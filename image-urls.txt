@@ -1,0 +1,4 @@
+hero-home-bg: https://d2xsxph8kpxj0f.cloudfront.net/310519663357378777/mLRoMfUBgPHZe3zeGnUGcR/hero-home-bg-mjLUBLDwZfsU6RgsHAiXRQ.webp
+workspace-browser: https://d2xsxph8kpxj0f.cloudfront.net/310519663357378777/mLRoMfUBgPHZe3zeGnUGcR/workspace-browser-preview-M5EZ4xXZcCHLkWY7VcLLGZ.webp
+agent-illustration: https://d2xsxph8kpxj0f.cloudfront.net/310519663357378777/mLRoMfUBgPHZe3zeGnUGcR/hero-agent-illustration-5xgBeUwbPzjG2QnkwaT4cS.webp
+category-cards: https://d2xsxph8kpxj0f.cloudfront.net/310519663357378777/mLRoMfUBgPHZe3zeGnUGcR/category-cards-bg-TaFd6GmVZkaseGSXFcJLCs.webp

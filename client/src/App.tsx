@@ -4,36 +4,74 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { TaskProvider } from "./contexts/TaskContext";
+import { lazy, Suspense } from "react";
+import AppLayout from "./components/AppLayout";
+
+// Eagerly loaded
 import Home from "./pages/Home";
 
+// Lazy-loaded pages
+const TaskView = lazy(() => import("./pages/TaskView"));
+const BillingPage = lazy(() => import("./pages/BillingPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/" component={Home} />
+      <Route path="/task/:id">
+        {(params) => (
+          <Suspense fallback={<PageLoader />}>
+            <TaskView />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/billing">
+        <Suspense fallback={<PageLoader />}>
+          <BillingPage />
+        </Suspense>
+      </Route>
+      <Route path="/settings">
+        <Suspense fallback={<PageLoader />}>
+          <SettingsPage />
+        </Suspense>
+      </Route>
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+      <ThemeProvider defaultTheme="dark">
+        <TaskProvider>
+          <TooltipProvider>
+            <Toaster
+              theme="dark"
+              toastOptions={{
+                style: {
+                  background: 'oklch(0.16 0.005 60)',
+                  border: '1px solid oklch(0.25 0.005 60)',
+                  color: 'oklch(0.9 0.01 70)',
+                },
+              }}
+            />
+            <AppLayout>
+              <Router />
+            </AppLayout>
+          </TooltipProvider>
+        </TaskProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
