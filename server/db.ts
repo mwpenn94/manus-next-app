@@ -81,12 +81,12 @@ export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get user: database not available");
-    return undefined;
+    return null;
   }
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
-  return result.length > 0 ? result[0] : undefined;
+  return result.length > 0 ? result[0] : null;
 }
 
 // ── Task Queries ──
@@ -96,7 +96,7 @@ export async function createTask(task: InsertTask) {
   if (!db) throw new Error("Database not available");
   await db.insert(tasks).values(task);
   const result = await db.select().from(tasks).where(eq(tasks.externalId, task.externalId)).limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function getUserTasks(userId: number, opts?: { includeArchived?: boolean; statusFilter?: string }) {
@@ -114,9 +114,9 @@ export async function getUserTasks(userId: number, opts?: { includeArchived?: bo
 
 export async function getTaskByExternalId(externalId: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db.select().from(tasks).where(eq(tasks.externalId, externalId)).limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function updateTaskStatus(externalId: string, status: "idle" | "running" | "completed" | "error") {
@@ -194,9 +194,9 @@ export async function getTaskMessages(taskId: number) {
 
 export async function getBridgeConfig(userId: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db.select().from(bridgeConfigs).where(eq(bridgeConfigs.userId, userId)).limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function upsertBridgeConfig(config: InsertBridgeConfig) {
@@ -230,9 +230,9 @@ export async function getTaskFiles(taskExternalId: string) {
 
 export async function getUserPreferences(userId: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId)).limit(1);
-  return result[0];
+  return result[0] ?? null;
 }
 
 export async function upsertUserPreferences(prefs: InsertUserPreference) {
@@ -282,9 +282,9 @@ export async function getWorkspaceArtifacts(taskId: number, type?: string) {
 
 export async function getLatestArtifactByType(taskId: number, type: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return null;
   const result = await db.select().from(workspaceArtifacts).where(
     and(eq(workspaceArtifacts.taskId, taskId), eq(workspaceArtifacts.artifactType, type as any))
   ).orderBy(desc(workspaceArtifacts.createdAt)).limit(1);
-  return result[0];
+  return result[0] ?? null;
 }

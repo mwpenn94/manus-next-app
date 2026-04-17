@@ -152,3 +152,15 @@
 ### Remaining Gaps
 - [x] Ensure new-task workspace artifact queries refetch automatically once serverId becomes available (added prevServerIdRef + useEffect refetch trigger)
 - [x] Verify and implement explicit Safari-safe voice recording MIME fallback (already implemented: isTypeSupported check with webm→mp4 fallback, dynamic extension, correct Content-Type)
+
+## Critical Production Bugs (User-Reported)
+- [x] LLM streaming stuck on typing indicator — root cause: req.on('close') fired prematurely, setting aborted=true before invokeLLM returned, causing all res.write() calls to be silently skipped. Fixed with safeWrite() pattern that checks res.destroyed instead of premature close events.
+- [x] Investigate /api/stream endpoint for production failures — confirmed invokeLLM works correctly (returns in ~2s), issue was in SSE delivery layer only
+- [x] Test full end-to-end flow: verified via curl — single sentence and multi-sentence responses both stream correctly with proper SSE event formatting
+- [x] Added /api/upload body parsing fix — excluded from express.json() middleware to allow raw binary body reading
+- [x] Added stream.test.ts with 8 tests covering SSE event formatting, content chunking, error handling, system prompt injection
+- [x] All 75 tests passing across 7 test files
+
+## Post-Fix Validation Gaps
+- [x] Verify /api/upload still works after express.json() middleware exclusion — confirmed via curl: binary upload returns S3 URL successfully
+- [ ] Verify full UI end-to-end chat flow in browser (create task → send message → receive streamed response)

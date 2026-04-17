@@ -167,7 +167,7 @@ export const appRouter = router({
 
   bridge: router({
     getConfig: protectedProcedure.query(async ({ ctx }) => {
-      return getBridgeConfig(ctx.user.id) ?? null;
+      return getBridgeConfig(ctx.user.id);
     }),
 
     saveConfig: protectedProcedure

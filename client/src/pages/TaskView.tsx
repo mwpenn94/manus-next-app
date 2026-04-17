@@ -715,7 +715,7 @@ export default function TaskView() {
   };
 
   const handleSend = useCallback(async () => {
-    if (!input.trim() || !task) return;
+    if (!input.trim() || !task || streaming) return;
     const userContent = files.length > 0
       ? `${input}\n\n📎 Attached: ${files.map(f => f.fileName).join(", ")}`
       : input;
@@ -1120,12 +1120,13 @@ export default function TaskView() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey && !streaming) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
-              placeholder="Send a message..."
+              disabled={streaming}
+              placeholder={streaming ? "Generating response..." : "Send a message..."}
               rows={1}
               className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm leading-relaxed"
             />

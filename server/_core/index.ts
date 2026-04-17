@@ -31,7 +31,11 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
+  // Skip JSON parsing for /api/upload (binary) to allow raw body reading
+  app.use((req, res, next) => {
+    if (req.path === "/api/upload") return next();
+    express.json({ limit: "50mb" })(req, res, next);
+  });
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
@@ -64,29 +68,42 @@ async function startServer() {
   // Authenticates user, resolves system prompt (per-task > global > default),
   // calls LLM, and delivers response in real sentence-boundary chunks.
   app.post("/api/stream", async (req, res) => {
+    console.log("[Stream] Request received");
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
-    let aborted = false;
-    req.on("close", () => { aborted = true; });
+    // Track if the underlying socket is truly destroyed (not just 'close' event)
+    let socketDestroyed = false;
+    res.on("close", () => { socketDestroyed = res.writableFinished || res.destroyed; });
+
+    const safeWrite = (data: string): boolean => {
+      try {
+        if (res.destroyed) return false;
+        return res.write(data);
+      } catch {
+        return false;
+      }
+    };
+
+    const safeEnd = () => {
+      try {
+        if (!res.destroyed) res.end();
+      } catch { /* ignore */ }
+    };
 
     try {
-      const { invokeLLM } = await import("./llm").catch(() => ({ invokeLLM: null }));
-      const bodyChunks: Buffer[] = [];
-      await new Promise<void>((resolve) => {
-        req.on("data", (c: Buffer) => bodyChunks.push(c));
-        req.on("end", resolve);
-      });
-      const body = JSON.parse(Buffer.concat(bodyChunks).toString());
+      const { invokeLLM } = await import("./llm").catch((e) => { console.error("[Stream] LLM import failed:", e); return { invokeLLM: null }; });
+      const body = req.body || {};
       let messages = body.messages || [];
       const taskExternalId = body.taskExternalId as string | undefined;
+      console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId);
 
       if (!invokeLLM) {
-        res.write(`data: ${JSON.stringify({ error: "LLM service is not available. Please check server configuration." })}\n\n`);
-        res.end();
+        safeWrite(`data: ${JSON.stringify({ error: "LLM service is not available. Please check server configuration." })}\n\n`);
+        safeEnd();
         return;
       }
 
@@ -96,13 +113,11 @@ async function startServer() {
         const { sdk: sdkInstance } = await import("./sdk");
         const user = await sdkInstance.authenticateRequest(req).catch(() => null);
         if (user) {
-          // Check per-task system prompt
           if (taskExternalId) {
             const { getTaskByExternalId } = await import("../db");
             const task = await getTaskByExternalId(taskExternalId);
             if (task?.systemPrompt) resolvedSystemPrompt = task.systemPrompt;
           }
-          // Fall back to global user preference
           if (!resolvedSystemPrompt) {
             const { getUserPreferences } = await import("../db");
             const prefs = await getUserPreferences(user.id);
@@ -111,39 +126,37 @@ async function startServer() {
         }
       } catch { /* proceed with default */ }
 
-      // Inject resolved system prompt if the first message isn't already a system message
       if (resolvedSystemPrompt && messages.length > 0 && messages[0].role === "system") {
         messages[0].content = resolvedSystemPrompt;
       } else if (resolvedSystemPrompt) {
         messages = [{ role: "system", content: resolvedSystemPrompt }, ...messages];
       }
 
+      console.log("[Stream] Calling invokeLLM with", messages.length, "messages...");
       const response = await invokeLLM({ messages });
+      console.log("[Stream] invokeLLM returned, choices:", response.choices?.length);
       const rawContent = response.choices?.[0]?.message?.content;
       const content = typeof rawContent === "string" ? rawContent : "I couldn't generate a response.";
+      console.log("[Stream] Content length:", content.length);
 
-      // Deliver content in real sentence-boundary chunks (no artificial delay)
-      // Split on sentence boundaries for natural streaming feel
+      // Deliver content in sentence-boundary chunks for natural streaming feel
       const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
       const chunks = content.match(sentencePattern) || [content];
-      // If the regex didn't capture trailing text, add it
       const captured = chunks.join("");
       if (captured.length < content.length) {
         chunks.push(content.slice(captured.length));
       }
 
       for (const chunk of chunks) {
-        if (aborted) return;
-        res.write(`data: ${JSON.stringify({ delta: chunk })}\n\n`);
+        if (!safeWrite(`data: ${JSON.stringify({ delta: chunk })}\n\n`)) break;
       }
-      if (aborted) return;
-      res.write(`data: ${JSON.stringify({ done: true, content })}\n\n`);
-      res.end();
+      safeWrite(`data: ${JSON.stringify({ done: true, content })}\n\n`);
+      safeEnd();
+      console.log("[Stream] Response complete");
     } catch (err: any) {
-      if (aborted) return;
       console.error("[Stream] Error:", err);
-      res.write(`data: ${JSON.stringify({ error: err.message || "Streaming failed" })}\n\n`);
-      res.end();
+      safeWrite(`data: ${JSON.stringify({ error: err.message || "Streaming failed" })}\n\n`);
+      safeEnd();
     }
   });
 
