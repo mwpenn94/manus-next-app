@@ -61,3 +61,27 @@
 - [x] Wire BridgeContext events into TaskContext so task status/messages update from bridge protocol events
 - [x] Add a real stop-generation button that aborts the active SSE/LLM stream (AbortController + server abort handling)
 - [x] Add drag-and-drop file upload to chat input (visual drop zone overlay + file input dispatch)
+
+## Landscape Pass: Simulation → Real Wiring
+
+### Critical
+- [x] Remove DEMO_TASKS from TaskContext — show empty state for unauth, server tasks only for auth
+- [x] Remove AGENT_SEQUENCES from TaskContext — no fake auto-responses on task creation
+- [x] Remove hardcoded totalSteps:8 from createTask — let bridge/LLM set dynamically
+
+### Moderate
+- [x] Replace LLM fallback simulation in /api/stream with proper error response
+- [x] Wire BillingPage to real task data from DB (task count, actual usage) instead of hardcoded constants
+- [x] Add user_preferences table and persist general settings + capability toggles to DB
+- [x] Remove "Feature coming soon" toasts — replaced with real persistence
+
+### Low
+- [x] Remove Sync tab from Settings (no backend exists)
+- [x] Remove ComponentShowcase from production routing
+
+### Depth Pass Fixes
+- [x] Fix bridge URL validation to accept ws:// and wss:// protocols (not just http/https)
+- [x] Remove DEMO_MAP_ID hardcoded placeholder from Map component
+- [x] Load saved bridge config from DB on mount instead of hardcoding localhost
+- [x] Fix getUserPreferences await bug (missing await before ?? fallback)
+- [x] Add preferences and usage stats test coverage (6 new tests)

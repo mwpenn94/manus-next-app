@@ -116,13 +116,20 @@ describe("bridge config lifecycle", () => {
     expect(config!.apiKey).toBeNull();
   });
 
-  it("rejects malformed bridge URL", async () => {
+  it("rejects empty bridge URL", async () => {
     const ctx = makeCtx(300);
     const caller = appRouter.createCaller(ctx);
 
     await expect(
-      caller.bridge.saveConfig({ bridgeUrl: "not-a-url" })
+      caller.bridge.saveConfig({ bridgeUrl: "" })
     ).rejects.toThrow();
+  });
+
+  it("accepts arbitrary protocol URLs like ws://", async () => {
+    const ctx = makeCtx(300);
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.bridge.saveConfig({ bridgeUrl: "ws://localhost:3001/bridge" });
+    expect(result).toBeDefined();
   });
 
   it("accepts wss:// protocol URLs", async () => {

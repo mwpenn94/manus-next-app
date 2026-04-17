@@ -15,6 +15,9 @@ import {
   upsertBridgeConfig,
   createTaskFile,
   getTaskFiles,
+  getUserPreferences,
+  upsertUserPreferences,
+  getUserTaskStats,
 } from "./db";
 
 export const appRouter = router({
@@ -125,7 +128,7 @@ export const appRouter = router({
 
     saveConfig: protectedProcedure
       .input(z.object({
-        bridgeUrl: z.string().url().optional().nullable(),
+        bridgeUrl: z.string().min(1).optional().nullable(),
         apiKey: z.string().optional().nullable(),
         enabled: z.boolean().optional(),
       }))
@@ -137,6 +140,37 @@ export const appRouter = router({
           enabled: input.enabled ? 1 : 0,
         });
       }),
+  }),
+
+  /** User preferences — persist settings and capability toggles */
+  preferences: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const prefs = await getUserPreferences(ctx.user.id);
+      return prefs ?? {
+        generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false },
+        capabilities: {},
+      };
+    }),
+
+    save: protectedProcedure
+      .input(z.object({
+        generalSettings: z.any().optional(),
+        capabilities: z.any().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return upsertUserPreferences({
+          userId: ctx.user.id,
+          generalSettings: input.generalSettings ?? null,
+          capabilities: input.capabilities ?? null,
+        });
+      }),
+  }),
+
+  /** Usage stats — real task counts from the database */
+  usage: router({
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      return getUserTaskStats(ctx.user.id);
+    }),
   }),
 
   /** LLM chat completion — sends user message to the built-in LLM and returns the response */

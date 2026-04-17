@@ -84,16 +84,7 @@ async function startServer() {
       const messages = body.messages || [];
 
       if (!invokeLLM) {
-        // Fallback: simulate streaming if LLM not available
-        const simulated = "I'm Manus Next, your AI assistant. The LLM integration is being configured. In the meantime, I can help you explore the interface and test the various capabilities available through the @manus-next packages.";
-        const words = simulated.split(" ");
-        for (const word of words) {
-          if (aborted) return;
-          res.write(`data: ${JSON.stringify({ delta: word + " " })}\n\n`);
-          await new Promise(r => setTimeout(r, 40));
-        }
-        if (aborted) return;
-        res.write(`data: ${JSON.stringify({ done: true, content: simulated })}\n\n`);
+        res.write(`data: ${JSON.stringify({ error: "LLM service is not available. Please check server configuration." })}\n\n`);
         res.end();
         return;
       }

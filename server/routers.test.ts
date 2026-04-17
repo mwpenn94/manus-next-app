@@ -253,15 +253,24 @@ describe("bridge router", () => {
     expect(config!.enabled).toBe(0);
   });
 
-  it("rejects invalid bridge URL", async () => {
+  it("rejects empty bridge URL", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
     await expect(
       caller.bridge.saveConfig({
-        bridgeUrl: "not-a-valid-url",
+        bridgeUrl: "",
       })
     ).rejects.toThrow();
+  });
+
+  it("accepts ws:// protocol bridge URLs", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.bridge.saveConfig({
+      bridgeUrl: "ws://localhost:3001/bridge",
+    });
+    expect(result).toBeDefined();
   });
 
   it("rejects unauthenticated bridge config access", async () => {

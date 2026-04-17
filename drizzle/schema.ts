@@ -86,3 +86,18 @@ export const taskFiles = mysqlTable("task_files", {
 
 export type TaskFile = typeof taskFiles.$inferSelect;
 export type InsertTaskFile = typeof taskFiles.$inferInsert;
+
+// ── User Preferences (settings + capability toggles) ──
+export const userPreferences = mysqlTable("user_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  /** JSON object: { notifications: bool, soundEffects: bool, autoExpandActions: bool, compactMode: bool } */
+  generalSettings: json("generalSettings"),
+  /** JSON object: { "package-name": bool, ... } mapping capability package names to enabled/disabled */
+  capabilities: json("capabilities"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type InsertUserPreference = typeof userPreferences.$inferInsert;

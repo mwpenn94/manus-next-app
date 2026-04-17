@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -166,4 +166,39 @@ export async function getTaskFiles(taskExternalId: string) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(taskFiles).where(eq(taskFiles.taskExternalId, taskExternalId)).orderBy(desc(taskFiles.createdAt));
+}
+
+// ── User Preferences Queries ──
+
+export async function getUserPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId)).limit(1);
+  return result[0];
+}
+
+export async function upsertUserPreferences(prefs: InsertUserPreference) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(userPreferences).values(prefs).onDuplicateKeyUpdate({
+    set: {
+      generalSettings: prefs.generalSettings,
+      capabilities: prefs.capabilities,
+    },
+  });
+  return getUserPreferences(prefs.userId);
+}
+
+// ── Usage Stats Queries ──
+
+export async function getUserTaskStats(userId: number) {
+  const db = await getDb();
+  if (!db) return { totalTasks: 0, completedTasks: 0, runningTasks: 0, errorTasks: 0 };
+  const allTasks = await db.select().from(tasks).where(eq(tasks.userId, userId));
+  return {
+    totalTasks: allTasks.length,
+    completedTasks: allTasks.filter(t => t.status === "completed").length,
+    runningTasks: allTasks.filter(t => t.status === "running").length,
+    errorTasks: allTasks.filter(t => t.status === "error").length,
+  };
 }

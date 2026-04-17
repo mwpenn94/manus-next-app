@@ -104,11 +104,16 @@ export default function Home() {
 
   const handleSubmit = useCallback(() => {
     if (!input.trim()) return;
+    if (!isAuthenticated) {
+      // Redirect to login — task creation requires authentication
+      window.location.href = getLoginUrl();
+      return;
+    }
     const title = input.length > 50 ? input.slice(0, 50) + "..." : input;
     const id = createTask(title, input);
     setInput("");
     navigate(`/task/${id}`);
-  }, [input, createTask, navigate]);
+  }, [input, createTask, navigate, isAuthenticated]);
 
   return (
     <div className="h-full overflow-y-auto relative">

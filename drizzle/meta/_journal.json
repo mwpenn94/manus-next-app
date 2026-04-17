@@ -22,6 +22,13 @@
       "when": 1776445600515,
       "tag": "0002_powerful_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1776451153713,
+      "tag": "0003_optimal_tyrannus",
+      "breakpoints": true
     }
   ]
 }

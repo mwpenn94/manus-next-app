@@ -1,15 +1,15 @@
 /**
- * SettingsPage — "Warm Void" Manus-Authentic Settings
- * 
- * Convergence Pass 3: Refined capability cards with search/filter,
- * polished toggle animations, richer sync and bridge panels.
+ * SettingsPage — Real Persistence
+ *
+ * All settings are persisted to the database via tRPC.
+ * No "coming soon" gates. No simulated data.
+ * Tabs: Account, General, Capabilities, Bridge.
  */
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   User,
   Settings,
   Puzzle,
-  RefreshCw,
   Unplug,
   Globe,
   Monitor,
@@ -22,12 +22,11 @@ import {
   Cpu,
   Laptop,
   Search,
-  Shield,
   Bell,
   Palette,
-  Languages,
   ChevronRight,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -37,37 +36,52 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 
-type SettingsTab = "account" | "general" | "capabilities" | "sync" | "bridge";
+type SettingsTab = "account" | "general" | "capabilities" | "bridge";
 
 interface Capability {
   name: string;
   package: string;
   icon: typeof Globe;
   description: string;
-  enabled: boolean;
-  status: "active" | "inactive" | "beta";
+  defaultEnabled: boolean;
 }
 
-const INITIAL_CAPABILITIES: Capability[] = [
-  { name: "Browser Automation", package: "@manus-next/browser", icon: Globe, description: "Playwright + CDP failover for web browsing, form filling, and data extraction.", enabled: true, status: "active" },
-  { name: "Computer Use", package: "@manus-next/computer", icon: Monitor, description: "Screen capture, mouse/keyboard control, and visual element detection.", enabled: true, status: "active" },
-  { name: "Document Generation", package: "@manus-next/document", icon: FileText, description: "Create PDFs, Word docs, and Markdown with templates and styling.", enabled: true, status: "active" },
-  { name: "Slide Decks", package: "@manus-next/deck", icon: Presentation, description: "Generate presentation slides with layouts, charts, and speaker notes.", enabled: true, status: "active" },
-  { name: "Task Scheduling", package: "@manus-next/scheduled", icon: Calendar, description: "Cron-based and interval scheduling with retry and dead-letter queues.", enabled: true, status: "active" },
-  { name: "Sharing", package: "@manus-next/share", icon: Share2, description: "Generate shareable links, embed codes, and export bundles.", enabled: true, status: "active" },
-  { name: "Session Replay", package: "@manus-next/replay", icon: Play, description: "Record and replay agent sessions with timeline scrubbing.", enabled: false, status: "beta" },
-  { name: "Webapp Builder", package: "@manus-next/webapp-builder", icon: Code, description: "Scaffold, build, and deploy web applications from prompts.", enabled: true, status: "active" },
-  { name: "Client Inference", package: "@manus-next/client-inference", icon: Cpu, description: "Run small models locally via WebGPU/WASM for offline capabilities.", enabled: false, status: "beta" },
-  { name: "Desktop Agent", package: "@manus-next/desktop", icon: Laptop, description: "Native desktop integration with system tray and global shortcuts.", enabled: false, status: "inactive" },
+const CAPABILITY_DEFINITIONS: Capability[] = [
+  { name: "Browser Automation", package: "@manus-next/browser", icon: Globe, description: "Playwright + CDP failover for web browsing, form filling, and data extraction.", defaultEnabled: true },
+  { name: "Computer Use", package: "@manus-next/computer", icon: Monitor, description: "Screen capture, mouse/keyboard control, and visual element detection.", defaultEnabled: true },
+  { name: "Document Generation", package: "@manus-next/document", icon: FileText, description: "Create PDFs, Word docs, and Markdown with templates and styling.", defaultEnabled: true },
+  { name: "Slide Decks", package: "@manus-next/deck", icon: Presentation, description: "Generate presentation slides with layouts, charts, and speaker notes.", defaultEnabled: true },
+  { name: "Task Scheduling", package: "@manus-next/scheduled", icon: Calendar, description: "Cron-based and interval scheduling with retry and dead-letter queues.", defaultEnabled: true },
+  { name: "Sharing", package: "@manus-next/share", icon: Share2, description: "Generate shareable links, embed codes, and export bundles.", defaultEnabled: true },
+  { name: "Session Replay", package: "@manus-next/replay", icon: Play, description: "Record and replay agent sessions with timeline scrubbing.", defaultEnabled: false },
+  { name: "Webapp Builder", package: "@manus-next/webapp-builder", icon: Code, description: "Scaffold, build, and deploy web applications from prompts.", defaultEnabled: true },
+  { name: "Client Inference", package: "@manus-next/client-inference", icon: Cpu, description: "Run small models locally via WebGPU/WASM for offline capabilities.", defaultEnabled: false },
+  { name: "Desktop Agent", package: "@manus-next/desktop", icon: Laptop, description: "Native desktop integration with system tray and global shortcuts.", defaultEnabled: false },
 ];
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+interface GeneralSettings {
+  notifications: boolean;
+  soundEffects: boolean;
+  autoExpandActions: boolean;
+  compactMode: boolean;
+}
+
+const DEFAULT_GENERAL: GeneralSettings = {
+  notifications: true,
+  soundEffects: false,
+  autoExpandActions: true,
+  compactMode: false,
+};
+
+function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onChange}
+      disabled={disabled}
       className={cn(
         "w-10 h-[22px] rounded-full transition-colors relative shrink-0",
-        checked ? "bg-primary" : "bg-muted"
+        checked ? "bg-primary" : "bg-muted",
+        disabled && "opacity-50 cursor-not-allowed"
       )}
       role="switch"
       aria-checked={checked}
@@ -82,21 +96,85 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("capabilities");
-  const [capabilities, setCapabilities] = useState(INITIAL_CAPABILITIES);
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [capSearch, setCapSearch] = useState("");
-  const [capFilter, setCapFilter] = useState<"all" | "active" | "beta" | "inactive">("all");
+  const [capFilter, setCapFilter] = useState<"all" | "enabled" | "disabled">("all");
+
+  // Auth
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Bridge integration
   const { status: bridgeStatus, connect, disconnect, quality, events } = useBridge();
-  const [bridgeUrl, setBridgeUrl] = useState("ws://localhost:3001/bridge");
+  const [bridgeUrl, setBridgeUrl] = useState("");
   const [bridgeApiKey, setBridgeApiKey] = useState("");
-  const [bridgeEnabled, setBridgeEnabled] = useState(false);
 
-  // Auth
-  const { user, isAuthenticated } = useAuth();
+  // ── Load persisted preferences from DB ──
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, {
+    enabled: isAuthenticated,
+    retry: false,
+  });
 
-  // Save bridge config to DB
+  // ── Load persisted bridge config from DB ──
+  const bridgeConfigQuery = trpc.bridge.getConfig.useQuery(undefined, {
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
+  const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL);
+  const [capabilityToggles, setCapabilityToggles] = useState<Record<string, boolean>>({});
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [bridgeConfigLoaded, setBridgeConfigLoaded] = useState(false);
+
+  // Hydrate local state from server on first load
+  useEffect(() => {
+    if (prefsLoaded || !prefsQuery.data) return;
+    const gs = prefsQuery.data.generalSettings as GeneralSettings | null;
+    if (gs) setGeneralSettings(gs);
+    const caps = prefsQuery.data.capabilities as Record<string, boolean> | null;
+    if (caps) setCapabilityToggles(caps);
+    setPrefsLoaded(true);
+  }, [prefsQuery.data, prefsLoaded]);
+
+  // Hydrate bridge config from server
+  useEffect(() => {
+    if (bridgeConfigLoaded || !bridgeConfigQuery.data) return;
+    const cfg = bridgeConfigQuery.data;
+    if (cfg.bridgeUrl) setBridgeUrl(cfg.bridgeUrl);
+    if (cfg.apiKey) setBridgeApiKey(cfg.apiKey);
+    setBridgeConfigLoaded(true);
+  }, [bridgeConfigQuery.data, bridgeConfigLoaded]);
+
+  // Save mutation
+  const savePrefsMutation = trpc.preferences.save.useMutation({
+    onError: () => toast.error("Failed to save preferences"),
+  });
+
+  // Persist general settings
+  const updateGeneralSetting = useCallback((key: keyof GeneralSettings) => {
+    setGeneralSettings((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      if (isAuthenticated) {
+        savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+      }
+      toast.success(`${key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase())} ${updated[key] ? "enabled" : "disabled"}`);
+      return updated;
+    });
+  }, [isAuthenticated, savePrefsMutation, capabilityToggles]);
+
+  // Persist capability toggles
+  const toggleCapability = useCallback((pkg: string) => {
+    setCapabilityToggles((prev) => {
+      const current = prev[pkg] ?? CAPABILITY_DEFINITIONS.find(c => c.package === pkg)?.defaultEnabled ?? false;
+      const updated = { ...prev, [pkg]: !current };
+      if (isAuthenticated) {
+        savePrefsMutation.mutate({ generalSettings, capabilities: updated });
+      }
+      toast.success(`${CAPABILITY_DEFINITIONS.find(c => c.package === pkg)?.name} ${!current ? "enabled" : "disabled"}`);
+      return updated;
+    });
+  }, [isAuthenticated, savePrefsMutation, generalSettings]);
+
+  // Bridge config persistence
   const saveBridgeConfig = trpc.bridge.saveConfig.useMutation({
     onSuccess: () => toast.success("Bridge configuration saved"),
     onError: () => toast.error("Failed to save bridge config"),
@@ -104,7 +182,6 @@ export default function SettingsPage() {
 
   const handleBridgeConnect = useCallback(() => {
     connect(bridgeUrl, bridgeApiKey || undefined);
-    setBridgeEnabled(true);
     if (isAuthenticated) {
       saveBridgeConfig.mutate({ bridgeUrl, apiKey: bridgeApiKey || null, enabled: true });
     }
@@ -112,37 +189,36 @@ export default function SettingsPage() {
 
   const handleBridgeDisconnect = useCallback(() => {
     disconnect();
-    setBridgeEnabled(false);
     if (isAuthenticated) {
       saveBridgeConfig.mutate({ bridgeUrl, apiKey: bridgeApiKey || null, enabled: false });
     }
   }, [disconnect, isAuthenticated, bridgeUrl, bridgeApiKey, saveBridgeConfig]);
 
+  // Computed capabilities list
+  const capabilitiesWithState = useMemo(() => {
+    return CAPABILITY_DEFINITIONS.map((c) => ({
+      ...c,
+      enabled: capabilityToggles[c.package] ?? c.defaultEnabled,
+    }));
+  }, [capabilityToggles]);
+
+  const filteredCapabilities = useMemo(() => {
+    return capabilitiesWithState.filter((c) => {
+      const matchesSearch = c.name.toLowerCase().includes(capSearch.toLowerCase()) ||
+        c.package.toLowerCase().includes(capSearch.toLowerCase());
+      const matchesFilter = capFilter === "all" ||
+        (capFilter === "enabled" && c.enabled) ||
+        (capFilter === "disabled" && !c.enabled);
+      return matchesSearch && matchesFilter;
+    });
+  }, [capabilitiesWithState, capSearch, capFilter]);
+
   const tabs: { id: SettingsTab; label: string; icon: typeof User }[] = [
     { id: "account", label: "Account", icon: User },
     { id: "general", label: "General", icon: Settings },
     { id: "capabilities", label: "Capabilities", icon: Puzzle },
-    { id: "sync", label: "Sync", icon: RefreshCw },
     { id: "bridge", label: "Bridge", icon: Unplug },
   ];
-
-  const filteredCapabilities = useMemo(() => {
-    return capabilities.filter((c) => {
-      const matchesSearch = c.name.toLowerCase().includes(capSearch.toLowerCase()) ||
-        c.package.toLowerCase().includes(capSearch.toLowerCase());
-      const matchesFilter = capFilter === "all" || c.status === capFilter;
-      return matchesSearch && matchesFilter;
-    });
-  }, [capabilities, capSearch, capFilter]);
-
-  const toggleCapability = (index: number) => {
-    const realIndex = capabilities.findIndex(c => c.package === filteredCapabilities[index].package);
-    setCapabilities((prev) =>
-      prev.map((c, i) => i === realIndex ? { ...c, enabled: !c.enabled } : c)
-    );
-    const cap = filteredCapabilities[index];
-    toast(cap.enabled ? `${cap.name} disabled` : `${cap.name} enabled`);
-  };
 
   return (
     <div className="h-full flex">
@@ -171,6 +247,110 @@ export default function SettingsPage() {
       {/* Settings Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-2xl">
+          {/* ── Account ── */}
+          {activeTab === "account" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Account
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">Manage your profile and authentication.</p>
+
+              <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-semibold text-primary" style={{ fontFamily: "var(--font-heading)" }}>
+                    {isAuthenticated ? (user?.name?.[0]?.toUpperCase() || "U") : "G"}
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-foreground">
+                      {isAuthenticated ? (user?.name || "User") : "Guest User"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isAuthenticated ? (user?.email || "Signed in via Manus OAuth") : "Sign in to save your tasks and preferences"}
+                    </p>
+                  </div>
+                </div>
+                {!isAuthenticated ? (
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={getLoginUrl()}
+                      className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity inline-block"
+                    >
+                      Sign in with Manus
+                    </a>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between py-2">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Name</p>
+                        <p className="text-xs text-muted-foreground">{user?.name || "Not set"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-t border-border/50">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Email</p>
+                        <p className="text-xs text-muted-foreground">{user?.email || "Not set"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-t border-border/50">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Role</p>
+                        <p className="text-xs text-muted-foreground capitalize">{user?.role || "user"}</p>
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t border-border/50">
+                      <button
+                        onClick={() => logout()}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-red-500/15 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/25 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── General ── */}
+          {activeTab === "general" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                General
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Application preferences.{" "}
+                {isAuthenticated
+                  ? "Changes are saved automatically."
+                  : "Sign in to persist your settings."}
+              </p>
+
+              <div className="space-y-2.5">
+                {([
+                  { key: "notifications" as const, label: "Notifications", description: "Receive alerts when tasks complete", icon: Bell },
+                  { key: "soundEffects" as const, label: "Sound effects", description: "Play sounds for agent actions", icon: Palette },
+                  { key: "autoExpandActions" as const, label: "Auto-expand actions", description: "Show action steps by default in chat", icon: ChevronRight },
+                  { key: "compactMode" as const, label: "Compact mode", description: "Reduce spacing for information density", icon: Monitor },
+                ]).map((setting) => (
+                  <div key={setting.key} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <setting.icon className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{setting.label}</p>
+                        <p className="text-xs text-muted-foreground">{setting.description}</p>
+                      </div>
+                    </div>
+                    <Toggle
+                      checked={generalSettings[setting.key]}
+                      onChange={() => updateGeneralSetting(setting.key)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* ── Capabilities ── */}
           {activeTab === "capabilities" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
@@ -178,7 +358,10 @@ export default function SettingsPage() {
                 Capabilities
               </h2>
               <p className="text-sm text-muted-foreground mb-5">
-                Enable or disable agent capabilities powered by @manus-next packages.
+                Enable or disable agent capabilities.{" "}
+                {isAuthenticated
+                  ? "Preferences are saved to your account."
+                  : "Sign in to persist your capability preferences."}
               </p>
 
               {/* Search + Filter */}
@@ -194,7 +377,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="flex items-center gap-1">
-                  {(["all", "active", "beta", "inactive"] as const).map((f) => (
+                  {(["all", "enabled", "disabled"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setCapFilter(f)}
@@ -234,168 +417,21 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-medium text-foreground">{cap.name}</h3>
+                          <p className="text-sm font-medium text-foreground">{cap.name}</p>
                           <span className={cn(
                             "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                            cap.status === "active" ? "bg-emerald-500/15 text-emerald-400" :
-                            cap.status === "beta" ? "bg-amber-500/15 text-amber-400" :
-                            "bg-muted text-muted-foreground"
+                            cap.enabled ? "bg-emerald-500/15 text-emerald-400" : "bg-muted text-muted-foreground"
                           )}>
-                            {cap.status}
+                            {cap.enabled ? "enabled" : "disabled"}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{cap.description}</p>
                         <p className="text-[10px] text-muted-foreground/60 mt-1 font-mono">{cap.package}</p>
                       </div>
-                      <Toggle checked={cap.enabled} onChange={() => toggleCapability(i)} />
+                      <Toggle checked={cap.enabled} onChange={() => toggleCapability(cap.package)} />
                     </motion.div>
                   ))
                 )}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── Account ── */}
-          {activeTab === "account" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                Account
-              </h2>
-              <p className="text-sm text-muted-foreground mb-5">Manage your profile and authentication.</p>
-
-              <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-semibold text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                    {isAuthenticated ? (user?.name?.[0]?.toUpperCase() || "U") : "G"}
-                  </div>
-                  <div>
-                    <p className="text-lg font-medium text-foreground">
-                      {isAuthenticated ? (user?.name || "User") : "Guest User"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {isAuthenticated ? (user?.email || "Signed in via Manus OAuth") : "Sign in to save your tasks and preferences"}
-                    </p>
-                  </div>
-                </div>
-                {!isAuthenticated && (
-                  <div className="flex items-center gap-3">
-                    <a
-                      href={getLoginUrl()}
-                      className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity inline-block"
-                    >
-                      Sign in with Manus
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-5 space-y-2">
-                {[
-                  { label: "Security", desc: "Password, 2FA, and session management", icon: Shield },
-                  { label: "Notifications", desc: "Email and push notification preferences", icon: Bell },
-                ].map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={() => toast("Feature coming soon")}
-                    className="w-full bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-accent/30 transition-colors text-left"
-                  >
-                    <item.icon className="w-5 h-5 text-muted-foreground" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── General ── */}
-          {activeTab === "general" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                General
-              </h2>
-              <p className="text-sm text-muted-foreground mb-5">Application preferences and defaults.</p>
-
-              <div className="space-y-2.5">
-                {[
-                  { label: "Notifications", description: "Receive alerts when tasks complete", enabled: true, icon: Bell },
-                  { label: "Sound effects", description: "Play sounds for agent actions", enabled: false, icon: Palette },
-                  { label: "Auto-expand actions", description: "Show action steps by default in chat", enabled: true, icon: ChevronRight },
-                  { label: "Compact mode", description: "Reduce spacing for information density", enabled: false, icon: Monitor },
-                  { label: "Language", description: "Interface language (English)", enabled: true, icon: Languages },
-                ].map((setting, i) => (
-                  <div key={i} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <setting.icon className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{setting.label}</p>
-                        <p className="text-xs text-muted-foreground">{setting.description}</p>
-                      </div>
-                    </div>
-                    <Toggle checked={setting.enabled} onChange={() => toast("Feature coming soon")} />
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── Sync ── */}
-          {activeTab === "sync" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                Sync
-              </h2>
-              <p className="text-sm text-muted-foreground mb-5">
-                Cross-device synchronization powered by <code className="text-[11px] bg-muted px-1 py-0.5 rounded">@manus-next/sync</code>
-              </p>
-
-              <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <RefreshCw className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Real-time Sync</p>
-                      <p className="text-xs text-muted-foreground">CRDT-based conflict resolution</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs text-emerald-400">Connected</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Last sync", value: "just now" },
-                    { label: "Devices", value: "1 active" },
-                    { label: "Pending", value: "0 changes" },
-                  ].map((stat, i) => (
-                    <div key={i} className="bg-muted/30 rounded-lg p-3">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                      <p className="text-sm font-medium text-foreground mt-0.5">{stat.value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Sync strategy</p>
-                  <div className="flex items-center gap-2">
-                    {["Real-time", "On demand", "Periodic"].map((s, i) => (
-                      <button
-                        key={s}
-                        className={cn(
-                          "text-xs px-3 py-1.5 rounded-lg transition-colors",
-                          i === 0 ? "bg-primary/15 text-primary border border-primary/20" : "bg-muted text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </motion.div>
           )}
@@ -451,7 +487,7 @@ export default function SettingsPage() {
                       type="text"
                       value={bridgeUrl}
                       onChange={(e) => setBridgeUrl(e.target.value)}
-                      placeholder="ws://localhost:3001/bridge"
+                      placeholder="wss://your-bridge-server.example.com/bridge"
                       className="w-full h-9 px-3 text-sm bg-muted rounded-md border border-border text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                   </div>
@@ -464,14 +500,6 @@ export default function SettingsPage() {
                       placeholder="sk-..."
                       className="w-full h-9 px-3 text-sm bg-muted rounded-md border border-border text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
                     />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1.5 block">Reconnect strategy</label>
-                    <select className="w-full h-9 px-3 text-sm bg-muted rounded-md border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring">
-                      <option>Exponential backoff (recommended)</option>
-                      <option>Linear retry</option>
-                      <option>Manual only</option>
-                    </select>
                   </div>
                 </div>
 
@@ -508,6 +536,22 @@ export default function SettingsPage() {
                   </a>
                 </div>
 
+                {/* Connection quality stats */}
+                {bridgeStatus === "connected" && (
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Latency", value: quality.latencyMs ? `${quality.latencyMs}ms` : "—" },
+                      { label: "Reconnects", value: String(quality.reconnectCount ?? 0) },
+                      { label: "Messages", value: String((quality.messagesSent ?? 0) + (quality.messagesReceived ?? 0)) },
+                    ].map((stat, i) => (
+                      <div key={i} className="bg-muted/30 rounded-lg p-3">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                        <p className="text-sm font-medium text-foreground mt-0.5 tabular-nums">{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Event log */}
                 {events.length > 0 && (
                   <div>
@@ -530,26 +574,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Account section with auth */}
-              <div className="bg-card border border-border rounded-xl p-5 mt-4">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
-                    isAuthenticated ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                  )} style={{ fontFamily: "var(--font-heading)" }}>
-                    {user?.name?.[0]?.toUpperCase() || "?"}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {isAuthenticated ? user?.name || "Authenticated" : "Not signed in"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {isAuthenticated ? "Bridge config will be saved to your account" : "Sign in to persist bridge settings"}
-                    </p>
-                  </div>
-                </div>
               </div>
             </motion.div>
           )}

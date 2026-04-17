@@ -138,7 +138,7 @@ export function MapView({
       fullscreenControl: true,
       zoomControl: true,
       streetViewControl: true,
-      mapId: "DEMO_MAP_ID",
+      mapId: undefined, // Uses default raster map; set a real Cloud Map ID for vector features
     });
     if (onMapReady) {
       onMapReady(map.current);
