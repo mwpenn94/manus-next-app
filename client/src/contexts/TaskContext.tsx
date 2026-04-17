@@ -18,14 +18,14 @@ import { useBridge, type BridgeMessage, type BridgeTaskStep, type BridgeTaskComp
 
 // ── Types ──
 export type AgentAction =
-  | { type: "browsing"; url: string; status: "active" | "done" }
-  | { type: "scrolling"; status: "active" | "done" }
-  | { type: "clicking"; element: string; status: "active" | "done" }
-  | { type: "executing"; command: string; status: "active" | "done" }
-  | { type: "creating"; file: string; status: "active" | "done" }
-  | { type: "searching"; query: string; status: "active" | "done" }
-  | { type: "generating"; description: string; status: "active" | "done" }
-  | { type: "thinking"; status: "active" | "done" };
+  | { type: "browsing"; url: string; status: "active" | "done"; preview?: string }
+  | { type: "scrolling"; status: "active" | "done"; preview?: string }
+  | { type: "clicking"; element: string; status: "active" | "done"; preview?: string }
+  | { type: "executing"; command: string; status: "active" | "done"; preview?: string }
+  | { type: "creating"; file: string; status: "active" | "done"; preview?: string }
+  | { type: "searching"; query: string; status: "active" | "done"; preview?: string }
+  | { type: "generating"; description: string; status: "active" | "done"; preview?: string }
+  | { type: "thinking"; status: "active" | "done"; preview?: string };
 
 export interface Message {
   id: string;
@@ -65,7 +65,7 @@ const TaskContext = createContext<TaskContextValue | null>(null);
 let nextMsgId = 100;
 
 // Valid artifact types that the workspace panel can display
-const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal"]);
+const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]);
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);

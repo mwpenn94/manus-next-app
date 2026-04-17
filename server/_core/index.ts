@@ -64,20 +64,16 @@ async function startServer() {
     }
   });
 
-  // ── SSE streaming endpoint for LLM ──
-  // Authenticates user, resolves system prompt (per-task > global > default),
-  // calls LLM, and delivers response in real sentence-boundary chunks.
+  // ── SSE streaming endpoint for LLM (Agentic) ──
+  // Multi-turn agentic loop: LLM calls tools (search, image gen, code exec),
+  // server executes them, streams progress, feeds results back until done.
   app.post("/api/stream", async (req, res) => {
-    console.log("[Stream] Request received");
+    console.log("[Stream] Agentic request received");
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
-
-    // Track if the underlying socket is truly destroyed (not just 'close' event)
-    let socketDestroyed = false;
-    res.on("close", () => { socketDestroyed = res.writableFinished || res.destroyed; });
 
     const safeWrite = (data: string): boolean => {
       try {
@@ -95,17 +91,11 @@ async function startServer() {
     };
 
     try {
-      const { invokeLLM } = await import("./llm").catch((e) => { console.error("[Stream] LLM import failed:", e); return { invokeLLM: null }; });
+      const { runAgentStream } = await import("../agentStream");
       const body = req.body || {};
-      let messages = body.messages || [];
+      const messages = body.messages || [];
       const taskExternalId = body.taskExternalId as string | undefined;
       console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId);
-
-      if (!invokeLLM) {
-        safeWrite(`data: ${JSON.stringify({ error: "LLM service is not available. Please check server configuration." })}\n\n`);
-        safeEnd();
-        return;
-      }
 
       // Resolve system prompt: per-task > global preferences > default
       let resolvedSystemPrompt: string | null = null;
@@ -126,33 +116,42 @@ async function startServer() {
         }
       } catch { /* proceed with default */ }
 
-      if (resolvedSystemPrompt && messages.length > 0 && messages[0].role === "system") {
-        messages[0].content = resolvedSystemPrompt;
-      } else if (resolvedSystemPrompt) {
-        messages = [{ role: "system", content: resolvedSystemPrompt }, ...messages];
+      // Resolve server-side task ID for artifact persistence
+      let taskServerId: number | null = null;
+      if (taskExternalId) {
+        try {
+          const { getTaskByExternalId } = await import("../db");
+          const taskRecord = await getTaskByExternalId(taskExternalId);
+          if (taskRecord) taskServerId = taskRecord.id;
+        } catch { /* ignore */ }
       }
 
-      console.log("[Stream] Calling invokeLLM with", messages.length, "messages...");
-      const response = await invokeLLM({ messages });
-      console.log("[Stream] invokeLLM returned, choices:", response.choices?.length);
-      const rawContent = response.choices?.[0]?.message?.content;
-      const content = typeof rawContent === "string" ? rawContent : "I couldn't generate a response.";
-      console.log("[Stream] Content length:", content.length);
-
-      // Deliver content in sentence-boundary chunks for natural streaming feel
-      const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
-      const chunks = content.match(sentencePattern) || [content];
-      const captured = chunks.join("");
-      if (captured.length < content.length) {
-        chunks.push(content.slice(captured.length));
-      }
-
-      for (const chunk of chunks) {
-        if (!safeWrite(`data: ${JSON.stringify({ delta: chunk })}\n\n`)) break;
-      }
-      safeWrite(`data: ${JSON.stringify({ done: true, content })}\n\n`);
-      safeEnd();
-      console.log("[Stream] Response complete");
+      // Run the agentic stream
+      await runAgentStream({
+        messages,
+        taskExternalId,
+        resolvedSystemPrompt,
+        safeWrite,
+        safeEnd,
+        onArtifact: async (artifact) => {
+          console.log("[Stream] Artifact produced:", artifact.type, artifact.label);
+          if (taskServerId) {
+            try {
+              const { addWorkspaceArtifact } = await import("../db");
+              await addWorkspaceArtifact({
+                taskId: taskServerId,
+                artifactType: artifact.type as any,
+                label: artifact.label || null,
+                content: artifact.content || null,
+                url: artifact.url || null,
+              });
+              console.log("[Stream] Artifact persisted:", artifact.type);
+            } catch (err) {
+              console.error("[Stream] Failed to persist artifact:", err);
+            }
+          }
+        },
+      });
     } catch (err: any) {
       console.error("[Stream] Error:", err);
       safeWrite(`data: ${JSON.stringify({ error: err.message || "Streaming failed" })}\n\n`);

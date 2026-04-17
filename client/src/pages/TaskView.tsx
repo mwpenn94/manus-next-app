@@ -90,6 +90,7 @@ function ActionLabel({ action }: { action: AgentAction }) {
 function ActionStep({ action, index, total }: { action: AgentAction; index: number; total: number }) {
   const isActive = action.status === "active";
   const isDone = action.status === "done";
+  const [previewExpanded, setPreviewExpanded] = useState(false);
 
   return (
     <div className="flex items-start gap-2.5 py-1.5 px-3 relative">
@@ -109,7 +110,22 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
         )}
       </div>
       <div className="flex-1 min-w-0 text-xs text-foreground/80 leading-relaxed pt-0.5">
-        <ActionLabel action={action} />
+        <div className="flex items-center gap-1">
+          <ActionLabel action={action} />
+          {isDone && action.preview && (
+            <button
+              onClick={() => setPreviewExpanded(!previewExpanded)}
+              className="ml-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {previewExpanded ? "hide" : "show"}
+            </button>
+          )}
+        </div>
+        {previewExpanded && action.preview && (
+          <div className="mt-1.5 p-2 rounded bg-muted/50 border border-border/50 text-[11px] text-muted-foreground font-mono leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
+            {action.preview}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -228,7 +244,7 @@ function MessageBubble({ message, isLast }: { message: Message; isLast: boolean 
 
 // ── Workspace Panel with real artifacts ──
 
-type WorkspaceTab = "browser" | "code" | "terminal";
+type WorkspaceTab = "browser" | "code" | "terminal" | "images";
 
 function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -255,6 +271,10 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { taskId: serverId, type: "terminal" },
     { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
+  const imageArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "generated_image" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
 
   // When serverId transitions from undefined to a value (new task synced to server),
   // force an immediate refetch of all artifact queries
@@ -266,6 +286,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
       browserUrlArtifact.refetch();
       codeArtifacts.refetch();
       terminalArtifacts.refetch();
+      imageArtifacts.refetch();
     }
   }, [hasServerId, serverId]);
 
@@ -280,6 +301,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { id: "browser", label: "Browser", icon: Globe },
     { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
     { id: "terminal", label: "Terminal", icon: Terminal, count: terminalArtifacts.data?.length },
+    { id: "images", label: "Images", icon: ImageIcon, count: imageArtifacts.data?.length },
   ];
 
   return (
@@ -455,6 +477,38 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
             )}
           </div>
         )}
+
+        {activeTab === "images" && (
+          <div className="p-4 h-full overflow-y-auto">
+            {imageArtifacts.data && imageArtifacts.data.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {imageArtifacts.data.map((img: any, i: number) => (
+                  <div key={img.id || i} className="group relative rounded-lg overflow-hidden border border-border bg-muted">
+                    <img
+                      src={img.url}
+                      alt={img.label || `Generated image ${i + 1}`}
+                      className="w-full aspect-square object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => img.url && window.open(img.url, "_blank")}
+                    />
+                    {img.label && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                        <p className="text-[10px] text-white truncate">{img.label}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div>
+                  <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-xs">No generated images yet</p>
+                  <p className="text-[10px] mt-1 opacity-60">Images will appear here when the agent generates them</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Timeline / Progress */}
@@ -562,6 +616,31 @@ function useVoiceRecorder(onTranscription: (text: string) => void) {
   return { recording, transcribing, voiceError, startRecording, stopRecording, clearVoiceError: () => setVoiceError(null) };
 }
 
+// ── Helper: Map tool display type to AgentAction ──
+
+function mapToolToAction(
+  type: string,
+  label: string,
+  args: any,
+  status: "active" | "done"
+): AgentAction {
+  switch (type) {
+    case "searching":
+      return { type: "searching", query: args?.query || label, status };
+    case "generating":
+      return { type: "generating", description: args?.prompt || label, status };
+    case "executing":
+      return { type: "executing", command: args?.description || label, status };
+    case "browsing":
+      return { type: "browsing", url: args?.url || label, status };
+    case "creating":
+      return { type: "creating", file: args?.file || label, status };
+    case "thinking":
+    default:
+      return { type: "thinking", status };
+  }
+}
+
 // ── Main TaskView ──
 
 export default function TaskView() {
@@ -573,6 +652,8 @@ export default function TaskView() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState("");
+  const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
+  const [streamImages, setStreamImages] = useState<string[]>([]);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -697,7 +778,11 @@ export default function TaskView() {
 
       setStreaming(true);
       setStreamContent("");
+      setAgentActions([]);
+      setStreamImages([]);
       let accumulated = "";
+      const actions: AgentAction[] = [];
+      const images: string[] = [];
 
       try {
         const defaultSystemPrompt = "You are Manus Next, an advanced AI assistant. You help users with research, coding, data analysis, content creation, and more. Be helpful, concise, and proactive. When the user attaches files, acknowledge them and incorporate them into your response.";
@@ -737,8 +822,36 @@ export default function TaskView() {
                 accumulated += data.delta;
                 setStreamContent(accumulated);
               }
+              if (data.tool_start) {
+                const display = data.tool_start.display || {};
+                const actionType = display.type || "thinking";
+                const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
+                actions.push(newAction);
+                setAgentActions([...actions]);
+              }
+              if (data.tool_result) {
+                // Mark the matching action as done and attach preview
+                const idx = actions.findIndex(a => a.status === "active");
+                if (idx >= 0) {
+                  const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
+                  actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                  setAgentActions([...actions]);
+                }
+              }
+              if (data.image) {
+                images.push(data.image);
+                setStreamImages([...images]);
+                accumulated += `\n\n![Generated Image](${data.image})\n\n`;
+                setStreamContent(accumulated);
+              }
               if (data.done) {
                 accumulated = data.content || accumulated;
+                // Append images to content if they were generated
+                if (images.length > 0 && !accumulated.includes(images[0])) {
+                  for (const img of images) {
+                    accumulated += `\n\n![Generated Image](${img})`;
+                  }
+                }
               }
               if (data.error) {
                 accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
@@ -748,11 +861,13 @@ export default function TaskView() {
           }
         }
 
-        addMessage(task.id, { role: "assistant", content: accumulated });
+        // Mark all remaining active actions as done
+        const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+        addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
       } catch (err: any) {
         if (err.name === "AbortError") {
           if (accumulated.trim()) {
-            addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*" });
+            addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
           }
         } else {
           addMessage(task.id, {
@@ -764,6 +879,8 @@ export default function TaskView() {
         abortControllerRef.current = null;
         setStreaming(false);
         setStreamContent("");
+        setAgentActions([]);
+        setStreamImages([]);
       }
     })();
   }, [task?.id, task?.messages.length, streaming, bridgeStatus, bridgeSend, addMessage]);
@@ -841,8 +958,12 @@ export default function TaskView() {
     inputRef.current?.focus();
     setStreaming(true);
     setStreamContent("");
+    setAgentActions([]);
+    setStreamImages([]);
 
     let accumulated = "";
+    const actions: AgentAction[] = [];
+    const images: string[] = [];
 
     try {
       const defaultSystemPrompt = "You are Manus Next, an advanced AI assistant. You help users with research, coding, data analysis, content creation, and more. Be helpful, concise, and proactive. When the user attaches files, acknowledge them and incorporate them into your response.";
@@ -888,22 +1009,49 @@ export default function TaskView() {
               accumulated += data.delta;
               setStreamContent(accumulated);
             }
+            if (data.tool_start) {
+              const display = data.tool_start.display || {};
+              const actionType = display.type || "thinking";
+              const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
+              actions.push(newAction);
+              setAgentActions([...actions]);
+            }
+            if (data.tool_result) {
+              const idx = actions.findIndex(a => a.status === "active");
+              if (idx >= 0) {
+                const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
+                actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                setAgentActions([...actions]);
+              }
+            }
+            if (data.image) {
+              images.push(data.image);
+              setStreamImages([...images]);
+              accumulated += `\n\n![Generated Image](${data.image})\n\n`;
+              setStreamContent(accumulated);
+            }
             if (data.done) {
               accumulated = data.content || accumulated;
+              if (images.length > 0 && !accumulated.includes(images[0])) {
+                for (const img of images) {
+                  accumulated += `\n\n![Generated Image](${img})`;
+                }
+              }
             }
             if (data.error) {
-              accumulated += `\n\n⚠️ ${data.error}`;
+              accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
               setStreamContent(accumulated);
             }
           } catch { /* skip malformed lines */ }
         }
       }
 
-      addMessage(task.id, { role: "assistant", content: accumulated });
+      const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
         if (accumulated.trim()) {
-          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*" });
+          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
         addMessage(task.id, {
@@ -915,6 +1063,8 @@ export default function TaskView() {
       abortControllerRef.current = null;
       setStreaming(false);
       setStreamContent("");
+      setAgentActions([]);
+      setStreamImages([]);
     }
   }, [input, task, addMessage, bridgeStatus, bridgeSend, files, clearFiles]);
 
@@ -1167,7 +1317,7 @@ export default function TaskView() {
             <MessageBubble key={msg.id} message={msg} isLast={i === task.messages.length - 1} />
           ))}
           {isTyping && <TypingIndicator />}
-          {streaming && streamContent && (
+          {streaming && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1181,13 +1331,29 @@ export default function TaskView() {
                   <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>manus next</span>
                   <Loader2 className="w-3 h-3 text-primary animate-spin" />
                 </div>
-                <div className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">
-                  <Streamdown>{streamContent}</Streamdown>
-                </div>
+                {/* Agent action steps */}
+                {agentActions.length > 0 && (
+                  <div className="mb-2 bg-card/50 rounded-lg border border-border/50 py-1">
+                    {agentActions.map((action, i) => (
+                      <ActionStep key={i} action={action} index={i} total={agentActions.length} />
+                    ))}
+                  </div>
+                )}
+                {/* Streaming text content */}
+                {streamContent ? (
+                  <div className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">
+                    <Streamdown>{streamContent}</Streamdown>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/30">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
-          {streaming && !streamContent && <TypingIndicator />}
         </div>
 
         {/* Input */}

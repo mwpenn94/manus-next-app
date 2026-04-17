@@ -159,9 +159,53 @@
 - [x] Test full end-to-end flow: verified via curl — single sentence and multi-sentence responses both stream correctly with proper SSE event formatting
 - [x] Added /api/upload body parsing fix — excluded from express.json() middleware to allow raw binary body reading
 - [x] Added stream.test.ts with 8 tests covering SSE event formatting, content chunking, error handling, system prompt injection
-- [x] All 75 tests passing across 7 test files
+- [x] All 89 tests passing across 8 test files
 
 ## Post-Fix Validation Gaps
 - [x] Verify /api/upload still works after express.json() middleware exclusion — confirmed via curl: binary upload returns S3 URL successfully
 - [x] Verify full UI end-to-end chat flow in browser (create task → send message → receive streamed response) — user-confirmed working
 - [x] Fix: first message in a new task gets no LLM response — root cause: Home.createTask adds initial user message but never triggers /api/stream. Fixed with auto-stream useEffect in TaskView that detects new tasks with exactly 1 user message and automatically triggers SSE streaming. User-confirmed working.
+
+## Manus Parity: Chatbot → Autonomous Agent
+
+### Tier 1: Agentic LLM with Tool Use
+- [x] Implement server-side tool definitions (web_search, generate_image, analyze_data, execute_code) in agentTools.ts
+- [x] Update /api/stream to use agentic loop via agentStream.ts — multi-turn tool execution with MAX_TOOL_TURNS=8
+- [x] Stream tool execution steps as SSE events (tool_start, tool_result, image) alongside text deltas
+- [x] Support multi-turn tool use: LLM calls tool → server executes → feeds result back → LLM continues
+- [x] Add tool execution status display in TaskView (real-time ActionStep rendering during streaming)
+
+### Tier 2: Image Generation
+- [x] Wire generateImage helper into generate_image tool the LLM can call
+- [x] Display generated images inline in chat messages via Streamdown markdown rendering
+- [x] Store generated image URLs as workspace artifacts (added generated_image to schema + router)
+- [x] Add image generation loading state with progress indicator (tool_start → spinner → tool_result)
+
+### Tier 3: Web Search & Research
+- [x] Implement web_search tool using LLM-powered research synthesis (no general web search API available)
+- [x] Display research results in chat with structured formatting
+- [x] Wire search results into workspace artifacts (browser_url type)
+- [x] Support multi-step research: LLM calls web_search → gets synthesis → integrates into response
+
+### Tier 4: Code Execution Display
+- [x] Display code blocks the agent generates with syntax highlighting (via Streamdown)
+- [x] Show code execution results in tool_result events with terminal-formatted output
+- [x] Wire code artifacts into workspace (terminal artifact type)
+
+### Tier 5: Agent Progress & Step Visualization
+- [x] Show tool execution badges inline in chat (Searching..., Generating image..., Running code...) via ActionStep
+- [x] mapToolToAction helper maps tool display types to AgentAction types for consistent rendering
+- [x] Agent actions rendered in real-time during streaming with active/done status transitions
+- [ ] Update task status automatically based on agent progress (idle → running → done) — deferred
+- [ ] Add step-by-step progress indicator in TaskView header (Step 1 of N) — deferred
+
+### Tests
+- [x] agentTools.test.ts: 14 tests covering all 4 tools, error handling, unknown tools, malformed JSON, timeouts
+- [x] All 89 tests passing across 8 test files
+
+### Gap Fixes (System Review)
+- [x] Wire onArtifact callback in /api/stream to persist artifacts to DB (generated_image, terminal, browser_url)
+- [x] Add Images tab to WorkspacePanel with grid display of generated images
+- [x] Surface tool_result.preview in ActionStep with show/hide toggle
+- [x] Add preview field to AgentAction type for all action variants
+- [x] Schema migration applied for generated_image artifact type

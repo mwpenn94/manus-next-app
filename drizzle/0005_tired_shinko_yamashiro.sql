@@ -1,0 +1,1 @@
+ALTER TABLE `workspace_artifacts` MODIFY COLUMN `artifactType` enum('browser_screenshot','browser_url','code','terminal','generated_image') NOT NULL;

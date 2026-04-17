@@ -225,7 +225,7 @@ export const appRouter = router({
     addArtifact: protectedProcedure
       .input(z.object({
         taskId: z.number(),
-        artifactType: z.enum(["browser_screenshot", "browser_url", "code", "terminal"]),
+        artifactType: z.enum(["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]),
         label: z.string().optional(),
         content: z.string().optional(),
         url: z.string().optional(),
@@ -253,7 +253,7 @@ export const appRouter = router({
     latest: protectedProcedure
       .input(z.object({
         taskId: z.number(),
-        type: z.enum(["browser_screenshot", "browser_url", "code", "terminal"]),
+        type: z.enum(["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]),
       }))
       .query(async ({ input }) => {
         return getLatestArtifactByType(input.taskId, input.type) ?? null;
