@@ -56,8 +56,8 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <TaskProvider>
-          <BridgeProvider>
+        <BridgeProvider>
+          <TaskProvider>
           <TooltipProvider>
             <Toaster
               theme="dark"
@@ -73,8 +73,8 @@ function App() {
               <Router />
             </AppLayout>
           </TooltipProvider>
-          </BridgeProvider>
-        </TaskProvider>
+          </TaskProvider>
+        </BridgeProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

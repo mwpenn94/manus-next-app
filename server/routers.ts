@@ -13,6 +13,8 @@ import {
   getTaskMessages,
   getBridgeConfig,
   upsertBridgeConfig,
+  createTaskFile,
+  getTaskFiles,
 } from "./db";
 
 export const appRouter = router({
@@ -84,6 +86,38 @@ export const appRouter = router({
       }),
   }),
 
+  file: router({
+    /** Record a file upload in the database (actual S3 upload happens via /api/upload) */
+    record: protectedProcedure
+      .input(z.object({
+        taskExternalId: z.string(),
+        fileName: z.string(),
+        fileKey: z.string(),
+        url: z.string().url(),
+        mimeType: z.string().optional(),
+        size: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await createTaskFile({
+          taskExternalId: input.taskExternalId,
+          userId: ctx.user.id,
+          fileName: input.fileName,
+          fileKey: input.fileKey,
+          url: input.url,
+          mimeType: input.mimeType ?? null,
+          size: input.size ?? null,
+        });
+        return { success: true };
+      }),
+
+    /** List files for a task */
+    list: protectedProcedure
+      .input(z.object({ taskExternalId: z.string() }))
+      .query(async ({ input }) => {
+        return getTaskFiles(input.taskExternalId);
+      }),
+  }),
+
   bridge: router({
     getConfig: protectedProcedure.query(async ({ ctx }) => {
       return getBridgeConfig(ctx.user.id) ?? null;
@@ -102,6 +136,25 @@ export const appRouter = router({
           apiKey: input.apiKey ?? null,
           enabled: input.enabled ? 1 : 0,
         });
+      }),
+  }),
+
+  /** LLM chat completion — sends user message to the built-in LLM and returns the response */
+  llm: router({
+    chat: protectedProcedure
+      .input(z.object({
+        messages: z.array(z.object({
+          role: z.enum(["system", "user", "assistant"]),
+          content: z.string(),
+        })).min(1),
+      }))
+      .mutation(async ({ input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const response = await invokeLLM({
+          messages: input.messages,
+        });
+        const content = response.choices?.[0]?.message?.content ?? "I'm sorry, I couldn't generate a response.";
+        return { content };
       }),
   }),
 });

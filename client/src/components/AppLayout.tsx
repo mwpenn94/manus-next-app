@@ -79,7 +79,7 @@ function UserInitials({ name }: { name: string | null | undefined }) {
 }
 
 function BridgeStatusBadge() {
-  const { status, latencyMs } = useBridge();
+  const { status, quality } = useBridge();
   if (status === "disconnected") return null;
 
   return (
@@ -103,7 +103,7 @@ function BridgeStatusBadge() {
       >
         Bridge{" "}
         {status === "connected"
-          ? `connected${latencyMs ? ` · ${latencyMs}ms` : ""}`
+          ? `connected${quality.latencyMs ? ` · ${quality.latencyMs}ms` : ""}`
           : status === "connecting"
           ? "connecting..."
           : "error"}

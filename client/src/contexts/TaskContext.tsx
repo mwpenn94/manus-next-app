@@ -8,6 +8,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useBridge, type BridgeMessage } from "./BridgeContext";
 
 // ── Types ──
 export type AgentAction =
@@ -363,6 +364,168 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     },
     [isAuthenticated, updateStatusMutation]
   );
+
+  // ── Wire bridge events into task state ──
+  const { onTaskEvent, status: bridgeStatus } = useBridge();
+
+  // Helper to persist bridge-driven updates to server
+  const persistBridgeStatus = useCallback(
+    (taskId: string, status: Task["status"]) => {
+      if (!isAuthenticated) return;
+      // Find the task to get its serverId for persistence
+      const task = tasks.find((t) => t.id === taskId);
+      if (task?.id) {
+        updateStatusMutation.mutate({ externalId: task.id, status });
+      }
+    },
+    [isAuthenticated, tasks, updateStatusMutation]
+  );
+
+  const persistBridgeMessage = useCallback(
+    (taskId: string, role: "user" | "assistant" | "system", content: string, actions?: string) => {
+      if (!isAuthenticated) return;
+      const task = tasks.find((t) => t.id === taskId);
+      if (task?.serverId) {
+        addMessageMutation.mutate({
+          taskId: task.serverId,
+          role,
+          content,
+          actions,
+        });
+      }
+    },
+    [isAuthenticated, tasks, addMessageMutation]
+  );
+
+  useEffect(() => {
+    if (bridgeStatus !== "connected") return;
+
+    const unsubscribe = onTaskEvent((event: BridgeMessage) => {
+      switch (event.type) {
+        case "task:start": {
+          const e = event as { type: "task:start"; taskId: string; prompt: string };
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === e.taskId
+                ? { ...t, status: "running" as const, updatedAt: new Date() }
+                : t
+            )
+          );
+          persistBridgeStatus(e.taskId, "running");
+          break;
+        }
+        case "task:step": {
+          const e = event as {
+            type: "task:step";
+            taskId: string;
+            stepIndex: number;
+            totalSteps: number;
+            action: string;
+            status: "active" | "done" | "error";
+            content?: string;
+          };
+          setTasks((prev) =>
+            prev.map((t) => {
+              if (t.id !== e.taskId) return t;
+              const updated: Task = {
+                ...t,
+                updatedAt: new Date(),
+                totalSteps: e.totalSteps,
+                completedSteps: e.stepIndex,
+                currentStep: e.action,
+              };
+              if (e.content) {
+                // Map step status correctly: active, done, or error
+                const stepStatus: "active" | "done" = e.status === "error" ? "done" : e.status;
+                const stepContent = e.status === "error" ? `⚠️ ${e.content}` : e.content;
+                updated.messages = [
+                  ...t.messages,
+                  {
+                    id: `bridge-step-${e.stepIndex}-${Date.now()}`,
+                    role: "assistant",
+                    content: stepContent,
+                    timestamp: new Date(),
+                    actions: [
+                      {
+                        type: "executing" as const,
+                        command: e.action,
+                        status: stepStatus,
+                      },
+                    ],
+                  },
+                ];
+                persistBridgeMessage(e.taskId, "assistant", stepContent,
+                  JSON.stringify([{ type: "executing", command: e.action, status: stepStatus }]));
+              }
+              return updated;
+            })
+          );
+          break;
+        }
+        case "task:complete": {
+          const e = event as {
+            type: "task:complete";
+            taskId: string;
+            result: string;
+          };
+          setTasks((prev) =>
+            prev.map((t) => {
+              if (t.id !== e.taskId) return t;
+              return {
+                ...t,
+                status: "completed" as const,
+                updatedAt: new Date(),
+                completedSteps: t.totalSteps,
+                messages: [
+                  ...t.messages,
+                  {
+                    id: `bridge-complete-${Date.now()}`,
+                    role: "assistant",
+                    content: e.result,
+                    timestamp: new Date(),
+                  },
+                ],
+              };
+            })
+          );
+          persistBridgeStatus(e.taskId, "completed");
+          persistBridgeMessage(e.taskId, "assistant", e.result);
+          break;
+        }
+        case "task:error": {
+          const e = event as {
+            type: "task:error";
+            taskId: string;
+            error: string;
+          };
+          setTasks((prev) =>
+            prev.map((t) => {
+              if (t.id !== e.taskId) return t;
+              return {
+                ...t,
+                status: "error" as const,
+                updatedAt: new Date(),
+                messages: [
+                  ...t.messages,
+                  {
+                    id: `bridge-error-${Date.now()}`,
+                    role: "system",
+                    content: `Error: ${e.error}`,
+                    timestamp: new Date(),
+                  },
+                ],
+              };
+            })
+          );
+          persistBridgeStatus(e.taskId, "error");
+          persistBridgeMessage(e.taskId, "system", `Error: ${e.error}`);
+          break;
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [bridgeStatus, onTaskEvent, persistBridgeStatus, persistBridgeMessage]);
 
   return (
     <TaskContext.Provider

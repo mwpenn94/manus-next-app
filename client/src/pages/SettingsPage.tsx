@@ -88,7 +88,7 @@ export default function SettingsPage() {
   const [capFilter, setCapFilter] = useState<"all" | "active" | "beta" | "inactive">("all");
 
   // Bridge integration
-  const { status: bridgeStatus, connect, disconnect, latencyMs, events } = useBridge();
+  const { status: bridgeStatus, connect, disconnect, quality, events } = useBridge();
   const [bridgeUrl, setBridgeUrl] = useState("ws://localhost:3001/bridge");
   const [bridgeApiKey, setBridgeApiKey] = useState("");
   const [bridgeEnabled, setBridgeEnabled] = useState(false);
@@ -435,7 +435,7 @@ export default function SettingsPage() {
                       bridgeStatus === "error" ? "text-red-400" :
                       "text-muted-foreground"
                     )}>
-                      {bridgeStatus === "connected" ? `Connected${latencyMs ? ` (${latencyMs}ms)` : ""}` :
+                      {bridgeStatus === "connected" ? `Connected${quality.latencyMs ? ` (${quality.latencyMs}ms)` : ""}` :
                        bridgeStatus === "connecting" ? "Connecting..." :
                        bridgeStatus === "error" ? "Connection Error" :
                        "Disconnected"}

@@ -31,3 +31,33 @@
 - [x] Add test coverage for mobile bottom nav and bridge integration (27 tests, 3 files, all passing)
 - [x] Fetch persisted task messages into TaskContext for authenticated users
 - [x] Add client-side component tests for MobileBottomNav and BridgeContext (server-side coverage via bridge.test.ts)
+
+## Next Steps Round 2
+
+### 1. Real Sovereign Bridge Endpoint Connection
+- [x] Enhance BridgeContext with reconnection logic, heartbeat, and auth token handshake
+- [x] Add bridge message protocol (task:start, task:step, task:complete, task:error)
+- [x] Wire bridge events to TaskContext for live task state updates
+- [x] Add connection quality indicator (latency, reconnect count)
+- [x] Add bridge event log viewer in Settings
+
+### 2. File Upload with S3 Storage
+- [x] Add file attachments schema to database (files table with task association)
+- [x] Create server-side upload endpoint using storagePut
+- [x] Create tRPC procedures for file CRUD (record, list)
+- [x] Add file upload UI to chat input (paperclip button functional)
+- [x] Display file attachments in chat messages with preview
+- [x] Add drag-and-drop file upload support
+
+### 3. Real-time Task Streaming via SSE/LLM
+- [x] Create SSE endpoint for streaming LLM responses (/api/stream)
+- [x] Create tRPC procedure that invokes LLM and streams via SSE
+- [x] Wire TaskView to consume SSE stream for real-time assistant responses
+- [x] Add typing indicator and streaming text animation
+- [x] Support markdown rendering in streamed responses (Streamdown)
+- [x] Add stop generation button during streaming (send disabled while streaming)
+
+### Gap Resolutions
+- [x] Wire BridgeContext events into TaskContext so task status/messages update from bridge protocol events
+- [x] Add a real stop-generation button that aborts the active SSE/LLM stream (AbortController + server abort handling)
+- [x] Add drag-and-drop file upload to chat input (visual drop zone overlay + file input dispatch)

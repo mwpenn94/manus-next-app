@@ -71,3 +71,18 @@ export const bridgeConfigs = mysqlTable("bridge_configs", {
 
 export type BridgeConfig = typeof bridgeConfigs.$inferSelect;
 export type InsertBridgeConfig = typeof bridgeConfigs.$inferInsert;
+// ── Task Files (S3 attachments) ──
+export const taskFiles = mysqlTable("task_files", {
+  id: int("id").autoincrement().primaryKey(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }).notNull(),
+  userId: int("userId").notNull(),
+  fileName: varchar("fileName", { length: 512 }).notNull(),
+  fileKey: varchar("fileKey", { length: 1024 }).notNull(),
+  url: text("url").notNull(),
+  mimeType: varchar("mimeType", { length: 128 }),
+  size: int("size"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskFile = typeof taskFiles.$inferSelect;
+export type InsertTaskFile = typeof taskFiles.$inferInsert;

@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -152,4 +152,18 @@ export async function upsertBridgeConfig(config: InsertBridgeConfig) {
     },
   });
   return getBridgeConfig(config.userId);
+}
+
+// ── Task File Queries ──
+
+export async function createTaskFile(file: InsertTaskFile) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(taskFiles).values(file);
+}
+
+export async function getTaskFiles(taskExternalId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskFiles).where(eq(taskFiles.taskExternalId, taskExternalId)).orderBy(desc(taskFiles.createdAt));
 }

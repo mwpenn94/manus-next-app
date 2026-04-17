@@ -8,9 +8,13 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useRoute } from "wouter";
 import { useTask, type Message, type AgentAction } from "@/contexts/TaskContext";
 import { useBridge } from "@/contexts/BridgeContext";
+import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import {
   Send,
   Paperclip,
+  X,
+  File as FileIcon,
+  Upload,
   Globe,
   MousePointer2,
   ScrollText,
@@ -36,6 +40,7 @@ import {
   ArrowDown,
   PanelBottomOpen,
   PanelBottomClose,
+  Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Streamdown } from "streamdown";
@@ -449,11 +454,18 @@ has improved significantly.
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const { tasks, activeTask, setActiveTask, addMessage } = useTask();
-  const { status: bridgeStatus, send: bridgeSend, lastEvent } = useBridge();
+  const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const [input, setInput] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const [streamContent, setStreamContent] = useState("");
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const dragCounterRef = useRef(0);
+  const taskExternalId = activeTask?.id || params?.id;
+  const { files, uploading, progress, error: uploadError, upload, openPicker, handleFileChange, removeFile, clearFiles, inputRef: fileInputRef } = useFileUpload(taskExternalId);
 
   // Listen for bridge events and add them as assistant messages
   useEffect(() => {
@@ -505,21 +517,155 @@ export default function TaskView() {
     );
   }
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!input.trim() || !task) return;
-    addMessage(task.id, { role: "user", content: input });
+    const userContent = files.length > 0
+      ? `${input}\n\n📎 Attached: ${files.map(f => f.fileName).join(", ")}`
+      : input;
+    addMessage(task.id, { role: "user", content: userContent });
 
     // If bridge is connected, dispatch the message to the Sovereign agent
     if (bridgeStatus === "connected") {
       bridgeSend("task.message", {
         taskId: task.id,
         content: input,
+        files: files.map(f => ({ url: f.url, name: f.fileName })),
       });
+      setInput("");
+      clearFiles();
+      inputRef.current?.focus();
+      return;
     }
 
+    // Otherwise, use SSE streaming from the LLM
+    const currentInput = input;
     setInput("");
+    clearFiles();
     inputRef.current?.focus();
-  }, [input, task, addMessage, bridgeStatus, bridgeSend]);
+    setStreaming(true);
+    setStreamContent("");
+
+    let accumulated = "";
+
+    try {
+      const systemPrompt = "You are Manus Next, an advanced AI assistant. You help users with research, coding, data analysis, content creation, and more. Be helpful, concise, and proactive. When the user attaches files, acknowledge them and incorporate them into your response.";
+      const conversationMessages = task.messages.slice(-10).map(m => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: m.content,
+      }));
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        ...conversationMessages,
+        { role: "user" as const, content: currentInput },
+      ];
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const response = await fetch("/api/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messages }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Stream failed");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        const lines = text.split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.delta) {
+              accumulated += data.delta;
+              setStreamContent(accumulated);
+            }
+            if (data.done) {
+              accumulated = data.content || accumulated;
+            }
+            if (data.error) {
+              accumulated += `\n\n⚠️ ${data.error}`;
+              setStreamContent(accumulated);
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+
+      // Add the final message
+      addMessage(task.id, { role: "assistant", content: accumulated });
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        // User stopped generation — save whatever was accumulated
+        if (accumulated.trim()) {
+          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*" });
+        }
+      } else {
+        addMessage(task.id, {
+          role: "assistant",
+          content: `I encountered an error: ${err.message}. Please try again.`,
+        });
+      }
+    } finally {
+      abortControllerRef.current = null;
+      setStreaming(false);
+      setStreamContent("");
+    }
+  }, [input, task, addMessage, bridgeStatus, bridgeSend, files, clearFiles]);
+
+  const handleStopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, []);
+
+  // ── Drag-and-drop handlers ──
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+    const droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+      // Directly call the upload function for each dropped file
+      for (const file of Array.from(droppedFiles)) {
+        await upload(file);
+      }
+    }
+  }, [upload]);
 
   return (
     <div className="h-full flex flex-col md:flex-row">
@@ -567,11 +713,54 @@ export default function TaskView() {
           {task.messages.map((msg, i) => (
             <MessageBubble key={msg.id} message={msg} isLast={i === task.messages.length - 1} />
           ))}
-          {isTyping && <TypingIndicator />}
-        </div>
+            {isTyping && <TypingIndicator />}
+            {streaming && streamContent && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex gap-3 mb-5"
+              >
+                <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-sm">🐾</span>
+                </div>
+                <div className="max-w-[90%] md:max-w-[80%]">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>manus next</span>
+                    <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                  </div>
+                  <div className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">
+                    <Streamdown>{streamContent}</Streamdown>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+            {streaming && !streamContent && <TypingIndicator />}
+          </div>
 
         {/* Input */}
-        <div className="px-4 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0">
+        <div
+          className="px-4 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0 relative"
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          {/* Drag overlay */}
+          <AnimatePresence>
+            {isDragging && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-20 flex items-center justify-center bg-primary/10 border-2 border-dashed border-primary/40 rounded-xl backdrop-blur-sm"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="w-8 h-8 text-primary" />
+                  <span className="text-sm font-medium text-primary">Drop files here</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors">
             <textarea
               ref={inputRef}
@@ -587,25 +776,75 @@ export default function TaskView() {
               rows={1}
               className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm leading-relaxed"
             />
+            {/* Attached files preview */}
+            {files.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-4 pb-2">
+                {files.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
+                    <FileIcon className="w-3 h-3 text-primary" />
+                    <span className="text-foreground/80 max-w-[120px] truncate">{f.fileName}</span>
+                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {uploading && (
+              <div className="px-4 pb-2">
+                <div className="h-1 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            )}
+            {uploadError && (
+              <p className="px-4 pb-2 text-xs text-destructive">{uploadError}</p>
+            )}
             <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <button className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95" title="Attach file">
-                  <Paperclip className="w-4 h-4" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                  accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.md,.py,.js,.ts,.html,.css"
+                />
+                <button
+                  onClick={openPicker}
+                  disabled={uploading}
+                  className={cn(
+                    "p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95",
+                    uploading && "opacity-50 cursor-not-allowed"
+                  )}
+                  title="Attach file"
+                >
+                  {uploading ? <Upload className="w-4 h-4 animate-pulse" /> : <Paperclip className="w-4 h-4" />}
                 </button>
               </div>
-              <button
-                onClick={handleSend}
-                disabled={!input.trim()}
-                className={cn(
-                  "w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95",
-                  input.trim()
-                    ? "bg-primary text-primary-foreground hover:opacity-90"
-                    : "bg-muted text-muted-foreground"
-                )}
-                title="Send"
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
+              {streaming ? (
+                <button
+                  onClick={handleStopGeneration}
+                  className="w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95 bg-destructive/80 text-destructive-foreground hover:bg-destructive"
+                  title="Stop generation"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                  className={cn(
+                    "w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95",
+                    input.trim()
+                      ? "bg-primary text-primary-foreground hover:opacity-90"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                  title="Send"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-2 hidden md:block">

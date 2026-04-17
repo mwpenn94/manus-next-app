@@ -7,6 +7,7 @@ vi.mock("./db", () => {
   const tasks: any[] = [];
   const messages: any[] = [];
   const bridgeConfigs: any[] = [];
+  const taskFiles: any[] = [];
   let taskIdCounter = 1;
 
   return {
@@ -49,12 +50,25 @@ vi.mock("./db", () => {
       }
       return { success: true };
     }),
+    createTaskFile: vi.fn(async (data: any) => {
+      taskFiles.push({ id: taskFiles.length + 1, ...data, createdAt: new Date() });
+    }),
+    getTaskFiles: vi.fn(async (taskExternalId: string) => {
+      return taskFiles.filter((f) => f.taskExternalId === taskExternalId);
+    }),
     // Keep the original user functions
     upsertUser: vi.fn(),
     getUserByOpenId: vi.fn(),
     getDb: vi.fn(),
   };
 });
+
+// Mock the LLM module
+vi.mock("./_core/llm", () => ({
+  invokeLLM: vi.fn(async () => ({
+    choices: [{ message: { content: "This is a test LLM response." } }],
+  })),
+}));
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -278,5 +292,131 @@ describe("auth router", () => {
     const user = await caller.auth.me();
 
     expect(user).toBeNull();
+  });
+});
+
+describe("file router", () => {
+  it("records a file upload", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.file.record({
+      taskExternalId: "test-task-ext",
+      fileName: "report.pdf",
+      fileKey: "42-files/report-abc123.pdf",
+      url: "https://cdn.example.com/42-files/report-abc123.pdf",
+      mimeType: "application/pdf",
+      size: 1024000,
+    });
+
+    expect(result).toEqual({ success: true });
+  });
+
+  it("lists files for a task", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const files = await caller.file.list({ taskExternalId: "test-task-ext" });
+
+    expect(Array.isArray(files)).toBe(true);
+    expect(files.length).toBeGreaterThanOrEqual(1);
+    expect(files[0].fileName).toBe("report.pdf");
+    expect(files[0].url).toContain("cdn.example.com");
+  });
+
+  it("records file without optional fields", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.file.record({
+      taskExternalId: "test-task-ext-2",
+      fileName: "notes.txt",
+      fileKey: "42-files/notes-xyz.txt",
+      url: "https://cdn.example.com/42-files/notes-xyz.txt",
+    });
+
+    expect(result).toEqual({ success: true });
+  });
+
+  it("rejects file record with invalid URL", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.file.record({
+        taskExternalId: "test-task-ext",
+        fileName: "bad.pdf",
+        fileKey: "bad-key",
+        url: "not-a-url",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated file operations", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.file.record({
+        taskExternalId: "test",
+        fileName: "test.pdf",
+        fileKey: "key",
+        url: "https://example.com/test.pdf",
+      })
+    ).rejects.toThrow();
+  });
+});
+
+describe("llm router", () => {
+  it("sends messages and returns LLM response", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.llm.chat({
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: "Hello!" },
+      ],
+    });
+
+    expect(result).toBeDefined();
+    expect(result.content).toBe("This is a test LLM response.");
+  });
+
+  it("handles multi-turn conversation", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const result = await caller.llm.chat({
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: "What is AI?" },
+        { role: "assistant", content: "AI is artificial intelligence." },
+        { role: "user", content: "Tell me more." },
+      ],
+    });
+
+    expect(result.content).toBeDefined();
+    expect(typeof result.content).toBe("string");
+  });
+
+  it("rejects empty messages array", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.llm.chat({ messages: [] })
+    ).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated LLM access", async () => {
+    const ctx = createUnauthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.llm.chat({
+        messages: [{ role: "user", content: "Hello" }],
+      })
+    ).rejects.toThrow();
   });
 });
