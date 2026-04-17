@@ -654,6 +654,7 @@ export default function TaskView() {
   const [streamContent, setStreamContent] = useState("");
   const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
   const [streamImages, setStreamImages] = useState<string[]>([]);
+  const [stepProgress, setStepProgress] = useState<{ completed: number; total: number; turn: number } | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -853,6 +854,13 @@ export default function TaskView() {
                   }
                 }
               }
+              if (data.status) {
+                if (data.status === "running") updateTaskStatus(task.id, "running");
+                if (data.status === "completed") updateTaskStatus(task.id, "completed");
+              }
+              if (data.step_progress) {
+                setStepProgress(data.step_progress);
+              }
               if (data.error) {
                 accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
                 setStreamContent(accumulated);
@@ -862,6 +870,7 @@ export default function TaskView() {
         }
 
         // Mark all remaining active actions as done
+        setStepProgress(null);
         const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
         addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
       } catch (err: any) {
@@ -881,6 +890,7 @@ export default function TaskView() {
         setStreamContent("");
         setAgentActions([]);
         setStreamImages([]);
+        setStepProgress(null);
       }
     })();
   }, [task?.id, task?.messages.length, streaming, bridgeStatus, bridgeSend, addMessage]);
@@ -1038,6 +1048,13 @@ export default function TaskView() {
                 }
               }
             }
+            if (data.status) {
+              if (data.status === "running") updateTaskStatus(task.id, "running");
+              if (data.status === "completed") updateTaskStatus(task.id, "completed");
+            }
+            if (data.step_progress) {
+              setStepProgress(data.step_progress);
+            }
             if (data.error) {
               accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
               setStreamContent(accumulated);
@@ -1046,6 +1063,7 @@ export default function TaskView() {
         }
       }
 
+      setStepProgress(null);
       const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
     } catch (err: any) {
@@ -1065,6 +1083,7 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setStreamImages([]);
+      setStepProgress(null);
     }
   }, [input, task, addMessage, bridgeStatus, bridgeSend, files, clearFiles]);
 
@@ -1125,8 +1144,9 @@ export default function TaskView() {
               {task.title}
             </h2>
             {task.status === "running" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0">
-                Running
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0 flex items-center gap-1">
+                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                {stepProgress ? `Step ${stepProgress.completed}/${stepProgress.total}` : "Running"}
               </span>
             )}
             {task.status === "error" && (

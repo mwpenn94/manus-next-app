@@ -196,8 +196,8 @@
 - [x] Show tool execution badges inline in chat (Searching..., Generating image..., Running code...) via ActionStep
 - [x] mapToolToAction helper maps tool display types to AgentAction types for consistent rendering
 - [x] Agent actions rendered in real-time during streaming with active/done status transitions
-- [ ] Update task status automatically based on agent progress (idle → running → done) — deferred
-- [ ] Add step-by-step progress indicator in TaskView header (Step 1 of N) — deferred
+- [x] Update task status automatically based on agent progress (idle → running → completed) — server emits status SSE events, frontend calls updateTaskStatus; sidebar status filters now reflect real agent state
+- [x] Add step-by-step progress indicator in TaskView header (Step X/Y) — server emits step_progress SSE events with completed/total/turn; header badge shows animated spinner + step count during tool execution
 
 ### Tests
 - [x] agentTools.test.ts: 14 tests covering all 4 tools, error handling, unknown tools, malformed JSON, timeouts

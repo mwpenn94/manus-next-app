@@ -13,6 +13,8 @@
  * - data: { tool_start: {...} }     — Tool execution beginning
  * - data: { tool_result: {...} }    — Tool execution completed
  * - data: { image: string }         — Generated image URL (inline display)
+ * - data: { status: string }        — Task status change (running/completed)
+ * - data: { step_progress: {...} }  — Step progress (current/total)
  * - data: { done: true, content }   — Stream complete
  * - data: { error: string }         — Error occurred
  */
@@ -79,6 +81,11 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
 
     let turn = 0;
     let finalContent = "";
+    let totalToolCalls = 0;
+    let completedToolCalls = 0;
+
+    // Signal task is running
+    sendSSE(safeWrite, { status: "running" });
 
     while (turn < MAX_TOOL_TURNS) {
       turn++;
@@ -128,6 +135,12 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         // @ts-ignore - tool_calls is part of the message but not in our Message type
         tool_calls: toolCalls,
       } as any);
+
+      // Track total tool calls for progress
+      totalToolCalls += toolCalls.length;
+      sendSSE(safeWrite, {
+        step_progress: { completed: completedToolCalls, total: totalToolCalls, turn },
+      });
 
       // Execute each tool call
       for (const toolCall of toolCalls) {
@@ -180,6 +193,12 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
           });
         }
 
+        // Track progress
+        completedToolCalls++;
+        sendSSE(safeWrite, {
+          step_progress: { completed: completedToolCalls, total: totalToolCalls, turn },
+        });
+
         // Add tool result to conversation for next LLM turn
         conversation.push({
           role: "tool",
@@ -203,10 +222,11 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
       finalContent += "\n\n*[Reached maximum number of tool execution steps]*";
     }
 
-    // Send done event
+    // Signal completion
+    sendSSE(safeWrite, { status: "completed" });
     sendSSE(safeWrite, { done: true, content: finalContent });
     safeEnd();
-    console.log("[Agent] Stream complete after", turn, "turns");
+    console.log("[Agent] Stream complete after", turn, "turns,", completedToolCalls, "tool calls");
   } catch (err: any) {
     console.error("[Agent] Error:", err);
     sendSSE(safeWrite, { error: err.message || "Agent execution failed" });
