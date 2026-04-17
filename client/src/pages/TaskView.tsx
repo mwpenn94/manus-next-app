@@ -1,12 +1,13 @@
 /**
  * TaskView — "Warm Void" Manus-Authentic Task Interface
  * 
- * Convergence Pass 1: Enhanced streaming simulation, richer action steps,
- * workspace tabs (Browser, Code, Terminal), progress timeline, typing indicator.
+ * Convergence Pass 2: Mobile responsive — workspace stacks below conversation
+ * on small screens with a toggle button, touch-friendly tap targets.
  */
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useRoute } from "wouter";
 import { useTask, type Message, type AgentAction } from "@/contexts/TaskContext";
+import { useBridge } from "@/contexts/BridgeContext";
 import {
   Send,
   Paperclip,
@@ -25,7 +26,6 @@ import {
   MoreHorizontal,
   Maximize2,
   Minimize2,
-  SkipForward,
   Loader2,
   Code,
   MonitorPlay,
@@ -34,6 +34,8 @@ import {
   RotateCcw,
   CheckCircle2,
   ArrowDown,
+  PanelBottomOpen,
+  PanelBottomClose,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Streamdown } from "streamdown";
@@ -141,7 +143,7 @@ function MessageBubble({ message, isLast }: { message: Message; isLast: boolean 
         </div>
       )}
 
-      <div className={cn("max-w-[80%]", isUser ? "ml-auto" : "")}>
+      <div className={cn("max-w-[90%] md:max-w-[80%]", isUser ? "ml-auto" : "")}>
         {/* Sender label */}
         {!isUser && (
           <div className="flex items-center gap-2 mb-1.5">
@@ -221,7 +223,7 @@ function MessageBubble({ message, isLast }: { message: Message; isLast: boolean 
 
 type WorkspaceTab = "browser" | "code" | "terminal";
 
-function WorkspacePanel({ task }: { task: ReturnType<typeof useTask>["activeTask"] }) {
+function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("browser");
 
@@ -235,8 +237,11 @@ function WorkspacePanel({ task }: { task: ReturnType<typeof useTask>["activeTask
 
   return (
     <div className={cn(
-      "border-l border-border bg-card flex flex-col transition-all duration-300 shrink-0",
-      expanded ? "w-[560px]" : "w-[400px]"
+      "bg-card flex flex-col",
+      isMobile
+        ? "border-t border-border h-[50vh] max-h-[50vh]"
+        : "border-l border-border transition-all duration-300 shrink-0",
+      !isMobile && (expanded ? "w-[560px]" : "w-[400px]")
     )}>
       {/* Workspace Header */}
       <div className="h-12 flex items-center justify-between px-4 border-b border-border shrink-0">
@@ -247,26 +252,47 @@ function WorkspacePanel({ task }: { task: ReturnType<typeof useTask>["activeTask
               Manus's Computer
             </h3>
           </div>
+          {bridgeStatus === "connected" && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+              Bridge Live
+            </span>
+          )}
+          {bridgeStatus === "connecting" && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium">
+              Connecting...
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            title={expanded ? "Collapse" : "Expand"}
-          >
-            {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          </button>
+          {isMobile && onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Close workspace"
+            >
+              <PanelBottomClose className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {!isMobile && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Workspace Tabs */}
-      <div className="flex items-center gap-0 border-b border-border shrink-0">
+      <div className="flex items-center gap-0 border-b border-border shrink-0 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px",
+              "flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
               activeTab === tab.id
                 ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -299,10 +325,10 @@ function WorkspacePanel({ task }: { task: ReturnType<typeof useTask>["activeTask
                     {task.workspaceUrl}
                   </span>
                 </div>
-                <button className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Open in new tab">
+                <button className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Open in new tab">
                   <ExternalLink className="w-3 h-3" />
                 </button>
-                <button className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Refresh">
+                <button className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Refresh">
                   <RotateCcw className="w-3 h-3" />
                 </button>
               </div>
@@ -322,7 +348,7 @@ function WorkspacePanel({ task }: { task: ReturnType<typeof useTask>["activeTask
           <div className="p-4 h-full overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-muted-foreground font-mono">research_summary.md</span>
-              <button className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Copy">
+              <button className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Copy">
                 <Copy className="w-3 h-3" />
               </button>
             </div>
@@ -391,7 +417,7 @@ has improved significantly.
       {/* Timeline / Progress */}
       <div className="h-10 flex items-center justify-between px-4 border-t border-border shrink-0">
         <div className="flex items-center gap-2">
-          <button className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title="Jump to live">
+          <button className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Jump to live">
             <ArrowDown className="w-3.5 h-3.5" />
           </button>
           <span className="text-[10px] text-muted-foreground">
@@ -423,9 +449,26 @@ has improved significantly.
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const { tasks, activeTask, setActiveTask, addMessage } = useTask();
+  const { status: bridgeStatus, send: bridgeSend, lastEvent } = useBridge();
   const [input, setInput] = useState("");
+  const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Listen for bridge events and add them as assistant messages
+  useEffect(() => {
+    if (!lastEvent || !task) return;
+    if (lastEvent.type === "agent.message") {
+      const payload = lastEvent.payload as { content?: string; actions?: AgentAction[] };
+      if (payload.content) {
+        addMessage(task.id, {
+          role: "assistant",
+          content: payload.content,
+          actions: payload.actions,
+        });
+      }
+    }
+  }, [lastEvent]);
 
   // Set active task from URL
   useEffect(() => {
@@ -462,19 +505,28 @@ export default function TaskView() {
     );
   }
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = useCallback(() => {
+    if (!input.trim() || !task) return;
     addMessage(task.id, { role: "user", content: input });
+
+    // If bridge is connected, dispatch the message to the Sovereign agent
+    if (bridgeStatus === "connected") {
+      bridgeSend("task.message", {
+        taskId: task.id,
+        content: input,
+      });
+    }
+
     setInput("");
     inputRef.current?.focus();
-  };
+  }, [input, task, addMessage, bridgeStatus, bridgeSend]);
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex flex-col md:flex-row">
       {/* ── CONVERSATION PANEL ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Task Header */}
-        <div className="h-12 flex items-center justify-between px-6 border-b border-border shrink-0">
+        <div className="h-12 flex items-center justify-between px-4 md:px-6 border-b border-border shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-sm font-medium text-foreground truncate" style={{ fontFamily: "var(--font-heading)" }}>
               {task.title}
@@ -486,10 +538,22 @@ export default function TaskView() {
             )}
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
-            <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Share">
+            {/* Mobile workspace toggle */}
+            <button
+              onClick={() => setMobileWorkspaceOpen(!mobileWorkspaceOpen)}
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors md:hidden active:scale-95"
+              title={mobileWorkspaceOpen ? "Hide workspace" : "Show workspace"}
+            >
+              {mobileWorkspaceOpen ? (
+                <PanelBottomClose className="w-4 h-4" />
+              ) : (
+                <PanelBottomOpen className="w-4 h-4" />
+              )}
+            </button>
+            <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex" title="Share">
               <Share2 className="w-3.5 h-3.5" />
             </button>
-            <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Bookmark">
+            <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex" title="Bookmark">
               <Bookmark className="w-3.5 h-3.5" />
             </button>
             <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="More">
@@ -499,7 +563,7 @@ export default function TaskView() {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain">
           {task.messages.map((msg, i) => (
             <MessageBubble key={msg.id} message={msg} isLast={i === task.messages.length - 1} />
           ))}
@@ -507,7 +571,7 @@ export default function TaskView() {
         </div>
 
         {/* Input */}
-        <div className="px-6 pb-4 pt-2 border-t border-border shrink-0">
+        <div className="px-4 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0">
           <div className="relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors">
             <textarea
               ref={inputRef}
@@ -525,7 +589,7 @@ export default function TaskView() {
             />
             <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Attach file">
+                <button className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95" title="Attach file">
                   <Paperclip className="w-4 h-4" />
                 </button>
               </div>
@@ -533,7 +597,7 @@ export default function TaskView() {
                 onClick={handleSend}
                 disabled={!input.trim()}
                 className={cn(
-                  "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                  "w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95",
                   input.trim()
                     ? "bg-primary text-primary-foreground hover:opacity-90"
                     : "bg-muted text-muted-foreground"
@@ -544,14 +608,36 @@ export default function TaskView() {
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-2">
+          <p className="text-[10px] text-muted-foreground text-center mt-2 hidden md:block">
             Manus Next may make mistakes. Verify important information.
           </p>
         </div>
       </div>
 
-      {/* ── WORKSPACE PANEL ── */}
-      <WorkspacePanel task={task} />
+      {/* ── WORKSPACE PANEL (Desktop — side panel) ── */}
+      <div className="hidden md:block">
+        <WorkspacePanel task={task} bridgeStatus={bridgeStatus} />
+      </div>
+
+      {/* ── WORKSPACE PANEL (Mobile — bottom sheet) ── */}
+      <AnimatePresence>
+        {mobileWorkspaceOpen && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: "50vh" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="md:hidden overflow-hidden"
+          >
+            <WorkspacePanel
+              task={task}
+              isMobile
+              bridgeStatus={bridgeStatus}
+              onClose={() => setMobileWorkspaceOpen(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

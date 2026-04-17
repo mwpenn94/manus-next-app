@@ -4,7 +4,7 @@
  * Convergence Pass 3: Refined capability cards with search/filter,
  * polished toggle animations, richer sync and bridge panels.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   User,
   Settings,
@@ -32,6 +32,10 @@ import {
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useBridge } from "@/contexts/BridgeContext";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { getLoginUrl } from "@/const";
 
 type SettingsTab = "account" | "general" | "capabilities" | "sync" | "bridge";
 
@@ -82,6 +86,37 @@ export default function SettingsPage() {
   const [capabilities, setCapabilities] = useState(INITIAL_CAPABILITIES);
   const [capSearch, setCapSearch] = useState("");
   const [capFilter, setCapFilter] = useState<"all" | "active" | "beta" | "inactive">("all");
+
+  // Bridge integration
+  const { status: bridgeStatus, connect, disconnect, latencyMs, events } = useBridge();
+  const [bridgeUrl, setBridgeUrl] = useState("ws://localhost:3001/bridge");
+  const [bridgeApiKey, setBridgeApiKey] = useState("");
+  const [bridgeEnabled, setBridgeEnabled] = useState(false);
+
+  // Auth
+  const { user, isAuthenticated } = useAuth();
+
+  // Save bridge config to DB
+  const saveBridgeConfig = trpc.bridge.saveConfig.useMutation({
+    onSuccess: () => toast.success("Bridge configuration saved"),
+    onError: () => toast.error("Failed to save bridge config"),
+  });
+
+  const handleBridgeConnect = useCallback(() => {
+    connect(bridgeUrl, bridgeApiKey || undefined);
+    setBridgeEnabled(true);
+    if (isAuthenticated) {
+      saveBridgeConfig.mutate({ bridgeUrl, apiKey: bridgeApiKey || null, enabled: true });
+    }
+  }, [bridgeUrl, bridgeApiKey, connect, isAuthenticated, saveBridgeConfig]);
+
+  const handleBridgeDisconnect = useCallback(() => {
+    disconnect();
+    setBridgeEnabled(false);
+    if (isAuthenticated) {
+      saveBridgeConfig.mutate({ bridgeUrl, apiKey: bridgeApiKey || null, enabled: false });
+    }
+  }, [disconnect, isAuthenticated, bridgeUrl, bridgeApiKey, saveBridgeConfig]);
 
   const tabs: { id: SettingsTab; label: string; icon: typeof User }[] = [
     { id: "account", label: "Account", icon: User },
@@ -231,21 +266,27 @@ export default function SettingsPage() {
               <div className="bg-card border border-border rounded-xl p-6 space-y-5">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-semibold text-primary" style={{ fontFamily: "var(--font-heading)" }}>
-                    G
+                    {isAuthenticated ? (user?.name?.[0]?.toUpperCase() || "U") : "G"}
                   </div>
                   <div>
-                    <p className="text-lg font-medium text-foreground">Guest User</p>
-                    <p className="text-sm text-muted-foreground">Sign in to save your tasks and preferences</p>
+                    <p className="text-lg font-medium text-foreground">
+                      {isAuthenticated ? (user?.name || "User") : "Guest User"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isAuthenticated ? (user?.email || "Signed in via Manus OAuth") : "Sign in to save your tasks and preferences"}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-                    Sign in with Google
-                  </button>
-                  <button className="px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-accent transition-colors">
-                    Sign in with GitHub
-                  </button>
-                </div>
+                {!isAuthenticated && (
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={getLoginUrl()}
+                      className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity inline-block"
+                    >
+                      Sign in with Manus
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div className="mt-5 space-y-2">
@@ -370,6 +411,7 @@ export default function SettingsPage() {
               </p>
 
               <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+                {/* Status header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Unplug className="w-5 h-5 text-primary" />
@@ -379,25 +421,47 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Disconnected</span>
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      bridgeStatus === "connected" ? "bg-emerald-500 animate-pulse" :
+                      bridgeStatus === "connecting" ? "bg-amber-500 animate-pulse" :
+                      bridgeStatus === "error" ? "bg-red-500" :
+                      "bg-muted-foreground"
+                    )} />
+                    <span className={cn(
+                      "text-xs",
+                      bridgeStatus === "connected" ? "text-emerald-400" :
+                      bridgeStatus === "connecting" ? "text-amber-400" :
+                      bridgeStatus === "error" ? "text-red-400" :
+                      "text-muted-foreground"
+                    )}>
+                      {bridgeStatus === "connected" ? `Connected${latencyMs ? ` (${latencyMs}ms)` : ""}` :
+                       bridgeStatus === "connecting" ? "Connecting..." :
+                       bridgeStatus === "error" ? "Connection Error" :
+                       "Disconnected"}
+                    </span>
                   </div>
                 </div>
 
+                {/* Config inputs */}
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1.5 block">Bridge URL</label>
                     <input
                       type="text"
-                      defaultValue="ws://localhost:3001/bridge"
+                      value={bridgeUrl}
+                      onChange={(e) => setBridgeUrl(e.target.value)}
+                      placeholder="ws://localhost:3001/bridge"
                       className="w-full h-9 px-3 text-sm bg-muted rounded-md border border-border text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1.5 block">API Key</label>
+                    <label className="text-xs text-muted-foreground mb-1.5 block">API Key (optional)</label>
                     <input
                       type="password"
-                      defaultValue="sk-demo-key-12345"
+                      value={bridgeApiKey}
+                      onChange={(e) => setBridgeApiKey(e.target.value)}
+                      placeholder="sk-..."
                       className="w-full h-9 px-3 text-sm bg-muted rounded-md border border-border text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                   </div>
@@ -411,13 +475,29 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
+                {/* Action buttons */}
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => toast("Bridge connection test: OK")}
-                    className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                  >
-                    Test Connection
-                  </button>
+                  {bridgeStatus === "connected" ? (
+                    <button
+                      onClick={handleBridgeDisconnect}
+                      className="px-4 py-2.5 bg-red-500/15 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/25 transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleBridgeConnect}
+                      disabled={!bridgeUrl || bridgeStatus === "connecting"}
+                      className={cn(
+                        "px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                        bridgeStatus === "connecting"
+                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                          : "bg-primary text-primary-foreground hover:opacity-90"
+                      )}
+                    >
+                      {bridgeStatus === "connecting" ? "Connecting..." : "Connect"}
+                    </button>
+                  )}
                   <a
                     href="https://github.com/mwpenn94/manus-next-hybrid"
                     target="_blank"
@@ -426,6 +506,49 @@ export default function SettingsPage() {
                   >
                     View docs <ExternalLink className="w-3 h-3" />
                   </a>
+                </div>
+
+                {/* Event log */}
+                {events.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Recent events</p>
+                    <div className="bg-muted/30 rounded-lg p-3 max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]">
+                      {events.slice(-10).reverse().map((evt, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-muted-foreground/60 shrink-0">
+                            {evt.timestamp.toLocaleTimeString()}
+                          </span>
+                          <span className={cn(
+                            evt.type.includes("error") ? "text-red-400" :
+                            evt.type.includes("open") ? "text-emerald-400" :
+                            "text-foreground/70"
+                          )}>
+                            {evt.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Account section with auth */}
+              <div className="bg-card border border-border rounded-xl p-5 mt-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
+                    isAuthenticated ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                  )} style={{ fontFamily: "var(--font-heading)" }}>
+                    {user?.name?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {isAuthenticated ? user?.name || "Authenticated" : "Not signed in"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isAuthenticated ? "Bridge config will be saved to your account" : "Sign in to persist bridge settings"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>

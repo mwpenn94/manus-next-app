@@ -5,6 +5,8 @@
  * keyboard shortcut hint, smoother category transitions, package badge strip.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 import { useTask } from "@/contexts/TaskContext";
 import {
@@ -65,6 +67,10 @@ const PACKAGES = [
 ];
 
 export default function Home() {
+  // The userAuth hooks provides authentication state
+  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const [input, setInput] = useState("");
   const [activeCategory, setActiveCategory] = useState("featured");
   const [, navigate] = useLocation();
@@ -118,7 +124,7 @@ export default function Home() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-full px-6 py-12">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-full px-4 md:px-6 py-8 md:py-12">
         {/* Agent illustration */}
         <motion.div
           className="mb-6"
@@ -175,10 +181,10 @@ export default function Home() {
             />
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-0.5">
-                <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Attach file">
+                <button className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95" title="Attach file">
                   <Paperclip className="w-4 h-4" />
                 </button>
-                <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Voice input">
+                <button className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95" title="Voice input">
                   <Mic className="w-4 h-4" />
                 </button>
               </div>
@@ -211,7 +217,7 @@ export default function Home() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm transition-all duration-200",
+                "flex items-center gap-1.5 px-3.5 py-2 md:py-1.5 rounded-full text-sm transition-all duration-200 active:scale-95",
                 activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
@@ -235,7 +241,7 @@ export default function Home() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2, delay: i * 0.04 }}
                 onClick={() => setInput(suggestion.title)}
-                className="text-left p-4 bg-card border border-border rounded-xl hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all group"
+                className="text-left p-4 bg-card border border-border rounded-xl hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all group active:scale-[0.98]"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
@@ -255,9 +261,9 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        {/* Package badges */}
+        {/* Package badges — hidden on mobile for cleaner experience */}
         <motion.div
-          className="mt-14 flex flex-wrap items-center justify-center gap-1.5"
+          className="mt-10 md:mt-14 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}

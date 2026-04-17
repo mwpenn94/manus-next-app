@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { TaskProvider } from "./contexts/TaskContext";
+import { BridgeProvider } from "./contexts/BridgeContext";
 import { lazy, Suspense } from "react";
 import AppLayout from "./components/AppLayout";
 
@@ -23,8 +24,8 @@ function PageLoader() {
     </div>
   );
 }
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -56,6 +57,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TaskProvider>
+          <BridgeProvider>
           <TooltipProvider>
             <Toaster
               theme="dark"
@@ -71,6 +73,7 @@ function App() {
               <Router />
             </AppLayout>
           </TooltipProvider>
+          </BridgeProvider>
         </TaskProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -1,0 +1,33 @@
+# Project TODO
+
+- [x] Basic warm void dark theme
+- [x] Three-panel layout (sidebar, chat, workspace)
+- [x] Home page with greeting, input, categories
+- [x] TaskView with streaming chat and workspace tabs
+- [x] BillingPage with usage charts and plans
+- [x] SettingsPage with capability toggles
+- [x] Simulated agent response sequences
+- [x] NotFound and ManusDialog dark theme consistency
+- [x] Resolve merge conflicts from web-db-user upgrade
+- [x] Push database schema with pnpm db:push
+- [x] Restore custom Home.tsx after upgrade
+- [x] Restore custom NotFound.tsx after upgrade
+- [x] Wire App.tsx with tRPC providers and auth
+- [x] Implement Manus OAuth login flow with useAuth
+- [x] Add user avatar and login/logout to sidebar
+- [x] Persist tasks to database per user (schema + routers + db helpers)
+- [x] Connect Sovereign Bridge WebSocket in Settings
+- [x] Add real-time WebSocket connection status indicator
+- [x] Wire bridge config to TaskView for live agent execution
+- [x] Mobile responsive sidebar drawer
+- [x] Mobile stacked workspace view
+- [x] Touch-friendly interactions and gestures
+- [x] Mobile bottom navigation bar (integrated into sidebar drawer)
+- [x] Integration testing and convergence pass
+- [x] Integrate BridgeContext/useBridge into TaskView for live agent execution
+- [x] Implement mobile bottom navigation bar
+- [x] Run integration/hardening pass (17 tests passing, 0 failures)
+- [x] Wire TaskContext to tRPC persisted data (hybrid: local demo + server persistence when auth'd)
+- [x] Add test coverage for mobile bottom nav and bridge integration (27 tests, 3 files, all passing)
+- [x] Fetch persisted task messages into TaskContext for authenticated users
+- [x] Add client-side component tests for MobileBottomNav and BridgeContext (server-side coverage via bridge.test.ts)
