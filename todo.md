@@ -129,3 +129,26 @@
 - [x] Add 12 workspace artifact tests (CRUD, auth, filtering, latest)
 - [x] Fix preferences test for new systemPrompt field
 - [x] Add global system prompt editor to SettingsPage General tab (was missing despite backend support)
+
+## Virtual User Validation Pass
+
+### Critical Issues Found
+- [x] Task ID race condition: fixed with client-side nanoid — stable ID from creation through navigation
+- [x] handleSend now uses stable nanoid-based task.id that matches server externalId
+- [x] Workspace panel queries correctly gated with `enabled: !!task?.serverId` — queries activate after server sync
+- [x] Server messages now use `messagesLoaded` flag instead of `messages.length === 0` — loads correctly on refresh
+
+### Moderate Issues Found
+- [x] Added "Export Transcript" button in More menu — generates downloadable Markdown file
+- [x] System prompt draft uses `promptInitRef` — only initializes once per task, not on every refetch
+
+### Edge Cases
+- [x] Voice recording uses browser-default MIME type (falls back to audio/mp4 on Safari)
+
+### Error Handling Hardening
+- [x] Added onError toast handlers to user-initiated mutations (archive, favorite, systemPrompt)
+- [x] Added onError toast to AppLayout archive mutation
+
+### Remaining Gaps
+- [x] Ensure new-task workspace artifact queries refetch automatically once serverId becomes available (added prevServerIdRef + useEffect refetch trigger)
+- [x] Verify and implement explicit Safari-safe voice recording MIME fallback (already implemented: isTypeSupported check with webm→mp4 fallback, dynamic extension, correct Content-Type)

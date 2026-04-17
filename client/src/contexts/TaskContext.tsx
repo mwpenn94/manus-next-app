@@ -1,15 +1,17 @@
 /**
  * TaskContext — Real Persistence with Workspace Artifact Wiring
  *
- * When unauthenticated: empty task list with CTA to sign in.
- * When authenticated: creates tasks via tRPC, persists to database,
- * receives real LLM responses via SSE, and bridge events via WebSocket.
+ * Critical fixes applied:
+ * 1. Client-side nanoid for stable task IDs — no more ID race condition
+ * 2. messagesLoaded flag per task — server messages load correctly on refresh
+ * 3. Workspace queries naturally enable once serverId is set
  *
  * Bridge artifact pipeline:
  * - task:step metadata.type → workspace.addArtifact (browser_screenshot, browser_url, code, terminal)
  * - task:complete artifacts[] → workspace.addArtifact for each artifact
  */
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { nanoid } from "nanoid";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useBridge, type BridgeMessage, type BridgeTaskStep, type BridgeTaskComplete } from "./BridgeContext";
@@ -34,7 +36,7 @@ export interface Message {
 }
 
 export interface Task {
-  id: string;
+  id: string; // Always the server externalId (nanoid) — stable from creation
   title: string;
   status: "idle" | "running" | "completed" | "error";
   messages: Message[];
@@ -44,7 +46,8 @@ export interface Task {
   currentStep?: string;
   totalSteps?: number;
   completedSteps?: number;
-  serverId?: number; // DB id when persisted
+  serverId?: number; // DB auto-increment id, set after server mutation completes
+  messagesLoaded?: boolean; // Whether server messages have been hydrated
 }
 
 interface TaskContextValue {
@@ -59,7 +62,7 @@ interface TaskContextValue {
 
 const TaskContext = createContext<TaskContextValue | null>(null);
 
-let nextId = 100;
+let nextMsgId = 100;
 
 // Valid artifact types that the workspace panel can display
 const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal"]);
@@ -101,6 +104,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         completedSteps: st.completedSteps ?? undefined,
         workspaceUrl: st.workspaceUrl ?? undefined,
         serverId: st.id,
+        messagesLoaded: false,
       }));
       setTasks((prev) => {
         const existingIds = new Set(prev.map((t) => t.id));
@@ -114,11 +118,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const activeTask = tasks.find((t) => t.id === activeTaskId) ?? null;
 
   // Fetch messages for server-persisted tasks when they become active
+  // Use messagesLoaded flag instead of messages.length to avoid blocking on local messages
   const activeServerId = activeTask?.serverId;
+  const needsMessageLoad = activeTask && activeServerId && !activeTask.messagesLoaded;
   const serverMessagesQuery = trpc.task.messages.useQuery(
     { taskId: activeServerId! },
     {
-      enabled: isAuthenticated && !!activeServerId && activeTask?.messages.length === 0,
+      enabled: isAuthenticated && !!needsMessageLoad,
       retry: false,
     }
   );
@@ -126,25 +132,33 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   // Merge server messages into the active task
   useEffect(() => {
     if (!activeServerId || !serverMessagesQuery.data) return;
-    if (serverMessagesQuery.data.length === 0) return;
+    if (!needsMessageLoad) return;
 
     setTasks((prev) =>
       prev.map((t) => {
-        if (t.serverId !== activeServerId || t.messages.length > 0) return t;
-        const msgs: Message[] = serverMessagesQuery.data.map((sm: any) => ({
+        if (t.serverId !== activeServerId) return t;
+        if (t.messagesLoaded) return t; // Already loaded
+        
+        const serverMsgs: Message[] = serverMessagesQuery.data.map((sm: any) => ({
           id: sm.externalId || `srv-${sm.id}`,
           role: sm.role as Message["role"],
           content: sm.content,
           timestamp: new Date(sm.createdAt),
           actions: sm.actions ? (typeof sm.actions === "string" ? JSON.parse(sm.actions) : sm.actions) : undefined,
         }));
-        return { ...t, messages: msgs };
+
+        // Merge: server messages first, then any local messages not already in server set
+        const serverMsgIds = new Set(serverMsgs.map(m => m.content));
+        const uniqueLocalMsgs = t.messages.filter(m => !serverMsgIds.has(m.content));
+        
+        return { ...t, messages: [...serverMsgs, ...uniqueLocalMsgs], messagesLoaded: true };
       })
     );
-  }, [activeServerId, serverMessagesQuery.data]);
+  }, [activeServerId, serverMessagesQuery.data, needsMessageLoad]);
 
   const createTask = useCallback((title: string, initialMessage: string) => {
-    const id = `task-${nextId++}`;
+    // Generate stable ID on the client — this ID is used everywhere from the start
+    const id = nanoid(12);
     const now = new Date();
     const newTask: Task = {
       id,
@@ -152,9 +166,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       status: "idle",
       createdAt: now,
       updatedAt: now,
+      messagesLoaded: true, // We have the messages locally, no need to fetch
       messages: [
         {
-          id: `msg-${nextId++}`,
+          id: `msg-${nextMsgId++}`,
           role: "user",
           content: initialMessage,
           timestamp: now,
@@ -164,18 +179,19 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setTasks((prev) => [newTask, ...prev]);
     setActiveTaskId(id);
 
-    // Persist to server if authenticated
+    // Persist to server if authenticated — pass the same externalId
     if (isAuthenticated) {
       createTaskMutation.mutate(
-        { title },
+        { title, externalId: id },
         {
           onSuccess: (result) => {
+            // Only set serverId — the task.id is already correct (same nanoid)
             setTasks((prev) =>
               prev.map((t) =>
-                t.id === id ? { ...t, serverId: result.id, id: result.externalId } : t
+                t.id === id ? { ...t, serverId: result.id } : t
               )
             );
-            // Also persist the initial message
+            // Persist the initial message
             if (result.id) {
               addMessageMutation.mutate({
                 taskId: result.id,
@@ -215,7 +231,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
                 updatedAt: new Date(),
                 messages: [
                   ...t.messages,
-                  { ...message, id: `msg-${nextId++}`, timestamp: new Date() },
+                  { ...message, id: `msg-${nextMsgId++}`, timestamp: new Date() },
                 ],
               }
             : t
@@ -335,7 +351,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
                     url: meta.url as string,
                     label: (meta.label as string) || e.action,
                   });
-                  // Also update the task's workspaceUrl if a page URL is present
                   if (meta.pageUrl) {
                     updated.workspaceUrl = meta.pageUrl as string;
                     persistArtifact(e.taskId, "browser_url", {

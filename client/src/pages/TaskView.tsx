@@ -51,8 +51,10 @@ import {
   Trash2,
   Settings2,
   Check,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -232,23 +234,40 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("browser");
 
-  // Fetch real artifacts from DB
+  // Fetch real artifacts from DB — queries auto-enable when serverId becomes available
+  const serverId = task?.serverId ?? 0;
+  const hasServerId = !!task?.serverId;
+  const isRunning = task?.status === "running";
+
   const browserArtifact = trpc.workspace.latest.useQuery(
-    { taskId: task?.serverId ?? 0, type: "browser_screenshot" },
-    { enabled: !!task?.serverId, refetchInterval: task?.status === "running" ? 5000 : false }
+    { taskId: serverId, type: "browser_screenshot" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
   const browserUrlArtifact = trpc.workspace.latest.useQuery(
-    { taskId: task?.serverId ?? 0, type: "browser_url" },
-    { enabled: !!task?.serverId, refetchInterval: task?.status === "running" ? 5000 : false }
+    { taskId: serverId, type: "browser_url" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
   const codeArtifacts = trpc.workspace.list.useQuery(
-    { taskId: task?.serverId ?? 0, type: "code" },
-    { enabled: !!task?.serverId, refetchInterval: task?.status === "running" ? 5000 : false }
+    { taskId: serverId, type: "code" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
   const terminalArtifacts = trpc.workspace.list.useQuery(
-    { taskId: task?.serverId ?? 0, type: "terminal" },
-    { enabled: !!task?.serverId, refetchInterval: task?.status === "running" ? 5000 : false }
+    { taskId: serverId, type: "terminal" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
+
+  // When serverId transitions from undefined to a value (new task synced to server),
+  // force an immediate refetch of all artifact queries
+  const prevServerIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (hasServerId && prevServerIdRef.current !== serverId) {
+      prevServerIdRef.current = serverId;
+      browserArtifact.refetch();
+      browserUrlArtifact.refetch();
+      codeArtifacts.refetch();
+      terminalArtifacts.refetch();
+    }
+  }, [hasServerId, serverId]);
 
   if (!task) return null;
 
@@ -570,9 +589,16 @@ export default function TaskView() {
   const { files, uploading, progress, error: uploadError, upload, openPicker, handleFileChange, removeFile, clearFiles, inputRef: fileInputRef } = useFileUpload(taskExternalId);
 
   // tRPC mutations for task management
-  const archiveMutation = trpc.task.archive.useMutation();
-  const favoriteMutation = trpc.task.toggleFavorite.useMutation();
-  const systemPromptMutation = trpc.task.updateSystemPrompt.useMutation();
+  const archiveMutation = trpc.task.archive.useMutation({
+    onError: () => toast.error("Failed to delete task"),
+  });
+  const favoriteMutation = trpc.task.toggleFavorite.useMutation({
+    onError: () => toast.error("Failed to update bookmark"),
+  });
+  const systemPromptMutation = trpc.task.updateSystemPrompt.useMutation({
+    onSuccess: () => toast.success("System prompt saved"),
+    onError: () => toast.error("Failed to save system prompt"),
+  });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },
     { enabled: !!taskExternalId && isAuthenticated }
@@ -585,14 +611,15 @@ export default function TaskView() {
   }, []);
   const { recording, transcribing, voiceError, startRecording, stopRecording, clearVoiceError } = useVoiceRecorder(handleTranscription);
 
-  // Load per-task system prompt when task changes
+  // Load per-task system prompt when task changes — only initialize once per task
+  const promptInitRef = useRef<string | null>(null);
   useEffect(() => {
-    if (taskQuery.data?.systemPrompt) {
-      setSystemPromptDraft(taskQuery.data.systemPrompt);
-    } else {
-      setSystemPromptDraft("");
-    }
-  }, [taskQuery.data?.systemPrompt]);
+    const currentTaskId = taskExternalId || "";
+    if (promptInitRef.current === currentTaskId) return; // Already initialized for this task
+    if (taskQuery.isLoading) return; // Wait for data
+    promptInitRef.current = currentTaskId;
+    setSystemPromptDraft(taskQuery.data?.systemPrompt || "");
+  }, [taskExternalId, taskQuery.data?.systemPrompt, taskQuery.isLoading]);
 
   // Close more menu on outside click
   useEffect(() => {
@@ -919,6 +946,28 @@ export default function TaskView() {
                     >
                       <Settings2 className="w-3.5 h-3.5" />
                       System Prompt
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!task) return;
+                        const lines = [`# ${task.title}\n`, `Created: ${task.createdAt.toLocaleString()}\n`, `Status: ${task.status}\n`, `---\n`];
+                        for (const msg of task.messages) {
+                          const label = msg.role === "user" ? "**You**" : msg.role === "assistant" ? "**Assistant**" : "**System**";
+                          lines.push(`${label} (${msg.timestamp.toLocaleString()})\n\n${msg.content}\n\n---\n`);
+                        }
+                        const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${task.title.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 40).trim()}.md`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Export Transcript
                     </button>
                     <button
                       onClick={handleShare}

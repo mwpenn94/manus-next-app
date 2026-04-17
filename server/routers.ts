@@ -58,9 +58,9 @@ export const appRouter = router({
       }),
 
     create: protectedProcedure
-      .input(z.object({ title: z.string().min(1).max(500) }))
+      .input(z.object({ title: z.string().min(1).max(500), externalId: z.string().min(8).max(24).optional() }))
       .mutation(async ({ ctx, input }) => {
-        const externalId = nanoid(12);
+        const externalId = input.externalId || nanoid(12);
         return createTask({
           externalId,
           userId: ctx.user.id,

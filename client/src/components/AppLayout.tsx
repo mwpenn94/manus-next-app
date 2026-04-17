@@ -11,6 +11,7 @@
  * Bridge: Real-time connection status indicator in sidebar footer
  */
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { toast } from "sonner";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -142,6 +143,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     onSuccess: () => {
       setConfirmDeleteId(null);
     },
+    onError: () => toast.error("Failed to delete task"),
   });
 
   // Close mobile drawer on navigation
