@@ -186,11 +186,29 @@ export default function Home() {
             />
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-0.5">
-                <button className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95" title="Attach file">
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+                    const title = "File upload task";
+                    const id = createTask(title, "I'd like to upload and work with some files.");
+                    navigate(`/task/${id}`);
+                  }}
+                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
+                  title="Attach file — creates a new task"
+                >
                   <Paperclip className="w-4 h-4" />
                 </button>
-                <button className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95" title="Voice input">
-                  <Mic className="w-4 h-4" />
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+                    const title = "Voice task";
+                    const id = createTask(title, "Voice task — use the microphone button to record.");
+                    navigate(`/task/${id}`);
+                  }}
+                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
+                  title="Voice input — creates a new task with voice recording"
+                >
+                  <Mic className="w-4 h-4" />  
                 </button>
               </div>
               <button

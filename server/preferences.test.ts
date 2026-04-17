@@ -67,6 +67,7 @@ describe("preferences router", () => {
     expect(result).toEqual({
       generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false },
       capabilities: {},
+      systemPrompt: null,
     });
   });
 

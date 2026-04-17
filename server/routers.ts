@@ -18,6 +18,13 @@ import {
   getUserPreferences,
   upsertUserPreferences,
   getUserTaskStats,
+  archiveTask,
+  toggleTaskFavorite,
+  updateTaskSystemPrompt,
+  searchTasks,
+  addWorkspaceArtifact,
+  getWorkspaceArtifacts,
+  getLatestArtifactByType,
 } from "./db";
 
 export const appRouter = router({
@@ -32,9 +39,17 @@ export const appRouter = router({
   }),
 
   task: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return getUserTasks(ctx.user.id);
-    }),
+    list: protectedProcedure
+      .input(z.object({
+        statusFilter: z.string().optional(),
+        includeArchived: z.boolean().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        return getUserTasks(ctx.user.id, {
+          statusFilter: input?.statusFilter,
+          includeArchived: input?.includeArchived,
+        });
+      }),
 
     get: protectedProcedure
       .input(z.object({ externalId: z.string() }))
@@ -61,6 +76,35 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await updateTaskStatus(input.externalId, input.status);
         return { success: true };
+      }),
+
+    archive: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await archiveTask(input.externalId, ctx.user.id);
+        return { success: true };
+      }),
+
+    toggleFavorite: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        return toggleTaskFavorite(input.externalId, ctx.user.id);
+      }),
+
+    updateSystemPrompt: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        systemPrompt: z.string().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await updateTaskSystemPrompt(input.externalId, ctx.user.id, input.systemPrompt);
+        return { success: true };
+      }),
+
+    search: protectedProcedure
+      .input(z.object({ query: z.string().min(1) }))
+      .query(async ({ ctx, input }) => {
+        return searchTasks(ctx.user.id, input.query);
       }),
 
     messages: protectedProcedure
@@ -142,13 +186,14 @@ export const appRouter = router({
       }),
   }),
 
-  /** User preferences — persist settings and capability toggles */
+  /** User preferences — persist settings, capability toggles, and system prompt */
   preferences: router({
     get: protectedProcedure.query(async ({ ctx }) => {
       const prefs = await getUserPreferences(ctx.user.id);
       return prefs ?? {
         generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false },
         capabilities: {},
+        systemPrompt: null,
       };
     }),
 
@@ -156,12 +201,14 @@ export const appRouter = router({
       .input(z.object({
         generalSettings: z.any().optional(),
         capabilities: z.any().optional(),
+        systemPrompt: z.string().nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return upsertUserPreferences({
           userId: ctx.user.id,
-          generalSettings: input.generalSettings ?? null,
-          capabilities: input.capabilities ?? null,
+          generalSettings: input.generalSettings ?? undefined,
+          capabilities: input.capabilities ?? undefined,
+          systemPrompt: input.systemPrompt !== undefined ? input.systemPrompt : undefined,
         });
       }),
   }),
@@ -171,6 +218,68 @@ export const appRouter = router({
     stats: protectedProcedure.query(async ({ ctx }) => {
       return getUserTaskStats(ctx.user.id);
     }),
+  }),
+
+  /** Workspace artifacts — browser screenshots, code, terminal output from bridge events */
+  workspace: router({
+    addArtifact: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        artifactType: z.enum(["browser_screenshot", "browser_url", "code", "terminal"]),
+        label: z.string().optional(),
+        content: z.string().optional(),
+        url: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await addWorkspaceArtifact({
+          taskId: input.taskId,
+          artifactType: input.artifactType,
+          label: input.label ?? null,
+          content: input.content ?? null,
+          url: input.url ?? null,
+        });
+        return { success: true };
+      }),
+
+    list: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        type: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        return getWorkspaceArtifacts(input.taskId, input.type);
+      }),
+
+    latest: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        type: z.enum(["browser_screenshot", "browser_url", "code", "terminal"]),
+      }))
+      .query(async ({ input }) => {
+        return getLatestArtifactByType(input.taskId, input.type) ?? null;
+      }),
+  }),
+
+  /** Voice transcription — uses built-in Whisper service */
+  voice: router({
+    transcribe: protectedProcedure
+      .input(z.object({
+        audioUrl: z.string().url(),
+        language: z.string().optional(),
+        prompt: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { transcribeAudio } = await import("./_core/voiceTranscription");
+        const result = await transcribeAudio({
+          audioUrl: input.audioUrl,
+          language: input.language,
+          prompt: input.prompt,
+        });
+        if ("error" in result) {
+          throw new Error(result.error);
+        }
+        return { text: result.text, language: result.language };
+      }),
   }),
 
   /** LLM chat completion — sends user message to the built-in LLM and returns the response */

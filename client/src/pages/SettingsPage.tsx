@@ -122,6 +122,7 @@ export default function SettingsPage() {
 
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL);
   const [capabilityToggles, setCapabilityToggles] = useState<Record<string, boolean>>({});
+  const [globalSystemPrompt, setGlobalSystemPrompt] = useState("");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [bridgeConfigLoaded, setBridgeConfigLoaded] = useState(false);
 
@@ -132,6 +133,7 @@ export default function SettingsPage() {
     if (gs) setGeneralSettings(gs);
     const caps = prefsQuery.data.capabilities as Record<string, boolean> | null;
     if (caps) setCapabilityToggles(caps);
+    if (prefsQuery.data.systemPrompt) setGlobalSystemPrompt(prefsQuery.data.systemPrompt as string);
     setPrefsLoaded(true);
   }, [prefsQuery.data, prefsLoaded]);
 
@@ -347,6 +349,37 @@ export default function SettingsPage() {
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* ── Global System Prompt ── */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-foreground mb-1">Default System Prompt</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Set a global system prompt for all tasks. Individual tasks can override this in their settings.
+                </p>
+                <textarea
+                  value={globalSystemPrompt}
+                  onChange={(e) => setGlobalSystemPrompt(e.target.value)}
+                  placeholder="You are a helpful AI assistant..."
+                  rows={4}
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/30 resize-none"
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    {globalSystemPrompt.length > 0 ? `${globalSystemPrompt.length} characters` : "Using built-in default"}
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (!isAuthenticated) return;
+                      savePrefsMutation.mutate({ systemPrompt: globalSystemPrompt || null });
+                      toast.success("System prompt saved");
+                    }}
+                    disabled={!isAuthenticated}
+                    className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    Save prompt
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

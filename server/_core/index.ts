@@ -61,6 +61,8 @@ async function startServer() {
   });
 
   // ── SSE streaming endpoint for LLM ──
+  // Authenticates user, resolves system prompt (per-task > global > default),
+  // calls LLM, and delivers response in real sentence-boundary chunks.
   app.post("/api/stream", async (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -68,20 +70,19 @@ async function startServer() {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
-    // Track whether the client disconnected (abort)
     let aborted = false;
     req.on("close", () => { aborted = true; });
 
     try {
       const { invokeLLM } = await import("./llm").catch(() => ({ invokeLLM: null }));
-      // Parse body from raw chunks since we set up raw body handling
       const bodyChunks: Buffer[] = [];
       await new Promise<void>((resolve) => {
         req.on("data", (c: Buffer) => bodyChunks.push(c));
         req.on("end", resolve);
       });
       const body = JSON.parse(Buffer.concat(bodyChunks).toString());
-      const messages = body.messages || [];
+      let messages = body.messages || [];
+      const taskExternalId = body.taskExternalId as string | undefined;
 
       if (!invokeLLM) {
         res.write(`data: ${JSON.stringify({ error: "LLM service is not available. Please check server configuration." })}\n\n`);
@@ -89,17 +90,51 @@ async function startServer() {
         return;
       }
 
+      // Resolve system prompt: per-task > global preferences > default
+      let resolvedSystemPrompt: string | null = null;
+      try {
+        const { sdk: sdkInstance } = await import("./sdk");
+        const user = await sdkInstance.authenticateRequest(req).catch(() => null);
+        if (user) {
+          // Check per-task system prompt
+          if (taskExternalId) {
+            const { getTaskByExternalId } = await import("../db");
+            const task = await getTaskByExternalId(taskExternalId);
+            if (task?.systemPrompt) resolvedSystemPrompt = task.systemPrompt;
+          }
+          // Fall back to global user preference
+          if (!resolvedSystemPrompt) {
+            const { getUserPreferences } = await import("../db");
+            const prefs = await getUserPreferences(user.id);
+            if (prefs?.systemPrompt) resolvedSystemPrompt = prefs.systemPrompt as string;
+          }
+        }
+      } catch { /* proceed with default */ }
+
+      // Inject resolved system prompt if the first message isn't already a system message
+      if (resolvedSystemPrompt && messages.length > 0 && messages[0].role === "system") {
+        messages[0].content = resolvedSystemPrompt;
+      } else if (resolvedSystemPrompt) {
+        messages = [{ role: "system", content: resolvedSystemPrompt }, ...messages];
+      }
+
       const response = await invokeLLM({ messages });
       const rawContent = response.choices?.[0]?.message?.content;
       const content = typeof rawContent === "string" ? rawContent : "I couldn't generate a response.";
 
-      // Stream word-by-word for a natural feel
-      const words = content.split(" ");
-      for (let i = 0; i < words.length; i++) {
+      // Deliver content in real sentence-boundary chunks (no artificial delay)
+      // Split on sentence boundaries for natural streaming feel
+      const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
+      const chunks = content.match(sentencePattern) || [content];
+      // If the regex didn't capture trailing text, add it
+      const captured = chunks.join("");
+      if (captured.length < content.length) {
+        chunks.push(content.slice(captured.length));
+      }
+
+      for (const chunk of chunks) {
         if (aborted) return;
-        const delta = words[i] + (i < words.length - 1 ? " " : "");
-        res.write(`data: ${JSON.stringify({ delta })}\n\n`);
-        await new Promise(r => setTimeout(r, 25 + Math.random() * 25));
+        res.write(`data: ${JSON.stringify({ delta: chunk })}\n\n`);
       }
       if (aborted) return;
       res.write(`data: ${JSON.stringify({ done: true, content })}\n\n`);

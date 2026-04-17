@@ -29,6 +29,13 @@
       "when": 1776451153713,
       "tag": "0003_optimal_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1776452314142,
+      "tag": "0004_closed_paibok",
+      "breakpoints": true
     }
   ]
 }

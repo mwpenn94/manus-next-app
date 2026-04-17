@@ -36,6 +36,12 @@ export const tasks = mysqlTable("tasks", {
   currentStep: varchar("currentStep", { length: 500 }),
   totalSteps: int("totalSteps"),
   completedSteps: int("completedSteps"),
+  /** Per-task system prompt override (null = use global default) */
+  systemPrompt: text("systemPrompt"),
+  /** Soft-delete flag: archived tasks are hidden from sidebar but preserved */
+  archived: int("archived").default(0).notNull(),
+  /** Favorite/bookmark flag for quick access */
+  favorite: int("favorite").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -71,6 +77,7 @@ export const bridgeConfigs = mysqlTable("bridge_configs", {
 
 export type BridgeConfig = typeof bridgeConfigs.$inferSelect;
 export type InsertBridgeConfig = typeof bridgeConfigs.$inferInsert;
+
 // ── Task Files (S3 attachments) ──
 export const taskFiles = mysqlTable("task_files", {
   id: int("id").autoincrement().primaryKey(),
@@ -87,7 +94,7 @@ export const taskFiles = mysqlTable("task_files", {
 export type TaskFile = typeof taskFiles.$inferSelect;
 export type InsertTaskFile = typeof taskFiles.$inferInsert;
 
-// ── User Preferences (settings + capability toggles) ──
+// ── User Preferences (settings + capability toggles + system prompt) ──
 export const userPreferences = mysqlTable("user_preferences", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique(),
@@ -95,9 +102,29 @@ export const userPreferences = mysqlTable("user_preferences", {
   generalSettings: json("generalSettings"),
   /** JSON object: { "package-name": bool, ... } mapping capability package names to enabled/disabled */
   capabilities: json("capabilities"),
+  /** Global default system prompt for all tasks (overridden by per-task systemPrompt) */
+  systemPrompt: text("systemPrompt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type InsertUserPreference = typeof userPreferences.$inferInsert;
+
+// ── Workspace Artifacts (browser screenshots, code, terminal output from bridge events) ──
+export const workspaceArtifacts = mysqlTable("workspace_artifacts", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  /** Artifact type: browser_screenshot, browser_url, code, terminal */
+  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal"]).notNull(),
+  /** For code: filename. For terminal: command. For browser: page title. */
+  label: varchar("label", { length: 500 }),
+  /** Text content (code source, terminal output). Null for screenshots. */
+  content: text("content"),
+  /** URL for screenshots or browser URLs */
+  url: text("url"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WorkspaceArtifact = typeof workspaceArtifacts.$inferSelect;
+export type InsertWorkspaceArtifact = typeof workspaceArtifacts.$inferInsert;

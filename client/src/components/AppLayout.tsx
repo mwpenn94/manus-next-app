@@ -1,7 +1,8 @@
 /**
- * AppLayout — "Warm Void" Manus-Authentic Three-Panel Layout
+ * AppLayout — Real-Wired Three-Panel Layout
  *
- * LEFT:   Task sidebar (280px) — task list, search, +New task
+ * LEFT:   Task sidebar (280px) — real task list from DB, server-side search,
+ *         status filter tabs, favorite indicators, archive/delete
  * CENTER: Main content area (flexible) — home or chat view
  * RIGHT:  Contextual — nothing on home, workspace on task view
  *
@@ -9,12 +10,13 @@
  * Mobile: Responsive sidebar drawer with overlay, stacked workspace, touch UX
  * Bridge: Real-time connection status indicator in sidebar footer
  */
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useTask } from "@/contexts/TaskContext";
 import { useBridge } from "@/contexts/BridgeContext";
+import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
   Search,
@@ -33,6 +35,9 @@ import {
   X,
   Wifi,
   WifiOff,
+  Star,
+  Trash2,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -112,13 +117,32 @@ function BridgeStatusBadge() {
   );
 }
 
+type StatusFilter = "all" | "running" | "completed" | "error";
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [location, navigate] = useLocation();
   const { tasks, activeTaskId, setActiveTask } = useTask();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Server-side search when query is long enough
+  const searchEnabled = isAuthenticated && searchQuery.trim().length >= 2;
+  const serverSearch = trpc.task.search.useQuery(
+    { query: searchQuery.trim() },
+    { enabled: searchEnabled, placeholderData: (prev: any) => prev }
+  );
+
+  // Archive mutation
+  const archiveMutation = trpc.task.archive.useMutation({
+    onSuccess: () => {
+      setConfirmDeleteId(null);
+    },
+  });
 
   // Close mobile drawer on navigation
   useEffect(() => {
@@ -146,9 +170,42 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     };
   }, [mobileDrawerOpen]);
 
-  const filteredTasks = tasks.filter((t) =>
-    t.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Determine displayed tasks: server search results or local filtered list
+  const displayedTasks = (() => {
+    // If searching and server results are available, use them
+    if (searchEnabled && serverSearch.data) {
+      const serverResults = serverSearch.data.map((st: any) => ({
+        id: st.externalId,
+        title: st.title,
+        status: st.status,
+        updatedAt: new Date(st.updatedAt),
+        favorite: st.favorite,
+        source: "server" as const,
+      }));
+      if (statusFilter !== "all") {
+        return serverResults.filter((t: any) => t.status === statusFilter);
+      }
+      return serverResults;
+    }
+
+    // Otherwise, filter local tasks
+    let filtered = tasks;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((t) => t.title.toLowerCase().includes(q));
+    }
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((t) => t.status === statusFilter);
+    }
+    return filtered.map((t) => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      updatedAt: t.updatedAt,
+      favorite: 0,
+      source: "local" as const,
+    }));
+  })();
 
   const handleLogin = () => {
     window.location.href = getLoginUrl();
@@ -158,6 +215,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     await logout();
     navigate("/");
   };
+
+  const handleDeleteTask = (externalId: string) => {
+    archiveMutation.mutate({ externalId });
+    if (activeTaskId === externalId) {
+      setActiveTask(null);
+      navigate("/");
+    }
+  };
+
+  const statusFilters: { id: StatusFilter; label: string; count?: number }[] = [
+    { id: "all", label: "All", count: tasks.length },
+    { id: "running", label: "Running", count: tasks.filter(t => t.status === "running").length },
+    { id: "completed", label: "Done", count: tasks.filter(t => t.status === "completed").length },
+    { id: "error", label: "Error", count: tasks.filter(t => t.status === "error").length },
+  ];
 
   const sidebarContent = (
     <>
@@ -193,11 +265,42 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search tasks..."
+            placeholder="Search tasks & messages..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-9 md:h-8 pl-8 pr-3 text-sm bg-sidebar-accent rounded-md border-0 text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-sidebar-ring"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Status Filter Tabs */}
+      <div className="px-3 pb-2 shrink-0">
+        <div className="flex gap-0.5 bg-sidebar-accent/50 rounded-md p-0.5">
+          {statusFilters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setStatusFilter(f.id)}
+              className={cn(
+                "flex-1 text-[10px] py-1.5 rounded transition-colors font-medium",
+                statusFilter === f.id
+                  ? "bg-sidebar-accent text-sidebar-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-sidebar-foreground"
+              )}
+            >
+              {f.label}
+              {f.count !== undefined && f.count > 0 && statusFilter !== f.id && (
+                <span className="ml-0.5 opacity-60">{f.count}</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -222,40 +325,91 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Task List */}
       <div className="flex-1 overflow-y-auto px-2 py-1 overscroll-contain">
-        {filteredTasks.length === 0 ? (
+        {searchEnabled && serverSearch.isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-xs text-muted-foreground">Searching...</span>
+          </div>
+        ) : displayedTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <div className="text-3xl mb-3 opacity-40">📋</div>
-            <p className="text-xs">Create a new task to get started</p>
+            <div className="text-3xl mb-3 opacity-40">
+              {searchQuery ? "🔍" : statusFilter !== "all" ? "📋" : "📋"}
+            </div>
+            <p className="text-xs">
+              {searchQuery
+                ? "No matching tasks found"
+                : statusFilter !== "all"
+                ? `No ${statusFilter} tasks`
+                : "Create a new task to get started"}
+            </p>
           </div>
         ) : (
           <div className="space-y-0.5">
-            {filteredTasks.map((task) => (
-              <button
-                key={task.id}
-                onClick={() => {
-                  setActiveTask(task.id);
-                  navigate(`/task/${task.id}`);
-                  setMobileDrawerOpen(false);
-                }}
-                className={cn(
-                  "w-full text-left px-3 py-3 md:py-2.5 rounded-md transition-colors group active:scale-[0.98]",
-                  activeTaskId === task.id
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <TaskStatusIcon status={task.status} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate leading-tight">
-                      {task.title}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {formatTimeAgo(task.updatedAt)}
-                    </p>
+            {displayedTasks.map((task) => (
+              <div key={task.id} className="group relative">
+                <button
+                  onClick={() => {
+                    setActiveTask(task.id);
+                    navigate(`/task/${task.id}`);
+                    setMobileDrawerOpen(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-3 md:py-2.5 rounded-md transition-colors active:scale-[0.98]",
+                    activeTaskId === task.id
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <TaskStatusIcon status={task.status} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm font-medium truncate leading-tight flex-1">
+                          {task.title}
+                        </p>
+                        {task.favorite === 1 && (
+                          <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {formatTimeAgo(task.updatedAt)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                {/* Delete button on hover */}
+                {isAuthenticated && (
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {confirmDeleteId === task.id ? (
+                      <div className="flex gap-1 bg-popover border border-border rounded-md shadow-lg p-1">
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="text-[10px] px-2 py-1 bg-destructive text-destructive-foreground rounded hover:opacity-90"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-[10px] px-2 py-1 bg-muted text-foreground rounded hover:bg-accent"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDeleteId(task.id);
+                        }}
+                        className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete task"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}

@@ -1,14 +1,18 @@
 /**
- * TaskContext — Real Persistence
+ * TaskContext — Real Persistence with Workspace Artifact Wiring
  *
  * When unauthenticated: empty task list with CTA to sign in.
  * When authenticated: creates tasks via tRPC, persists to database,
  * receives real LLM responses via SSE, and bridge events via WebSocket.
+ *
+ * Bridge artifact pipeline:
+ * - task:step metadata.type → workspace.addArtifact (browser_screenshot, browser_url, code, terminal)
+ * - task:complete artifacts[] → workspace.addArtifact for each artifact
  */
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useBridge, type BridgeMessage } from "./BridgeContext";
+import { useBridge, type BridgeMessage, type BridgeTaskStep, type BridgeTaskComplete } from "./BridgeContext";
 
 // ── Types ──
 export type AgentAction =
@@ -57,6 +61,9 @@ const TaskContext = createContext<TaskContextValue | null>(null);
 
 let nextId = 100;
 
+// Valid artifact types that the workspace panel can display
+const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal"]);
+
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -67,6 +74,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const createTaskMutation = trpc.task.create.useMutation();
   const addMessageMutation = trpc.task.addMessage.useMutation();
   const updateStatusMutation = trpc.task.updateStatus.useMutation();
+  const addArtifactMutation = trpc.workspace.addArtifact.useMutation();
 
   // Fetch server tasks when authenticated
   const serverTasksQuery = trpc.task.list.useQuery(undefined, {
@@ -235,7 +243,31 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   // ── Wire bridge events into task state ──
   const { onTaskEvent, status: bridgeStatus } = useBridge();
 
-  // Helper to persist bridge-driven updates to server
+  // Helper: resolve serverId from taskId for artifact persistence
+  const resolveServerId = useCallback((taskId: string): number | null => {
+    const task = tasks.find((t) => t.id === taskId);
+    return task?.serverId ?? null;
+  }, [tasks]);
+
+  // Helper: persist a workspace artifact from bridge event metadata
+  const persistArtifact = useCallback(
+    (taskId: string, artifactType: string, data: { label?: string; content?: string; url?: string }) => {
+      if (!isAuthenticated) return;
+      if (!ARTIFACT_TYPES.has(artifactType)) return;
+      const serverId = resolveServerId(taskId);
+      if (!serverId) return;
+      addArtifactMutation.mutate({
+        taskId: serverId,
+        artifactType: artifactType as "browser_screenshot" | "browser_url" | "code" | "terminal",
+        label: data.label,
+        content: data.content,
+        url: data.url,
+      });
+    },
+    [isAuthenticated, resolveServerId, addArtifactMutation]
+  );
+
+  // Helper to persist bridge-driven status updates to server
   const persistBridgeStatus = useCallback(
     (taskId: string, status: Task["status"]) => {
       if (!isAuthenticated) return;
@@ -281,15 +313,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           break;
         }
         case "task:step": {
-          const e = event as {
-            type: "task:step";
-            taskId: string;
-            stepIndex: number;
-            totalSteps: number;
-            action: string;
-            status: "active" | "done" | "error";
-            content?: string;
-          };
+          const e = event as BridgeTaskStep;
           setTasks((prev) =>
             prev.map((t) => {
               if (t.id !== e.taskId) return t;
@@ -300,6 +324,45 @@ export function TaskProvider({ children }: { children: ReactNode }) {
                 completedSteps: e.stepIndex,
                 currentStep: e.action,
               };
+
+              // ── Persist workspace artifacts from step metadata ──
+              if (e.metadata) {
+                const meta = e.metadata;
+                const artifactType = meta.type as string | undefined;
+
+                if (artifactType === "browser_screenshot" && meta.url) {
+                  persistArtifact(e.taskId, "browser_screenshot", {
+                    url: meta.url as string,
+                    label: (meta.label as string) || e.action,
+                  });
+                  // Also update the task's workspaceUrl if a page URL is present
+                  if (meta.pageUrl) {
+                    updated.workspaceUrl = meta.pageUrl as string;
+                    persistArtifact(e.taskId, "browser_url", {
+                      url: meta.pageUrl as string,
+                      label: (meta.pageTitle as string) || "Browser",
+                    });
+                  }
+                } else if (artifactType === "browser_url" && meta.url) {
+                  updated.workspaceUrl = meta.url as string;
+                  persistArtifact(e.taskId, "browser_url", {
+                    url: meta.url as string,
+                    label: (meta.title as string) || "Browser",
+                  });
+                } else if (artifactType === "code" && (meta.content || meta.url)) {
+                  persistArtifact(e.taskId, "code", {
+                    content: meta.content as string | undefined,
+                    url: meta.url as string | undefined,
+                    label: (meta.filename as string) || (meta.label as string) || e.action,
+                  });
+                } else if (artifactType === "terminal" && (meta.content || meta.output)) {
+                  persistArtifact(e.taskId, "terminal", {
+                    content: (meta.output as string) || (meta.content as string),
+                    label: (meta.command as string) || e.action,
+                  });
+                }
+              }
+
               if (e.content) {
                 const stepStatus: "active" | "done" = e.status === "error" ? "done" : e.status;
                 const stepContent = e.status === "error" ? `⚠️ ${e.content}` : e.content;
@@ -328,14 +391,23 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           break;
         }
         case "task:complete": {
-          const e = event as {
-            type: "task:complete";
-            taskId: string;
-            result: string;
-          };
+          const e = event as BridgeTaskComplete;
           setTasks((prev) =>
             prev.map((t) => {
               if (t.id !== e.taskId) return t;
+
+              // ── Persist workspace artifacts from completion ──
+              if (e.artifacts && e.artifacts.length > 0) {
+                for (const artifact of e.artifacts) {
+                  if (ARTIFACT_TYPES.has(artifact.type)) {
+                    persistArtifact(e.taskId, artifact.type, {
+                      url: artifact.url,
+                      label: artifact.name,
+                    });
+                  }
+                }
+              }
+
               return {
                 ...t,
                 status: "completed" as const,
@@ -390,7 +462,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     });
 
     return unsubscribe;
-  }, [bridgeStatus, onTaskEvent, persistBridgeStatus, persistBridgeMessage]);
+  }, [bridgeStatus, onTaskEvent, persistBridgeStatus, persistBridgeMessage, persistArtifact]);
 
   return (
     <TaskContext.Provider

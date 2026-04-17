@@ -85,3 +85,47 @@
 - [x] Load saved bridge config from DB on mount instead of hardcoding localhost
 - [x] Fix getUserPreferences await bug (missing await before ?? fallback)
 - [x] Add preferences and usage stats test coverage (6 new tests)
+
+## Deep Wiring Pass: Real-World Functionality
+
+### Workspace Panel — Real Artifacts
+- [x] Add workspace_artifacts table to schema (taskId, type, content/url, timestamp)
+- [x] Store workspace artifacts from bridge task:step metadata in DB via TaskContext
+- [x] Wire workspace Browser tab to display real screenshots/URLs from artifacts
+- [x] Wire workspace Code tab to display real code artifacts
+- [x] Wire workspace Terminal tab to display real terminal output
+- [x] Remove static WORKSPACE_IMG and hardcoded code/terminal content
+
+### System Prompt Customization
+- [x] Add systemPrompt column to user_preferences for global default
+- [x] Add systemPrompt column to tasks table for per-task override
+- [x] Wire system prompt into /api/stream LLM call (per-task > global > default)
+- [x] Add system prompt editor in SettingsPage General tab
+- [x] Add per-task system prompt editor in TaskView header More menu
+
+### Task Management — Search, Filter, Delete
+- [x] Add task deletion (soft delete with archived flag) to DB and tRPC
+- [x] Add delete button to sidebar task items with confirmation
+- [x] Add status filter tabs to sidebar (All/Running/Done/Error)
+- [x] Extend sidebar search to include message content via tRPC server-side search
+- [x] Add status indicator icons to sidebar task list items
+
+### Voice Input — Real Transcription
+- [x] Add voice.transcribe tRPC procedure using existing voiceTranscription helper
+- [x] Wire voice button in TaskView to record audio via MediaRecorder API
+- [x] Upload recorded audio to S3, call voice.transcribe, insert text into input
+- [x] Wire voice button in Home page to create task and navigate to TaskView
+
+### Dead-End UI Buttons — Real Functionality
+- [x] Wire Share button (copy task URL to clipboard)
+- [x] Wire Bookmark button (toggle favorite flag on task via tRPC)
+- [x] Wire More button (dropdown: delete, system prompt editor)
+- [x] Wire ExternalLink button in workspace browser tab (open URL in new tab)
+- [x] Wire Refresh button in workspace browser tab (re-fetch latest artifact)
+
+### Adversarial Pass Fixes
+- [x] Add user-visible voiceError state (microphone denied, recording too large, transcription failed)
+- [x] Wire Home page Paperclip and Mic buttons (were dead-end, now create tasks)
+- [x] Add 12 workspace artifact tests (CRUD, auth, filtering, latest)
+- [x] Fix preferences test for new systemPrompt field
+- [x] Add global system prompt editor to SettingsPage General tab (was missing despite backend support)
