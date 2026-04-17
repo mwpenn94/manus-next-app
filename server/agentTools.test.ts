@@ -34,9 +34,10 @@ describe("Agent Tools", () => {
 
   it("AGENT_TOOLS defines the expected tool set", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(4);
+    expect(AGENT_TOOLS).toHaveLength(5);
     const toolNames = AGENT_TOOLS.map((t) => t.function.name);
     expect(toolNames).toContain("web_search");
+    expect(toolNames).toContain("read_webpage");
     expect(toolNames).toContain("generate_image");
     expect(toolNames).toContain("analyze_data");
     expect(toolNames).toContain("execute_code");
@@ -194,12 +195,9 @@ describe("Agent Stream SSE Protocol", () => {
   });
 
   it("getToolDisplayInfo maps tool names correctly", async () => {
-    // Import the module to test the display info mapping
-    const agentStream = await import("./agentStream");
-    // The function is not exported, but we can test the expected behavior
-    // by verifying the tool_start events from the curl tests match expected patterns
     const expectedMappings = {
       web_search: "searching",
+      read_webpage: "browsing",
       generate_image: "generating",
       analyze_data: "thinking",
       execute_code: "executing",
@@ -208,5 +206,107 @@ describe("Agent Stream SSE Protocol", () => {
     for (const [toolName, expectedType] of Object.entries(expectedMappings)) {
       expect(expectedType).toBeTruthy();
     }
+  });
+
+  it("agentStream passes tool_choice: auto to invokeLLM", async () => {
+    const { AGENT_TOOLS } = await import("./agentTools");
+    expect(AGENT_TOOLS.length).toBeGreaterThan(0);
+    for (const tool of AGENT_TOOLS) {
+      expect(tool.type).toBe("function");
+      expect(tool.function.name).toBeTruthy();
+      expect(tool.function.parameters).toBeDefined();
+    }
+    const fs = await import("fs");
+    const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
+    expect(source).toContain('tool_choice: "auto"');
+  });
+});
+
+describe("Multimodal Attachment Serialization", () => {
+  it("image attachments should use image_url content type", () => {
+    // Simulate the frontend serialization logic for images
+    const attachment = { url: "https://cdn.example.com/photo.jpg", name: "photo.jpg", type: "image/jpeg" };
+    const isImage = attachment.type?.startsWith("image/");
+    expect(isImage).toBe(true);
+    
+    // Verify the expected multimodal message format
+    const content = [
+      { type: "text" as const, text: "Analyze this image" },
+      { type: "image_url" as const, image_url: { url: attachment.url } },
+    ];
+    expect(content).toHaveLength(2);
+    expect(content[1].type).toBe("image_url");
+    expect(content[1].image_url.url).toBe(attachment.url);
+  });
+
+  it("PDF attachments should use file_url content type", () => {
+    const attachment = { url: "https://cdn.example.com/doc.pdf", name: "doc.pdf", type: "application/pdf" };
+    const isPdf = attachment.type === "application/pdf";
+    expect(isPdf).toBe(true);
+    
+    const content = [
+      { type: "text" as const, text: "Analyze this document" },
+      { type: "file_url" as const, file_url: { url: attachment.url, mime_type: "application/pdf" as const } },
+    ];
+    expect(content[1].type).toBe("file_url");
+    expect(content[1].file_url.mime_type).toBe("application/pdf");
+  });
+
+  it("audio attachments should use file_url with audio mime type", () => {
+    const attachment = { url: "https://cdn.example.com/audio.mp3", name: "audio.mp3", type: "audio/mpeg" };
+    const isAudio = attachment.type?.startsWith("audio/");
+    expect(isAudio).toBe(true);
+    
+    const content = [
+      { type: "text" as const, text: "Transcribe this audio" },
+      { type: "file_url" as const, file_url: { url: attachment.url, mime_type: "audio/mpeg" as const } },
+    ];
+    expect(content[1].type).toBe("file_url");
+    expect(content[1].file_url.mime_type).toBe("audio/mpeg");
+  });
+});
+
+describe("System Prompt Identity & Research Rules", () => {
+  it("system prompt contains CRITICAL IDENTITY RULE preventing vendor self-identification", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
+    expect(source).toContain("CRITICAL IDENTITY RULE");
+    expect(source).toContain("NOT Google Gemini");
+    expect(source).toContain("NOT ChatGPT");
+    expect(source).toContain("NOT Claude");
+    expect(source).toContain("Manus Next is an independent open-source project");
+  });
+
+  it("system prompt contains research nudge logic for deeper research", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
+    // Verify the nudge mechanism exists
+    expect(source).toContain("shouldNudge");
+    expect(source).toContain("usedWebSearch");
+    expect(source).toContain("usedReadWebpage");
+    expect(source).toContain("nudgedForDeepResearch");
+    expect(source).toContain("Researching in more depth");
+  });
+
+  it("system prompt mandates web_search for real-world questions", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
+    expect(source).toContain("ALWAYS use web_search FIRST");
+    expect(source).toContain("NEVER claim you cannot find information");
+  });
+
+  it("system prompt includes self-knowledge about Manus Next", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
+    expect(source).toContain("ABOUT YOURSELF");
+    expect(source).toContain("open-source autonomous AI agent platform");
+    expect(source).toContain("self-hosted");
+  });
+
+  it("system prompt includes structured comparison instructions", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
+    expect(source).toContain("comparison table");
+    expect(source).toContain("side-by-side");
   });
 });

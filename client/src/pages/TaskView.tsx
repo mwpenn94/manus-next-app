@@ -786,9 +786,8 @@ export default function TaskView() {
       const images: string[] = [];
 
       try {
-        const defaultSystemPrompt = "You are Manus Next, an advanced AI assistant. You help users with research, coding, data analysis, content creation, and more. Be helpful, concise, and proactive. When the user attaches files, acknowledge them and incorporate them into your response.";
+        // System prompt is handled server-side (agentStream.ts)
         const messages = [
-          { role: "system" as const, content: defaultSystemPrompt },
           { role: "user" as const, content: firstMsg.content },
         ];
 
@@ -963,6 +962,7 @@ export default function TaskView() {
 
     // Otherwise, use SSE streaming from the LLM
     const currentInput = input;
+    const currentFiles = [...files]; // Capture files before clearing
     setInput("");
     clearFiles();
     inputRef.current?.focus();
@@ -976,15 +976,42 @@ export default function TaskView() {
     const images: string[] = [];
 
     try {
-      const defaultSystemPrompt = "You are Manus Next, an advanced AI assistant. You help users with research, coding, data analysis, content creation, and more. Be helpful, concise, and proactive. When the user attaches files, acknowledge them and incorporate them into your response.";
+      // Build conversation history (system prompt is handled server-side)
       const conversationMessages = task.messages.slice(-10).map(m => ({
         role: m.role as "user" | "assistant" | "system",
         content: m.content,
       }));
+
+      // Build user message with multimodal content if files are attached
+      let userMessage: any;
+      if (currentFiles.length > 0) {
+        // Multimodal message: text + file references
+        const content: any[] = [{ type: "text", text: currentInput }];
+        for (const f of currentFiles) {
+          const ext = f.fileName.split(".").pop()?.toLowerCase() || "";
+          const imageExts = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
+          const audioExts = ["mp3", "wav", "ogg", "m4a", "webm"];
+          const pdfExts = ["pdf"];
+
+          if (imageExts.includes(ext)) {
+            content.push({ type: "image_url", image_url: { url: f.url, detail: "auto" } });
+          } else if (audioExts.includes(ext)) {
+            content.push({ type: "file_url", file_url: { url: f.url, mime_type: `audio/${ext === "mp3" ? "mpeg" : ext}` } });
+          } else if (pdfExts.includes(ext)) {
+            content.push({ type: "file_url", file_url: { url: f.url, mime_type: "application/pdf" } });
+          } else {
+            // For other file types, add as text reference with URL
+            content.push({ type: "text", text: `\n[Attached file: ${f.fileName}](${f.url})` });
+          }
+        }
+        userMessage = { role: "user" as const, content };
+      } else {
+        userMessage = { role: "user" as const, content: currentInput };
+      }
+
       const messages = [
-        { role: "system" as const, content: defaultSystemPrompt },
         ...conversationMessages,
-        { role: "user" as const, content: currentInput },
+        userMessage,
       ];
 
       const controller = new AbortController();
