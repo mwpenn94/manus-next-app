@@ -668,6 +668,106 @@ export default function TaskView() {
     inputRef.current?.focus();
   }, [task?.id]);
 
+  // Auto-stream for initial message in a newly created task
+  // When navigating from Home, createTask adds the first user message but never calls /api/stream.
+  // This effect detects that pattern and triggers the LLM stream automatically.
+  const autoStreamedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!task) return;
+    if (streaming) return; // Already streaming
+    if (autoStreamedRef.current.has(task.id)) return; // Already auto-streamed for this task
+    // Only trigger if: exactly 1 message, it's a user message, and no assistant response yet
+    if (task.messages.length !== 1) return;
+    const firstMsg = task.messages[0];
+    if (firstMsg.role !== "user") return;
+    // Mark as auto-streamed immediately to prevent re-triggering
+    autoStreamedRef.current.add(task.id);
+
+    // Trigger the SSE stream for the initial message
+    (async () => {
+      // If bridge is connected, dispatch to the Sovereign agent instead
+      if (bridgeStatus === "connected") {
+        bridgeSend("task.message", {
+          taskId: task.id,
+          content: firstMsg.content,
+          files: [],
+        });
+        return;
+      }
+
+      setStreaming(true);
+      setStreamContent("");
+      let accumulated = "";
+
+      try {
+        const defaultSystemPrompt = "You are Manus Next, an advanced AI assistant. You help users with research, coding, data analysis, content creation, and more. Be helpful, concise, and proactive. When the user attaches files, acknowledge them and incorporate them into your response.";
+        const messages = [
+          { role: "system" as const, content: defaultSystemPrompt },
+          { role: "user" as const, content: firstMsg.content },
+        ];
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        const response = await fetch("/api/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ messages, taskExternalId: task.id }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok || !response.body) {
+          throw new Error("Stream failed");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const text = decoder.decode(value, { stream: true });
+          const lines = text.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.delta) {
+                accumulated += data.delta;
+                setStreamContent(accumulated);
+              }
+              if (data.done) {
+                accumulated = data.content || accumulated;
+              }
+              if (data.error) {
+                accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
+                setStreamContent(accumulated);
+              }
+            } catch { /* skip malformed lines */ }
+          }
+        }
+
+        addMessage(task.id, { role: "assistant", content: accumulated });
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          if (accumulated.trim()) {
+            addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*" });
+          }
+        } else {
+          addMessage(task.id, {
+            role: "assistant",
+            content: `I encountered an error: ${err.message}. Please try again.`,
+          });
+        }
+      } finally {
+        abortControllerRef.current = null;
+        setStreaming(false);
+        setStreamContent("");
+      }
+    })();
+  }, [task?.id, task?.messages.length, streaming, bridgeStatus, bridgeSend, addMessage]);
+
   const isTyping = useMemo(() => {
     if (!task) return false;
     const lastMsg = task.messages[task.messages.length - 1];

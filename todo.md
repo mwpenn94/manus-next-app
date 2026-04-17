@@ -163,4 +163,5 @@
 
 ## Post-Fix Validation Gaps
 - [x] Verify /api/upload still works after express.json() middleware exclusion — confirmed via curl: binary upload returns S3 URL successfully
-- [ ] Verify full UI end-to-end chat flow in browser (create task → send message → receive streamed response)
+- [x] Verify full UI end-to-end chat flow in browser (create task → send message → receive streamed response) — user-confirmed working
+- [x] Fix: first message in a new task gets no LLM response — root cause: Home.createTask adds initial user message but never triggers /api/stream. Fixed with auto-stream useEffect in TaskView that detects new tasks with exactly 1 user message and automatically triggers SSE streaming. User-confirmed working.
