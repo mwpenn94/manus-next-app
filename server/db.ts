@@ -109,7 +109,7 @@ export async function getUserTasks(userId: number, opts?: { includeArchived?: bo
   if (opts?.statusFilter && opts.statusFilter !== "all") {
     conditions.push(eq(tasks.status, opts.statusFilter as any));
   }
-  return db.select().from(tasks).where(and(...conditions)).orderBy(desc(tasks.updatedAt));
+  return db.select().from(tasks).where(and(...conditions)).orderBy(desc(tasks.updatedAt)).limit(200);
 }
 
 export async function getTaskByExternalId(externalId: string) {
@@ -157,11 +157,11 @@ export async function searchTasks(userId: number, query: string) {
   // Search in task titles
   const titleMatches = await db.select().from(tasks).where(
     and(eq(tasks.userId, userId), eq(tasks.archived, 0), like(tasks.title, pattern))
-  ).orderBy(desc(tasks.updatedAt));
+  ).orderBy(desc(tasks.updatedAt)).limit(50);
   // Search in message content
   const allUserTasks = await db.select().from(tasks).where(
     and(eq(tasks.userId, userId), eq(tasks.archived, 0))
-  );
+  ).limit(200);
   const taskIds = allUserTasks.map(t => t.id);
   if (taskIds.length === 0) return titleMatches;
   const messageMatches: typeof allUserTasks = [];
@@ -187,7 +187,7 @@ export async function addTaskMessage(message: InsertTaskMessage) {
 export async function getTaskMessages(taskId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(taskMessages).where(eq(taskMessages.taskId, taskId));
+  return db.select().from(taskMessages).where(eq(taskMessages.taskId, taskId)).limit(500);
 }
 
 // ── Bridge Config Queries ──
@@ -223,7 +223,7 @@ export async function createTaskFile(file: InsertTaskFile) {
 export async function getTaskFiles(taskExternalId: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(taskFiles).where(eq(taskFiles.taskExternalId, taskExternalId)).orderBy(desc(taskFiles.createdAt));
+  return db.select().from(taskFiles).where(eq(taskFiles.taskExternalId, taskExternalId)).orderBy(desc(taskFiles.createdAt)).limit(100);
 }
 
 // ── User Preferences Queries ──
@@ -253,7 +253,7 @@ export async function upsertUserPreferences(prefs: InsertUserPreference) {
 export async function getUserTaskStats(userId: number) {
   const db = await getDb();
   if (!db) return { totalTasks: 0, completedTasks: 0, runningTasks: 0, errorTasks: 0 };
-  const allTasks = await db.select().from(tasks).where(and(eq(tasks.userId, userId), eq(tasks.archived, 0)));
+  const allTasks = await db.select().from(tasks).where(and(eq(tasks.userId, userId), eq(tasks.archived, 0))).limit(1000);
   return {
     totalTasks: allTasks.length,
     completedTasks: allTasks.filter(t => t.status === "completed").length,
@@ -277,7 +277,7 @@ export async function getWorkspaceArtifacts(taskId: number, type?: string) {
   if (type) {
     conditions.push(eq(workspaceArtifacts.artifactType, type as any));
   }
-  return db.select().from(workspaceArtifacts).where(and(...conditions)).orderBy(desc(workspaceArtifacts.createdAt));
+  return db.select().from(workspaceArtifacts).where(and(...conditions)).orderBy(desc(workspaceArtifacts.createdAt)).limit(100);
 }
 
 export async function getLatestArtifactByType(taskId: number, type: string) {
@@ -339,7 +339,7 @@ export async function getTaskShares(taskExternalId: string, userId: number) {
   if (!db) return [];
   return db.select().from(taskShares).where(
     and(eq(taskShares.taskExternalId, taskExternalId), eq(taskShares.userId, userId))
-  ).orderBy(desc(taskShares.createdAt));
+  ).orderBy(desc(taskShares.createdAt)).limit(20);
 }
 
 export async function incrementShareViewCount(token: string) {
@@ -365,10 +365,10 @@ export async function getUserNotifications(userId: number, limit = 50) {
 export async function getUnreadNotificationCount(userId: number) {
   const db = await getDb();
   if (!db) return 0;
-  const result = await db.select().from(notifications).where(
+  const result = await db.select({ count: sql<number>`count(*)` }).from(notifications).where(
     and(eq(notifications.userId, userId), eq(notifications.read, 0))
   );
-  return result.length;
+  return Number(result[0]?.count ?? 0);
 }
 
 export async function createNotification(notification: InsertNotification) {

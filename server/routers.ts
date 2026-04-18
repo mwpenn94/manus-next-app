@@ -75,7 +75,7 @@ export const appRouter = router({
       }),
 
     get: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(50) }))
       .query(async ({ input }) => {
         return getTaskByExternalId(input.externalId);
       }),
@@ -93,7 +93,7 @@ export const appRouter = router({
 
     updateStatus: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
+        externalId: z.string().max(50),
         status: z.enum(["idle", "running", "completed", "error"]),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -125,22 +125,22 @@ export const appRouter = router({
       }),
 
     archive: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(50) }))
       .mutation(async ({ ctx, input }) => {
         await archiveTask(input.externalId, ctx.user.id);
         return { success: true };
       }),
 
     toggleFavorite: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(50) }))
       .mutation(async ({ ctx, input }) => {
         return toggleTaskFavorite(input.externalId, ctx.user.id);
       }),
 
     updateSystemPrompt: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
-        systemPrompt: z.string().nullable(),
+        externalId: z.string().max(50),
+        systemPrompt: z.string().max(10000).nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         await updateTaskSystemPrompt(input.externalId, ctx.user.id, input.systemPrompt);
@@ -163,7 +163,7 @@ export const appRouter = router({
       .input(z.object({
         taskId: z.number(),
         role: z.enum(["user", "assistant", "system"]),
-        content: z.string(),
+        content: z.string().max(100000),
         actions: z.any().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -183,9 +183,9 @@ export const appRouter = router({
     /** Record a file upload in the database (actual S3 upload happens via /api/upload) */
     record: protectedProcedure
       .input(z.object({
-        taskExternalId: z.string(),
-        fileName: z.string(),
-        fileKey: z.string(),
+        taskExternalId: z.string().max(50),
+        fileName: z.string().max(500),
+        fileKey: z.string().max(500),
         url: z.string().url(),
         mimeType: z.string().optional(),
         size: z.number().optional(),
@@ -205,7 +205,7 @@ export const appRouter = router({
 
     /** List files for a task */
     list: protectedProcedure
-      .input(z.object({ taskExternalId: z.string() }))
+      .input(z.object({ taskExternalId: z.string().max(50) }))
       .query(async ({ input }) => {
         return getTaskFiles(input.taskExternalId);
       }),
@@ -358,9 +358,9 @@ export const appRouter = router({
     add: protectedProcedure
       .input(z.object({
         key: z.string().min(1).max(500),
-        value: z.string().min(1),
+        value: z.string().min(1).max(5000),
         source: z.enum(["auto", "user"]).optional(),
-        taskExternalId: z.string().optional(),
+        taskExternalId: z.string().max(50).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await addMemoryEntry({
@@ -391,8 +391,8 @@ export const appRouter = router({
   share: router({
     create: protectedProcedure
       .input(z.object({
-        taskExternalId: z.string(),
-        password: z.string().optional(),
+        taskExternalId: z.string().max(50),
+        password: z.string().max(200).optional(),
         expiresInHours: z.number().min(1).max(720).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -426,7 +426,7 @@ export const appRouter = router({
       }),
 
     list: protectedProcedure
-      .input(z.object({ taskExternalId: z.string() }))
+      .input(z.object({ taskExternalId: z.string().max(50) }))
       .query(async ({ ctx, input }) => {
         return getTaskShares(input.taskExternalId, ctx.user.id);
       }),
@@ -441,8 +441,8 @@ export const appRouter = router({
     /** Public: view a shared task (no auth required) */
     view: publicProcedure
       .input(z.object({
-        shareToken: z.string(),
-        password: z.string().optional(),
+        shareToken: z.string().max(50),
+        password: z.string().max(200).optional(),
       }))
       .query(async ({ input }) => {
         const share = await getTaskShareByToken(input.shareToken);
@@ -494,10 +494,10 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(500),
-        prompt: z.string().min(1),
+        prompt: z.string().min(1).max(10000),
         scheduleType: z.enum(["cron", "interval"]),
-        cronExpression: z.string().optional(),
-        intervalSeconds: z.number().min(60).optional(),
+        cronExpression: z.string().max(100).optional(),
+        intervalSeconds: z.number().min(60).max(31536000).optional(),
         repeat: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -526,9 +526,9 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).max(500).optional(),
-        prompt: z.string().min(1).optional(),
-        cronExpression: z.string().optional(),
-        intervalSeconds: z.number().min(60).optional(),
+        prompt: z.string().min(1).max(10000).optional(),
+        cronExpression: z.string().max(100).optional(),
+        intervalSeconds: z.number().min(60).max(31536000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...updates } = input;
@@ -561,8 +561,8 @@ export const appRouter = router({
     addEvent: protectedProcedure
       .input(z.object({
         taskId: z.number(),
-        eventType: z.string(),
-        payload: z.string(),
+        eventType: z.string().max(100),
+        payload: z.string().max(100000),
         offsetMs: z.number(),
       }))
       .mutation(async ({ input }) => {

@@ -1,13 +1,13 @@
 # Manus Next — Architecture Documentation
 
-**Version:** 2.0 (Parity v8.0)
+**Version:** 3.0 (Phase 3 Complete)
 **Last Updated:** April 18, 2026
 
 ---
 
 ## Overview
 
-Manus Next is an open-source autonomous AI agent platform that provides a web-based interface for conversational and agentic AI interactions. It is built on a React 19 + Express + tRPC stack with server-sent events (SSE) for real-time streaming.
+Manus Next is an open-source autonomous AI agent platform that provides a web-based interface for conversational and agentic AI interactions. It is built on a React 19 + Express + tRPC stack with server-sent events (SSE) for real-time streaming, cross-session memory, task scheduling, session replay, and document generation.
 
 ---
 
@@ -43,28 +43,32 @@ manus-next-app/
 │   │   ├── contexts/           # React contexts (Task, Bridge, Theme)
 │   │   ├── pages/              # Route-level components
 │   │   │   ├── Home.tsx        # Landing page with task input
-│   │   │   ├── TaskView.tsx    # Task execution and chat interface
+│   │   │   ├── TaskView.tsx    # Task execution, chat, regenerate
 │   │   │   ├── MemoryPage.tsx  # Cross-session memory management
+│   │   │   ├── SchedulePage.tsx # Task scheduling (cron/interval)
+│   │   │   ├── ReplayPage.tsx  # Session replay viewer
 │   │   │   ├── SettingsPage.tsx # User preferences and capabilities
 │   │   │   └── SharedTaskView.tsx # Public shared task viewer
 │   │   ├── App.tsx             # Route definitions
 │   │   └── main.tsx            # tRPC + React Query providers
-│   └── index.html              # Entry HTML with SEO meta tags
+│   └── index.html              # Entry HTML with SEO meta tags + JSON-LD
 ├── server/                     # Backend application
 │   ├── _core/                  # Framework plumbing (do not edit)
 │   │   ├── index.ts            # Express server + /api/stream endpoint
 │   │   ├── llm.ts              # LLM invocation helper
 │   │   ├── imageGeneration.ts  # Image generation helper
 │   │   ├── voiceTranscription.ts # Whisper STT helper
+│   │   ├── vite.ts             # Vite dev server + dynamic meta injection
 │   │   └── ...                 # OAuth, context, cookies, etc.
 │   ├── agentStream.ts          # SSE agent loop with tool calling
-│   ├── agentTools.ts           # Tool definitions and executors
+│   ├── agentTools.ts           # Tool definitions and executors (7 tools)
+│   ├── memoryExtractor.ts      # LLM-powered memory auto-extraction
 │   ├── db.ts                   # Database query helpers
 │   ├── routers.ts              # tRPC procedure definitions
 │   ├── storage.ts              # S3 file storage helpers
-│   └── *.test.ts               # Vitest test files
+│   └── *.test.ts               # Vitest test files (10 files)
 ├── drizzle/                    # Database schema and migrations
-│   └── schema.ts               # Table definitions
+│   └── schema.ts               # Table definitions (12 tables)
 ├── shared/                     # Shared types and constants
 └── docs/                       # Documentation
 ```
@@ -86,6 +90,7 @@ User Input → POST /api/stream
       → If text response: stream via SSE → break
   → Persist messages to DB
   → Create notification on completion/error
+  → Fire-and-forget: extractMemories() for auto-learning
 ```
 
 ### Tool Execution Flow
@@ -95,12 +100,34 @@ LLM requests tool_call → agentStream.ts dispatches
   → agentTools.ts executeTool(name, args)
     → web_search: DDG API → Wikipedia → page fetch → LLM synthesis
     → read_webpage: HTTP fetch → HTML parse → text extraction
+    → browse_web: Enhanced URL fetch → metadata + links + images + structured data
     → execute_code: Sandboxed JS eval with timeout
     → analyze_data: LLM-powered structured analysis
     → generate_image: Built-in image generation API
     → generate_document: LLM-powered document creation
   → Result stored as workspace artifact
   → Result appended to conversation context
+```
+
+### Memory Auto-Extraction Flow
+
+```
+Task completes → /api/stream handler fires extractMemories()
+  → Load last 20 messages from conversation
+  → Send to LLM with structured JSON schema extraction prompt
+  → LLM returns array of {key, value} facts
+  → Each fact stored in memory_entries with source="auto"
+  → Available for injection into future task system prompts
+```
+
+### Regenerate Flow
+
+```
+User clicks Regenerate → TaskView.handleRegenerate()
+  → removeLastMessage() from TaskContext (removes last assistant msg)
+  → Re-send full conversation history to POST /api/stream
+  → New SSE stream replaces the removed message
+  → UI updates in real-time
 ```
 
 ---
@@ -117,13 +144,15 @@ LLM requests tool_call → agentStream.ts dispatches
 | `task_files` | Uploaded files | taskId, fileName, fileUrl, mimeType |
 | `workspace_artifacts` | Tool outputs | taskId, artifactType, content, url |
 
-### Parity v8.0 Tables
+### Feature Tables
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
 | `memory_entries` | Cross-session memory | userId, key, value, source, taskExternalId |
 | `task_shares` | Shared task links | taskExternalId, shareToken, passwordHash, expiresAt |
 | `notifications` | User notifications | userId, type, title, content, readAt |
+| `scheduled_tasks` | Recurring/one-time tasks | userId, name, prompt, cronExpression, interval, enabled |
+| `task_events` | Session replay events | taskExternalId, eventType, eventData, timestamp |
 
 ### Settings Tables
 
@@ -159,22 +188,32 @@ LLM requests tool_call → agentStream.ts dispatches
 | notification.markAllRead | mutation | protected | Mark all read |
 | preferences.get | query | protected | Get user preferences |
 | preferences.save | mutation | protected | Save user preferences |
+| schedule.list | query | protected | List scheduled tasks |
+| schedule.create | mutation | protected | Create scheduled task |
+| schedule.toggle | mutation | protected | Enable/disable scheduled task |
+| schedule.delete | mutation | protected | Delete scheduled task |
+| replay.events | query | protected | Get task events for replay |
+| replay.record | mutation | protected | Record a task event |
+| usage.stats | query | protected | Get usage statistics |
+| bridge.getConfig | query | protected | Get bridge configuration |
+| bridge.saveConfig | mutation | protected | Save bridge configuration |
 
 ### Direct Endpoints
 
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| /api/stream | POST | optional | SSE agent streaming endpoint |
+| /api/stream | POST | optional | SSE agent streaming endpoint (accepts mode param) |
 | /api/oauth/callback | GET | public | OAuth callback handler |
 
 ---
 
-## Agent Tools
+## Agent Tools (7 total)
 
 | Tool | Description | Output Type |
 |------|-------------|-------------|
 | `web_search` | Multi-source web search (DDG + Wikipedia + page fetch + LLM synthesis) | browser_url |
 | `read_webpage` | Fetch and parse webpage content | browser_url |
+| `browse_web` | Enhanced URL fetch with metadata, links, images, structured data extraction | browser_url |
 | `execute_code` | Sandboxed JavaScript execution with 5s timeout | code |
 | `analyze_data` | LLM-powered structured data analysis | N/A |
 | `generate_image` | AI image generation via built-in API | generated_image |
@@ -197,21 +236,16 @@ LLM requests tool_call → agentStream.ts dispatches
 | preferences.test.ts | 6 | User preferences CRUD |
 | parity.test.ts | 30 | Memory, share, notification, document gen |
 | stream.test.ts | 8 | Stream endpoint validation |
+| phase3.test.ts | 27 | Browse_web, memory extractor, regenerate, scheduling, replay |
 
-**Total: 128 tests across 9 files**
+**Total: 155 tests across 10 files**
 
-### Running Tests
-
-```bash
-pnpm test          # Run all tests
-npx vitest run     # Same as above
-npx vitest --watch # Watch mode
-```
-
-### E2E Validation
+### Validation Suites
 
 ```bash
-node validate-parity.mjs  # 18 checks against live server
+pnpm test                    # Run all 155 unit tests
+node validate-parity.mjs     # 18 e2e checks against live server
+node validate-personas.mjs   # 35 virtual user persona checks (5 personas)
 ```
 
 ---
@@ -223,8 +257,9 @@ node validate-parity.mjs  # 18 checks against live server
 3. **Code execution**: Sandboxed with `vm.createContext` and 5-second timeout
 4. **SQL injection**: All queries use Drizzle ORM parameterized queries
 5. **XSS**: React's default escaping; no `dangerouslySetInnerHTML` in app code
-6. **CORS**: Handled by Express middleware
-7. **Rate limiting**: Not implemented (recommended for production)
+6. **Input validation**: All tRPC inputs use Zod schemas with `.max()` constraints
+7. **CORS**: Handled by Express middleware
+8. **Rate limiting**: Not implemented (recommended for production)
 
 ---
 
@@ -242,9 +277,39 @@ All environment variables are managed through the Manus platform. See `server/_c
 
 ### Speed/Quality Mode
 
-The agent supports two modes that adjust LLM behavior:
+The agent supports three modes that adjust LLM behavior:
 
 | Mode | Temperature | Max Tokens | Behavior |
 |------|------------|------------|----------|
 | Speed | 0.3 | 1024 | Fast, concise responses |
+| Balanced | 0.5 | 2048 | Default balanced mode |
 | Quality | 0.7 | 4096 | Thorough, detailed responses |
+
+---
+
+## Capability Status
+
+| Capability | Status | Implementation |
+|-----------|--------|---------------|
+| Conversational AI | Live | agentStream.ts + /api/stream |
+| Web Search (DDG + Wikipedia) | Live | agentTools.ts web_search |
+| Webpage Reading | Live | agentTools.ts read_webpage |
+| Enhanced Browsing | Live | agentTools.ts browse_web |
+| Code Execution (JS sandbox) | Live | agentTools.ts execute_code |
+| Data Analysis | Live | agentTools.ts analyze_data |
+| Image Generation | Live | agentTools.ts generate_image |
+| Document Generation | Live | agentTools.ts generate_document |
+| Cross-Session Memory | Live | memoryExtractor.ts + memory router |
+| Memory Auto-Extraction | Live | memoryExtractor.ts (post-task) |
+| Task Sharing | Live | share router + ShareDialog |
+| Notifications | Live | notification router + NotificationCenter |
+| Speed/Quality Mode | Live | ModeToggle + agentStream mode params |
+| Conversation Regenerate | Live | TaskView handleRegenerate |
+| Task Scheduling | Live | schedule router + SchedulePage |
+| Session Replay | Live | replay router + ReplayPage |
+| System Prompt Customization | Live | SettingsPage + preferences router |
+| Bridge/Desktop Agent | Partial | Config UI exists, bridge protocol planned |
+| Slide Decks | Planned | — |
+| Client Inference | Planned | — |
+| Desktop Agent | Planned | — |
+| Sync/Collaboration | Planned | — |
