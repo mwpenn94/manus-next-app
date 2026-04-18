@@ -108,8 +108,27 @@ Example comparison format:
 
 You are an AGENT, not a chatbot. Act like one.`;
 
+/**
+ * Agent execution mode.
+ * - `speed`: Lower temperature (0.3), shorter max_tokens (1024), fewer tool turns, concise responses.
+ * - `quality`: Higher temperature (0.7), longer max_tokens (4096), thorough research, detailed responses.
+ */
 export type AgentMode = "speed" | "quality";
 
+/**
+ * Configuration options for the agentic streaming loop.
+ *
+ * @example
+ * ```ts
+ * await runAgentStream({
+ *   messages: [{ role: "user", content: "Research quantum computing" }],
+ *   safeWrite: (data) => res.write(data),
+ *   safeEnd: () => res.end(),
+ *   mode: "quality",
+ *   memoryContext: "- User is interested in physics",
+ * });
+ * ```
+ */
 export interface AgentStreamOptions {
   messages: Message[];
   taskExternalId?: string;
@@ -134,7 +153,25 @@ function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknow
 }
 
 /**
- * Run the agentic streaming loop
+ * Run the agentic streaming loop.
+ *
+ * Executes a multi-turn LLM conversation with tool calling over SSE.
+ * Each turn: LLM generates a response or tool call → tool is executed →
+ * result fed back → repeat until final text response or MAX_TOOL_TURNS reached.
+ *
+ * SSE events emitted:
+ * - `{ delta: string }` — Incremental text content
+ * - `{ tool_start: { name, args } }` — Tool execution beginning
+ * - `{ tool_result: { name, result, success } }` — Tool execution completed
+ * - `{ image: string }` — Generated image URL for inline display
+ * - `{ document: { title, content, format } }` — Generated document artifact
+ * - `{ step_progress: { current, total } }` — Turn progress indicator
+ * - `{ status: string }` — Task status change
+ * - `{ done: true, content }` — Stream complete with final content
+ * - `{ error: string }` — Error occurred during processing
+ *
+ * @param options - Configuration for the stream (messages, mode, memory, callbacks)
+ * @returns Promise that resolves when the stream is complete
  */
 export async function runAgentStream(options: AgentStreamOptions): Promise<void> {
   const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext } = options;

@@ -1,16 +1,19 @@
 /**
  * Agent Tools — Server-side tool definitions and executors
  *
- * These tools are provided to the LLM via function calling. When the LLM
- * decides to use a tool, the server executes it and feeds the result back
- * into the conversation for the next LLM turn.
+ * These tools are provided to the LLM via function calling (OpenAI format).
+ * When the LLM decides to use a tool, the server executes it and feeds
+ * the result back into the conversation for the next LLM turn.
  *
- * Tools:
- * - web_search: Multi-source web search (DDG API + Wikipedia + page fetch)
- * - read_webpage: Fetch and read a specific URL's content
- * - generate_image: Create images from text descriptions
- * - analyze_data: Analyze data and produce insights
- * - execute_code: Execute JavaScript code and return results
+ * Tool inventory:
+ * - `web_search` — Multi-source web search (DDG API + Wikipedia + page fetch + LLM synthesis)
+ * - `read_webpage` — Fetch and parse a specific URL's text content
+ * - `generate_image` — Create images from text descriptions via built-in image generation API
+ * - `analyze_data` — LLM-powered structured data analysis
+ * - `execute_code` — Sandboxed JavaScript execution with 5-second timeout
+ * - `generate_document` — LLM-powered document creation (markdown, report, analysis, plan formats)
+ *
+ * @module agentTools
  */
 import type { Tool } from "./_core/llm";
 
@@ -816,6 +819,25 @@ async function executeGenerateDocument(args: {
 
 // ── Tool Dispatcher ──
 
+/**
+ * Execute a named tool with the given JSON arguments.
+ *
+ * This is the central dispatcher called by the agentic loop when the LLM
+ * emits a `tool_calls` response. It parses the arguments, routes to the
+ * correct executor, and returns a standardized `ToolResult`.
+ *
+ * @param name - The tool name (must match one of AGENT_TOOLS[].function.name)
+ * @param argsJson - JSON string of tool arguments from the LLM
+ * @returns ToolResult with success status, result text, and optional artifact metadata
+ *
+ * @example
+ * ```ts
+ * const result = await executeTool("web_search", JSON.stringify({ query: "AI news" }));
+ * // result.success === true
+ * // result.result === "Research synthesis..."
+ * // result.artifactType === "browser_url"
+ * ```
+ */
 export async function executeTool(
   name: string,
   argsJson: string

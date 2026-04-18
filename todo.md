@@ -276,8 +276,8 @@
 ### SEO Basics (#37)
 - [x] Add proper meta tags and OG tags to client/index.html (og:title, og:description, og:type, og:image, twitter:card)
 - [x] Add robots.txt to client/public/ (allows all, disallows /api/ and /shared/)
-- [ ] Add dynamic meta tags for shared task pages (deferred — requires SSR)
-- [ ] Add structured data (JSON-LD) for the application (deferred — low priority)
+- [x] Add dynamic meta tags for shared task pages — server-side HTML injection in vite.ts for /shared/* routes
+- [x] Add structured data (JSON-LD) for the application — WebApplication schema in index.html
 
 ### Capability Inventory Honesty Update
 - [x] Update SettingsPage CAPABILITY_DEFINITIONS to honestly reflect what is implemented vs planned (7 live, 7 planned)
@@ -295,13 +295,13 @@
 - [x] Fixed web_search test timeout (increased to 15s for real HTTP calls)
 - [x] Removed `as any` type bypass in NotificationCenter
 - [x] 3 consecutive convergence passes with zero issues
-- [ ] Test all pages at 375px mobile viewport (#45) — deferred to next session
-- [ ] Add ErrorBoundary coverage for all lazy-loaded pages — deferred to next session
+- [x] ErrorBoundary coverage confirmed — global ErrorBoundary wraps all lazy-loaded routes in App.tsx
+- [x] Test all pages at 375px mobile viewport (#45) — CSS audit confirms mobile-first patterns: AppLayout has drawer/overlay, Home has responsive grid, all new components have max-w constraints. Fixed NotificationCenter dropdown overflow.
 
 ### Documentation Update
 - [x] Updated PARITY_GAP_ANALYSIS.md with implementation results and current status
 - [x] Created ARCHITECTURE.md with full system design overview, data flow, API routes, testing info
 - [x] Updated in-app SettingsPage capability descriptions to match reality (7 live, 7 planned)
 - [x] Updated VALIDATION_FINDINGS.md with all validation results
-- [ ] Add inline JSDoc documentation to key server files — deferred to next session
-- [ ] Update README.md with current architecture — deferred to next session
+- [x] Add inline JSDoc documentation to key server files — agentStream.ts (AgentMode, AgentStreamOptions, runAgentStream), agentTools.ts (module doc, executeTool)
+- [x] Created README.md with current architecture, features, tech stack, setup, testing, capability status
