@@ -20,6 +20,8 @@ import { useBridge } from "@/contexts/BridgeContext";
 import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import NotificationCenter from "@/components/NotificationCenter";
+import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
   Search,
   Plus,
@@ -126,6 +128,13 @@ type StatusFilter = "all" | "running" | "completed" | "error";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { showHelp, setShowHelp } = useKeyboardShortcuts({
+    onNewTask: () => {
+      setActiveTask(null);
+      navigate("/");
+    },
+    onToggleSidebar: () => setSidebarOpen((prev) => !prev),
+  });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -595,6 +604,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
+
+      {/* Keyboard Shortcuts Help Dialog */}
+      <KeyboardShortcutsDialog open={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }

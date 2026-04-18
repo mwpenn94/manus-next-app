@@ -1,13 +1,13 @@
 # Manus Next — Architecture Documentation
 
-**Version:** 3.0 (Phase 3 Complete)
+**Version:** 4.0 (Phase 4 Complete — v8.2 Parity)
 **Last Updated:** April 18, 2026
 
 ---
 
 ## Overview
 
-Manus Next is an open-source autonomous AI agent platform that provides a web-based interface for conversational and agentic AI interactions. It is built on a React 19 + Express + tRPC stack with server-sent events (SSE) for real-time streaming, cross-session memory, task scheduling, session replay, and document generation.
+Manus Next is an open-source autonomous AI agent platform that provides a web-based interface for conversational and agentic AI interactions. It is built on a React 19 + Express + tRPC stack with server-sent events (SSE) for real-time streaming, cross-session memory, task scheduling with server-side polling, parallel wide research, session replay, document generation, and PWA installability.
 
 ---
 
@@ -24,6 +24,8 @@ Manus Next is an open-source autonomous AI agent platform that provides a web-ba
 | LLM | Built-in Forge API | AI model inference |
 | Storage | S3 | File and media storage |
 | Streaming | Server-Sent Events (SSE) | Real-time agent responses |
+| Scheduling | cron-parser + polling loop | Server-side task automation |
+| PWA | Web App Manifest | Installable web application |
 
 ---
 
@@ -32,41 +34,48 @@ Manus Next is an open-source autonomous AI agent platform that provides a web-ba
 ```
 manus-next-app/
 ├── client/                     # Frontend application
+│   ├── public/                 # Static assets (manifest.json, favicon, robots.txt)
 │   ├── src/
 │   │   ├── _core/hooks/        # Auth hooks (useAuth)
 │   │   ├── components/         # Reusable UI components
 │   │   │   ├── ui/             # shadcn/ui primitives
-│   │   │   ├── AppLayout.tsx   # Main layout with sidebar
+│   │   │   ├── AppLayout.tsx   # Main layout with sidebar + keyboard shortcuts
+│   │   │   ├── KeyboardShortcutsDialog.tsx  # Cmd+/ help overlay
 │   │   │   ├── ModeToggle.tsx  # Speed/Quality mode selector
+│   │   │   ├── MobileBottomNav.tsx  # Mobile navigation bar
 │   │   │   ├── NotificationCenter.tsx  # Notification bell + dropdown
 │   │   │   └── ShareDialog.tsx # Task sharing dialog
 │   │   ├── contexts/           # React contexts (Task, Bridge, Theme)
+│   │   ├── hooks/              # Custom hooks
+│   │   │   └── useKeyboardShortcuts.ts  # Global keyboard shortcut handler
 │   │   ├── pages/              # Route-level components
 │   │   │   ├── Home.tsx        # Landing page with task input
-│   │   │   ├── TaskView.tsx    # Task execution, chat, regenerate
+│   │   │   ├── TaskView.tsx    # Task execution, chat, cost visibility
 │   │   │   ├── MemoryPage.tsx  # Cross-session memory management
 │   │   │   ├── SchedulePage.tsx # Task scheduling (cron/interval)
 │   │   │   ├── ReplayPage.tsx  # Session replay viewer
+│   │   │   ├── BillingPage.tsx # Usage and billing
 │   │   │   ├── SettingsPage.tsx # User preferences and capabilities
 │   │   │   └── SharedTaskView.tsx # Public shared task viewer
 │   │   ├── App.tsx             # Route definitions
 │   │   └── main.tsx            # tRPC + React Query providers
-│   └── index.html              # Entry HTML with SEO meta tags + JSON-LD
+│   └── index.html              # Entry HTML with SEO meta, PWA manifest, JSON-LD
 ├── server/                     # Backend application
 │   ├── _core/                  # Framework plumbing (do not edit)
-│   │   ├── index.ts            # Express server + /api/stream endpoint
+│   │   ├── index.ts            # Express server + /api/stream + scheduler startup
 │   │   ├── llm.ts              # LLM invocation helper
 │   │   ├── imageGeneration.ts  # Image generation helper
 │   │   ├── voiceTranscription.ts # Whisper STT helper
 │   │   ├── vite.ts             # Vite dev server + dynamic meta injection
 │   │   └── ...                 # OAuth, context, cookies, etc.
 │   ├── agentStream.ts          # SSE agent loop with tool calling
-│   ├── agentTools.ts           # Tool definitions and executors (7 tools)
+│   ├── agentTools.ts           # Tool definitions and executors (8 tools)
+│   ├── scheduler.ts            # Server-side task scheduler (polling loop)
 │   ├── memoryExtractor.ts      # LLM-powered memory auto-extraction
 │   ├── db.ts                   # Database query helpers
 │   ├── routers.ts              # tRPC procedure definitions
 │   ├── storage.ts              # S3 file storage helpers
-│   └── *.test.ts               # Vitest test files (10 files)
+│   └── *.test.ts               # Vitest test files (11 files)
 ├── drizzle/                    # Database schema and migrations
 │   └── schema.ts               # Table definitions (12 tables)
 ├── shared/                     # Shared types and constants
@@ -105,8 +114,26 @@ LLM requests tool_call → agentStream.ts dispatches
     → analyze_data: LLM-powered structured analysis
     → generate_image: Built-in image generation API
     → generate_document: LLM-powered document creation
+    → wide_research: Parallel multi-query search → LLM synthesis
   → Result stored as workspace artifact
   → Result appended to conversation context
+```
+
+### Scheduler Flow
+
+```
+Server startup → startScheduler()
+  → setInterval(pollDueTasks, 60_000)
+  → Every 60s: query scheduled_tasks WHERE enabled AND nextRunAt <= NOW
+  → For each due task:
+      → Create task record in tasks table
+      → Add prompt as first user message
+      → Execute agent stream (fire-and-forget)
+      → Update lastRunAt, nextRunAt, runCount, lastStatus
+      → Create notification for user
+  → Cron tasks: parse expression → calculate next occurrence
+  → Interval tasks: add intervalSeconds to current time
+  → Non-repeating tasks: set nextRunAt to null after execution
 ```
 
 ### Memory Auto-Extraction Flow
@@ -120,14 +147,16 @@ Task completes → /api/stream handler fires extractMemories()
   → Available for injection into future task system prompts
 ```
 
-### Regenerate Flow
+### Wide Research Flow
 
 ```
-User clicks Regenerate → TaskView.handleRegenerate()
-  → removeLastMessage() from TaskContext (removes last assistant msg)
-  → Re-send full conversation history to POST /api/stream
-  → New SSE stream replaces the removed message
-  → UI updates in real-time
+Agent calls wide_research(queries, synthesis_prompt)
+  → Cap queries at 5 for resource management
+  → Execute all queries in parallel via Promise.allSettled
+  → Each query runs through executeWebSearch pipeline
+  → Collect results (successful + failed)
+  → Send combined results to LLM with synthesis prompt
+  → Return unified research synthesis + raw data
 ```
 
 ---
@@ -173,6 +202,7 @@ User clicks Regenerate → TaskView.handleRegenerate()
 | auth.logout | mutation | public | Clear session |
 | task.create | mutation | protected | Create new task |
 | task.list | query | protected | List user tasks |
+| task.search | query | protected | Search tasks by query |
 | task.updateStatus | mutation | protected | Update task status + auto-notify |
 | memory.list | query | protected | List memory entries |
 | memory.add | mutation | protected | Add memory entry |
@@ -207,7 +237,7 @@ User clicks Regenerate → TaskView.handleRegenerate()
 
 ---
 
-## Agent Tools (7 total)
+## Agent Tools (8 total)
 
 | Tool | Description | Output Type |
 |------|-------------|-------------|
@@ -218,6 +248,7 @@ User clicks Regenerate → TaskView.handleRegenerate()
 | `analyze_data` | LLM-powered structured data analysis | N/A |
 | `generate_image` | AI image generation via built-in API | generated_image |
 | `generate_document` | LLM-powered document creation (markdown, report, analysis, plan) | document |
+| `wide_research` | Parallel multi-query research with LLM synthesis (up to 5 concurrent queries) | document |
 
 ---
 
@@ -237,13 +268,14 @@ User clicks Regenerate → TaskView.handleRegenerate()
 | parity.test.ts | 30 | Memory, share, notification, document gen |
 | stream.test.ts | 8 | Stream endpoint validation |
 | phase3.test.ts | 27 | Browse_web, memory extractor, regenerate, scheduling, replay |
+| phase4.test.ts | 11 | Scheduler, wide_research, keyboard shortcuts, PWA, cost visibility |
 
-**Total: 155 tests across 10 files**
+**Total: 166 tests across 11 files**
 
 ### Validation Suites
 
 ```bash
-pnpm test                    # Run all 155 unit tests
+pnpm test                    # Run all 166 unit tests
 node validate-parity.mjs     # 18 e2e checks against live server
 node validate-personas.mjs   # 35 virtual user persona checks (5 personas)
 ```
@@ -260,6 +292,21 @@ node validate-personas.mjs   # 35 virtual user persona checks (5 personas)
 6. **Input validation**: All tRPC inputs use Zod schemas with `.max()` constraints
 7. **CORS**: Handled by Express middleware
 8. **Rate limiting**: Not implemented (recommended for production)
+9. **Scheduler isolation**: Server-side only; no user-accessible scheduler endpoint
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action | Scope |
+|----------|--------|-------|
+| `Cmd+K` / `Ctrl+K` | Focus search / input | Global |
+| `Cmd+N` / `Ctrl+N` | New task (navigate home) | Global |
+| `Cmd+/` / `Ctrl+/` | Toggle keyboard shortcuts help | Global |
+| `Cmd+Shift+S` / `Ctrl+Shift+S` | Toggle sidebar | Global |
+| `Escape` | Close dialog / cancel | Global |
+| `Enter` | Send message | Chat input |
+| `Shift+Enter` | New line in message | Chat input |
 
 ---
 
@@ -279,11 +326,11 @@ All environment variables are managed through the Manus platform. See `server/_c
 
 The agent supports three modes that adjust LLM behavior:
 
-| Mode | Temperature | Max Tokens | Behavior |
-|------|------------|------------|----------|
-| Speed | 0.3 | 1024 | Fast, concise responses |
-| Balanced | 0.5 | 2048 | Default balanced mode |
-| Quality | 0.7 | 4096 | Thorough, detailed responses |
+| Mode | Temperature | Max Tokens | Estimated Cost | Behavior |
+|------|------------|------------|----------------|----------|
+| Speed | 0.3 | 1024 | ~$0.02/task | Fast, concise responses |
+| Balanced | 0.5 | 2048 | ~$0.08/task | Default balanced mode |
+| Quality | 0.7 | 4096 | ~$0.15/task | Thorough, detailed responses |
 
 ---
 
@@ -295,6 +342,7 @@ The agent supports three modes that adjust LLM behavior:
 | Web Search (DDG + Wikipedia) | Live | agentTools.ts web_search |
 | Webpage Reading | Live | agentTools.ts read_webpage |
 | Enhanced Browsing | Live | agentTools.ts browse_web |
+| Wide Research (parallel) | Live | agentTools.ts wide_research |
 | Code Execution (JS sandbox) | Live | agentTools.ts execute_code |
 | Data Analysis | Live | agentTools.ts analyze_data |
 | Image Generation | Live | agentTools.ts generate_image |
@@ -304,11 +352,17 @@ The agent supports three modes that adjust LLM behavior:
 | Task Sharing | Live | share router + ShareDialog |
 | Notifications | Live | notification router + NotificationCenter |
 | Speed/Quality Mode | Live | ModeToggle + agentStream mode params |
+| Cost Visibility | Live | TaskView header indicator |
 | Conversation Regenerate | Live | TaskView handleRegenerate |
-| Task Scheduling | Live | schedule router + SchedulePage |
+| Task Scheduling (UI) | Live | schedule router + SchedulePage |
+| Task Scheduling (Server) | Live | scheduler.ts polling loop |
 | Session Replay | Live | replay router + ReplayPage |
 | System Prompt Customization | Live | SettingsPage + preferences router |
+| Keyboard Shortcuts | Live | useKeyboardShortcuts + KeyboardShortcutsDialog |
+| PWA Installability | Live | manifest.json + meta tags |
 | Bridge/Desktop Agent | Partial | Config UI exists, bridge protocol planned |
+| Voice STT | Live | Whisper API integration |
+| Voice TTS | Planned | — |
 | Slide Decks | Planned | — |
 | Client Inference | Planned | — |
 | Desktop Agent | Planned | — |

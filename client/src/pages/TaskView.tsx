@@ -75,6 +75,7 @@ function ActionIcon({ type }: { type: AgentAction["type"] }) {
     case "generating": return <ImageIcon className={cn(iconClass, "text-pink-400")} />;
     case "thinking": return <Brain className={cn(iconClass, "text-primary")} />;
     case "writing": return <FileText className={cn(iconClass, "text-indigo-400")} />;
+    case "researching": return <Search className={cn(iconClass, "text-teal-400")} />;
   }
 }
 
@@ -89,6 +90,7 @@ function ActionLabel({ action }: { action: AgentAction }) {
     case "generating": return <span>Generating <span className="text-muted-foreground">{action.description}</span></span>;
     case "thinking": return <span>Reasoning about next steps...</span>;
     case "writing": return <span>Writing document</span>;
+    case "researching": return <span>Wide research <span className="text-muted-foreground">{(action as any).label}</span></span>;
   }
 }
 
@@ -656,6 +658,8 @@ function mapToolToAction(
       return { type: "creating", file: args?.file || label, status };
     case "writing":
       return { type: "writing", label: label, status };
+    case "researching":
+      return { type: "researching", label: label, status };
     case "thinking":
     default:
       return { type: "thinking", status };
@@ -1316,11 +1320,23 @@ export default function TaskView() {
             )}
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
+            {/* Cost visibility indicator */}
+            {(task.status === "running" || task.status === "completed") && (
+              <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 mr-1" title="Estimated task cost">
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {agentMode === "speed" ? "~$0.02" : "~$0.15"}
+                </span>
+                <span className="text-[9px] text-muted-foreground/60">
+                  {agentMode === "speed" ? "speed" : "quality"}
+                </span>
+              </div>
+            )}
             {/* Mobile workspace toggle */}
             <button
               onClick={() => setMobileWorkspaceOpen(!mobileWorkspaceOpen)}
-              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors md:hidden active:scale-95"
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors md:hidden active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
               title={mobileWorkspaceOpen ? "Hide workspace" : "Show workspace"}
+              aria-label={mobileWorkspaceOpen ? "Hide workspace" : "Show workspace"}
             >
               {mobileWorkspaceOpen ? (
                 <PanelBottomClose className="w-4 h-4" />
@@ -1333,8 +1349,9 @@ export default function TaskView() {
             {/* Share */}
             <button
               onClick={handleShareDialog}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
               title={shareCopied ? "Copied!" : "Share task"}
+              aria-label="Share task"
             >
               {shareCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
             </button>
@@ -1346,6 +1363,8 @@ export default function TaskView() {
                 isFavorited ? "text-amber-400 hover:text-amber-300" : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
               title={isFavorited ? "Remove bookmark" : "Bookmark"}
+              aria-label={isFavorited ? "Remove bookmark" : "Bookmark"}
+              aria-pressed={isFavorited}
             >
               {isFavorited ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
             </button>
@@ -1353,8 +1372,11 @@ export default function TaskView() {
             <div className="relative" ref={moreMenuRef}>
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                title="More"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                title="More options"
+                aria-label="More options"
+                aria-expanded={showMoreMenu}
+                aria-haspopup="true"
               >
                 <MoreHorizontal className="w-3.5 h-3.5" />
               </button>
@@ -1477,8 +1499,9 @@ export default function TaskView() {
                   value={systemPromptDraft}
                   onChange={(e) => setSystemPromptDraft(e.target.value)}
                   placeholder="Override the default system prompt for this task. Leave empty to use global default."
+                  aria-label="System prompt override"
                   rows={3}
-                  className="w-full bg-card border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/30 resize-none"
+                  className="w-full bg-card border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary/50 resize-none"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
                   Priority: Per-task prompt &gt; Global prompt (Settings) &gt; Default
@@ -1576,8 +1599,9 @@ export default function TaskView() {
               }}
               disabled={streaming}
               placeholder={streaming ? "Generating response..." : "Send a message..."}
+              aria-label="Chat message input"
               rows={1}
-              className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-foreground placeholder:text-muted-foreground focus:outline-none text-sm leading-relaxed"
+              className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"
             />
             {/* Attached files preview */}
             {files.length > 0 && (

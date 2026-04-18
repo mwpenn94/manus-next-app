@@ -58,6 +58,7 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You d
 - **execute_code(code)**: Run JavaScript for calculations, data processing, or structured output.
 - **generate_document(title, content)**: Create structured documents (reports, analyses, plans) as downloadable markdown files. Use this when asked to write, draft, or produce any long-form content.
 - **browse_web(url, action)**: Navigate to a URL and extract structured content including metadata, headings, links, images, and full text. More thorough than read_webpage — use for deep page analysis.
+- **wide_research(queries, synthesis_prompt)**: Run 2-5 web searches IN PARALLEL and synthesize results. Use this for comprehensive research, multi-topic comparisons, or when you need to cover multiple angles simultaneously. Much faster than sequential searches.
 
 ## RESEARCH WORKFLOW
 
@@ -67,6 +68,16 @@ When answering questions about real-world topics:
 3. If the results mention specific URLs, call read_webpage on the most relevant 1-2 URLs
 4. Synthesize ALL the information you gathered into a comprehensive answer
 5. Cite your sources with links
+
+## WIDE RESEARCH MODE
+
+For comprehensive research, comparisons, or multi-angle analysis:
+1. Use **wide_research** with 2-5 parallel queries targeting different aspects
+2. Include a synthesis_prompt that describes how to combine the results
+3. The tool runs all searches simultaneously and produces a unified analysis
+4. Use this when the user asks to "research thoroughly", "compare multiple", or needs broad coverage
+
+Example: Comparing AI agents → wide_research({ queries: ["Manus AI features", "Devin AI capabilities", "Cursor AI pricing"], synthesis_prompt: "Compare these AI agents side by side" })
 
 ## ABOUT YOURSELF (Manus Next)
 
@@ -377,7 +388,18 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     console.log("[Agent] Stream complete after", turn, "turns,", completedToolCalls, "tool calls");
   } catch (err: any) {
     console.error("[Agent] Error:", err);
-    sendSSE(safeWrite, { error: err.message || "Agent execution failed" });
+    let userMessage = err.message || "Agent execution failed";
+    // Provide user-friendly error messages for common failure modes
+    if (err.code === "ETIMEDOUT" || err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+      userMessage = "The request timed out. Please try again with a simpler query or switch to Speed mode.";
+    } else if (err.status === 429 || err.message?.includes("rate limit") || err.message?.includes("Rate limit")) {
+      userMessage = "Rate limit reached. Please wait a moment before sending another message.";
+    } else if (err.status === 401 || err.status === 403 || err.message?.includes("unauthorized") || err.message?.includes("Unauthorized")) {
+      userMessage = "Authentication expired. Please refresh the page and log in again.";
+    } else if (err.message?.includes("ECONNREFUSED")) {
+      userMessage = "Unable to connect to the AI service. Please try again in a moment.";
+    }
+    sendSSE(safeWrite, { error: userMessage });
     safeEnd();
   }
 }
@@ -404,6 +426,8 @@ function getToolDisplayInfo(
       return { type: "writing", label: `Writing document: ${(args.title || "").slice(0, 60)}` };
     case "browse_web":
       return { type: "browsing", label: `Browsing ${args.url ? new URL(args.url).hostname : "webpage"}` };
+    case "wide_research":
+      return { type: "researching", label: `Wide research: ${(args.queries || []).length} parallel queries` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

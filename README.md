@@ -11,6 +11,7 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 | **Conversational AI** | Multi-turn chat with persistent message history |
 | **Agentic Execution** | Multi-turn tool-calling loop (up to 8 turns per task) |
 | **Web Research** | DuckDuckGo + Wikipedia + page fetch + LLM synthesis |
+| **Wide Research** | Parallel multi-query search (up to 5 concurrent) with LLM synthesis |
 | **Enhanced Browsing** | Deep URL analysis with metadata, links, images, structured data |
 | **Code Execution** | Sandboxed JavaScript with 5-second timeout |
 | **Image Generation** | AI-powered image creation from text prompts |
@@ -20,10 +21,13 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 | **Memory Auto-Extraction** | LLM-powered fact extraction from completed conversations |
 | **Conversation Regenerate** | Re-generate any assistant response with one click |
 | **Task Sharing** | Signed URLs with optional password and expiry |
-| **Task Scheduling** | Cron-based and interval-based recurring tasks |
+| **Task Scheduling (UI + Server)** | Cron-based and interval-based recurring tasks with server-side polling |
 | **Session Replay** | Recorded interaction playback for task review |
 | **Notifications** | In-app notification center with unread tracking |
 | **Speed/Quality Mode** | Toggle between fast concise vs. thorough detailed responses |
+| **Cost Visibility** | Per-task estimated cost indicator in task header |
+| **Keyboard Shortcuts** | Global shortcuts (Cmd+K, Cmd+N, Cmd+/, Cmd+Shift+S, Escape) |
+| **PWA Installable** | Web App Manifest for mobile/desktop installation |
 | **Bridge Integration** | WebSocket connection to Sovereign Hybrid backend |
 
 ---
@@ -36,6 +40,7 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 - **Auth:** Manus OAuth
 - **LLM:** Built-in Forge API
 - **Storage:** S3
+- **Scheduling:** cron-parser + server-side polling loop
 
 ---
 
@@ -60,19 +65,21 @@ The app will be available at `http://localhost:3000`.
 
 ```
 client/src/
-  pages/          → Route-level components (Home, TaskView, Memory, Schedule, Replay, Settings, SharedTaskView)
-  components/     → Reusable UI (NotificationCenter, ShareDialog, ModeToggle, AppLayout)
+  pages/          → Route-level components (Home, TaskView, Memory, Schedule, Replay, Settings, Billing, SharedTaskView)
+  components/     → Reusable UI (NotificationCenter, ShareDialog, ModeToggle, AppLayout, KeyboardShortcutsDialog)
   contexts/       → React contexts (Task, Bridge, Theme)
+  hooks/          → Custom hooks (useKeyboardShortcuts)
   _core/hooks/    → Auth hooks
 
 server/
   agentStream.ts  → SSE agentic loop with tool calling
-  agentTools.ts   → Tool definitions and executors (7 tools)
+  agentTools.ts   → Tool definitions and executors (8 tools)
+  scheduler.ts    → Server-side task scheduler (60s polling loop)
   memoryExtractor.ts → LLM-powered memory auto-extraction
-  routers.ts      → tRPC procedures (auth, task, memory, share, notification, preferences, schedule, replay)
+  routers.ts      → tRPC procedures (auth, task, memory, share, notification, preferences, schedule, replay, usage, bridge)
   db.ts           → Database query helpers
   storage.ts      → S3 file storage
-  _core/          → Framework plumbing (OAuth, LLM, context)
+  _core/          → Framework plumbing (OAuth, LLM, context, scheduler startup)
 
 drizzle/
   schema.ts       → Database table definitions (12 tables)
@@ -80,13 +87,14 @@ drizzle/
 
 ---
 
-## Agent Tools (7)
+## Agent Tools (8)
 
 | Tool | Description |
 |------|-------------|
 | `web_search` | Multi-source search with LLM synthesis |
 | `read_webpage` | Fetch and parse webpage content |
 | `browse_web` | Enhanced URL analysis (metadata, links, images, structured data) |
+| `wide_research` | Parallel multi-query research (up to 5 concurrent) with LLM synthesis |
 | `execute_code` | Sandboxed JavaScript execution |
 | `analyze_data` | Structured data analysis |
 | `generate_image` | AI image generation |
@@ -94,16 +102,28 @@ drizzle/
 
 ---
 
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+K` / `Ctrl+K` | Focus search / input |
+| `Cmd+N` / `Ctrl+N` | New task (navigate home) |
+| `Cmd+/` / `Ctrl+/` | Toggle keyboard shortcuts help |
+| `Cmd+Shift+S` / `Ctrl+Shift+S` | Toggle sidebar |
+| `Escape` | Close dialog / cancel |
+
+---
+
 ## Testing
 
 ```bash
-pnpm test                    # Run all 155 tests
+pnpm test                    # Run all 166 tests
 node validate-parity.mjs     # Run 18 e2e validations
 node validate-personas.mjs   # Run 35 virtual user persona checks
 npx tsc --noEmit             # TypeScript type check
 ```
 
-**Test coverage:** 155 tests across 10 test files covering routers, agent tools, streaming, features, bridge, preferences, parity features, and Phase 3 features (browse_web, memory extractor, regenerate, scheduling, replay).
+**Test coverage:** 166 tests across 11 test files covering routers, agent tools, streaming, features, bridge, preferences, parity features, Phase 3 features (browse_web, memory extractor, regenerate, scheduling, replay), and Phase 4 features (scheduler, wide_research, keyboard shortcuts, PWA, cost visibility).
 
 ---
 
@@ -117,8 +137,8 @@ npx tsc --noEmit             # TypeScript type check
 
 ## Capability Status
 
-### Live (28 capabilities)
-Chat Mode, Agent Mode, Speed/Quality Mode, Cross-Session Memory, Memory Auto-Extraction, Task Sharing, Task Scheduling, Session Replay, Conversation Regenerate, Notifications, Data Analysis, Image Generation, Web Search, Enhanced Browsing, Auth, SEO, Code Execution, Voice STT, Document Generation, Task Management, Workspace Artifacts, Bridge Integration, Preferences, Identity Rule, Research Nudge, GitHub Integration, Mobile Responsive, System Prompt Customization
+### Live (32 capabilities)
+Chat Mode, Agent Mode, Speed/Quality Mode, Cost Visibility, Cross-Session Memory, Memory Auto-Extraction, Task Sharing, Task Scheduling (UI + Server), Session Replay, Conversation Regenerate, Notifications, Data Analysis, Image Generation, Web Search, Wide Research, Enhanced Browsing, Auth, SEO, Code Execution, Voice STT, Document Generation, Task Management, Workspace Artifacts, Bridge Integration, Preferences, Identity Rule, Research Nudge, GitHub Integration, Mobile Responsive, System Prompt Customization, Keyboard Shortcuts, PWA Installability
 
 ### Planned (4 capabilities)
 Slide Decks, Client Inference, Desktop Agent, Sync/Collaboration

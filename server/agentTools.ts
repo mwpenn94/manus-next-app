@@ -165,6 +165,32 @@ export const AGENT_TOOLS: Tool[] = [
   {
     type: "function",
     function: {
+      name: "wide_research",
+      description:
+        "Conduct parallel wide research across multiple queries simultaneously. Use this when the user asks for comprehensive research, comparisons across multiple topics, or when you need to gather information from several different angles at once. Runs multiple web searches in parallel and synthesizes the results into a unified analysis.",
+      parameters: {
+        type: "object",
+        properties: {
+          queries: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Array of 2-5 search queries to execute in parallel. Each query should target a different aspect or angle of the research topic.",
+          },
+          synthesis_prompt: {
+            type: "string",
+            description:
+              "Instructions for how to synthesize the parallel results. E.g., 'Compare these AI agents side by side' or 'Identify common themes across these topics'.",
+          },
+        },
+        required: ["queries", "synthesis_prompt"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "execute_code",
       description:
         "Execute JavaScript/TypeScript code to perform calculations, data transformations, or generate structured output. Use this for math, algorithms, data processing, or when you need to compute something precisely rather than estimate.",
@@ -967,6 +993,101 @@ async function executeGenerateDocument(args: {
   }
 }
 
+/**
+ * Wide Research — Parallel multi-query research with LLM synthesis.
+ * Runs multiple web searches concurrently via Promise.allSettled,
+ * then synthesizes the combined results using the LLM.
+ */
+async function executeWideResearch(args: {
+  queries: string[];
+  synthesis_prompt: string;
+}): Promise<ToolResult> {
+  try {
+    const queries = (args.queries || []).slice(0, 5); // Cap at 5 parallel queries
+    if (queries.length === 0) {
+      return { success: false, result: "No queries provided for wide research." };
+    }
+
+    console.log(`[wide_research] Launching ${queries.length} parallel searches...`);
+
+    // Execute all searches in parallel
+    const searchPromises = queries.map(async (query) => {
+      try {
+        const result = await executeWebSearch({ query });
+        return { query, result };
+      } catch (err: any) {
+        return { query, result: { success: false, result: `Search failed: ${err.message}` } as ToolResult };
+      }
+    });
+
+    const results = await Promise.allSettled(searchPromises);
+
+    // Collect all successful results
+    let combinedResearch = `## Parallel Research Results\n\n`;
+    let successCount = 0;
+
+    for (const settled of results) {
+      if (settled.status === "fulfilled") {
+        const { query, result } = settled.value;
+        combinedResearch += `### Query: "${query}"\n\n`;
+        if (result.success) {
+          combinedResearch += result.result + "\n\n---\n\n";
+          successCount++;
+        } else {
+          combinedResearch += `*Search failed: ${result.result}*\n\n---\n\n`;
+        }
+      } else {
+        combinedResearch += `*Search failed: ${settled.reason}*\n\n---\n\n`;
+      }
+    }
+
+    if (successCount === 0) {
+      return {
+        success: false,
+        result: "All parallel searches failed. Try individual web_search calls instead.",
+      };
+    }
+
+    // Synthesize results using LLM
+    console.log(`[wide_research] Synthesizing ${successCount}/${queries.length} successful results...`);
+    const { invokeLLM } = await import("./_core/llm");
+
+    const synthesisResponse = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a research synthesis engine. Combine the following parallel research results into a unified, well-structured analysis. Use markdown formatting with clear sections, comparison tables where appropriate, and cite sources with links. Be thorough and analytical.",
+        },
+        {
+          role: "user",
+          content: `Synthesis instructions: ${args.synthesis_prompt}\n\n${combinedResearch}`,
+        },
+      ],
+    });
+
+    const synthesis =
+      typeof synthesisResponse.choices?.[0]?.message?.content === "string"
+        ? synthesisResponse.choices[0].message.content
+        : "Synthesis could not be completed.";
+
+    const finalResult = `## Wide Research Synthesis\n\n**Queries researched:** ${queries.map(q => `"${q}"`).join(", ")}\n**Successful searches:** ${successCount}/${queries.length}\n\n${synthesis}\n\n---\n\n## Raw Research Data\n\n${combinedResearch}`;
+
+    return {
+      success: true,
+      result: finalResult,
+      artifactType: "document",
+      artifactLabel: `Wide Research: ${args.synthesis_prompt.slice(0, 60)}`,
+    };
+  } catch (err: any) {
+    console.error("[wide_research] Error:", err.message);
+    return {
+      success: false,
+      result: `Wide research failed: ${err.message}`,
+    };
+  }
+}
+
 // ── Tool Dispatcher ──
 
 /**
@@ -1014,6 +1135,8 @@ export async function executeTool(
       return executeGenerateDocument(args);
     case "browse_web":
       return executeBrowseWeb(args);
+    case "wide_research":
+      return executeWideResearch(args);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }

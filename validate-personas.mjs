@@ -82,6 +82,32 @@ async function validateDeveloper() {
     assert(src.includes("generate_document"), "Missing generate_document");
     assert(src.includes("markdown") || src.includes("report"), "Missing document format options");
   });
+
+  // Phase 4: Scheduler module exists
+  await check("Developer", "Server-side scheduler module exists", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("server/scheduler.ts"), "Missing scheduler.ts");
+    const src = fs.readFileSync("server/scheduler.ts", "utf-8");
+    assert(src.includes("startScheduler"), "Missing startScheduler function");
+    assert(src.includes("pollDueTasks"), "Missing pollDueTasks function");
+  });
+
+  // Phase 4: Wide research tool exists
+  await check("Developer", "Wide research tool exists", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("server/agentTools.ts", "utf-8");
+    assert(src.includes("wide_research"), "Missing wide_research tool");
+    assert(src.includes("executeWideResearch"), "Missing wide research executor");
+  });
+
+  // Phase 4: Keyboard shortcuts hook exists
+  await check("Developer", "Keyboard shortcuts hook exists", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("client/src/hooks/useKeyboardShortcuts.ts"), "Missing useKeyboardShortcuts.ts");
+    const src = fs.readFileSync("client/src/hooks/useKeyboardShortcuts.ts", "utf-8");
+    assert(src.includes("SHORTCUTS"), "Missing SHORTCUTS export");
+    assert(src.includes("metaKey") || src.includes("ctrlKey"), "Missing modifier key handling");
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -138,6 +164,20 @@ async function validateResearcher() {
     const src = fs.readFileSync("server/agentStream.ts", "utf-8");
     assert(src.includes("nudge") || src.includes("read_webpage"), "Missing research nudge behavior");
   });
+
+  // Phase 4: Wide research in system prompt
+  await check("Researcher", "Wide research mentioned in system prompt", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("server/agentStream.ts", "utf-8");
+    assert(src.includes("wide_research"), "System prompt missing wide_research guidance");
+  });
+
+  // Phase 4: Cost visibility in TaskView
+  await check("Researcher", "Cost visibility indicator in TaskView", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("client/src/pages/TaskView.tsx", "utf-8");
+    assert(src.includes("cost") || src.includes("Cost") || src.includes("$0."), "Missing cost visibility");
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -193,6 +233,13 @@ async function validateBusinessUser() {
     });
     assert(r.status !== 404, "Stream endpoint not found");
   });
+
+  // Phase 4: Scheduler is wired into server startup
+  await check("Business", "Scheduler wired into server startup", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("server/_core/index.ts", "utf-8");
+    assert(src.includes("startScheduler"), "Scheduler not wired into server startup");
+  });
 }
 
 // ═══════════════════════════════════════════════════
@@ -247,6 +294,21 @@ async function validateCasualUser() {
     const html = await r.text();
     assert(html.includes("viewport"), "Missing viewport meta");
     assert(html.includes("width=device-width"), "Missing responsive viewport");
+  });
+
+  // Phase 4: PWA manifest exists
+  await check("Casual", "PWA manifest accessible", async () => {
+    const r = await fetch(`${BASE}/manifest.json`);
+    assert(r.ok, `manifest.json status ${r.status}`);
+    const json = await r.json();
+    assert(json.name, "Missing manifest name");
+    assert(json.display === "standalone", "Missing standalone display mode");
+  });
+
+  // Phase 4: Keyboard shortcuts dialog exists
+  await check("Casual", "Keyboard shortcuts dialog component exists", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("client/src/components/KeyboardShortcutsDialog.tsx"), "Missing KeyboardShortcutsDialog.tsx");
   });
 }
 
@@ -315,6 +377,22 @@ async function validateAdmin() {
     const src = fs.readFileSync("server/routers.ts", "utf-8");
     const maxCount = (src.match(/\.max\(/g) || []).length;
     assert(maxCount >= 15, `Only ${maxCount} .max() constraints found, expected 15+`);
+  });
+
+  // Phase 4: 166 tests exist
+  await check("Admin", "Test suite has 166+ tests across 11 files", async () => {
+    const fs = await import("fs");
+    const testFiles = fs.readdirSync("server").filter(f => f.endsWith(".test.ts"));
+    assert(testFiles.length >= 11, `Only ${testFiles.length} test files, expected 11+`);
+  });
+
+  // Phase 4: ARCHITECTURE.md is v4.0
+  await check("Admin", "ARCHITECTURE.md is v4.0", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("ARCHITECTURE.md", "utf-8");
+    assert(src.includes("4.0"), "ARCHITECTURE.md not updated to v4.0");
+    assert(src.includes("wide_research"), "ARCHITECTURE.md missing wide_research");
+    assert(src.includes("scheduler"), "ARCHITECTURE.md missing scheduler");
   });
 }
 

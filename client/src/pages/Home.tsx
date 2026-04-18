@@ -181,8 +181,9 @@ export default function Home() {
                 }
               }}
               placeholder="Give Manus Next a task to work on..."
+              aria-label="Task input"
               rows={1}
-              className="w-full resize-none bg-transparent px-4 pt-4 pb-12 text-foreground placeholder:text-muted-foreground focus:outline-none text-[15px] leading-relaxed min-h-[56px]"
+              className="w-full resize-none bg-transparent px-4 pt-4 pb-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-[15px] leading-relaxed min-h-[56px]"
             />
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-0.5">
@@ -193,10 +194,11 @@ export default function Home() {
                     const id = createTask(title, "I'd like to upload and work with some files.");
                     navigate(`/task/${id}`);
                   }}
-                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
+                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                   title="Attach file — creates a new task"
+                  aria-label="Attach file"
                 >
-                  <Paperclip className="w-4 h-4" />
+                  <Paperclip className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                   onClick={() => {
@@ -205,10 +207,11 @@ export default function Home() {
                     const id = createTask(title, "Voice task — use the microphone button to record.");
                     navigate(`/task/${id}`);
                   }}
-                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95"
+                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
                   title="Voice input — creates a new task with voice recording"
+                  aria-label="Voice input"
                 >
-                  <Mic className="w-4 h-4" />  
+                  <Mic className="w-4 h-4" aria-hidden="true" />  
                 </button>
               </div>
               <button
@@ -220,9 +223,10 @@ export default function Home() {
                     ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm shadow-primary/20"
                     : "bg-muted text-muted-foreground"
                 )}
-                title="Submit"
+                title="Submit task"
+                aria-label="Submit task"
               >
-                <ArrowUp className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -231,6 +235,8 @@ export default function Home() {
         {/* Category Tabs */}
         <motion.div
           className="flex items-center gap-2 mb-6 flex-wrap justify-center"
+          role="tablist"
+          aria-label="Task categories"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.35 }}
@@ -238,15 +244,17 @@ export default function Home() {
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
+              role="tab"
+              aria-selected={activeCategory === cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 md:py-1.5 rounded-full text-sm transition-all duration-200 active:scale-95",
+                "flex items-center gap-1.5 px-3.5 py-2 md:py-1.5 rounded-full text-sm transition-all duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none",
                 activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
                   : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
               )}
             >
-              <cat.icon className="w-3.5 h-3.5" />
+              <cat.icon className="w-3.5 h-3.5" aria-hidden="true" />
               {cat.label}
             </button>
           ))}
