@@ -23,6 +23,7 @@ import {
   Laptop,
   Search,
   Bell,
+  Brain,
   Palette,
   ChevronRight,
   ExternalLink,
@@ -46,17 +47,28 @@ interface Capability {
   defaultEnabled: boolean;
 }
 
-const CAPABILITY_DEFINITIONS: Capability[] = [
-  { name: "Browser Automation", package: "@manus-next/browser", icon: Globe, description: "Playwright + CDP failover for web browsing, form filling, and data extraction.", defaultEnabled: true },
-  { name: "Computer Use", package: "@manus-next/computer", icon: Monitor, description: "Screen capture, mouse/keyboard control, and visual element detection.", defaultEnabled: true },
-  { name: "Document Generation", package: "@manus-next/document", icon: FileText, description: "Create PDFs, Word docs, and Markdown with templates and styling.", defaultEnabled: true },
-  { name: "Slide Decks", package: "@manus-next/deck", icon: Presentation, description: "Generate presentation slides with layouts, charts, and speaker notes.", defaultEnabled: true },
-  { name: "Task Scheduling", package: "@manus-next/scheduled", icon: Calendar, description: "Cron-based and interval scheduling with retry and dead-letter queues.", defaultEnabled: true },
-  { name: "Sharing", package: "@manus-next/share", icon: Share2, description: "Generate shareable links, embed codes, and export bundles.", defaultEnabled: true },
-  { name: "Session Replay", package: "@manus-next/replay", icon: Play, description: "Record and replay agent sessions with timeline scrubbing.", defaultEnabled: false },
-  { name: "Webapp Builder", package: "@manus-next/webapp-builder", icon: Code, description: "Scaffold, build, and deploy web applications from prompts.", defaultEnabled: true },
-  { name: "Client Inference", package: "@manus-next/client-inference", icon: Cpu, description: "Run small models locally via WebGPU/WASM for offline capabilities.", defaultEnabled: false },
-  { name: "Desktop Agent", package: "@manus-next/desktop", icon: Laptop, description: "Native desktop integration with system tray and global shortcuts.", defaultEnabled: false },
+type CapabilityStatus = "live" | "partial" | "planned";
+
+interface CapabilityDef extends Capability {
+  status: CapabilityStatus;
+  statusNote?: string;
+}
+
+const CAPABILITY_DEFINITIONS: CapabilityDef[] = [
+  { name: "Web Research", package: "@manus-next/browser", icon: Globe, description: "Search the web, read pages, and extract information via web_search and read_webpage tools.", defaultEnabled: true, status: "live" },
+  { name: "Code Execution", package: "@manus-next/code", icon: Code, description: "Write and execute Python code for calculations, data analysis, and file processing.", defaultEnabled: true, status: "live" },
+  { name: "Document Generation", package: "@manus-next/document", icon: FileText, description: "Create Markdown, report, and plain-text documents via the generate_document agent tool.", defaultEnabled: true, status: "live" },
+  { name: "Task Sharing", package: "@manus-next/share", icon: Share2, description: "Create shareable links with optional password protection and expiration for completed tasks.", defaultEnabled: true, status: "live" },
+  { name: "Cross-Session Memory", package: "@manus-next/memory", icon: Brain, description: "Persistent memory entries that the agent uses to personalize responses across sessions.", defaultEnabled: true, status: "live" },
+  { name: "Notifications", package: "@manus-next/notifications", icon: Bell, description: "In-app notifications for task completion, errors, and share activity.", defaultEnabled: true, status: "live" },
+  { name: "Speed/Quality Mode", package: "@manus-next/mode", icon: Cpu, description: "Toggle between Speed mode (faster, concise) and Quality mode (thorough, detailed) per task.", defaultEnabled: true, status: "live" },
+  { name: "Computer Use", package: "@manus-next/computer", icon: Monitor, description: "Screen capture, mouse/keyboard control, and visual element detection.", defaultEnabled: false, status: "planned", statusNote: "Requires Sovereign Bridge connection" },
+  { name: "Slide Decks", package: "@manus-next/deck", icon: Presentation, description: "Generate presentation slides with layouts, charts, and speaker notes.", defaultEnabled: false, status: "planned", statusNote: "Coming in a future release" },
+  { name: "Task Scheduling", package: "@manus-next/scheduled", icon: Calendar, description: "Cron-based and interval scheduling with retry and dead-letter queues.", defaultEnabled: false, status: "planned", statusNote: "Coming in a future release" },
+  { name: "Session Replay", package: "@manus-next/replay", icon: Play, description: "Record and replay agent sessions with timeline scrubbing.", defaultEnabled: false, status: "planned", statusNote: "Coming in a future release" },
+  { name: "Webapp Builder", package: "@manus-next/webapp-builder", icon: Code, description: "Scaffold, build, and deploy web applications from prompts.", defaultEnabled: false, status: "planned", statusNote: "Coming in a future release" },
+  { name: "Client Inference", package: "@manus-next/client-inference", icon: Cpu, description: "Run small models locally via WebGPU/WASM for offline capabilities.", defaultEnabled: false, status: "planned", statusNote: "Experimental — requires WebGPU support" },
+  { name: "Desktop Agent", package: "@manus-next/desktop", icon: Laptop, description: "Native desktop integration with system tray and global shortcuts.", defaultEnabled: false, status: "planned", statusNote: "Requires native app build" },
 ];
 
 interface GeneralSettings {
@@ -440,28 +452,47 @@ export default function SettingsPage() {
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.15, delay: i * 0.02 }}
-                      className="bg-card border border-border rounded-xl p-4 flex items-start gap-4 hover:border-border/80 transition-colors"
+                      className={cn(
+                        "bg-card border rounded-xl p-4 flex items-start gap-4 transition-colors",
+                        cap.status === "live" ? "border-border hover:border-border/80" : "border-border/50 opacity-75"
+                      )}
                     >
                       <div className={cn(
                         "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                        cap.enabled ? "bg-primary/10" : "bg-muted"
+                        cap.status === "live" && cap.enabled ? "bg-primary/10" : "bg-muted"
                       )}>
-                        <cap.icon className={cn("w-5 h-5", cap.enabled ? "text-primary" : "text-muted-foreground")} />
+                        <cap.icon className={cn("w-5 h-5", cap.status === "live" && cap.enabled ? "text-primary" : "text-muted-foreground")} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-medium text-foreground">{cap.name}</p>
                           <span className={cn(
                             "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                            cap.enabled ? "bg-emerald-500/15 text-emerald-400" : "bg-muted text-muted-foreground"
+                            cap.status === "live" ? "bg-emerald-500/15 text-emerald-400" :
+                            cap.status === "partial" ? "bg-amber-500/15 text-amber-400" :
+                            "bg-muted text-muted-foreground"
                           )}>
-                            {cap.enabled ? "enabled" : "disabled"}
+                            {cap.status === "live" ? (cap.enabled ? "live" : "disabled") :
+                             cap.status === "partial" ? "partial" : "planned"}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{cap.description}</p>
+                        {cap.statusNote && (
+                          <p className="text-[10px] text-amber-400/70 mt-0.5 italic">{cap.statusNote}</p>
+                        )}
                         <p className="text-[10px] text-muted-foreground/60 mt-1 font-mono">{cap.package}</p>
                       </div>
-                      <Toggle checked={cap.enabled} onChange={() => toggleCapability(cap.package)} />
+                      <Toggle
+                        checked={cap.enabled}
+                        onChange={() => {
+                          if (cap.status === "planned") {
+                            toast.info(`${cap.name} is not yet available. It will be enabled when released.`);
+                            return;
+                          }
+                          toggleCapability(cap.package);
+                        }}
+                        disabled={cap.status === "planned"}
+                      />
                     </motion.div>
                   ))
                 )}

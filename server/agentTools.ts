@@ -108,6 +108,35 @@ export const AGENT_TOOLS: Tool[] = [
   {
     type: "function",
     function: {
+      name: "generate_document",
+      description:
+        "Generate a structured document (report, analysis, summary, article, plan) as a downloadable markdown file. Use this when the user asks you to create, write, draft, or produce a document, report, or any long-form structured content. Returns the document content and a download URL.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Title of the document",
+          },
+          content: {
+            type: "string",
+            description:
+              "Full markdown content of the document. Use proper markdown formatting with headings, lists, tables, and emphasis.",
+          },
+          format: {
+            type: "string",
+            enum: ["markdown", "report", "analysis", "plan"],
+            description: "The type/format of document to generate",
+          },
+        },
+        required: ["title", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "execute_code",
       description:
         "Execute JavaScript/TypeScript code to perform calculations, data transformations, or generate structured output. Use this for math, algorithms, data processing, or when you need to compute something precisely rather than estimate.",
@@ -138,7 +167,7 @@ export interface ToolResult {
   /** Optional URL for images or browser artifacts */
   url?: string;
   /** Optional artifact type for workspace persistence */
-  artifactType?: "browser_url" | "code" | "terminal" | "generated_image";
+  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document";
   /** Optional label for the artifact */
   artifactLabel?: string;
 }
@@ -749,6 +778,42 @@ async function executeCode(args: {
   }
 }
 
+/**
+ * Generate a structured document and upload it to S3
+ */
+async function executeGenerateDocument(args: {
+  title: string;
+  content: string;
+  format?: string;
+}): Promise<ToolResult> {
+  try {
+    const { storagePut } = await import("./storage");
+    const { nanoid } = await import("nanoid");
+
+    const fileName = `${args.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase()}-${nanoid(6)}.md`;
+    const fileKey = `documents/${fileName}`;
+
+    // Build document with front matter
+    const docContent = `# ${args.title}\n\n${args.content}`;
+    const buffer = Buffer.from(docContent, "utf-8");
+
+    const { url } = await storagePut(fileKey, buffer, "text/markdown");
+
+    return {
+      success: true,
+      result: `Document generated: **${args.title}**\n\n[Download Document](${url})\n\n---\n\n${docContent.slice(0, 2000)}${docContent.length > 2000 ? "\n\n*[Document truncated for display — full version available at download link]*" : ""}`,
+      url,
+      artifactType: "document",
+      artifactLabel: args.title,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      result: `Document generation failed: ${err.message}`,
+    };
+  }
+}
+
 // ── Tool Dispatcher ──
 
 export async function executeTool(
@@ -773,6 +838,8 @@ export async function executeTool(
       return executeAnalyzeData(args);
     case "execute_code":
       return executeCode(args);
+    case "generate_document":
+      return executeGenerateDocument(args);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }

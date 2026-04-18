@@ -57,6 +57,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
+import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
+import ShareDialog from "@/components/ShareDialog";
 
 // ── Action rendering ──
 
@@ -71,6 +73,7 @@ function ActionIcon({ type }: { type: AgentAction["type"] }) {
     case "searching": return <Search className={cn(iconClass, "text-cyan-400")} />;
     case "generating": return <ImageIcon className={cn(iconClass, "text-pink-400")} />;
     case "thinking": return <Brain className={cn(iconClass, "text-primary")} />;
+    case "writing": return <FileText className={cn(iconClass, "text-indigo-400")} />;
   }
 }
 
@@ -84,6 +87,7 @@ function ActionLabel({ action }: { action: AgentAction }) {
     case "searching": return <span>Searching <span className="text-muted-foreground italic">"{action.query}"</span></span>;
     case "generating": return <span>Generating <span className="text-muted-foreground">{action.description}</span></span>;
     case "thinking": return <span>Reasoning about next steps...</span>;
+    case "writing": return <span>Writing document</span>;
   }
 }
 
@@ -635,6 +639,8 @@ function mapToolToAction(
       return { type: "browsing", url: args?.url || label, status };
     case "creating":
       return { type: "creating", file: args?.file || label, status };
+    case "writing":
+      return { type: "writing", label: label, status };
     case "thinking":
     default:
       return { type: "thinking", status };
@@ -662,6 +668,8 @@ export default function TaskView() {
   const [systemPromptDraft, setSystemPromptDraft] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [agentMode, setAgentMode] = useState<AgentMode>("quality");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -798,7 +806,7 @@ export default function TaskView() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ messages, taskExternalId: task.id }),
+          body: JSON.stringify({ messages, taskExternalId: task.id, mode: agentMode }),
           signal: controller.signal,
         });
 
@@ -892,7 +900,7 @@ export default function TaskView() {
         setStepProgress(null);
       }
     })();
-  }, [task?.id, task?.messages.length, streaming, bridgeStatus, bridgeSend, addMessage]);
+  }, [task?.id, task?.messages.length, streaming, bridgeStatus, bridgeSend, addMessage, agentMode]);
 
   const isTyping = useMemo(() => {
     if (!task) return false;
@@ -910,11 +918,19 @@ export default function TaskView() {
 
   // ── Header button handlers ──
 
-  const handleShare = () => {
+  const handleShareUrl = () => {
     const url = `${window.location.origin}/task/${task.id}`;
     navigator.clipboard.writeText(url);
     setShareCopied(true);
     setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  const handleShareDialog = () => {
+    if (isAuthenticated) {
+      setShareDialogOpen(true);
+    } else {
+      handleShareUrl();
+    }
   };
 
   const handleToggleFavorite = () => {
@@ -1022,7 +1038,7 @@ export default function TaskView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ messages, taskExternalId: task.id }),
+        body: JSON.stringify({ messages, taskExternalId: task.id, mode: agentMode }),
         signal: controller.signal,
       });
 
@@ -1200,11 +1216,13 @@ export default function TaskView() {
                 <PanelBottomOpen className="w-4 h-4" />
               )}
             </button>
+            {/* Mode Toggle */}
+            <ModeToggle mode={agentMode} onChange={setAgentMode} className="hidden md:flex mr-1" />
             {/* Share */}
             <button
-              onClick={handleShare}
+              onClick={handleShareDialog}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex"
-              title={shareCopied ? "Copied!" : "Copy task URL"}
+              title={shareCopied ? "Copied!" : "Share task"}
             >
               {shareCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
             </button>
@@ -1267,11 +1285,11 @@ export default function TaskView() {
                       Export Transcript
                     </button>
                     <button
-                      onClick={handleShare}
+                      onClick={handleShareDialog}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left md:hidden"
                     >
                       <Share2 className="w-3.5 h-3.5" />
-                      Copy Task URL
+                      Share Task
                     </button>
                     <button
                       onClick={handleToggleFavorite}
@@ -1574,6 +1592,14 @@ export default function TaskView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        taskExternalId={taskExternalId || ""}
+        taskTitle={task.title}
+      />
     </div>
   );
 }

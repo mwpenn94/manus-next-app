@@ -43,6 +43,13 @@
       "when": 1776460213112,
       "tag": "0005_tired_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1776499411604,
+      "tag": "0006_legal_santa_claus",
+      "breakpoints": true
     }
   ]
 }

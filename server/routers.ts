@@ -25,7 +25,23 @@ import {
   addWorkspaceArtifact,
   getWorkspaceArtifacts,
   getLatestArtifactByType,
+  getUserMemories,
+  addMemoryEntry,
+  deleteMemoryEntry,
+  searchMemories,
+  createTaskShare,
+  getTaskShareByToken,
+  getTaskShares,
+  incrementShareViewCount,
+  deleteTaskShare,
+  getUserNotifications,
+  getUnreadNotificationCount,
+  createNotification,
+  markNotificationRead,
+  markAllNotificationsRead,
 } from "./db";
+
+const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
 
 export const appRouter = router({
   system: systemRouter,
@@ -73,8 +89,31 @@ export const appRouter = router({
         externalId: z.string(),
         status: z.enum(["idle", "running", "completed", "error"]),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         await updateTaskStatus(input.externalId, input.status);
+
+        // Auto-create notification on task completion or error
+        if (input.status === "completed" || input.status === "error") {
+          try {
+            const task = await getTaskByExternalId(input.externalId);
+            if (task) {
+              await createNotification({
+                userId: ctx.user.id,
+                type: input.status === "completed" ? "task_completed" : "task_error",
+                title: input.status === "completed"
+                  ? `Task completed: ${task.title}`
+                  : `Task failed: ${task.title}`,
+                content: input.status === "completed"
+                  ? "Your task has finished successfully."
+                  : "Your task encountered an error.",
+                taskExternalId: input.externalId,
+              });
+            }
+          } catch (err) {
+            console.error("[Notification] Failed to create auto-notification:", err);
+          }
+        }
+
         return { success: true };
       }),
 
@@ -220,12 +259,12 @@ export const appRouter = router({
     }),
   }),
 
-  /** Workspace artifacts — browser screenshots, code, terminal output from bridge events */
+  /** Workspace artifacts — browser screenshots, code, terminal output, documents from bridge events */
   workspace: router({
     addArtifact: protectedProcedure
       .input(z.object({
         taskId: z.number(),
-        artifactType: z.enum(["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]),
+        artifactType: z.enum(ARTIFACT_TYPES),
         label: z.string().optional(),
         content: z.string().optional(),
         url: z.string().optional(),
@@ -253,7 +292,7 @@ export const appRouter = router({
     latest: protectedProcedure
       .input(z.object({
         taskId: z.number(),
-        type: z.enum(["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]),
+        type: z.enum(ARTIFACT_TYPES),
       }))
       .query(async ({ input }) => {
         return getLatestArtifactByType(input.taskId, input.type) ?? null;
@@ -299,6 +338,169 @@ export const appRouter = router({
         const content = response.choices?.[0]?.message?.content ?? "I'm sorry, I couldn't generate a response.";
         return { content };
       }),
+  }),
+
+  /** Cross-session memory — persistent knowledge extracted from tasks or added manually */
+  memory: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(200).optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return getUserMemories(ctx.user.id, input?.limit ?? 50);
+      }),
+
+    add: protectedProcedure
+      .input(z.object({
+        key: z.string().min(1).max(500),
+        value: z.string().min(1),
+        source: z.enum(["auto", "user"]).optional(),
+        taskExternalId: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await addMemoryEntry({
+          userId: ctx.user.id,
+          key: input.key,
+          value: input.value,
+          source: input.source ?? "user",
+          taskExternalId: input.taskExternalId ?? null,
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteMemoryEntry(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    search: protectedProcedure
+      .input(z.object({ query: z.string().min(1), limit: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return searchMemories(ctx.user.id, input.query, input.limit ?? 10);
+      }),
+  }),
+
+  /** Task sharing — create signed share links with optional password and expiry */
+  share: router({
+    create: protectedProcedure
+      .input(z.object({
+        taskExternalId: z.string(),
+        password: z.string().optional(),
+        expiresInHours: z.number().min(1).max(720).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const shareToken = nanoid(24);
+        let passwordHash: string | null = null;
+
+        if (input.password) {
+          // Simple hash using built-in crypto (not bcrypt to avoid dep)
+          const crypto = await import("crypto");
+          passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
+        }
+
+        const expiresAt = input.expiresInHours
+          ? new Date(Date.now() + input.expiresInHours * 60 * 60 * 1000)
+          : null;
+
+        const share = await createTaskShare({
+          taskExternalId: input.taskExternalId,
+          userId: ctx.user.id,
+          shareToken,
+          passwordHash,
+          expiresAt,
+        });
+
+        return {
+          shareToken,
+          shareUrl: `/shared/${shareToken}`,
+          expiresAt,
+          hasPassword: !!passwordHash,
+        };
+      }),
+
+    list: protectedProcedure
+      .input(z.object({ taskExternalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        return getTaskShares(input.taskExternalId, ctx.user.id);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteTaskShare(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    /** Public: view a shared task (no auth required) */
+    view: publicProcedure
+      .input(z.object({
+        shareToken: z.string(),
+        password: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const share = await getTaskShareByToken(input.shareToken);
+        if (!share) return { error: "Share not found" };
+
+        // Check expiration
+        if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
+          return { error: "This share link has expired" };
+        }
+
+        // Check password
+        if (share.passwordHash) {
+          if (!input.password) {
+            return { error: "password_required" };
+          }
+          const crypto = await import("crypto");
+          const hash = crypto.createHash("sha256").update(input.password).digest("hex");
+          if (hash !== share.passwordHash) {
+            return { error: "Incorrect password" };
+          }
+        }
+
+        // Increment view count
+        await incrementShareViewCount(input.shareToken);
+
+        // Get task and messages
+        const task = await getTaskByExternalId(share.taskExternalId);
+        if (!task) return { error: "Task not found" };
+
+        const messages = await getTaskMessages(task.id);
+
+        return {
+          task: { title: task.title, status: task.status, createdAt: task.createdAt },
+          messages: messages.map(m => ({
+            role: m.role,
+            content: m.content,
+            createdAt: m.createdAt,
+          })),
+        };
+      }),
+  }),
+
+  /** In-app notifications — task completion, errors, share views */
+  notification: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return getUserNotifications(ctx.user.id, input?.limit ?? 50);
+      }),
+
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return getUnreadNotificationCount(ctx.user.id);
+    }),
+
+    markRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await markNotificationRead(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
+      await markAllNotificationsRead(ctx.user.id);
+      return { success: true };
+    }),
   }),
 });
 

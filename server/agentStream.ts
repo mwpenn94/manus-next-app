@@ -56,6 +56,7 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You d
 - **generate_image(prompt)**: Create images from text descriptions.
 - **analyze_data(data, analysis_type)**: Analyze structured data and produce insights.
 - **execute_code(code)**: Run JavaScript for calculations, data processing, or structured output.
+- **generate_document(title, content)**: Create structured documents (reports, analyses, plans) as downloadable markdown files. Use this when asked to write, draft, or produce any long-form content.
 
 ## RESEARCH WORKFLOW
 
@@ -77,6 +78,7 @@ You are **Manus Next**, an open-source autonomous AI agent platform. Here is wha
 - **How you work**: You receive a user request, plan your approach, call tools autonomously in a loop (up to 8 turns), and synthesize results into a comprehensive response
 - **Key differentiator**: You are self-hosted and open-source — users own their data and can extend your capabilities
 - **Limitations**: You currently search via DuckDuckGo + Wikipedia (not a full web crawler), execute only JavaScript (not Python), and don't have browser automation or file system access
+- **Memory**: You can recall information from previous conversations if the user has enabled cross-session memory. Use this context to personalize responses.
 
 CRITICAL IDENTITY RULE: When describing who built you or your origin, say "Manus Next is an independent open-source project." NEVER say you were built by Google, OpenAI, Anthropic, Meta, or any other company.
 
@@ -106,6 +108,8 @@ Example comparison format:
 
 You are an AGENT, not a chatbot. Act like one.`;
 
+export type AgentMode = "speed" | "quality";
+
 export interface AgentStreamOptions {
   messages: Message[];
   taskExternalId?: string;
@@ -119,6 +123,10 @@ export interface AgentStreamOptions {
     content?: string;
     url?: string;
   }) => void;
+  /** Speed/Quality mode — affects MAX_TOOL_TURNS and response depth */
+  mode?: AgentMode;
+  /** Cross-session memory entries to inject into context */
+  memoryContext?: string;
 }
 
 function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknown>): boolean {
@@ -129,7 +137,7 @@ function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknow
  * Run the agentic streaming loop
  */
 export async function runAgentStream(options: AgentStreamOptions): Promise<void> {
-  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact } = options;
+  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext } = options;
 
   try {
     const { invokeLLM } = await import("./_core/llm");
@@ -138,13 +146,24 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     let conversation: Message[] = [...messages];
 
     // Inject or replace system prompt
-    const systemPrompt = resolvedSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+    let systemPrompt = resolvedSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+
+    // Inject memory context if available
+    if (memoryContext) {
+      systemPrompt += `\n\n## USER MEMORY (from previous sessions)\n\n${memoryContext}\n\nUse this information to personalize your responses. Do not mention that you have "memory" unless the user asks.`;
+    }
+
+    // Mode-specific instructions
+    if (mode === "speed") {
+      systemPrompt += `\n\n## MODE: SPEED\nPrioritize fast, concise responses. Use fewer tool calls. Give direct answers when confident. Skip deep research unless explicitly asked.`;
+    }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
     } else {
       conversation = [{ role: "system", content: systemPrompt }, ...conversation];
     }
 
+    const maxTurns = mode === "speed" ? 4 : MAX_TOOL_TURNS;
     let turn = 0;
     let finalContent = "";
     let totalToolCalls = 0;
@@ -156,7 +175,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     // Signal task is running
     sendSSE(safeWrite, { status: "running" });
 
-    while (turn < MAX_TOOL_TURNS) {
+    while (turn < maxTurns) {
       turn++;
       console.log(`[Agent] Turn ${turn}/${MAX_TOOL_TURNS}, messages: ${conversation.length}`);
 
@@ -305,7 +324,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
       }
     }
 
-    if (turn >= MAX_TOOL_TURNS) {
+    if (turn >= maxTurns) {
       console.log("[Agent] Max tool turns reached");
       sendSSE(safeWrite, {
         delta: "\n\n*[Reached maximum number of tool execution steps]*",
@@ -343,6 +362,8 @@ function getToolDisplayInfo(
       return { type: "executing", label: args.description || "Running code" };
     case "read_webpage":
       return { type: "browsing", label: `Reading ${args.url ? new URL(args.url).hostname : "webpage"}` };
+    case "generate_document":
+      return { type: "writing", label: `Writing document: ${(args.title || "").slice(0, 60)}` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /shared/
+
+# Manus Next — Sovereign AI Agent
+# https://manusnext-mlromfub.manus.space

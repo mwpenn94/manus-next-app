@@ -34,13 +34,14 @@ describe("Agent Tools", () => {
 
   it("AGENT_TOOLS defines the expected tool set", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(5);
+    expect(AGENT_TOOLS).toHaveLength(6);
     const toolNames = AGENT_TOOLS.map((t) => t.function.name);
     expect(toolNames).toContain("web_search");
     expect(toolNames).toContain("read_webpage");
     expect(toolNames).toContain("generate_image");
     expect(toolNames).toContain("analyze_data");
     expect(toolNames).toContain("execute_code");
+    expect(toolNames).toContain("generate_document");
   });
 
   it("each tool has proper function calling schema", async () => {
@@ -119,7 +120,7 @@ describe("Agent Tools", () => {
     expect(result.success).toBe(true);
     expect(result.result).toBeTruthy();
     expect(result.artifactType).toBe("browser_url");
-  });
+  }, 25000);
 
   it("analyze_data uses LLM for structured analysis", async () => {
     const { executeTool } = await import("./agentTools");

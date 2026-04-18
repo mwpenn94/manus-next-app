@@ -19,6 +19,7 @@ import { useTask } from "@/contexts/TaskContext";
 import { useBridge } from "@/contexts/BridgeContext";
 import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import NotificationCenter from "@/components/NotificationCenter";
 import {
   Search,
   Plus,
@@ -39,6 +40,7 @@ import {
   Star,
   Trash2,
   Filter,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -435,6 +437,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           Usage & Billing
         </Link>
         <Link
+          href="/memory"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/memory"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Brain className="w-4 h-4" />
+          Memory
+        </Link>
+        <Link
           href="/settings"
           className={cn(
             "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
@@ -544,6 +558,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               manus next
             </span>
           </Link>
+          <div className="ml-auto">
+            <NotificationCenter />
+          </div>
         </div>
 
         {/* Page content */}

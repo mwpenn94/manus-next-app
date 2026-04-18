@@ -25,7 +25,8 @@ export type AgentAction =
   | { type: "creating"; file: string; status: "active" | "done"; preview?: string }
   | { type: "searching"; query: string; status: "active" | "done"; preview?: string }
   | { type: "generating"; description: string; status: "active" | "done"; preview?: string }
-  | { type: "thinking"; status: "active" | "done"; preview?: string };
+  | { type: "thinking"; status: "active" | "done"; preview?: string }
+  | { type: "writing"; label?: string; status: "active" | "done"; preview?: string };
 
 export interface Message {
   id: string;

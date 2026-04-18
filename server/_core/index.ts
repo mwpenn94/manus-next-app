@@ -95,10 +95,12 @@ async function startServer() {
       const body = req.body || {};
       const messages = body.messages || [];
       const taskExternalId = body.taskExternalId as string | undefined;
-      console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId);
+      const mode = (body.mode === "speed" ? "speed" : "quality") as "speed" | "quality";
+      console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId, "mode:", mode);
 
       // Resolve system prompt: per-task > global preferences > default
       let resolvedSystemPrompt: string | null = null;
+      let memoryContext: string | undefined;
       try {
         const { sdk: sdkInstance } = await import("./sdk");
         const user = await sdkInstance.authenticateRequest(req).catch(() => null);
@@ -113,6 +115,14 @@ async function startServer() {
             const prefs = await getUserPreferences(user.id);
             if (prefs?.systemPrompt) resolvedSystemPrompt = prefs.systemPrompt as string;
           }
+          // Load cross-session memory
+          try {
+            const { getUserMemories } = await import("../db");
+            const memories = await getUserMemories(user.id, 20);
+            if (memories.length > 0) {
+              memoryContext = memories.map(m => `- **${m.key}**: ${m.value}`).join("\n");
+            }
+          } catch { /* memory is optional */ }
         }
       } catch { /* proceed with default */ }
 
@@ -133,6 +143,8 @@ async function startServer() {
         resolvedSystemPrompt,
         safeWrite,
         safeEnd,
+        mode,
+        memoryContext,
         onArtifact: async (artifact) => {
           console.log("[Stream] Artifact produced:", artifact.type, artifact.label);
           if (taskServerId) {

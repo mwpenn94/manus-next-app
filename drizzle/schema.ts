@@ -1,4 +1,5 @@
-import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint } from "drizzle-orm/mysql-core";
+import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, boolean } from "drizzle-orm/mysql-core";
+import { nanoid } from "nanoid";
 
 /**
  * Core user table backing auth flow.
@@ -116,7 +117,7 @@ export const workspaceArtifacts = mysqlTable("workspace_artifacts", {
   id: int("id").autoincrement().primaryKey(),
   taskId: int("taskId").notNull(),
   /** Artifact type: browser_screenshot, browser_url, code, terminal */
-  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]).notNull(),
+  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"]).notNull(),
   /** For code: filename. For terminal: command. For browser: page title. */
   label: varchar("label", { length: 500 }),
   /** Text content (code source, terminal output). Null for screenshots. */
@@ -128,3 +129,58 @@ export const workspaceArtifacts = mysqlTable("workspace_artifacts", {
 
 export type WorkspaceArtifact = typeof workspaceArtifacts.$inferSelect;
 export type InsertWorkspaceArtifact = typeof workspaceArtifacts.$inferInsert;
+
+// ── Memory Entries (cross-session knowledge) ──
+export const memoryEntries = mysqlTable("memory_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Short key/label for the memory (e.g., "User prefers dark mode") */
+  key: varchar("key", { length: 500 }).notNull(),
+  /** Detailed value/content of the memory */
+  value: text("value").notNull(),
+  /** Source of the memory: auto-extracted from task, or user-created */
+  source: mysqlEnum("source", ["auto", "user"]).default("auto").notNull(),
+  /** Task that produced this memory (null for user-created) */
+  taskExternalId: varchar("taskExternalId", { length: 64 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MemoryEntry = typeof memoryEntries.$inferSelect;
+export type InsertMemoryEntry = typeof memoryEntries.$inferInsert;
+
+// ── Task Shares (signed URL sharing) ──
+export const taskShares = mysqlTable("task_shares", {
+  id: int("id").autoincrement().primaryKey(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }).notNull(),
+  userId: int("userId").notNull(),
+  /** Unique share token for the public URL */
+  shareToken: varchar("shareToken", { length: 64 }).notNull().unique(),
+  /** Optional bcrypt password hash for protected shares */
+  passwordHash: text("passwordHash"),
+  /** Optional expiration timestamp */
+  expiresAt: timestamp("expiresAt"),
+  /** View count */
+  viewCount: int("viewCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskShare = typeof taskShares.$inferSelect;
+export type InsertTaskShare = typeof taskShares.$inferInsert;
+
+// ── Notifications ──
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Notification type: task_completed, task_error, share_viewed, system */
+  type: mysqlEnum("type", ["task_completed", "task_error", "share_viewed", "system"]).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  content: text("content"),
+  /** Related task external ID (optional) */
+  taskExternalId: varchar("taskExternalId", { length: 64 }),
+  /** Read status */
+  read: int("read").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;

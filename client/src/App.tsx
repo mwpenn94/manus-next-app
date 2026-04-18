@@ -16,6 +16,8 @@ import Home from "./pages/Home";
 const TaskView = lazy(() => import("./pages/TaskView"));
 const BillingPage = lazy(() => import("./pages/BillingPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const SharedTaskView = lazy(() => import("./pages/SharedTaskView"));
+const MemoryPage = lazy(() => import("./pages/MemoryPage"));
 
 function PageLoader() {
   return (
@@ -44,6 +46,16 @@ function Router() {
       <Route path="/settings">
         <Suspense fallback={<PageLoader />}>
           <SettingsPage />
+        </Suspense>
+      </Route>
+      <Route path="/memory">
+        <Suspense fallback={<PageLoader />}>
+          <MemoryPage />
+        </Suspense>
+      </Route>
+      <Route path="/shared/:token">
+        <Suspense fallback={<PageLoader />}>
+          <SharedTaskView />
         </Suspense>
       </Route>
       <Route path="/404" component={NotFound} />

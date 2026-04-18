@@ -234,3 +234,74 @@
 - [x] Add test for research nudge behavior (web_search without read_webpage triggers nudge) — test verifies shouldNudge, usedWebSearch, usedReadWebpage, nudgedForDeepResearch variables exist in agentStream.ts
 - [x] Fix failing test assertion: "MUST use web_search" → "ALWAYS use web_search FIRST", "NEVER answer questions about real-world entities" → "NEVER claim you cannot find information"
 - [x] All 98 tests passing across 8 test files (final)
+
+## Manus Parity Spec v8.0 Incorporation (Landscape Pass)
+
+### Speed/Quality Mode (#4)
+- [x] Add SpeedQuality mode type and state to TaskContext (speed | quality | balanced)
+- [x] Add mode toggle UI in Home page input area and TaskView header
+- [x] Pass mode to /api/stream endpoint → adjust LLM parameters (temperature, max_tokens)
+- [x] Persist mode preference per user via preferences.save
+- [x] Add test for mode parameter passing through stream endpoint
+
+### Cross-Session Memory (#6)
+- [x] Add memory_entries table to schema (userId, key, value, source, taskExternalId, createdAt)
+- [x] Add memory extraction logic — extract key facts from completed task conversations
+- [x] Add memory injection into system prompt — query relevant memories for new tasks
+- [x] Add tRPC procedures for memory CRUD (list, add, delete, search)
+- [x] Add Memory page (accessible from sidebar) showing stored knowledge entries
+
+### Task Sharing via Signed URL (#7)
+- [x] Add task_shares table to schema (taskId, shareToken, passwordHash, expiresAt, createdAt)
+- [x] Add tRPC procedures for share CRUD (create, list, view, delete)
+- [x] Add public /shared/:token route that renders read-only task transcript
+- [x] Add ShareDialog in TaskView with password/expiry options
+- [x] Add tests for share token generation and validation (30 parity tests)
+
+### Event Notifications (#9)
+- [x] Add notifications table to schema (userId, type, title, content, readAt, taskExternalId, createdAt)
+- [x] Add NotificationCenter bell icon in AppLayout header with unread count badge
+- [x] Add notification dropdown showing recent notifications with mark-read
+- [x] Trigger notifications on task completion and task error events (auto-notify in updateStatus)
+- [x] Add tRPC procedures for notification CRUD (list, unreadCount, markRead, markAllRead)
+- [x] Notification preferences toggle already in General settings
+
+### Document Generation Tool (#61)
+- [x] Add generate_document tool to AGENT_TOOLS in agentTools.ts
+- [x] Implement document generation (markdown, report, analysis, plan formats)
+- [x] Store generated documents as workspace artifacts (new 'document' artifact type)
+- [x] Document artifacts visible in workspace panel
+- [x] Add tests for document generation tool (format enum, tool presence, executor)
+
+### SEO Basics (#37)
+- [x] Add proper meta tags and OG tags to client/index.html (og:title, og:description, og:type, og:image, twitter:card)
+- [x] Add robots.txt to client/public/ (allows all, disallows /api/ and /shared/)
+- [ ] Add dynamic meta tags for shared task pages (deferred — requires SSR)
+- [ ] Add structured data (JSON-LD) for the application (deferred — low priority)
+
+### Capability Inventory Honesty Update
+- [x] Update SettingsPage CAPABILITY_DEFINITIONS to honestly reflect what is implemented vs planned (7 live, 7 planned)
+- [x] Add implementation status badges (live / partial / planned) to each capability card
+- [x] Planned capabilities have disabled toggles and show informational toasts
+
+### Stability Hardening (Recursive Assessment)
+- [x] Audit all SSE stream error paths — graceful degradation confirmed
+- [x] Audit React context memory usage — useEffect cleanups verified in all new components
+- [x] Audit database query error handling — all DB calls have try/catch, return [] or null on failure
+- [x] Audit file upload error paths — handled in existing code
+- [x] Audit voice recording error paths — handled in existing code
+- [x] Audit bridge WebSocket reconnection — exponential backoff with MAX_RECONNECT_ATTEMPTS=5 confirmed
+- [x] Fixed mock/implementation mismatch: getUnreadNotificationCount returns number, not {count: number}
+- [x] Fixed web_search test timeout (increased to 15s for real HTTP calls)
+- [x] Removed `as any` type bypass in NotificationCenter
+- [x] 3 consecutive convergence passes with zero issues
+- [ ] Test all pages at 375px mobile viewport (#45) — deferred to next session
+- [ ] Add ErrorBoundary coverage for all lazy-loaded pages — deferred to next session
+
+### Documentation Update
+- [x] Updated PARITY_GAP_ANALYSIS.md with implementation results and current status
+- [x] Created ARCHITECTURE.md with full system design overview, data flow, API routes, testing info
+- [x] Updated in-app SettingsPage capability descriptions to match reality (7 live, 7 planned)
+- [x] Updated VALIDATION_FINDINGS.md with all validation results
+- [ ] Add inline JSDoc documentation to key server files — deferred to next session
+- [ ] Update README.md with current architecture — deferred to next session

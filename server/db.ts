@@ -1,6 +1,6 @@
-import { eq, desc, and, or, like, ne } from "drizzle-orm";
+import { eq, desc, and, or, like, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -287,4 +287,104 @@ export async function getLatestArtifactByType(taskId: number, type: string) {
     and(eq(workspaceArtifacts.taskId, taskId), eq(workspaceArtifacts.artifactType, type as any))
   ).orderBy(desc(workspaceArtifacts.createdAt)).limit(1);
   return result[0] ?? null;
+}
+
+// ── Memory Entry Queries ──
+
+export async function getUserMemories(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(memoryEntries).where(eq(memoryEntries.userId, userId)).orderBy(desc(memoryEntries.createdAt)).limit(limit);
+}
+
+export async function addMemoryEntry(entry: InsertMemoryEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(memoryEntries).values(entry);
+}
+
+export async function deleteMemoryEntry(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(memoryEntries).where(and(eq(memoryEntries.id, id), eq(memoryEntries.userId, userId)));
+}
+
+export async function searchMemories(userId: number, query: string, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  const pattern = `%${query}%`;
+  return db.select().from(memoryEntries).where(
+    and(eq(memoryEntries.userId, userId), or(like(memoryEntries.key, pattern), like(memoryEntries.value, pattern)))
+  ).orderBy(desc(memoryEntries.createdAt)).limit(limit);
+}
+
+// ── Task Share Queries ──
+
+export async function createTaskShare(share: InsertTaskShare) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(taskShares).values(share);
+  return getTaskShareByToken(share.shareToken);
+}
+
+export async function getTaskShareByToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(taskShares).where(eq(taskShares.shareToken, token)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getTaskShares(taskExternalId: string, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskShares).where(
+    and(eq(taskShares.taskExternalId, taskExternalId), eq(taskShares.userId, userId))
+  ).orderBy(desc(taskShares.createdAt));
+}
+
+export async function incrementShareViewCount(token: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(taskShares).set({ viewCount: sql`${taskShares.viewCount} + 1` }).where(eq(taskShares.shareToken, token));
+}
+
+export async function deleteTaskShare(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(taskShares).where(and(eq(taskShares.id, id), eq(taskShares.userId, userId)));
+}
+
+// ── Notification Queries ──
+
+export async function getUserNotifications(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(limit);
+}
+
+export async function getUnreadNotificationCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select().from(notifications).where(
+    and(eq(notifications.userId, userId), eq(notifications.read, 0))
+  );
+  return result.length;
+}
+
+export async function createNotification(notification: InsertNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(notifications).values(notification);
+}
+
+export async function markNotificationRead(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(notifications).set({ read: 1 }).where(and(eq(notifications.id, id), eq(notifications.userId, userId)));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(notifications).set({ read: 1 }).where(eq(notifications.userId, userId));
 }
