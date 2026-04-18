@@ -305,3 +305,54 @@
 - [x] Updated VALIDATION_FINDINGS.md with all validation results
 - [x] Add inline JSDoc documentation to key server files — agentStream.ts (AgentMode, AgentStreamOptions, runAgentStream), agentTools.ts (module doc, executeTool)
 - [x] Created README.md with current architecture, features, tech stack, setup, testing, capability status
+
+## Phase 3: Recommended Items + Remaining Parity (Recursive Optimization)
+
+### Memory Auto-Extraction (post-task LLM fact extraction)
+- [x] Add extractMemories() function in server/memoryExtractor.ts that calls LLM with structured JSON schema to extract key facts
+- [x] Wire extractMemories into /api/stream completion handler (fire-and-forget after task completes)
+- [x] Store extracted memories with source="auto" and taskExternalId reference
+- [ ] Add test for memory auto-extraction logic
+
+### Conversation Branching / Regenerate
+- [x] Add removeLastMessage to TaskContext (removes last message, returns removed msg)
+- [x] Add "Regenerate" button (RefreshCw icon) on last assistant message in MessageBubble
+- [x] Implement handleRegenerate: remove last assistant msg, re-send full SSE conversation
+- [ ] Add test for regenerate flow
+
+### Task Replay with Timeline Scrubber (#8)
+- [ ] Record all SSE events with timestamps during task execution for replay
+- [ ] Add replay mode to TaskView that replays messages step-by-step
+- [ ] Add timeline scrubber slider component for navigating through task steps
+- [ ] Add play/pause/speed controls for replay
+- [ ] Add replay button to completed task headers
+
+### Scheduled Tasks (#17)
+- [ ] Add scheduled_tasks table to schema (userId, name, prompt, cronExpression, intervalSeconds, repeat, enabled, lastRunAt, nextRunAt)
+- [ ] Add tRPC procedures for schedule CRUD (create, list, update, delete, toggle)
+- [ ] Add SchedulePage with schedule management UI
+- [ ] Add schedule creation dialog accessible from task completion
+- [ ] Add cron expression builder/helper UI
+- [ ] Add server-side scheduler that checks and executes due tasks (polling-based)
+
+### Wide Research / Parallel Sub-agents (#5)
+- [ ] Add parallel research mode that spawns multiple search queries simultaneously
+- [ ] Add research synthesis that combines results from parallel searches
+- [ ] Update system prompt to support "wide research" instruction
+- [ ] Add progress indicator for parallel research operations
+
+### Update SettingsPage Capabilities
+- [ ] Update all newly implemented capabilities from "planned" to "live"
+- [ ] Add accurate descriptions for all live capabilities
+
+### Virtual User Persona Validation
+- [ ] Developer persona: test code execution, document generation, web search for technical topics
+- [ ] Researcher persona: test wide research, data analysis, document generation for research
+- [ ] Business persona: test scheduling, notifications, sharing, memory for business workflows
+- [ ] Casual persona: test chat mode, image generation, simple queries
+- [ ] Admin persona: test settings, memory management, task management
+
+### Final Documentation Update
+- [ ] Update ARCHITECTURE.md with new features
+- [ ] Update README.md with new capabilities
+- [ ] Update PARITY_GAP_ANALYSIS.md with current status

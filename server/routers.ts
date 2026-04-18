@@ -39,6 +39,13 @@ import {
   createNotification,
   markNotificationRead,
   markAllNotificationsRead,
+  createScheduledTask,
+  getUserScheduledTasks,
+  updateScheduledTask,
+  deleteScheduledTask,
+  toggleScheduledTask,
+  addTaskEvent,
+  getTaskEvents,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -475,6 +482,92 @@ export const appRouter = router({
             createdAt: m.createdAt,
           })),
         };
+      }),
+  }),
+
+  /** Task scheduling — cron and interval-based recurring tasks */
+  schedule: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserScheduledTasks(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(500),
+        prompt: z.string().min(1),
+        scheduleType: z.enum(["cron", "interval"]),
+        cronExpression: z.string().optional(),
+        intervalSeconds: z.number().min(60).optional(),
+        repeat: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Calculate next run time
+        let nextRunAt: Date | null = null;
+        if (input.scheduleType === "interval" && input.intervalSeconds) {
+          nextRunAt = new Date(Date.now() + input.intervalSeconds * 1000);
+        } else if (input.scheduleType === "cron" && input.cronExpression) {
+          // For cron, set next run to 1 minute from now as initial
+          nextRunAt = new Date(Date.now() + 60_000);
+        }
+
+        return createScheduledTask({
+          userId: ctx.user.id,
+          name: input.name,
+          prompt: input.prompt,
+          scheduleType: input.scheduleType,
+          cronExpression: input.cronExpression ?? null,
+          intervalSeconds: input.intervalSeconds ?? null,
+          repeat: input.repeat !== false ? 1 : 0,
+          nextRunAt,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(500).optional(),
+        prompt: z.string().min(1).optional(),
+        cronExpression: z.string().optional(),
+        intervalSeconds: z.number().min(60).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        await updateScheduledTask(id, ctx.user.id, updates as any);
+        return { success: true };
+      }),
+
+    toggle: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return toggleScheduledTask(input.id, ctx.user.id);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteScheduledTask(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  /** Session replay — recorded task events for playback */
+  replay: router({
+    events: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .query(async ({ input }) => {
+        return getTaskEvents(input.taskId);
+      }),
+
+    addEvent: protectedProcedure
+      .input(z.object({
+        taskId: z.number(),
+        eventType: z.string(),
+        payload: z.string(),
+        offsetMs: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await addTaskEvent(input);
+        return { success: true };
       }),
   }),
 

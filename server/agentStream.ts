@@ -57,6 +57,7 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You d
 - **analyze_data(data, analysis_type)**: Analyze structured data and produce insights.
 - **execute_code(code)**: Run JavaScript for calculations, data processing, or structured output.
 - **generate_document(title, content)**: Create structured documents (reports, analyses, plans) as downloadable markdown files. Use this when asked to write, draft, or produce any long-form content.
+- **browse_web(url, action)**: Navigate to a URL and extract structured content including metadata, headings, links, images, and full text. More thorough than read_webpage — use for deep page analysis.
 
 ## RESEARCH WORKFLOW
 
@@ -77,7 +78,7 @@ You are **Manus Next**, an open-source autonomous AI agent platform. Here is wha
 - **Your capabilities**: Web search (DuckDuckGo + Wikipedia + page reading), image generation, code execution (JavaScript), data analysis, and multi-turn autonomous reasoning with tool use
 - **How you work**: You receive a user request, plan your approach, call tools autonomously in a loop (up to 8 turns), and synthesize results into a comprehensive response
 - **Key differentiator**: You are self-hosted and open-source — users own their data and can extend your capabilities
-- **Limitations**: You currently search via DuckDuckGo + Wikipedia (not a full web crawler), execute only JavaScript (not Python), and don't have browser automation or file system access
+- **Limitations**: You currently search via DuckDuckGo + Wikipedia (not a full web crawler), execute only JavaScript (not Python), and don't have full browser automation or file system access. You can browse and extract content from any URL.
 - **Memory**: You can recall information from previous conversations if the user has enabled cross-session memory. Use this context to personalize responses.
 
 CRITICAL IDENTITY RULE: When describing who built you or your origin, say "Manus Next is an independent open-source project." NEVER say you were built by Google, OpenAI, Anthropic, Meta, or any other company.
@@ -311,7 +312,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         // Execute the tool
         console.log(`[Agent] Executing tool: ${toolName}`, parsedArgs);
         if (toolName === "web_search") usedWebSearch = true;
-        if (toolName === "read_webpage") usedReadWebpage = true;
+        if (toolName === "read_webpage" || toolName === "browse_web") usedReadWebpage = true;
         const result: ToolResult = await executeTool(toolName, toolArgs);
 
         // Send tool_result event
@@ -401,6 +402,8 @@ function getToolDisplayInfo(
       return { type: "browsing", label: `Reading ${args.url ? new URL(args.url).hostname : "webpage"}` };
     case "generate_document":
       return { type: "writing", label: `Writing document: ${(args.title || "").slice(0, 60)}` };
+    case "browse_web":
+      return { type: "browsing", label: `Browsing ${args.url ? new URL(args.url).hostname : "webpage"}` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

@@ -1,6 +1,6 @@
-import { eq, desc, and, or, like, ne, sql } from "drizzle-orm";
+import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -387,4 +387,93 @@ export async function markAllNotificationsRead(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(notifications).set({ read: 1 }).where(eq(notifications.userId, userId));
+}
+
+// ── Scheduled Task Queries ──
+
+export async function createScheduledTask(task: InsertScheduledTask) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(scheduledTasks).values(task);
+  // Return the last inserted
+  const result = await db.select().from(scheduledTasks)
+    .where(and(eq(scheduledTasks.userId, task.userId), eq(scheduledTasks.name, task.name)))
+    .orderBy(desc(scheduledTasks.createdAt)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getUserScheduledTasks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(scheduledTasks)
+    .where(eq(scheduledTasks.userId, userId))
+    .orderBy(desc(scheduledTasks.createdAt))
+    .limit(50);
+}
+
+export async function updateScheduledTask(id: number, userId: number, updates: Partial<InsertScheduledTask>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(scheduledTasks).set(updates as any)
+    .where(and(eq(scheduledTasks.id, id), eq(scheduledTasks.userId, userId)));
+}
+
+export async function deleteScheduledTask(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(scheduledTasks)
+    .where(and(eq(scheduledTasks.id, id), eq(scheduledTasks.userId, userId)));
+}
+
+export async function toggleScheduledTask(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(scheduledTasks)
+    .where(and(eq(scheduledTasks.id, id), eq(scheduledTasks.userId, userId))).limit(1);
+  if (!result[0]) throw new Error("Schedule not found");
+  const newEnabled = result[0].enabled ? 0 : 1;
+  await db.update(scheduledTasks).set({ enabled: newEnabled })
+    .where(eq(scheduledTasks.id, id));
+  return { enabled: !!newEnabled };
+}
+
+export async function getDueScheduledTasks() {
+  const db = await getDb();
+  if (!db) return [];
+  const now = new Date();
+  return db.select().from(scheduledTasks)
+    .where(and(
+      eq(scheduledTasks.enabled, 1),
+      lte(scheduledTasks.nextRunAt, now)
+    ))
+    .limit(20);
+}
+
+export async function markScheduledTaskRun(id: number, status: "success" | "error" | "running", nextRunAt: Date | null) {
+  const db = await getDb();
+  if (!db) return;
+  const updates: Record<string, unknown> = {
+    lastRunAt: new Date(),
+    lastStatus: status,
+    runCount: sql`${scheduledTasks.runCount} + 1`,
+  };
+  if (nextRunAt) updates.nextRunAt = nextRunAt;
+  await db.update(scheduledTasks).set(updates).where(eq(scheduledTasks.id, id));
+}
+
+// ── Task Event Queries (for session replay) ──
+
+export async function addTaskEvent(event: InsertTaskEvent) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(taskEvents).values(event);
+}
+
+export async function getTaskEvents(taskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskEvents)
+    .where(eq(taskEvents.taskId, taskId))
+    .orderBy(taskEvents.offsetMs)
+    .limit(500);
 }

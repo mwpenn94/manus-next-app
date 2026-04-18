@@ -184,3 +184,52 @@ export const notifications = mysqlTable("notifications", {
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+// ── Scheduled Tasks ──
+export const scheduledTasks = mysqlTable("scheduled_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Human-readable name for the schedule */
+  name: varchar("name", { length: 500 }).notNull(),
+  /** The prompt/instruction to execute */
+  prompt: text("prompt").notNull(),
+  /** Schedule type: cron or interval */
+  scheduleType: mysqlEnum("scheduleType", ["cron", "interval"]).notNull(),
+  /** Cron expression (6-field: sec min hr dom mon dow) — null for interval type */
+  cronExpression: varchar("cronExpression", { length: 128 }),
+  /** Interval in seconds — null for cron type */
+  intervalSeconds: int("intervalSeconds"),
+  /** Whether to repeat after execution */
+  repeat: int("repeat").default(1).notNull(),
+  /** Whether the schedule is active */
+  enabled: int("enabled").default(1).notNull(),
+  /** Last execution timestamp */
+  lastRunAt: timestamp("lastRunAt"),
+  /** Next scheduled execution timestamp */
+  nextRunAt: timestamp("nextRunAt"),
+  /** Total number of executions */
+  runCount: int("runCount").default(0).notNull(),
+  /** Last execution status */
+  lastStatus: mysqlEnum("lastStatus", ["success", "error", "running"]),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScheduledTask = typeof scheduledTasks.$inferSelect;
+export type InsertScheduledTask = typeof scheduledTasks.$inferInsert;
+
+// ── Task Events (for session replay) ──
+export const taskEvents = mysqlTable("task_events", {
+  id: int("id").autoincrement().primaryKey(),
+  taskId: int("taskId").notNull(),
+  /** Event type matching SSE event types */
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  /** JSON payload of the event */
+  payload: text("payload").notNull(),
+  /** Milliseconds since task start */
+  offsetMs: int("offsetMs").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TaskEvent = typeof taskEvents.$inferSelect;
+export type InsertTaskEvent = typeof taskEvents.$inferInsert;

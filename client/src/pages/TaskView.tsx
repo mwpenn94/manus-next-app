@@ -41,6 +41,7 @@ import {
   ExternalLink,
   Copy,
   RotateCcw,
+  RefreshCw,
   CheckCircle2,
   ArrowDown,
   PanelBottomOpen,
@@ -154,7 +155,7 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast }: { message: Message; isLast: boolean }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const isUser = message.role === "user";
   const hasActions = message.actions && message.actions.length > 0;
@@ -233,6 +234,20 @@ function MessageBubble({ message, isLast }: { message: Message; isLast: boolean 
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+        )}
+
+        {/* Regenerate button for last assistant message */}
+        {!isUser && isLast && canRegenerate && onRegenerate && (
+          <div className="mt-2 flex items-center gap-1">
+            <button
+              onClick={onRegenerate}
+              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
+              title="Regenerate response"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Regenerate
+            </button>
           </div>
         )}
 
@@ -652,7 +667,7 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
-  const { tasks, activeTask, setActiveTask, addMessage, updateTaskStatus } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -1136,6 +1151,103 @@ export default function TaskView() {
     }
   }, []);
 
+  /**
+   * Regenerate: remove the last assistant message and re-send the conversation.
+   * This re-triggers the SSE stream with the same conversation history minus the last response.
+   */
+  const handleRegenerate = useCallback(async () => {
+    if (!task || streaming) return;
+    // Remove the last assistant message
+    const removed = removeLastMessage(task.id);
+    if (!removed || removed.role !== "assistant") return;
+
+    // Re-send the conversation (minus the removed assistant message)
+    setStreaming(true);
+    setStreamContent("");
+    setAgentActions([]);
+    setStreamImages([]);
+    let accumulated = "";
+    const actions: AgentAction[] = [];
+    const images: string[] = [];
+
+    try {
+      // Build conversation from remaining messages
+      const conversationMessages = task.messages
+        .filter(m => m.id !== removed.id) // Exclude the removed message
+        .slice(-10)
+        .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const response = await fetch("/api/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messages: conversationMessages, taskExternalId: task.id, mode: agentMode }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) throw new Error("Stream failed");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        const lines = text.split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.delta) { accumulated += data.delta; setStreamContent(accumulated); }
+            if (data.tool_start) {
+              const display = data.tool_start.display || {};
+              const actionType = display.type || "thinking";
+              actions.push(mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active"));
+              setAgentActions([...actions]);
+            }
+            if (data.tool_result) {
+              const idx = actions.findIndex(a => a.status === "active");
+              if (idx >= 0) {
+                const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
+                actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                setAgentActions([...actions]);
+              }
+            }
+            if (data.image) { images.push(data.image); setStreamImages([...images]); accumulated += `\n\n![Generated Image](${data.image})\n\n`; setStreamContent(accumulated); }
+            if (data.done) { accumulated = data.content || accumulated; }
+            if (data.status) {
+              if (data.status === "running") updateTaskStatus(task.id, "running");
+              if (data.status === "completed") updateTaskStatus(task.id, "completed");
+            }
+            if (data.step_progress) setStepProgress(data.step_progress);
+            if (data.error) { accumulated += `\n\n\u26a0\ufe0f ${data.error}`; setStreamContent(accumulated); }
+          } catch { /* skip */ }
+        }
+      }
+
+      setStepProgress(null);
+      const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+      } else {
+        addMessage(task.id, { role: "assistant", content: `I encountered an error: ${err.message}. Please try again.` });
+      }
+    } finally {
+      abortControllerRef.current = null;
+      setStreaming(false);
+      setStreamContent("");
+      setAgentActions([]);
+      setStreamImages([]);
+      setStepProgress(null);
+    }
+  }, [task, streaming, removeLastMessage, addMessage, agentMode, updateTaskStatus]);
+
   // ── Drag-and-drop handlers ──
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -1379,7 +1491,13 @@ export default function TaskView() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain">
           {task.messages.map((msg, i) => (
-            <MessageBubble key={msg.id} message={msg} isLast={i === task.messages.length - 1} />
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isLast={i === task.messages.length - 1}
+              canRegenerate={!streaming && msg.role === "assistant" && i === task.messages.length - 1}
+              onRegenerate={handleRegenerate}
+            />
           ))}
           {isTyping && <TypingIndicator />}
           {streaming && (

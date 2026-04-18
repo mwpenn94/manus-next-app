@@ -136,6 +136,14 @@ async function startServer() {
         } catch { /* ignore */ }
       }
 
+      // Resolve userId for memory extraction
+      let streamUserId: number | null = null;
+      try {
+        const { sdk: sdkInstance2 } = await import("./sdk");
+        const streamUser = await sdkInstance2.authenticateRequest(req).catch(() => null);
+        if (streamUser) streamUserId = streamUser.id;
+      } catch { /* ignore */ }
+
       // Run the agentic stream
       await runAgentStream({
         messages,
@@ -164,6 +172,17 @@ async function startServer() {
           }
         },
       });
+
+      // Fire-and-forget: extract memories from the completed conversation
+      if (streamUserId && taskExternalId && messages.length >= 2) {
+        import("../memoryExtractor").then(({ extractMemories }) => {
+          extractMemories(
+            streamUserId!,
+            taskExternalId,
+            messages.map((m: any) => ({ role: m.role, content: typeof m.content === "string" ? m.content : "[non-text]" }))
+          ).catch(() => { /* fire-and-forget */ });
+        }).catch(() => { /* ignore */ });
+      }
     } catch (err: any) {
       console.error("[Stream] Error:", err);
       safeWrite(`data: ${JSON.stringify({ error: err.message || "Streaming failed" })}\n\n`);

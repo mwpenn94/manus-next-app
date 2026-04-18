@@ -41,6 +41,8 @@ import {
   Trash2,
   Filter,
   Brain,
+  Clock as ClockIcon,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -447,6 +449,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <Brain className="w-4 h-4" />
           Memory
+        </Link>
+        <Link
+          href="/schedule"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/schedule"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <ClockIcon className="w-4 h-4" />
+          Schedules
+        </Link>
+        <Link
+          href="/replay"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/replay"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Film className="w-4 h-4" />
+          Replay
         </Link>
         <Link
           href="/settings"

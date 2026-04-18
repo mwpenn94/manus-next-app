@@ -12,6 +12,7 @@
  * - `analyze_data` — LLM-powered structured data analysis
  * - `execute_code` — Sandboxed JavaScript execution with 5-second timeout
  * - `generate_document` — LLM-powered document creation (markdown, report, analysis, plan formats)
+ * - `browse_web` — Enhanced webpage browsing with structured extraction (metadata, headings, links, images, tables)
  *
  * @module agentTools
  */
@@ -133,6 +134,30 @@ export const AGENT_TOOLS: Tool[] = [
           },
         },
         required: ["title", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "browse_web",
+      description:
+        "Browse a webpage and extract structured information including page title, meta description, headings, links, images, and main content. Use this for comprehensive page analysis, extracting structured data from websites, or when you need more detail than read_webpage provides. Returns structured page analysis.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            description: "The full URL of the webpage to browse",
+          },
+          extract: {
+            type: "string",
+            enum: ["full", "links", "images", "metadata", "headings", "tables"],
+            description: "What to extract from the page. 'full' returns everything, others focus on specific elements.",
+          },
+        },
+        required: ["url"],
         additionalProperties: false,
       },
     },
@@ -782,6 +807,131 @@ async function executeCode(args: {
 }
 
 /**
+ * Browse a webpage and extract structured information.
+ * Enhanced version of read_webpage with structured extraction.
+ */
+async function executeBrowseWeb(args: { url: string; extract?: string }): Promise<ToolResult> {
+  try {
+    const resp = await fetch(args.url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(15000),
+      redirect: "follow",
+    });
+
+    if (!resp.ok) return { success: false, result: `Failed to fetch: HTTP ${resp.status}` };
+
+    const html = await resp.text();
+    const extractMode = args.extract || "full";
+
+    // Extract title
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : "(No title)";
+
+    // Extract meta description
+    const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)
+      || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
+    const metaDesc = metaDescMatch ? metaDescMatch[1].trim() : "";
+
+    // Extract OG tags
+    const ogTags: Record<string, string> = {};
+    const ogMatches = Array.from(html.matchAll(/<meta[^>]*property=["']og:([^"']+)["'][^>]*content=["']([^"']+)["'][^>]*>/gi));
+    for (const m of ogMatches) ogTags[m[1]] = m[2];
+
+    // Extract headings
+    const headings: string[] = [];    const headingMatches = Array.from(html.matchAll(/<h([1-3])[^>]*>([^<]*(?:<[^\/][^>]*>[^<]*)*)<\/h\1>/gi));
+    for (const m of headingMatches) {
+      const text = m[2].replace(/<[^>]+>/g, "").trim();
+      if (text) headings.push(`${'#'.repeat(parseInt(m[1]))} ${text}`);
+    }
+
+    // Extract links
+    const links: Array<{ text: string; href: string }> = [];
+    const linkMatches = Array.from(html.matchAll(/<a[^>]*href=["']([^"'#]+)["'][^>]*>([^<]*(?:<[^\/][^>]*>[^<]*)*)<\/a>/gi));
+    for (const m of linkMatches) {      const text = m[2].replace(/<[^>]+>/g, "").trim();
+      if (text && m[1].startsWith("http")) links.push({ text: text.slice(0, 100), href: m[1] });
+    }
+    const uniqueLinks = links.filter((l, i, arr) => arr.findIndex(a => a.href === l.href) === i).slice(0, 30);
+
+    // Extract images
+    const images: Array<{ src: string; alt: string }> = [];
+    const imgMatches = Array.from(html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi));
+    for (const m of imgMatches) {
+      if (m[1].startsWith("http")) images.push({ src: m[1], alt: m[2] || "" });
+    }
+    const uniqueImages = images.slice(0, 20);
+
+    // Extract main text content
+    let mainText = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+      .replace(/<footer[\s\S]*?<\/footer>/gi, "")
+      .replace(/<header[\s\S]*?<\/header>/gi, "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\s+/g, " ")
+      .replace(/\n\s*\n/g, "\n\n")
+      .trim()
+      .slice(0, 6000);
+
+    // Build result based on extract mode
+    let result = `## Page Analysis: ${title}\n\n`;
+    result += `**URL:** ${args.url}\n`;
+    if (metaDesc) result += `**Description:** ${metaDesc}\n`;
+
+    if (extractMode === "metadata" || extractMode === "full") {
+      if (Object.keys(ogTags).length > 0) {
+        result += `\n### Open Graph Tags\n`;
+        for (const [k, v] of Object.entries(ogTags)) result += `- **og:${k}:** ${v}\n`;
+      }
+    }
+
+    if (extractMode === "headings" || extractMode === "full") {
+      if (headings.length > 0) {
+        result += `\n### Page Structure (${headings.length} headings)\n`;
+        result += headings.slice(0, 20).join("\n") + "\n";
+      }
+    }
+
+    if (extractMode === "links" || extractMode === "full") {
+      if (uniqueLinks.length > 0) {
+        result += `\n### Links (${uniqueLinks.length} found)\n`;
+        for (const l of uniqueLinks.slice(0, 15)) result += `- [${l.text}](${l.href})\n`;
+      }
+    }
+
+    if (extractMode === "images" || extractMode === "full") {
+      if (uniqueImages.length > 0) {
+        result += `\n### Images (${uniqueImages.length} found)\n`;
+        for (const img of uniqueImages.slice(0, 10)) result += `- ${img.alt || '(no alt)'}: ${img.src}\n`;
+      }
+    }
+
+    if (extractMode === "full" || extractMode === "tables") {
+      result += `\n### Main Content\n${mainText.slice(0, 3000)}\n`;
+    }
+
+    return {
+      success: true,
+      result,
+      url: args.url,
+      artifactType: "browser_url",
+      artifactLabel: title,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Browse failed: ${err.message}` };
+  }
+}
+
+/**
  * Generate a structured document and upload it to S3
  */
 async function executeGenerateDocument(args: {
@@ -862,6 +1012,8 @@ export async function executeTool(
       return executeCode(args);
     case "generate_document":
       return executeGenerateDocument(args);
+    case "browse_web":
+      return executeBrowseWeb(args);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }

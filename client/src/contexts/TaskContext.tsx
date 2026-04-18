@@ -58,6 +58,7 @@ interface TaskContextValue {
   createTask: (title: string, initialMessage: string) => string;
   setActiveTask: (id: string | null) => void;
   addMessage: (taskId: string, message: Omit<Message, "id" | "timestamp">) => void;
+  removeLastMessage: (taskId: string) => Message | null;
   updateTaskStatus: (taskId: string, status: Task["status"]) => void;
 }
 
@@ -240,6 +241,30 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       });
     },
     [isAuthenticated, addMessageMutation]
+  );
+
+  /**
+   * Remove the last message from a task and return it.
+   * Used for regenerate — removes the last assistant response so we can re-generate.
+   * Note: This only removes from local state, not from the server DB.
+   */
+  const removeLastMessage = useCallback(
+    (taskId: string): Message | null => {
+      let removed: Message | null = null;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId || t.messages.length === 0) return t;
+          removed = t.messages[t.messages.length - 1];
+          return {
+            ...t,
+            updatedAt: new Date(),
+            messages: t.messages.slice(0, -1),
+          };
+        })
+      );
+      return removed;
+    },
+    []
   );
 
   const updateTaskStatus = useCallback(
@@ -489,6 +514,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         createTask,
         setActiveTask,
         addMessage,
+        removeLastMessage,
         updateTaskStatus,
       }}
     >
