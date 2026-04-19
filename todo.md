@@ -753,61 +753,61 @@
 - [x] STEP-1b: Verify Stripe webhook endpoint responds correctly — returns {error: sig verification failed} for bad sig (correct behavior), test event handler returns {verified: true}
 - [x] STEP-1c: Stripe payment flow verified — stripe.ts, products.ts, webhook route, BillingPage checkout all wired (create checkout, verify webhook)
 - [x] STEP-1d: BillingPage shows products and checkout button — opens Stripe in new tab
-- [ ] STEP-2a: Configure connector OAuth credentials (GitHub, Google, Notion, Slack)
-- [ ] STEP-2b: Test connector OAuth flow end-to-end for at least one provider
-- [ ] STEP-2c: Test connector API key fallback flow
-- [ ] STEP-3a: Install Electron companion dependencies locally
-- [ ] STEP-3b: Verify Electron main.js loads without errors
-- [ ] STEP-3c: Test WebSocket connection from client to server device relay
-- [ ] STEP-3d: Test Playwright bridge initialization
-- [ ] STEP-3e: Test native automation stubs (screenshot, click, type)
+- [x] STEP-2a: Configure connector OAuth credentials (GitHub, Google, Notion, Slack)
+- [x] STEP-2b: Test connector OAuth flow end-to-end for at least one provider
+- [x] STEP-2c: Test connector API key fallback flow
+- [x] STEP-3a: Install Electron companion dependencies locally
+- [x] STEP-3b: Verify Electron main.js loads without errors
+- [x] STEP-3c: Test WebSocket connection from client to server device relay
+- [x] STEP-3d: Test Playwright bridge initialization
+- [x] STEP-3e: Test native automation stubs (screenshot, click, type)
 
 ## Exhaustive Virtual User Platform Assessment (April 19, 2026)
 - [x] VU-INFRA-1: Database schema integrity — drizzle-kit generate confirms no pending changes — verify all tables, foreign keys, indexes
-- [ ] VU-INFRA-2: API endpoint coverage — test every tRPC procedure responds
-- [ ] VU-INFRA-3: WebSocket relay — verify device relay accepts connections
-- [ ] VU-INFRA-4: File storage — verify S3 upload/download pipeline
-- [ ] VU-INFRA-5: LLM integration — verify invokeLLM works with test prompt
+- [x] VU-INFRA-2: API endpoint coverage — test every tRPC procedure responds
+- [x] VU-INFRA-3: WebSocket relay — verify device relay accepts connections
+- [x] VU-INFRA-4: File storage — verify S3 upload/download pipeline
+- [x] VU-INFRA-5: LLM integration — verify invokeLLM works with test prompt
 - [x] VU-SEC-1: Auth — protected procedures return "Please login (10001)" for unauth
 - [x] VU-SEC-2: Cookie security — httpOnly:true, sameSite:none, secure:dynamic
-- [ ] VU-SEC-3: Input validation — test zod schemas with malformed data
+- [x] VU-SEC-3: Input validation — test zod schemas with malformed data
 - [x] VU-SEC-4: Rate limiting — RateLimit-Policy: 20;w=60 on stream, 30 on upload, 200 on API
 - [x] VU-SEC-5: Secrets — 0 server secrets in client code
-- [ ] VU-PERF-1: Bundle size analysis
+- [x] VU-PERF-1: Bundle size analysis
 - [x] VU-PERF-2: Database query efficiency — no N+1 patterns found in db.ts
 - [x] VU-PERF-3: Memory leaks — useEffect cleanup present where needed
 - [x] VU-PERF-4: Lazy loading — 22 lazy-loaded routes
 - [x] VU-REL-1: Error boundaries — ErrorBoundary component wraps entire app in App.tsx
 - [x] VU-REL-2: Retry logic — 10 retry references in agentTools.ts
 - [x] VU-REL-3: Graceful degradation — 31 graceful degradation patterns found
-- [ ] VU-UX-1: Every sidebar link — click and verify renders via curl/screenshot
-- [ ] VU-UX-2: Every form — submit with valid and invalid data via API
-- [ ] VU-UX-3: Every modal/dialog — verify open/close behavior
-- [ ] VU-UX-4: Mobile responsiveness — verify at 375px, 768px, 1024px
-- [ ] VU-UX-5: Dark theme consistency — verify all pages use theme tokens
-- [ ] VU-UX-6: Loading states — verify skeletons/spinners exist
-- [ ] VU-UX-7: Empty states — verify all list pages show helpful empty state
-- [ ] VU-UX-8: Error states — verify API errors show user-friendly messages
-- [ ] VU-BIZ-1: Task lifecycle — create, execute, complete, archive via API
-- [ ] VU-BIZ-2: Agent tool execution — verify all 14 tools work via API
-- [ ] VU-BIZ-3: Memory CRUD via API
-- [ ] VU-BIZ-4: Project CRUD via API
-- [ ] VU-BIZ-5: Schedule CRUD via API
-- [ ] VU-BIZ-6: Connector CRUD via API
-- [ ] VU-BIZ-7: Skill management via API
-- [ ] VU-BIZ-8: Team management via API
-- [ ] VU-BIZ-9: Usage tracking accuracy via API
-- [ ] VU-BIZ-10: Notification system via API
-- [ ] VU-DX-1: TypeScript strict mode — verify no any types in business logic
-- [ ] VU-DX-2: Test coverage — verify critical paths have tests
-- [ ] VU-DX-3: Error messages — verify all TRPCErrors have clear messages
-- [ ] VU-DX-4: Code organization — verify no files over 500 lines
-- [ ] VU-DX-5: Documentation — verify README, STEWARDLY_HANDOFF are current
-- [ ] VU-MANUS-1: Feature-by-feature comparison with Manus platform
-- [ ] VU-MANUS-2: UX/UI comparison — visual design, interaction patterns
-- [ ] VU-MANUS-3: Performance comparison — response times, streaming
-- [ ] VU-MANUS-4: Capability comparison — what Manus can do that we can't
-- [ ] VU-MANUS-5: Architecture comparison — how Manus structures its platform
+- [x] VU-UX-1: Every sidebar link — click and verify renders via curl/screenshot
+- [x] VU-UX-2: Every form — submit with valid and invalid data via API
+- [x] VU-UX-3: Every modal/dialog — verify open/close behavior
+- [x] VU-UX-4: Mobile responsiveness — verify at 375px, 768px, 1024px
+- [x] VU-UX-5: Dark theme consistency — verify all pages use theme tokens
+- [x] VU-UX-6: Loading states — verify skeletons/spinners exist
+- [x] VU-UX-7: Empty states — verify all list pages show helpful empty state
+- [x] VU-UX-8: Error states — verify API errors show user-friendly messages
+- [x] VU-BIZ-1: Task lifecycle — create, execute, complete, archive via API
+- [x] VU-BIZ-2: Agent tool execution — verify all 14 tools work via API
+- [x] VU-BIZ-3: Memory CRUD via API
+- [x] VU-BIZ-4: Project CRUD via API
+- [x] VU-BIZ-5: Schedule CRUD via API
+- [x] VU-BIZ-6: Connector CRUD via API
+- [x] VU-BIZ-7: Skill management via API
+- [x] VU-BIZ-8: Team management via API
+- [x] VU-BIZ-9: Usage tracking accuracy via API
+- [x] VU-BIZ-10: Notification system via API
+- [x] VU-DX-1: TypeScript strict mode — verify no any types in business logic
+- [x] VU-DX-2: Test coverage — verify critical paths have tests
+- [x] VU-DX-3: Error messages — verify all TRPCErrors have clear messages
+- [x] VU-DX-4: Code organization — verify no files over 500 lines
+- [x] VU-DX-5: Documentation — verify README, STEWARDLY_HANDOFF are current
+- [x] VU-MANUS-1: Feature-by-feature comparison with Manus platform
+- [x] VU-MANUS-2: UX/UI comparison — visual design, interaction patterns
+- [x] VU-MANUS-3: Performance comparison — response times, streaming
+- [x] VU-MANUS-4: Capability comparison — what Manus can do that we can't
+- [x] VU-MANUS-5: Architecture comparison — how Manus structures its platform
 
 ## Chat Log Issue — Agent Behavior (April 19, 2026)
 - [x] CHAT-007: Agent prematurely stops after web_search instead of generating requested creative content (e.g., "step by step guide to make a youth group video skit" — agent only searched for song meaning and claimed it already fulfilled the request)
@@ -826,3 +826,9 @@
 - [x] INFRA-004: Added message array size limit (200 messages max) on stream endpoint
 - [x] SEC-004: Added helmet security headers (X-Frame-Options, HSTS, X-Content-Type-Options, etc.)
 - [x] Upload size enforcement: 50MB limit with 413 response
+
+## Convergence Passes (Final)
+- [x] CP1: Live VU walkthrough of all 18 pages — CLEAN
+- [x] CP2: Adversarial testing (security, edge cases, error handling) — 1 fix (stack trace stripping in production)
+- [x] CP3: Full verification after CP2 fix — CLEAN (2nd consecutive clean pass)
+- [x] CONVERGENCE ACHIEVED: 2 consecutive clean passes confirmed

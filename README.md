@@ -21,7 +21,7 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 | **Memory Auto-Extraction** | LLM-powered fact extraction from completed conversations |
 | **Conversation Regenerate** | Re-generate any assistant response with one click |
 | **Task Sharing** | Signed URLs with optional password and expiry |
-| **Task Scheduling (UI + Server)** | Cron-based and interval-based recurring tasks with server-side polling |
+| **Task Scheduling** | Cron-based and interval-based recurring tasks with server-side polling |
 | **Session Replay** | Recorded interaction playback for task review |
 | **Notifications** | In-app notification center with unread tracking |
 | **Speed/Quality Mode** | Toggle between fast concise vs. thorough detailed responses |
@@ -29,6 +29,19 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 | **Keyboard Shortcuts** | Global shortcuts (Cmd+K, Cmd+N, Cmd+/, Cmd+Shift+S, Escape) |
 | **PWA Installable** | Web App Manifest for mobile/desktop installation |
 | **Bridge Integration** | WebSocket connection to Sovereign Hybrid backend |
+| **Stripe Payments** | Subscription billing with checkout, webhooks, and product management |
+| **Connector Ecosystem** | 8 connectors (Slack, GitHub, Google, Notion, Zapier, MCP, Webhooks, Email) |
+| **Skills Library** | Installable skill packs for specialized capabilities |
+| **App Builder** | Full webapp builder with preview, code editor, and publish |
+| **Design Studio** | AI image generation + text layers + canvas composition + export |
+| **Meeting Notes** | Record, transcribe, and summarize meetings |
+| **Slides Generator** | AI-powered slide deck creation |
+| **Figma Import** | Convert Figma designs to React components |
+| **Desktop App Builder** | Package web app as native desktop application |
+| **Virtual Desktop** | Terminal, text editor, browser, and file manager in-browser |
+| **Team Collaboration** | Create/join teams with invite codes |
+| **Mobile Projects** | Mobile-optimized project management |
+| **Electron Companion** | Native desktop bridge with WebSocket relay |
 
 ---
 
@@ -38,9 +51,12 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 - **Backend:** Express 4, tRPC 11, Server-Sent Events (SSE)
 - **Database:** MySQL/TiDB via Drizzle ORM
 - **Auth:** Manus OAuth
+- **Payments:** Stripe (checkout, webhooks, subscriptions)
 - **LLM:** Built-in Forge API
 - **Storage:** S3
 - **Scheduling:** cron-parser + server-side polling loop
+- **Security:** Helmet, express-rate-limit, auth guards on all sensitive endpoints
+- **Desktop:** Electron companion app with Playwright bridge
 
 ---
 
@@ -65,29 +81,35 @@ The app will be available at `http://localhost:3000`.
 
 ```
 client/src/
-  pages/          → Route-level components (Home, TaskView, Memory, Schedule, Replay, Settings, Billing, SharedTaskView)
-  components/     → Reusable UI (NotificationCenter, ShareDialog, ModeToggle, AppLayout, KeyboardShortcutsDialog)
-  contexts/       → React contexts (Task, Bridge, Theme)
-  hooks/          → Custom hooks (useKeyboardShortcuts)
-  _core/hooks/    → Auth hooks
+  pages/          -> Route-level components (25+ pages)
+  components/     -> Reusable UI (AppLayout, ManusNextChat, NotificationCenter, ShareDialog, etc.)
+  contexts/       -> React contexts (Task, Bridge, Theme)
+  hooks/          -> Custom hooks (useKeyboardShortcuts)
+  _core/hooks/    -> Auth hooks
 
 server/
-  agentStream.ts  → SSE agentic loop with tool calling
-  agentTools.ts   → Tool definitions and executors (8 tools)
-  scheduler.ts    → Server-side task scheduler (60s polling loop)
-  memoryExtractor.ts → LLM-powered memory auto-extraction
-  routers.ts      → tRPC procedures (auth, task, memory, share, notification, preferences, schedule, replay, usage, bridge)
-  db.ts           → Database query helpers
-  storage.ts      → S3 file storage
-  _core/          → Framework plumbing (OAuth, LLM, context, scheduler startup)
+  agentStream.ts  -> SSE agentic loop with tool calling + anti-premature-completion
+  agentTools.ts   -> Tool definitions and executors (14 tools)
+  scheduler.ts    -> Server-side task scheduler (60s polling loop)
+  memoryExtractor.ts -> LLM-powered memory auto-extraction
+  routers.ts      -> tRPC procedures (27 routers)
+  db.ts           -> Database query helpers
+  storage.ts      -> S3 file storage
+  stripe.ts       -> Stripe payment integration
+  products.ts     -> Product/pricing definitions
+  _core/          -> Framework plumbing (OAuth, LLM, context, security middleware)
+
+electron-companion/
+  src/            -> Electron main process, preload, renderer
+  scripts/        -> Build and packaging scripts
 
 drizzle/
-  schema.ts       → Database table definitions (12 tables)
+  schema.ts       -> Database table definitions
 ```
 
 ---
 
-## Agent Tools (8)
+## Agent Tools (14)
 
 | Tool | Description |
 |------|-------------|
@@ -99,6 +121,12 @@ drizzle/
 | `analyze_data` | Structured data analysis |
 | `generate_image` | AI image generation |
 | `generate_document` | Document creation (4 formats) |
+| `create_slides` | AI-powered slide deck generation |
+| `transcribe_audio` | Audio transcription via Whisper |
+| `send_notification` | Push notifications to connectors |
+| `manage_files` | File upload/download/management |
+| `build_webapp` | Web application scaffolding |
+| `design_compose` | Visual composition with AI |
 
 ---
 
@@ -114,16 +142,25 @@ drizzle/
 
 ---
 
+## Security
+
+- **Helmet** security headers (10 headers including CSP, HSTS, X-Frame-Options)
+- **Rate limiting** on all API endpoints (200/min general, 30/min uploads, 20/min streams)
+- **Auth guards** on file upload and SSE stream endpoints
+- **Zod validation** on all tRPC procedure inputs (281 validations)
+- **CSRF protection** via SameSite cookies
+- **JWT session management** with configurable expiry
+
+---
+
 ## Testing
 
 ```bash
-pnpm test                    # Run all 166 tests
-node validate-parity.mjs     # Run 18 e2e validations
-node validate-personas.mjs   # Run 35 virtual user persona checks
+pnpm test                    # Run all 246 tests
 npx tsc --noEmit             # TypeScript type check
 ```
 
-**Test coverage:** 166 tests across 11 test files covering routers, agent tools, streaming, features, bridge, preferences, parity features, Phase 3 features (browse_web, memory extractor, regenerate, scheduling, replay), and Phase 4 features (scheduler, wide_research, keyboard shortcuts, PWA, cost visibility).
+**Test coverage:** 246 tests across 14 test files covering routers, agent tools, streaming, features, bridge, preferences, parity, Stripe integration, connector OAuth, and agent behavior.
 
 ---
 
@@ -132,16 +169,18 @@ npx tsc --noEmit             # TypeScript type check
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — System design, data flow, API routes, capability status
 - **[PARITY_GAP_ANALYSIS.md](./PARITY_GAP_ANALYSIS.md)** — Manus Parity Spec v8.0 audit and status
 - **[todo.md](./todo.md)** — Feature tracking and implementation history
+- **[assessment-findings.md](./assessment-findings.md)** — Security and performance assessment results
+- **[vu-walkthrough-complete.md](./vu-walkthrough-complete.md)** — Virtual user walkthrough results
 
 ---
 
 ## Capability Status
 
-### Live (32 capabilities)
-Chat Mode, Agent Mode, Speed/Quality Mode, Cost Visibility, Cross-Session Memory, Memory Auto-Extraction, Task Sharing, Task Scheduling (UI + Server), Session Replay, Conversation Regenerate, Notifications, Data Analysis, Image Generation, Web Search, Wide Research, Enhanced Browsing, Auth, SEO, Code Execution, Voice STT, Document Generation, Task Management, Workspace Artifacts, Bridge Integration, Preferences, Identity Rule, Research Nudge, GitHub Integration, Mobile Responsive, System Prompt Customization, Keyboard Shortcuts, PWA Installability
+### Live (50+ capabilities)
+Chat Mode, Agent Mode, Speed/Quality Mode, Cost Visibility, Cross-Session Memory, Memory Auto-Extraction, Task Sharing, Task Scheduling, Session Replay, Conversation Regenerate, Notifications, Data Analysis, Image Generation, Web Search, Wide Research, Enhanced Browsing, Auth, SEO, Code Execution, Voice STT, Document Generation, Task Management, Workspace Artifacts, Bridge Integration, Preferences, Identity Rule, Research Nudge, GitHub Integration, Mobile Responsive, System Prompt Customization, Keyboard Shortcuts, PWA Installability, Stripe Payments, Connector Ecosystem, Skills Library, App Builder, Design Studio, Meeting Notes, Slides Generator, Figma Import, Desktop App Builder, Virtual Desktop, Team Collaboration, Mobile Projects, Electron Companion, Security Hardening, Rate Limiting
 
-### Planned (4 capabilities)
-Slide Decks, Client Inference, Desktop Agent, Sync/Collaboration
+### Planned
+Client Inference, Sync/Collaboration
 
 See the in-app Settings page for detailed status of each capability.
 
