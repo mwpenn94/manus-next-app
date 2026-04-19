@@ -1,0 +1,32 @@
+id: 37
+name: built-in-seo
+title: Built-in SEO
+category: website-builder-pm
+status: GREEN
+task:
+  prompt: Verify SEO meta tags, OG tags, and robots.txt are configured.
+  expected_behavior: All SEO elements present and correctly configured.
+  scoring_criteria:
+  - Meta tags present
+  - OG tags correct
+  - robots.txt exists
+  - JSON-LD structured data
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

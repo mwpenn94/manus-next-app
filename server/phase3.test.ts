@@ -181,8 +181,8 @@ describe("browse_web tool", () => {
 
   it("browse_web tool count is correct (8 total tools)", async () => {
     const mod = await import("./agentTools");
-    // web_search, read_webpage, generate_image, analyze_data, execute_code, generate_document, browse_web, wide_research = 8
-    expect(mod.AGENT_TOOLS.length).toBe(8);
+    // 14 tools: web_search, read_webpage, generate_image, analyze_data, execute_code, generate_document, browse_web, wide_research, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify
+    expect(mod.AGENT_TOOLS.length).toBe(14);
   });
 
   it("executeTool handles browse_web", async () => {

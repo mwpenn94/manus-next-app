@@ -1,0 +1,31 @@
+id: 57
+name: team-billing
+title: Team Billing + Admin
+category: collaboration
+status: RED
+task:
+  prompt: Set up team billing and add team members.
+  expected_behavior: Team billing configured, members added.
+  scoring_criteria:
+  - Billing configured
+  - Members added
+  - Roles assigned
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

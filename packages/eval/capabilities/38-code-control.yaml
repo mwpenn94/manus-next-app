@@ -1,0 +1,31 @@
+id: 38
+name: code-control
+title: Code Control
+category: developer-tools
+status: YELLOW
+task:
+  prompt: Export the full codebase as a downloadable ZIP file.
+  expected_behavior: Codebase exported and downloadable.
+  scoring_criteria:
+  - Export triggered
+  - ZIP generated
+  - Download works
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

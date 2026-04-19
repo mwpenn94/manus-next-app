@@ -1,0 +1,31 @@
+id: 42
+name: app-publishing-mobile
+title: App Publishing (Mobile)
+category: developer-tools
+status: RED
+task:
+  prompt: Publish the app to a mobile app store.
+  expected_behavior: App packaged and submitted to app store.
+  scoring_criteria:
+  - App packaged
+  - Store submission
+  - Listing created
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

@@ -1,0 +1,33 @@
+id: 4
+name: speed-quality-mode
+title: Speed/Quality Mode Toggle
+category: agent-core
+status: GREEN
+task:
+  prompt: Toggle between Speed and Quality modes and verify each produces different
+    behavior.
+  expected_behavior: Speed mode responds faster with fewer tool turns. Quality mode
+    is more thorough.
+  scoring_criteria:
+  - Mode toggle works
+  - Speed mode is faster
+  - Quality mode is more thorough
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

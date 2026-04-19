@@ -1,0 +1,31 @@
+id: 15
+name: design-view
+title: Design View
+category: features
+status: YELLOW
+task:
+  prompt: Open the design view and inspect a generated UI component.
+  expected_behavior: Design view page loads with planned features.
+  scoring_criteria:
+  - Page loads
+  - Route works
+  - Planned features listed
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

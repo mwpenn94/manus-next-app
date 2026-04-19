@@ -1,0 +1,31 @@
+id: 67
+name: data-api
+title: Data API Capability
+category: website-builder-features
+status: RED
+task:
+  prompt: Expose a structured data API from the generated app.
+  expected_behavior: REST or tRPC API endpoint returns structured data.
+  scoring_criteria:
+  - API endpoint exists
+  - Returns structured data
+  - Authentication works
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

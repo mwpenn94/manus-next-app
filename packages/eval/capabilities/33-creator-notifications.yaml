@@ -1,0 +1,31 @@
+id: 33
+name: creator-notifications
+title: Notifications for Creators
+category: website-builder-features
+status: GREEN
+task:
+  prompt: Trigger a notification to the project owner.
+  expected_behavior: notifyOwner sends notification, owner receives it.
+  scoring_criteria:
+  - Notification sent
+  - Owner receives
+  - Content correct
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

@@ -1,0 +1,31 @@
+id: 23
+name: browser-operator
+title: Browser Operator
+category: browser-computer
+status: RED
+task:
+  prompt: Use the browser to fill out a form on a test website.
+  expected_behavior: Browser automation fills form fields and submits.
+  scoring_criteria:
+  - Form fields filled
+  - Submission successful
+  - Result verified
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

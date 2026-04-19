@@ -1,0 +1,31 @@
+id: 25
+name: computer-use
+title: Computer Use
+category: browser-computer
+status: RED
+task:
+  prompt: Use the computer to create a text file on the desktop.
+  expected_behavior: Desktop OS control creates file.
+  scoring_criteria:
+  - File created
+  - Content correct
+  - OS interaction logged
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

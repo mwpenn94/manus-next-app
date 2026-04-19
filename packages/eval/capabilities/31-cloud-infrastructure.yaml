@@ -1,0 +1,31 @@
+id: 31
+name: cloud-infrastructure
+title: Cloud Infrastructure
+category: website-builder-features
+status: YELLOW
+task:
+  prompt: Verify the app is hosted on managed cloud infrastructure.
+  expected_behavior: App running on Manus hosting with CDN, SSL.
+  scoring_criteria:
+  - Hosting active
+  - SSL enabled
+  - CDN configured
+scoring:
+  dimensions:
+  - correctness
+  - completeness
+  - efficiency
+  - robustness
+  - user_experience
+  - maintainability
+  - innovation
+  weights:
+    correctness: 0.2
+    completeness: 0.15
+    efficiency: 0.1
+    robustness: 0.15
+    user_experience: 0.15
+    maintainability: 0.1
+    innovation: 0.15
+  threshold: 0.8
+result: null

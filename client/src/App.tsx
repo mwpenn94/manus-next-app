@@ -8,6 +8,7 @@ import { TaskProvider } from "./contexts/TaskContext";
 import { BridgeProvider } from "./contexts/BridgeContext";
 import { lazy, Suspense } from "react";
 import AppLayout from "./components/AppLayout";
+import FeedbackWidget from "./components/FeedbackWidget";
 
 // Eagerly loaded
 import Home from "./pages/Home";
@@ -154,6 +155,7 @@ function App() {
             <AppLayout>
               <Router />
             </AppLayout>
+            <FeedbackWidget />
           </TooltipProvider>
           </TaskProvider>
         </BridgeProvider>
