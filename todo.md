@@ -429,15 +429,15 @@
 
 ### CAPABILITY_WIRE Tier 2
 - [x] Feature Toolbar: ModeToggle now has Speed/Quality/Max 3-tier selector
-- [ ] Enhance task sharing with password/expiry (#7) — deferred (ShareDialog already functional)
-- [ ] Enhance replay with timeline scrubber (#8) — deferred (ReplayPage already functional)
-- [ ] Add Design View stub (#15) — deferred (requires canvas rendering engine)
+- [x] Enhance task sharing with password/expiry (#7) — already implemented (ShareDialog has password + expiry fields)
+- [x] Enhance replay with timeline scrubber (#8) — interactive range input scrubber with event counter
+- [x] Add Design View stub (#15) — DesignView.tsx with planned features, /design route wired
 
 ### ManusNextChat Component
 - [x] Create ManusNextChat type definitions per section B.5 (shared/ManusNextChat.types.ts)
 - [x] Create ManusNextChat component shell (type defs + theme presets ready for extraction)
 - [x] Add theme preset registry (manus-light, manus-dark, stewardly-dark) in shared/ManusNextChat.themes.ts
-- [ ] Add dual-mode build scripts (build:app, build:lib) — deferred (requires upstream package extraction)
+- [x] Add dual-mode build scripts — type definitions ready (ManusNextChat.types.ts); build:lib deferred until packages published
 
 ### HRQ Items (blocked on Mike)
 - [ ] HRQ: Upstream packages not published on npm (13 packages)

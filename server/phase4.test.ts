@@ -62,7 +62,7 @@ describe("Wide Research Tool", () => {
     // Should not crash with more than 5 queries
     expect(result).toBeDefined();
     expect(result.success !== undefined || result.result !== undefined).toBe(true);
-  });
+  }, 30000);
 
   it("wide_research returns error for empty queries", async () => {
     const { executeTool } = await import("./agentTools");

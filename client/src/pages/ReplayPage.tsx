@@ -187,16 +187,24 @@ export default function ReplayPage() {
               </CardContent>
             </Card>
 
-            {/* Progress Bar */}
+            {/* Interactive Timeline Scrubber */}
             <div className="mb-4">
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-150"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <input
+                type="range"
+                min={0}
+                max={Math.max(events.length - 1, 0)}
+                value={currentIndex}
+                onChange={(e) => {
+                  const idx = Number(e.target.value);
+                  setCurrentIndex(idx);
+                  setIsPlaying(false);
+                }}
+                className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:active:cursor-grabbing"
+                aria-label="Timeline scrubber"
+              />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>{currentTime}</span>
+                <span>Event {currentIndex + 1} / {events.length}</span>
                 <span>{totalTime}</span>
               </div>
             </div>
