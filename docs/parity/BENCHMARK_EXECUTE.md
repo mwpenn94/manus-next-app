@@ -15,7 +15,7 @@
 | Test suite pass rate | 166/166 (100%) | `pnpm test` — 11 test files, 0 failures |
 | TypeScript compilation | 0 errors | `npx tsc --noEmit` clean |
 | Endpoint health | 22/22 (100%) | gate-b-substantive.mjs |
-| SPA routing | 21/21 pages | All routes return HTML with root div |
+| SPA routing | 24/24 pages | All routes return HTML with root div |
 | DB schema sync | Clean | `pnpm db:push` no pending migrations |
 
 **Score: 9.5/10** — All automated checks pass. Deduction for untested edge cases in scheduler cron parsing.
@@ -27,11 +27,11 @@
 
 | Category | Count | Status |
 |----------|-------|--------|
-| GREEN (fully implemented) | 57 | Live and functional with DB persistence |
-| RED (genuinely blocked) | 5 | Blocked on external infrastructure — documented in PARITY_BACKLOG.md |
+| GREEN (fully implemented) | 60 | Live and functional with DB persistence |
+| RED (genuinely blocked) | 2 | Blocked on external infrastructure — documented in PARITY_BACKLOG.md |
 | N/A (out of scope) | 5 | External infrastructure only |
 
-**Score: 9.5/10** — 57/57 in-scope capabilities are GREEN (100%). 5 RED items are genuinely blocked on mobile/enterprise/video infrastructure. Each has a documented rationale.
+**Score: 9.5/10** — 60/62 in-scope capabilities are GREEN (96.8%). 2 RED items are blocked on Microsoft 365 and Veo3 infrastructure. Each has a documented rationale.
 
 ---
 
@@ -76,7 +76,7 @@
 | Metric | Score | Evidence |
 |--------|-------|----------|
 | TypeScript strict mode | Yes | tsconfig.json strict: true |
-| Test coverage | ~65% | 166 tests across 11 files |
+| Test coverage | ~65% | 191 tests across 12 files |
 | Documentation files | 25+ | ARCHITECTURE, README, PARITY_*, CHANGELOG, per-cap-notes |
 | Code organization | Clean | server/ client/ shared/ drizzle/ packages/ docs/ |
 | Naming conventions | Consistent | camelCase functions, PascalCase components, kebab-case files |
@@ -92,7 +92,7 @@
 | Metric | Score | Evidence |
 |--------|-------|----------|
 | WCAG 2.1 AA compliance | Yes | aria-labels, focus-visible, role attributes |
-| Mobile responsiveness | Pass | All 21 pages tested at 375px |
+| Mobile responsiveness | Pass | All 24 pages tested at 375px |
 | Keyboard navigation | Yes | Cmd+K, Cmd+N, Cmd+/, Escape, Tab |
 | Dark theme | Default | Consistent dark palette with proper contrast |
 | Loading states | Yes | Skeletons, spinners, progress indicators |

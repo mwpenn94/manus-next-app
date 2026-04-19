@@ -56,7 +56,7 @@ All major decisions are documented in `docs/parity/AFK_DECISIONS.md` and `docs/p
 server/
   agentStream.ts     ← Core agent loop (SSE streaming, tool dispatch, MAX_TOOL_TURNS)
   agentTools.ts      ← 14 tool definitions + executors
-  routers.ts         ← tRPC procedures (25 router namespaces: system, auth, task, file, bridge, preferences, usage, workspace, voice, llm, memory, share, schedule, replay, notification, project (with knowledge sub-router), skill, slides, connector, meeting, team, webapp, design, payment)
+  routers.ts         ← tRPC procedures (28 router namespaces: system, auth, task, file, bridge, preferences, usage, workspace, voice, llm, memory, share, schedule, replay, notification, project (with knowledge sub-router), skill, slides, connector, meeting, team, webapp, design, payment, device, mobileProject, appPublish)
   db.ts              ← Database query helpers (50+ functions)
   stripe.ts          ← Stripe checkout + webhook + fulfillment
   products.ts        ← Stripe product definitions

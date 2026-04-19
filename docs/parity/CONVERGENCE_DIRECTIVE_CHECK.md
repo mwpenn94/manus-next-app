@@ -19,7 +19,7 @@
 **Spec reference:** §L.10 Exceed regime, §L.14 aspiration ceilings, §L.18 best-in-class benchmarking
 
 **Implementation evidence:**
-- 57 GREEN capabilities out of 57 in-scope (100%), with 5 RED genuinely blocked on external infrastructure, 5 N/A
+- 60 GREEN capabilities out of 62 in-scope (96.8%), with 2 RED blocked on external infrastructure (#53 Microsoft 365, #62 Veo3), 5 N/A
 - 14 agent tools (vs Manus ~12): web_search, read_webpage, generate_image, analyze_data, generate_document, browse_web, wide_research, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify, execute_code
 - MAX_TOOL_TURNS=20 in quality mode (vs Manus ~15), 8 in speed mode, 25 max
 - 23 database tables with full CRUD operations
@@ -49,7 +49,7 @@
 **Spec reference:** §L.1 deep study, SPEC §2 capability inventory, §A package-to-capability map
 
 **Implementation evidence:**
-- `PARITY_BACKLOG.md` tracks all 67 capabilities: 57 GREEN, 0 YELLOW, 5 RED, 5 N/A
+- `PARITY_BACKLOG.md` tracks all 67 capabilities: 60 GREEN, 0 YELLOW, 2 RED, 5 N/A
 - Every GREEN capability has real implementation with DB persistence, tRPC procedures, and functional UI
 - Pages: Home, TaskView, Settings, Projects, Skills, Slides, Design, Meetings, Connectors, WebApp Builder, Team, Computer Use, Figma Import, Desktop App, Messaging Agent, Billing, NotFound
 - `packages/eval/capabilities/` contains 72 benchmark YAML shells
@@ -119,7 +119,7 @@
 **Spec reference:** §L.4 prompt engineering, §L.12 substrate
 
 **Implementation evidence:**
-- Working application on Manus hosting with 21 pages, 14 agent tools, 23 DB tables, 25 tRPC router namespaces
+- Working application on Manus hosting with 24 pages, 14 agent tools, 28 DB tables, 28 tRPC router namespaces
 - All scaffold pages converted to real tRPC+DB implementations (TeamPage, WebAppBuilderPage, DesignView, MessagingAgentPage)
 - Stripe webhook with real fulfillment logic (persists IDs to users table)
 - No canned/mock data in any page — all data from DB or agent

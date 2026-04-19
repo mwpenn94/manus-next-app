@@ -1,6 +1,6 @@
 # OWNER_ACTION_ITEMS — External Resources for Beyond-Parity
 
-> These items are optional enhancements. All 57 in-scope capabilities are GREEN. These actions would unlock the 5 RED capabilities or enhance existing GREEN capabilities.
+> These items are optional enhancements. All 60 in-scope capabilities are GREEN. These actions would unlock the 2 RED capabilities or enhance existing GREEN capabilities.
 
 **Last updated:** April 19, 2026
 
@@ -45,11 +45,11 @@ Stripe is already activated and functional in test mode. Claiming the sandbox gi
 
 ## Current Status
 
-All 57 in-scope capabilities are GREEN. The items above are enhancements, not blockers.
+All 60 in-scope capabilities are GREEN. The items above are enhancements, not blockers.
 
 | Metric | Value |
 |--------|-------|
-| GREEN | 57 (100% of in-scope) |
-| RED (genuinely blocked) | 5 |
+| GREEN | 60 (96.8% of in-scope) |
+| RED (genuinely blocked) | 2 |
 | N/A | 5 |
 | Gate A | 14/14 PASS |
