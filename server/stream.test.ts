@@ -236,3 +236,61 @@ describe("Anti-premature-completion detection", () => {
     expect(content).toContain("Searching for information is NOT the same as producing the requested output");
   });
 });
+
+describe("Topic-drift detection", () => {
+  // Patterns from agentStream.ts
+  const looksLikeResearchOnly = /\b(meaning|interpretation|analysis|overview|background|context|summary of|about the song|lyrics|theme|message of)\b/i;
+  const hasCreativeStructure = /\b(step\s*[1-9]|scene\s*[1-9]|act\s*[1-9]|phase\s*[1-9]|part\s*[1-9]|##\s*(step|scene|act|phase|part|preparation|pre-production|filming|setup|materials|cast|roles|script|storyboard|shot list|location|props|costume|rehearsal|recording|editing))\b/i;
+  const wantsCreativeOutputPattern = /\b(generate|create|write|make|draft|build|design|plan|guide|step.?by.?step|outline|script|story|tutorial|curriculum|template|proposal|report)\b/i;
+
+  it("detects research-only response to creative request (Casting Crowns skit scenario)", () => {
+    const userText = "generate me a step by step guide to make a youth group video skit to the song from casting crowns does anybody hear her";
+    const llmResponse = "The song 'Does Anybody Hear Her' by Casting Crowns carries a powerful meaning about the church's failure to reach those who are hurting. The lyrics explore themes of isolation, judgment, and the need for compassion. The song's message is about a woman who feels invisible to the church community. Here is a detailed analysis of the song's meaning and interpretation of the lyrics and their context within contemporary Christian music...";
+
+    // User wants creative output
+    expect(wantsCreativeOutputPattern.test(userText)).toBe(true);
+    // Response looks like research/analysis
+    expect(looksLikeResearchOnly.test(llmResponse.slice(0, 500))).toBe(true);
+    // Response does NOT have creative structure (no steps, scenes, etc.)
+    expect(hasCreativeStructure.test(llmResponse)).toBe(false);
+    // → Topic drift should be detected
+  });
+
+  it("does NOT flag a proper creative response as topic drift", () => {
+    const llmResponse = "## Step-by-Step Guide to Making a Youth Group Video Skit\n\n### Step 1: Pre-Production Planning\nGather your youth group and listen to the song together...\n\n### Step 2: Script Writing\nBreak the song into scenes...\n\n### Step 3: Casting and Rehearsal\nAssign roles to youth group members...";
+
+    // Response has creative structure
+    expect(hasCreativeStructure.test(llmResponse)).toBe(true);
+    // Even if it mentions analysis keywords, creative structure should override
+  });
+
+  it("does NOT flag factual research responses when user asked for research", () => {
+    const userText = "what is the meaning of does anybody hear her by casting crowns";
+    const llmResponse = "The song 'Does Anybody Hear Her' explores themes of isolation and the church's failure to reach hurting people. The meaning centers on compassion and judgment.";
+
+    // User did NOT ask for creative output
+    expect(wantsCreativeOutputPattern.test(userText)).toBe(false);
+    // So topic drift detection should not even activate
+  });
+
+  it("detects response without deliverable keywords for creative requests", () => {
+    const userText = "create a tutorial for building a React app";
+    const llmResponse = "React is a popular JavaScript library developed by Facebook. It uses a component-based architecture and virtual DOM for efficient rendering. React has gained widespread adoption in the web development community since its release in 2013. Many companies use React for their frontend applications including Netflix, Airbnb, and Instagram. The ecosystem includes tools like Create React App, Next.js, and Gatsby for different use cases.";
+
+    // User wants creative output
+    expect(wantsCreativeOutputPattern.test(userText)).toBe(true);
+    // Response is informational, not a tutorial
+    expect(hasCreativeStructure.test(llmResponse)).toBe(false);
+    // Response doesn't have deliverable keywords like "here is", "below is"
+    expect(/\b(here is|here's|below is|i've (created|written|drafted|prepared))\b/i.test(llmResponse.slice(0, 300))).toBe(false);
+  });
+
+  it("system prompt includes topic-drift detection code", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("TOPIC-DRIFT DETECTION");
+    expect(content).toContain("looksLikeResearchOnly");
+    expect(content).toContain("hasCreativeStructure");
+    expect(content).toContain("isTopicDrift");
+  });
+});

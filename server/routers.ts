@@ -1822,7 +1822,7 @@ export const appRouter = router({
         return createCheckoutSession({
           productId: input.productId,
           userId: ctx.user.id,
-          userEmail: ctx.user.openId ?? "",
+          userEmail: ctx.user.email ?? "",
           userName: ctx.user.name ?? "",
           origin: input.origin,
         });

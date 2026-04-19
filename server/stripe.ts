@@ -36,7 +36,7 @@ export async function createCheckoutSession(opts: {
 
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     mode: product.mode,
-    customer_email: opts.userEmail,
+    ...(opts.userEmail ? { customer_email: opts.userEmail } : {}),
     client_reference_id: opts.userId.toString(),
     allow_promotion_codes: true,
     metadata: {

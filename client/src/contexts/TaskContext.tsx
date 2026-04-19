@@ -50,6 +50,7 @@ export interface Task {
   completedSteps?: number;
   serverId?: number; // DB auto-increment id, set after server mutation completes
   messagesLoaded?: boolean; // Whether server messages have been hydrated
+  autoStreamed?: boolean; // Whether the initial auto-stream has been triggered for this task
 }
 
 interface TaskContextValue {
@@ -61,6 +62,7 @@ interface TaskContextValue {
   addMessage: (taskId: string, message: Omit<Message, "id" | "timestamp">) => void;
   removeLastMessage: (taskId: string) => Message | null;
   updateTaskStatus: (taskId: string, status: Task["status"]) => void;
+  markAutoStreamed: (taskId: string) => void;
 }
 
 const TaskContext = createContext<TaskContextValue | null>(null);
@@ -506,6 +508,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, [bridgeStatus, onTaskEvent, persistBridgeStatus, persistBridgeMessage, persistArtifact]);
 
+  const markAutoStreamed = useCallback((taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, autoStreamed: true } : t))
+    );
+  }, []);
+
   return (
     <TaskContext.Provider
       value={{
@@ -517,6 +525,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         addMessage,
         removeLastMessage,
         updateTaskStatus,
+        markAutoStreamed,
       }}
     >
       {children}

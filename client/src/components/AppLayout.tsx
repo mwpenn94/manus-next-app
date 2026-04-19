@@ -162,9 +162,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   );
 
   // Archive mutation
+  const utils = trpc.useUtils();
   const archiveMutation = trpc.task.archive.useMutation({
     onSuccess: () => {
       setConfirmDeleteId(null);
+      // Invalidate the task list cache so the archived task disappears
+      utils.task.list.invalidate();
+      utils.task.search.invalidate();
     },
     onError: () => toast.error("Failed to delete task"),
   });
@@ -408,13 +412,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     {confirmDeleteId === task.id ? (
                       <div className="flex gap-1 bg-popover border border-border rounded-md shadow-lg p-1">
                         <button
-                          onClick={() => handleDeleteTask(task.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
                           className="text-[10px] px-2 py-1 bg-destructive text-destructive-foreground rounded hover:opacity-90"
                         >
                           Delete
                         </button>
                         <button
-                          onClick={() => setConfirmDeleteId(null)}
+                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
                           className="text-[10px] px-2 py-1 bg-muted text-foreground rounded hover:bg-accent"
                         >
                           Cancel

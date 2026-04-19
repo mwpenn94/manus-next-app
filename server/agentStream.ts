@@ -372,16 +372,54 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         // Also check if the LLM's own response asks the user what to do next (sign of premature stopping)
         const asksUser = /\b(what (would you|tool|should I)|which (one|tool)|would you like|shall I|let me know)\b/i.test(textContent);
         
-        // ANTI-PREMATURE-COMPLETION: If user asked for creative output but LLM claims it's done or deflects
-        if ((claimsFulfilled || isDeflecting) && wantsCreativeOutput && turn <= 5 && turn < maxTurns - 2) {
-          console.log(`[Agent] Anti-premature-completion: LLM claimed fulfillment or deflected on creative task, nudging to produce deliverable`);
-          // Suppress the premature response
+        // TOPIC-DRIFT DETECTION: Check if the LLM responded about a related but different topic
+        // e.g., user asks "generate a step by step guide to make a video skit" but LLM produces "song meaning analysis"
+        let isTopicDrift = false;
+        let deliverable = "";
+        let requestedAction = "";
+        if (wantsCreativeOutput && textContent.length > 200 && turn <= 6 && turn < maxTurns - 2) {
+          // Extract the key action words from the user request
+          const actionMatch = userText.match(/\b(generate|create|write|make|draft|build|design|plan|guide|step.?by.?step|outline|script|story|tutorial|curriculum|template|proposal|report)\b/gi);
+          requestedAction = actionMatch ? actionMatch[0].toLowerCase() : "";
+          
+          // Extract the key deliverable type from the user request
+          const deliverableMatch = userText.match(/(?:generate|create|write|make|draft|build|design|plan)\s+(?:me\s+)?(?:a\s+)?(.{5,80}?)(?:\s+(?:to|for|about|from|based|using|with))/i);
+          deliverable = deliverableMatch ? deliverableMatch[1].toLowerCase().trim() : "";
+          
+          // Check if the response looks like research/analysis rather than the requested creative output
+          const looksLikeResearchOnly = /\b(meaning|interpretation|analysis|overview|background|context|summary of|about the song|lyrics|theme|message of)\b/i.test(textContent.slice(0, 500));
+          const hasCreativeStructure = /\b(step\s*[1-9]|scene\s*[1-9]|act\s*[1-9]|phase\s*[1-9]|part\s*[1-9]|##\s*(step|scene|act|phase|part|preparation|pre-production|filming|setup|materials|cast|roles|script|storyboard|shot list|location|props|costume|rehearsal|recording|editing))\b/i.test(textContent);
+          
+          // If user asked for a creative deliverable but response looks like research/analysis without creative structure
+          if (looksLikeResearchOnly && !hasCreativeStructure && requestedAction) {
+            isTopicDrift = true;
+            console.log(`[Agent] Topic-drift detected: user asked to '${requestedAction}' a '${deliverable}' but response looks like research/analysis`);
+          }
+          
+          // Also detect when the response doesn't contain the deliverable type at all
+          // e.g., user asks for "guide" but response has no numbered steps or sections
+          if (deliverable && !hasCreativeStructure && !isTopicDrift) {
+            const hasDeliverableKeywords = new RegExp(`\\b(${requestedAction}|here is|here's|below is|i've (created|written|drafted|prepared))\\b`, 'i').test(textContent.slice(0, 300));
+            if (!hasDeliverableKeywords && textContent.length > 400) {
+              isTopicDrift = true;
+              console.log(`[Agent] Topic-drift detected: response doesn't appear to contain the requested '${requestedAction}' deliverable`);
+            }
+          }
+        }
+        
+        // ANTI-PREMATURE-COMPLETION: If user asked for creative output but LLM claims it's done, deflects, or drifted to wrong topic
+        if ((claimsFulfilled || isDeflecting || isTopicDrift) && wantsCreativeOutput && turn <= 6 && turn < maxTurns - 2) {
+          console.log(`[Agent] Anti-premature-completion: ${isTopicDrift ? 'topic drift' : claimsFulfilled ? 'false completion claim' : 'deflection'} on creative task, nudging to produce deliverable`);
+          // Suppress the premature/drifted response
           finalContent = "";
           sendSSE(safeWrite, { delta: "\n\n*Producing the requested content...*\n\n" });
           conversation.push({ role: "assistant", content: textContent || "" });
+          const nudgeContent = isTopicDrift
+            ? `STOP. You just provided research/analysis about the topic, but the user did NOT ask for that. The user asked you to: "${userText.slice(0, 200)}". This is a CREATIVE/GENERATIVE task. You need to PRODUCE the actual deliverable — not analyze the source material. Write the complete ${deliverable || 'requested content'} now with clear numbered steps, sections, or scenes as appropriate. The research you did is useful context, but the OUTPUT must be the creative deliverable the user requested.`
+            : `You have NOT completed the task yet. The user asked you to PRODUCE specific content: "${userText.slice(0, 200)}". Your research was a good first step, but now you need to actually CREATE and DELIVER the requested output. Write the complete deliverable now — do not summarize your research, do not claim you already provided it, and do not deflect. PRODUCE THE ACTUAL CONTENT.`;
           conversation.push({
             role: "user",
-            content: `You have NOT completed the task yet. The user asked you to PRODUCE specific content: "${userText.slice(0, 200)}". Your research was a good first step, but now you need to actually CREATE and DELIVER the requested output. Write the complete deliverable now — do not summarize your research, do not claim you already provided it, and do not deflect. PRODUCE THE ACTUAL CONTENT.`,
+            content: nudgeContent,
           });
           continue;
         }

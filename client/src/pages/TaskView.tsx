@@ -719,7 +719,7 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, markAutoStreamed } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -746,7 +746,12 @@ export default function TaskView() {
   const { files, uploading, progress, error: uploadError, upload, openPicker, handleFileChange, removeFile, clearFiles, inputRef: fileInputRef } = useFileUpload(taskExternalId);
 
   // tRPC mutations for task management
+  const utils = trpc.useUtils();
   const archiveMutation = trpc.task.archive.useMutation({
+    onSuccess: () => {
+      utils.task.list.invalidate();
+      utils.task.search.invalidate();
+    },
     onError: () => toast.error("Failed to delete task"),
   });
   const favoriteMutation = trpc.task.toggleFavorite.useMutation({
@@ -828,17 +833,16 @@ export default function TaskView() {
   // Auto-stream for initial message in a newly created task
   // When navigating from Home, createTask adds the first user message but never calls /api/stream.
   // This effect detects that pattern and triggers the LLM stream automatically.
-  const autoStreamedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!task) return;
     if (streaming) return; // Already streaming
-    if (autoStreamedRef.current.has(task.id)) return; // Already auto-streamed for this task
+    if (task.autoStreamed) return; // Already auto-streamed for this task (persisted in context)
     // Only trigger if: exactly 1 message, it's a user message, and no assistant response yet
     if (task.messages.length !== 1) return;
     const firstMsg = task.messages[0];
     if (firstMsg.role !== "user") return;
-    // Mark as auto-streamed immediately to prevent re-triggering
-    autoStreamedRef.current.add(task.id);
+    // Mark as auto-streamed immediately in context to prevent re-triggering on remount
+    markAutoStreamed(task.id);
 
     // Trigger the SSE stream for the initial message
     (async () => {
@@ -973,7 +977,7 @@ export default function TaskView() {
         setStepProgress(null);
       }
     })();
-  }, [task?.id, task?.messages.length, streaming, bridgeStatus, bridgeSend, addMessage, agentMode]);
+  }, [task?.id, task?.messages.length, task?.autoStreamed, streaming, bridgeStatus, bridgeSend, addMessage, markAutoStreamed, agentMode]);
 
   const isTyping = useMemo(() => {
     if (!task) return false;
@@ -1363,38 +1367,38 @@ export default function TaskView() {
         {/* Task Header */}
         <div className="h-12 flex items-center justify-between px-4 md:px-6 border-b border-border shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-sm font-medium text-foreground truncate" style={{ fontFamily: "var(--font-heading)" }}>
+            <h2 className="text-sm font-medium text-foreground truncate max-w-[40vw]" style={{ fontFamily: "var(--font-heading)" }}>
               {task.title}
             </h2>
             {task.status === "running" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0 flex items-center gap-1">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0 flex items-center gap-1 whitespace-nowrap">
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
                 {stepProgress ? `Step ${stepProgress.completed}/${stepProgress.total}` : "Running"}
               </span>
             )}
             {task.status === "error" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium shrink-0">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive font-medium shrink-0 whitespace-nowrap">
                 Error
               </span>
             )}
             {task.status === "completed" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium shrink-0">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium shrink-0 whitespace-nowrap">
                 Completed
               </span>
             )}
-          </div>
-          <div className="flex items-center gap-0.5 shrink-0">
             {/* Cost visibility indicator */}
             {(task.status === "running" || task.status === "completed") && (
-              <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 mr-1" title="Estimated task cost">
+              <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0" title="Estimated task cost">
                 <span className="text-[10px] text-muted-foreground font-mono">
                   {agentMode === "speed" ? "~$0.02" : agentMode === "max" ? "~$0.50" : "~$0.15"}
                 </span>
                 <span className="text-[9px] text-muted-foreground/60">
                   {agentMode === "speed" ? "speed" : agentMode === "max" ? "max" : "quality"}
                 </span>
-              </div>
+              </span>
             )}
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0">
             {/* Mobile workspace toggle */}
             <button
               onClick={() => setMobileWorkspaceOpen(!mobileWorkspaceOpen)}
