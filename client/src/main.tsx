@@ -8,6 +8,16 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import { I18nProvider } from "./i18n/I18nProvider";
 import "./index.css";
+import React from "react";
+import ReactDOM from "react-dom";
+
+// axe-core accessibility auditing in development
+if (import.meta.env.DEV) {
+  import("@axe-core/react").then((axe) => {
+    axe.default(React, ReactDOM, 1000);
+    console.log("[a11y] axe-core enabled for development");
+  });
+}
 
 const queryClient = new QueryClient();
 

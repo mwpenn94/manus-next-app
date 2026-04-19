@@ -1,15 +1,28 @@
 # @mwpenn94/manus-next-share
 
-Task sharing with password protection and expiration
+> Task sharing with signed URLs, password, and expiry for Manus Next
+
+## Installation
+
+```bash
+npm install @mwpenn94/manus-next-share
+```
+
+## Usage
+
+```typescript
+import { PACKAGE_NAME } from "@mwpenn94/manus-next-share";
+```
 
 ## Status
 
-**Local workspace stub** — This package is part of the Manus Next monorepo and will be extracted for npm publication.
+This package is currently a workspace stub within the manus-next-app monorepo.
+It will be extracted and published to npm as part of the Phase B release.
 
-## Planned Exports
+## Dependencies
 
-- `ShareDialog`
+- `@mwpenn94/manus-next-core`: 0.1.0
 
-## Source
+## License
 
-Extracted from: `client/src/components/ShareDialog.tsx`
+MIT

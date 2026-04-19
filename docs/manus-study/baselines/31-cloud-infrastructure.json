@@ -1,0 +1,36 @@
+{
+  "task_id": "31-cloud-infrastructure",
+  "type": "capability",
+  "capability": "Cloud Infrastructure",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.86,
+      "completeness": 0.926,
+      "ux_polish": 0.889,
+      "latency_appropriateness": 0.928,
+      "error_handling": 0.884,
+      "context_awareness": 0.927,
+      "output_formatting": 0.847
+    },
+    "composite_score": 0.893,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.841,
+      "completeness": 0.81,
+      "ux_polish": 0.806,
+      "latency_appropriateness": 0.88,
+      "error_handling": 0.907,
+      "context_awareness": 0.878,
+      "output_formatting": 0.905
+    },
+    "composite_score": 0.857,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.96
+}

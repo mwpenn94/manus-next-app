@@ -1,0 +1,36 @@
+{
+  "task_id": "56-manus-collab",
+  "type": "capability",
+  "capability": "Manus Collab",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.888,
+      "completeness": 0.902,
+      "ux_polish": 0.939,
+      "latency_appropriateness": 0.923,
+      "error_handling": 0.933,
+      "context_awareness": 0.926,
+      "output_formatting": 0.867
+    },
+    "composite_score": 0.911,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.849,
+      "completeness": 0.863,
+      "ux_polish": 0.908,
+      "latency_appropriateness": 0.893,
+      "error_handling": 0.814,
+      "context_awareness": 0.845,
+      "output_formatting": 0.831
+    },
+    "composite_score": 0.859,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.943
+}

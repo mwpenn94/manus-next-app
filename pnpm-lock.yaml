@@ -25,6 +25,45 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.64.0(react@19.2.1))
+      '@mwpenn94/manus-next-agent':
+        specifier: file:packages/agent
+        version: file:packages/agent
+      '@mwpenn94/manus-next-bridge':
+        specifier: file:packages/bridge
+        version: file:packages/bridge
+      '@mwpenn94/manus-next-chat':
+        specifier: file:packages/chat
+        version: file:packages/chat(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@mwpenn94/manus-next-core':
+        specifier: file:packages/core
+        version: file:packages/core(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@mwpenn94/manus-next-design':
+        specifier: file:packages/design
+        version: file:packages/design(react@19.2.1)
+      '@mwpenn94/manus-next-memory':
+        specifier: file:packages/memory
+        version: file:packages/memory
+      '@mwpenn94/manus-next-projects':
+        specifier: file:packages/projects
+        version: file:packages/projects
+      '@mwpenn94/manus-next-replay':
+        specifier: file:packages/replay
+        version: file:packages/replay(react@19.2.1)
+      '@mwpenn94/manus-next-scheduler':
+        specifier: file:packages/scheduler
+        version: file:packages/scheduler
+      '@mwpenn94/manus-next-share':
+        specifier: file:packages/share
+        version: file:packages/share
+      '@mwpenn94/manus-next-storage':
+        specifier: file:packages/storage
+        version: file:packages/storage
+      '@mwpenn94/manus-next-tools':
+        specifier: file:packages/tools
+        version: file:packages/tools
+      '@mwpenn94/manus-next-voice':
+        specifier: file:packages/voice
+        version: file:packages/voice(react@19.2.1)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.1(@types/react@19.2.1))(@types/react@19.2.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -218,6 +257,9 @@ importers:
         specifier: ^4.1.12
         version: 4.1.12
     devDependencies:
+      '@axe-core/react':
+        specifier: ^4.11.2
+        version: 4.11.2
       '@builder.io/vite-plugin-jsx-loc':
         specifier: ^0.1.1
         version: 0.1.1(vite@7.1.9(@types/node@24.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.6))
@@ -477,6 +519,9 @@ packages:
   '@aws/lambda-invoke-store@0.2.4':
     resolution: {integrity: sha512-iY8yvjE0y651BixKNPgmv1WrQc+GZ142sb0z4gYnChDDY2YqI4P/jsSopBWrKfAt7LOJAkOXt7rC/hms+WclQQ==}
     engines: {node: '>=18.0.0'}
+
+  '@axe-core/react@4.11.2':
+    resolution: {integrity: sha512-+bQ5yO9FAU4hfZRJXi81Eiv5bd53BrsjAEFoE6QlMkqKOoIq4wC15a9d8kRHs4i5dgLqD8S9NW5qWkiFVsV3/g==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -1265,6 +1310,57 @@ packages:
 
   '@mermaid-js/parser@0.6.3':
     resolution: {integrity: sha512-lnjOhe7zyHjc+If7yT4zoedx2vo4sHaTmtkl1+or8BRTnCtDmcTpAjpzDSfCZrshM5bCoz0GyidzadJAH1xobA==}
+
+  '@mwpenn94/manus-next-agent@file:packages/agent':
+    resolution: {directory: packages/agent, type: directory}
+
+  '@mwpenn94/manus-next-bridge@file:packages/bridge':
+    resolution: {directory: packages/bridge, type: directory}
+
+  '@mwpenn94/manus-next-chat@file:packages/chat':
+    resolution: {directory: packages/chat, type: directory}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@mwpenn94/manus-next-core@file:packages/core':
+    resolution: {directory: packages/core, type: directory}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@mwpenn94/manus-next-design@file:packages/design':
+    resolution: {directory: packages/design, type: directory}
+    peerDependencies:
+      react: '>=18.0.0'
+
+  '@mwpenn94/manus-next-memory@file:packages/memory':
+    resolution: {directory: packages/memory, type: directory}
+
+  '@mwpenn94/manus-next-projects@file:packages/projects':
+    resolution: {directory: packages/projects, type: directory}
+
+  '@mwpenn94/manus-next-replay@file:packages/replay':
+    resolution: {directory: packages/replay, type: directory}
+    peerDependencies:
+      react: '>=18.0.0'
+
+  '@mwpenn94/manus-next-scheduler@file:packages/scheduler':
+    resolution: {directory: packages/scheduler, type: directory}
+
+  '@mwpenn94/manus-next-share@file:packages/share':
+    resolution: {directory: packages/share, type: directory}
+
+  '@mwpenn94/manus-next-storage@file:packages/storage':
+    resolution: {directory: packages/storage, type: directory}
+
+  '@mwpenn94/manus-next-tools@file:packages/tools':
+    resolution: {directory: packages/tools, type: directory}
+
+  '@mwpenn94/manus-next-voice@file:packages/voice':
+    resolution: {directory: packages/voice, type: directory}
+    peerDependencies:
+      react: '>=18.0.0'
 
   '@radix-ui/number@1.1.1':
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
@@ -2829,6 +2925,10 @@ packages:
   aws-ssl-profiles@1.1.2:
     resolution: {integrity: sha512-NZKeq9AfyQvEeNlN0zSYAaWrmBffJh3IELMZfRpJVWgrpEbtEpnjvzqBPf+mxoI287JohRDoa+/nsfqqiZmF6g==}
     engines: {node: '>= 6.0.0'}
+
+  axe-core@4.11.3:
+    resolution: {integrity: sha512-zBQouZixDTbo3jMGqHKyePxYxr1e5W8UdTmBQ7sNtaA9M2bE32daxxPLS/jojhKOHxQ7LWwPjfiwf/fhaJWzlg==}
+    engines: {node: '>=4'}
 
   axios@1.12.2:
     resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
@@ -4471,6 +4571,9 @@ packages:
   remark-stringify@11.0.0:
     resolution: {integrity: sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw==}
 
+  requestidlecallback@0.3.0:
+    resolution: {integrity: sha512-TWHFkT7S9p7IxLC5A1hYmAYQx2Eb9w1skrXmQ+dS1URyvR8tenMLl4lHbqEOUnpEYxNKpkVMXUgknVpBZWXXfQ==}
+
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
 
@@ -5485,6 +5588,11 @@ snapshots:
 
   '@aws/lambda-invoke-store@0.2.4': {}
 
+  '@axe-core/react@4.11.2':
+    dependencies:
+      axe-core: 4.11.3
+      requestidlecallback: 0.3.0
+
   '@babel/code-frame@7.27.1':
     dependencies:
       '@babel/helper-validator-identifier': 7.27.1
@@ -6027,6 +6135,48 @@ snapshots:
   '@mermaid-js/parser@0.6.3':
     dependencies:
       langium: 3.3.1
+
+  '@mwpenn94/manus-next-agent@file:packages/agent': {}
+
+  '@mwpenn94/manus-next-bridge@file:packages/bridge': {}
+
+  '@mwpenn94/manus-next-chat@file:packages/chat(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+
+  '@mwpenn94/manus-next-core@file:packages/core(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+
+  '@mwpenn94/manus-next-design@file:packages/design(react@19.2.1)':
+    dependencies:
+      react: 19.2.1
+
+  '@mwpenn94/manus-next-memory@file:packages/memory': {}
+
+  '@mwpenn94/manus-next-projects@file:packages/projects': {}
+
+  '@mwpenn94/manus-next-replay@file:packages/replay(react@19.2.1)':
+    dependencies:
+      react: 19.2.1
+
+  '@mwpenn94/manus-next-scheduler@file:packages/scheduler': {}
+
+  '@mwpenn94/manus-next-share@file:packages/share': {}
+
+  '@mwpenn94/manus-next-storage@file:packages/storage':
+    dependencies:
+      '@aws-sdk/client-s3': 3.1031.0
+    transitivePeerDependencies:
+      - aws-crt
+
+  '@mwpenn94/manus-next-tools@file:packages/tools': {}
+
+  '@mwpenn94/manus-next-voice@file:packages/voice(react@19.2.1)':
+    dependencies:
+      react: 19.2.1
 
   '@radix-ui/number@1.1.1': {}
 
@@ -7789,6 +7939,8 @@ snapshots:
       postcss-value-parser: 4.2.0
 
   aws-ssl-profiles@1.1.2: {}
+
+  axe-core@4.11.3: {}
 
   axios@1.12.2:
     dependencies:
@@ -9742,6 +9894,8 @@ snapshots:
       '@types/mdast': 4.0.4
       mdast-util-to-markdown: 2.1.2
       unified: 11.0.5
+
+  requestidlecallback@0.3.0: {}
 
   resolve-pkg-maps@1.0.0: {}
 

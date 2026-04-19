@@ -1,0 +1,36 @@
+{
+  "task_id": "20-mail-manus",
+  "type": "capability",
+  "capability": "Mail Manus",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.875,
+      "completeness": 0.915,
+      "ux_polish": 0.935,
+      "latency_appropriateness": 0.868,
+      "error_handling": 0.862,
+      "context_awareness": 0.905,
+      "output_formatting": 0.905
+    },
+    "composite_score": 0.893,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.908,
+      "completeness": 0.817,
+      "ux_polish": 0.916,
+      "latency_appropriateness": 0.905,
+      "error_handling": 0.86,
+      "context_awareness": 0.854,
+      "output_formatting": 0.897
+    },
+    "composite_score": 0.881,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.987
+}

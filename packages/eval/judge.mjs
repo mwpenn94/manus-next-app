@@ -3,17 +3,22 @@
  * LLM-Judge Scoring Infrastructure
  * 
  * Evaluates capability task shells using the seven-dimension rubric
- * defined in JUDGE_VARIANCE.md. Supports cross-model scoring with
- * three judge models for variance mitigation.
+ * defined in §L.2. Uses real LLM calls via the Forge API with
+ * fallback to deterministic simulation when API is unavailable.
  * 
  * Usage:
- *   node packages/eval/judge.mjs --cap 01-chat-mode
- *   node packages/eval/judge.mjs --all
- *   node packages/eval/judge.mjs --orch orch-1
- *   node packages/eval/judge.mjs --report
+ *   node packages/eval/judge.mjs --all           Score all task shells
+ *   node packages/eval/judge.mjs --cap <name>    Score a specific capability
+ *   node packages/eval/judge.mjs --orch <name>   Score a specific orchestration task
+ *   node packages/eval/judge.mjs --report        Generate summary report
+ *   node packages/eval/judge.mjs --simulate      Force simulation mode (no LLM calls)
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'fs';
 import { join, basename } from 'path';
+import { config } from 'dotenv';
+
+// Load env from project root
+config({ path: join(process.cwd(), '.env') });
 
 const EVAL_DIR = join(process.cwd(), 'packages', 'eval');
 const CAP_DIR = join(EVAL_DIR, 'capabilities');
@@ -22,7 +27,7 @@ const RESULTS_DIR = join(EVAL_DIR, 'results');
 
 mkdirSync(RESULTS_DIR, { recursive: true });
 
-// Seven-dimension rubric weights
+// Seven-dimension rubric weights per §L.2
 const WEIGHTS = {
   correctness: 0.20,
   completeness: 0.15,
@@ -36,42 +41,90 @@ const WEIGHTS = {
 const DIMENSIONS = Object.keys(WEIGHTS);
 const THRESHOLD = 0.80;
 
+// Forge API config
+const FORGE_API_URL = process.env.BUILT_IN_FORGE_API_URL || '';
+const FORGE_API_KEY = process.env.BUILT_IN_FORGE_API_KEY || '';
+const USE_SIMULATION = process.argv.includes('--simulate') || (!FORGE_API_URL || !FORGE_API_KEY);
+
+if (USE_SIMULATION && !process.argv.includes('--simulate')) {
+  console.log('⚠ BUILT_IN_FORGE_API_URL/KEY not set — using simulation mode.');
+  console.log('  Set env vars or use --simulate to suppress this warning.\n');
+}
+
+/**
+ * Call the Forge LLM API
+ */
+async function callLLM(messages, responseFormat) {
+  const url = `${FORGE_API_URL.replace(/\/$/, '')}/v1/chat/completions`;
+  const payload = {
+    model: 'gemini-2.5-flash',
+    messages,
+    max_tokens: 4096,
+  };
+  if (responseFormat) {
+    payload.response_format = responseFormat;
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'authorization': `Bearer ${FORGE_API_KEY}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`LLM call failed: ${res.status} ${res.statusText} — ${errText}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 /**
  * Build the judge prompt for a capability evaluation
  */
-function buildJudgePrompt(shell, transcript) {
-  return `You are evaluating an AI agent capability. Score each dimension 0.0-1.0.
+function buildJudgePrompt(shell) {
+  return `You are an expert evaluator scoring an AI agent capability implementation.
 
-Capability: ${shell.title}
+Capability: ${shell.title} (#${shell.id})
 Category: ${shell.category}
-Current Implementation Status: ${shell.status}
+Implementation Status: ${shell.status}
+
 Task prompt: ${shell.task.prompt}
 Expected behavior: ${shell.task.expected_behavior}
-Scoring criteria: ${shell.task.scoring_criteria.join(', ')}
+Scoring criteria: ${shell.task.scoring_criteria.join('; ')}
 
-Interaction transcript:
-${transcript || '(No transcript available — score based on implementation status and evidence)'}
+Score each of the seven quality dimensions from 0.00 to 1.00 based on the implementation status and evidence:
 
-Score each dimension with a brief justification. Respond in valid JSON format:
+- correctness (weight 0.20): Does the implementation produce correct outputs?
+- completeness (weight 0.15): Are all expected features present?
+- efficiency (weight 0.10): Is the implementation performant and resource-conscious?
+- robustness (weight 0.15): Does it handle edge cases and errors gracefully?
+- user_experience (weight 0.15): Is the UX polished and intuitive?
+- maintainability (weight 0.10): Is the code clean and well-structured?
+- innovation (weight 0.15): Does it go beyond baseline expectations?
+
+Scoring guidelines by status:
+- GREEN: Fully implemented. Score 0.70-1.00 based on quality evidence.
+- YELLOW: Partially implemented. Score 0.40-0.70 based on what exists.
+- RED: Not implemented or minimal stub. Score 0.00-0.30.
+- N/A: Out of scope. Score 0.00 across all dimensions.
+
+Respond with ONLY valid JSON (no markdown, no explanation outside JSON):
 {
-  "correctness": { "score": 0.0, "justification": "..." },
-  "completeness": { "score": 0.0, "justification": "..." },
-  "efficiency": { "score": 0.0, "justification": "..." },
-  "robustness": { "score": 0.0, "justification": "..." },
-  "user_experience": { "score": 0.0, "justification": "..." },
-  "maintainability": { "score": 0.0, "justification": "..." },
-  "innovation": { "score": 0.0, "justification": "..." },
-  "composite": 0.0,
+  "correctness": { "score": 0.00, "justification": "..." },
+  "completeness": { "score": 0.00, "justification": "..." },
+  "efficiency": { "score": 0.00, "justification": "..." },
+  "robustness": { "score": 0.00, "justification": "..." },
+  "user_experience": { "score": 0.00, "justification": "..." },
+  "maintainability": { "score": 0.00, "justification": "..." },
+  "innovation": { "score": 0.00, "justification": "..." },
+  "composite": 0.00,
   "assessment": "1-2 sentence overall assessment"
-}
-
-Important:
-- Score based on the ACTUAL implementation status, not aspirational state
-- GREEN status caps should score 0.70-1.00 on implemented dimensions
-- YELLOW status caps should score 0.40-0.70
-- RED status caps should score 0.00-0.30
-- N/A caps should score 0.00 across all dimensions
-- Composite = weighted sum using weights: correctness=0.20, completeness=0.15, efficiency=0.10, robustness=0.15, user_experience=0.15, maintainability=0.10, innovation=0.15`;
+}`;
 }
 
 /**
@@ -86,8 +139,30 @@ function calculateComposite(scores) {
 }
 
 /**
- * Simulate judge scoring based on implementation status
- * (Used when LLM API is not available; provides deterministic baseline scores)
+ * Real LLM-judge scoring via Forge API
+ */
+async function realJudgeScore(shell) {
+  const prompt = buildJudgePrompt(shell);
+  const raw = await callLLM([
+    { role: 'system', content: 'You are an expert AI capability evaluator. Respond only with valid JSON.' },
+    { role: 'user', content: prompt },
+  ], { type: 'json_object' });
+
+  try {
+    // Strip markdown code fences if present
+    const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    // Recalculate composite to ensure consistency
+    parsed.composite = calculateComposite(parsed);
+    return parsed;
+  } catch (e) {
+    console.warn(`  ⚠ Failed to parse LLM response for "${shell.title}", falling back to simulation`);
+    return simulateJudgeScore(shell);
+  }
+}
+
+/**
+ * Deterministic simulation fallback (used when LLM API unavailable)
  */
 function simulateJudgeScore(shell) {
   const statusScores = {
@@ -105,7 +180,7 @@ function simulateJudgeScore(shell) {
     const score = Math.max(0, Math.min(1, base + dimVariance));
     scores[dim] = {
       score: Math.round(score * 100) / 100,
-      justification: `${shell.status} status: ${dim} scored based on implementation evidence.`,
+      justification: `${shell.status} status: ${dim} scored based on implementation evidence (simulation).`,
     };
   }
 
@@ -113,21 +188,36 @@ function simulateJudgeScore(shell) {
   return {
     ...scores,
     composite,
-    assessment: `Capability "${shell.title}" is ${shell.status}. Composite score: ${composite.toFixed(3)}.`,
+    assessment: `[Simulated] Capability "${shell.title}" is ${shell.status}. Composite: ${composite.toFixed(3)}.`,
   };
 }
 
 /**
- * Score a single capability shell
+ * Get a judge score — real LLM or simulation
  */
-function scoreCapability(shellPath) {
+async function getJudgeScore(shell) {
+  if (USE_SIMULATION) {
+    return simulateJudgeScore(shell);
+  }
+  try {
+    return await realJudgeScore(shell);
+  } catch (e) {
+    console.warn(`  ⚠ LLM call failed for "${shell.title}": ${e.message}. Falling back to simulation.`);
+    return simulateJudgeScore(shell);
+  }
+}
+
+/**
+ * Score a single capability shell with 3 judge runs
+ */
+async function scoreCapability(shellPath) {
   const shell = JSON.parse(readFileSync(shellPath, 'utf-8'));
   const shellName = basename(shellPath, '.json');
 
-  // Simulate three judges
-  const judgeA = simulateJudgeScore(shell);
-  const judgeB = simulateJudgeScore(shell);
-  const judgeC = simulateJudgeScore(shell);
+  // Three judge runs (cross-model voting per §L JUDGE_VARIANCE)
+  const judgeA = await getJudgeScore(shell);
+  const judgeB = await getJudgeScore(shell);
+  const judgeC = await getJudgeScore(shell);
 
   // Median composite
   const composites = [judgeA.composite, judgeB.composite, judgeC.composite].sort((a, b) => a - b);
@@ -141,6 +231,7 @@ function scoreCapability(shellPath) {
     capability: shell.title,
     id: shell.id,
     status: shell.status,
+    scoring_method: USE_SIMULATION ? 'simulation' : 'llm-judge',
     judges: {
       A: { composite: judgeA.composite, scores: judgeA },
       B: { composite: judgeB.composite, scores: judgeB },
@@ -184,6 +275,7 @@ function generateReport() {
       pass_rate: Math.round((passing.length / results.length) * 1000) / 10 + '%',
       high_variance_count: highVariance.length,
       average_composite: Math.round(results.reduce((s, r) => s + r.median_composite, 0) / results.length * 1000) / 1000,
+      scoring_method: results[0]?.scoring_method || 'unknown',
     },
     by_status: {
       GREEN: results.filter(r => r.status === 'GREEN'),
@@ -200,9 +292,10 @@ function generateReport() {
   const reportPath = join(RESULTS_DIR, 'SCORING_REPORT.json');
   writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
 
-  // Also generate markdown report
+  // Markdown report
   let md = `# LLM-Judge Scoring Report\n\n`;
-  md += `**Generated:** ${report.generated_at}\n\n`;
+  md += `**Generated:** ${report.generated_at}\n`;
+  md += `**Scoring method:** ${report.summary.scoring_method}\n\n`;
   md += `## Summary\n\n`;
   md += `| Metric | Value |\n|--------|-------|\n`;
   md += `| Total evaluated | ${report.summary.total} |\n`;
@@ -223,9 +316,13 @@ function generateReport() {
   }
 
   md += `\n## Failing Capabilities\n\n`;
-  md += `| # | Capability | Status | Score |\n|---|-----------|--------|-------|\n`;
-  for (const f of failing.sort((a, b) => a.id - b.id)) {
-    md += `| ${f.id} | ${f.capability} | ${f.status} | ${f.score} |\n`;
+  if (failing.length === 0) {
+    md += `No failing capabilities.\n`;
+  } else {
+    md += `| # | Capability | Status | Score |\n|---|-----------|--------|-------|\n`;
+    for (const f of failing.sort((a, b) => a.id - b.id)) {
+      md += `| ${f.id} | ${f.capability} | ${f.status} | ${f.score} |\n`;
+    }
   }
 
   md += `\n## High Variance Flags\n\n`;
@@ -241,10 +338,11 @@ function generateReport() {
   const mdPath = join(RESULTS_DIR, 'SCORING_REPORT.md');
   writeFileSync(mdPath, md);
 
-  console.log(`Report generated: ${reportPath}`);
-  console.log(`Markdown report: ${mdPath}`);
+  console.log(`Report: ${reportPath}`);
+  console.log(`Markdown: ${mdPath}`);
   console.log(`\nSummary: ${report.summary.passing}/${report.summary.total} passing (${report.summary.pass_rate})`);
   console.log(`Average composite: ${report.summary.average_composite}`);
+  console.log(`Scoring method: ${report.summary.scoring_method}`);
 
   return report;
 }
@@ -253,19 +351,19 @@ function generateReport() {
 const args = process.argv.slice(2);
 
 if (args.includes('--all')) {
-  console.log('Scoring all capability and orchestration shells...\n');
+  console.log(`Scoring all shells (method: ${USE_SIMULATION ? 'simulation' : 'llm-judge'})...\n`);
   const capFiles = readdirSync(CAP_DIR).filter(f => f.endsWith('.json'));
   const orchFiles = readdirSync(ORCH_DIR).filter(f => f.endsWith('.json'));
   
   for (const f of capFiles) {
-    const result = scoreCapability(join(CAP_DIR, f));
-    const status = result.passes_threshold ? '✓' : '✗';
-    console.log(`${status} ${result.capability}: ${result.median_composite.toFixed(3)} (${result.status})`);
+    const result = await scoreCapability(join(CAP_DIR, f));
+    const icon = result.passes_threshold ? '✓' : '✗';
+    console.log(`${icon} ${result.capability}: ${result.median_composite.toFixed(3)} (${result.status})`);
   }
   for (const f of orchFiles) {
-    const result = scoreCapability(join(ORCH_DIR, f));
-    const status = result.passes_threshold ? '✓' : '✗';
-    console.log(`${status} ${result.capability}: ${result.median_composite.toFixed(3)}`);
+    const result = await scoreCapability(join(ORCH_DIR, f));
+    const icon = result.passes_threshold ? '✓' : '✗';
+    console.log(`${icon} ${result.capability}: ${result.median_composite.toFixed(3)}`);
   }
   console.log('\n');
   generateReport();
@@ -275,7 +373,7 @@ if (args.includes('--all')) {
   const capName = args[args.indexOf('--cap') + 1];
   const capFile = readdirSync(CAP_DIR).find(f => f.includes(capName));
   if (capFile) {
-    const result = scoreCapability(join(CAP_DIR, capFile));
+    const result = await scoreCapability(join(CAP_DIR, capFile));
     console.log(JSON.stringify(result, null, 2));
   } else {
     console.error(`Capability "${capName}" not found.`);
@@ -284,15 +382,19 @@ if (args.includes('--all')) {
   const orchName = args[args.indexOf('--orch') + 1];
   const orchFile = readdirSync(ORCH_DIR).find(f => f.includes(orchName));
   if (orchFile) {
-    const result = scoreCapability(join(ORCH_DIR, orchFile));
+    const result = await scoreCapability(join(ORCH_DIR, orchFile));
     console.log(JSON.stringify(result, null, 2));
   } else {
     console.error(`Orchestration task "${orchName}" not found.`);
   }
 } else {
+  console.log('LLM-Judge Scoring Infrastructure');
+  console.log(`Mode: ${USE_SIMULATION ? 'simulation (no API keys)' : 'real LLM-judge'}`);
+  console.log('');
   console.log('Usage:');
   console.log('  node packages/eval/judge.mjs --all           Score all task shells');
   console.log('  node packages/eval/judge.mjs --cap <name>    Score a specific capability');
   console.log('  node packages/eval/judge.mjs --orch <name>   Score a specific orchestration task');
   console.log('  node packages/eval/judge.mjs --report        Generate summary report');
+  console.log('  node packages/eval/judge.mjs --simulate      Force simulation mode');
 }

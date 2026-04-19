@@ -1,7 +1,7 @@
 {
   "name": "@mwpenn94/manus-next-design",
   "version": "0.1.0",
-  "description": "Design view canvas (stub)",
+  "description": "Design view and UI generation components for Manus Next",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "license": "MIT",
@@ -9,7 +9,6 @@
     "access": "public"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": ">=18.0.0"
   }
 }

@@ -1,0 +1,36 @@
+{
+  "task_id": "17-scheduled-tasks",
+  "type": "capability",
+  "capability": "Scheduled Tasks",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.906,
+      "completeness": 0.888,
+      "ux_polish": 0.886,
+      "latency_appropriateness": 0.83,
+      "error_handling": 0.932,
+      "context_awareness": 0.936,
+      "output_formatting": 0.924
+    },
+    "composite_score": 0.898,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.918,
+      "completeness": 0.803,
+      "ux_polish": 0.801,
+      "latency_appropriateness": 0.885,
+      "error_handling": 0.903,
+      "context_awareness": 0.81,
+      "output_formatting": 0.837
+    },
+    "composite_score": 0.857,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.954
+}

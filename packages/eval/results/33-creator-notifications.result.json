@@ -2,116 +2,117 @@
   "capability": "Notifications for Creators",
   "id": 33,
   "status": "GREEN",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
-      "composite": 0.845,
+      "composite": 0.823,
       "scores": {
         "correctness": {
-          "score": 0.87,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.78,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.88,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "score": 0.86,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
           "score": 0.86,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
           "score": 0.85,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.8,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.9,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.78,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.77,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.8,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.845,
-        "assessment": "Capability \"Notifications for Creators\" is GREEN. Composite score: 0.845."
+        "composite": 0.823,
+        "assessment": "[Simulated] Capability \"Notifications for Creators\" is GREEN. Composite: 0.823."
       }
     },
     "B": {
-      "composite": 0.841,
+      "composite": 0.842,
       "scores": {
         "correctness": {
-          "score": 0.88,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.85,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "score": 0.87,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.85,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.89,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.83,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "score": 0.79,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.79,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.76,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.85,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.9,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.83,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.88,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.841,
-        "assessment": "Capability \"Notifications for Creators\" is GREEN. Composite score: 0.841."
+        "composite": 0.842,
+        "assessment": "[Simulated] Capability \"Notifications for Creators\" is GREEN. Composite: 0.842."
       }
     },
     "C": {
-      "composite": 0.805,
+      "composite": 0.834,
       "scores": {
         "correctness": {
-          "score": 0.77,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.81,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.8,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "score": 0.85,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.84,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.81,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.81,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "score": 0.86,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.88,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.78,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.75,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.79,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.89,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.805,
-        "assessment": "Capability \"Notifications for Creators\" is GREEN. Composite score: 0.805."
+        "composite": 0.834,
+        "assessment": "[Simulated] Capability \"Notifications for Creators\" is GREEN. Composite: 0.834."
       }
     }
   },
-  "median_composite": 0.841,
-  "spread": 0.04,
+  "median_composite": 0.834,
+  "spread": 0.019,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-19T03:32:41.470Z"
+  "evaluated_at": "2026-04-19T04:16:09.444Z"
 }

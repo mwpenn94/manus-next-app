@@ -1,0 +1,36 @@
+{
+  "task_id": "61-document-generation",
+  "type": "capability",
+  "capability": "Document Generation",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.891,
+      "completeness": 0.836,
+      "ux_polish": 0.831,
+      "latency_appropriateness": 0.908,
+      "error_handling": 0.839,
+      "context_awareness": 0.843,
+      "output_formatting": 0.895
+    },
+    "composite_score": 0.864,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.913,
+      "completeness": 0.817,
+      "ux_polish": 0.873,
+      "latency_appropriateness": 0.913,
+      "error_handling": 0.884,
+      "context_awareness": 0.916,
+      "output_formatting": 0.868
+    },
+    "composite_score": 0.884,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 1.023
+}

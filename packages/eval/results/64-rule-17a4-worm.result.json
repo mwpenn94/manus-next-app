@@ -2,40 +2,41 @@
   "capability": "Rule 17a-4 WORM",
   "id": 64,
   "status": "N/A",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
       "composite": 0,
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence."
+          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence."
+          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence."
+          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence."
+          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence."
+          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence."
+          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence."
+          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
         },
         "composite": 0,
-        "assessment": "Capability \"Rule 17a-4 WORM\" is N/A. Composite score: 0.000."
+        "assessment": "[Simulated] Capability \"Rule 17a-4 WORM\" is N/A. Composite: 0.000."
       }
     },
     "B": {
@@ -43,34 +44,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence."
+          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence."
+          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence."
+          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence."
+          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence."
+          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence."
+          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence."
+          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
         },
         "composite": 0,
-        "assessment": "Capability \"Rule 17a-4 WORM\" is N/A. Composite score: 0.000."
+        "assessment": "[Simulated] Capability \"Rule 17a-4 WORM\" is N/A. Composite: 0.000."
       }
     },
     "C": {
@@ -78,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence."
+          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence."
+          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence."
+          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence."
+          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence."
+          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence."
+          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence."
+          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
         },
         "composite": 0,
-        "assessment": "Capability \"Rule 17a-4 WORM\" is N/A. Composite score: 0.000."
+        "assessment": "[Simulated] Capability \"Rule 17a-4 WORM\" is N/A. Composite: 0.000."
       }
     }
   },
@@ -113,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T03:32:41.478Z"
+  "evaluated_at": "2026-04-19T04:16:09.449Z"
 }

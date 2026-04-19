@@ -1,0 +1,36 @@
+{
+  "task_id": "27-webapp-creation",
+  "type": "capability",
+  "capability": "Full-Stack Web-App Creation",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.851,
+      "completeness": 0.92,
+      "ux_polish": 0.89,
+      "latency_appropriateness": 0.884,
+      "error_handling": 0.894,
+      "context_awareness": 0.925,
+      "output_formatting": 0.926
+    },
+    "composite_score": 0.894,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.849,
+      "completeness": 0.823,
+      "ux_polish": 0.874,
+      "latency_appropriateness": 0.8,
+      "error_handling": 0.892,
+      "context_awareness": 0.897,
+      "output_formatting": 0.834
+    },
+    "composite_score": 0.851,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.952
+}

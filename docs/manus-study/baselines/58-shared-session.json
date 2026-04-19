@@ -1,0 +1,36 @@
+{
+  "task_id": "58-shared-session",
+  "type": "capability",
+  "capability": "Shared Session",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.869,
+      "completeness": 0.926,
+      "ux_polish": 0.863,
+      "latency_appropriateness": 0.949,
+      "error_handling": 0.841,
+      "context_awareness": 0.947,
+      "output_formatting": 0.931
+    },
+    "composite_score": 0.898,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.842,
+      "completeness": 0.808,
+      "ux_polish": 0.888,
+      "latency_appropriateness": 0.897,
+      "error_handling": 0.841,
+      "context_awareness": 0.908,
+      "output_formatting": 0.858
+    },
+    "composite_score": 0.86,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.958
+}

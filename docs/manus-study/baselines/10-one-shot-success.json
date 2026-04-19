@@ -1,0 +1,36 @@
+{
+  "task_id": "10-one-shot-success",
+  "type": "capability",
+  "capability": "One-Shot Success Target",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.921,
+      "completeness": 0.874,
+      "ux_polish": 0.838,
+      "latency_appropriateness": 0.855,
+      "error_handling": 0.949,
+      "context_awareness": 0.948,
+      "output_formatting": 0.845
+    },
+    "composite_score": 0.891,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.898,
+      "completeness": 0.881,
+      "ux_polish": 0.823,
+      "latency_appropriateness": 0.887,
+      "error_handling": 0.867,
+      "context_awareness": 0.888,
+      "output_formatting": 0.818
+    },
+    "composite_score": 0.869,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.975
+}

@@ -1,0 +1,36 @@
+{
+  "task_id": "32-access-control",
+  "type": "capability",
+  "capability": "Access Control",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.918,
+      "completeness": 0.885,
+      "ux_polish": 0.845,
+      "latency_appropriateness": 0.84,
+      "error_handling": 0.841,
+      "context_awareness": 0.913,
+      "output_formatting": 0.857
+    },
+    "composite_score": 0.872,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.898,
+      "completeness": 0.888,
+      "ux_polish": 0.916,
+      "latency_appropriateness": 0.904,
+      "error_handling": 0.823,
+      "context_awareness": 0.918,
+      "output_formatting": 0.874
+    },
+    "composite_score": 0.888,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 1.018
+}

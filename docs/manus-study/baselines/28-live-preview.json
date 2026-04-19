@@ -1,0 +1,36 @@
+{
+  "task_id": "28-live-preview",
+  "type": "capability",
+  "capability": "Live Preview with Direct Editing",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.911,
+      "completeness": 0.928,
+      "ux_polish": 0.865,
+      "latency_appropriateness": 0.894,
+      "error_handling": 0.832,
+      "context_awareness": 0.838,
+      "output_formatting": 0.881
+    },
+    "composite_score": 0.882,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.856,
+      "completeness": 0.808,
+      "ux_polish": 0.909,
+      "latency_appropriateness": 0.881,
+      "error_handling": 0.857,
+      "context_awareness": 0.865,
+      "output_formatting": 0.826
+    },
+    "composite_score": 0.859,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.974
+}

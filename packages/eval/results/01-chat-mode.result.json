@@ -2,116 +2,117 @@
   "capability": "Chat Mode",
   "id": 1,
   "status": "GREEN",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
-      "composite": 0.837,
+      "composite": 0.802,
       "scores": {
         "correctness": {
-          "score": 0.9,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
-        },
-        "completeness": {
-          "score": 0.75,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
-        },
-        "efficiency": {
-          "score": 0.89,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
-        },
-        "robustness": {
-          "score": 0.78,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
-        },
-        "user_experience": {
-          "score": 0.87,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
-        },
-        "maintainability": {
-          "score": 0.88,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
-        },
-        "innovation": {
-          "score": 0.8,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
-        },
-        "composite": 0.837,
-        "assessment": "Capability \"Chat Mode\" is GREEN. Composite score: 0.837."
-      }
-    },
-    "B": {
-      "composite": 0.809,
-      "scores": {
-        "correctness": {
-          "score": 0.84,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.86,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
           "score": 0.76,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.78,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.8,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
           "score": 0.78,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.86,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.77,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.84,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.77,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.79,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.809,
-        "assessment": "Capability \"Chat Mode\" is GREEN. Composite score: 0.809."
+        "composite": 0.802,
+        "assessment": "[Simulated] Capability \"Chat Mode\" is GREEN. Composite: 0.802."
+      }
+    },
+    "B": {
+      "composite": 0.844,
+      "scores": {
+        "correctness": {
+          "score": 0.86,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
+        },
+        "completeness": {
+          "score": 0.87,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
+        },
+        "efficiency": {
+          "score": 0.86,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
+        },
+        "robustness": {
+          "score": 0.89,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
+        },
+        "user_experience": {
+          "score": 0.81,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
+        },
+        "maintainability": {
+          "score": 0.9,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
+        },
+        "innovation": {
+          "score": 0.74,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
+        },
+        "composite": 0.844,
+        "assessment": "[Simulated] Capability \"Chat Mode\" is GREEN. Composite: 0.844."
       }
     },
     "C": {
-      "composite": 0.81,
+      "composite": 0.823,
       "scores": {
         "correctness": {
           "score": 0.83,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.75,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "score": 0.89,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.87,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.86,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.87,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "score": 0.9,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.75,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.76,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.84,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.78,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.78,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.74,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.81,
-        "assessment": "Capability \"Chat Mode\" is GREEN. Composite score: 0.810."
+        "composite": 0.823,
+        "assessment": "[Simulated] Capability \"Chat Mode\" is GREEN. Composite: 0.823."
       }
     }
   },
-  "median_composite": 0.81,
-  "spread": 0.028,
+  "median_composite": 0.823,
+  "spread": 0.042,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-19T03:32:41.456Z"
+  "evaluated_at": "2026-04-19T04:16:09.433Z"
 }

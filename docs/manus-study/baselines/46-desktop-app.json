@@ -1,0 +1,36 @@
+{
+  "task_id": "46-desktop-app",
+  "type": "capability",
+  "capability": "Desktop App",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.841,
+      "completeness": 0.946,
+      "ux_polish": 0.867,
+      "latency_appropriateness": 0.865,
+      "error_handling": 0.937,
+      "context_awareness": 0.856,
+      "output_formatting": 0.859
+    },
+    "composite_score": 0.882,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.844,
+      "completeness": 0.906,
+      "ux_polish": 0.832,
+      "latency_appropriateness": 0.882,
+      "error_handling": 0.819,
+      "context_awareness": 0.835,
+      "output_formatting": 0.841
+    },
+    "composite_score": 0.852,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.966
+}

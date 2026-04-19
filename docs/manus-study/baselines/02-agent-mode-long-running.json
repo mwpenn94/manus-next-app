@@ -1,0 +1,36 @@
+{
+  "task_id": "02-agent-mode-long-running",
+  "type": "capability",
+  "capability": "Agent Mode Long-Running",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.938,
+      "completeness": 0.905,
+      "ux_polish": 0.864,
+      "latency_appropriateness": 0.911,
+      "error_handling": 0.918,
+      "context_awareness": 0.856,
+      "output_formatting": 0.897
+    },
+    "composite_score": 0.903,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.835,
+      "completeness": 0.904,
+      "ux_polish": 0.866,
+      "latency_appropriateness": 0.846,
+      "error_handling": 0.808,
+      "context_awareness": 0.908,
+      "output_formatting": 0.805
+    },
+    "composite_score": 0.852,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.944
+}

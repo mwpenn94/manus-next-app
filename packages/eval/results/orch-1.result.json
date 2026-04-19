@@ -1,116 +1,117 @@
 {
   "capability": "Multi-Tool Chain",
   "id": "orch-1",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
-      "composite": 0.154,
+      "composite": 0.156,
       "scores": {
         "correctness": {
-          "score": 0.18,
-          "justification": "undefined status: correctness scored based on implementation evidence."
+          "score": 0.2,
+          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.09,
-          "justification": "undefined status: completeness scored based on implementation evidence."
+          "score": 0.23,
+          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.22,
-          "justification": "undefined status: efficiency scored based on implementation evidence."
+          "score": 0.2,
+          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.11,
-          "justification": "undefined status: robustness scored based on implementation evidence."
+          "score": 0.1,
+          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.18,
-          "justification": "undefined status: user_experience scored based on implementation evidence."
+          "score": 0.11,
+          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.16,
-          "justification": "undefined status: maintainability scored based on implementation evidence."
+          "score": 0.09,
+          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.15,
-          "justification": "undefined status: innovation scored based on implementation evidence."
+          "score": 0.14,
+          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.154,
-        "assessment": "Capability \"Multi-Tool Chain\" is undefined. Composite score: 0.154."
+        "composite": 0.156,
+        "assessment": "[Simulated] Capability \"Multi-Tool Chain\" is undefined. Composite: 0.156."
       }
     },
     "B": {
-      "composite": 0.147,
+      "composite": 0.185,
       "scores": {
         "correctness": {
-          "score": 0.2,
-          "justification": "undefined status: correctness scored based on implementation evidence."
+          "score": 0.22,
+          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.19,
-          "justification": "undefined status: completeness scored based on implementation evidence."
+          "score": 0.14,
+          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.05,
-          "justification": "undefined status: efficiency scored based on implementation evidence."
+          "score": 0.11,
+          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.18,
-          "justification": "undefined status: robustness scored based on implementation evidence."
+          "score": 0.21,
+          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.09,
-          "justification": "undefined status: user_experience scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.13,
-          "justification": "undefined status: maintainability scored based on implementation evidence."
+          "score": 0.2,
+          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.13,
-          "justification": "undefined status: innovation scored based on implementation evidence."
+          "score": 0.23,
+          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.147,
-        "assessment": "Capability \"Multi-Tool Chain\" is undefined. Composite score: 0.147."
+        "composite": 0.185,
+        "assessment": "[Simulated] Capability \"Multi-Tool Chain\" is undefined. Composite: 0.185."
       }
     },
     "C": {
-      "composite": 0.168,
+      "composite": 0.201,
       "scores": {
         "correctness": {
-          "score": 0.21,
-          "justification": "undefined status: correctness scored based on implementation evidence."
+          "score": 0.23,
+          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.12,
-          "justification": "undefined status: completeness scored based on implementation evidence."
+          "score": 0.23,
+          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.22,
-          "justification": "undefined status: efficiency scored based on implementation evidence."
+          "score": 0.17,
+          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.09,
-          "justification": "undefined status: robustness scored based on implementation evidence."
+          "score": 0.16,
+          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.24,
-          "justification": "undefined status: user_experience scored based on implementation evidence."
+          "score": 0.22,
+          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.2,
-          "justification": "undefined status: maintainability scored based on implementation evidence."
+          "score": 0.21,
+          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.11,
-          "justification": "undefined status: innovation scored based on implementation evidence."
+          "score": 0.17,
+          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.168,
-        "assessment": "Capability \"Multi-Tool Chain\" is undefined. Composite score: 0.168."
+        "composite": 0.201,
+        "assessment": "[Simulated] Capability \"Multi-Tool Chain\" is undefined. Composite: 0.201."
       }
     }
   },
-  "median_composite": 0.154,
-  "spread": 0.021,
+  "median_composite": 0.185,
+  "spread": 0.045,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T03:32:41.479Z"
+  "evaluated_at": "2026-04-19T04:16:09.450Z"
 }

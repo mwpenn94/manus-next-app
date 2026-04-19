@@ -1,0 +1,36 @@
+{
+  "task_id": "19-multimedia-processing",
+  "type": "capability",
+  "capability": "Multimedia Processing",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.832,
+      "completeness": 0.857,
+      "ux_polish": 0.882,
+      "latency_appropriateness": 0.927,
+      "error_handling": 0.926,
+      "context_awareness": 0.928,
+      "output_formatting": 0.888
+    },
+    "composite_score": 0.887,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.855,
+      "completeness": 0.864,
+      "ux_polish": 0.904,
+      "latency_appropriateness": 0.812,
+      "error_handling": 0.841,
+      "context_awareness": 0.855,
+      "output_formatting": 0.912
+    },
+    "composite_score": 0.861,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.971
+}

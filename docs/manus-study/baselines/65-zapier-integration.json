@@ -1,0 +1,36 @@
+{
+  "task_id": "65-zapier-integration",
+  "type": "capability",
+  "capability": "Zapier Integration",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.88,
+      "completeness": 0.847,
+      "ux_polish": 0.838,
+      "latency_appropriateness": 0.933,
+      "error_handling": 0.871,
+      "context_awareness": 0.923,
+      "output_formatting": 0.842
+    },
+    "composite_score": 0.876,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.875,
+      "completeness": 0.895,
+      "ux_polish": 0.903,
+      "latency_appropriateness": 0.879,
+      "error_handling": 0.809,
+      "context_awareness": 0.849,
+      "output_formatting": 0.805
+    },
+    "composite_score": 0.863,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.985
+}

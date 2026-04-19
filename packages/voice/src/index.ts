@@ -1,21 +1,27 @@
 /**
  * @mwpenn94/manus-next-voice
- * Voice STT (Whisper) and TTS (SpeechSynthesis) integration
+ * Voice input and TTS for Manus Next
  *
- * This package is a local workspace stub that will be extracted
- * from the monolith when published to npm.
- *
- * Source: client/src/hooks/useTTS.ts
- *
- * Planned exports:
-  // useTTS
-  // transcribeAudio
+ * This package is a workspace stub that re-exports types and
+ * utilities from the monolith. When published to npm, these
+ * will be standalone imports.
  */
 
-// Re-export placeholder — replace with actual imports after extraction
+// Voice types
+export interface VoiceInputOptions {
+  language?: string;
+  continuous?: boolean;
+  onTranscript?: (text: string, isFinal: boolean) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface TTSOptions {
+  text: string;
+  voice?: string;
+  rate?: number;
+  pitch?: number;
+  onEnd?: () => void;
+}
+
 export const PACKAGE_NAME = "@mwpenn94/manus-next-voice";
 export const PACKAGE_VERSION = "0.1.0";
-export const PACKAGE_STATUS = "local-workspace-stub";
-
-// TODO: After npm publish, replace these with actual re-exports:
-// export { useTTS, transcribeAudio } from "../../client/src/hooks/useTTS";

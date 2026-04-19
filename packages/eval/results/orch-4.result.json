@@ -1,116 +1,117 @@
 {
   "capability": "Memory Across Tasks",
   "id": "orch-4",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
-      "composite": 0.186,
+      "composite": 0.137,
       "scores": {
         "correctness": {
           "score": 0.2,
-          "justification": "undefined status: correctness scored based on implementation evidence."
+          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.19,
-          "justification": "undefined status: completeness scored based on implementation evidence."
+          "score": 0.24,
+          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.21,
-          "justification": "undefined status: efficiency scored based on implementation evidence."
+          "score": 0.06,
+          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.14,
-          "justification": "undefined status: robustness scored based on implementation evidence."
+          "score": 0.06,
+          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.18,
-          "justification": "undefined status: user_experience scored based on implementation evidence."
+          "score": 0.14,
+          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.14,
-          "justification": "undefined status: maintainability scored based on implementation evidence."
+          "score": 0.17,
+          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.23,
-          "justification": "undefined status: innovation scored based on implementation evidence."
+          "score": 0.05,
+          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.186,
-        "assessment": "Capability \"Memory Across Tasks\" is undefined. Composite score: 0.186."
+        "composite": 0.137,
+        "assessment": "[Simulated] Capability \"Memory Across Tasks\" is undefined. Composite: 0.137."
       }
     },
     "B": {
-      "composite": 0.159,
+      "composite": 0.136,
       "scores": {
         "correctness": {
-          "score": 0.19,
-          "justification": "undefined status: correctness scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
           "score": 0.16,
-          "justification": "undefined status: completeness scored based on implementation evidence."
+          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.24,
-          "justification": "undefined status: efficiency scored based on implementation evidence."
+          "score": 0.06,
+          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.18,
-          "justification": "undefined status: robustness scored based on implementation evidence."
+          "score": 0.07,
+          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.14,
-          "justification": "undefined status: user_experience scored based on implementation evidence."
+          "score": 0.2,
+          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
           "score": 0.13,
-          "justification": "undefined status: maintainability scored based on implementation evidence."
+          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.08,
-          "justification": "undefined status: innovation scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.159,
-        "assessment": "Capability \"Memory Across Tasks\" is undefined. Composite score: 0.159."
+        "composite": 0.136,
+        "assessment": "[Simulated] Capability \"Memory Across Tasks\" is undefined. Composite: 0.136."
       }
     },
     "C": {
-      "composite": 0.119,
+      "composite": 0.139,
       "scores": {
         "correctness": {
-          "score": 0.13,
-          "justification": "undefined status: correctness scored based on implementation evidence."
+          "score": 0.22,
+          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.11,
-          "justification": "undefined status: completeness scored based on implementation evidence."
+          "score": 0.1,
+          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.16,
-          "justification": "undefined status: efficiency scored based on implementation evidence."
+          "score": 0.11,
+          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.1,
-          "justification": "undefined status: robustness scored based on implementation evidence."
+          "score": 0.08,
+          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.16,
-          "justification": "undefined status: user_experience scored based on implementation evidence."
+          "score": 0.13,
+          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.12,
-          "justification": "undefined status: maintainability scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.06,
-          "justification": "undefined status: innovation scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.119,
-        "assessment": "Capability \"Memory Across Tasks\" is undefined. Composite score: 0.119."
+        "composite": 0.139,
+        "assessment": "[Simulated] Capability \"Memory Across Tasks\" is undefined. Composite: 0.139."
       }
     }
   },
-  "median_composite": 0.159,
-  "spread": 0.067,
+  "median_composite": 0.137,
+  "spread": 0.003,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T03:32:41.480Z"
+  "evaluated_at": "2026-04-19T04:16:09.451Z"
 }

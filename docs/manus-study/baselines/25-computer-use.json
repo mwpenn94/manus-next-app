@@ -1,0 +1,36 @@
+{
+  "task_id": "25-computer-use",
+  "type": "capability",
+  "capability": "Computer Use",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.905,
+      "completeness": 0.842,
+      "ux_polish": 0.909,
+      "latency_appropriateness": 0.946,
+      "error_handling": 0.872,
+      "context_awareness": 0.859,
+      "output_formatting": 0.871
+    },
+    "composite_score": 0.889,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.887,
+      "completeness": 0.816,
+      "ux_polish": 0.84,
+      "latency_appropriateness": 0.815,
+      "error_handling": 0.918,
+      "context_awareness": 0.822,
+      "output_formatting": 0.89
+    },
+    "composite_score": 0.857,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.964
+}

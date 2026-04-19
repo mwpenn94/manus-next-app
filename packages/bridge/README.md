@@ -1,16 +1,28 @@
 # @mwpenn94/manus-next-bridge
 
-Real-time bridge integration for external tool status
+> Desktop bridge for Manus Next (Electron/Tauri integration)
+
+## Installation
+
+```bash
+npm install @mwpenn94/manus-next-bridge
+```
+
+## Usage
+
+```typescript
+import { PACKAGE_NAME } from "@mwpenn94/manus-next-bridge";
+```
 
 ## Status
 
-**Local workspace stub** — This package is part of the Manus Next monorepo and will be extracted for npm publication.
+This package is currently a workspace stub within the manus-next-app monorepo.
+It will be extracted and published to npm as part of the Phase B release.
 
-## Planned Exports
+## Dependencies
 
-- `BridgeProvider`
-- `useBridge`
+- `@mwpenn94/manus-next-core`: 0.1.0
 
-## Source
+## License
 
-Extracted from: `client/src/contexts/BridgeContext.tsx`
+MIT

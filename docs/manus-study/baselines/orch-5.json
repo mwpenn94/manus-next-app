@@ -1,0 +1,36 @@
+{
+  "task_id": "orch-5",
+  "type": "orchestration",
+  "capability": "Concurrent Tool Execution",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.862,
+      "completeness": 0.917,
+      "ux_polish": 0.919,
+      "latency_appropriateness": 0.88,
+      "error_handling": 0.937,
+      "context_awareness": 0.908,
+      "output_formatting": 0.845
+    },
+    "composite_score": 0.896,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.886,
+      "completeness": 0.91,
+      "ux_polish": 0.916,
+      "latency_appropriateness": 0.841,
+      "error_handling": 0.803,
+      "context_awareness": 0.905,
+      "output_formatting": 0.894
+    },
+    "composite_score": 0.878,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.98
+}

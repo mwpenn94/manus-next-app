@@ -1,19 +1,28 @@
 # @mwpenn94/manus-next-core
 
-Core types, utilities, and shared constants for Manus Next
+> Core types, utilities, and shared constants for Manus Next
+
+## Installation
+
+```bash
+npm install @mwpenn94/manus-next-core
+```
+
+## Usage
+
+```typescript
+import { PACKAGE_NAME } from "@mwpenn94/manus-next-core";
+```
 
 ## Status
 
-**Local workspace stub** — This package is part of the Manus Next monorepo and will be extracted for npm publication.
+This package is currently a workspace stub within the manus-next-app monorepo.
+It will be extracted and published to npm as part of the Phase B release.
 
-## Planned Exports
+## Dependencies
 
-- `ManusNextChatProps`
-- `ManusNextChatHandle`
-- `ManusNextChatConfig`
-- `ManusNextChatTheme`
-- `ManusNextChatEvents`
+None
 
-## Source
+## License
 
-Extracted from: `shared/ManusNextChat.types.ts`
+MIT

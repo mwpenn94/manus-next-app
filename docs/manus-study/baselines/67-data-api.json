@@ -1,0 +1,36 @@
+{
+  "task_id": "67-data-api",
+  "type": "capability",
+  "capability": "Data API Capability",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.909,
+      "completeness": 0.898,
+      "ux_polish": 0.931,
+      "latency_appropriateness": 0.93,
+      "error_handling": 0.83,
+      "context_awareness": 0.884,
+      "output_formatting": 0.935
+    },
+    "composite_score": 0.902,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.853,
+      "completeness": 0.819,
+      "ux_polish": 0.848,
+      "latency_appropriateness": 0.836,
+      "error_handling": 0.844,
+      "context_awareness": 0.918,
+      "output_formatting": 0.833
+    },
+    "composite_score": 0.848,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.94
+}

@@ -1,0 +1,36 @@
+{
+  "task_id": "23-browser-operator",
+  "type": "capability",
+  "capability": "Browser Operator",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.841,
+      "completeness": 0.912,
+      "ux_polish": 0.935,
+      "latency_appropriateness": 0.839,
+      "error_handling": 0.873,
+      "context_awareness": 0.863,
+      "output_formatting": 0.886
+    },
+    "composite_score": 0.877,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.803,
+      "completeness": 0.886,
+      "ux_polish": 0.801,
+      "latency_appropriateness": 0.907,
+      "error_handling": 0.894,
+      "context_awareness": 0.899,
+      "output_formatting": 0.915
+    },
+    "composite_score": 0.865,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.986
+}

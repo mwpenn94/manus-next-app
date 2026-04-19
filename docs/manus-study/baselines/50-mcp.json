@@ -1,0 +1,36 @@
+{
+  "task_id": "50-mcp",
+  "type": "capability",
+  "capability": "MCP Protocol",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.907,
+      "completeness": 0.847,
+      "ux_polish": 0.837,
+      "latency_appropriateness": 0.903,
+      "error_handling": 0.835,
+      "context_awareness": 0.911,
+      "output_formatting": 0.879
+    },
+    "composite_score": 0.874,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.819,
+      "completeness": 0.884,
+      "ux_polish": 0.907,
+      "latency_appropriateness": 0.876,
+      "error_handling": 0.812,
+      "context_awareness": 0.881,
+      "output_formatting": 0.86
+    },
+    "composite_score": 0.86,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.984
+}

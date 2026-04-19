@@ -1,25 +1,26 @@
 # LLM-Judge Scoring Report
 
-**Generated:** 2026-04-19T03:32:41.483Z
+**Generated:** 2026-04-19T04:16:09.455Z
+**Scoring method:** simulation
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total evaluated | 72 |
-| Passing (≥0.8) | 17 |
-| Failing (<0.8) | 55 |
-| Pass rate | 23.6% |
-| Average composite | 0.376 |
+| Passing (≥0.8) | 15 |
+| Failing (<0.8) | 57 |
+| Pass rate | 20.8% |
+| Average composite | 0.375 |
 | High variance flags | 0 |
 
 ## By Implementation Status
 
 | Status | Count | Avg Score | Passing |
 |--------|-------|-----------|--------|
-| GREEN | 18 | 0.823 | 17/18 |
-| YELLOW | 12 | 0.544 | 0/12 |
-| RED | 32 | 0.154 | 0/32 |
+| GREEN | 18 | 0.82 | 15/18 |
+| YELLOW | 12 | 0.547 | 0/12 |
+| RED | 32 | 0.152 | 0/32 |
 | N/A | 5 | 0 | 0/5 |
 
 ## Failing Capabilities
@@ -70,6 +71,8 @@
 | 56 | Manus Collab | RED | undefined |
 | 57 | Team Billing + Admin | RED | undefined |
 | 58 | Shared Session | RED | undefined |
+| 60 | Voice STT + Hands-Free | GREEN | undefined |
+| 61 | Document Generation | GREEN | undefined |
 | 62 | Veo3 Video Generation | RED | undefined |
 | 63 | FINRA/SEC Compliance | N/A | undefined |
 | 64 | Rule 17a-4 WORM | N/A | undefined |

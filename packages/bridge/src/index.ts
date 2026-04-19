@@ -1,21 +1,33 @@
 /**
  * @mwpenn94/manus-next-bridge
- * Real-time bridge integration for external tool status
+ * Desktop bridge for Manus Next (Electron/Tauri integration)
  *
- * This package is a local workspace stub that will be extracted
- * from the monolith when published to npm.
- *
- * Source: client/src/contexts/BridgeContext.tsx
- *
- * Planned exports:
-  // BridgeProvider
-  // useBridge
+ * This package is a workspace stub that re-exports types and
+ * utilities from the monolith. When published to npm, these
+ * will be standalone imports.
  */
 
-// Re-export placeholder — replace with actual imports after extraction
+// Bridge types
+export interface BridgeConfig {
+  runtime: "electron" | "tauri" | "browser";
+  apiUrl: string;
+  features: {
+    fileSystem: boolean;
+    notifications: boolean;
+    clipboard: boolean;
+    deepLinks: boolean;
+  };
+}
+
+export interface BridgeAPI {
+  readFile(path: string): Promise<Uint8Array>;
+  writeFile(path: string, data: Uint8Array): Promise<void>;
+  showNotification(title: string, body: string): Promise<void>;
+  getClipboard(): Promise<string>;
+  setClipboard(text: string): Promise<void>;
+}
+
 export const PACKAGE_NAME = "@mwpenn94/manus-next-bridge";
 export const PACKAGE_VERSION = "0.1.0";
-export const PACKAGE_STATUS = "local-workspace-stub";
 
-// TODO: After npm publish, replace these with actual re-exports:
-// export { BridgeProvider, useBridge } from "../../client/src/contexts/BridgeContextx";
+// Bridge is deferred per DEFERRED_CAPABILITIES.md — desktop runtime not in scope for Phase A

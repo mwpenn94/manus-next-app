@@ -1,0 +1,36 @@
+{
+  "task_id": "59-voice-tts",
+  "type": "capability",
+  "capability": "Voice TTS",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.933,
+      "completeness": 0.87,
+      "ux_polish": 0.925,
+      "latency_appropriateness": 0.892,
+      "error_handling": 0.83,
+      "context_awareness": 0.949,
+      "output_formatting": 0.914
+    },
+    "composite_score": 0.9,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.875,
+      "completeness": 0.85,
+      "ux_polish": 0.813,
+      "latency_appropriateness": 0.861,
+      "error_handling": 0.853,
+      "context_awareness": 0.903,
+      "output_formatting": 0.814
+    },
+    "composite_score": 0.853,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.948
+}

@@ -1,0 +1,36 @@
+{
+  "task_id": "14-project-skills",
+  "type": "capability",
+  "capability": "Project Skills",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.894,
+      "completeness": 0.911,
+      "ux_polish": 0.886,
+      "latency_appropriateness": 0.882,
+      "error_handling": 0.905,
+      "context_awareness": 0.944,
+      "output_formatting": 0.899
+    },
+    "composite_score": 0.901,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.825,
+      "completeness": 0.849,
+      "ux_polish": 0.809,
+      "latency_appropriateness": 0.897,
+      "error_handling": 0.896,
+      "context_awareness": 0.891,
+      "output_formatting": 0.853
+    },
+    "composite_score": 0.857,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.951
+}

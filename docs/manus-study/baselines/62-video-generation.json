@@ -1,0 +1,36 @@
+{
+  "task_id": "62-video-generation",
+  "type": "capability",
+  "capability": "Veo3 Video Generation",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.838,
+      "completeness": 0.887,
+      "ux_polish": 0.881,
+      "latency_appropriateness": 0.872,
+      "error_handling": 0.837,
+      "context_awareness": 0.949,
+      "output_formatting": 0.94
+    },
+    "composite_score": 0.878,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.901,
+      "completeness": 0.826,
+      "ux_polish": 0.824,
+      "latency_appropriateness": 0.916,
+      "error_handling": 0.889,
+      "context_awareness": 0.902,
+      "output_formatting": 0.846
+    },
+    "composite_score": 0.873,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.994
+}

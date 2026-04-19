@@ -1,0 +1,36 @@
+{
+  "task_id": "13-open-standards-skills",
+  "type": "capability",
+  "capability": "Open-Standards Agent Skills",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.933,
+      "completeness": 0.843,
+      "ux_polish": 0.83,
+      "latency_appropriateness": 0.934,
+      "error_handling": 0.85,
+      "context_awareness": 0.857,
+      "output_formatting": 0.935
+    },
+    "composite_score": 0.884,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.833,
+      "completeness": 0.856,
+      "ux_polish": 0.844,
+      "latency_appropriateness": 0.849,
+      "error_handling": 0.843,
+      "context_awareness": 0.859,
+      "output_formatting": 0.9
+    },
+    "composite_score": 0.851,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.963
+}

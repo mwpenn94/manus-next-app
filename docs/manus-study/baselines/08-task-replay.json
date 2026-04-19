@@ -1,0 +1,36 @@
+{
+  "task_id": "08-task-replay",
+  "type": "capability",
+  "capability": "Task Replay with Timeline Scrubber",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.944,
+      "completeness": 0.942,
+      "ux_polish": 0.831,
+      "latency_appropriateness": 0.834,
+      "error_handling": 0.942,
+      "context_awareness": 0.937,
+      "output_formatting": 0.834
+    },
+    "composite_score": 0.898,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.915,
+      "completeness": 0.85,
+      "ux_polish": 0.822,
+      "latency_appropriateness": 0.88,
+      "error_handling": 0.818,
+      "context_awareness": 0.912,
+      "output_formatting": 0.901
+    },
+    "composite_score": 0.87,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.969
+}

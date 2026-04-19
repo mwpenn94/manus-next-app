@@ -1,0 +1,36 @@
+{
+  "task_id": "66-maps-in-apps",
+  "type": "capability",
+  "capability": "Maps in Generated Apps",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.872,
+      "completeness": 0.922,
+      "ux_polish": 0.889,
+      "latency_appropriateness": 0.855,
+      "error_handling": 0.843,
+      "context_awareness": 0.88,
+      "output_formatting": 0.897
+    },
+    "composite_score": 0.878,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.911,
+      "completeness": 0.842,
+      "ux_polish": 0.903,
+      "latency_appropriateness": 0.872,
+      "error_handling": 0.889,
+      "context_awareness": 0.873,
+      "output_formatting": 0.845
+    },
+    "composite_score": 0.88,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 1.002
+}

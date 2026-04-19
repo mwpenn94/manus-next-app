@@ -1,0 +1,36 @@
+{
+  "task_id": "26-sandbox-runtime",
+  "type": "capability",
+  "capability": "Sandbox Runtime",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.923,
+      "completeness": 0.868,
+      "ux_polish": 0.848,
+      "latency_appropriateness": 0.851,
+      "error_handling": 0.848,
+      "context_awareness": 0.841,
+      "output_formatting": 0.901
+    },
+    "composite_score": 0.871,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.809,
+      "completeness": 0.833,
+      "ux_polish": 0.801,
+      "latency_appropriateness": 0.888,
+      "error_handling": 0.864,
+      "context_awareness": 0.808,
+      "output_formatting": 0.85
+    },
+    "composite_score": 0.835,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.959
+}

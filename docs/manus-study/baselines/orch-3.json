@@ -1,0 +1,36 @@
+{
+  "task_id": "orch-3",
+  "type": "orchestration",
+  "capability": "Mode Switching Mid-Task",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.84,
+      "completeness": 0.92,
+      "ux_polish": 0.926,
+      "latency_appropriateness": 0.839,
+      "error_handling": 0.931,
+      "context_awareness": 0.843,
+      "output_formatting": 0.84
+    },
+    "composite_score": 0.879,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.885,
+      "completeness": 0.82,
+      "ux_polish": 0.914,
+      "latency_appropriateness": 0.818,
+      "error_handling": 0.893,
+      "context_awareness": 0.89,
+      "output_formatting": 0.805
+    },
+    "composite_score": 0.863,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.982
+}

@@ -1,20 +1,26 @@
 /**
  * @mwpenn94/manus-next-projects
- * Project workspace management
+ * Project management and organization for Manus Next
  *
- * This package is a local workspace stub that will be extracted
- * from the monolith when published to npm.
- *
- * Source: client/src/pages/ProjectsPage.tsx
- *
- * Planned exports:
-  // ProjectsPage
+ * This package is a workspace stub that re-exports types and
+ * utilities from the monolith. When published to npm, these
+ * will be standalone imports.
  */
 
-// Re-export placeholder — replace with actual imports after extraction
+// Project types
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  taskIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProjectCreateOptions {
+  name: string;
+  description?: string;
+}
+
 export const PACKAGE_NAME = "@mwpenn94/manus-next-projects";
 export const PACKAGE_VERSION = "0.1.0";
-export const PACKAGE_STATUS = "local-workspace-stub";
-
-// TODO: After npm publish, replace these with actual re-exports:
-// export { ProjectsPage } from "../../client/src/pages/ProjectsPagex";

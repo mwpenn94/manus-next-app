@@ -1,21 +1,35 @@
 /**
  * @mwpenn94/manus-next-tools
- * Agent tool definitions and executors
+ * Tool definitions and executors for Manus Next agent
  *
- * This package is a local workspace stub that will be extracted
- * from the monolith when published to npm.
- *
- * Source: server/agentTools.ts
- *
- * Planned exports:
-  // TOOLS
-  // executeTool
+ * This package is a workspace stub that re-exports types and
+ * utilities from the monolith. When published to npm, these
+ * will be standalone imports.
  */
 
-// Re-export placeholder — replace with actual imports after extraction
+// Tool types
+export interface ToolDefinition {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+export interface ToolExecutor {
+  name: string;
+  execute: (args: Record<string, unknown>) => Promise<string>;
+}
+
+export type ToolResult = {
+  success: boolean;
+  content: string;
+  artifacts?: Array<{ type: string; url: string; filename?: string }>;
+};
+
+// Re-export tool definitions
+export { TOOL_DEFINITIONS } from "../../server/agentTools";
+
 export const PACKAGE_NAME = "@mwpenn94/manus-next-tools";
 export const PACKAGE_VERSION = "0.1.0";
-export const PACKAGE_STATUS = "local-workspace-stub";
-
-// TODO: After npm publish, replace these with actual re-exports:
-// export { TOOLS, executeTool } from "../../server/agentTools";

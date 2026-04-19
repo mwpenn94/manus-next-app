@@ -1,0 +1,36 @@
+{
+  "task_id": "35-project-analytics",
+  "type": "capability",
+  "capability": "Project Analytics",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.864,
+      "completeness": 0.887,
+      "ux_polish": 0.912,
+      "latency_appropriateness": 0.884,
+      "error_handling": 0.85,
+      "context_awareness": 0.932,
+      "output_formatting": 0.943
+    },
+    "composite_score": 0.89,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.802,
+      "completeness": 0.845,
+      "ux_polish": 0.857,
+      "latency_appropriateness": 0.851,
+      "error_handling": 0.919,
+      "context_awareness": 0.913,
+      "output_formatting": 0.853
+    },
+    "composite_score": 0.858,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.964
+}

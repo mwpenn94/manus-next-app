@@ -1,0 +1,36 @@
+{
+  "task_id": "55-meta-ads",
+  "type": "capability",
+  "capability": "Meta Ads Manager",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.93,
+      "completeness": 0.855,
+      "ux_polish": 0.921,
+      "latency_appropriateness": 0.92,
+      "error_handling": 0.915,
+      "context_awareness": 0.85,
+      "output_formatting": 0.919
+    },
+    "composite_score": 0.905,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.89,
+      "completeness": 0.897,
+      "ux_polish": 0.846,
+      "latency_appropriateness": 0.824,
+      "error_handling": 0.894,
+      "context_awareness": 0.905,
+      "output_formatting": 0.809
+    },
+    "composite_score": 0.869,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.96
+}

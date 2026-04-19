@@ -1,0 +1,36 @@
+{
+  "task_id": "43-mobile-development",
+  "type": "capability",
+  "capability": "Mobile Development",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.888,
+      "completeness": 0.911,
+      "ux_polish": 0.931,
+      "latency_appropriateness": 0.912,
+      "error_handling": 0.841,
+      "context_awareness": 0.917,
+      "output_formatting": 0.877
+    },
+    "composite_score": 0.896,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.879,
+      "completeness": 0.83,
+      "ux_polish": 0.906,
+      "latency_appropriateness": 0.89,
+      "error_handling": 0.901,
+      "context_awareness": 0.892,
+      "output_formatting": 0.828
+    },
+    "composite_score": 0.877,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.979
+}

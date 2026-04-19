@@ -1,0 +1,36 @@
+{
+  "task_id": "52-messaging-agent",
+  "type": "capability",
+  "capability": "Messaging-App Agent",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.905,
+      "completeness": 0.865,
+      "ux_polish": 0.927,
+      "latency_appropriateness": 0.833,
+      "error_handling": 0.936,
+      "context_awareness": 0.868,
+      "output_formatting": 0.904
+    },
+    "composite_score": 0.892,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.834,
+      "completeness": 0.884,
+      "ux_polish": 0.898,
+      "latency_appropriateness": 0.918,
+      "error_handling": 0.862,
+      "context_awareness": 0.872,
+      "output_formatting": 0.819
+    },
+    "composite_score": 0.87,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.975
+}

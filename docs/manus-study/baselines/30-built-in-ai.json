@@ -1,0 +1,36 @@
+{
+  "task_id": "30-built-in-ai",
+  "type": "capability",
+  "capability": "Built-in AI Capabilities",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.896,
+      "completeness": 0.859,
+      "ux_polish": 0.901,
+      "latency_appropriateness": 0.909,
+      "error_handling": 0.869,
+      "context_awareness": 0.872,
+      "output_formatting": 0.898
+    },
+    "composite_score": 0.887,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.872,
+      "completeness": 0.823,
+      "ux_polish": 0.804,
+      "latency_appropriateness": 0.826,
+      "error_handling": 0.918,
+      "context_awareness": 0.916,
+      "output_formatting": 0.868
+    },
+    "composite_score": 0.858,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.967
+}

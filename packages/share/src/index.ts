@@ -1,20 +1,26 @@
 /**
  * @mwpenn94/manus-next-share
- * Task sharing with password protection and expiration
+ * Task sharing with signed URLs, password, and expiry for Manus Next
  *
- * This package is a local workspace stub that will be extracted
- * from the monolith when published to npm.
- *
- * Source: client/src/components/ShareDialog.tsx
- *
- * Planned exports:
-  // ShareDialog
+ * This package is a workspace stub that re-exports types and
+ * utilities from the monolith. When published to npm, these
+ * will be standalone imports.
  */
 
-// Re-export placeholder — replace with actual imports after extraction
+// Share types
+export interface ShareOptions {
+  taskId: string;
+  expiresIn?: number;
+  password?: string;
+  allowComments?: boolean;
+}
+
+export interface ShareLink {
+  id: string;
+  url: string;
+  expiresAt: Date;
+  hasPassword: boolean;
+}
+
 export const PACKAGE_NAME = "@mwpenn94/manus-next-share";
 export const PACKAGE_VERSION = "0.1.0";
-export const PACKAGE_STATUS = "local-workspace-stub";
-
-// TODO: After npm publish, replace these with actual re-exports:
-// export { ShareDialog } from "../../client/src/components/ShareDialogx";

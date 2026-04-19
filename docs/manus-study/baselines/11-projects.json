@@ -1,0 +1,36 @@
+{
+  "task_id": "11-projects",
+  "type": "capability",
+  "capability": "Projects",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.876,
+      "completeness": 0.874,
+      "ux_polish": 0.933,
+      "latency_appropriateness": 0.843,
+      "error_handling": 0.921,
+      "context_awareness": 0.864,
+      "output_formatting": 0.889
+    },
+    "composite_score": 0.886,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.854,
+      "completeness": 0.841,
+      "ux_polish": 0.838,
+      "latency_appropriateness": 0.876,
+      "error_handling": 0.836,
+      "context_awareness": 0.831,
+      "output_formatting": 0.843
+    },
+    "composite_score": 0.847,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.956
+}

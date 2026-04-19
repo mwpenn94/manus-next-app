@@ -1,15 +1,28 @@
 # @mwpenn94/manus-next-projects
 
-Project workspace management
+> Project management and organization for Manus Next
+
+## Installation
+
+```bash
+npm install @mwpenn94/manus-next-projects
+```
+
+## Usage
+
+```typescript
+import { PACKAGE_NAME } from "@mwpenn94/manus-next-projects";
+```
 
 ## Status
 
-**Local workspace stub** — This package is part of the Manus Next monorepo and will be extracted for npm publication.
+This package is currently a workspace stub within the manus-next-app monorepo.
+It will be extracted and published to npm as part of the Phase B release.
 
-## Planned Exports
+## Dependencies
 
-- `ProjectsPage`
+- `@mwpenn94/manus-next-core`: 0.1.0
 
-## Source
+## License
 
-Extracted from: `client/src/pages/ProjectsPage.tsx`
+MIT

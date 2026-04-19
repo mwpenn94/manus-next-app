@@ -1,21 +1,35 @@
 /**
  * @mwpenn94/manus-next-memory
- * Cross-session memory extraction and retrieval
+ * Cross-session memory system for Manus Next
  *
- * This package is a local workspace stub that will be extracted
- * from the monolith when published to npm.
- *
- * Source: server/db.ts
- *
- * Planned exports:
-  // extractMemories
-  // searchMemories
+ * This package is a workspace stub that re-exports types and
+ * utilities from the monolith. When published to npm, these
+ * will be standalone imports.
  */
 
-// Re-export placeholder — replace with actual imports after extraction
+// Memory types
+export interface MemoryEntry {
+  id: string;
+  content: string;
+  category: string;
+  source: string;
+  taskId: string;
+  createdAt: Date;
+  relevanceScore?: number;
+}
+
+export interface MemorySearchOptions {
+  query: string;
+  limit?: number;
+  category?: string;
+  minRelevance?: number;
+}
+
+export interface MemoryStore {
+  search(options: MemorySearchOptions): Promise<MemoryEntry[]>;
+  add(entry: Omit<MemoryEntry, "id" | "createdAt">): Promise<MemoryEntry>;
+  delete(id: string): Promise<void>;
+}
+
 export const PACKAGE_NAME = "@mwpenn94/manus-next-memory";
 export const PACKAGE_VERSION = "0.1.0";
-export const PACKAGE_STATUS = "local-workspace-stub";
-
-// TODO: After npm publish, replace these with actual re-exports:
-// export { extractMemories, searchMemories } from "../../server/db";

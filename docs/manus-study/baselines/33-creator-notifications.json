@@ -1,0 +1,36 @@
+{
+  "task_id": "33-creator-notifications",
+  "type": "capability",
+  "capability": "Notifications for Creators",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.858,
+      "completeness": 0.857,
+      "ux_polish": 0.931,
+      "latency_appropriateness": 0.943,
+      "error_handling": 0.921,
+      "context_awareness": 0.926,
+      "output_formatting": 0.896
+    },
+    "composite_score": 0.902,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.89,
+      "completeness": 0.844,
+      "ux_polish": 0.817,
+      "latency_appropriateness": 0.902,
+      "error_handling": 0.909,
+      "context_awareness": 0.882,
+      "output_formatting": 0.866
+    },
+    "composite_score": 0.874,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.969
+}

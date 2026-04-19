@@ -1,0 +1,36 @@
+{
+  "task_id": "05-wide-research",
+  "type": "capability",
+  "capability": "Wide Research",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.941,
+      "completeness": 0.842,
+      "ux_polish": 0.844,
+      "latency_appropriateness": 0.894,
+      "error_handling": 0.863,
+      "context_awareness": 0.932,
+      "output_formatting": 0.911
+    },
+    "composite_score": 0.889,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.882,
+      "completeness": 0.848,
+      "ux_polish": 0.808,
+      "latency_appropriateness": 0.889,
+      "error_handling": 0.809,
+      "context_awareness": 0.916,
+      "output_formatting": 0.856
+    },
+    "composite_score": 0.857,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.964
+}

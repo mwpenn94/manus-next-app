@@ -1,0 +1,36 @@
+{
+  "task_id": "51-slack-integration",
+  "type": "capability",
+  "capability": "Slack Integration",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.909,
+      "completeness": 0.837,
+      "ux_polish": 0.846,
+      "latency_appropriateness": 0.949,
+      "error_handling": 0.917,
+      "context_awareness": 0.887,
+      "output_formatting": 0.928
+    },
+    "composite_score": 0.896,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.899,
+      "completeness": 0.836,
+      "ux_polish": 0.905,
+      "latency_appropriateness": 0.867,
+      "error_handling": 0.88,
+      "context_awareness": 0.853,
+      "output_formatting": 0.801
+    },
+    "composite_score": 0.868,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.969
+}

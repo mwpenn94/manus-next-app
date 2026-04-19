@@ -1,0 +1,36 @@
+{
+  "task_id": "48-version-rollback",
+  "type": "capability",
+  "capability": "Version Rollback",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.914,
+      "completeness": 0.933,
+      "ux_polish": 0.933,
+      "latency_appropriateness": 0.902,
+      "error_handling": 0.845,
+      "context_awareness": 0.918,
+      "output_formatting": 0.899
+    },
+    "composite_score": 0.906,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.829,
+      "completeness": 0.8,
+      "ux_polish": 0.881,
+      "latency_appropriateness": 0.901,
+      "error_handling": 0.901,
+      "context_awareness": 0.868,
+      "output_formatting": 0.802
+    },
+    "composite_score": 0.855,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.944
+}

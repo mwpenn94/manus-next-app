@@ -1,16 +1,28 @@
 # @mwpenn94/manus-next-scheduler
 
-Task scheduling with cron and interval support
+> Scheduled task execution for Manus Next
+
+## Installation
+
+```bash
+npm install @mwpenn94/manus-next-scheduler
+```
+
+## Usage
+
+```typescript
+import { PACKAGE_NAME } from "@mwpenn94/manus-next-scheduler";
+```
 
 ## Status
 
-**Local workspace stub** — This package is part of the Manus Next monorepo and will be extracted for npm publication.
+This package is currently a workspace stub within the manus-next-app monorepo.
+It will be extracted and published to npm as part of the Phase B release.
 
-## Planned Exports
+## Dependencies
 
-- `startScheduler`
-- `stopScheduler`
+- `@mwpenn94/manus-next-core`: 0.1.0
 
-## Source
+## License
 
-Extracted from: `server/scheduler.ts`
+MIT

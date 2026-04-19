@@ -1,0 +1,36 @@
+{
+  "task_id": "07-task-sharing",
+  "type": "capability",
+  "capability": "Task Sharing via Signed URL",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.936,
+      "completeness": 0.845,
+      "ux_polish": 0.94,
+      "latency_appropriateness": 0.876,
+      "error_handling": 0.878,
+      "context_awareness": 0.854,
+      "output_formatting": 0.859
+    },
+    "composite_score": 0.889,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.806,
+      "completeness": 0.83,
+      "ux_polish": 0.901,
+      "latency_appropriateness": 0.858,
+      "error_handling": 0.851,
+      "context_awareness": 0.845,
+      "output_formatting": 0.89
+    },
+    "composite_score": 0.851,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.957
+}

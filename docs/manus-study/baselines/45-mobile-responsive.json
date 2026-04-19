@@ -1,0 +1,36 @@
+{
+  "task_id": "45-mobile-responsive",
+  "type": "capability",
+  "capability": "Mobile-Responsive Web UI",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.903,
+      "completeness": 0.881,
+      "ux_polish": 0.87,
+      "latency_appropriateness": 0.831,
+      "error_handling": 0.844,
+      "context_awareness": 0.922,
+      "output_formatting": 0.93
+    },
+    "composite_score": 0.88,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.891,
+      "completeness": 0.902,
+      "ux_polish": 0.867,
+      "latency_appropriateness": 0.876,
+      "error_handling": 0.813,
+      "context_awareness": 0.847,
+      "output_formatting": 0.879
+    },
+    "composite_score": 0.869,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.988
+}

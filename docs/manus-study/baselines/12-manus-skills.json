@@ -1,0 +1,36 @@
+{
+  "task_id": "12-manus-skills",
+  "type": "capability",
+  "capability": "Manus Skills",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.89,
+      "completeness": 0.93,
+      "ux_polish": 0.861,
+      "latency_appropriateness": 0.945,
+      "error_handling": 0.83,
+      "context_awareness": 0.832,
+      "output_formatting": 0.902
+    },
+    "composite_score": 0.886,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.895,
+      "completeness": 0.826,
+      "ux_polish": 0.894,
+      "latency_appropriateness": 0.828,
+      "error_handling": 0.828,
+      "context_awareness": 0.861,
+      "output_formatting": 0.822
+    },
+    "composite_score": 0.854,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.964
+}

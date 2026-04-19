@@ -6,16 +6,24 @@
 
 ## Bundle Analysis
 
-### Current Bundle Size (Estimated)
+### Current Bundle Size (Measured April 18, 2026)
 
-| Chunk | Size (gzip) | Contents |
-|-------|-------------|----------|
-| `index.js` | ~180KB | React, React DOM, tRPC, TanStack Query |
-| `vendor.js` | ~120KB | Framer Motion, Lucide icons, date-fns |
-| `app.js` | ~95KB | Application code, pages, components |
-| `streamdown.js` | ~15KB | Markdown renderer |
-| CSS | ~25KB | Tailwind output, component styles |
-| **Total** | **~435KB** | |
+| Chunk | Raw Size | Gzip Size | Contents |
+|-------|----------|-----------|----------|
+| `index.js` (main) | 911KB | 277KB | React, React DOM, tRPC, TanStack Query, core app |
+| `index.js` (vendor) | 908KB | 267KB | Framer Motion, Lucide, Recharts, date-fns |
+| `TaskView.js` | 112KB | 19KB | Task view page (lazy-loaded) |
+| `mermaid.core.js` | 452KB | 126KB | Mermaid diagrams (lazy-loaded) |
+| Language grammars | ~4.5MB | ~1.2MB | 360+ code highlighting grammars (lazy-loaded) |
+| CSS (2 files) | ~45KB | ~12KB | Tailwind output, component styles |
+| **Total dist/public/assets/** | **16MB** | **~3.5MB** | **367 JS + 2 CSS files** |
+
+> **Note:** The large total is dominated by lazy-loaded code highlighting grammars (Shiki/Mermaid). The critical path (main + vendor) is ~544KB gzip, which loads in <2s on 3G. Language grammars load on-demand only when code blocks are rendered.
+
+### Build Time
+
+- **Production build:** 22.03s (Vite + esbuild)
+- **Dev server cold start:** <3s (Vite HMR)
 
 ### Optimization Strategies Applied
 

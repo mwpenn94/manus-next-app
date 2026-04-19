@@ -1,0 +1,36 @@
+{
+  "task_id": "54-gohighlevel",
+  "type": "capability",
+  "capability": "GoHighLevel",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.925,
+      "completeness": 0.914,
+      "ux_polish": 0.894,
+      "latency_appropriateness": 0.867,
+      "error_handling": 0.895,
+      "context_awareness": 0.886,
+      "output_formatting": 0.911
+    },
+    "composite_score": 0.9,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.839,
+      "completeness": 0.856,
+      "ux_polish": 0.881,
+      "latency_appropriateness": 0.847,
+      "error_handling": 0.851,
+      "context_awareness": 0.817,
+      "output_formatting": 0.877
+    },
+    "composite_score": 0.852,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.947
+}

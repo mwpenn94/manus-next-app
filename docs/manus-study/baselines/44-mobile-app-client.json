@@ -1,0 +1,36 @@
+{
+  "task_id": "44-mobile-app-client",
+  "type": "capability",
+  "capability": "Mobile App (Manus Client)",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.849,
+      "completeness": 0.927,
+      "ux_polish": 0.892,
+      "latency_appropriateness": 0.919,
+      "error_handling": 0.872,
+      "context_awareness": 0.899,
+      "output_formatting": 0.832
+    },
+    "composite_score": 0.884,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.882,
+      "completeness": 0.839,
+      "ux_polish": 0.902,
+      "latency_appropriateness": 0.913,
+      "error_handling": 0.801,
+      "context_awareness": 0.872,
+      "output_formatting": 0.835
+    },
+    "composite_score": 0.865,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.979
+}

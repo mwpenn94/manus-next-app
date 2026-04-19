@@ -1,0 +1,36 @@
+{
+  "task_id": "04-speed-quality-mode",
+  "type": "capability",
+  "capability": "Speed/Quality Mode Toggle",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.837,
+      "completeness": 0.878,
+      "ux_polish": 0.93,
+      "latency_appropriateness": 0.848,
+      "error_handling": 0.845,
+      "context_awareness": 0.862,
+      "output_formatting": 0.861
+    },
+    "composite_score": 0.865,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.835,
+      "completeness": 0.859,
+      "ux_polish": 0.883,
+      "latency_appropriateness": 0.891,
+      "error_handling": 0.814,
+      "context_awareness": 0.906,
+      "output_formatting": 0.854
+    },
+    "composite_score": 0.86,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.994
+}

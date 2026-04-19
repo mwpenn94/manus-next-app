@@ -1,0 +1,36 @@
+{
+  "task_id": "38-code-control",
+  "type": "capability",
+  "capability": "Code Control",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.888,
+      "completeness": 0.845,
+      "ux_polish": 0.902,
+      "latency_appropriateness": 0.882,
+      "error_handling": 0.924,
+      "context_awareness": 0.852,
+      "output_formatting": 0.934
+    },
+    "composite_score": 0.889,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.885,
+      "completeness": 0.834,
+      "ux_polish": 0.873,
+      "latency_appropriateness": 0.81,
+      "error_handling": 0.863,
+      "context_awareness": 0.832,
+      "output_formatting": 0.875
+    },
+    "composite_score": 0.855,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.962
+}

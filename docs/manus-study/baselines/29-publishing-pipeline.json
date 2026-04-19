@@ -1,0 +1,36 @@
+{
+  "task_id": "29-publishing-pipeline",
+  "type": "capability",
+  "capability": "Publishing Pipeline",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.923,
+      "completeness": 0.915,
+      "ux_polish": 0.929,
+      "latency_appropriateness": 0.9,
+      "error_handling": 0.92,
+      "context_awareness": 0.848,
+      "output_formatting": 0.884
+    },
+    "composite_score": 0.907,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.842,
+      "completeness": 0.884,
+      "ux_polish": 0.829,
+      "latency_appropriateness": 0.872,
+      "error_handling": 0.86,
+      "context_awareness": 0.908,
+      "output_formatting": 0.82
+    },
+    "composite_score": 0.858,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.946
+}

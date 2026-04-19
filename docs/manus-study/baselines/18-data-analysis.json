@@ -1,0 +1,36 @@
+{
+  "task_id": "18-data-analysis",
+  "type": "capability",
+  "capability": "Data Analysis & Visualization",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.863,
+      "completeness": 0.926,
+      "ux_polish": 0.907,
+      "latency_appropriateness": 0.91,
+      "error_handling": 0.928,
+      "context_awareness": 0.866,
+      "output_formatting": 0.849
+    },
+    "composite_score": 0.895,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.874,
+      "completeness": 0.845,
+      "ux_polish": 0.814,
+      "latency_appropriateness": 0.863,
+      "error_handling": 0.913,
+      "context_awareness": 0.89,
+      "output_formatting": 0.831
+    },
+    "composite_score": 0.862,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.963
+}

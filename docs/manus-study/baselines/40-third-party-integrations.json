@@ -1,0 +1,36 @@
+{
+  "task_id": "40-third-party-integrations",
+  "type": "capability",
+  "capability": "Third-Party Integrations",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.931,
+      "completeness": 0.95,
+      "ux_polish": 0.929,
+      "latency_appropriateness": 0.901,
+      "error_handling": 0.911,
+      "context_awareness": 0.869,
+      "output_formatting": 0.899
+    },
+    "composite_score": 0.917,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.822,
+      "completeness": 0.836,
+      "ux_polish": 0.899,
+      "latency_appropriateness": 0.834,
+      "error_handling": 0.859,
+      "context_awareness": 0.881,
+      "output_formatting": 0.839
+    },
+    "composite_score": 0.851,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.928
+}

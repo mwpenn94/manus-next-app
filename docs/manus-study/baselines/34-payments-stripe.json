@@ -1,0 +1,36 @@
+{
+  "task_id": "34-payments-stripe",
+  "type": "capability",
+  "capability": "Payments (Stripe)",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.95,
+      "completeness": 0.886,
+      "ux_polish": 0.84,
+      "latency_appropriateness": 0.874,
+      "error_handling": 0.841,
+      "context_awareness": 0.925,
+      "output_formatting": 0.905
+    },
+    "composite_score": 0.889,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.817,
+      "completeness": 0.884,
+      "ux_polish": 0.912,
+      "latency_appropriateness": 0.86,
+      "error_handling": 0.876,
+      "context_awareness": 0.908,
+      "output_formatting": 0.842
+    },
+    "composite_score": 0.868,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.976
+}

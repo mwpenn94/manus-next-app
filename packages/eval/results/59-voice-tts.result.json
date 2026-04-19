@@ -2,116 +2,117 @@
   "capability": "Voice TTS",
   "id": 59,
   "status": "GREEN",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
-      "composite": 0.811,
+      "composite": 0.844,
       "scores": {
         "correctness": {
-          "score": 0.8,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.85,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.83,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "score": 0.85,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.89,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.84,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "score": 0.83,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.78,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.83,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.86,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.74,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.811,
-        "assessment": "Capability \"Voice TTS\" is GREEN. Composite score: 0.811."
+        "composite": 0.844,
+        "assessment": "[Simulated] Capability \"Voice TTS\" is GREEN. Composite: 0.844."
       }
     },
     "B": {
-      "composite": 0.815,
+      "composite": 0.803,
       "scores": {
         "correctness": {
-          "score": 0.77,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.83,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
           "score": 0.81,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.88,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.75,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.74,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "score": 0.77,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
           "score": 0.82,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.88,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.76,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.86,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.815,
-        "assessment": "Capability \"Voice TTS\" is GREEN. Composite score: 0.815."
+        "composite": 0.803,
+        "assessment": "[Simulated] Capability \"Voice TTS\" is GREEN. Composite: 0.803."
       }
     },
     "C": {
-      "composite": 0.836,
+      "composite": 0.817,
       "scores": {
         "correctness": {
-          "score": 0.87,
-          "justification": "GREEN status: correctness scored based on implementation evidence."
+          "score": 0.75,
+          "justification": "GREEN status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.84,
-          "justification": "GREEN status: completeness scored based on implementation evidence."
+          "score": 0.83,
+          "justification": "GREEN status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.81,
-          "justification": "GREEN status: efficiency scored based on implementation evidence."
+          "score": 0.75,
+          "justification": "GREEN status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.8,
-          "justification": "GREEN status: robustness scored based on implementation evidence."
+          "score": 0.84,
+          "justification": "GREEN status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.81,
-          "justification": "GREEN status: user_experience scored based on implementation evidence."
+          "score": 0.82,
+          "justification": "GREEN status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.87,
-          "justification": "GREEN status: maintainability scored based on implementation evidence."
+          "score": 0.88,
+          "justification": "GREEN status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.84,
-          "justification": "GREEN status: innovation scored based on implementation evidence."
+          "score": 0.87,
+          "justification": "GREEN status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.836,
-        "assessment": "Capability \"Voice TTS\" is GREEN. Composite score: 0.836."
+        "composite": 0.817,
+        "assessment": "[Simulated] Capability \"Voice TTS\" is GREEN. Composite: 0.817."
       }
     }
   },
-  "median_composite": 0.815,
-  "spread": 0.025,
+  "median_composite": 0.817,
+  "spread": 0.041,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-19T03:32:41.477Z"
+  "evaluated_at": "2026-04-19T04:16:09.449Z"
 }

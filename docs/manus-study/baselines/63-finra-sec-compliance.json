@@ -1,0 +1,36 @@
+{
+  "task_id": "63-finra-sec-compliance",
+  "type": "capability",
+  "capability": "FINRA/SEC Compliance",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.939,
+      "completeness": 0.937,
+      "ux_polish": 0.888,
+      "latency_appropriateness": 0.864,
+      "error_handling": 0.85,
+      "context_awareness": 0.859,
+      "output_formatting": 0.9
+    },
+    "composite_score": 0.895,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.824,
+      "completeness": 0.909,
+      "ux_polish": 0.823,
+      "latency_appropriateness": 0.869,
+      "error_handling": 0.809,
+      "context_awareness": 0.851,
+      "output_formatting": 0.904
+    },
+    "composite_score": 0.852,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.952
+}

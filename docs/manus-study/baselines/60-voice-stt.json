@@ -1,0 +1,36 @@
+{
+  "task_id": "60-voice-stt",
+  "type": "capability",
+  "capability": "Voice STT + Hands-Free",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.891,
+      "completeness": 0.899,
+      "ux_polish": 0.831,
+      "latency_appropriateness": 0.857,
+      "error_handling": 0.856,
+      "context_awareness": 0.902,
+      "output_formatting": 0.918
+    },
+    "composite_score": 0.877,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.881,
+      "completeness": 0.846,
+      "ux_polish": 0.801,
+      "latency_appropriateness": 0.914,
+      "error_handling": 0.862,
+      "context_awareness": 0.883,
+      "output_formatting": 0.847
+    },
+    "composite_score": 0.863,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.984
+}

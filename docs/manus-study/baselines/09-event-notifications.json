@@ -1,0 +1,36 @@
+{
+  "task_id": "09-event-notifications",
+  "type": "capability",
+  "capability": "Event Notifications",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.927,
+      "completeness": 0.904,
+      "ux_polish": 0.857,
+      "latency_appropriateness": 0.913,
+      "error_handling": 0.932,
+      "context_awareness": 0.882,
+      "output_formatting": 0.849
+    },
+    "composite_score": 0.899,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.866,
+      "completeness": 0.854,
+      "ux_polish": 0.848,
+      "latency_appropriateness": 0.903,
+      "error_handling": 0.849,
+      "context_awareness": 0.847,
+      "output_formatting": 0.805
+    },
+    "composite_score": 0.856,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.952
+}

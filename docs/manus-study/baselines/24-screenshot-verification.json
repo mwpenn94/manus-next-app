@@ -1,0 +1,36 @@
+{
+  "task_id": "24-screenshot-verification",
+  "type": "capability",
+  "capability": "Screenshot Verification",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.915,
+      "completeness": 0.94,
+      "ux_polish": 0.876,
+      "latency_appropriateness": 0.933,
+      "error_handling": 0.843,
+      "context_awareness": 0.877,
+      "output_formatting": 0.87
+    },
+    "composite_score": 0.896,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.901,
+      "completeness": 0.809,
+      "ux_polish": 0.819,
+      "latency_appropriateness": 0.912,
+      "error_handling": 0.847,
+      "context_awareness": 0.893,
+      "output_formatting": 0.812
+    },
+    "composite_score": 0.859,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.959
+}

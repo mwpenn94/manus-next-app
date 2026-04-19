@@ -1,0 +1,36 @@
+{
+  "task_id": "57-team-billing",
+  "type": "capability",
+  "capability": "Team Billing + Admin",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.842,
+      "completeness": 0.876,
+      "ux_polish": 0.83,
+      "latency_appropriateness": 0.861,
+      "error_handling": 0.918,
+      "context_awareness": 0.845,
+      "output_formatting": 0.911
+    },
+    "composite_score": 0.867,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.865,
+      "completeness": 0.871,
+      "ux_polish": 0.862,
+      "latency_appropriateness": 0.918,
+      "error_handling": 0.916,
+      "context_awareness": 0.853,
+      "output_formatting": 0.856
+    },
+    "composite_score": 0.879,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 1.014
+}

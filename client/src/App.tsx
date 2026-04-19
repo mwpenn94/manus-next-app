@@ -22,6 +22,9 @@ const SchedulePage = lazy(() => import("./pages/SchedulePage"));
 const ReplayPage = lazy(() => import("./pages/ReplayPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const DesignView = lazy(() => import("./pages/DesignView"));
+const SkillsPage = lazy(() => import("./pages/SkillsPage"));
+const SlidesPage = lazy(() => import("./pages/SlidesPage"));
+const ConnectorsPage = lazy(() => import("./pages/ConnectorsPage"));
 
 function PageLoader() {
   return (
@@ -85,6 +88,21 @@ function Router() {
       <Route path="/design">
         <Suspense fallback={<PageLoader />}>
           <DesignView />
+        </Suspense>
+      </Route>
+      <Route path="/skills">
+        <Suspense fallback={<PageLoader />}>
+          <SkillsPage />
+        </Suspense>
+      </Route>
+      <Route path="/slides">
+        <Suspense fallback={<PageLoader />}>
+          <SlidesPage />
+        </Suspense>
+      </Route>
+      <Route path="/connectors">
+        <Suspense fallback={<PageLoader />}>
+          <ConnectorsPage />
         </Suspense>
       </Route>
       <Route path="/shared/:token">

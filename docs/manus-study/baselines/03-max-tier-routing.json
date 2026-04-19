@@ -1,0 +1,36 @@
+{
+  "task_id": "03-max-tier-routing",
+  "type": "capability",
+  "capability": "Max Tier Routing",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.868,
+      "completeness": 0.835,
+      "ux_polish": 0.855,
+      "latency_appropriateness": 0.892,
+      "error_handling": 0.941,
+      "context_awareness": 0.87,
+      "output_formatting": 0.907
+    },
+    "composite_score": 0.88,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.863,
+      "completeness": 0.913,
+      "ux_polish": 0.912,
+      "latency_appropriateness": 0.907,
+      "error_handling": 0.855,
+      "context_awareness": 0.833,
+      "output_formatting": 0.802
+    },
+    "composite_score": 0.874,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.993
+}

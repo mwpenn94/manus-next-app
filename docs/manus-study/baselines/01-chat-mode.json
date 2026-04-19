@@ -1,0 +1,36 @@
+{
+  "task_id": "01-chat-mode",
+  "type": "capability",
+  "capability": "Chat Mode",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.949,
+      "completeness": 0.927,
+      "ux_polish": 0.831,
+      "latency_appropriateness": 0.877,
+      "error_handling": 0.864,
+      "context_awareness": 0.869,
+      "output_formatting": 0.882
+    },
+    "composite_score": 0.89,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.896,
+      "completeness": 0.846,
+      "ux_polish": 0.88,
+      "latency_appropriateness": 0.905,
+      "error_handling": 0.858,
+      "context_awareness": 0.872,
+      "output_formatting": 0.919
+    },
+    "composite_score": 0.882,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.991
+}

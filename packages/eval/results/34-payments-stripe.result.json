@@ -2,116 +2,117 @@
   "capability": "Payments (Stripe)",
   "id": 34,
   "status": "RED",
+  "scoring_method": "simulation",
   "judges": {
     "A": {
-      "composite": 0.132,
+      "composite": 0.184,
       "scores": {
         "correctness": {
-          "score": 0.08,
-          "justification": "RED status: correctness scored based on implementation evidence."
+          "score": 0.25,
+          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.2,
-          "justification": "RED status: completeness scored based on implementation evidence."
+          "score": 0.12,
+          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.09,
-          "justification": "RED status: efficiency scored based on implementation evidence."
+          "score": 0.22,
+          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.12,
-          "justification": "RED status: robustness scored based on implementation evidence."
+          "score": 0.16,
+          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.17,
-          "justification": "RED status: user_experience scored based on implementation evidence."
+          "score": 0.12,
+          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.05,
-          "justification": "RED status: maintainability scored based on implementation evidence."
+          "score": 0.14,
+          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.19,
-          "justification": "RED status: innovation scored based on implementation evidence."
+          "score": 0.25,
+          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.132,
-        "assessment": "Capability \"Payments (Stripe)\" is RED. Composite score: 0.132."
+        "composite": 0.184,
+        "assessment": "[Simulated] Capability \"Payments (Stripe)\" is RED. Composite: 0.184."
       }
     },
     "B": {
-      "composite": 0.172,
+      "composite": 0.162,
       "scores": {
         "correctness": {
-          "score": 0.2,
-          "justification": "RED status: correctness scored based on implementation evidence."
+          "score": 0.21,
+          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.16,
-          "justification": "RED status: completeness scored based on implementation evidence."
+          "score": 0.23,
+          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.12,
-          "justification": "RED status: efficiency scored based on implementation evidence."
+          "score": 0.07,
+          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.2,
-          "justification": "RED status: robustness scored based on implementation evidence."
+          "score": 0.22,
+          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.23,
-          "justification": "RED status: user_experience scored based on implementation evidence."
+          "score": 0.07,
+          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.21,
-          "justification": "RED status: maintainability scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.07,
-          "justification": "RED status: innovation scored based on implementation evidence."
+          "score": 0.13,
+          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.172,
-        "assessment": "Capability \"Payments (Stripe)\" is RED. Composite score: 0.172."
+        "composite": 0.162,
+        "assessment": "[Simulated] Capability \"Payments (Stripe)\" is RED. Composite: 0.162."
       }
     },
     "C": {
-      "composite": 0.168,
+      "composite": 0.149,
       "scores": {
         "correctness": {
-          "score": 0.2,
-          "justification": "RED status: correctness scored based on implementation evidence."
+          "score": 0.16,
+          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
         },
         "completeness": {
-          "score": 0.18,
-          "justification": "RED status: completeness scored based on implementation evidence."
+          "score": 0.07,
+          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
         },
         "efficiency": {
-          "score": 0.07,
-          "justification": "RED status: efficiency scored based on implementation evidence."
+          "score": 0.22,
+          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
         },
         "robustness": {
-          "score": 0.14,
-          "justification": "RED status: robustness scored based on implementation evidence."
+          "score": 0.06,
+          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
         },
         "user_experience": {
-          "score": 0.14,
-          "justification": "RED status: user_experience scored based on implementation evidence."
+          "score": 0.15,
+          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
         },
         "maintainability": {
-          "score": 0.23,
-          "justification": "RED status: maintainability scored based on implementation evidence."
+          "score": 0.21,
+          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
         },
         "innovation": {
-          "score": 0.19,
-          "justification": "RED status: innovation scored based on implementation evidence."
+          "score": 0.21,
+          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
         },
-        "composite": 0.168,
-        "assessment": "Capability \"Payments (Stripe)\" is RED. Composite score: 0.168."
+        "composite": 0.149,
+        "assessment": "[Simulated] Capability \"Payments (Stripe)\" is RED. Composite: 0.149."
       }
     }
   },
-  "median_composite": 0.168,
-  "spread": 0.04,
+  "median_composite": 0.162,
+  "spread": 0.035,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T03:32:41.471Z"
+  "evaluated_at": "2026-04-19T04:16:09.444Z"
 }

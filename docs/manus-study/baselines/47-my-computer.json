@@ -1,0 +1,36 @@
+{
+  "task_id": "47-my-computer",
+  "type": "capability",
+  "capability": "My Computer",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.845,
+      "completeness": 0.834,
+      "ux_polish": 0.89,
+      "latency_appropriateness": 0.904,
+      "error_handling": 0.934,
+      "context_awareness": 0.922,
+      "output_formatting": 0.836
+    },
+    "composite_score": 0.879,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.906,
+      "completeness": 0.874,
+      "ux_polish": 0.855,
+      "latency_appropriateness": 0.841,
+      "error_handling": 0.897,
+      "context_awareness": 0.884,
+      "output_formatting": 0.914
+    },
+    "composite_score": 0.881,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 1.002
+}

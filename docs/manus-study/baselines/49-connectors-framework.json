@@ -1,0 +1,36 @@
+{
+  "task_id": "49-connectors-framework",
+  "type": "capability",
+  "capability": "Connectors Framework",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.89,
+      "completeness": 0.859,
+      "ux_polish": 0.836,
+      "latency_appropriateness": 0.886,
+      "error_handling": 0.929,
+      "context_awareness": 0.852,
+      "output_formatting": 0.876
+    },
+    "composite_score": 0.877,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.851,
+      "completeness": 0.92,
+      "ux_polish": 0.802,
+      "latency_appropriateness": 0.854,
+      "error_handling": 0.85,
+      "context_awareness": 0.871,
+      "output_formatting": 0.877
+    },
+    "composite_score": 0.859,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.979
+}

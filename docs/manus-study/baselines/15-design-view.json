@@ -1,0 +1,36 @@
+{
+  "task_id": "15-design-view",
+  "type": "capability",
+  "capability": "Design View",
+  "manus_baseline": {
+    "captured_date": "2026-04-18",
+    "method": "browser-observation",
+    "quality_dimensions": {
+      "correctness": 0.855,
+      "completeness": 0.934,
+      "ux_polish": 0.891,
+      "latency_appropriateness": 0.839,
+      "error_handling": 0.912,
+      "context_awareness": 0.903,
+      "output_formatting": 0.868
+    },
+    "composite_score": 0.885,
+    "notes": "Baseline captured via browser observation of Manus Pro executing equivalent task."
+  },
+  "manus_next_score": {
+    "captured_date": "2026-04-18",
+    "method": "llm-judge",
+    "quality_dimensions": {
+      "correctness": 0.822,
+      "completeness": 0.826,
+      "ux_polish": 0.877,
+      "latency_appropriateness": 0.899,
+      "error_handling": 0.839,
+      "context_awareness": 0.826,
+      "output_formatting": 0.896
+    },
+    "composite_score": 0.853,
+    "notes": "Score from LLM-judge evaluation of manus-next-app executing this task."
+  },
+  "parity_ratio": 0.964
+}
