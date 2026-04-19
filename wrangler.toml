@@ -1,0 +1,21 @@
+# Cloudflare Pages deployment configuration
+# This is a stub for future migration from Manus hosting
+# See docs/parity/INFRA_DECISIONS.md for migration plan
+
+name = "manus-next"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "dist"
+
+[env.production]
+name = "manus-next-prod"
+
+[env.staging]
+name = "manus-next-staging"
+
+# Build configuration
+[build]
+command = "pnpm build"
+watch_dir = "client/src"
+
+# Environment variables (set via Cloudflare dashboard)
+# DATABASE_URL, JWT_SECRET, etc. — see .env.example
