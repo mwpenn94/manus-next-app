@@ -1,117 +1,117 @@
 {
   "capability": "Mode Switching Mid-Task",
   "id": "orch-3",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.171,
+      "composite": 0.2,
       "scores": {
         "correctness": {
-          "score": 0.19,
-          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "The implementation status is 'undefined', suggesting no concrete evidence of correctness. A minimal score is assigned as a placeholder, assuming no current functionality."
         },
         "completeness": {
-          "score": 0.06,
-          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "Given the 'undefined' status, there's no indication that the expected features (mode switching, behavior change, no context loss) are present. A minimal score is assigned."
         },
         "efficiency": {
           "score": 0.2,
-          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "Without an implementation, efficiency cannot be assessed. A minimal score is assigned."
         },
         "robustness": {
-          "score": 0.23,
-          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "The 'undefined' status means there's no evidence of error handling or graceful degradation. A minimal score is assigned."
         },
         "user_experience": {
-          "score": 0.15,
-          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "With an 'undefined' implementation, there's no user experience to evaluate. A minimal score is assigned."
         },
         "maintainability": {
-          "score": 0.23,
-          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "No code exists to assess maintainability. A minimal score is assigned."
         },
         "innovation": {
-          "score": 0.16,
-          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "While the capability itself is innovative, without an implementation, no specific innovative aspects can be evaluated. A minimal score is assigned."
         },
-        "composite": 0.171,
-        "assessment": "[Simulated] Capability \"Mode Switching Mid-Task\" is undefined. Composite: 0.171."
+        "composite": 0.2,
+        "assessment": "The implementation status is 'undefined', indicating no concrete work has been done on this capability. All dimensions are scored minimally as there is no evidence to evaluate."
       }
     },
     "B": {
-      "composite": 0.105,
+      "composite": 0.2,
       "scores": {
         "correctness": {
-          "score": 0.07,
-          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "The implementation status is 'undefined', suggesting no concrete evidence of correctness. A minimal score is assigned as a placeholder."
         },
         "completeness": {
-          "score": 0.14,
-          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "The implementation status is 'undefined', indicating that the feature is likely not present or fully developed. A minimal score is assigned."
         },
         "efficiency": {
-          "score": 0.05,
-          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "With an 'undefined' status, there's no information to assess efficiency. A minimal score is given."
         },
         "robustness": {
-          "score": 0.14,
-          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "An 'undefined' status means there's no evidence of how edge cases or errors are handled. A minimal score is appropriate."
         },
         "user_experience": {
-          "score": 0.12,
-          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "Without an implemented feature, there's no user experience to evaluate. A minimal score is assigned."
         },
         "maintainability": {
-          "score": 0.15,
-          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "The 'undefined' status implies no code exists for evaluation, hence no assessment of maintainability can be made. A minimal score is given."
         },
         "innovation": {
-          "score": 0.07,
-          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.2,
+          "justification": "As the implementation is 'undefined', there's no basis to evaluate innovation. A minimal score is assigned."
         },
-        "composite": 0.105,
-        "assessment": "[Simulated] Capability \"Mode Switching Mid-Task\" is undefined. Composite: 0.105."
+        "composite": 0.2,
+        "assessment": "The capability implementation status is 'undefined', indicating no evidence for evaluation. All dimensions are scored minimally as a placeholder."
       }
     },
     "C": {
-      "composite": 0.17,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.21,
-          "justification": "undefined status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', indicating no evidence of correctness."
         },
         "completeness": {
-          "score": 0.22,
-          "justification": "undefined status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', indicating no evidence of feature presence."
         },
         "efficiency": {
-          "score": 0.07,
-          "justification": "undefined status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', so there's no basis to evaluate efficiency."
         },
         "robustness": {
-          "score": 0.11,
-          "justification": "undefined status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', so robustness cannot be assessed."
         },
         "user_experience": {
-          "score": 0.24,
-          "justification": "undefined status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', so there is no user experience to evaluate."
         },
         "maintainability": {
-          "score": 0.17,
-          "justification": "undefined status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', so maintainability cannot be judged."
         },
         "innovation": {
-          "score": 0.12,
-          "justification": "undefined status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is 'undefined', so no innovation can be observed."
         },
-        "composite": 0.17,
-        "assessment": "[Simulated] Capability \"Mode Switching Mid-Task\" is undefined. Composite: 0.170."
+        "composite": 0,
+        "assessment": "The capability implementation is currently undefined, meaning there is no evidence to score any quality dimensions. All scores are set to 0.00."
       }
     }
   },
-  "median_composite": 0.17,
-  "spread": 0.066,
-  "high_variance": false,
+  "median_composite": 0.2,
+  "spread": 0.2,
+  "high_variance": true,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.450Z"
+  "evaluated_at": "2026-04-19T05:06:40.411Z"
 }

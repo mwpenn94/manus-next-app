@@ -2,41 +2,41 @@
   "capability": "Mobile App (Manus Client)",
   "id": 44,
   "status": "N/A",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
       "composite": 0,
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Mobile App (Manus Client)\" is N/A. Composite: 0.000."
+        "assessment": "This capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. All scores are accordingly set to 0.00."
       }
     },
     "B": {
@@ -44,34 +44,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for user experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to assess for innovation."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Mobile App (Manus Client)\" is N/A. Composite: 0.000."
+        "assessment": "This capability is marked as N/A (Out of scope), indicating no implementation exists or is expected. Therefore, all quality dimensions are scored 0.00."
       }
     },
     "C": {
@@ -79,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for user experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The capability is N/A (Out of scope), therefore no implementation exists to evaluate for innovation."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Mobile App (Manus Client)\" is N/A. Composite: 0.000."
+        "assessment": "This capability is marked as N/A (Out of scope), indicating no implementation exists for evaluation. All scores are consequently 0.00."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.446Z"
+  "evaluated_at": "2026-04-19T05:03:46.389Z"
 }

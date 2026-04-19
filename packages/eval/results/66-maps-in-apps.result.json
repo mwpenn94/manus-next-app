@@ -2,117 +2,117 @@
   "capability": "Maps in Generated Apps",
   "id": 66,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.178,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.09,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the capability is not implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.19,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented (RED status), none of the expected features, such as map rendering, location display, or interactive controls, are present."
         },
         "efficiency": {
-          "score": 0.24,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since there is no implementation, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.15,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there are no edge cases or errors being handled gracefully."
         },
         "user_experience": {
-          "score": 0.23,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user experience to evaluate as the feature is not implemented."
         },
         "maintainability": {
-          "score": 0.23,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists for this feature, so maintainability cannot be assessed."
         },
         "innovation": {
-          "score": 0.18,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no innovation to evaluate beyond baseline expectations."
         },
-        "composite": 0.178,
-        "assessment": "[Simulated] Capability \"Maps in Generated Apps\" is RED. Composite: 0.178."
+        "composite": 0,
+        "assessment": "The 'Maps in Generated Apps' capability is currently in RED status, indicating it is not implemented. Consequently, all quality dimensions score 0.00 as there is no functionality to evaluate against the expected behavior."
       }
     },
     "B": {
-      "composite": 0.182,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.2,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the capability is not implemented. Therefore, no correct outputs can be produced."
         },
         "completeness": {
-          "score": 0.16,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is not implemented, meaning none of the expected features (map rendering, location display, interactive controls) are present."
         },
         "efficiency": {
-          "score": 0.18,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.18,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there are no edge cases or errors being handled gracefully."
         },
         "user_experience": {
-          "score": 0.12,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not present, there is no user experience to assess."
         },
         "maintainability": {
-          "score": 0.19,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no code for this capability to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.24,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, there is no innovation to demonstrate beyond baseline expectations."
         },
-        "composite": 0.182,
-        "assessment": "[Simulated] Capability \"Maps in Generated Apps\" is RED. Composite: 0.182."
+        "composite": 0,
+        "assessment": "The 'Maps in Generated Apps' capability is currently in a RED status, indicating it is not implemented. Consequently, all quality dimensions score 0.00 as there is no functionality to evaluate against the expected behavior."
       }
     },
     "C": {
-      "composite": 0.118,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.14,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the capability is not implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.09,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented (RED status), none of the expected features, such as map rendering, location display, or interactive controls, are present."
         },
         "efficiency": {
-          "score": 0.16,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implementation to evaluate for performance or resource consumption."
         },
         "robustness": {
-          "score": 0.14,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there are no edge cases or error handling mechanisms to assess."
         },
         "user_experience": {
-          "score": 0.07,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A non-existent feature provides no user experience to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.14,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no code for this feature to assess for cleanliness or structure given the RED status."
         },
         "innovation": {
-          "score": 0.1,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no opportunity for the feature to go beyond baseline expectations."
         },
-        "composite": 0.118,
-        "assessment": "[Simulated] Capability \"Maps in Generated Apps\" is RED. Composite: 0.118."
+        "composite": 0,
+        "assessment": "The 'Maps in Generated Apps' capability is currently in a RED implementation status, indicating it is not implemented. Consequently, all quality dimensions receive a score of 0.00 as there is no functionality to evaluate against the expected behavior."
       }
     }
   },
-  "median_composite": 0.178,
-  "spread": 0.064,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.450Z"
+  "evaluated_at": "2026-04-19T05:06:14.024Z"
 }

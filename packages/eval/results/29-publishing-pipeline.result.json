@@ -2,117 +2,117 @@
   "capability": "Publishing Pipeline",
   "id": 29,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.153,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.18,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional output for publishing the app to a public URL."
         },
         "completeness": {
-          "score": 0.17,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core functionality of deploying the app and making it accessible at a public URL is completely missing as per the RED status."
         },
         "efficiency": {
-          "score": 0.08,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there is no efficiency to evaluate."
         },
         "robustness": {
-          "score": 0.09,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without an implementation, there are no error handling or edge case scenarios to assess for robustness."
         },
         "user_experience": {
-          "score": 0.18,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The feature is not present, so there is no user experience to evaluate regarding publishing the app."
         },
         "maintainability": {
-          "score": 0.2,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As there is no implementation, there is no code structure or cleanliness to evaluate for maintainability."
         },
         "innovation": {
-          "score": 0.15,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity for innovation beyond baseline expectations."
         },
-        "composite": 0.153,
-        "assessment": "[Simulated] Capability \"Publishing Pipeline\" is RED. Composite: 0.153."
+        "composite": 0,
+        "assessment": "The capability is marked RED, indicating no implementation for publishing the app to a public URL. All scoring criteria are unmet, resulting in a composite score of 0.00."
       }
     },
     "B": {
-      "composite": 0.125,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.09,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional output for publishing the app."
         },
         "completeness": {
-          "score": 0.18,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core functionality of publishing to a public URL is not present."
         },
         "efficiency": {
-          "score": 0.14,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation exists to evaluate for performance or resource usage."
         },
         "robustness": {
-          "score": 0.11,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without an implementation, there are no error handling capabilities to assess."
         },
         "user_experience": {
-          "score": 0.05,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user-facing functionality for publishing, thus no UX to evaluate."
         },
         "maintainability": {
-          "score": 0.12,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no code to assess for maintainability."
         },
         "innovation": {
-          "score": 0.2,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity for innovative approaches beyond baseline expectations."
         },
-        "composite": 0.125,
-        "assessment": "[Simulated] Capability \"Publishing Pipeline\" is RED. Composite: 0.125."
+        "composite": 0,
+        "assessment": "The 'Publishing Pipeline' capability is currently not implemented, resulting in a score of 0.00 across all dimensions. There is no evidence of deployment triggering, public URL generation, or app accessibility."
       }
     },
     "C": {
-      "composite": 0.13,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.12,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional output for publishing the app to a public URL."
         },
         "completeness": {
-          "score": 0.13,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core functionality of deploying the app and making it accessible at a public URL is completely missing."
         },
         "efficiency": {
-          "score": 0.17,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no implementation to evaluate for performance or resource usage."
         },
         "robustness": {
-          "score": 0.12,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no handling of edge cases or errors related to publishing."
         },
         "user_experience": {
-          "score": 0.14,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any publishing functionality, there is no user experience to evaluate."
         },
         "maintainability": {
-          "score": 0.05,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no code to assess for maintainability."
         },
         "innovation": {
-          "score": 0.17,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity for innovation beyond baseline expectations."
         },
-        "composite": 0.13,
-        "assessment": "[Simulated] Capability \"Publishing Pipeline\" is RED. Composite: 0.130."
+        "composite": 0,
+        "assessment": "The 'Publishing Pipeline' capability is currently not implemented, resulting in a RED status and a score of 0.00 across all quality dimensions. The core functionality of deploying an app to a public URL is entirely absent."
       }
     }
   },
-  "median_composite": 0.13,
-  "spread": 0.028,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.443Z"
+  "evaluated_at": "2026-04-19T05:01:50.334Z"
 }

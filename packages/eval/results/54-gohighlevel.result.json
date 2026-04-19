@@ -2,41 +2,41 @@
   "capability": "GoHighLevel",
   "id": 54,
   "status": "N/A",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
       "composite": 0,
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"GoHighLevel\" is N/A. Composite: 0.000."
+        "assessment": "The capability is marked as N/A (Out of scope), so no assessment of the implementation is possible. All quality dimensions are scored 0.00 as per the guidelines for N/A status."
       }
     },
     "B": {
@@ -44,34 +44,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"GoHighLevel\" is N/A. Composite: 0.000."
+        "assessment": "The capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. All quality dimensions are scored 0.00 accordingly."
       }
     },
     "C": {
@@ -79,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"GoHighLevel\" is N/A. Composite: 0.000."
+        "assessment": "The GoHighLevel capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions are scored at 0.00 as there is no implementation to assess."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.448Z"
+  "evaluated_at": "2026-04-19T05:04:53.952Z"
 }

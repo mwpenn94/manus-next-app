@@ -2,117 +2,117 @@
   "capability": "Veo3 Video Generation",
   "id": 62,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.164,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.13,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating no video generation functionality is implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.14,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core feature of video generation is entirely missing, as per the RED status."
         },
         "efficiency": {
-          "score": 0.08,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there's no performance to evaluate."
         },
         "robustness": {
-          "score": 0.15,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without implementation, there are no edge cases or errors to handle gracefully."
         },
         "user_experience": {
-          "score": 0.24,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No video generation means no user experience related to this specific capability."
         },
         "maintainability": {
-          "score": 0.2,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no code to assess for maintainability."
         },
         "innovation": {
-          "score": 0.2,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity for innovation beyond baseline expectations."
         },
-        "composite": 0.164,
-        "assessment": "[Simulated] Capability \"Veo3 Video Generation\" is RED. Composite: 0.164."
+        "composite": 0,
+        "assessment": "The Veo3 Video Generation capability is currently not implemented, resulting in a score of 0.00 across all dimensions. There is no functionality to evaluate for correctness, completeness, or any other quality metric."
       }
     },
     "B": {
-      "composite": 0.139,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.08,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating no video generation functionality is implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.22,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core feature of video generation is missing, as per the RED status."
         },
         "efficiency": {
-          "score": 0.13,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.15,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without implementation, there are no edge cases or errors to handle gracefully."
         },
         "user_experience": {
-          "score": 0.18,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user-facing functionality to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.14,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As there is no implementation, there is no code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.09,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity to go beyond baseline expectations."
         },
-        "composite": 0.139,
-        "assessment": "[Simulated] Capability \"Veo3 Video Generation\" is RED. Composite: 0.139."
+        "composite": 0,
+        "assessment": "The Veo3 Video Generation capability is currently not implemented, resulting in a score of 0 across all dimensions. There is no functionality to evaluate against the task prompt or expected behaviors."
       }
     },
     "C": {
-      "composite": 0.156,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.1,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked RED, indicating no video generation functionality is implemented. Therefore, no correct outputs can be produced."
         },
         "completeness": {
-          "score": 0.21,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core feature of video generation is entirely absent, as per the RED status."
         },
         "efficiency": {
-          "score": 0.18,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.22,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As there is no implementation, there are no edge cases or errors to handle gracefully."
         },
         "user_experience": {
-          "score": 0.11,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No functionality means no user experience to assess."
         },
         "maintainability": {
-          "score": 0.08,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists for this capability, so maintainability cannot be evaluated."
         },
         "innovation": {
-          "score": 0.19,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there is no innovation to demonstrate beyond baseline expectations."
         },
-        "composite": 0.156,
-        "assessment": "[Simulated] Capability \"Veo3 Video Generation\" is RED. Composite: 0.156."
+        "composite": 0,
+        "assessment": "The Veo3 Video Generation capability is currently not implemented, resulting in a score of 0.00 across all dimensions. There is no functionality available to evaluate against the task prompt or expected behaviors."
       }
     }
   },
-  "median_composite": 0.156,
-  "spread": 0.025,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.449Z"
+  "evaluated_at": "2026-04-19T05:05:50.932Z"
 }

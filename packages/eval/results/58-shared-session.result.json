@@ -2,117 +2,117 @@
   "capability": "Shared Session",
   "id": 58,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.193,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.18,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functionality for sharing sessions or real-time updates."
         },
         "completeness": {
-          "score": 0.24,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No features related to session sharing, real-time updates, or permission enforcement are present as per the RED status."
         },
         "efficiency": {
-          "score": 0.21,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.11,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No functionality exists to handle edge cases or errors gracefully for shared sessions."
         },
         "user_experience": {
-          "score": 0.17,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user interface or experience for sharing sessions due to the RED status."
         },
         "maintainability": {
-          "score": 0.23,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no code to assess for maintainability."
         },
         "innovation": {
-          "score": 0.23,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation exists, therefore no innovation can be demonstrated."
         },
-        "composite": 0.193,
-        "assessment": "[Simulated] Capability \"Shared Session\" is RED. Composite: 0.193."
+        "composite": 0,
+        "assessment": "The 'Shared Session' capability is marked as RED, indicating it is not implemented. Consequently, all quality dimensions receive a score of 0.00 as there is no functionality to evaluate."
       }
     },
     "B": {
-      "composite": 0.132,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.16,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional sharing of live sessions, thus correctness cannot be assessed."
         },
         "completeness": {
-          "score": 0.15,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, meaning none of the expected features (session sharing, real-time updates, permissions enforcement) are present."
         },
         "efficiency": {
-          "score": 0.19,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented, there is no functionality to evaluate for performance or resource usage."
         },
         "robustness": {
-          "score": 0.1,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implemented system to handle edge cases or errors gracefully."
         },
         "user_experience": {
-          "score": 0.17,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there is no user experience to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.07,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status implies no significant code exists for this feature, therefore maintainability cannot be assessed."
         },
         "innovation": {
-          "score": 0.07,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, there is no innovation to evaluate beyond baseline expectations."
         },
-        "composite": 0.132,
-        "assessment": "[Simulated] Capability \"Shared Session\" is RED. Composite: 0.132."
+        "composite": 0,
+        "assessment": "The 'Shared Session' capability is marked as RED, indicating it is not implemented. Consequently, all quality dimensions receive a score of 0.00 as there is no functionality to evaluate."
       }
     },
     "C": {
-      "composite": 0.159,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.12,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functionality for sharing sessions or real-time updates. Therefore, correctness cannot be assessed as there are no outputs."
         },
         "completeness": {
-          "score": 0.09,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation is RED, meaning none of the expected features (session sharing, real-time updates, permissions enforcement) are present."
         },
         "efficiency": {
-          "score": 0.14,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented (RED status), there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.2,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implementation to test for graceful handling of edge cases or errors related to session sharing."
         },
         "user_experience": {
-          "score": 0.2,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented (RED status), there is no user interface or workflow to evaluate for polish and intuitiveness."
         },
         "maintainability": {
-          "score": 0.23,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Given the RED status, there is no existing code for this specific capability to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.16,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented (RED status), it cannot go beyond baseline expectations."
         },
-        "composite": 0.159,
-        "assessment": "[Simulated] Capability \"Shared Session\" is RED. Composite: 0.159."
+        "composite": 0,
+        "assessment": "The 'Shared Session' capability is marked as RED, indicating no implementation. Consequently, all quality dimensions score 0.00 as there is no functionality to evaluate against the expected behaviors."
       }
     }
   },
-  "median_composite": 0.159,
-  "spread": 0.061,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.449Z"
+  "evaluated_at": "2026-04-19T05:05:20.037Z"
 }

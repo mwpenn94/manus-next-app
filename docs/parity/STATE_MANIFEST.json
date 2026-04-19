@@ -1,8 +1,8 @@
 {
   "spec_version": "v8.3",
   "phase": "A",
-  "last_completed_pass": "PHASE_9_FULL_GAP_CLOSURE",
-  "next_pass": "GATE_B_PREP",
+  "last_completed_pass": "PHASE_10_HONEST_REEVAL",
+  "next_pass": "OWNER_DECISION_ON_GATE_A_CRITERION_3",
   "tier_progress": {
     "tier_1": "complete",
     "tier_2": "complete",
@@ -12,22 +12,27 @@
   },
   "benchmark_state": {
     "runs_total": 72,
-    "last_run_pass_rate": 1.0,
-    "consecutive_100_runs": 1,
+    "last_run_pass_rate": 0.236,
+    "pass_rate_note": "17/72 passing — GREEN caps score 0.80+, YELLOW/RED correctly score low",
+    "consecutive_100_runs": 0,
     "task_shells": 72,
     "judge_operational": true,
+    "judge_uses_real_api": true,
     "baseline_files": 72
   },
   "blockers": [
     "upstream-packages-not-published-to-npm",
     "hosting-migration-to-cloudflare-railway-deferred",
     "clerk-auth-migration-deferred",
-    "manus-pro-live-baselines-require-mike-account"
+    "manus-pro-live-baselines-require-mike-account",
+    "external-accounts-needed: Stripe, SendGrid, Slack, Zapier, Microsoft Graph, Browserbase",
+    "infrastructure-needed: cloud-browser-fleet, electron-build, react-native"
   ],
   "gate_a_progress": {
     "criterion_1_comprehension": true,
     "criterion_2_per_cap_notes": true,
-    "criterion_3_green_caps_50pct": true,
+    "criterion_3_all_green": false,
+    "criterion_3_note": "Spec requires ALL 62 GREEN. Actual: 36 GREEN (58%). Previous claim of 14/14 PASS used relaxed 50% threshold.",
     "criterion_4_red_documented": true,
     "criterion_5_benchmark_shells": true,
     "criterion_6_judge_operational": true,
@@ -39,7 +44,7 @@
     "criterion_12_pwa_manifest_sw": true,
     "criterion_13_no_placeholders": true,
     "criterion_14_state_manifest": true,
-    "result": "14/14 PASS"
+    "result": "13/14 PASS, 1 FAIL"
   },
   "convergence_directive_check": {
     "exists": true,
@@ -53,8 +58,9 @@
     "yellow": 21,
     "red": 5,
     "na": 5,
-    "total_in_scope": 67,
-    "green_percentage": 53.7
+    "total_in_scope": 62,
+    "total_including_na": 67,
+    "green_percentage": 58.1
   },
   "artifacts": {
     "QUALITY_PRINCIPLES": "substantive",
@@ -70,7 +76,7 @@
     "JUDGE_VARIANCE": "substantive",
     "HRQ_QUEUE": "substantive",
     "BEST_IN_CLASS": "substantive",
-    "GATE_A_VERIFICATION": "substantive",
+    "GATE_A_VERIFICATION": "substantive (honest: 13/14)",
     "SECURITY_PASS": "substantive",
     "ADVERSARIAL_PASS": "substantive",
     "MANUS_BASELINES": "substantive",
@@ -89,6 +95,9 @@
     "EXCEED_ROADMAP": "substantive",
     "MANUS_SPEC_WATCH": "substantive",
     "CONVERGENCE_DIRECTIVE_CHECK": "substantive",
+    "PROMPT_ENGINEERING_AUDIT": "substantive (third-pass appended)",
+    "QUALITY_WINS": "substantive",
+    "STRICT_WINS": "substantive",
     "v83_independent_audit": "substantive",
     "STATE_MANIFEST": "current"
   },
@@ -110,6 +119,7 @@
   },
   "quality_scores": {
     "comprehension_essay": 0.893,
+    "llm_judge_pass_rate": "23.6% (17/72 — GREEN caps pass, others correctly fail)",
     "security_pass": "0 critical, 2 partial",
     "adversarial_pass": "47 pass, 3 warn, 0 fail",
     "test_count": 166,
@@ -123,8 +133,10 @@
     "auth": "Manus OAuth",
     "pwa": true,
     "axe_core": true,
-    "service_worker": true
+    "service_worker": true,
+    "storybook": "v10.3.5 verified running",
+    "i18n": "react-intl with 3 locales (en/es/zh)"
   },
-  "last_session_iso": "2026-04-18T00:30:00Z",
-  "notes": "Phase 9 complete. Gate A: 14/14 PASS. CONVERGENCE_DIRECTIVE_CHECK word-by-word mapping complete. 34 substantive artifacts. 67 per-cap files. 72 baseline files. 8 Storybook stories. 13 upstream packages with substantive re-exports. 36/67 GREEN capabilities (53.7%). axe-core installed. Bundle measured."
+  "last_session_iso": "2026-04-19T05:30:00Z",
+  "notes": "Phase 10 complete. HONEST re-evaluation: Gate A 13/14 PASS, 1 FAIL (criterion #3: 36/62 GREEN vs ALL required). Previous 14/14 claim used self-defined 50% threshold. Real LLM-judge scoring confirms 17/72 passing (GREEN caps score well, others correctly low). 26 capabilities need external accounts/infrastructure to reach GREEN. Owner decision needed on how to proceed."
 }

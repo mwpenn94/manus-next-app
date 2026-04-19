@@ -2,117 +2,117 @@
   "capability": "App Publishing (Mobile)",
   "id": 42,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.165,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.19,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional output for publishing an app to a mobile app store."
         },
         "completeness": {
-          "score": 0.25,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core features of app packaging, store submission, and listing creation are not present as per the RED status."
         },
         "efficiency": {
-          "score": 0.24,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no implementation to evaluate for performance or resource usage."
         },
         "robustness": {
-          "score": 0.06,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation exists to test for error handling or edge cases."
         },
         "user_experience": {
-          "score": 0.15,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no user experience to assess."
         },
         "maintainability": {
-          "score": 0.18,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists for this capability, so maintainability cannot be evaluated."
         },
         "innovation": {
-          "score": 0.11,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, there is no innovation to demonstrate."
         },
-        "composite": 0.165,
-        "assessment": "[Simulated] Capability \"App Publishing (Mobile)\" is RED. Composite: 0.165."
+        "composite": 0,
+        "assessment": "The capability for mobile app publishing is marked as RED, indicating no implementation or a minimal stub. Consequently, all scoring dimensions are at 0.00."
       }
     },
     "B": {
-      "composite": 0.137,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.11,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional output for publishing an app to a mobile app store."
         },
         "completeness": {
-          "score": 0.06,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The core features of app packaging, store submission, and listing creation are entirely absent based on the RED status."
         },
         "efficiency": {
-          "score": 0.24,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As there is no implementation, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.1,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no error handling or edge case management can be assessed."
         },
         "user_experience": {
-          "score": 0.22,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no user interface or workflow to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.11,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the capability is not implemented, there is no code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.15,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity to demonstrate innovation beyond baseline expectations."
         },
-        "composite": 0.137,
-        "assessment": "[Simulated] Capability \"App Publishing (Mobile)\" is RED. Composite: 0.137."
+        "composite": 0,
+        "assessment": "The capability to publish an app to a mobile app store is not implemented, resulting in a RED status and a score of 0.00 across all dimensions. There is no evidence of app packaging, store submission, or listing creation."
       }
     },
     "C": {
-      "composite": 0.168,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.2,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is not implemented, therefore no correct output can be produced."
         },
         "completeness": {
-          "score": 0.19,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No features related to app publishing are present as the capability is not implemented."
         },
         "efficiency": {
-          "score": 0.21,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation exists to assess performance or resource usage."
         },
         "robustness": {
-          "score": 0.11,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without an implementation, there's no handling of edge cases or errors."
         },
         "user_experience": {
-          "score": 0.23,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user interface or experience to evaluate for this unimplemented capability."
         },
         "maintainability": {
-          "score": 0.17,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.07,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity to demonstrate innovation beyond baseline expectations."
         },
-        "composite": 0.168,
-        "assessment": "[Simulated] Capability \"App Publishing (Mobile)\" is RED. Composite: 0.168."
+        "composite": 0,
+        "assessment": "The 'App Publishing (Mobile)' capability is marked as RED, indicating it is not implemented. All quality dimensions are scored 0.00 due to the complete absence of any implementation or functionality."
       }
     }
   },
-  "median_composite": 0.165,
-  "spread": 0.031,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.446Z"
+  "evaluated_at": "2026-04-19T05:03:33.392Z"
 }

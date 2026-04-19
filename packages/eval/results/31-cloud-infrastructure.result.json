@@ -2,117 +2,117 @@
   "capability": "Cloud Infrastructure",
   "id": 31,
   "status": "YELLOW",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.519,
+      "composite": 0.525,
       "scores": {
         "correctness": {
-          "score": 0.46,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.65,
+          "justification": "The core functionality of hosting on managed cloud infrastructure is partially correct, but specific details like 'Manus hosting' are not confirmed, and CDN/SSL configuration might vary in correctness."
         },
         "completeness": {
-          "score": 0.46,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
-        },
-        "efficiency": {
-          "score": 0.47,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
-        },
-        "robustness": {
-          "score": 0.59,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
-        },
-        "user_experience": {
-          "score": 0.46,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
-        },
-        "maintainability": {
-          "score": 0.59,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
-        },
-        "innovation": {
-          "score": 0.63,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
-        },
-        "composite": 0.519,
-        "assessment": "[Simulated] Capability \"Cloud Infrastructure\" is YELLOW. Composite: 0.519."
-      }
-    },
-    "B": {
-      "composite": 0.526,
-      "scores": {
-        "correctness": {
-          "score": 0.54,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
-        },
-        "completeness": {
-          "score": 0.51,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "The implementation is partially complete. While the app is likely hosted, the specific requirements of 'Manus hosting', 'CDN', and 'SSL' need verification. It's unclear if all three are fully present and correctly configured."
         },
         "efficiency": {
           "score": 0.6,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "Assuming managed cloud infrastructure implies some level of efficiency, but without specific performance metrics or confirmation of CDN optimization, it's difficult to score higher. The 'YELLOW' status suggests potential inefficiencies or unconfirmed optimizations."
         },
         "robustness": {
-          "score": 0.58,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
-        },
-        "user_experience": {
-          "score": 0.52,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
-        },
-        "maintainability": {
-          "score": 0.46,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
-        },
-        "innovation": {
-          "score": 0.47,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
-        },
-        "composite": 0.526,
-        "assessment": "[Simulated] Capability \"Cloud Infrastructure\" is YELLOW. Composite: 0.526."
-      }
-    },
-    "C": {
-      "composite": 0.492,
-      "scores": {
-        "correctness": {
-          "score": 0.56,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
-        },
-        "completeness": {
-          "score": 0.48,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
-        },
-        "efficiency": {
-          "score": 0.51,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
-        },
-        "robustness": {
-          "score": 0.47,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.55,
+          "justification": "Managed cloud infrastructure generally offers some robustness, but without explicit details on error handling, redundancy, or failover specific to this implementation, it's only partially robust. The 'YELLOW' status implies potential vulnerabilities or unhandled edge cases."
         },
         "user_experience": {
           "score": 0.45,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "User experience is indirectly affected by hosting. While a hosted app is better than none, the lack of full confirmation on CDN and SSL (which impact load times and security warnings) means the UX is only partially polished from this perspective."
         },
         "maintainability": {
-          "score": 0.47,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "Maintainability of the hosting setup itself is hard to assess without internal details. Managed cloud infrastructure generally implies some maintainability, but the 'YELLOW' status suggests that the specific configuration might not be fully optimized or documented for easy maintenance."
         },
         "innovation": {
-          "score": 0.48,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Using managed cloud infrastructure is standard practice. To be innovative, it would need to demonstrate advanced features, unique optimizations, or novel approaches to hosting beyond basic CDN/SSL, which are not confirmed by the 'YELLOW' status."
         },
-        "composite": 0.492,
-        "assessment": "[Simulated] Capability \"Cloud Infrastructure\" is YELLOW. Composite: 0.492."
+        "composite": 0.525,
+        "assessment": "The implementation is partially complete, with the app likely hosted on some cloud infrastructure. However, specific requirements like 'Manus hosting', full CDN configuration, and SSL enablement need further verification to confirm complete and correct functionality."
+      }
+    },
+    "B": {
+      "composite": 0.505,
+      "scores": {
+        "correctness": {
+          "score": 0.6,
+          "justification": "The core functionality of hosting is present, but the specific 'Manus hosting' requirement isn't explicitly confirmed as correct without further evidence. SSL is a standard feature that should be correctly implemented."
+        },
+        "completeness": {
+          "score": 0.5,
+          "justification": "The task requires hosting, CDN, and SSL. While hosting and SSL are likely, the CDN configuration is a specific feature that might be partially or not yet implemented, leading to partial completeness."
+        },
+        "efficiency": {
+          "score": 0.5,
+          "justification": "Managed cloud infrastructure generally implies some level of efficiency. However, without details on the CDN's optimization or the hosting's performance metrics, it's difficult to assess full efficiency."
+        },
+        "robustness": {
+          "score": 0.55,
+          "justification": "Managed cloud infrastructure typically offers good robustness. However, the 'YELLOW' status suggests there might be areas where error handling or edge cases (e.g., CDN failures) are not fully robust."
+        },
+        "user_experience": {
+          "score": 0.45,
+          "justification": "While the end-user experience benefits from reliable hosting, CDN, and SSL, this dimension primarily relates to the developer/administrator's experience in managing these aspects. The 'YELLOW' status implies potential friction or missing features in the management interface."
+        },
+        "maintainability": {
+          "score": 0.5,
+          "justification": "Managed cloud infrastructure usually simplifies maintenance. However, if the setup is only partially implemented, there might be manual steps or inconsistencies that reduce maintainability."
+        },
+        "innovation": {
+          "score": 0.4,
+          "justification": "Managed cloud hosting with CDN and SSL is a standard expectation for modern web applications, not particularly innovative. The 'YELLOW' status indicates it hasn't even fully met these baseline expectations."
+        },
+        "composite": 0.505,
+        "assessment": "The implementation is partially complete, with core hosting and SSL likely in place, but the specific hosting provider and CDN configuration require further verification. The 'YELLOW' status indicates that some expected features are either missing or not fully optimized."
+      }
+    },
+    "C": {
+      "composite": 0.54,
+      "scores": {
+        "correctness": {
+          "score": 0.6,
+          "justification": "The core functionality of hosting is present, but specific details like CDN and SSL configuration need verification."
+        },
+        "completeness": {
+          "score": 0.5,
+          "justification": "The app is hosted, but the 'CDN configured' and 'SSL enabled' aspects are not explicitly confirmed or may be partially implemented."
+        },
+        "efficiency": {
+          "score": 0.6,
+          "justification": "Assuming Manus hosting provides a reasonable baseline for efficiency, but without specific performance metrics or CDN verification, it's not fully optimal."
+        },
+        "robustness": {
+          "score": 0.6,
+          "justification": "Managed cloud infrastructure generally implies good robustness, but the lack of full SSL and CDN confirmation suggests potential gaps in handling certain network conditions or security aspects."
+        },
+        "user_experience": {
+          "score": 0.5,
+          "justification": "A hosted app is a basic requirement for user experience. Lack of confirmed SSL might negatively impact user trust, and unconfigured CDN could affect load times."
+        },
+        "maintainability": {
+          "score": 0.6,
+          "justification": "Using managed cloud infrastructure like Manus hosting generally improves maintainability, as many operational tasks are handled by the provider."
+        },
+        "innovation": {
+          "score": 0.4,
+          "justification": "While using managed cloud is standard practice, the specific details like CDN and SSL are expected and not particularly innovative unless there are advanced configurations."
+        },
+        "composite": 0.54,
+        "assessment": "The app is hosted on managed cloud infrastructure, fulfilling a core requirement. However, the full extent of CDN configuration and SSL enablement needs further verification to meet all expected behaviors."
       }
     }
   },
-  "median_composite": 0.519,
-  "spread": 0.034,
+  "median_composite": 0.525,
+  "spread": 0.035,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.444Z"
+  "evaluated_at": "2026-04-19T05:02:09.725Z"
 }

@@ -56,6 +56,21 @@ import {
   addProjectKnowledge,
   getProjectKnowledgeItems,
   deleteProjectKnowledge,
+  getUserSkills,
+  installSkill,
+  uninstallSkill,
+  toggleSkill,
+  getUserSlideDecks,
+  createSlideDeck,
+  updateSlideDeck,
+  getSlideDeck,
+  getUserConnectors,
+  upsertConnector,
+  disconnectConnector,
+  getUserMeetingSessions,
+  createMeetingSession,
+  updateMeetingSession,
+  getMeetingSession,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -715,6 +730,179 @@ export const appRouter = router({
           return { success: true };
         }),
     }),
+  }),
+
+  // ── Skills ──
+  skill: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserSkills(ctx.user.id);
+    }),
+    install: protectedProcedure
+      .input(z.object({
+        skillId: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await installSkill({
+          userId: ctx.user.id,
+          skillId: input.skillId,
+          name: input.name,
+          description: input.description ?? null,
+          category: input.category ?? null,
+        });
+        return { success: true };
+      }),
+    uninstall: protectedProcedure
+      .input(z.object({ skillId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await uninstallSkill(ctx.user.id, input.skillId);
+        return { success: true };
+      }),
+    toggle: protectedProcedure
+      .input(z.object({ skillId: z.string(), enabled: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        await toggleSkill(ctx.user.id, input.skillId, input.enabled);
+        return { success: true };
+      }),
+  }),
+
+  // ── Slides ──
+  slides: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserSlideDecks(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getSlideDeck(input.id);
+      }),
+    generate: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1),
+        template: z.string().default("blank"),
+        slideCount: z.number().min(3).max(30).default(8),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { invokeLLM } = await import("./_core/llm");
+        const title = input.prompt.length > 60 ? input.prompt.slice(0, 60) + "..." : input.prompt;
+        const deckId = await createSlideDeck({
+          userId: ctx.user.id,
+          title,
+          prompt: input.prompt,
+          template: input.template,
+          status: "generating",
+        });
+        // Generate slides via LLM (async, non-blocking)
+        (async () => {
+          try {
+            const response = await invokeLLM({
+              messages: [
+                { role: "system", content: `You are a presentation designer. Generate exactly ${input.slideCount} slides as a JSON array. Each slide has: title (string), content (markdown string with bullet points), notes (optional speaker notes string). Return ONLY valid JSON array, no markdown fences.` },
+                { role: "user", content: `Create a presentation about: ${input.prompt}\n\nTemplate style: ${input.template}` },
+              ],
+            });
+            const rawContent = response.choices?.[0]?.message?.content ?? "[]";
+            const text = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+            // Extract JSON from response
+            const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+            const slides = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+            await updateSlideDeck(deckId, { slides, status: "ready" });
+          } catch (err) {
+            console.error("[Slides] Generation failed:", err);
+            await updateSlideDeck(deckId, { status: "error" });
+          }
+        })();
+        return { id: deckId, title };
+      }),
+  }),
+
+  // ── Connectors ──
+  connector: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserConnectors(ctx.user.id);
+    }),
+    connect: protectedProcedure
+      .input(z.object({
+        connectorId: z.string(),
+        name: z.string(),
+        config: z.record(z.string(), z.string()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const configVal = (input.config ?? {}) as Record<string, string>;
+        const id = await upsertConnector({
+          userId: ctx.user.id,
+          connectorId: input.connectorId,
+          name: input.name,
+          config: configVal,
+          status: "connected",
+        });
+        return { id, success: true };
+      }),
+    disconnect: protectedProcedure
+      .input(z.object({ connectorId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await disconnectConnector(ctx.user.id, input.connectorId);
+        return { success: true };
+      }),
+  }),
+
+  // ── Meeting Sessions ──
+  meeting: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserMeetingSessions(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getMeetingSession(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().optional(),
+        audioUrl: z.string(),
+        taskId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await createMeetingSession({
+          userId: ctx.user.id,
+          title: input.title ?? "Meeting " + new Date().toLocaleDateString(),
+          audioUrl: input.audioUrl,
+          taskId: input.taskId ?? null,
+          status: "transcribing",
+        });
+        // Async transcription + summarization
+        (async () => {
+          try {
+            const { transcribeAudio } = await import("./_core/voiceTranscription");
+            const { invokeLLM } = await import("./_core/llm");
+            const result = await transcribeAudio({ audioUrl: input.audioUrl });
+            const transcript = ("text" in result ? result.text : "") ?? "";
+            await updateMeetingSession(id, { transcript, status: "summarizing" });
+            const summaryResponse = await invokeLLM({
+              messages: [
+                { role: "system", content: "You are a meeting notes assistant. Given a transcript, produce: 1) A concise summary (2-3 paragraphs), 2) A list of action items. Return as JSON: { summary: string, actionItems: string[] }" },
+                { role: "user", content: transcript },
+              ],
+            });
+            const rawSummary = summaryResponse.choices?.[0]?.message?.content ?? "{}";
+            const summaryText = typeof rawSummary === "string" ? rawSummary : JSON.stringify(rawSummary);
+            const jsonMatch = summaryText.match(/\{[\s\S]*\}/);
+            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: transcript.slice(0, 500), actionItems: [] };
+            await updateMeetingSession(id, {
+              summary: parsed.summary,
+              actionItems: parsed.actionItems,
+              duration: Math.round(("segments" in result && result.segments?.slice(-1)?.[0]?.end) || 0),
+              status: "ready",
+            });
+          } catch (err) {
+            console.error("[Meeting] Processing failed:", err);
+            await updateMeetingSession(id, { status: "error" });
+          }
+        })();
+        return { id };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

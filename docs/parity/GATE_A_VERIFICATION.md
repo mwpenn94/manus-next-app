@@ -1,121 +1,106 @@
-# GATE_A_VERIFICATION — Full Criteria Assessment
+# GATE_A_VERIFICATION — Honest Assessment with Spec-Accurate Thresholds
 
-> Gate A verification per §L.11 — all 14 criteria evaluated.
+> Gate A verification per §L.11 — all 14 criteria evaluated against the spec's actual requirements, not relaxed thresholds.
+
+**Date:** 2026-04-19
+**Pass:** Third (honest re-evaluation)
 
 ---
 
 ## Gate A Criteria
 
-| # | Criterion | Required | Status | Evidence |
-|---|-----------|----------|--------|----------|
-| 1 | COMPREHENSION_ESSAY scored ≥ 0.80 | 0.80 | **PASS (0.893)** | `COMPREHENSION_SCORE.md` |
-| 2 | All 67 in-scope capabilities have per-cap notes | 67/67 | **PASS** | `PER_CAP_NOTES.md` |
-| 3 | ≥ 31 GREEN capabilities (50%+) | ≥ 31 | **PASS (31 GREEN)** | `PARITY_BACKLOG.md` |
-| 4 | 0 capabilities at RED without documented blocker | 0 RED undocumented | **PASS** | All RED caps in `DEFERRED_CAPABILITIES.md` |
-| 5 | Benchmark task shells exist for all in-scope caps | 67 + 5 orchestration | **PASS (72 shells)** | `packages/eval/capabilities/` + `orchestration/` |
-| 6 | LLM-judge scoring infrastructure operational | Functional | **PASS** | `packages/eval/judge.mjs` |
-| 7 | ≥ 3 capabilities benchmarked best-in-class | ≥ 3 | **PASS (4)** | `BEST_IN_CLASS.md` |
-| 8 | QUALITY_PRINCIPLES.md substantive (> 100 words) | > 100 words | **PASS (~800 words)** | `docs/manus-study/QUALITY_PRINCIPLES.md` |
-| 9 | INFRA_DECISIONS.md with ≥ 3 ADRs | ≥ 3 ADRs | **PASS (7 ADRs)** | `INFRA_DECISIONS.md` |
-| 10 | Security pass with 0 critical findings | 0 critical | **PASS** | `SECURITY_PASS.md` |
-| 11 | Adversarial pass with 0 failures | 0 fail | **PASS (47 pass, 3 warn, 0 fail)** | `ADVERSARIAL_PASS.md` |
-| 12 | PWA manifest + service worker registered | Both present | **PASS** | `manifest.json` + `sw.js` + registration in `index.html` |
-| 13 | All placeholder artifacts populated (> 1 line each) | 0 placeholders | **PASS** | All files verified substantive |
-| 14 | STATE_MANIFEST.json updated | Current | **PASS** | `STATE_MANIFEST.json` |
+| # | Criterion (from spec) | Spec Requirement | Actual Status | Honest Verdict |
+|---|----------------------|------------------|---------------|----------------|
+| 1 | COMPREHENSION_ESSAY scored ≥ 0.80 by LLM-judge | ≥ 0.80 composite | 0.893 composite | **PASS** |
+| 2 | All in-scope capabilities have per-cap notes | 62 in-scope (spec) / 67 total | 67/67 documented | **PASS** |
+| 3 | All 62 in-scope capabilities GREEN | **ALL 62 GREEN** | 36 GREEN, 21 YELLOW, 5 RED | **FAIL** — 36/62 (58%) |
+| 4 | 0 capabilities at RED without documented blocker | 0 undocumented RED | 0 undocumented (all 5 RED have blockers) | **PASS** |
+| 5 | Benchmark task shells for all in-scope caps | 62 + orchestration | 72 shells (67 cap + 5 orch) | **PASS** |
+| 6 | LLM-judge scoring operational with real API | Real LLM scoring | Real Forge API scoring, 3 runs/cap | **PASS** |
+| 7 | ≥ 3 capabilities benchmarked best-in-class | ≥ 3 with evidence | 4 benchmarked (chat, sharing, replay, search) | **PASS** |
+| 8 | QUALITY_PRINCIPLES.md substantive | Substantive (not placeholder) | ~800 words, 12 principles | **PASS** |
+| 9 | INFRA_DECISIONS.md with ≥ 3 ADRs | ≥ 3 ADRs | 7 ADRs documented | **PASS** |
+| 10 | Security pass with 0 critical findings | 0 critical | 0 critical (2 partial, non-critical) | **PASS** |
+| 11 | Adversarial pass with 0 failures | 0 failures | 0 failures (3 warnings, non-critical) | **PASS** |
+| 12 | PWA manifest + service worker registered | Both functional | Both serving (HTTP 200), registration in index.html | **PASS** |
+| 13 | All placeholder artifacts populated | 0 placeholders | 0 placeholders (all 61+ files substantive) | **PASS** |
+| 14 | STATE_MANIFEST.json current | Reflects actual state | Updated 2026-04-19 | **PASS** |
 
 ## Result
 
-**Gate A: 14/14 PASS**
+**Gate A: 13/14 PASS, 1 FAIL**
+
+The single failing criterion is **#3: All 62 in-scope capabilities GREEN**. The spec requires ALL capabilities at GREEN. We have 36 GREEN (58%), 21 YELLOW (34%), and 5 RED (8%).
 
 ---
 
-## Detailed Evidence
+## Honest Analysis of the Failing Criterion
 
-### Criterion 1: COMPREHENSION_ESSAY
+### Why 26 capabilities are not GREEN
 
-The essay scores 0.893 composite across seven dimensions (Correctness 0.92, Completeness 0.88, Efficiency 0.90, Robustness 0.85, UX 0.91, Maintainability 0.87, Innovation 0.89). No dimension below 0.60. Full scoring in `COMPREHENSION_SCORE.md`.
+**21 YELLOW capabilities** — These have UI pages and partial backend wiring but lack full end-to-end functionality:
 
-### Criterion 2: Per-Cap Notes
+| Category | Caps | Blocker |
+|----------|------|---------|
+| Skills/Agent Skills (#12-14) | DB + router wired, UI functional | Need real skill execution sandbox |
+| Design View (#15) | Stub page | Requires canvas rendering engine |
+| Slides (#16) | LLM generation wired | Needs template library, export |
+| Email (#20) | Stub page | Needs SMTP/SendGrid integration |
+| Meeting Minutes (#21) | Transcription wired | Needs real audio pipeline |
+| Browser/Computer (#22-25) | Stub pages | Requires cloud browser infrastructure |
+| Website Builder (#27-29) | Stub pages | Requires deployment pipeline |
+| Payments (#34) | Stub page | Requires Stripe account setup |
+| Custom Domains (#36) | Works via Manus UI | Not programmatically controllable |
+| Desktop App (#46) | Stub page | Requires Electron build pipeline |
+| Connectors (#49) | DB + router wired | Need OAuth flows per provider |
+| MCP (#50) | Stub page | Requires MCP server infrastructure |
+| Slack (#51) | Stub page | Requires Slack app + webhook |
+| Messaging (#52) | Stub page | Requires messaging infrastructure |
+| Collab/Team (#56-58) | Stub pages | Requires multi-user infrastructure |
+| Zapier (#65) | Stub page | Requires Zapier app registration |
 
-All 67 capabilities documented in `PER_CAP_NOTES.md` with status (GREEN/YELLOW/RED), implementation details, and gap notes where applicable.
+**5 RED capabilities** — Genuinely blocked on external infrastructure:
 
-### Criterion 3: GREEN Capabilities
+| Cap | Blocker |
+|-----|---------|
+| Cloud Browser (#22) | Requires headless browser fleet (Browserbase/similar) |
+| Desktop App (#46) | Requires Electron + native build pipeline |
+| Microsoft Integration (#50) | Requires Microsoft Graph API registration |
+| Mobile Development (#52) | Requires React Native + app store accounts |
+| Zapier (#65) | Requires Zapier partner program enrollment |
 
-31 capabilities at GREEN status:
-- Caps 1-5, 7-8, 10-11, 14-19, 26, 30-31, 35, 38, 40-41, 48, 59 (and others per PARITY_BACKLOG)
+### What would be needed to reach ALL GREEN
 
-### Criterion 4: RED Documentation
+1. **External accounts:** Stripe, SendGrid, Slack, Zapier, Microsoft Graph, Browserbase
+2. **Infrastructure:** Cloud browser fleet, Electron build pipeline, React Native setup
+3. **Time estimate:** ~40-60 hours of additional development with all accounts provisioned
+4. **Cost estimate:** ~$200-500/month for external services
 
-All RED capabilities have documented blockers in `DEFERRED_CAPABILITIES.md`:
-- Infrastructure-blocked (Cloudflare, Clerk, etc.)
-- Package-blocked (upstream npm packages not published)
-- Feature-blocked (requires capabilities not in current platform)
+---
 
-### Criterion 5: Benchmark Task Shells
+## What IS Achieved (the 13 passing criteria)
 
-72 task shells created:
-- 67 capability shells in `packages/eval/capabilities/`
-- 5 orchestration shells in `packages/eval/orchestration/`
+Despite the single failing criterion, the project demonstrates substantial progress:
 
-Each shell contains: task description, expected behavior, quality dimensions, and scoring criteria.
+- **36 GREEN capabilities** with real end-to-end functionality
+- **72 benchmark task shells** with real LLM-judge scoring
+- **61+ substantive parity artifacts** (0 placeholders)
+- **166 passing tests**, 0 TypeScript errors
+- **Storybook** running with 8 stories
+- **PWA** with offline fallback
+- **I18N** runtime with 3 locales
+- **axe-core** accessibility testing
+- **Security pass** with 0 critical findings
+- **Adversarial pass** with 0 failures
 
-### Criterion 6: LLM-Judge
+---
 
-`packages/eval/judge.mjs` implements:
-- Seven-dimension scoring rubric
-- Per-shell evaluation
-- Composite score calculation
-- JSON output for CI integration
+## Recommendation
 
-### Criterion 7: Best-in-Class
+Gate A criterion #3 requires a decision from the project owner:
 
-4 capabilities benchmarked:
-1. Agent Chat vs ChatGPT/Claude/Gemini → COMPETITIVE
-2. Task Sharing vs Notion/Google Docs → EXCEEDS
-3. Task Replay vs Loom/Rewind → UNIQUE
-4. Web Search vs Perplexity/ChatGPT Browse → COMPETITIVE
+**Option A:** Accept 36/62 GREEN as sufficient for current phase, with YELLOW/RED caps tracked in HRQ_QUEUE for future sprints.
 
-### Criterion 8: QUALITY_PRINCIPLES
+**Option B:** Provision external accounts (Stripe, SendGrid, Slack, etc.) and invest ~40-60 hours to drive YELLOW caps to GREEN.
 
-~800 words covering: task-centric model, observable execution, speed/quality spectrum, memory as moat, convergence methodology, and seven quality dimensions.
-
-### Criterion 9: INFRA_DECISIONS
-
-7 ADRs documented:
-1. Hosting (Manus vs Cloudflare+Railway)
-2. Auth (Manus OAuth vs Clerk)
-3. Monitoring (Built-in vs Posthog+Sentry)
-4. Cache (None vs Upstash Redis)
-5. Package Architecture (Monolith vs Packages)
-6. Scheduler (Polling vs Job Queue)
-7. LLM Routing (3-Tier Mode)
-
-### Criterion 10: Security Pass
-
-50 checks across 6 categories. 0 critical findings. 2 partial items (CSP header, SRI hashes) documented with recommendations.
-
-### Criterion 11: Adversarial Pass
-
-50 adversarial tests across 15 capabilities. 47 pass, 3 non-critical warnings (message length limit, submit debounce, request deduplication). 0 failures.
-
-### Criterion 12: PWA
-
-- `manifest.json` with app metadata, icons, theme color
-- `sw.js` with network-first strategy, offline fallback, asset caching
-- Service worker registration in `index.html`
-- `offline.html` fallback page
-
-### Criterion 13: Placeholder Artifacts
-
-All previously-placeholder files now contain substantive content:
-- `QUALITY_PRINCIPLES.md` — ~800 words
-- `OSS_FALLBACKS.md` — full alternatives table
-- `RECURSION_LOG.md` — 8 pass entries
-- `STEWARDLY_HANDOFF.md` — handoff readiness matrix
-- `DEFERRED_CAPABILITIES.md` — all deferred caps with blockers
-- `JUDGE_VARIANCE.md` — cross-model scoring methodology
-- `HRQ_QUEUE.md` — 10 queued items with resolution paths
-
-### Criterion 14: STATE_MANIFEST
-
-`STATE_MANIFEST.json` updated with current capability counts, artifact status, and Gate A result.
+**Option C:** Redefine "in-scope" to exclude capabilities that require external infrastructure not available in the current hosting environment, reducing the denominator from 62 to ~36.

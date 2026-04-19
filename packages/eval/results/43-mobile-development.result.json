@@ -2,117 +2,117 @@
   "capability": "Mobile Development",
   "id": 43,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.155,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.18,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional output for generating a mobile app from a web application."
         },
         "completeness": {
-          "score": 0.08,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No features are present as the capability is not implemented. There is no app generated and no native components."
         },
         "efficiency": {
-          "score": 0.17,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the capability is not implemented, there is no efficiency to evaluate."
         },
         "robustness": {
-          "score": 0.16,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is not implemented, thus there are no error handling or edge case considerations to assess."
         },
         "user_experience": {
-          "score": 0.21,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No user-facing functionality exists for evaluation, as the capability is not implemented."
         },
         "maintainability": {
-          "score": 0.19,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.1,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity for innovation beyond baseline expectations."
         },
-        "composite": 0.155,
-        "assessment": "[Simulated] Capability \"Mobile Development\" is RED. Composite: 0.155."
+        "composite": 0,
+        "assessment": "The Mobile Development capability is marked as RED, indicating it is not implemented. All quality dimensions therefore receive a score of 0.00 as there is no functional output or code to evaluate."
       }
     },
     "B": {
-      "composite": 0.138,
+      "composite": 0.1,
       "scores": {
         "correctness": {
           "score": 0.1,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is RED, indicating it is not implemented or minimal. Therefore, it does not produce correct outputs for generating a mobile app from a web application with native components."
         },
         "completeness": {
-          "score": 0.13,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "As the status is RED, none of the expected features (app generation, native components, running on device) are present."
         },
         "efficiency": {
-          "score": 0.22,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "With a RED status, there is no implementation to evaluate for performance or resource consumption."
         },
         "robustness": {
-          "score": 0.05,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "The RED status means there's no implementation to handle edge cases or errors gracefully."
         },
         "user_experience": {
-          "score": 0.07,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Since the capability is not implemented (RED status), there is no user experience to assess."
         },
         "maintainability": {
-          "score": 0.22,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "A RED status implies there is no significant code to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.24,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Given the RED status, there is no implementation to demonstrate innovation beyond baseline expectations."
         },
-        "composite": 0.138,
-        "assessment": "[Simulated] Capability \"Mobile Development\" is RED. Composite: 0.138."
+        "composite": 0.1,
+        "assessment": "The mobile development capability is currently in RED status, indicating it is not implemented. Consequently, all quality dimensions receive a minimal score as there is no functional output to evaluate against the expected behaviors."
       }
     },
     "C": {
-      "composite": 0.147,
+      "composite": 0.1,
       "scores": {
         "correctness": {
-          "score": 0.08,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "The implementation status is RED, indicating it is not implemented or is a minimal stub. Therefore, it cannot produce correct outputs as there is no functional output."
         },
         "completeness": {
-          "score": 0.23,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Given the RED status, no expected features are present, as the core functionality of generating a mobile app from a web application is absent."
         },
         "efficiency": {
-          "score": 0.21,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Without an implementation, there's no performance or resource consumption to evaluate. A minimal stub would have negligible efficiency."
         },
         "robustness": {
-          "score": 0.19,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Since there is no implemented functionality, there are no edge cases or errors to handle gracefully."
         },
         "user_experience": {
-          "score": 0.12,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "A non-existent or minimal stub implementation provides no user experience to assess for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.06,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "With a RED status, there's likely no significant code to evaluate for cleanliness or structure beyond a placeholder."
         },
         "innovation": {
-          "score": 0.15,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "As the capability is not implemented, it cannot go beyond baseline expectations or offer innovative solutions."
         },
-        "composite": 0.147,
-        "assessment": "[Simulated] Capability \"Mobile Development\" is RED. Composite: 0.147."
+        "composite": 0.1,
+        "assessment": "The capability implementation is in a RED status, indicating it is not functional or is a minimal stub. Consequently, all quality dimensions receive a very low score as there is no tangible output or functionality to evaluate against the expected behavior."
       }
     }
   },
-  "median_composite": 0.147,
-  "spread": 0.017,
+  "median_composite": 0.1,
+  "spread": 0.1,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.446Z"
+  "evaluated_at": "2026-04-19T05:03:39.982Z"
 }

@@ -275,3 +275,74 @@ export const taskEvents = mysqlTable("task_events", {
 
 export type TaskEvent = typeof taskEvents.$inferSelect;
 export type InsertTaskEvent = typeof taskEvents.$inferInsert;
+
+
+// ── Skills (user-installed agent skills) ──
+export const skills = mysqlTable("skills", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  skillId: varchar("skillId", { length: 128 }).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 64 }),
+  version: varchar("version", { length: 32 }).default("1.0.0"),
+  config: json("config").$type<Record<string, unknown>>(),
+  enabled: boolean("enabled").default(true),
+  installedAt: timestamp("installedAt").defaultNow().notNull(),
+});
+export type Skill = typeof skills.$inferSelect;
+export type InsertSkill = typeof skills.$inferInsert;
+
+// ── Slide Decks (AI-generated presentations) ──
+export const slideDecks = mysqlTable("slide_decks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 512 }).notNull(),
+  prompt: text("prompt"),
+  template: varchar("template", { length: 64 }).default("blank"),
+  /** JSON array of slide objects: { title, content, notes } */
+  slides: json("slides").$type<Array<{ title: string; content: string; notes?: string }>>(),
+  /** S3 URL if exported */
+  exportUrl: text("exportUrl"),
+  status: mysqlEnum("status", ["generating", "ready", "error"]).default("generating"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type SlideDeck = typeof slideDecks.$inferSelect;
+export type InsertSlideDeck = typeof slideDecks.$inferInsert;
+
+// ── Connectors (third-party integrations) ──
+export const connectors = mysqlTable("connectors", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  connectorId: varchar("connectorId", { length: 128 }).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Encrypted config (API keys, tokens, webhook URLs) */
+  config: json("config").$type<Record<string, string>>(),
+  status: mysqlEnum("status", ["connected", "disconnected", "error"]).default("disconnected"),
+  lastSyncAt: timestamp("lastSyncAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Connector = typeof connectors.$inferSelect;
+export type InsertConnector = typeof connectors.$inferInsert;
+
+// ── Meeting Sessions (transcription + summary) ──
+export const meetingSessions = mysqlTable("meeting_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  taskId: int("taskId"),
+  title: varchar("title", { length: 512 }),
+  /** S3 URL of the audio recording */
+  audioUrl: text("audioUrl"),
+  /** Full transcription text */
+  transcript: text("transcript"),
+  /** LLM-generated summary */
+  summary: text("summary"),
+  /** LLM-generated action items as JSON array */
+  actionItems: json("actionItems").$type<string[]>(),
+  duration: int("duration"),
+  status: mysqlEnum("status", ["recording", "transcribing", "summarizing", "ready", "error"]).default("recording"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type MeetingSession = typeof meetingSessions.$inferSelect;
+export type InsertMeetingSession = typeof meetingSessions.$inferInsert;

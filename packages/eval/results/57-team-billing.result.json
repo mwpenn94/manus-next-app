@@ -2,117 +2,117 @@
   "capability": "Team Billing + Admin",
   "id": 57,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.147,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.18,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating no implementation or a minimal stub. Therefore, there are no correct outputs to evaluate."
         },
         "completeness": {
-          "score": 0.18,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the implementation status is RED, none of the expected features (billing configuration, member addition, role assignment) are present."
         },
         "efficiency": {
-          "score": 0.07,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there is no performance or resource usage to assess."
         },
         "robustness": {
-          "score": 0.24,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status means there's no system to handle edge cases or errors gracefully."
         },
         "user_experience": {
-          "score": 0.06,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user interface or workflow to evaluate for polish or intuitiveness given the RED status."
         },
         "maintainability": {
-          "score": 0.11,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists or it's a minimal stub, so maintainability cannot be assessed."
         },
         "innovation": {
-          "score": 0.14,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the capability is not implemented, there is no opportunity for it to go beyond baseline expectations."
         },
-        "composite": 0.147,
-        "assessment": "[Simulated] Capability \"Team Billing + Admin\" is RED. Composite: 0.147."
+        "composite": 0,
+        "assessment": "The 'Team Billing + Admin' capability is currently not implemented, as indicated by its RED status. Consequently, all quality dimensions score 0.00 due to the absence of any functional features or code to evaluate."
       }
     },
     "B": {
-      "composite": 0.152,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.24,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating no implementation or a minimal stub. Therefore, it cannot produce correct outputs."
         },
         "completeness": {
-          "score": 0.07,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is RED, none of the expected features (billing configuration, member addition, role assignment) are present."
         },
         "efficiency": {
-          "score": 0.21,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no implementation to assess for performance or resource consciousness."
         },
         "robustness": {
-          "score": 0.22,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without an implementation, there are no edge cases or errors to handle gracefully."
         },
         "user_experience": {
-          "score": 0.08,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A non-existent feature provides no user experience."
         },
         "maintainability": {
-          "score": 0.14,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no code to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.09,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity to go beyond baseline expectations."
         },
-        "composite": 0.152,
-        "assessment": "[Simulated] Capability \"Team Billing + Admin\" is RED. Composite: 0.152."
+        "composite": 0,
+        "assessment": "The 'Team Billing + Admin' capability is currently marked as RED, indicating it is not implemented. As such, all quality dimensions score 0.00 due to the absence of any functional implementation."
       }
     },
     "C": {
-      "composite": 0.145,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.11,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the capability is not implemented. Therefore, it cannot produce correct outputs."
         },
         "completeness": {
-          "score": 0.08,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, meaning no features are present for team billing or adding members."
         },
         "efficiency": {
-          "score": 0.16,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented (RED status), there is no functionality to assess for performance or resource usage."
         },
         "robustness": {
-          "score": 0.25,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implementation to handle edge cases or errors gracefully."
         },
         "user_experience": {
-          "score": 0.15,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the capability is not implemented (RED status), there is no user interface or experience to evaluate."
         },
         "maintainability": {
-          "score": 0.08,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status indicates no implementation, thus no code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.18,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented (RED status), it cannot go beyond baseline expectations."
         },
-        "composite": 0.145,
-        "assessment": "[Simulated] Capability \"Team Billing + Admin\" is RED. Composite: 0.145."
+        "composite": 0,
+        "assessment": "The Team Billing + Admin capability is marked as RED, indicating it is not implemented. All quality dimensions therefore receive a score of 0.00."
       }
     }
   },
-  "median_composite": 0.147,
-  "spread": 0.007,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.448Z"
+  "evaluated_at": "2026-04-19T05:05:13.271Z"
 }

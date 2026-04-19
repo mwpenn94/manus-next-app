@@ -2,117 +2,117 @@
   "capability": "Version Rollback",
   "id": 48,
   "status": "YELLOW",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.526,
+      "composite": 0.47,
       "scores": {
         "correctness": {
           "score": 0.5,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
+          "justification": "As the status is YELLOW, it implies partial implementation. Therefore, the rollback mechanism might work for some cases but not all, or might have minor inaccuracies in restoring the exact previous state."
         },
         "completeness": {
-          "score": 0.52,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.45,
+          "justification": "Partial implementation suggests that not all expected features are present. For instance, checkpoints might be listed, but the actual rollback functionality might be incomplete or only work under specific conditions. The 'app reverts to earlier state' might not be fully achieved."
         },
         "efficiency": {
-          "score": 0.62,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "With partial implementation, efficiency is likely average. It might not be fully optimized for performance or resource usage, but it's not completely inefficient either."
         },
         "robustness": {
-          "score": 0.46,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Partial implementation often means that edge cases and error handling are not fully developed. The system might fail or behave unexpectedly when encountering unusual scenarios during a rollback."
         },
         "user_experience": {
-          "score": 0.63,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.55,
+          "justification": "A partially implemented feature can still offer a decent user experience, but with noticeable gaps or rough edges. The interface for listing checkpoints might be present, but the rollback process itself might be clunky or lack clear feedback."
         },
         "maintainability": {
-          "score": 0.52,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "In a partially implemented state, the code might be reasonably structured for the existing parts, but could lack consistency or be less clean in areas that are still under development."
         },
         "innovation": {
-          "score": 0.47,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Partial implementation typically focuses on core functionality. It's unlikely to go beyond baseline expectations at this stage, as the primary goal is to get the basic feature working."
         },
-        "composite": 0.526,
-        "assessment": "[Simulated] Capability \"Version Rollback\" is YELLOW. Composite: 0.526."
+        "composite": 0.47,
+        "assessment": "The Version Rollback capability is partially implemented, indicating that core functionality for restoring previous states may exist but is likely incomplete or inconsistent. Further development is needed to ensure full correctness, robustness, and a polished user experience."
       }
     },
     "B": {
-      "composite": 0.566,
+      "composite": 0.49,
       "scores": {
         "correctness": {
-          "score": 0.65,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "The implementation is 'YELLOW', indicating partial functionality. It likely performs the rollback correctly for some scenarios but may have issues or limitations in others."
         },
         "completeness": {
-          "score": 0.53,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.45,
+          "justification": "The 'YELLOW' status suggests that not all expected features are present. For instance, 'Checkpoints listed' might be missing or incomplete, and the state restoration might not cover all aspects of the application."
         },
         "efficiency": {
-          "score": 0.53,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.6,
+          "justification": "Given the 'YELLOW' status, the core rollback mechanism might be reasonably efficient, but there could be areas for optimization or resource management that are not yet fully addressed."
         },
         "robustness": {
-          "score": 0.56,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Partial implementation ('YELLOW') implies that edge cases and error handling are likely not fully robust. It might fail or behave unexpectedly under certain conditions (e.g., corrupted checkpoints, complex project structures)."
         },
         "user_experience": {
-          "score": 0.45,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.55,
+          "justification": "A 'YELLOW' status suggests the UX is functional but not fully polished or intuitive. There might be missing visual cues, unclear instructions, or a less-than-seamless interaction flow."
         },
         "maintainability": {
-          "score": 0.57,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.6,
+          "justification": "While 'YELLOW' indicates partial implementation, the existing code might be reasonably clean and structured, allowing for future development. However, some areas might require refactoring as features are added."
         },
         "innovation": {
-          "score": 0.63,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "As a partially implemented feature, it likely sticks to baseline expectations for rollback functionality and doesn't yet include advanced or innovative approaches."
         },
-        "composite": 0.566,
-        "assessment": "[Simulated] Capability \"Version Rollback\" is YELLOW. Composite: 0.566."
+        "composite": 0.49,
+        "assessment": "The Version Rollback capability is partially implemented, indicating that core functionality might exist but is likely incomplete or has limitations in correctness, completeness, and robustness. User experience and innovation are also likely to be basic at this stage."
       }
     },
     "C": {
-      "composite": 0.553,
+      "composite": 0.46,
       "scores": {
         "correctness": {
-          "score": 0.56,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "The core functionality of rolling back might work, but given the 'YELLOW' status, it's likely not fully correct in all scenarios or for all types of projects/states."
         },
         "completeness": {
           "score": 0.45,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation is partial. It's probable that not all expected features (e.g., listing checkpoints, full state restoration) are present or fully functional."
         },
         "efficiency": {
-          "score": 0.46,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "Without specific evidence, assume average efficiency for a partially implemented feature. There might be some performance issues or resource inefficiencies due to incomplete optimization."
         },
         "robustness": {
-          "score": 0.51,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "A 'YELLOW' status suggests that edge cases and error handling are likely not fully robust. It might fail for certain project configurations or unexpected user inputs."
         },
         "user_experience": {
-          "score": 0.64,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.45,
+          "justification": "The UX for a partially implemented feature is rarely polished. There might be missing UI elements, unclear feedback, or awkward workflows."
         },
         "maintainability": {
-          "score": 0.62,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.55,
+          "justification": "For a partially implemented feature, the code might be reasonably structured, but could also contain temporary solutions or areas needing refactoring."
         },
         "innovation": {
-          "score": 0.62,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Given it's a partial implementation of a standard feature, it likely doesn't go beyond baseline expectations. Any innovative aspects would be hindered by its incomplete state."
         },
-        "composite": 0.553,
-        "assessment": "[Simulated] Capability \"Version Rollback\" is YELLOW. Composite: 0.553."
+        "composite": 0.46,
+        "assessment": "The Version Rollback capability is partially implemented, suggesting core rollback functionality might exist but is likely incomplete, lacks full robustness, and has a less-than-ideal user experience. Further development is needed to meet all expected behaviors and quality dimensions."
       }
     }
   },
-  "median_composite": 0.553,
-  "spread": 0.04,
+  "median_composite": 0.47,
+  "spread": 0.03,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.447Z"
+  "evaluated_at": "2026-04-19T05:04:16.424Z"
 }

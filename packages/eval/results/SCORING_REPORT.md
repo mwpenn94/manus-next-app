@@ -1,33 +1,33 @@
 # LLM-Judge Scoring Report
 
-**Generated:** 2026-04-19T04:16:09.455Z
-**Scoring method:** simulation
+**Generated:** 2026-04-19T05:06:52.245Z
+**Scoring method:** llm-judge
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
 | Total evaluated | 72 |
-| Passing (≥0.8) | 15 |
-| Failing (<0.8) | 57 |
-| Pass rate | 20.8% |
-| Average composite | 0.375 |
-| High variance flags | 0 |
+| Passing (≥0.8) | 17 |
+| Failing (<0.8) | 55 |
+| Pass rate | 23.6% |
+| Average composite | 0.3 |
+| High variance flags | 2 |
 
 ## By Implementation Status
 
 | Status | Count | Avg Score | Passing |
 |--------|-------|-----------|--------|
-| GREEN | 18 | 0.82 | 15/18 |
-| YELLOW | 12 | 0.547 | 0/12 |
-| RED | 32 | 0.152 | 0/32 |
+| GREEN | 18 | 0.824 | 17/18 |
+| YELLOW | 12 | 0.489 | 0/12 |
+| RED | 32 | 0.012 | 0/32 |
 | N/A | 5 | 0 | 0/5 |
 
 ## Failing Capabilities
 
 | # | Capability | Status | Score |
 |---|-----------|--------|-------|
-| 8 | Task Replay with Timeline Scrubber | GREEN | undefined |
+| 3 | Max Tier Routing | GREEN | undefined |
 | 10 | One-Shot Success Target | YELLOW | undefined |
 | 12 | Manus Skills | RED | undefined |
 | 13 | Open-Standards Agent Skills | RED | undefined |
@@ -71,8 +71,6 @@
 | 56 | Manus Collab | RED | undefined |
 | 57 | Team Billing + Admin | RED | undefined |
 | 58 | Shared Session | RED | undefined |
-| 60 | Voice STT + Hands-Free | GREEN | undefined |
-| 61 | Document Generation | GREEN | undefined |
 | 62 | Veo3 Video Generation | RED | undefined |
 | 63 | FINRA/SEC Compliance | N/A | undefined |
 | 64 | Rule 17a-4 WORM | N/A | undefined |
@@ -87,4 +85,7 @@
 
 ## High Variance Flags
 
-No high variance flags.
+| # | Capability | Spread |
+|---|-----------|--------|
+| orch-2 | Error Recovery | 0.2 |
+| orch-3 | Mode Switching Mid-Task | 0.2 |

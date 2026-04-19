@@ -2,117 +2,117 @@
   "capability": "Microsoft Agent365",
   "id": 53,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.196,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.23,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional integration or correct outputs."
         },
         "completeness": {
-          "score": 0.24,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, meaning none of the expected features (M365 connected, data accessible, auth works) are present."
         },
         "efficiency": {
-          "score": 0.13,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As there is no implementation, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.24,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there are no error handling or edge case scenarios to assess."
         },
         "user_experience": {
-          "score": 0.13,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the integration is not implemented, there is no user experience to evaluate."
         },
         "maintainability": {
-          "score": 0.17,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The RED status implies no code exists for this integration, thus maintainability cannot be scored."
         },
         "innovation": {
-          "score": 0.19,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity for innovation beyond baseline expectations."
         },
-        "composite": 0.196,
-        "assessment": "[Simulated] Capability \"Microsoft Agent365\" is RED. Composite: 0.196."
+        "composite": 0,
+        "assessment": "The Microsoft Agent365 capability is currently in RED status, indicating no implementation. Consequently, all scoring dimensions are at 0.00 as there is no functionality to evaluate."
       }
     },
     "B": {
-      "composite": 0.133,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.15,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional integration with Microsoft 365 services, thus no correct outputs can be produced."
         },
         "completeness": {
-          "score": 0.11,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the status is RED, none of the expected features (M365 connected, Data accessible, Auth works) are present."
         },
         "efficiency": {
-          "score": 0.08,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implementation to evaluate for performance or resource usage."
         },
         "robustness": {
-          "score": 0.07,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means there are no edge cases or errors being handled gracefully."
         },
         "user_experience": {
-          "score": 0.12,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status implies no user-facing functionality, thus no user experience to assess."
         },
         "maintainability": {
-          "score": 0.14,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the implementation is not present or minimal (RED status), there is no code to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.24,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no opportunity to go beyond baseline expectations."
         },
-        "composite": 0.133,
-        "assessment": "[Simulated] Capability \"Microsoft Agent365\" is RED. Composite: 0.133."
+        "composite": 0,
+        "assessment": "The Microsoft Agent365 capability is currently in RED status, indicating no functional implementation. Therefore, all quality dimensions are scored at 0.00 as there is no evidence of integration or functionality."
       }
     },
     "C": {
-      "composite": 0.138,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.13,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional integration with Microsoft 365 services, thus no correct outputs can be produced."
         },
         "completeness": {
-          "score": 0.22,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the implementation is RED, none of the expected features (M365 connected, Data accessible, Auth works) are present."
         },
         "efficiency": {
-          "score": 0.13,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implemented functionality to assess for performance or resource consumption."
         },
         "robustness": {
-          "score": 0.06,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no implementation to test for graceful handling of edge cases or errors related to Microsoft 365 integration."
         },
         "user_experience": {
-          "score": 0.22,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status means there is no user-facing integration to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.07,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented (RED status), there is no code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.11,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Given the RED status, the implementation does not exist, and therefore cannot go beyond baseline expectations."
         },
-        "composite": 0.138,
-        "assessment": "[Simulated] Capability \"Microsoft Agent365\" is RED. Composite: 0.138."
+        "composite": 0,
+        "assessment": "The Microsoft Agent365 capability is currently in a RED status, indicating it is not implemented. Consequently, all scoring dimensions are at 0.00 as there is no functionality to evaluate."
       }
     }
   },
-  "median_composite": 0.138,
-  "spread": 0.063,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.448Z"
+  "evaluated_at": "2026-04-19T05:04:47.591Z"
 }

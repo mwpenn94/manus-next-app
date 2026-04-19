@@ -2,41 +2,41 @@
   "capability": "Rule 17a-4 WORM",
   "id": 64,
   "status": "N/A",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
       "composite": 0,
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for user experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for innovation."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Rule 17a-4 WORM\" is N/A. Composite: 0.000."
+        "assessment": "This capability is marked as N/A, indicating it is out of scope for evaluation. Consequently, all scores are 0.00 as there is no implementation to assess."
       }
     },
     "B": {
@@ -44,34 +44,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for user experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for innovation."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Rule 17a-4 WORM\" is N/A. Composite: 0.000."
+        "assessment": "The capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions receive a score of 0.00."
       }
     },
     "C": {
@@ -79,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of correctness can be made."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of completeness can be made."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of efficiency can be made."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of robustness can be made."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of user experience can be made."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of maintainability can be made."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of innovation can be made."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Rule 17a-4 WORM\" is N/A. Composite: 0.000."
+        "assessment": "The capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all scores are 0.00 as per the scoring guidelines for N/A status."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.449Z"
+  "evaluated_at": "2026-04-19T05:06:02.197Z"
 }

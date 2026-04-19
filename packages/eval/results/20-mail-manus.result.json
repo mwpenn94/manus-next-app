@@ -2,117 +2,117 @@
   "capability": "Mail Manus",
   "id": 20,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.161,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.24,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating it is not implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.11,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, meaning the core features for sending emails are not present."
         },
         "efficiency": {
-          "score": 0.19,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.13,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implementation to handle edge cases or errors gracefully."
         },
         "user_experience": {
-          "score": 0.07,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there is no user experience to assess."
         },
         "maintainability": {
-          "score": 0.17,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Given the RED status, there is no code to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.2,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, it cannot go beyond baseline expectations."
         },
-        "composite": 0.161,
-        "assessment": "[Simulated] Capability \"Mail Manus\" is RED. Composite: 0.161."
+        "composite": 0,
+        "assessment": "The 'Mail Manus' capability is marked as RED, indicating it is not implemented. All dimensions score 0.00 as there is no functionality to evaluate against the expected behavior."
       }
     },
     "B": {
-      "composite": 0.137,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.06,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating it is not implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.18,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, meaning the feature is not present at all."
         },
         "efficiency": {
-          "score": 0.11,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.09,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, there are no error handling mechanisms to assess."
         },
         "user_experience": {
-          "score": 0.16,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there is no user experience to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.18,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists for this feature, so maintainability cannot be assessed."
         },
         "innovation": {
-          "score": 0.21,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The feature is not implemented, therefore no innovation beyond baseline expectations can be demonstrated."
         },
-        "composite": 0.137,
-        "assessment": "[Simulated] Capability \"Mail Manus\" is RED. Composite: 0.137."
+        "composite": 0,
+        "assessment": "The Mail Manus capability is currently in RED status, indicating it is not implemented. Consequently, all quality dimensions score 0.00 as there is no functionality to evaluate."
       }
     },
     "C": {
-      "composite": 0.147,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.15,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, indicating it is not implemented. Therefore, no correct output can be produced."
         },
         "completeness": {
-          "score": 0.2,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, meaning the feature is not present at all."
         },
         "efficiency": {
-          "score": 0.08,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the capability is not implemented, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.22,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, implying no implementation to handle edge cases or errors."
         },
         "user_experience": {
-          "score": 0.08,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there is no user experience to assess for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.14,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the capability is not implemented, there is no code to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.13,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The capability is marked as RED, meaning there is no implementation to demonstrate any innovation beyond baseline expectations."
         },
-        "composite": 0.147,
-        "assessment": "[Simulated] Capability \"Mail Manus\" is RED. Composite: 0.147."
+        "composite": 0,
+        "assessment": "The Mail Manus capability is not implemented, as indicated by its RED status. Consequently, all quality dimensions receive a score of 0.00."
       }
     }
   },
-  "median_composite": 0.147,
-  "spread": 0.024,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.442Z"
+  "evaluated_at": "2026-04-19T05:00:54.870Z"
 }

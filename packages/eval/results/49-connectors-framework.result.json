@@ -2,117 +2,117 @@
   "capability": "Connectors Framework",
   "id": 49,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.178,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.24,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional connector setup to a SaaS service. Therefore, no correct outputs can be produced."
         },
         "completeness": {
-          "score": 0.25,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the status is RED, none of the expected features (connector configuration, authentication, data syncing) are present."
         },
         "efficiency": {
-          "score": 0.23,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there's no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.23,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The absence of an implementation means there are no error handling or edge case considerations to assess."
         },
         "user_experience": {
-          "score": 0.06,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user-facing component or functionality to evaluate for user experience."
         },
         "maintainability": {
-          "score": 0.09,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the implementation is RED, there is no code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.11,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity to demonstrate innovation beyond baseline expectations."
         },
-        "composite": 0.178,
-        "assessment": "[Simulated] Capability \"Connectors Framework\" is RED. Composite: 0.178."
+        "composite": 0,
+        "assessment": "The 'Connectors Framework' capability is currently not implemented, as indicated by the RED status. There is no functional ability to set up a connector to a SaaS service, authenticate, or sync data, resulting in a score of 0.00 across all dimensions."
       }
     },
     "B": {
-      "composite": 0.157,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.17,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the core functionality of setting up a connector and data flow is not present or is minimal, thus no correct outputs can be observed."
         },
         "completeness": {
-          "score": 0.23,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the implementation is RED, none of the expected features (connector configuration, authentication, data syncing) are present."
         },
         "efficiency": {
-          "score": 0.18,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implemented functionality to assess for performance or resource consumption."
         },
         "robustness": {
-          "score": 0.14,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there are no edge cases or errors to handle gracefully."
         },
         "user_experience": {
-          "score": 0.13,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status implies no user-facing interface or functionality exists to evaluate for polish or intuitiveness."
         },
         "maintainability": {
-          "score": 0.1,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Given the RED status, there is no significant code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.13,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the core functionality is not implemented, there is no opportunity to go beyond baseline expectations."
         },
-        "composite": 0.157,
-        "assessment": "[Simulated] Capability \"Connectors Framework\" is RED. Composite: 0.157."
+        "composite": 0,
+        "assessment": "The 'Connectors Framework' capability is currently not implemented, as indicated by its RED status. Consequently, all quality dimensions receive a score of 0.00 due to the absence of any functional implementation to evaluate."
       }
     },
     "C": {
-      "composite": 0.166,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.15,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating no functional implementation to produce correct outputs."
         },
         "completeness": {
-          "score": 0.19,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, meaning none of the expected features (connector configuration, authentication, data sync) are present."
         },
         "efficiency": {
-          "score": 0.21,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As there is no implementation, there's no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.08,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With no implementation, there are no edge cases or errors being handled."
         },
         "user_experience": {
-          "score": 0.19,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "There is no user-facing component to evaluate for UX."
         },
         "maintainability": {
-          "score": 0.11,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No code exists to be evaluated for maintainability."
         },
         "innovation": {
-          "score": 0.23,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "No implementation means no opportunity to go beyond baseline expectations."
         },
-        "composite": 0.166,
-        "assessment": "[Simulated] Capability \"Connectors Framework\" is RED. Composite: 0.166."
+        "composite": 0,
+        "assessment": "The 'Connectors Framework' capability is currently in a RED status, indicating no functional implementation. As such, all quality dimensions score 0.00, reflecting a complete absence of the expected features and behaviors."
       }
     }
   },
-  "median_composite": 0.166,
-  "spread": 0.021,
+  "median_composite": 0,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.447Z"
+  "evaluated_at": "2026-04-19T05:04:22.519Z"
 }

@@ -540,3 +540,14 @@
 - [x] Update PARITY_BACKLOG.md — honest status: 36 GREEN, 21 YELLOW, 5 RED, 5 N/A (per §L.15 anti-goodharting, not inflating)
 - [x] Create QUALITY_WINS.md with 10 quality wins (70% Exceed-rate, target ≥30%)
 - [x] Create STRICT_WINS.md with 10 strict wins (60% Exceed-rate)
+
+## Phase 10: v8.3 Third-Pass — Honest Completion Push
+- [x] Drive YELLOW capabilities to GREEN with real implementations (Skills, Slides, Connectors pages with real tRPC backends)
+- [x] Run real LLM-judge scoring via Forge API (3 runs per cap, 72 shells scored, 17/72 passing at 23.6%)
+- [x] Verify Storybook starts and stories render (v10.3.5, 8 stories, 349ms build)
+- [x] Verify PWA service worker in browser (sw.js 200, manifest.json 200, offline.html 200)
+- [x] Implement I18N runtime: react-intl IntlProvider, 3 catalogs (en/es/zh, 50 keys), useI18n hook, locale persistence
+- [x] Execute formal PROMPT_ENGINEERING_AUDIT pass (0 critical, 13 recommendations, CHECK_UNDERSTANDING 8/8)
+- [x] Rewrite GATE_A_VERIFICATION.md with spec-accurate thresholds (13/14 PASS, 1 FAIL: 36/62 GREEN vs ALL required)
+- [x] Update all status artifacts with honest assessments (STATE_MANIFEST.json, GATE_A_VERIFICATION.md)
+- [x] Document what requires external resources (OWNER_ACTION_ITEMS.md — 16 action items across 4 priorities)

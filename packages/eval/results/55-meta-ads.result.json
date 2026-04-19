@@ -2,41 +2,41 @@
   "capability": "Meta Ads Manager",
   "id": 55,
   "status": "N/A",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
       "composite": 0,
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus correctness cannot be assessed."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus completeness cannot be assessed."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus efficiency cannot be assessed."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus robustness cannot be assessed."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus user experience cannot be assessed."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus maintainability cannot be assessed."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The capability is out of scope and not implemented, thus innovation cannot be assessed."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Meta Ads Manager\" is N/A. Composite: 0.000."
+        "assessment": "This capability is marked as 'N/A' (Out of scope), therefore all quality dimensions are scored 0.00 as per the scoring guidelines. There is no implementation to evaluate."
       }
     },
     "B": {
@@ -44,34 +44,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Meta Ads Manager\" is N/A. Composite: 0.000."
+        "assessment": "The Meta Ads Manager capability is marked as N/A, meaning it is out of scope for this evaluation. All scores are set to 0.00 accordingly."
       }
     },
     "C": {
@@ -79,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "N/A status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of correctness can be made."
         },
         "completeness": {
           "score": 0,
-          "justification": "N/A status: completeness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of completeness can be made."
         },
         "efficiency": {
           "score": 0,
-          "justification": "N/A status: efficiency scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of efficiency can be made."
         },
         "robustness": {
           "score": 0,
-          "justification": "N/A status: robustness scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of robustness can be made."
         },
         "user_experience": {
           "score": 0,
-          "justification": "N/A status: user_experience scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of user experience can be made."
         },
         "maintainability": {
           "score": 0,
-          "justification": "N/A status: maintainability scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of maintainability can be made."
         },
         "innovation": {
           "score": 0,
-          "justification": "N/A status: innovation scored based on implementation evidence (simulation)."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of innovation can be made."
         },
         "composite": 0,
-        "assessment": "[Simulated] Capability \"Meta Ads Manager\" is N/A. Composite: 0.000."
+        "assessment": "The Meta Ads Manager capability is currently out of scope, resulting in a score of 0.00 across all quality dimensions. No implementation details are available for evaluation."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.448Z"
+  "evaluated_at": "2026-04-19T05:04:59.671Z"
 }

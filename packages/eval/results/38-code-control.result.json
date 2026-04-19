@@ -2,117 +2,117 @@
   "capability": "Code Control",
   "id": 38,
   "status": "YELLOW",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.566,
-      "scores": {
-        "correctness": {
-          "score": 0.6,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
-        },
-        "completeness": {
-          "score": 0.54,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
-        },
-        "efficiency": {
-          "score": 0.64,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
-        },
-        "robustness": {
-          "score": 0.46,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
-        },
-        "user_experience": {
-          "score": 0.5,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
-        },
-        "maintainability": {
-          "score": 0.62,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
-        },
-        "innovation": {
-          "score": 0.63,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
-        },
-        "composite": 0.566,
-        "assessment": "[Simulated] Capability \"Code Control\" is YELLOW. Composite: 0.566."
-      }
-    },
-    "B": {
-      "composite": 0.567,
+      "composite": 0.478,
       "scores": {
         "correctness": {
           "score": 0.55,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
+          "justification": "The core functionality of exporting a ZIP file is partially implemented, meaning it might trigger an export or generate a partial ZIP, but not reliably or completely."
         },
         "completeness": {
-          "score": 0.64,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.45,
+          "justification": "The feature is partially implemented. It might trigger an export, but the ZIP generation or the download mechanism might be missing or incomplete."
         },
         "efficiency": {
-          "score": 0.51,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "Given it's partially implemented, there's no strong evidence of it being highly efficient, but also no clear indication of significant performance issues yet. It's likely in a development state."
         },
         "robustness": {
-          "score": 0.6,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Partial implementation suggests that edge cases (e.g., large codebases, empty projects, network issues during download) are likely not fully handled or tested."
         },
         "user_experience": {
-          "score": 0.59,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "A partial implementation implies that the UX for triggering the export and confirming the download might be present but not polished or fully intuitive."
         },
         "maintainability": {
-          "score": 0.52,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.55,
+          "justification": "As a partial implementation, the code structure might be reasonable for the existing parts, but it's hard to judge overall maintainability without the full picture. It's likely in an evolving state."
         },
         "innovation": {
-          "score": 0.53,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "Exporting a codebase as a ZIP is a standard feature. A partial implementation doesn't offer any innovative aspects beyond the basic expectation."
         },
-        "composite": 0.567,
-        "assessment": "[Simulated] Capability \"Code Control\" is YELLOW. Composite: 0.567."
+        "composite": 0.478,
+        "assessment": "The implementation is in a 'YELLOW' state, indicating partial functionality. While it might initiate an export, the full process of generating a complete, downloadable ZIP is not yet robust or complete."
+      }
+    },
+    "B": {
+      "composite": 0.473,
+      "scores": {
+        "correctness": {
+          "score": 0.55,
+          "justification": "The core functionality of exporting a ZIP file is partially implemented, but there might be issues with the completeness or integrity of the exported content, or the download mechanism itself."
+        },
+        "completeness": {
+          "score": 0.45,
+          "justification": "The feature is partially implemented, meaning some aspects of the 'full codebase' might be missing from the ZIP, or the download process might not be fully integrated or reliable."
+        },
+        "efficiency": {
+          "score": 0.5,
+          "justification": "Performance for ZIP generation and download is likely moderate, but not fully optimized, given the 'YELLOW' status. Large codebases might experience delays."
+        },
+        "robustness": {
+          "score": 0.4,
+          "justification": "Error handling for network issues during download, very large codebases, or corrupted files during ZIP generation is likely present but not comprehensive or fully robust."
+        },
+        "user_experience": {
+          "score": 0.5,
+          "justification": "The UX for triggering the export and initiating the download probably exists, but might lack polish, clear feedback, or smooth integration within the overall interface."
+        },
+        "maintainability": {
+          "score": 0.5,
+          "justification": "Code for this feature is likely functional but might not adhere to all best practices for clean code, modularity, or testability, reflecting a partial implementation."
+        },
+        "innovation": {
+          "score": 0.4,
+          "justification": "Exporting a ZIP is a standard feature. There's no evidence of innovative approaches like selective export, advanced filtering, or integration with external version control systems beyond basic functionality."
+        },
+        "composite": 0.473,
+        "assessment": "The capability to export the codebase as a downloadable ZIP file is partially implemented. While the basic mechanism for export and download likely exists, there are probable gaps in completeness, robustness, and user experience, indicating it's not yet fully production-ready."
       }
     },
     "C": {
-      "composite": 0.548,
+      "composite": 0.505,
       "scores": {
         "correctness": {
-          "score": 0.5,
-          "justification": "YELLOW status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.6,
+          "justification": "The core functionality of exporting and downloading a ZIP file is likely present and functional, but there might be minor issues or limitations not fully addressed."
         },
         "completeness": {
-          "score": 0.46,
-          "justification": "YELLOW status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "The essential features (export, ZIP generation, download) are present, but advanced options like selective export, progress indicators, or background processing might be missing."
         },
         "efficiency": {
-          "score": 0.58,
-          "justification": "YELLOW status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "The export process might be reasonably efficient for small to medium codebases, but could become slow or resource-intensive for very large projects, indicating room for optimization."
         },
         "robustness": {
-          "score": 0.61,
-          "justification": "YELLOW status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.45,
+          "justification": "Basic error handling for common scenarios (e.g., file not found, permission issues) is probably in place, but edge cases like extremely large files, network interruptions during download, or corrupted source files might not be handled gracefully."
         },
         "user_experience": {
-          "score": 0.59,
-          "justification": "YELLOW status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.55,
+          "justification": "The user interface for triggering the export and downloading the file is likely functional and straightforward, but could lack polish, clear feedback (e.g., progress bars), or customization options."
         },
         "maintainability": {
-          "score": 0.63,
-          "justification": "YELLOW status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.5,
+          "justification": "The code for this feature is probably structured adequately for its current state, but might require refactoring or clearer documentation as more features are added or edge cases are addressed."
         },
         "innovation": {
-          "score": 0.52,
-          "justification": "YELLOW status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.4,
+          "justification": "The implementation provides the expected baseline functionality without introducing novel approaches or significantly enhancing the user's workflow beyond a standard export."
         },
-        "composite": 0.548,
-        "assessment": "[Simulated] Capability \"Code Control\" is YELLOW. Composite: 0.548."
+        "composite": 0.505,
+        "assessment": "The implementation provides the core functionality of exporting the codebase as a downloadable ZIP, indicating a partial but functional solution. There are clear opportunities for improvement in terms of completeness, robustness, and user experience, especially for larger codebases or more complex scenarios."
       }
     }
   },
-  "median_composite": 0.566,
-  "spread": 0.019,
+  "median_composite": 0.478,
+  "spread": 0.032,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.445Z"
+  "evaluated_at": "2026-04-19T05:03:04.438Z"
 }

@@ -1,9 +1,12 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: ["../client/src/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-essentials"],
+  addons: [],
   framework: {
     name: "@storybook/react-vite",
     options: {},

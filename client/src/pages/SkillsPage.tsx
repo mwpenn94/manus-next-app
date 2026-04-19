@@ -1,25 +1,27 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Puzzle, Search, Star, Download, ExternalLink } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Puzzle, Search, Star, Download, Trash2, Loader2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
-const SKILLS = [
-  { id: "web-search", name: "Web Search", description: "Search the web for real-time information", category: "Research", installed: true, rating: 4.8 },
-  { id: "wide-research", name: "Wide Research", description: "Parallel multi-source research synthesis", category: "Research", installed: true, rating: 4.9 },
-  { id: "code-execution", name: "Code Execution", description: "Execute Python and JavaScript code", category: "Development", installed: true, rating: 4.7 },
-  { id: "image-generation", name: "Image Generation", description: "Generate images from text descriptions", category: "Creative", installed: true, rating: 4.6 },
-  { id: "document-generation", name: "Document Generation", description: "Create formatted documents (PDF, DOCX)", category: "Productivity", installed: true, rating: 4.5 },
-  { id: "data-analysis", name: "Data Analysis", description: "Analyze datasets with visualizations", category: "Analytics", installed: true, rating: 4.7 },
-  { id: "memory-search", name: "Memory Search", description: "Search cross-session memory entries", category: "Core", installed: true, rating: 4.4 },
-  { id: "image-analysis", name: "Image Analysis", description: "Analyze and describe uploaded images", category: "Creative", installed: true, rating: 4.5 },
-  { id: "slide-generation", name: "Slide Generation", description: "Create presentation decks", category: "Productivity", installed: false, rating: 4.3 },
-  { id: "email-drafting", name: "Email Drafting", description: "Draft and send emails", category: "Communication", installed: false, rating: 4.2 },
-  { id: "meeting-notes", name: "Meeting Notes", description: "Transcribe and summarize meetings", category: "Communication", installed: false, rating: 4.4 },
-  { id: "figma-import", name: "Figma Import", description: "Import designs from Figma", category: "Design", installed: false, rating: 4.1 },
+const AVAILABLE_SKILLS = [
+  { id: "web-search", name: "Web Search", description: "Search the web for real-time information using DuckDuckGo and Wikipedia", category: "Research", rating: 4.8 },
+  { id: "wide-research", name: "Wide Research", description: "Parallel multi-source research synthesis with LLM aggregation", category: "Research", rating: 4.9 },
+  { id: "code-execution", name: "Code Execution", description: "Execute JavaScript code in a sandboxed environment", category: "Development", rating: 4.7 },
+  { id: "image-generation", name: "Image Generation", description: "Generate images from text descriptions via AI", category: "Creative", rating: 4.6 },
+  { id: "document-generation", name: "Document Generation", description: "Create formatted documents (markdown, reports, plans)", category: "Productivity", rating: 4.5 },
+  { id: "data-analysis", name: "Data Analysis", description: "Analyze datasets with structured insights and visualizations", category: "Analytics", rating: 4.7 },
+  { id: "memory-search", name: "Memory Search", description: "Search cross-session memory entries for context", category: "Core", rating: 4.4 },
+  { id: "image-analysis", name: "Image Analysis", description: "Analyze and describe uploaded images using vision AI", category: "Creative", rating: 4.5 },
+  { id: "slide-generation", name: "Slide Generation", description: "Create AI-generated presentation decks", category: "Productivity", rating: 4.3 },
+  { id: "email-drafting", name: "Email Drafting", description: "Draft professional emails with AI assistance", category: "Communication", rating: 4.2 },
+  { id: "meeting-notes", name: "Meeting Notes", description: "Transcribe and summarize meeting recordings", category: "Communication", rating: 4.4 },
+  { id: "browse-web", name: "Web Browsing", description: "Browse and extract structured data from web pages", category: "Research", rating: 4.3 },
 ];
 
 export default function SkillsPage() {
@@ -27,12 +29,54 @@ export default function SkillsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const categories = useMemo(() => ["all", ...Array.from(new Set(SKILLS.map(s => s.category)))], []);
-  const filtered = useMemo(() => SKILLS.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || s.category === filter;
-    return matchesSearch && matchesFilter;
-  }), [search, filter]);
+  const { data: installedSkills = [], isLoading } = trpc.skill.list.useQuery(undefined, { enabled: !!user });
+  const utils = trpc.useUtils();
+
+  const installMutation = trpc.skill.install.useMutation({
+    onSuccess: () => {
+      utils.skill.list.invalidate();
+      toast.success("Skill installed successfully");
+    },
+    onError: (err) => toast.error(`Failed to install: ${err.message}`),
+  });
+
+  const uninstallMutation = trpc.skill.uninstall.useMutation({
+    onSuccess: () => {
+      utils.skill.list.invalidate();
+      toast.success("Skill uninstalled");
+    },
+    onError: (err) => toast.error(`Failed to uninstall: ${err.message}`),
+  });
+
+  const toggleMutation = trpc.skill.toggle.useMutation({
+    onSuccess: () => utils.skill.list.invalidate(),
+    onError: (err) => toast.error(`Failed to toggle: ${err.message}`),
+  });
+
+  const installedIds = useMemo(() => new Set(installedSkills.map((s) => s.skillId)), [installedSkills]);
+  const categories = useMemo(() => ["all", ...Array.from(new Set(AVAILABLE_SKILLS.map((s) => s.category)))], []);
+
+  const filtered = useMemo(
+    () =>
+      AVAILABLE_SKILLS.filter((s) => {
+        const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase());
+        const matchesFilter = filter === "all" || s.category === filter;
+        return matchesSearch && matchesFilter;
+      }),
+    [search, filter]
+  );
+
+  const handleInstall = (skill: (typeof AVAILABLE_SKILLS)[0]) => {
+    installMutation.mutate({ skillId: skill.id, name: skill.name, description: skill.description, category: skill.category });
+  };
+
+  const handleUninstall = (skillId: string) => {
+    uninstallMutation.mutate({ skillId });
+  };
+
+  const handleToggle = (skillId: string, enabled: boolean) => {
+    toggleMutation.mutate({ skillId, enabled });
+  };
 
   return (
     <div className="h-full overflow-y-auto p-6">
@@ -40,50 +84,70 @@ export default function SkillsPage() {
         <div className="flex items-center gap-3 mb-6">
           <Puzzle className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-semibold text-foreground">Skills Library</h1>
+          <Badge variant="secondary" className="ml-auto">{installedSkills.length} installed</Badge>
         </div>
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search skills..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Search skills..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <div className="flex gap-1.5">
-            {categories.map(cat => (
+          <div className="flex gap-1.5 flex-wrap">
+            {categories.map((cat) => (
               <Button key={cat} variant={filter === cat ? "default" : "outline"} size="sm" onClick={() => setFilter(cat)} className="capitalize">
                 {cat}
               </Button>
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map(skill => (
-            <Card key={skill.id} className="hover:border-primary/30 transition-colors">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{skill.name}</CardTitle>
-                  <Badge variant={skill.installed ? "default" : "outline"}>
-                    {skill.installed ? "Installed" : "Available"}
-                  </Badge>
-                </div>
-                <CardDescription>{skill.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-                    {skill.rating}
-                    <span className="mx-1">·</span>
-                    <Badge variant="secondary" className="text-xs">{skill.category}</Badge>
-                  </div>
-                  {!skill.installed && (
-                    <Button size="sm" variant="outline" onClick={() => toast.info("Skill installation coming soon")}>
-                      <Download className="w-3.5 h-3.5 mr-1" /> Install
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.map((skill) => {
+              const installed = installedIds.has(skill.id);
+              const installedRecord = installedSkills.find((s) => s.skillId === skill.id);
+              return (
+                <Card key={skill.id} className={`hover:border-primary/30 transition-colors ${installed ? "border-primary/20 bg-primary/5" : ""}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">{skill.name}</CardTitle>
+                      <Badge variant={installed ? "default" : "outline"}>{installed ? "Installed" : "Available"}</Badge>
+                    </div>
+                    <CardDescription>{skill.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
+                        {skill.rating}
+                        <span className="mx-1">&middot;</span>
+                        <Badge variant="secondary" className="text-xs">{skill.category}</Badge>
+                      </div>
+                      {installed ? (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={installedRecord?.enabled ?? true}
+                            onCheckedChange={(checked) => handleToggle(skill.id, checked)}
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => handleUninstall(skill.id)}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleInstall(skill)} disabled={installMutation.isPending}>
+                          {installMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Download className="w-3.5 h-3.5 mr-1" />}
+                          Install
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

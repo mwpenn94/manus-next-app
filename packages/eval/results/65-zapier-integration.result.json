@@ -2,117 +2,117 @@
   "capability": "Zapier Integration",
   "id": 65,
   "status": "RED",
-  "scoring_method": "simulation",
+  "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.172,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.17,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the feature is not implemented, therefore it cannot produce correct outputs."
         },
         "completeness": {
-          "score": 0.24,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, meaning the feature is not present at all, thus none of the expected features are available."
         },
         "efficiency": {
-          "score": 0.17,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the feature is not implemented (RED status), there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.25,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "With a RED status, there is no implementation to handle edge cases or errors gracefully."
         },
         "user_experience": {
-          "score": 0.21,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The feature is not implemented (RED status), so there is no user experience to assess."
         },
         "maintainability": {
-          "score": 0.05,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Given the RED status, there is no code to evaluate for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.07,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented (RED status), there is no innovation beyond baseline expectations to consider."
         },
-        "composite": 0.172,
-        "assessment": "[Simulated] Capability \"Zapier Integration\" is RED. Composite: 0.172."
+        "composite": 0,
+        "assessment": "The Zapier integration for triggering on task completion is not implemented, resulting in a score of 0.00 across all quality dimensions. There is no evidence of any functionality or code related to this capability."
       }
     },
     "B": {
-      "composite": 0.17,
+      "composite": 0.1,
       "scores": {
         "correctness": {
-          "score": 0.17,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "The implementation status is RED, indicating it is not implemented or is a minimal stub. Therefore, it does not produce correct outputs for the given task."
         },
         "completeness": {
-          "score": 0.19,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "As the status is RED, the expected features such as webhook configuration and trigger firing are not present."
         },
         "efficiency": {
-          "score": 0.13,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "With a RED status, there is no implemented functionality to assess for performance or resource usage."
         },
         "robustness": {
-          "score": 0.15,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "A RED status implies no implementation, thus no handling of edge cases or errors can be evaluated."
         },
         "user_experience": {
-          "score": 0.15,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Since the feature is not implemented (RED status), there is no user experience to evaluate."
         },
         "maintainability": {
-          "score": 0.12,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "Given the RED status, there is no significant code to assess for cleanliness or structure."
         },
         "innovation": {
-          "score": 0.25,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0.1,
+          "justification": "As the capability is not implemented, it does not go beyond baseline expectations."
         },
-        "composite": 0.17,
-        "assessment": "[Simulated] Capability \"Zapier Integration\" is RED. Composite: 0.170."
+        "composite": 0.1,
+        "assessment": "The Zapier integration for task completion is currently not implemented, resulting in a minimal score across all dimensions. There is no functionality to evaluate against the expected behavior or scoring criteria."
       }
     },
     "C": {
-      "composite": 0.159,
+      "composite": 0,
       "scores": {
         "correctness": {
-          "score": 0.18,
-          "justification": "RED status: correctness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "The implementation status is RED, indicating that the core functionality of creating a Zapier automation that triggers on task completion is not present. Therefore, it cannot produce correct outputs."
         },
         "completeness": {
-          "score": 0.14,
-          "justification": "RED status: completeness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the status is RED, none of the expected features, such as a configured Zapier webhook or a firing trigger, are present."
         },
         "efficiency": {
-          "score": 0.12,
-          "justification": "RED status: efficiency scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Without any implementation, there is no performance or resource usage to evaluate."
         },
         "robustness": {
-          "score": 0.17,
-          "justification": "RED status: robustness scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Since the feature is not implemented, there are no edge cases or error handling mechanisms to assess."
         },
         "user_experience": {
-          "score": 0.23,
-          "justification": "RED status: user_experience scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "A RED status implies that the feature is not available, thus there is no user experience to evaluate."
         },
         "maintainability": {
-          "score": 0.09,
-          "justification": "RED status: maintainability scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "Given the RED status, there is no code or structure to assess for maintainability."
         },
         "innovation": {
-          "score": 0.14,
-          "justification": "RED status: innovation scored based on implementation evidence (simulation)."
+          "score": 0,
+          "justification": "As the basic functionality is not implemented, there is no opportunity for the implementation to go beyond baseline expectations."
         },
-        "composite": 0.159,
-        "assessment": "[Simulated] Capability \"Zapier Integration\" is RED. Composite: 0.159."
+        "composite": 0,
+        "assessment": "The Zapier integration for task completion triggers is not implemented, resulting in a RED status across all quality dimensions. No functionality or code is present for evaluation."
       }
     }
   },
-  "median_composite": 0.17,
-  "spread": 0.013,
+  "median_composite": 0,
+  "spread": 0.1,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T04:16:09.450Z"
+  "evaluated_at": "2026-04-19T05:06:08.147Z"
 }

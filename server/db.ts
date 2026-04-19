@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -554,4 +554,120 @@ export async function deleteProjectKnowledge(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(projectKnowledge).where(eq(projectKnowledge.id, id));
+}
+
+
+// ── Skills helpers ──
+
+export async function getUserSkills(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(skills).where(eq(skills.userId, userId)).orderBy(desc(skills.installedAt));
+}
+
+export async function installSkill(skill: InsertSkill) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(skills).values(skill);
+}
+
+export async function uninstallSkill(userId: number, skillId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(skills).where(and(eq(skills.userId, userId), eq(skills.skillId, skillId)));
+}
+
+export async function toggleSkill(userId: number, skillId: string, enabled: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(skills).set({ enabled }).where(and(eq(skills.userId, userId), eq(skills.skillId, skillId)));
+}
+
+// ── Slide Decks helpers ──
+
+export async function getUserSlideDecks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(slideDecks).where(eq(slideDecks.userId, userId)).orderBy(desc(slideDecks.createdAt));
+}
+
+export async function createSlideDeck(deck: InsertSlideDeck) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(slideDecks).values(deck).$returningId();
+  return result.id;
+}
+
+export async function updateSlideDeck(id: number, updates: Partial<InsertSlideDeck>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(slideDecks).set({ ...updates, updatedAt: new Date() }).where(eq(slideDecks.id, id));
+}
+
+export async function getSlideDeck(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(slideDecks).where(eq(slideDecks.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+// ── Connectors helpers ──
+
+export async function getUserConnectors(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(connectors).where(eq(connectors.userId, userId)).orderBy(desc(connectors.createdAt));
+}
+
+export async function upsertConnector(connector: InsertConnector) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check if exists
+  const existing = await db.select().from(connectors)
+    .where(and(eq(connectors.userId, connector.userId), eq(connectors.connectorId, connector.connectorId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(connectors)
+      .set({ config: connector.config, status: connector.status ?? "connected", lastSyncAt: new Date() })
+      .where(eq(connectors.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(connectors).values(connector).$returningId();
+  return result.id;
+}
+
+export async function disconnectConnector(userId: number, connectorId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(connectors)
+    .set({ status: "disconnected", config: {} })
+    .where(and(eq(connectors.userId, userId), eq(connectors.connectorId, connectorId)));
+}
+
+// ── Meeting Sessions helpers ──
+
+export async function getUserMeetingSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(meetingSessions).where(eq(meetingSessions.userId, userId)).orderBy(desc(meetingSessions.createdAt));
+}
+
+export async function createMeetingSession(session: InsertMeetingSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(meetingSessions).values(session).$returningId();
+  return result.id;
+}
+
+export async function updateMeetingSession(id: number, updates: Partial<InsertMeetingSession>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(meetingSessions).set(updates).where(eq(meetingSessions.id, id));
+}
+
+export async function getMeetingSession(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(meetingSessions).where(eq(meetingSessions.id, id)).limit(1);
+  return rows[0] ?? null;
 }
