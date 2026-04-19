@@ -90,6 +90,30 @@ import {
   getUserDesigns,
   getDesign,
   deleteDesign,
+  createConnectedDevice,
+  getUserDevices,
+  getDeviceByExternalId,
+  getDeviceByPairingCode,
+  updateDeviceStatus,
+  completeDevicePairing,
+  updateDeviceConnection,
+  deleteConnectedDevice,
+  createDeviceSession,
+  getActiveDeviceSession,
+  getUserDeviceSessions,
+  updateDeviceSession,
+  endDeviceSession,
+  createMobileProject,
+  getUserMobileProjects,
+  getMobileProjectByExternalId,
+  updateMobileProject,
+  deleteMobileProject,
+  createAppBuild,
+  getProjectBuilds,
+  getUserBuilds,
+  getBuildByExternalId,
+  updateBuildStatus,
+  updateBuildStoreMetadata,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -1193,6 +1217,504 @@ export const appRouter = router({
         const { url } = await storagePut(key, Buffer.from(JSON.stringify(design.canvasState), "utf-8"), "application/json");
         await updateDesign(input.id, { exportUrl: url });
         return { url };
+      }),
+  }),
+
+  // ── Connected Devices (#47 — My Computer / BYOD) ─────────────────────
+  device: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserDevices(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const device = await getDeviceByExternalId(input.externalId);
+        if (!device || device.userId !== ctx.user.id) return null;
+        return device;
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(256),
+        deviceType: z.enum(["desktop", "android", "ios", "browser_only"]),
+        connectionMethod: z.enum(["electron_app", "cloudflare_vnc", "cdp_browser", "adb_wireless", "wda_rest", "shortcuts_webhook"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const pairingCode = nanoid(6).toUpperCase();
+        return createConnectedDevice({
+          userId: ctx.user.id,
+          name: input.name,
+          deviceType: input.deviceType,
+          connectionMethod: input.connectionMethod,
+          pairingCode,
+          status: "pairing",
+        });
+      }),
+    completePairing: protectedProcedure
+      .input(z.object({
+        pairingCode: z.string().min(1),
+        tunnelUrl: z.string().min(1),
+        osInfo: z.string().optional(),
+        capabilities: z.record(z.string(), z.unknown()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const device = await getDeviceByPairingCode(input.pairingCode);
+        if (!device || device.userId !== ctx.user.id) throw new Error("Invalid pairing code");
+        await completeDevicePairing(device.id, input.tunnelUrl, input.osInfo, input.capabilities as any);
+        return { success: true, deviceId: device.externalId };
+      }),
+    updateConnection: protectedProcedure
+      .input(z.object({ externalId: z.string(), tunnelUrl: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const device = await getDeviceByExternalId(input.externalId);
+        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        await updateDeviceConnection(device.id, input.tunnelUrl);
+        return { success: true };
+      }),
+    updateStatus: protectedProcedure
+      .input(z.object({ externalId: z.string(), status: z.enum(["online", "offline", "pairing", "error"]), lastError: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const device = await getDeviceByExternalId(input.externalId);
+        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        await updateDeviceStatus(device.id, input.status, input.lastError);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteConnectedDevice(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    /** Execute a command on a connected device via its relay/tunnel */
+    execute: protectedProcedure
+      .input(z.object({
+        deviceExternalId: z.string(),
+        action: z.enum(["screenshot", "click", "type", "scroll", "keypress", "launch_app", "navigate", "accessibility_tree"]),
+        params: z.record(z.string(), z.unknown()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const device = await getDeviceByExternalId(input.deviceExternalId);
+        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        if (device.status !== "online" || !device.tunnelUrl) throw new Error("Device is not connected");
+        // Relay the command to the device's tunnel endpoint
+        try {
+          const response = await fetch(`${device.tunnelUrl}/api/execute`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: input.action, params: input.params ?? {} }),
+            signal: AbortSignal.timeout(30000),
+          });
+          if (!response.ok) {
+            const errText = await response.text().catch(() => "Unknown error");
+            await updateDeviceStatus(device.id, "error", errText);
+            throw new Error(`Device command failed: ${errText}`);
+          }
+          const result = await response.json();
+          // Update session stats
+          const session = await getActiveDeviceSession(device.id);
+          if (session) {
+            const updates: Record<string, unknown> = { commandCount: (session.commandCount ?? 0) + 1 };
+            if (input.action === "screenshot" && result.screenshotUrl) {
+              updates.screenshotCount = (session.screenshotCount ?? 0) + 1;
+              updates.lastScreenshotUrl = result.screenshotUrl;
+            }
+            await updateDeviceSession(session.id, updates as any);
+          }
+          return result;
+        } catch (err: any) {
+          if (err.name === "TimeoutError") {
+            await updateDeviceStatus(device.id, "error", "Command timed out");
+            throw new Error("Device command timed out");
+          }
+          throw err;
+        }
+      }),
+    /** Start a control session on a device */
+    startSession: protectedProcedure
+      .input(z.object({ deviceExternalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const device = await getDeviceByExternalId(input.deviceExternalId);
+        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        // End any existing active session
+        const existing = await getActiveDeviceSession(device.id);
+        if (existing) await endDeviceSession(existing.id);
+        return createDeviceSession({
+          userId: ctx.user.id,
+          deviceId: device.id,
+          status: "active",
+        });
+      }),
+    endSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ input }) => {
+        await endDeviceSession(input.sessionId);
+        return { success: true };
+      }),
+    sessions: protectedProcedure.query(async ({ ctx }) => {
+      return getUserDeviceSessions(ctx.user.id);
+    }),
+    /** Generate setup instructions for each connection method */
+    getSetupInstructions: protectedProcedure
+      .input(z.object({ connectionMethod: z.enum(["electron_app", "cloudflare_vnc", "cdp_browser", "adb_wireless", "wda_rest", "shortcuts_webhook"]) }))
+      .query(async ({ input }) => {
+        const instructions: Record<string, { title: string; steps: string[]; requirements: string[]; cost: string; platforms: string[] }> = {
+          cdp_browser: {
+            title: "Browser Control (CDP) — Zero Install",
+            steps: [
+              "Close all Chrome windows on your device",
+              "Relaunch Chrome with: chrome --remote-debugging-port=9222",
+              "Install Cloudflare Tunnel: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/",
+              "Run: cloudflared tunnel --url http://localhost:9222",
+              "Copy the generated tunnel URL and paste it here",
+            ],
+            requirements: ["Chrome or Chromium browser", "cloudflared CLI (free)"],
+            cost: "Free",
+            platforms: ["Windows", "macOS", "Linux", "Android (via ADB)"],
+          },
+          adb_wireless: {
+            title: "Android Device Control (ADB + Accessibility)",
+            steps: [
+              "On your Android device: Settings → Developer Options → Enable Wireless Debugging",
+              "Note the IP address and port shown",
+              "On your PC, run: adb pair <ip>:<port> (enter the pairing code)",
+              "Then: adb connect <ip>:<port>",
+              "Install Tailscale on both devices for persistent connection: https://tailscale.com",
+              "Run the relay server: npx @manus/device-relay --adb",
+              "Copy the relay URL and paste it here",
+            ],
+            requirements: ["Android device with Developer Options enabled", "ADB installed on PC", "Tailscale (free) for persistent tunnel"],
+            cost: "Free",
+            platforms: ["Android"],
+          },
+          cloudflare_vnc: {
+            title: "Desktop Control (VNC + Cloudflare Tunnel)",
+            steps: [
+              "Enable your OS built-in VNC/Remote Desktop server",
+              "  - macOS: System Preferences → Sharing → Screen Sharing",
+              "  - Windows: Settings → System → Remote Desktop → Enable",
+              "  - Linux: Install and start vino or x11vnc",
+              "Install Cloudflare Tunnel: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/",
+              "Run: cloudflared tunnel --url tcp://localhost:5900",
+              "Copy the generated tunnel URL and paste it here",
+            ],
+            requirements: ["VNC server enabled on your device", "cloudflared CLI (free)"],
+            cost: "Free",
+            platforms: ["Windows", "macOS", "Linux"],
+          },
+          electron_app: {
+            title: "Full Desktop Control (Companion App)",
+            steps: [
+              "Download the Manus Desktop Companion app from the releases page",
+              "Install and launch the app",
+              "The app will display a pairing code",
+              "Enter the pairing code below to connect",
+              "The app connects via outbound WebSocket (works through any firewall)",
+            ],
+            requirements: ["Manus Desktop Companion app (~50 MB)"],
+            cost: "Free",
+            platforms: ["Windows", "macOS", "Linux"],
+          },
+          wda_rest: {
+            title: "iOS Device Control (WebDriverAgent)",
+            steps: [
+              "Build WebDriverAgent using Xcode or GitHub Actions (see docs)",
+              "Install the WDA IPA on your iOS device using pymobiledevice3",
+              "Start WDA on the device",
+              "Set up a tunnel: cloudflared tunnel --url http://localhost:8100",
+              "Copy the tunnel URL and paste it here",
+            ],
+            requirements: ["iOS device", "WDA built and installed (requires Xcode or GitHub Actions)", "cloudflared CLI"],
+            cost: "Free (with GitHub Actions for WDA build)",
+            platforms: ["iOS"],
+          },
+          shortcuts_webhook: {
+            title: "iOS Shortcuts (Limited Control)",
+            steps: [
+              "Install the Pushcut app from the App Store (free tier available)",
+              "Create Shortcuts automations for the actions you want to control",
+              "Set up Pushcut webhook triggers for each Shortcut",
+              "Enter the Pushcut webhook base URL here",
+            ],
+            requirements: ["iOS device", "Pushcut app (free tier)", "Apple Shortcuts"],
+            cost: "Free (limited) / $5/mo (Pushcut Pro)",
+            platforms: ["iOS"],
+          },
+        };
+        return instructions[input.connectionMethod] ?? null;
+      }),
+  }),
+
+  // ── Mobile Projects (#43 — Mobile Development) ───────────────────────
+  mobileProject: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserMobileProjects(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getMobileProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) return null;
+        return project;
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(256),
+        framework: z.enum(["pwa", "capacitor", "expo"]),
+        platforms: z.array(z.enum(["ios", "android", "web"])).min(1),
+        bundleId: z.string().optional(),
+        displayName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const bundleId = input.bundleId || `com.manus.${input.name.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        return createMobileProject({
+          userId: ctx.user.id,
+          name: input.name,
+          framework: input.framework,
+          platforms: input.platforms,
+          bundleId,
+          displayName: input.displayName || input.name,
+          status: "draft",
+        });
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        bundleId: z.string().optional(),
+        displayName: z.string().optional(),
+        version: z.string().optional(),
+        iconUrl: z.string().optional(),
+        splashUrl: z.string().optional(),
+        pwaManifest: z.record(z.string(), z.unknown()).optional(),
+        capacitorConfig: z.record(z.string(), z.unknown()).optional(),
+        expoConfig: z.record(z.string(), z.unknown()).optional(),
+        status: z.enum(["draft", "configured", "building", "ready"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...updates } = input;
+        await updateMobileProject(id, ctx.user.id, updates as any);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteMobileProject(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    /** Generate PWA manifest JSON */
+    generatePwaManifest: protectedProcedure
+      .input(z.object({
+        projectId: z.string(),
+        name: z.string(),
+        shortName: z.string().optional(),
+        description: z.string().optional(),
+        themeColor: z.string().optional(),
+        backgroundColor: z.string().optional(),
+        display: z.enum(["standalone", "fullscreen", "minimal-ui", "browser"]).optional(),
+        orientation: z.enum(["portrait", "landscape", "any"]).optional(),
+        startUrl: z.string().optional(),
+        iconUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const manifest = {
+          name: input.name,
+          short_name: input.shortName || input.name.slice(0, 12),
+          description: input.description || "",
+          start_url: input.startUrl || "/",
+          display: input.display || "standalone",
+          orientation: input.orientation || "any",
+          theme_color: input.themeColor || "#000000",
+          background_color: input.backgroundColor || "#ffffff",
+          icons: input.iconUrl ? [
+            { src: input.iconUrl, sizes: "192x192", type: "image/png" },
+            { src: input.iconUrl, sizes: "512x512", type: "image/png" },
+          ] : [],
+        };
+        // Update the project with the manifest
+        const project = await getMobileProjectByExternalId(input.projectId);
+        if (project && project.userId === ctx.user.id) {
+          await updateMobileProject(project.id, ctx.user.id, { pwaManifest: manifest as any, status: "configured" });
+        }
+        return manifest;
+      }),
+    /** Generate Capacitor config */
+    generateCapacitorConfig: protectedProcedure
+      .input(z.object({
+        projectId: z.string(),
+        appId: z.string(),
+        appName: z.string(),
+        webDir: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const config = {
+          appId: input.appId,
+          appName: input.appName,
+          webDir: input.webDir || "dist",
+          plugins: {
+            SplashScreen: { launchShowDuration: 2000, backgroundColor: "#000000" },
+            StatusBar: { style: "dark" },
+          },
+        };
+        const project = await getMobileProjectByExternalId(input.projectId);
+        if (project && project.userId === ctx.user.id) {
+          await updateMobileProject(project.id, ctx.user.id, { capacitorConfig: config as any, status: "configured" });
+        }
+        return config;
+      }),
+    /** Generate Expo config */
+    generateExpoConfig: protectedProcedure
+      .input(z.object({
+        projectId: z.string(),
+        slug: z.string(),
+        sdkVersion: z.string().optional(),
+        iosBundleId: z.string().optional(),
+        androidPackage: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const config = {
+          slug: input.slug,
+          sdkVersion: input.sdkVersion || "52.0.0",
+          ios: { bundleIdentifier: input.iosBundleId || `com.manus.${input.slug}`, buildNumber: "1" },
+          android: { package: input.androidPackage || `com.manus.${input.slug}`, versionCode: 1 },
+        };
+        const project = await getMobileProjectByExternalId(input.projectId);
+        if (project && project.userId === ctx.user.id) {
+          await updateMobileProject(project.id, ctx.user.id, { expoConfig: config as any, status: "configured" });
+        }
+        return config;
+      }),
+    /** Generate service worker for PWA */
+    generateServiceWorker: protectedProcedure
+      .input(z.object({ cacheName: z.string().optional(), offlinePage: z.string().optional() }))
+      .query(async ({ input }) => {
+        const cacheName = input.cacheName || "manus-pwa-v1";
+        const offlinePage = input.offlinePage || "/offline.html";
+        return {
+          code: `// Service Worker — Generated by Manus Next\nconst CACHE_NAME = '${cacheName}';\nconst OFFLINE_URL = '${offlinePage}';\n\nself.addEventListener('install', (event) => {\n  event.waitUntil(\n    caches.open(CACHE_NAME).then((cache) => cache.addAll(['/', OFFLINE_URL]))\n  );\n  self.skipWaiting();\n});\n\nself.addEventListener('activate', (event) => {\n  event.waitUntil(\n    caches.keys().then((keys) => Promise.all(\n      keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))\n    ))\n  );\n  self.clients.claim();\n});\n\nself.addEventListener('fetch', (event) => {\n  if (event.request.mode === 'navigate') {\n    event.respondWith(\n      fetch(event.request).catch(() => caches.match(OFFLINE_URL))\n    );\n    return;\n  }\n  event.respondWith(\n    caches.match(event.request).then((cached) => cached || fetch(event.request))\n  );\n});`,
+          filename: "sw.js",
+        };
+      }),
+  }),
+
+  // ── App Publishing (#42 — Mobile Publishing) ─────────────────────────
+  appPublish: router({
+    builds: protectedProcedure
+      .input(z.object({ mobileProjectId: z.number() }))
+      .query(async ({ input }) => {
+        return getProjectBuilds(input.mobileProjectId);
+      }),
+    userBuilds: protectedProcedure.query(async ({ ctx }) => {
+      return getUserBuilds(ctx.user.id);
+    }),
+    getBuild: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const build = await getBuildByExternalId(input.externalId);
+        if (!build || build.userId !== ctx.user.id) return null;
+        return build;
+      }),
+    createBuild: protectedProcedure
+      .input(z.object({
+        mobileProjectId: z.number(),
+        platform: z.enum(["ios", "android", "web_pwa"]),
+        buildMethod: z.enum(["pwa_manifest", "capacitor_local", "github_actions", "expo_eas", "manual_xcode", "manual_android_studio"]),
+        version: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return createAppBuild({
+          userId: ctx.user.id,
+          mobileProjectId: input.mobileProjectId,
+          platform: input.platform,
+          buildMethod: input.buildMethod,
+          version: input.version || "1.0.0",
+          status: "queued",
+        });
+      }),
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["queued", "building", "success", "failed", "cancelled"]),
+        artifactUrl: z.string().optional(),
+        buildLog: z.string().optional(),
+        errorMessage: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, status, ...extras } = input;
+        await updateBuildStatus(id, status, extras);
+        return { success: true };
+      }),
+    updateStoreMetadata: protectedProcedure
+      .input(z.object({
+        buildId: z.number(),
+        title: z.string().optional(),
+        shortDescription: z.string().optional(),
+        fullDescription: z.string().optional(),
+        category: z.string().optional(),
+        keywords: z.array(z.string()).optional(),
+        screenshotUrls: z.array(z.string()).optional(),
+        privacyPolicyUrl: z.string().optional(),
+        supportUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { buildId, ...metadata } = input;
+        await updateBuildStoreMetadata(buildId, metadata);
+        return { success: true };
+      }),
+    /** Generate GitHub Actions workflow for automated builds */
+    generateGitHubWorkflow: protectedProcedure
+      .input(z.object({
+        framework: z.enum(["pwa", "capacitor", "expo"]),
+        platform: z.enum(["ios", "android", "web_pwa"]),
+        buildOnPush: z.boolean().optional(),
+      }))
+      .query(async ({ input }) => {
+        const triggers = input.buildOnPush ? "push:\n    branches: [main]" : "workflow_dispatch:";
+        let workflow = "";
+        if (input.framework === "pwa" || input.platform === "web_pwa") {
+          workflow = `name: Build PWA\non:\n  ${triggers}\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: pwa-dist\n          path: dist/`;
+        } else if (input.framework === "capacitor" && input.platform === "android") {
+          workflow = `name: Build Android (Capacitor)\non:\n  ${triggers}\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - uses: actions/setup-java@v4\n        with:\n          distribution: temurin\n          java-version: 17\n      - run: npm ci\n      - run: npm run build\n      - run: npx cap sync android\n      - run: cd android && ./gradlew assembleRelease\n      - uses: actions/upload-artifact@v4\n        with:\n          name: android-apk\n          path: android/app/build/outputs/apk/release/`;
+        } else if (input.framework === "capacitor" && input.platform === "ios") {
+          workflow = `name: Build iOS (Capacitor)\non:\n  ${triggers}\njobs:\n  build:\n    runs-on: macos-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - run: npm ci\n      - run: npm run build\n      - run: npx cap sync ios\n      - run: cd ios/App && xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive\n      - uses: actions/upload-artifact@v4\n        with:\n          name: ios-archive\n          path: ios/App/build/`;
+        } else if (input.framework === "expo") {
+          workflow = `name: Build with EAS\non:\n  ${triggers}\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - uses: expo/expo-github-action@v8\n        with:\n          eas-version: latest\n          token: \${{ secrets.EXPO_TOKEN }}\n      - run: npm ci\n      - run: eas build --platform ${input.platform === "ios" ? "ios" : "android"} --non-interactive`;
+        }
+        return { workflow, filename: `.github/workflows/build-${input.platform}.yml` };
+      }),
+    /** Get the publishing checklist for a platform */
+    getPublishChecklist: protectedProcedure
+      .input(z.object({ platform: z.enum(["ios", "android", "web_pwa"]) }))
+      .query(async ({ input }) => {
+        const checklists: Record<string, Array<{ item: string; required: boolean; description: string }>> = {
+          web_pwa: [
+            { item: "PWA Manifest", required: true, description: "Valid manifest.json with name, icons, start_url, display" },
+            { item: "Service Worker", required: true, description: "Registered service worker for offline support" },
+            { item: "HTTPS", required: true, description: "Site must be served over HTTPS" },
+            { item: "App Icons", required: true, description: "192x192 and 512x512 PNG icons" },
+            { item: "Lighthouse Score", required: false, description: "PWA score ≥ 90 in Lighthouse audit" },
+            { item: "Splash Screen", required: false, description: "Custom splash screen for app launch" },
+          ],
+          android: [
+            { item: "Signed APK/AAB", required: true, description: "Release build signed with upload key" },
+            { item: "App Icon", required: true, description: "512x512 PNG icon for Play Store listing" },
+            { item: "Feature Graphic", required: true, description: "1024x500 PNG feature graphic" },
+            { item: "Screenshots", required: true, description: "2-8 screenshots per device type" },
+            { item: "Privacy Policy", required: true, description: "Public URL to privacy policy" },
+            { item: "Content Rating", required: true, description: "Complete IARC content rating questionnaire" },
+            { item: "Store Listing", required: true, description: "Title, short description, full description" },
+            { item: "Google Play Developer Account", required: true, description: "$25 one-time registration fee" },
+          ],
+          ios: [
+            { item: "Signed IPA", required: true, description: "Release build signed with distribution certificate" },
+            { item: "App Icon", required: true, description: "1024x1024 PNG icon (no alpha)" },
+            { item: "Screenshots", required: true, description: "Screenshots for each required device size" },
+            { item: "Privacy Policy", required: true, description: "Public URL to privacy policy" },
+            { item: "App Review Info", required: true, description: "Demo account credentials and review notes" },
+            { item: "Store Listing", required: true, description: "Title, subtitle, description, keywords" },
+            { item: "Apple Developer Account", required: true, description: "$99/year enrollment" },
+            { item: "App Store Connect", required: true, description: "App record created in App Store Connect" },
+          ],
+        };
+        return checklists[input.platform] ?? [];
       }),
   }),
 

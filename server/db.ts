@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -864,4 +864,188 @@ export async function deleteDesign(id: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(designs).where(and(eq(designs.id, id), eq(designs.userId, userId)));
+}
+
+
+// ── Connected Devices (Capability #47 — BYOD) ──
+
+export async function createConnectedDevice(device: InsertConnectedDevice) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(connectedDevices).values(device);
+  const result = await db.select().from(connectedDevices).where(eq(connectedDevices.externalId, device.externalId!)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getUserDevices(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(connectedDevices).where(eq(connectedDevices.userId, userId)).orderBy(desc(connectedDevices.updatedAt));
+}
+
+export async function getDeviceByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(connectedDevices).where(eq(connectedDevices.externalId, externalId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getDeviceByPairingCode(pairingCode: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(connectedDevices).where(and(eq(connectedDevices.pairingCode, pairingCode), eq(connectedDevices.paired, 0))).limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateDeviceStatus(id: number, status: "online" | "offline" | "pairing" | "error", lastError?: string) {
+  const db = await getDb();
+  if (!db) return;
+  const updates: Record<string, unknown> = { status };
+  if (status === "online") updates.lastConnected = new Date();
+  if (lastError !== undefined) updates.lastError = lastError;
+  await db.update(connectedDevices).set(updates).where(eq(connectedDevices.id, id));
+}
+
+export async function completeDevicePairing(id: number, tunnelUrl: string, osInfo?: string, capabilities?: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(connectedDevices).set({
+    paired: 1,
+    status: "online",
+    tunnelUrl,
+    osInfo: osInfo ?? null,
+    capabilities: capabilities as any ?? null,
+    lastConnected: new Date(),
+  }).where(eq(connectedDevices.id, id));
+}
+
+export async function updateDeviceConnection(id: number, tunnelUrl: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(connectedDevices).set({ tunnelUrl, status: "online", lastConnected: new Date() }).where(eq(connectedDevices.id, id));
+}
+
+export async function deleteConnectedDevice(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(connectedDevices).where(and(eq(connectedDevices.id, id), eq(connectedDevices.userId, userId)));
+}
+
+// ── Device Sessions (Capability #47) ──
+
+export async function createDeviceSession(session: InsertDeviceSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(deviceSessions).values(session);
+  const result = await db.select().from(deviceSessions).where(eq(deviceSessions.externalId, session.externalId!)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getActiveDeviceSession(deviceId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(deviceSessions).where(and(eq(deviceSessions.deviceId, deviceId), eq(deviceSessions.status, "active"))).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getUserDeviceSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(deviceSessions).where(eq(deviceSessions.userId, userId)).orderBy(desc(deviceSessions.startedAt)).limit(50);
+}
+
+export async function updateDeviceSession(id: number, updates: { status?: "active" | "paused" | "ended" | "error"; commandCount?: number; screenshotCount?: number; lastScreenshotUrl?: string; metadata?: Record<string, unknown>; endedAt?: Date }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(deviceSessions).set(updates as any).where(eq(deviceSessions.id, id));
+}
+
+export async function endDeviceSession(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(deviceSessions).set({ status: "ended", endedAt: new Date() }).where(eq(deviceSessions.id, id));
+}
+
+// ── Mobile Projects (Capability #43 — Mobile Development) ──
+
+export async function createMobileProject(project: InsertMobileProject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(mobileProjects).values(project);
+  const result = await db.select().from(mobileProjects).where(eq(mobileProjects.externalId, project.externalId!)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getUserMobileProjects(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(mobileProjects).where(eq(mobileProjects.userId, userId)).orderBy(desc(mobileProjects.updatedAt));
+}
+
+export async function getMobileProjectByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(mobileProjects).where(eq(mobileProjects.externalId, externalId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateMobileProject(id: number, userId: number, updates: Partial<InsertMobileProject>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(mobileProjects).set(updates as any).where(and(eq(mobileProjects.id, id), eq(mobileProjects.userId, userId)));
+}
+
+export async function deleteMobileProject(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(mobileProjects).where(and(eq(mobileProjects.id, id), eq(mobileProjects.userId, userId)));
+}
+
+// ── App Builds (Capability #42 — Mobile Publishing) ──
+
+export async function createAppBuild(build: InsertAppBuild) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(appBuilds).values(build);
+  const result = await db.select().from(appBuilds).where(eq(appBuilds.externalId, build.externalId!)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getProjectBuilds(mobileProjectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(appBuilds).where(eq(appBuilds.mobileProjectId, mobileProjectId)).orderBy(desc(appBuilds.startedAt));
+}
+
+export async function getUserBuilds(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(appBuilds).where(eq(appBuilds.userId, userId)).orderBy(desc(appBuilds.startedAt)).limit(50);
+}
+
+export async function getBuildByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(appBuilds).where(eq(appBuilds.externalId, externalId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateBuildStatus(id: number, status: "queued" | "building" | "success" | "failed" | "cancelled", extras?: { artifactUrl?: string; buildLog?: string; errorMessage?: string; completedAt?: Date }) {
+  const db = await getDb();
+  if (!db) return;
+  const updates: Record<string, unknown> = { status };
+  if (extras?.artifactUrl) updates.artifactUrl = extras.artifactUrl;
+  if (extras?.buildLog) updates.buildLog = extras.buildLog;
+  if (extras?.errorMessage) updates.errorMessage = extras.errorMessage;
+  if (extras?.completedAt) updates.completedAt = extras.completedAt;
+  if (status === "success" || status === "failed" || status === "cancelled") {
+    updates.completedAt = updates.completedAt ?? new Date();
+  }
+  await db.update(appBuilds).set(updates).where(eq(appBuilds.id, id));
+}
+
+export async function updateBuildStoreMetadata(id: number, storeMetadata: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(appBuilds).set({ storeMetadata: storeMetadata as any }).where(eq(appBuilds.id, id));
 }

@@ -85,6 +85,13 @@
       "when": 1776581306168,
       "tag": "0011_exotic_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1776615303675,
+      "tag": "0012_lonely_wiccan",
+      "breakpoints": true
     }
   ]
 }

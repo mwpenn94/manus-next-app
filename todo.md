@@ -642,3 +642,43 @@
 - [x] Fix: Added auto-continuation in agentStream.ts — detects "demonstrate each/all/keep going" keywords, tracks used vs unused tools, injects continuation prompt when LLM stops prematurely
 - [x] Added CONTINUOUS EXECUTION section to system prompt instructing LLM to not stop between demonstrations
 - [x] 166 tests pass, 0 TypeScript errors
+
+## RED Capability #47 — My Computer (BYOD)
+- [ ] Add `connectedDevices` table to schema (device type, connection method, tunnel URL, pairing code, status)
+- [ ] Add `deviceSessions` table to schema (active sessions, screenshots, commands executed)
+- [ ] Add `device` router with CRUD for connected devices, pairing flow, session management
+- [ ] Implement pairing code generation and WebSocket relay endpoint
+- [ ] Implement CDP proxy for browser-only control (Approach C — free, zero install)
+- [ ] Implement ADB relay for Android device control (Approach D — free, wireless ADB + accessibility tree)
+- [ ] Implement WDA REST proxy for iOS device control (Approach D+ — requires WDA build)
+- [ ] Implement Cloudflare Tunnel + VNC integration (Approach B — free desktop control)
+- [ ] Implement Electron companion app config generation (Approach A — full desktop control)
+- [ ] Build "Connect Your Device" settings page with device type selector and pairing wizard
+- [ ] Build remote control viewer (VNC/screenshot stream + input overlay)
+- [ ] Update ComputerUsePage to support real BYOD device connections alongside simulation
+- [ ] Add device connection status indicators to sidebar/nav
+
+## RED Capability #43 — Mobile Development
+- [ ] Add `mobileProjects` table to schema (project name, platform, framework, config)
+- [ ] Add `mobileProject` router with CRUD, config generation, build triggers
+- [ ] Implement PWA manifest + service worker generator (free, all platforms)
+- [ ] Implement Capacitor project scaffolding (free, iOS + Android)
+- [ ] Implement React Native / Expo project scaffolding (free, iOS + Android)
+- [ ] Build mobile preview with device frame simulator
+- [ ] Build MobileDevPage with project creation wizard, platform selector, config editor
+- [ ] Add mobile project routes to App.tsx
+
+## RED Capability #42 — Mobile Publishing
+- [ ] Add `appBuilds` table to schema (build status, platform, artifact URL, store metadata)
+- [ ] Add `appPublish` router with build triggers, status tracking, store metadata management
+- [ ] Implement PWA install prompt and manifest validation (free, all platforms)
+- [ ] Implement Capacitor build config generation (free, requires local CLI)
+- [ ] Implement GitHub Actions workflow generator for automated builds (free for public repos)
+- [ ] Implement app store metadata editor (screenshots, descriptions, categories)
+- [ ] Build AppPublishPage with build pipeline UI, platform status cards, store submission checklist
+- [ ] Add publishing routes to App.tsx
+
+## Tests for RED Capabilities
+- [ ] Write vitest tests for device router (pairing, CRUD, session management)
+- [ ] Write vitest tests for mobileProject router (CRUD, config generation)
+- [ ] Write vitest tests for appPublish router (build triggers, status tracking)

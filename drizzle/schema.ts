@@ -454,3 +454,180 @@ export const designs = mysqlTable("designs", {
 });
 export type Design = typeof designs.$inferSelect;
 export type InsertDesign = typeof designs.$inferInsert;
+
+// ── Connected Devices (Capability #47 — My Computer / BYOD) ──
+export const connectedDevices = mysqlTable("connected_devices", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** Human-readable device name */
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Device type: desktop, android, ios, browser_only */
+  deviceType: mysqlEnum("deviceType", ["desktop", "android", "ios", "browser_only"]).notNull(),
+  /** Connection method determines the automation approach */
+  connectionMethod: mysqlEnum("connectionMethod", [
+    "electron_app",      // Approach A: Electron companion app (full desktop control)
+    "cloudflare_vnc",    // Approach B: Cloudflare Tunnel + VNC (free desktop)
+    "cdp_browser",       // Approach C: CDP browser-only (zero install)
+    "adb_wireless",      // Approach D: ADB + accessibility tree (Android)
+    "wda_rest",          // Approach D+: WebDriverAgent REST (iOS)
+    "shortcuts_webhook",  // iOS Shortcuts + Pushcut (limited iOS)
+  ]).notNull(),
+  /** Tunnel/relay URL for reaching the device */
+  tunnelUrl: text("tunnelUrl"),
+  /** Pairing code for initial device handshake (6-char alphanumeric) */
+  pairingCode: varchar("pairingCode", { length: 16 }),
+  /** Whether the pairing has been completed */
+  paired: int("paired").default(0).notNull(),
+  /** Connection status */
+  status: mysqlEnum("status", ["online", "offline", "pairing", "error"]).default("offline").notNull(),
+  /** Last known OS info (e.g. "Windows 11", "Android 14", "macOS 15") */
+  osInfo: varchar("osInfo", { length: 128 }),
+  /** Device capabilities as JSON (has_gpu, screen_resolution, etc.) */
+  capabilities: json("capabilities").$type<{
+    hasGpu?: boolean;
+    screenWidth?: number;
+    screenHeight?: number;
+    browserVersion?: string;
+    adbVersion?: string;
+    wdaInstalled?: boolean;
+  }>(),
+  /** Last successful connection timestamp */
+  lastConnected: timestamp("lastConnected"),
+  /** Error message if status is 'error' */
+  lastError: text("lastError"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ConnectedDevice = typeof connectedDevices.$inferSelect;
+export type InsertConnectedDevice = typeof connectedDevices.$inferInsert;
+
+// ── Device Sessions (Capability #47 — active control sessions) ──
+export const deviceSessions = mysqlTable("device_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  deviceId: int("deviceId").notNull(),
+  /** Session state */
+  status: mysqlEnum("status", ["active", "paused", "ended", "error"]).default("active").notNull(),
+  /** Number of commands executed in this session */
+  commandCount: int("commandCount").default(0).notNull(),
+  /** Number of screenshots captured */
+  screenshotCount: int("screenshotCount").default(0).notNull(),
+  /** Last screenshot URL (S3) */
+  lastScreenshotUrl: text("lastScreenshotUrl"),
+  /** Session metadata (current app, browser tab, etc.) */
+  metadata: json("metadata").$type<{
+    currentApp?: string;
+    currentUrl?: string;
+    accessibilityTreeSize?: number;
+    lastAction?: string;
+  }>(),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  endedAt: timestamp("endedAt"),
+});
+export type DeviceSession = typeof deviceSessions.$inferSelect;
+export type InsertDeviceSession = typeof deviceSessions.$inferInsert;
+
+// ── Mobile Projects (Capability #43 — Mobile Development) ──
+export const mobileProjects = mysqlTable("mobile_projects", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** Project name */
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Target framework */
+  framework: mysqlEnum("framework", ["pwa", "capacitor", "expo"]).notNull(),
+  /** Target platforms */
+  platforms: json("platforms").$type<Array<"ios" | "android" | "web">>().notNull(),
+  /** App bundle identifier (e.g. com.example.myapp) */
+  bundleId: varchar("bundleId", { length: 256 }),
+  /** App display name */
+  displayName: varchar("displayName", { length: 256 }),
+  /** App version */
+  version: varchar("version", { length: 32 }).default("1.0.0"),
+  /** PWA manifest config as JSON */
+  pwaManifest: json("pwaManifest").$type<{
+    name?: string;
+    short_name?: string;
+    description?: string;
+    start_url?: string;
+    display?: "standalone" | "fullscreen" | "minimal-ui" | "browser";
+    orientation?: "portrait" | "landscape" | "any";
+    theme_color?: string;
+    background_color?: string;
+    icons?: Array<{ src: string; sizes: string; type: string }>;
+  }>(),
+  /** Capacitor config as JSON */
+  capacitorConfig: json("capacitorConfig").$type<{
+    appId?: string;
+    appName?: string;
+    webDir?: string;
+    plugins?: Record<string, unknown>;
+  }>(),
+  /** Expo config as JSON */
+  expoConfig: json("expoConfig").$type<{
+    slug?: string;
+    sdkVersion?: string;
+    ios?: { bundleIdentifier?: string; buildNumber?: string };
+    android?: { package?: string; versionCode?: number };
+  }>(),
+  /** Icon URL (S3) */
+  iconUrl: text("iconUrl"),
+  /** Splash screen URL (S3) */
+  splashUrl: text("splashUrl"),
+  /** Project status */
+  status: mysqlEnum("status", ["draft", "configured", "building", "ready"]).default("draft").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MobileProject = typeof mobileProjects.$inferSelect;
+export type InsertMobileProject = typeof mobileProjects.$inferInsert;
+
+// ── App Builds (Capability #42 — Mobile Publishing) ──
+export const appBuilds = mysqlTable("app_builds", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  mobileProjectId: int("mobileProjectId").notNull(),
+  /** Target platform for this build */
+  platform: mysqlEnum("platform", ["ios", "android", "web_pwa"]).notNull(),
+  /** Build method */
+  buildMethod: mysqlEnum("buildMethod", [
+    "pwa_manifest",       // Free: PWA install prompt
+    "capacitor_local",    // Free: local Capacitor CLI build
+    "github_actions",     // Free: GitHub Actions CI/CD
+    "expo_eas",           // Paid: Expo EAS Build
+    "manual_xcode",       // Paid: manual Xcode build
+    "manual_android_studio", // Free: manual Android Studio build
+  ]).notNull(),
+  /** Build status */
+  status: mysqlEnum("status", ["queued", "building", "success", "failed", "cancelled"]).default("queued").notNull(),
+  /** Build artifact URL (S3 — APK, IPA, or PWA bundle) */
+  artifactUrl: text("artifactUrl"),
+  /** Build log output */
+  buildLog: text("buildLog"),
+  /** GitHub Actions workflow URL (if applicable) */
+  workflowUrl: text("workflowUrl"),
+  /** App store metadata as JSON */
+  storeMetadata: json("storeMetadata").$type<{
+    title?: string;
+    shortDescription?: string;
+    fullDescription?: string;
+    category?: string;
+    keywords?: string[];
+    screenshotUrls?: string[];
+    privacyPolicyUrl?: string;
+    supportUrl?: string;
+  }>(),
+  /** Version being built */
+  version: varchar("version", { length: 32 }),
+  /** Build number (auto-incrementing per platform) */
+  buildNumber: int("buildNumber").default(1),
+  /** Error message if build failed */
+  errorMessage: text("errorMessage"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+export type AppBuild = typeof appBuilds.$inferSelect;
+export type InsertAppBuild = typeof appBuilds.$inferInsert;
