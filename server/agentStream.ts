@@ -375,6 +375,17 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
           sendSSE(safeWrite, { image: result.url });
         }
 
+        // If it's a document, send a document event so client can surface download link
+        if (result.url && toolName === "generate_document") {
+          sendSSE(safeWrite, {
+            document: {
+              url: result.url,
+              title: parsedArgs.title || "Document",
+              format: parsedArgs.format || "markdown",
+            },
+          });
+        }
+
         // Persist artifact if callback provided
         if (onArtifact && result.artifactType) {
           onArtifact({

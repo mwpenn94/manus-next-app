@@ -398,6 +398,61 @@ async function fetchPageContent(url: string, maxChars = 8000): Promise<string> {
 }
 
 /**
+ * DuckDuckGo HTML Search — scrape actual search results from DDG's HTML endpoint.
+ * Returns titles, URLs, and snippets for real web pages.
+ * More reliable than Instant Answer API for broad/current queries.
+ */
+async function ddgHtmlSearch(query: string): Promise<Array<{ title: string; url: string; snippet: string }>> {
+  try {
+    const resp = await fetch(
+      `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    const html = await resp.text();
+
+    // Parse titles + URLs
+    const titleRegex = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+    const snippetRegex = /class="result__snippet"[^>]*>([\s\S]*?)<\/(?:a|td)>/g;
+
+    const titles: Array<{ url: string; title: string }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = titleRegex.exec(html)) !== null) {
+      let url = match[1];
+      const uddgMatch = url.match(/uddg=([^&]+)/);
+      if (uddgMatch) url = decodeURIComponent(uddgMatch[1]);
+      titles.push({ url, title: match[2].replace(/<[^>]+>/g, "").trim() });
+    }
+
+    const snippets: string[] = [];
+    while ((match = snippetRegex.exec(html)) !== null) {
+      snippets.push(
+        match[1]
+          .replace(/<[^>]+>/g, "")
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, "&")
+          .replace(/&#x27;/g, "'")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .trim()
+      );
+    }
+
+    return titles.slice(0, 10).map((t, i) => ({
+      title: t.title,
+      url: t.url,
+      snippet: snippets[i] || "",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Execute a REAL web search using a multi-source pipeline:
  * 1. DuckDuckGo Instant Answer API (quick facts + Wikipedia link)
  * 2. Wikipedia REST API (detailed summary)
@@ -555,31 +610,64 @@ async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
       }
     }
 
-    // Step 4: If we got nothing from DDG or Wikipedia, try fetching known URLs
-    if (!ddg.abstract && wikiResults.length === 0) {
-      console.log("[web_search] No DDG/Wikipedia results, trying direct search...");
-      
-      // Try to construct likely URLs from the query
-      const searchTerm = query.replace(/\s+/g, "+");
-      
-      // Try Wikipedia with a cleaned query
-      const wikiTopic = query.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_()-]/g, "");
-      const wikiSummary = await wikipediaSummary(wikiTopic);
-      if (wikiSummary) {
-        formattedResults += `### Wikipedia: ${wikiSummary.title}\n\n`;
-        formattedResults += `${wikiSummary.extract}\n`;
-        formattedResults += `\nSource: [${wikiSummary.url}](${wikiSummary.url})\n\n`;
-        
-        // Fetch full article
-        const fullContent = await fetchPageContent(wikiSummary.url, 5000);
-        if (!fullContent.startsWith("(Failed")) {
-          formattedResults += `### Full Article Content\n\n${fullContent}\n\n`;
+    // Step 4: DDG HTML Search — real web results for broader queries
+    // Run this if DDG Instant Answer didn't return an abstract (common for broad/current queries)
+    if (!ddg.abstract) {
+      console.log("[web_search] Running DDG HTML search for broader results...");
+      const htmlResults = await ddgHtmlSearch(query);
+      console.log(`[web_search] DDG HTML returned ${htmlResults.length} results`);
+
+      if (htmlResults.length > 0) {
+        formattedResults += `### Web Search Results\n\n`;
+        for (const r of htmlResults.slice(0, 8)) {
+          formattedResults += `- **[${r.title}](${r.url})**: ${r.snippet}\n`;
+          sources.push({ title: r.title, url: r.url, snippet: r.snippet, source: "ddg" });
+          if (urlsToFetch.length < 4) urlsToFetch.push(r.url);
         }
-      } else {
-        // Last resort: use LLM synthesis
-        formattedResults += `*Note: Could not find specific web results for this query. The following is based on AI training data.*\n\n`;
-        const fallback = await executeWebSearchFallback(args);
-        formattedResults += fallback.result;
+        formattedResults += "\n";
+
+        // Fetch top 2 pages for detailed content if we haven't already
+        const newUrls = htmlResults
+          .slice(0, 3)
+          .map(r => r.url)
+          .filter(u => !u.includes("google.com/topics")); // Skip Google News redirect URLs
+        if (newUrls.length > 0) {
+          console.log(`[web_search] Fetching ${Math.min(newUrls.length, 2)} DDG HTML result pages...`);
+          const fetchPromises = newUrls.slice(0, 2).map(async (url) => {
+            const content = await fetchPageContent(url, 4000);
+            return { url, content };
+          });
+          const fetched = await Promise.allSettled(fetchPromises);
+          const validPages = fetched
+            .filter((r): r is PromiseFulfilledResult<{ url: string; content: string }> =>
+              r.status === "fulfilled" && !r.value.content.startsWith("(Failed") && !r.value.content.startsWith("(Non-text"))
+            .map(r => r.value);
+          if (validPages.length > 0) {
+            formattedResults += `### Detailed Page Content\n\n`;
+            for (const page of validPages) {
+              try {
+                const hostname = new URL(page.url).hostname;
+                formattedResults += `**From: ${hostname}** ([${page.url}](${page.url}))\n`;
+                formattedResults += `${page.content.slice(0, 4000)}\n\n---\n\n`;
+              } catch {
+                formattedResults += `${page.content.slice(0, 4000)}\n\n---\n\n`;
+              }
+            }
+          }
+        }
+      } else if (wikiResults.length === 0) {
+        // Last resort: try Wikipedia with cleaned query, then LLM synthesis
+        const wikiTopic = query.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_()-]/g, "");
+        const wikiSummary = await wikipediaSummary(wikiTopic);
+        if (wikiSummary) {
+          formattedResults += `### Wikipedia: ${wikiSummary.title}\n\n`;
+          formattedResults += `${wikiSummary.extract}\n`;
+          formattedResults += `\nSource: [${wikiSummary.url}](${wikiSummary.url})\n\n`;
+        } else {
+          formattedResults += `*Note: Limited web results for this query. Supplementing with AI knowledge.*\n\n`;
+          const fallback = await executeWebSearchFallback(args);
+          formattedResults += fallback.result;
+        }
       }
     }
 

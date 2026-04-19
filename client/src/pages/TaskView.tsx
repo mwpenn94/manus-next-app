@@ -914,6 +914,12 @@ export default function TaskView() {
                 accumulated += `\n\n![Generated Image](${data.image})\n\n`;
                 setStreamContent(accumulated);
               }
+              if (data.document) {
+                const docTitle = data.document.title || "Document";
+                const docUrl = data.document.url;
+                accumulated += `\n\n📄 **${docTitle}** — [Download Document](${docUrl})\n\n`;
+                setStreamContent(accumulated);
+              }
               if (data.done) {
                 accumulated = data.content || accumulated;
                 // Append images to content if they were generated
@@ -970,53 +976,6 @@ export default function TaskView() {
     return lastMsg?.role === "assistant" && lastMsg.actions?.some(a => a.status === "active");
   }, [task]);
 
-  if (!task) {
-    return (
-      <div className="h-full flex items-center justify-center text-muted-foreground">
-        <p className="text-sm">Task not found</p>
-      </div>
-    );
-  }
-
-  // ── Header button handlers ──
-
-  const handleShareUrl = () => {
-    const url = `${window.location.origin}/task/${task.id}`;
-    navigator.clipboard.writeText(url);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
-  };
-
-  const handleShareDialog = () => {
-    if (isAuthenticated) {
-      setShareDialogOpen(true);
-    } else {
-      handleShareUrl();
-    }
-  };
-
-  const handleToggleFavorite = () => {
-    if (!taskExternalId || !isAuthenticated) return;
-    favoriteMutation.mutate({ externalId: taskExternalId });
-  };
-
-  const handleArchive = () => {
-    if (!taskExternalId || !isAuthenticated) return;
-    archiveMutation.mutate(
-      { externalId: taskExternalId },
-      { onSuccess: () => navigate("/") }
-    );
-  };
-
-  const handleSaveSystemPrompt = () => {
-    if (!taskExternalId || !isAuthenticated) return;
-    systemPromptMutation.mutate({
-      externalId: taskExternalId,
-      systemPrompt: systemPromptDraft.trim() || null,
-    });
-    setShowSystemPrompt(false);
-    setShowMoreMenu(false);
-  };
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || !task || streaming) return;
@@ -1145,6 +1104,13 @@ export default function TaskView() {
               accumulated += `\n\n![Generated Image](${data.image})\n\n`;
               setStreamContent(accumulated);
             }
+            if (data.document) {
+              // Inject download link into accumulated content so it appears in the chat
+              const docTitle = data.document.title || "Document";
+              const docUrl = data.document.url;
+              accumulated += `\n\n📄 **${docTitle}** — [Download Document](${docUrl})\n\n`;
+              setStreamContent(accumulated);
+            }
             if (data.done) {
               accumulated = data.content || accumulated;
               if (images.length > 0 && !accumulated.includes(images[0])) {
@@ -1265,6 +1231,7 @@ export default function TaskView() {
               }
             }
             if (data.image) { images.push(data.image); setStreamImages([...images]); accumulated += `\n\n![Generated Image](${data.image})\n\n`; setStreamContent(accumulated); }
+            if (data.document) { accumulated += `\n\n📄 **${data.document.title || "Document"}** — [Download Document](${data.document.url})\n\n`; setStreamContent(accumulated); }
             if (data.done) { accumulated = data.content || accumulated; }
             if (data.status) {
               if (data.status === "running") updateTaskStatus(task.id, "running");
@@ -1332,6 +1299,55 @@ export default function TaskView() {
       }
     }
   }, [upload]);
+
+  if (!task) {
+    return (
+      <div className="h-full flex items-center justify-center text-muted-foreground">
+        <p className="text-sm">Task not found</p>
+      </div>
+    );
+  }
+
+  // ── Header button handlers ──
+
+  const handleShareUrl = () => {
+    const url = `${window.location.origin}/task/${task.id}`;
+    navigator.clipboard.writeText(url);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  const handleShareDialog = () => {
+    if (isAuthenticated) {
+      setShareDialogOpen(true);
+    } else {
+      handleShareUrl();
+    }
+  };
+
+  const handleToggleFavorite = () => {
+    if (!taskExternalId || !isAuthenticated) return;
+    favoriteMutation.mutate({ externalId: taskExternalId });
+  };
+
+  const handleArchive = () => {
+    if (!taskExternalId || !isAuthenticated) return;
+    archiveMutation.mutate(
+      { externalId: taskExternalId },
+      { onSuccess: () => navigate("/") }
+    );
+  };
+
+  const handleSaveSystemPrompt = () => {
+    if (!taskExternalId || !isAuthenticated) return;
+    systemPromptMutation.mutate({
+      externalId: taskExternalId,
+      systemPrompt: systemPromptDraft.trim() || null,
+    });
+    setShowSystemPrompt(false);
+    setShowMoreMenu(false);
+  };
+
 
   const isFavorited = taskQuery.data?.favorite === 1;
 

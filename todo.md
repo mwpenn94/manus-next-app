@@ -478,3 +478,8 @@
 - [x] Create automated CDP test script for 10 virtual user flows (gate-b-simulation.mjs)
 - [x] Execute flows: 42 flows across 8 features, 10 personas, 100% pass rate
 - [x] Document results in docs/parity/GATE_B_SIMULATION.md
+
+## Phase 7: Bug Fixes
+- [x] Fix React error #310 on TaskView page (crash on published site)
+- [x] Fix document generation: generate_document tool should produce actual downloadable file URLs via S3
+- [x] Fix web search reliability: web_search tool returning empty/failing results
