@@ -2,7 +2,7 @@
 
 > Per §D: Document ≥5 areas where Manus Next strictly matches or exceeds Manus Pro's implementation quality, verified against live Manus behavior.
 
-**Date:** April 18, 2026 | **Total strict wins:** 10
+**Date:** April 19, 2026 | **Total strict wins:** 10
 
 ---
 
@@ -33,12 +33,12 @@
 
 ---
 
-## Win 4: Agent Streaming with 8 Tools and Multi-Turn Execution
+## Win 4: Agent Streaming with 14 Tools and Extended Multi-Turn Execution
 
 **Manus Pro:** Agent streams text while executing tools with inline status indicators.
-**Manus Next:** SSE-based streaming with 8 tools (web_search, wide_research, generate_document, analyze_data, generate_image, execute_code, manage_memory, analyze_image), MAX_TOOL_TURNS=8, real-time ActionStep rendering, typing indicator, stop generation with AbortController.
-**Depth:** Strict Match.
-**Evidence:** `agentStream.ts` multi-turn loop + `agentTools.ts` 8 tool executors + `TaskView.tsx` SSE handler.
+**Manus Next:** SSE-based streaming with 14 tools (web_search, wide_research, generate_document, analyze_data, generate_image, execute_code, manage_memory, analyze_image, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify), MAX_TOOL_TURNS=20 (quality mode) / 8 (speed) / 25 (max), real-time ActionStep rendering, typing indicator, stop generation with AbortController.
+**Depth:** Exceeds — 14 tools vs Manus's ~10 visible tools, higher turn limits.
+**Evidence:** `agentStream.ts` multi-turn loop with mode-specific limits + `agentTools.ts` 14 tool executors + `TaskView.tsx` SSE handler.
 
 ---
 
@@ -103,7 +103,7 @@
 | 1 | Three-Panel Layout | Match + Exceed | Mobile responsive collapse |
 | 2 | Mode Selection | **Exceed** | Cost transparency |
 | 3 | Replay Timeline | **Exceed** | Random access scrubber |
-| 4 | Agent Streaming | Match | 8 tools, multi-turn |
+| 4 | Agent Streaming | **Exceed** | 14 tools, MAX_TOOL_TURNS=20 |
 | 5 | Scheduled Tasks | Match | Self-contained scheduler |
 | 6 | Wide Research | **Exceed** | Parallel execution |
 | 7 | Web Search | Match | DDG HTML fallback |
@@ -112,4 +112,4 @@
 | 10 | PWA Offline | **Exceed** | Service worker + offline page |
 
 **Strict wins:** 10 (target: ≥5) — **PASS**
-**Exceed-rate:** 6/10 at Exceed depth = **60%**
+**Exceed-rate:** 7/10 at Exceed depth = **70%**
