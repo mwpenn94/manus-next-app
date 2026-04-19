@@ -46,6 +46,13 @@ import {
   Clock as ClockIcon,
   Film,
   FolderOpen,
+  Paintbrush,
+  Presentation,
+  Puzzle,
+  FileText,
+  Plug,
+  Wrench,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -495,6 +502,90 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <Film className="w-4 h-4" />
           Replay
+        </Link>
+        <Link
+          href="/skills"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/skills"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Puzzle className="w-4 h-4" />
+          Skills
+        </Link>
+        <Link
+          href="/slides"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/slides"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Presentation className="w-4 h-4" />
+          Slides
+        </Link>
+        <Link
+          href="/design"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/design"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Paintbrush className="w-4 h-4" />
+          Design
+        </Link>
+        <Link
+          href="/meetings"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/meetings"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <FileText className="w-4 h-4" />
+          Meetings
+        </Link>
+        <Link
+          href="/connectors"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/connectors"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Plug className="w-4 h-4" />
+          Connectors
+        </Link>
+        <Link
+          href="/webapp-builder"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/webapp-builder"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Wrench className="w-4 h-4" />
+          App Builder
+        </Link>
+        <Link
+          href="/team"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/team"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Users className="w-4 h-4" />
+          Team
         </Link>
         <Link
           href="/settings"

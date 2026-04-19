@@ -371,12 +371,12 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         });
 
         // If it's an image, send a special image event for inline display
-        if (result.url && toolName === "generate_image") {
+        if (result.url && (toolName === "generate_image" || toolName === "design_canvas")) {
           sendSSE(safeWrite, { image: result.url });
         }
 
         // If it's a document, send a document event so client can surface download link
-        if (result.url && toolName === "generate_document") {
+        if (result.url && (toolName === "generate_document" || toolName === "generate_slides" || toolName === "take_meeting_notes")) {
           sendSSE(safeWrite, {
             document: {
               url: result.url,
@@ -472,6 +472,18 @@ function getToolDisplayInfo(
       return { type: "browsing", label: `Browsing ${args.url ? new URL(args.url).hostname : "webpage"}` };
     case "wide_research":
       return { type: "researching", label: `Wide research: ${(args.queries || []).length} parallel queries` };
+    case "generate_slides":
+      return { type: "generating", label: `Creating presentation: ${(args.topic || "").slice(0, 60)}` };
+    case "send_email":
+      return { type: "sending", label: `Sending email: ${(args.subject || "").slice(0, 60)}` };
+    case "take_meeting_notes":
+      return { type: "analyzing", label: `Processing meeting notes` };
+    case "design_canvas":
+      return { type: "designing", label: `Creating design: ${(args.description || "").slice(0, 60)}` };
+    case "cloud_browser":
+      return { type: "browsing", label: `Cloud browser: ${args.url ? new URL(args.url).hostname : "page"}` };
+    case "screenshot_verify":
+      return { type: "analyzing", label: `Verifying screenshot: ${(args.question || "").slice(0, 60)}` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

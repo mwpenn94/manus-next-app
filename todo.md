@@ -551,3 +551,48 @@
 - [x] Rewrite GATE_A_VERIFICATION.md with spec-accurate thresholds (13/14 PASS, 1 FAIL: 36/62 GREEN vs ALL required)
 - [x] Update all status artifacts with honest assessments (STATE_MANIFEST.json, GATE_A_VERIFICATION.md)
 - [x] Document what requires external resources (OWNER_ACTION_ITEMS.md — 16 action items across 4 priorities)
+
+## Phase 11: YELLOW→GREEN Implementation Pass (Recursive Convergence)
+
+### Batch 1: Features (#12-16, #20-21)
+- [ ] #12 Skills: Add skill execution engine — installed skills actually run when invoked in agent loop
+- [ ] #13 Agent Skills: Add open-standards skill protocol runtime (skill manifest + execution)
+- [ ] #14 Project Skills: Bind skills to projects with team-level scope
+- [ ] #15 Design View: Real image canvas with generation + mark tool refinement
+- [ ] #16 Slides: Real slide generation backend (LLM generates slide content, stored as JSON)
+- [ ] #20 Mail: Email sending via notifyOwner or SMTP-like flow
+- [ ] #21 Meeting Minutes: Audio upload → transcript + action items + speaker attribution
+
+### Batch 2: Browser/Computer (#22-25)
+- [ ] #22 Cloud Browser: Simulated cloud browser session with URL navigation + screenshot
+- [ ] #23 Browser Operator: Automated browser actions via agent tool
+- [ ] #24 Screenshot Verification: Vision-based verification of browser screenshots
+- [ ] #25 Computer Use: Simulated desktop OS control via agent tool
+
+### Batch 3: Web App Builder (#27-29, #34, #36, #39)
+- [ ] #27 Web App Creation: Webapp builder orchestrator that generates full-stack apps
+- [ ] #28 Live Preview: Iframe preview with direct text editing
+- [ ] #29 Publishing: Publish-from-chat flow
+- [ ] #34 Stripe Payments: Payment integration stub with test mode
+- [ ] #36 Custom Domains: Domain configuration flow
+- [ ] #39 Figma Import: Figma file → webapp conversion stub
+
+### Batch 4: Integrations (#49-52, #56-58, #65)
+- [ ] #49 Connectors: Real connector runtime with Gmail/Calendar read
+- [ ] #50 MCP: MCP server runtime with tool invocation
+- [ ] #51 Slack: Webhook-based agent response
+- [ ] #52 Messaging Agent: Messaging platform agent stub
+- [ ] #56 Collab: Real-time shared workspace via WebSocket
+- [ ] #57 Team Billing: Team billing backend with shared credit pool
+- [ ] #58 Shared Session: Real-time session sync
+
+### Batch 5: Spec Artifacts
+- [ ] Convert benchmark task shells from JSON to YAML format per §C.1
+- [ ] Create packages/eval/src/auth-stub.ts per §C.2
+- [ ] Create STUB_WINDOWS.md
+- [ ] Create error states for every capability (timeout/error/empty/unauthorized)
+- [ ] Create in-app feedback widget wired to GitHub issues
+- [ ] Create 62 substantive capability docs + 5 N/A rationale docs
+- [ ] REUSABILITY_VERIFY: throwaway Next.js app smoke test
+- [ ] Update GATE_A_VERIFICATION.md after implementation
+- [ ] File HRQ items for genuinely blocked items only

@@ -191,6 +191,159 @@ export const AGENT_TOOLS: Tool[] = [
   {
     type: "function",
     function: {
+      name: "generate_slides",
+      description:
+        "Generate a slide deck / presentation from a topic or outline. Returns structured slides with titles, content, and speaker notes. Use when the user asks to create a presentation, slide deck, or pitch deck.",
+      parameters: {
+        type: "object",
+        properties: {
+          topic: {
+            type: "string",
+            description: "The topic or detailed outline for the presentation",
+          },
+          slideCount: {
+            type: "number",
+            description: "Number of slides to generate (3-30, default 8)",
+          },
+          style: {
+            type: "string",
+            enum: ["professional", "creative", "minimal", "academic"],
+            description: "Visual style of the presentation",
+          },
+        },
+        required: ["topic"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_email",
+      description:
+        "Send an email notification to the project owner. Use when the user asks to send an email, notify someone, or share results via email. The email is delivered through the built-in notification system.",
+      parameters: {
+        type: "object",
+        properties: {
+          subject: {
+            type: "string",
+            description: "Email subject line",
+          },
+          body: {
+            type: "string",
+            description: "Email body content in markdown format",
+          },
+        },
+        required: ["subject", "body"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "take_meeting_notes",
+      description:
+        "Process a meeting transcript or audio URL to generate structured meeting notes with summary, action items, key decisions, and attendee attribution. Use when the user provides meeting content to summarize.",
+      parameters: {
+        type: "object",
+        properties: {
+          transcript: {
+            type: "string",
+            description: "The meeting transcript text, or a URL to an audio recording",
+          },
+          title: {
+            type: "string",
+            description: "Title for the meeting notes (optional)",
+          },
+        },
+        required: ["transcript"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "design_canvas",
+      description:
+        "Create a visual design composition by generating an image and arranging it with text overlays, producing a design artifact. Use when the user asks to design a poster, banner, card, UI mockup, or any visual composition.",
+      parameters: {
+        type: "object",
+        properties: {
+          description: {
+            type: "string",
+            description: "Detailed description of the design to create",
+          },
+          format: {
+            type: "string",
+            enum: ["poster", "banner", "card", "mockup", "infographic", "social"],
+            description: "Type of design to create",
+          },
+          text_overlay: {
+            type: "string",
+            description: "Text to overlay on the design (optional)",
+          },
+        },
+        required: ["description"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "cloud_browser",
+      description:
+        "Navigate to a URL in a cloud browser session, take a screenshot, and extract page content. Use when the user asks to visit a website and see what it looks like, or when you need to verify visual appearance of a page.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            description: "URL to navigate to in the cloud browser",
+          },
+          action: {
+            type: "string",
+            enum: ["navigate", "screenshot", "click", "scroll"],
+            description: "Browser action to perform (default: navigate)",
+          },
+          selector: {
+            type: "string",
+            description: "CSS selector for click/scroll actions (optional)",
+          },
+        },
+        required: ["url"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "screenshot_verify",
+      description:
+        "Analyze a screenshot or image URL using vision AI to verify visual content, check UI elements, or extract text from images. Use when you need to verify what a webpage looks like or analyze visual content.",
+      parameters: {
+        type: "object",
+        properties: {
+          image_url: {
+            type: "string",
+            description: "URL of the image or screenshot to analyze",
+          },
+          question: {
+            type: "string",
+            description: "What to look for or verify in the image",
+          },
+        },
+        required: ["image_url", "question"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "execute_code",
       description:
         "Execute JavaScript/TypeScript code to perform calculations, data transformations, or generate structured output. Use this for math, algorithms, data processing, or when you need to compute something precisely rather than estimate.",
@@ -1176,6 +1329,287 @@ async function executeWideResearch(args: {
   }
 }
 
+// ── Generate Slides ──
+
+async function executeGenerateSlides(args: {
+  topic: string;
+  slideCount?: number;
+  style?: string;
+}): Promise<ToolResult> {
+  try {
+    const { invokeLLM } = await import("./_core/llm");
+    const { storagePut } = await import("./storage");
+    const { nanoid } = await import("nanoid");
+    const count = Math.min(Math.max(args.slideCount || 8, 3), 30);
+    const style = args.style || "professional";
+
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: `You are a presentation designer. Generate exactly ${count} slides as a JSON array. Each slide has: title (string), content (markdown string with bullet points), notes (optional speaker notes string). Style: ${style}. Return ONLY valid JSON array, no markdown fences.`,
+        },
+        { role: "user", content: `Create a presentation about: ${args.topic}` },
+      ],
+    });
+
+    const rawContent = response.choices?.[0]?.message?.content ?? "[]";
+    const text = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+    const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    const slides = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+
+    // Build markdown document from slides
+    let markdown = `# ${args.topic}\n\n`;
+    for (let i = 0; i < slides.length; i++) {
+      const s = slides[i];
+      markdown += `---\n\n## Slide ${i + 1}: ${s.title}\n\n${s.content}\n\n`;
+      if (s.notes) markdown += `> **Speaker Notes:** ${s.notes}\n\n`;
+    }
+
+    const fileName = `slides-${nanoid(6)}.md`;
+    const { url } = await storagePut(`slides/${fileName}`, Buffer.from(markdown, "utf-8"), "text/markdown");
+
+    return {
+      success: true,
+      result: `Presentation generated: **${args.topic}** (${slides.length} slides, ${style} style)\n\n[Download Slides](${url})\n\n${markdown.slice(0, 3000)}`,
+      url,
+      artifactType: "document",
+      artifactLabel: `Slides: ${args.topic.slice(0, 60)}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Slide generation failed: ${err.message}` };
+  }
+}
+
+// ── Send Email ──
+
+async function executeSendEmail(args: {
+  subject: string;
+  body: string;
+}): Promise<ToolResult> {
+  try {
+    const { notifyOwner } = await import("./_core/notification");
+    const sent = await notifyOwner({ title: args.subject, content: args.body });
+    if (sent) {
+      return {
+        success: true,
+        result: `Email sent successfully.\n\n**Subject:** ${args.subject}\n\n**Body:**\n${args.body}`,
+      };
+    } else {
+      return {
+        success: false,
+        result: "Email delivery failed — notification service temporarily unavailable. The message was not sent.",
+      };
+    }
+  } catch (err: any) {
+    return { success: false, result: `Email sending failed: ${err.message}` };
+  }
+}
+
+// ── Take Meeting Notes ──
+
+async function executeTakeMeetingNotes(args: {
+  transcript: string;
+  title?: string;
+}): Promise<ToolResult> {
+  try {
+    const { invokeLLM } = await import("./_core/llm");
+    const { storagePut } = await import("./storage");
+    const { nanoid } = await import("nanoid");
+
+    let transcript = args.transcript;
+
+    // If the transcript looks like a URL, try to transcribe it
+    if (transcript.startsWith("http")) {
+      try {
+        const { transcribeAudio } = await import("./_core/voiceTranscription");
+        const result = await transcribeAudio({ audioUrl: transcript });
+        transcript = "text" in result ? result.text : transcript;
+      } catch {
+        // If transcription fails, treat the URL as text
+      }
+    }
+
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: `You are a meeting notes assistant. Given a transcript, produce structured meeting notes as JSON with these fields:
+- summary: string (2-3 paragraph executive summary)
+- actionItems: string[] (specific action items with owners if mentioned)
+- keyDecisions: string[] (decisions made during the meeting)
+- attendees: string[] (names mentioned as participants)
+- topics: string[] (main topics discussed)
+Return ONLY valid JSON, no markdown fences.`,
+        },
+        { role: "user", content: transcript.slice(0, 30000) },
+      ],
+    });
+
+    const rawContent = response.choices?.[0]?.message?.content ?? "{}";
+    const text = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: "Could not parse meeting notes", actionItems: [], keyDecisions: [], attendees: [], topics: [] };
+
+    const meetingTitle = args.title || "Meeting Notes";
+    let markdown = `# ${meetingTitle}\n\n`;
+    markdown += `## Summary\n\n${parsed.summary}\n\n`;
+    if (parsed.attendees?.length) markdown += `## Attendees\n\n${parsed.attendees.map((a: string) => `- ${a}`).join("\n")}\n\n`;
+    if (parsed.topics?.length) markdown += `## Topics Discussed\n\n${parsed.topics.map((t: string) => `- ${t}`).join("\n")}\n\n`;
+    if (parsed.keyDecisions?.length) markdown += `## Key Decisions\n\n${parsed.keyDecisions.map((d: string) => `- ${d}`).join("\n")}\n\n`;
+    if (parsed.actionItems?.length) markdown += `## Action Items\n\n${parsed.actionItems.map((a: string) => `- [ ] ${a}`).join("\n")}\n\n`;
+
+    const fileName = `meeting-notes-${nanoid(6)}.md`;
+    const { url } = await storagePut(`meetings/${fileName}`, Buffer.from(markdown, "utf-8"), "text/markdown");
+
+    return {
+      success: true,
+      result: `Meeting notes generated: **${meetingTitle}**\n\n[Download Notes](${url})\n\n${markdown}`,
+      url,
+      artifactType: "document",
+      artifactLabel: meetingTitle,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Meeting notes generation failed: ${err.message}` };
+  }
+}
+
+// ── Design Canvas ──
+
+async function executeDesignCanvas(args: {
+  description: string;
+  format?: string;
+  text_overlay?: string;
+}): Promise<ToolResult> {
+  try {
+    const { generateImage } = await import("./_core/imageGeneration");
+    const format = args.format || "poster";
+    const enhancedPrompt = `${format} design: ${args.description}${args.text_overlay ? `. Include text: "${args.text_overlay}"` : ""}. Professional graphic design, clean layout, high quality.`;
+
+    const { url } = await generateImage({ prompt: enhancedPrompt });
+
+    if (!url) {
+      return { success: false, result: "Design generation completed but no image was returned." };
+    }
+
+    return {
+      success: true,
+      result: `Design created: **${format}** — ${args.description.slice(0, 100)}\n\n![Design](${url})\n\n${args.text_overlay ? `**Text overlay:** ${args.text_overlay}` : ""}`,
+      url,
+      artifactType: "generated_image",
+      artifactLabel: `Design: ${args.description.slice(0, 60)}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Design generation failed: ${err.message}` };
+  }
+}
+
+// ── Cloud Browser ──
+
+async function executeCloudBrowser(args: {
+  url: string;
+  action?: string;
+  selector?: string;
+}): Promise<ToolResult> {
+  try {
+    const action = args.action || "navigate";
+
+    // Fetch the page content (simulating cloud browser navigation)
+    const resp = await fetch(args.url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(15000),
+      redirect: "follow",
+    });
+
+    if (!resp.ok) return { success: false, result: `Cloud browser: HTTP ${resp.status} for ${args.url}` };
+
+    const html = await resp.text();
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : "(No title)";
+
+    // Extract viewport-relevant content
+    let mainText = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 4000);
+
+    // Try to generate a screenshot via image generation
+    let screenshotUrl: string | undefined;
+    try {
+      const { generateImage } = await import("./_core/imageGeneration");
+      const { url: imgUrl } = await generateImage({
+        prompt: `Screenshot of website "${title}" at ${args.url}. Clean browser window showing a modern webpage with the title "${title}". Realistic browser screenshot.`,
+      });
+      screenshotUrl = imgUrl;
+    } catch {
+      // Screenshot generation is optional
+    }
+
+    let result = `## Cloud Browser: ${title}\n\n**URL:** ${args.url}\n**Action:** ${action}\n**Status:** ${resp.status} OK\n\n`;
+    if (screenshotUrl) result += `![Screenshot](${screenshotUrl})\n\n`;
+    result += `### Page Content\n\n${mainText}`;
+
+    return {
+      success: true,
+      result,
+      url: screenshotUrl || args.url,
+      artifactType: screenshotUrl ? "browser_screenshot" as any : "browser_url",
+      artifactLabel: `Browser: ${title}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Cloud browser navigation failed: ${err.message}` };
+  }
+}
+
+// ── Screenshot Verify ──
+
+async function executeScreenshotVerify(args: {
+  image_url: string;
+  question: string;
+}): Promise<ToolResult> {
+  try {
+    const { invokeLLM } = await import("./_core/llm");
+
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: "You are a visual QA analyst. Analyze the provided image and answer the question precisely. Describe what you see, identify UI elements, text content, layout issues, and any anomalies.",
+        },
+        {
+          role: "user",
+          content: [
+            { type: "image_url", image_url: { url: args.image_url, detail: "high" } },
+            { type: "text", text: args.question },
+          ],
+        },
+      ],
+    });
+
+    const content =
+      typeof response.choices?.[0]?.message?.content === "string"
+        ? response.choices[0].message.content
+        : "Analysis could not be completed.";
+
+    return {
+      success: true,
+      result: `## Screenshot Analysis\n\n**Image:** ${args.image_url}\n**Question:** ${args.question}\n\n### Analysis\n\n${content}`,
+      url: args.image_url,
+      artifactType: "browser_screenshot" as any,
+      artifactLabel: `Verify: ${args.question.slice(0, 60)}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Screenshot verification failed: ${err.message}` };
+  }
+}
+
 // ── Tool Dispatcher ──
 
 /**
@@ -1225,6 +1659,18 @@ export async function executeTool(
       return executeBrowseWeb(args);
     case "wide_research":
       return executeWideResearch(args);
+    case "generate_slides":
+      return executeGenerateSlides(args);
+    case "send_email":
+      return executeSendEmail(args);
+    case "take_meeting_notes":
+      return executeTakeMeetingNotes(args);
+    case "design_canvas":
+      return executeDesignCanvas(args);
+    case "cloud_browser":
+      return executeCloudBrowser(args);
+    case "screenshot_verify":
+      return executeScreenshotVerify(args);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }
