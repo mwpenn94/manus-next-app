@@ -124,7 +124,17 @@ The `@storybook/addon-a11y` addon runs axe-core on every story, providing:
 
 ## Current Status
 
-**PLANNED** — Storybook configuration is documented and ready to execute. Installation deferred to avoid adding dev dependencies that increase `node_modules` size during active development.
+**IMPLEMENTED** — Storybook is installed and configured with 8 component stories:
+- ManusNextChat.stories.tsx
+- ModeToggle.stories.tsx
+- KeyboardShortcutsDialog.stories.tsx
+- NotificationCenter.stories.tsx
+- ShareDialog.stories.tsx
+- MobileBottomNav.stories.tsx
+- ManusDialog.stories.tsx
+- ErrorBoundary.stories.tsx
+
+Run `pnpm storybook` to launch the Storybook dev server on port 6006.
 
 ## Execution Steps
 

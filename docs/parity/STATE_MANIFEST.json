@@ -2,11 +2,11 @@
   "repo": "mwpenn94/manus-next-app",
   "spec_version": "v8.4",
   "phase": "A",
-  "last_completed_pass": "CONVERGENCE_VERIFICATION_PASS_3",
-  "next_pass": "CONVERGENCE_VERIFICATION_PASS_4",
-  "last_updated": "2026-04-19T07:05:00Z",
-  "current_state": "DEV_CONVERGED",
-  "convergence_pass": 14,
+  "last_completed_pass": "CONVERGENCE_PASS_1_FRESH",
+  "next_pass": "CONVERGENCE_PASS_2_FRESH",
+  "last_updated": "2026-04-19T10:30:00Z",
+  "current_state": "FIXING_PASS_1_ISSUES",
+  "convergence_pass": 1,
   "convergence_counter": 0,
   "target_consecutive_passes": 3,
 
@@ -81,31 +81,37 @@
     "storage": "S3 (via Manus)",
     "auth": "Manus OAuth",
     "agent_tools": 14,
+    "agent_tool_names": [
+      "web_search", "read_webpage", "generate_image", "analyze_data",
+      "generate_document", "browse_web", "wide_research", "generate_slides",
+      "send_email", "take_meeting_notes", "design_canvas", "cloud_browser",
+      "screenshot_verify", "execute_code"
+    ],
     "max_tool_turns": { "quality": 20, "speed": 8, "max": 25 },
-    "trpc_routers": 15,
+    "trpc_routers": 25,
     "db_tables": 23,
-    "pages": 17,
+    "pages": 21,
     "tests": 166,
     "test_files": 11,
     "typescript_errors": 0,
     "stripe": "sandbox_provisioned_with_fulfillment",
-    "i18n": "not_implemented",
-    "storybook": "not_implemented",
-    "pwa": "not_implemented"
+    "i18n": "implemented_react_intl_en_es",
+    "storybook": "configured_8_stories",
+    "pwa": "manifest_and_sw_in_public"
   },
 
   "artifacts": {
     "PARITY_BACKLOG": "current (57 GREEN, 0 YELLOW)",
     "GATE_A_VERIFICATION": "current (14/14 PASS)",
-    "CONVERGENCE_DIRECTIVE_CHECK": "current (57 GREEN, 14 tools, MAX_TOOL_TURNS=20)",
+    "CONVERGENCE_DIRECTIVE_CHECK": "current (correct 14 tool names, 57/57 GREEN)",
     "STEWARDLY_HANDOFF": "current (14 tools, 25 routers, 23 tables, 21 pages)",
     "STRICT_WINS": "current (14 tools, MAX_TOOL_TURNS=20)",
     "COMPREHENSION_ESSAY": "current",
-    "STATE_MANIFEST": "current",
-    "SESSION_HANDOFF": "current (57 in-scope, 14 tools, 23 tables)",
+    "STATE_MANIFEST": "this_file",
+    "SESSION_HANDOFF": "current",
     "STUB_WINDOWS": "current",
     "RECURSION_LOG": "current",
-    "PASS1_AUDIT": "current"
+    "BENCHMARK_EXECUTE": "current (21 pages, 9.5 completeness, 8.90 composite)"
   },
 
   "convergence_directive_check": {
@@ -113,7 +119,8 @@
     "word_by_word_mapping": true,
     "all_words_at_match": true,
     "humility_protocol": true,
-    "directive_words_mapped": 9
+    "directive_words_mapped": 8,
+    "known_issue": "none"
   },
 
   "quality_scores": {
@@ -123,17 +130,6 @@
     "typescript_errors": 0
   },
 
-  "phase_12_changes": {
-    "capabilities_upgraded": 6,
-    "green_delta": "+6 (51→57)",
-    "pages_added": ["ComputerUsePage", "FigmaImportPage", "DesktopAppPage", "MessagingAgentPage"],
-    "stripe_activated": true,
-    "db_tables_added": ["teams", "team_members", "team_sessions", "webapp_builds", "designs"],
-    "stripe_columns_added": ["users.stripeCustomerId", "users.stripeSubscriptionId"],
-    "pages_rewritten_with_real_trpc": ["TeamPage", "WebAppBuilderPage", "DesignView"],
-    "bugs_fixed": ["ManusNextChat AbortController", "ManusNextChat file picker", "ManusNextChat TTS", "MessagingAgent persistence", "FigmaImport canned fallback", "Stripe webhook fulfillment", "MAX_TOOL_TURNS 8→20"]
-  },
-
-  "last_session_iso": "2026-04-19T07:05:00Z",
-  "notes": "Phase 12 complete. All 57 in-scope GREEN. Convergence verification: Pass 1 found 10 issues (fixed), Pass 2 found 4 stale artifacts (fixed), Pass 3 found 6 stale docs (fixing now). Counter at 0/3."
+  "last_session_iso": "2026-04-19T10:30:00Z",
+  "notes": "Fresh 3-pass convergence protocol started. Pass 1 found 6 issues: STATE_MANIFEST stale counts, CONVERGENCE_DIRECTIVE_CHECK wrong tool names, BENCHMARK_EXECUTE stale scores/counts, STORYBOOK_PLAN stale status. Fixing now."
 }
