@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -62,6 +64,42 @@ function buildOAuthCallbackHtml(
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // ── Security Headers ──
+  app.use(helmet({
+    contentSecurityPolicy: false, // CSP handled by Vite in dev, custom in prod
+    crossOriginEmbedderPolicy: false, // Required for OAuth popups
+  }));
+
+  // ── Rate Limiting ──
+  // Strict limit for LLM stream (costs real money per call)
+  const streamLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 20, // 20 requests per minute per IP
+    message: { error: "Too many requests. Please slow down." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  // Moderate limit for file uploads
+  const uploadLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30, // 30 uploads per minute
+    message: { error: "Upload rate limit exceeded." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  // General API rate limit
+  const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 200, // 200 requests per minute
+    message: { error: "Rate limit exceeded. Please try again shortly." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use("/api/stream", streamLimiter);
+  app.use("/api/upload", uploadLimiter);
+  app.use("/api/trpc", apiLimiter);
+
   // ── Stripe webhook (raw body required BEFORE json parser) ──
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
     try {
@@ -114,15 +152,26 @@ async function startServer() {
     }
   });
 
-  // ── File upload endpoint ──
+  // ── File upload endpoint (auth required) ──
   app.post("/api/upload", async (req, res) => {
     try {
+      // Auth check: require valid session
+      const { sdk: sdkInstance } = await import("./sdk");
+      const user = await sdkInstance.authenticateRequest(req).catch(() => null);
+      if (!user) {
+        return res.status(401).json({ error: "Authentication required for file uploads" });
+      }
+
       const { storagePut } = await import("../storage");
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => chunks.push(chunk));
       req.on("end", async () => {
         try {
           const body = Buffer.concat(chunks);
+          // Enforce 50MB upload limit
+          if (body.length > 50 * 1024 * 1024) {
+            return res.status(413).json({ error: "File too large. Maximum size is 50MB." });
+          }
           const contentType = req.headers["content-type"] || "application/octet-stream";
           const fileName = (req.headers["x-file-name"] as string) || `upload-${Date.now()}`;
           const taskId = (req.headers["x-task-id"] as string) || "unknown";
@@ -144,6 +193,18 @@ async function startServer() {
   // server executes them, streams progress, feeds results back until done.
   app.post("/api/stream", async (req, res) => {
     console.log("[Stream] Agentic request received");
+
+    // Auth guard: require valid session before starting expensive LLM calls
+    try {
+      const { sdk: sdkAuth } = await import("./sdk");
+      const authUser = await sdkAuth.authenticateRequest(req).catch(() => null);
+      if (!authUser) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+    } catch {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -169,6 +230,12 @@ async function startServer() {
       const { runAgentStream } = await import("../agentStream");
       const body = req.body || {};
       const messages = body.messages || [];
+      // Enforce message array size limit (prevent abuse)
+      if (messages.length > 200) {
+        safeWrite(`data: ${JSON.stringify({ error: "Too many messages in conversation. Please start a new task." })}\n\n`);
+        safeEnd();
+        return;
+      }
       const taskExternalId = body.taskExternalId as string | undefined;
       const mode = (body.mode === "speed" ? "speed" : "quality") as "speed" | "quality";
       console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId, "mode:", mode);

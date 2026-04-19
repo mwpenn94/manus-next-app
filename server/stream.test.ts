@@ -158,3 +158,81 @@ describe("SSE stream endpoint logic", () => {
     expect(messages[1].role).toBe("user");
   });
 });
+
+describe("Anti-premature-completion detection", () => {
+  // Regex patterns from agentStream.ts
+  const wantsCreativeOutputPattern = /\b(generate|create|write|make|draft|build|design|plan|guide|step.?by.?step|outline|script|story|tutorial|curriculum|template|proposal|report)\b/i;
+  const claimsFulfilledPattern = /\b(already (fulfilled|provided|answered|completed|addressed)|I (have|believe I have) (already|previously)|comparison table isn.t (directly )?applicable|Therefore.{0,30}I (have|believe))\b/i;
+  const isDeflectingPattern = /\b(isn.t (directly )?applicable|not (directly )?applicable|cannot|can.t|unable to|beyond my|outside my)\b/i;
+
+  it("detects creative task requests", () => {
+    expect(wantsCreativeOutputPattern.test("generate me a step by step guide to make a video skit")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("create a plan for my project")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("write a story about a cat")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("make a tutorial for React")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("draft a proposal for the client")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("build an outline for the presentation")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("design a curriculum for the course")).toBe(true);
+    expect(wantsCreativeOutputPattern.test("step by step guide for cooking")).toBe(true);
+    // Non-creative requests should not match
+    expect(wantsCreativeOutputPattern.test("what is the weather today")).toBe(false);
+    expect(wantsCreativeOutputPattern.test("who is the president")).toBe(false);
+  });
+
+  it("detects premature fulfillment claims", () => {
+    expect(claimsFulfilledPattern.test("I have already fulfilled the request for detailed information")).toBe(true);
+    expect(claimsFulfilledPattern.test("I have already provided a comprehensive answer")).toBe(true);
+    expect(claimsFulfilledPattern.test("I believe I have already addressed this")).toBe(true);
+    expect(claimsFulfilledPattern.test("A comparison table isn't directly applicable here")).toBe(true);
+    expect(claimsFulfilledPattern.test("Therefore, I believe I have already fulfilled the request")).toBe(true);
+    // Normal responses should not match
+    expect(claimsFulfilledPattern.test("Here is the step by step guide you requested")).toBe(false);
+    expect(claimsFulfilledPattern.test("Let me create that for you")).toBe(false);
+  });
+
+  it("detects deflection on creative tasks", () => {
+    expect(isDeflectingPattern.test("A comparison table isn't directly applicable here as the request was for the meaning of a song")).toBe(true);
+    expect(isDeflectingPattern.test("This is not directly applicable to the task")).toBe(true);
+    expect(isDeflectingPattern.test("I cannot generate that type of content")).toBe(true);
+    expect(isDeflectingPattern.test("I'm unable to produce a video script")).toBe(true);
+    // Non-deflection should not match
+    expect(isDeflectingPattern.test("Here is the guide you requested")).toBe(false);
+  });
+
+  it("correctly identifies the Casting Crowns chat log scenario", () => {
+    const userText = "generate me a step by step guide to make a youth group video skit to the song from casting crowns does anybody hear her";
+    const llmResponse = "I have already used web_search and provided a comprehensive answer based on the snippets and an initial read of the most relevant URLs. A comparison table isn't directly applicable here as the request was for the meaning of a song, not a comparison between different entities. Therefore, I believe I have already fulfilled the request for detailed information.";
+
+    // User wants creative output
+    expect(wantsCreativeOutputPattern.test(userText)).toBe(true);
+    // LLM claims fulfillment
+    expect(claimsFulfilledPattern.test(llmResponse)).toBe(true);
+    // LLM is deflecting
+    expect(isDeflectingPattern.test(llmResponse)).toBe(true);
+
+    // Both conditions met → anti-premature-completion should trigger
+    const shouldNudge = (claimsFulfilledPattern.test(llmResponse) || (isDeflectingPattern.test(llmResponse) && wantsCreativeOutputPattern.test(userText))) && wantsCreativeOutputPattern.test(userText);
+    expect(shouldNudge).toBe(true);
+  });
+
+  it("does NOT trigger anti-premature-completion for genuine research answers", () => {
+    const userText = "what is the meaning of the song does anybody hear her";
+    const llmResponse = "Based on my research, the song 'Does Anybody Hear Her' by Casting Crowns is about the church's failure to reach out to those who are hurting and lost.";
+
+    // User is asking a question, not requesting creative output
+    expect(wantsCreativeOutputPattern.test(userText)).toBe(false);
+    // LLM is not claiming premature fulfillment
+    expect(claimsFulfilledPattern.test(llmResponse)).toBe(false);
+  });
+
+  it("system prompt includes creative task completion rules", async () => {
+    // Read the DEFAULT_SYSTEM_PROMPT from agentStream.ts
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("ALWAYS COMPLETE THE USER'S ACTUAL REQUEST");
+    expect(content).toContain("NEVER claim you have \"already fulfilled\"");
+    expect(content).toContain("NEVER refuse creative or generative tasks");
+    expect(content).toContain("TASK COMPLETION VERIFICATION");
+    expect(content).toContain("Searching for information is NOT the same as producing the requested output");
+  });
+});

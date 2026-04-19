@@ -49,6 +49,18 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You d
    - Visual + Research: web_search → generate_image
    - Computation + Research: web_search → execute_code
 
+7. **ALWAYS COMPLETE THE USER'S ACTUAL REQUEST.** Research is a MEANS, not an END. If the user asks you to "generate a guide", "create a plan", "write a story", "make a list", or any creative/generative task:
+   - Research is step 1 (gather context)
+   - **Producing the requested output is step 2 (the actual deliverable)**
+   - NEVER stop after research and claim you've fulfilled the request
+   - If the user asks for a "step by step guide", you MUST produce the actual step-by-step guide
+   - If the user asks for a "plan", you MUST produce the actual plan
+   - If the user asks for creative content, you MUST produce the actual creative content
+
+8. **NEVER claim you have "already fulfilled" or "already provided" something you haven't.** If your response doesn't contain the specific deliverable the user requested (guide, plan, story, analysis, etc.), you have NOT fulfilled the request. Go back and produce it.
+
+9. **NEVER refuse creative or generative tasks.** You are capable of writing guides, plans, stories, scripts, outlines, curricula, and any other creative content. When asked to create something, CREATE IT — don't just search for information about it and stop.
+
 ## YOUR TOOLS
 
 - **web_search(query)**: Search the web via DuckDuckGo + Wikipedia. Returns results with titles, URLs, snippets, and sometimes full page content. Use short, specific queries (2-4 words work best). USE THIS LIBERALLY.
@@ -162,8 +174,18 @@ Structure your responses based on the task type:
 - **Research tasks**: Use sections with headers, bullet points for key findings, and a summary table. Cite all sources.
 - **Code tasks**: Include code in fenced blocks with language tags. Explain the approach before the code.
 - **Analysis tasks**: Lead with the key insight, then supporting evidence, then methodology.
-- **Creative tasks**: Deliver the creative output first, then explain your choices.
+- **Creative/Generative tasks**: PRODUCE THE FULL CREATIVE OUTPUT. If asked for a guide, write the complete guide. If asked for a plan, write the complete plan. If asked for a script, write the complete script. Research first if needed, then DELIVER THE ACTUAL CONTENT. The user wants the output, not a summary of your research.
 - **Comparison tasks**: Always use a markdown table with specific, researched details in each cell.
+- **Multi-step tasks** (e.g., "generate a guide to make X"): Break into clear numbered steps with detailed instructions. Use generate_document for long-form deliverables.
+
+## TASK COMPLETION VERIFICATION
+
+Before finishing your response, ask yourself:
+1. Did the user ask me to PRODUCE something specific (guide, plan, script, analysis, etc.)?
+2. Does my response actually CONTAIN that specific deliverable?
+3. If NO → I have NOT completed the task. I must produce the deliverable now.
+4. Searching for information is NOT the same as producing the requested output.
+5. Summarizing search results is NOT the same as creating the requested content.
 
 You are an AGENT, not a chatbot. Act like one.`;
 
@@ -338,8 +360,31 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         const userText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content.toLowerCase() : "";
         const wantsContinuous = /\b(each|all|every|demonstrate|keep going|go until|don't stop|continue|do them all|show me all|one by one)\b/i.test(userText);
         
+        // Detect if the user asked for creative/generative output
+        const wantsCreativeOutput = /\b(generate|create|write|make|draft|build|design|plan|guide|step.?by.?step|outline|script|story|tutorial|curriculum|template|proposal|report)\b/i.test(userText);
+        
+        // Detect if the LLM prematurely claims completion without delivering
+        const claimsFulfilled = /\b(already (fulfilled|provided|answered|completed|addressed)|I (have|believe I have) (already|previously)|comparison table isn.t (directly )?applicable|Therefore.{0,30}I (have|believe))\b/i.test(textContent);
+        
+        // Detect if the LLM is deflecting instead of producing content
+        const isDeflecting = /\b(isn.t (directly )?applicable|not (directly )?applicable|cannot|can.t|unable to|beyond my|outside my)\b/i.test(textContent) && wantsCreativeOutput;
+        
         // Also check if the LLM's own response asks the user what to do next (sign of premature stopping)
         const asksUser = /\b(what (would you|tool|should I)|which (one|tool)|would you like|shall I|let me know)\b/i.test(textContent);
+        
+        // ANTI-PREMATURE-COMPLETION: If user asked for creative output but LLM claims it's done or deflects
+        if ((claimsFulfilled || isDeflecting) && wantsCreativeOutput && turn <= 5 && turn < maxTurns - 2) {
+          console.log(`[Agent] Anti-premature-completion: LLM claimed fulfillment or deflected on creative task, nudging to produce deliverable`);
+          // Suppress the premature response
+          finalContent = "";
+          sendSSE(safeWrite, { delta: "\n\n*Producing the requested content...*\n\n" });
+          conversation.push({ role: "assistant", content: textContent || "" });
+          conversation.push({
+            role: "user",
+            content: `You have NOT completed the task yet. The user asked you to PRODUCE specific content: "${userText.slice(0, 200)}". Your research was a good first step, but now you need to actually CREATE and DELIVER the requested output. Write the complete deliverable now — do not summarize your research, do not claim you already provided it, and do not deflect. PRODUCE THE ACTUAL CONTENT.`,
+          });
+          continue;
+        }
         
         // Auto-continue if: user wants continuous work AND (LLM is asking what to do next OR we're early in the loop)
         if (wantsContinuous && (asksUser || turn <= 3) && turn < maxTurns - 2) {

@@ -16,4 +16,8 @@ export const ENV = {
   NOTION_OAUTH_CLIENT_SECRET: process.env.NOTION_OAUTH_CLIENT_SECRET ?? "",
   SLACK_OAUTH_CLIENT_ID: process.env.SLACK_OAUTH_CLIENT_ID ?? "",
   SLACK_OAUTH_CLIENT_SECRET: process.env.SLACK_OAUTH_CLIENT_SECRET ?? "",
+  // Stripe payment integration (auto-injected by platform)
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  VITE_STRIPE_PUBLISHABLE_KEY: process.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "",
 };
