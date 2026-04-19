@@ -17,13 +17,13 @@ For each capability, we identify the best-in-class competitor, define measurable
 | Feature | ChatGPT | Claude | Gemini | manus-next-app |
 |---------|---------|--------|--------|----------------|
 | Streaming response | Yes | Yes | Yes | Yes |
-| Tool use | 10+ tools | 8+ tools | 10+ tools | 8 tools |
+| Tool use | 10+ tools | 8+ tools | 10+ tools | 14 tools |
 | Multi-turn context | 128K tokens | 200K tokens | 1M tokens | LLM-dependent |
 | Mode selection | GPT-4/4o toggle | Haiku/Sonnet/Opus | Flash/Pro | Speed/Quality/Max |
 | Voice input | Yes | No | Yes | Yes |
 | File upload | Yes | Yes | Yes | Yes |
 | Image generation | DALL-E 3 | No | Imagen | Via Forge API |
-| Code execution | Yes (sandbox) | No | Yes | No (LLM only) |
+| Code execution | Yes (sandbox) | No | Yes | Yes (execute_code tool) |
 | Memory | Yes (cross-session) | Yes (projects) | No | Yes (knowledge graph) |
 
 ### Quality Assessment
@@ -32,7 +32,7 @@ For each capability, we identify the best-in-class competitor, define measurable
 |-----------|--------------|----------------|-----|
 | Response quality | Claude (nuanced, detailed) | Good (model-dependent) | SMALL |
 | Response speed | Gemini Flash (~0.5s TTFT) | ~1-3s TTFT | MEDIUM |
-| Tool reliability | ChatGPT (mature pipeline) | Good (8 tools, tested) | SMALL |
+| Tool reliability | ChatGPT (mature pipeline) | Good (14 tools, tested) | SMALL |
 | UX polish | ChatGPT (refined, smooth) | Good (dark theme, animations) | SMALL |
 | Customization | Low (all competitors) | High (mode, memory, projects) | EXCEEDS |
 

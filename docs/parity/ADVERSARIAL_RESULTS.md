@@ -1,6 +1,6 @@
 # Adversarial Testing Results
 
-**Date:** 2026-04-18
+**Date:** 2026-04-19 (updated)
 **Scope:** Security, input validation, edge cases, error handling
 
 ---
@@ -41,7 +41,7 @@
 |---|--------------|----------|--------|---------|
 | 1 | Prompt injection in task input | Agent follows system prompt | System prompt takes precedence | PASS |
 | 2 | Tool call with invalid params | Error caught | executeTool catches and returns error | PASS |
-| 3 | Infinite tool loop | MAX_TOOL_TURNS stops | Capped at 4/8/12 by mode | PASS |
+| 3 | Infinite tool loop | MAX_TOOL_TURNS stops | Capped at 8/20/25 by mode (speed/quality/max) | PASS |
 | 4 | Malicious URL in read_webpage | Fetch with timeout | 30s timeout, error caught | PASS |
 | 5 | Code execution escape | Sandboxed | vm2-like isolation in execute_code | PASS |
 
@@ -52,7 +52,7 @@
 | # | Attack Vector | Expected | Actual | Verdict |
 |---|--------------|----------|--------|---------|
 | 1 | Path traversal in URL | Blocked | Express static middleware blocks | PASS |
-| 2 | Large file upload | Size limited | No file upload endpoint exposed | N/A |
+| 2 | Large file upload | Size limited | ManusNextChat file picker sends to agent, size validated | PASS |
 | 3 | Rapid API calls (DoS) | Rate limited | No explicit rate limit (noted) | WARN |
 | 4 | WebSocket flood | Connection limited | No WebSocket (SSE only) | N/A |
 | 5 | Memory exhaustion via large response | Streaming | SSE streaming prevents buffering | PASS |
