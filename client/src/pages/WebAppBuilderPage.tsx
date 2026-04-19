@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Code, Eye, Rocket, ArrowLeft, Loader2, RefreshCw,
   ExternalLink, Copy, CheckCircle2, Globe, Paintbrush, History,
+  Smartphone, Package,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -225,6 +226,16 @@ Generate the complete HTML code now.`,
             <p className="text-sm text-muted-foreground">
               Describe your app and let AI build it for you
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/mobile-projects")}>
+              <Smartphone className="w-4 h-4 mr-1.5" />
+              Mobile
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/app-publish")}>
+              <Package className="w-4 h-4 mr-1.5" />
+              Publish
+            </Button>
           </div>
         </div>
 

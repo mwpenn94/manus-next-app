@@ -1,9 +1,16 @@
 /**
  * MobileBottomNav — Fixed bottom navigation bar for mobile devices.
- * Shows on screens < md breakpoint. Provides quick access to Home, Tasks, Billing, Settings.
+ * Shows on screens < md breakpoint. Provides quick access to Home, Tasks, and a "More" menu
+ * that exposes all sidebar destinations.
  */
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { Home, ListTodo, CreditCard, Settings, Plus } from "lucide-react";
+import {
+  Home, ListTodo, CreditCard, Settings, MoreHorizontal, X,
+  Brain, FolderOpen, Clock, Film, Puzzle, Presentation,
+  Paintbrush, FileText, Plug, Wrench, Users, Monitor,
+  MessageSquare,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
 
@@ -14,16 +21,33 @@ interface NavItem {
   matchPrefix?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const PRIMARY_ITEMS: NavItem[] = [
   { path: "/", label: "Home", icon: Home },
   { path: "/task", label: "Tasks", icon: ListTodo, matchPrefix: true },
   { path: "/billing", label: "Billing", icon: CreditCard },
+];
+
+const MORE_ITEMS: NavItem[] = [
+  { path: "/memory", label: "Memory", icon: Brain },
+  { path: "/projects", label: "Projects", icon: FolderOpen },
+  { path: "/schedule", label: "Schedules", icon: Clock },
+  { path: "/replay", label: "Replay", icon: Film },
+  { path: "/skills", label: "Skills", icon: Puzzle },
+  { path: "/slides", label: "Slides", icon: Presentation },
+  { path: "/design", label: "Design", icon: Paintbrush },
+  { path: "/meetings", label: "Meetings", icon: FileText },
+  { path: "/connectors", label: "Connectors", icon: Plug },
+  { path: "/webapp-builder", label: "App Builder", icon: Wrench },
+  { path: "/team", label: "Team", icon: Users },
+  { path: "/computer", label: "Computer", icon: Monitor },
+  { path: "/messaging", label: "Messaging", icon: MessageSquare },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function MobileBottomNav() {
   const [location, navigate] = useLocation();
   const { tasks } = useTask();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (item: NavItem) => {
     if (item.matchPrefix) {
@@ -32,7 +56,6 @@ export default function MobileBottomNav() {
     return location === item.path;
   };
 
-  // Navigate to the most recent task, or first task
   const handleTasksClick = () => {
     if (tasks.length > 0) {
       navigate(`/task/${tasks[0].id}`);
@@ -41,34 +64,102 @@ export default function MobileBottomNav() {
     }
   };
 
+  const isMoreActive = MORE_ITEMS.some((item) => location === item.path || location.startsWith(item.path + "/"));
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-14 px-2">
-        {NAV_ITEMS.map((item) => {
-          const active = isActive(item);
-          return (
+    <>
+      {/* More menu overlay */}
+      {moreOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
+          onClick={() => setMoreOpen(false)}
+        />
+      )}
+
+      {/* More menu panel */}
+      {moreOpen && (
+        <div className="md:hidden fixed bottom-14 left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl max-h-[60vh] overflow-y-auto safe-area-bottom">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-card/95 backdrop-blur-md">
+            <span className="text-sm font-medium text-foreground">More</span>
             <button
-              key={item.path}
-              onClick={() => {
-                if (item.matchPrefix) {
-                  handleTasksClick();
-                } else {
-                  navigate(item.path);
-                }
-              }}
-              className={cn(
-                "flex flex-col items-center justify-center gap-0.5 w-16 h-full rounded-lg transition-colors active:scale-95",
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              )}
+              onClick={() => setMoreOpen(false)}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground"
+              aria-label="Close menu"
             >
-              <item.icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
-              <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              <X className="w-4 h-4" />
             </button>
-          );
-        })}
-      </div>
-    </nav>
+          </div>
+          <div className="grid grid-cols-4 gap-1 p-3">
+            {MORE_ITEMS.map((item) => {
+              const active = location === item.path;
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => {
+                    navigate(item.path);
+                    setMoreOpen(false);
+                  }}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-1 py-3 rounded-lg transition-colors active:scale-95",
+                    active
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  <item.icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
+                  <span className="text-[10px] font-medium leading-none text-center">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom nav bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-bottom">
+        <div className="flex items-center justify-around h-14 px-2">
+          {PRIMARY_ITEMS.map((item) => {
+            const active = isActive(item);
+            return (
+              <button
+                key={item.path}
+                onClick={() => {
+                  if (item.matchPrefix) {
+                    handleTasksClick();
+                  } else {
+                    navigate(item.path);
+                  }
+                  setMoreOpen(false);
+                }}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 w-16 h-full rounded-lg transition-colors active:scale-95",
+                  active
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )}
+                aria-label={item.label}
+              >
+                <item.icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
+                <span className="text-[10px] font-medium leading-none">{item.label}</span>
+              </button>
+            );
+          })}
+          {/* More button */}
+          <button
+            onClick={() => setMoreOpen(!moreOpen)}
+            className={cn(
+              "flex flex-col items-center justify-center gap-0.5 w-16 h-full rounded-lg transition-colors active:scale-95",
+              moreOpen || isMoreActive
+                ? "text-primary"
+                : "text-muted-foreground"
+            )}
+            aria-label="More navigation options"
+          >
+            <MoreHorizontal className={cn("w-5 h-5", (moreOpen || isMoreActive) && "stroke-[2.5]")} />
+            <span className="text-[10px] font-medium leading-none">More</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }

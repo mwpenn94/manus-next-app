@@ -288,6 +288,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
                 onClick={onRegenerate}
                 className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
                 title="Regenerate response"
+                aria-label="Regenerate response"
               >
                 <RefreshCw className="w-3 h-3" />
                 Regenerate
@@ -397,6 +398,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
               onClick={onClose}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title="Close workspace"
+              aria-label="Close workspace"
             >
               <PanelBottomClose className="w-3.5 h-3.5" />
             </button>
@@ -406,6 +408,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
               onClick={() => setExpanded(!expanded)}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title={expanded ? "Collapse" : "Expand"}
+              aria-label={expanded ? "Collapse workspace" : "Expand workspace"}
             >
               {expanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
@@ -459,6 +462,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                   onClick={() => currentBrowserUrl && window.open(currentBrowserUrl, "_blank")}
                   className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
                   title="Open in new tab"
+                  aria-label="Open in new tab"
                 >
                   <ExternalLink className="w-3 h-3" />
                 </button>
@@ -469,6 +473,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                   }}
                   className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
                   title="Refresh"
+                  aria-label="Refresh workspace"
                 >
                   <RotateCcw className="w-3 h-3" />
                 </button>
@@ -1704,6 +1709,7 @@ export default function TaskView() {
                     uploading && "opacity-50 cursor-not-allowed"
                   )}
                   title="Attach file"
+                  aria-label="Attach file"
                 >
                   {uploading ? <Upload className="w-4 h-4 animate-pulse" /> : <Paperclip className="w-4 h-4" />}
                 </button>
@@ -1720,6 +1726,7 @@ export default function TaskView() {
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   )}
                   title={recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input"}
+                  aria-label={recording ? "Stop recording" : transcribing ? "Transcribing" : "Voice input"}
                 >
                   {transcribing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1735,6 +1742,7 @@ export default function TaskView() {
                   onClick={handleStopGeneration}
                   className="w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95 bg-destructive/80 text-destructive-foreground hover:bg-destructive"
                   title="Stop generation"
+                  aria-label="Stop generation"
                 >
                   <Square className="w-3.5 h-3.5" />
                 </button>
@@ -1748,7 +1756,8 @@ export default function TaskView() {
                       ? "bg-primary text-primary-foreground hover:opacity-90"
                       : "bg-muted text-muted-foreground"
                   )}
-                  title="Send"
+                  title="Send message"
+                  aria-label="Send message"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>

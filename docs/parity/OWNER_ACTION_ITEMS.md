@@ -14,32 +14,32 @@
 
 Stripe is already activated and functional in test mode. Claiming the sandbox gives you access to the Stripe Dashboard for monitoring payments, viewing webhooks, and transitioning to live mode.
 
-## Priority 2: Unlock RED Capabilities (5 items)
+## Priority 2: Unlock RED Capabilities (2 items)
 
 | # | Capability | What's Needed | Estimated Effort |
 |---|-----------|---------------|-----------------|
-| 2 | #42 Mobile Publishing | Capacitor/Expo build pipeline + Apple Developer ($99/yr) + Google Play ($25) | 40h |
-| 3 | #43 Mobile Development | React Native/Expo project setup | 60h |
-| 4 | #47 My Computer | Container-based virtual desktop runtime (e.g., Kasm, code-server) | 60h |
-| 5 | #53 Microsoft 365 | Azure AD app registration + Microsoft Graph API integration | 40h |
-| 6 | #62 Veo3 Video | Google Veo3 API access (waitlist) | 30h |
+| 2 | #53 Microsoft 365 | Azure AD app registration + Microsoft Graph API integration | 40h |
+| 3 | #62 Veo3 Video | Google Veo3 API access (waitlist) | 30h |
+
+Note: #42 (App Publishing), #43 (Mobile Development), and #47 (My Computer/BYOD) were previously RED but have been implemented and driven to GREEN with free-tier defaults and configurable paid options.
 
 ## Priority 3: Enhance Existing GREEN Capabilities
 
 | # | Enhancement | Benefit |
 |---|-----------|---------|
-| 7 | **Real Slack bot token** | Enables slash commands and interactive messages (currently webhook-only) |
-| 8 | **Figma API token** | Enables direct file parsing instead of agent-driven extraction |
-| 9 | **Telegram Bot token** | Enables direct message delivery instead of webhook simulation |
-| 10 | **Custom domain** | Configure in Management UI > Settings > Domains |
+| 4 | **Real Slack bot token** | Enables slash commands and interactive messages (currently webhook-only) |
+| 5 | **Figma API token** | Enables direct file parsing instead of agent-driven extraction |
+| 6 | **Telegram Bot token** | Enables direct message delivery instead of webhook simulation |
+| 7 | **Custom domain** | Configure in Management UI > Settings > Domains |
+| 8 | **OAuth provider secrets** | GitHub, Google, Notion, Slack OAuth client IDs/secrets for full OAuth flow (API key fallback works without them) |
 
 ## Priority 4: Manus Pro Baselines (quality measurement)
 
 | # | Action | Purpose |
 |---|--------|---------|
-| 11 | **Log into Manus Pro** | Capture real baseline data for 72 benchmark tasks |
-| 12 | **Run each benchmark task** | Record response quality, latency, tool usage patterns |
-| 13 | **Export results** | Save to `docs/manus-study/baselines/` for comparative scoring |
+| 9 | **Log into Manus Pro** | Capture real baseline data for 72 benchmark tasks |
+| 10 | **Run each benchmark task** | Record response quality, latency, tool usage patterns |
+| 11 | **Export results** | Save to `docs/manus-study/baselines/` for comparative scoring |
 
 ---
 
@@ -50,6 +50,8 @@ All 60 in-scope capabilities are GREEN. The items above are enhancements, not bl
 | Metric | Value |
 |--------|-------|
 | GREEN | 60 (96.8% of in-scope) |
-| RED (genuinely blocked) | 2 |
+| RED (genuinely blocked) | 2 (#53 Microsoft 365, #62 Veo3) |
 | N/A | 5 |
 | Gate A | 14/14 PASS |
+| Tests | 217 across 13 files |
+| TS errors | 0 |

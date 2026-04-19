@@ -114,6 +114,8 @@ import {
   getBuildByExternalId,
   updateBuildStatus,
   updateBuildStoreMetadata,
+  updateConnectorOAuthTokens,
+  getConnectorById,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -967,6 +969,92 @@ export const appRouter = router({
         const conn = connectors.find(c => c.connectorId === input.connectorId);
         if (!conn) throw new Error("Connector not found");
         return { success: true, result: `Connector ${conn.name} is ${conn.status}` };
+      }),
+    /** Get OAuth authorization URL for a connector */
+    getOAuthUrl: protectedProcedure
+      .input(z.object({
+        connectorId: z.string(),
+        origin: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getOAuthProvider, isOAuthSupported } = await import("./connectorOAuth");
+        if (!isOAuthSupported(input.connectorId)) {
+          return { supported: false, url: null, fallback: "api_key" };
+        }
+        const provider = getOAuthProvider(input.connectorId);
+        if (!provider) return { supported: false, url: null, fallback: "api_key" };
+        const state = JSON.stringify({
+          connectorId: input.connectorId,
+          userId: ctx.user.id,
+          origin: input.origin,
+          ts: Date.now(),
+        });
+        const stateEncoded = Buffer.from(state).toString("base64url");
+        const redirectUri = `${input.origin}/api/connector/oauth/callback`;
+        const url = provider.getAuthUrl(redirectUri, stateEncoded);
+        return { supported: true, url, fallback: null };
+      }),
+    /** Complete OAuth flow — exchange code for tokens and save connector */
+    completeOAuth: protectedProcedure
+      .input(z.object({
+        connectorId: z.string(),
+        code: z.string(),
+        origin: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getOAuthProvider } = await import("./connectorOAuth");
+        const provider = getOAuthProvider(input.connectorId);
+        if (!provider) throw new Error("OAuth not supported for this connector");
+        const redirectUri = `${input.origin}/api/connector/oauth/callback`;
+        const tokens = await provider.exchangeCode(input.code, redirectUri);
+        let userName = provider.name;
+        if (provider.getUserInfo) {
+          try {
+            const info = await provider.getUserInfo(tokens.accessToken);
+            userName = info.name || provider.name;
+          } catch { /* ignore */ }
+        }
+        const id = await upsertConnector({
+          userId: ctx.user.id,
+          connectorId: input.connectorId,
+          name: userName,
+          config: { authMethod: "oauth" },
+          status: "connected",
+        });
+        // Update OAuth tokens via db helper
+        await updateConnectorOAuthTokens(id, {
+            authMethod: "oauth",
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken || null,
+            tokenExpiresAt: tokens.expiresIn ? new Date(Date.now() + tokens.expiresIn * 1000) : null,
+            oauthScopes: tokens.scope || null,
+        });
+        return { id, success: true, name: userName };
+      }),
+    /** Refresh an expired OAuth token */
+    refreshOAuth: protectedProcedure
+      .input(z.object({ connectorId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const { getOAuthProvider } = await import("./connectorOAuth");
+        const userConns = await getUserConnectors(ctx.user.id);
+        const conn = userConns.find(c => c.connectorId === input.connectorId);
+        if (!conn) throw new Error("Connector not found");
+        if (!conn.refreshToken) throw new Error("No refresh token available");
+        const provider = getOAuthProvider(input.connectorId);
+        if (!provider?.refreshToken) throw new Error("Provider does not support token refresh");
+        const tokens = await provider.refreshToken(conn.refreshToken);
+        await updateConnectorOAuthTokens(conn.id, {
+            accessToken: tokens.accessToken,
+            tokenExpiresAt: tokens.expiresIn ? new Date(Date.now() + tokens.expiresIn * 1000) : null,
+        });
+        return { success: true };
+      }),
+    /** Check if OAuth is available for a connector (no credentials needed) */
+    checkOAuthSupport: protectedProcedure
+      .input(z.object({ connectorId: z.string() }))
+      .query(async ({ input }) => {
+        const { isOAuthSupported } = await import("./connectorOAuth");
+        return { supported: isOAuthSupported(input.connectorId) };
       }),
   }),
 

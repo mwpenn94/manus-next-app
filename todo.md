@@ -682,3 +682,67 @@
 - [x] Write vitest tests for device router (pairing, CRUD, session management)
 - [x] Write vitest tests for mobileProject router (CRUD, config generation)
 - [x] Write vitest tests for appPublish router (build triggers, status tracking)
+
+## CDP Device Flow Test
+- [x] Launch Chrome with --remote-debugging-port in sandbox
+- [x] Test CDP connection from backend device router
+- [x] Validate screenshot capture and command execution via CDP
+- [x] Document the end-to-end flow
+
+## Electron Companion App Scaffold
+- [ ] Create electron-companion/ directory with package.json, main.js, preload.js
+- [ ] Implement WebSocket client that connects to Manus Next relay endpoint
+- [ ] Implement native OS automation layer (screenshot, click, type)
+- [ ] Implement CDP bridge for browser-specific automation
+- [ ] Add auto-update and pairing code display
+- [ ] Package config for Windows, macOS, Linux
+
+## Connector OAuth Optimization
+- [ ] Add OAuth token fields to connectors schema (accessToken, refreshToken, expiresAt, authMethod)
+- [ ] Create /api/oauth/connector/:provider callback endpoint
+- [ ] Implement GitHub OAuth flow (authorize URL generation + token exchange)
+- [ ] Implement Google OAuth flow (Drive + Calendar scopes)
+- [ ] Implement Notion OAuth flow
+- [ ] Implement Slack OAuth flow (Bot + User tokens)
+- [ ] Update ConnectorsPage UI with OAuth buttons alongside API key fallback
+- [ ] Add token refresh logic for expired OAuth tokens
+- [ ] Write tests for OAuth connector flows
+
+## Live Parity Assessment vs Manus
+- [ ] Side-by-side comparison of home/landing page
+- [ ] Side-by-side comparison of task creation and execution
+- [ ] Side-by-side comparison of connector/integration setup
+- [ ] Side-by-side comparison of file management
+- [ ] Side-by-side comparison of settings/preferences
+- [ ] Test as 6+ user personas (visitor, developer, power user, admin, mobile user, new user)
+- [ ] Document findings and gaps
+
+## Live Assessment Gaps (April 19, 2026) — Exhaustive Platform Audit
+
+### Sidebar / Navigation UX
+- [x] CRITICAL: Sign-in button hidden below fold — fixed by pinning auth section at absolute bottom
+- [x] Sidebar should pin auth section at bottom with fixed positioning so it never scrolls off-screen
+
+### Full Platform Audit (pending live testing)
+- [ ] Test every sidebar nav link loads correctly when authenticated
+- [ ] Test task creation end-to-end flow
+- [ ] Test each feature page renders and functions
+- [ ] Compare against Manus across all dimensions
+
+## Exhaustive Parity Gap Fixes (April 19, 2026)
+- [x] GAP-001: Fix sidebar overflow — make footer scrollable or collapse nav groups
+- [x] GAP-004: Remove maximum-scale=1 from viewport meta (WCAG violation)
+- [x] GAP-005: Fix color contrast ratios for muted-foreground in index.css
+- [x] GAP-006: Add aria-labels to icon-only buttons (paperclip, mic, submit arrow)
+- [x] GAP-002: Expand mobile bottom nav with "More" menu for all destinations
+- [x] GAP-021: Already implemented — all pages except Home use React.lazy()
+- [ ] Update LIVE_GAP_ANALYSIS.md after all fixes
+- [ ] Update all parity docs after convergence passes
+
+## Chat Log Issues (April 19, 2026)
+- [x] CHAT-001: File upload pipeline — already implemented in TaskView (Paperclip opens file picker, uploads to S3, records in DB)
+- [x] CHAT-002: Agent JS fallback — auto-fallback from read_webpage to browse_web for JS-heavy sites
+- [x] CHAT-003: Image generation reliability — added retry with exponential backoff and unique seed per call
+- [x] CHAT-004: PDF link detection — detect PDF links and handle differently from regular web pages
+- [x] CHAT-005: Orphan routes — linked from ComputerUsePage and WebAppBuilderPage
+- [x] CHAT-006: Agent source attribution — added to system prompt

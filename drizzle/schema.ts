@@ -323,6 +323,16 @@ export const connectors = mysqlTable("connectors", {
   name: varchar("name", { length: 256 }).notNull(),
   /** Encrypted config (API keys, tokens, webhook URLs) */
   config: json("config").$type<Record<string, string>>(),
+  /** Authentication method: oauth or api_key */
+  authMethod: mysqlEnum("authMethod", ["oauth", "api_key", "webhook"]).default("api_key"),
+  /** OAuth access token (encrypted) */
+  accessToken: text("accessToken"),
+  /** OAuth refresh token (encrypted) */
+  refreshToken: text("refreshToken"),
+  /** OAuth token expiry timestamp */
+  tokenExpiresAt: timestamp("tokenExpiresAt"),
+  /** OAuth scopes granted */
+  oauthScopes: text("oauthScopes"),
   status: mysqlEnum("status", ["connected", "disconnected", "error"]).default("disconnected"),
   lastSyncAt: timestamp("lastSyncAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

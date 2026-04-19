@@ -11,7 +11,7 @@
 ### Cap 1: Chat Mode — GREEN
 - **Implementation:** `TaskView.tsx` SSE streaming, `/api/stream` endpoint, persistent messages in `task_messages` table
 - **Quality:** Full conversational flow with markdown rendering via Streamdown, typing indicators, error recovery
-- **Evidence:** 191 tests pass, live demo functional
+- **Evidence:** 217 tests pass, live demo functional
 - **Action:** None — fully implemented
 
 ### Cap 2: Agent Mode Long-Running — GREEN
@@ -235,9 +235,9 @@
 - **Action:** None — fully implemented
 
 ### Cap 67: Data API Capability — GREEN
-- **Implementation:** tRPC API layer with 28 router namespaces, structured data access for all entities
+- **Implementation:** tRPC API layer with 27 router namespaces, structured data access for all entities
 - **Quality:** Full CRUD API for tasks, projects, teams, webapps, designs, connectors, etc.
-- **Evidence:** 28 tRPC routers serve as the data API
+- **Evidence:** 27 tRPC routers serve as the data API
 - **Action:** None — fully implemented
 
 ---

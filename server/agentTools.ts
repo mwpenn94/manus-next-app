@@ -895,12 +895,43 @@ async function executeWebSearchFallback(args: { query: string }): Promise<ToolRe
  */
 async function executeReadWebpage(args: { url: string }): Promise<ToolResult> {
   try {
+    // CHAT-004: Detect PDF links and provide helpful guidance
+    const urlLower = args.url.toLowerCase();
+    if (urlLower.endsWith(".pdf") || urlLower.includes("/pdf/") || urlLower.includes("type=pdf")) {
+      return {
+        success: false,
+        result: `The URL appears to be a PDF document. I cannot directly parse PDF files from URLs. To work with this PDF:\n1. If the user has the file, they can upload it via the attach button\n2. I can search for the same content in HTML format\n3. I can try browse_web to extract any available metadata from the hosting page\n\nURL: ${args.url}`,
+      };
+    }
+
     const content = await fetchPageContent(args.url, 12000);
 
     if (content.startsWith("(Failed") || content.startsWith("(Non-text")) {
       return {
         success: false,
         result: `Could not read webpage: ${content}`,
+      };
+    }
+
+    // CHAT-002: Detect JS-heavy pages with minimal content
+    const textLength = content.replace(/\s+/g, " ").trim().length;
+    const hasJSIndicators = content.includes("enable JavaScript") ||
+      content.includes("requires JavaScript") ||
+      content.includes("noscript") ||
+      textLength < 200;
+
+    if (hasJSIndicators && textLength < 500) {
+      // Auto-fallback: try browse_web for more thorough extraction
+      const browseResult = await executeBrowseWeb({ url: args.url, extract: "full" });
+      if (browseResult.success) {
+        return {
+          ...browseResult,
+          result: `[Note: Initial fetch returned minimal content — this site likely requires JavaScript. Used enhanced extraction.]\n\n${browseResult.result}`,
+        };
+      }
+      return {
+        success: false,
+        result: `This webpage appears to require JavaScript to render its content. The initial fetch returned very little text (${textLength} chars). Enhanced extraction also failed. The site may use a single-page application framework.\n\nSuggestions:\n1. Try browse_web for structured extraction\n2. Search for the same content on alternative sources\n3. Ask the user to paste relevant content directly`,
       };
     }
 
@@ -920,35 +951,59 @@ async function executeReadWebpage(args: { url: string }): Promise<ToolResult> {
 }
 
 /**
- * Generate an image using the built-in image generation helper
+ * Generate an image using the built-in image generation helper.
+ * CHAT-003: Includes retry with exponential backoff and unique seed per call.
  */
 async function executeGenerateImage(args: {
   prompt: string;
 }): Promise<ToolResult> {
-  try {
-    const { generateImage } = await import("./_core/imageGeneration");
-    const { url } = await generateImage({ prompt: args.prompt });
+  const MAX_RETRIES = 3;
+  const { generateImage } = await import("./_core/imageGeneration");
 
-    if (!url) {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      // Add a unique seed suffix to prevent duplicate/cached results
+      const uniqueSeed = `[seed:${Date.now()}-${Math.random().toString(36).slice(2, 8)}]`;
+      const enhancedPrompt = `${args.prompt} ${uniqueSeed}`;
+
+      const { url } = await generateImage({ prompt: enhancedPrompt });
+
+      if (!url) {
+        if (attempt < MAX_RETRIES) {
+          // Exponential backoff: 2s, 4s
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+          continue;
+        }
+        return {
+          success: false,
+          result: "Image generation completed but no URL was returned after multiple attempts.",
+        };
+      }
+
+      return {
+        success: true,
+        result: `Image generated successfully.\n\n![Generated Image](${url})`,
+        url,
+        artifactType: "generated_image",
+        artifactLabel: args.prompt.slice(0, 100),
+      };
+    } catch (err: any) {
+      if (attempt < MAX_RETRIES) {
+        // Exponential backoff: 2s, 4s
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+        continue;
+      }
       return {
         success: false,
-        result: "Image generation completed but no URL was returned.",
+        result: `Image generation failed after ${MAX_RETRIES} attempts: ${err.message}. The image generation service may be temporarily unavailable.`,
       };
     }
-
-    return {
-      success: true,
-      result: `Image generated successfully.\n\n![Generated Image](${url})`,
-      url,
-      artifactType: "generated_image",
-      artifactLabel: args.prompt.slice(0, 100),
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      result: `Image generation failed: ${err.message}`,
-    };
   }
+
+  return {
+    success: false,
+    result: "Image generation failed: maximum retries exceeded.",
+  };
 }
 
 /**

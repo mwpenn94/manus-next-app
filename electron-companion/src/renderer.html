@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manus Next Companion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e4e4e7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px;
+      -webkit-app-region: drag;
+    }
+    button, input { -webkit-app-region: no-drag; }
+    .logo { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { color: #71717a; font-size: 13px; margin-bottom: 32px; }
+    .status-card {
+      width: 100%;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .status-row:last-child { margin-bottom: 0; }
+    .status-label { color: #a1a1aa; font-size: 13px; }
+    .status-value { font-size: 13px; font-weight: 500; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-green { background: #22c55e; box-shadow: 0 0 6px #22c55e80; }
+    .dot-red { background: #ef4444; box-shadow: 0 0 6px #ef444480; }
+    .dot-yellow { background: #eab308; box-shadow: 0 0 6px #eab30880; }
+    .pairing-code {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      text-align: center;
+      padding: 16px;
+      background: #1e1b4b;
+      border: 1px solid #4338ca;
+      border-radius: 8px;
+      color: #a5b4fc;
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+    .input-group { width: 100%; margin-bottom: 12px; }
+    .input-group label { display: block; color: #a1a1aa; font-size: 12px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .input-group input {
+      width: 100%;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #e4e4e7;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus { border-color: #6366f1; }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #6366f1; color: white; }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-secondary { background: #27272a; color: #e4e4e7; margin-top: 8px; }
+    .btn-secondary:hover { background: #3f3f46; }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; margin-top: 8px; }
+    .btn-danger:hover { background: #991b1b; }
+    .section-title { font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 24px; width: 100%; }
+    .features { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .feature-badge {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      font-size: 11px;
+      color: #a1a1aa;
+    }
+    .feature-badge .icon { font-size: 18px; margin-bottom: 4px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="logo">🖥️</div>
+  <h1>Manus Next Companion</h1>
+  <p class="subtitle">Connect your computer to Manus Next</p>
+
+  <!-- Connection Status -->
+  <div class="status-card">
+    <div class="status-row">
+      <span class="status-label">Status</span>
+      <span class="status-value" id="conn-status">
+        <span class="status-dot dot-red"></span> Disconnected
+      </span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Device ID</span>
+      <span class="status-value" id="device-id" style="font-family: monospace; font-size: 11px;">Loading...</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Pairing Code</span>
+      <span class="status-value" id="pairing-display">—</span>
+    </div>
+  </div>
+
+  <!-- Pairing Code Display -->
+  <div id="pairing-section" style="width: 100%; display: none;">
+    <div class="pairing-code" id="pairing-code-large">------</div>
+    <p style="text-align: center; color: #71717a; font-size: 12px; margin-top: 8px;">
+      Enter this code on Manus Next → Connect Device
+    </p>
+  </div>
+
+  <!-- Server URL -->
+  <div class="section-title">Server Connection</div>
+  <div class="input-group">
+    <label>Server URL</label>
+    <input type="text" id="server-url" placeholder="wss://your-app.manus.space" />
+  </div>
+  <button class="btn btn-primary" id="btn-connect">Connect</button>
+  <button class="btn btn-danger" id="btn-disconnect" style="display: none;">Disconnect</button>
+
+  <!-- Test Controls -->
+  <div class="section-title">Test Controls</div>
+  <button class="btn btn-secondary" id="btn-test-screenshot">📸 Test Screenshot</button>
+
+  <!-- Capabilities -->
+  <div class="section-title">Capabilities</div>
+  <div class="features">
+    <div class="feature-badge"><span class="icon">🖱️</span>Mouse Control</div>
+    <div class="feature-badge"><span class="icon">⌨️</span>Keyboard Input</div>
+    <div class="feature-badge"><span class="icon">📸</span>Screenshots</div>
+    <div class="feature-badge"><span class="icon">🌐</span>CDP Browser</div>
+    <div class="feature-badge"><span class="icon">📋</span>Clipboard</div>
+    <div class="feature-badge"><span class="icon">📁</span>File Access</div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    let isConnected = false;
+
+    // Initialize
+    (async () => {
+      const deviceId = await window.companion.getDeviceId();
+      $("#device-id").textContent = deviceId;
+
+      const serverUrl = await window.companion.getServerUrl();
+      $("#server-url").value = serverUrl;
+
+      const code = await window.companion.getPairingCode();
+      if (code) updatePairingCode(code);
+    })();
+
+    // Connection status listener
+    window.companion.onConnectionStatus((data) => {
+      isConnected = data.connected;
+      updateConnectionUI();
+    });
+
+    // Pairing code listener
+    window.companion.onPairingCode((data) => {
+      updatePairingCode(data.code);
+    });
+
+    function updateConnectionUI() {
+      const statusEl = $("#conn-status");
+      if (isConnected) {
+        statusEl.innerHTML = '<span class="status-dot dot-green"></span> Connected';
+        $("#btn-connect").style.display = "none";
+        $("#btn-disconnect").style.display = "block";
+      } else {
+        statusEl.innerHTML = '<span class="status-dot dot-red"></span> Disconnected';
+        $("#btn-connect").style.display = "block";
+        $("#btn-disconnect").style.display = "none";
+      }
+    }
+
+    function updatePairingCode(code) {
+      if (code) {
+        $("#pairing-display").textContent = code;
+        $("#pairing-code-large").textContent = code;
+        $("#pairing-section").style.display = "block";
+      }
+    }
+
+    // Connect
+    $("#btn-connect").addEventListener("click", async () => {
+      const url = $("#server-url").value.trim();
+      if (!url) return;
+      $("#btn-connect").textContent = "Connecting...";
+      $("#btn-connect").disabled = true;
+      await window.companion.connect(url);
+      setTimeout(() => {
+        $("#btn-connect").textContent = "Connect";
+        $("#btn-connect").disabled = false;
+      }, 3000);
+    });
+
+    // Disconnect
+    $("#btn-disconnect").addEventListener("click", async () => {
+      await window.companion.disconnect();
+      isConnected = false;
+      updateConnectionUI();
+    });
+
+    // Test screenshot
+    $("#btn-test-screenshot").addEventListener("click", async () => {
+      $("#btn-test-screenshot").textContent = "📸 Capturing...";
+      const result = await window.companion.testScreenshot();
+      if (result.data) {
+        $("#btn-test-screenshot").textContent = `📸 Captured (${Math.round(result.data.length * 0.75 / 1024)} KB)`;
+      } else {
+        $("#btn-test-screenshot").textContent = `📸 Failed: ${result.error}`;
+      }
+      setTimeout(() => {
+        $("#btn-test-screenshot").textContent = "📸 Test Screenshot";
+      }, 3000);
+    });
+  </script>
+</body>
+</html>

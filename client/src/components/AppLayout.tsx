@@ -443,8 +443,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* Bridge Status */}
       <BridgeStatusBadge />
 
-      {/* Sidebar Footer */}
-      <div className="border-t border-sidebar-border p-2 space-y-0.5 shrink-0">
+      {/* Sidebar Footer — Nav links (scrollable) */}
+      <div className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
         <Link
           href="/billing"
           className={cn(
@@ -649,8 +649,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Settings className="w-4 h-4" />
           Settings
         </Link>
+      </div>
 
-        {/* Auth Section */}
+      {/* Auth Section — pinned at bottom, never scrolls away */}
+      <div className="border-t border-sidebar-border p-2 shrink-0">
         {authLoading ? (
           <div className="flex items-center gap-2.5 px-3 py-2">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -668,6 +670,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               onClick={handleLogout}
               className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-sidebar-accent transition-colors"
               title="Sign out"
+              aria-label="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>

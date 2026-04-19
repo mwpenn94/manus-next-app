@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Monitor, Terminal, FileText, FolderOpen, X, Minus, Maximize2,
-  Camera, Loader2, LogIn, Play, Square, RefreshCw,
+  Camera, Loader2, LogIn, Play, Square, RefreshCw, Wifi,
 } from "lucide-react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 type DesktopWindow = {
@@ -221,6 +222,12 @@ export default function ComputerUsePage() {
             <Camera className="w-3.5 h-3.5 mr-1.5" />
             Screenshot
           </Button>
+          <Link href="/connect-device">
+            <Button variant="outline" size="sm" className="text-xs">
+              <Wifi className="w-3.5 h-3.5 mr-1.5" />
+              Connect Device
+            </Button>
+          </Link>
         </div>
         <div className="flex items-center gap-2">
           {windows.filter((w) => w.minimized).map((w) => (

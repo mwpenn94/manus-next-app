@@ -1049,3 +1049,27 @@ export async function updateBuildStoreMetadata(id: number, storeMetadata: Record
   if (!db) return;
   await db.update(appBuilds).set({ storeMetadata: storeMetadata as any }).where(eq(appBuilds.id, id));
 }
+
+// ── Connector OAuth Helpers ──
+
+export async function updateConnectorOAuthTokens(
+  connectorDbId: number,
+  data: {
+    authMethod?: string;
+    accessToken?: string | null;
+    refreshToken?: string | null;
+    tokenExpiresAt?: Date | null;
+    oauthScopes?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(connectors).set(data as any).where(eq(connectors.id, connectorDbId));
+}
+
+export async function getConnectorById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(connectors).where(eq(connectors.id, id));
+  return rows[0] ?? null;
+}
