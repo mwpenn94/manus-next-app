@@ -396,3 +396,58 @@
 - [x] Business persona: test scheduling execution, notifications from scheduled tasks (8/8 pass)
 - [x] Casual persona: test accessibility, error states, mobile experience (8/8 pass)
 - [x] Admin persona: test all new settings, scheduler management, system health (11/11 pass)
+
+## Phase 5: v8.3 Manus Parity Spec Implementation
+
+### BOOTSTRAP
+- [x] Create docs/parity/ directory with 25 tracking files
+- [x] Create docs/manus-study/ directory with 9 study files
+- [x] Create MANIFEST.json with spec metadata
+- [x] Create STATE_MANIFEST.json with bootstrap state
+- [x] Create CHANGELOG.md
+- [x] Capture test baseline (166 tests)
+
+### CAPABILITY_GAP_SCAN
+- [x] Audit all 67 capabilities against current code (24 GREEN, 12 YELLOW, 26 RED, 5 N/A)
+- [x] Mark each capability as green/yellow/red/N-A
+- [x] Populate PARITY_BACKLOG.md with gaps (173 lines, 10 HRQ items)
+
+### COMPREHENSION_ESSAY
+- [x] Write ~500-word COMPREHENSION_ESSAY.md on Manus design philosophy (570 words)
+
+### CAPABILITY_WIRE Tier 1
+- [x] #59 Voice TTS: Browser SpeechSynthesis on assistant messages (useTTS hook + MessageBubble buttons)
+- [x] #11 Projects: DB schema + CRUD + tRPC router + knowledge base (projects + project_knowledge tables, full router)
+- [x] #3 Max tier routing: Add "max" mode to AgentMode with 12 tool turns, deeper research, ModeToggle updated
+- [x] #10 Telemetry: Cost visibility indicator shows mode + estimated cost per task
+- [x] Projects UI page (sidebar navigation + project list + create/edit/delete + grid cards)
+
+### AFK Artifacts
+- [x] AFK_DECISIONS.md — all autonomous decisions logged
+- [x] AFK_BLOCKED.md — upstream package blockers documented
+- [x] RESUME_WHEN_PACKAGES_PUBLISHED.md — step-by-step integration checklist
+
+### CAPABILITY_WIRE Tier 2
+- [x] Feature Toolbar: ModeToggle now has Speed/Quality/Max 3-tier selector
+- [ ] Enhance task sharing with password/expiry (#7) — deferred (ShareDialog already functional)
+- [ ] Enhance replay with timeline scrubber (#8) — deferred (ReplayPage already functional)
+- [ ] Add Design View stub (#15) — deferred (requires canvas rendering engine)
+
+### ManusNextChat Component
+- [x] Create ManusNextChat type definitions per section B.5 (shared/ManusNextChat.types.ts)
+- [x] Create ManusNextChat component shell (type defs + theme presets ready for extraction)
+- [x] Add theme preset registry (manus-light, manus-dark, stewardly-dark) in shared/ManusNextChat.themes.ts
+- [ ] Add dual-mode build scripts (build:app, build:lib) — deferred (requires upstream package extraction)
+
+### HRQ Items (blocked on Mike)
+- [ ] HRQ: Upstream packages not published on npm (13 packages)
+- [ ] HRQ: Hosting migration to Cloudflare Pages + Railway
+- [ ] HRQ: Clerk auth integration (replacing Manus OAuth)
+- [ ] HRQ: Real user recruitment for Gate B (100+ users)
+- [ ] HRQ: Manus baseline capture (Mike runs tasks on Manus Pro)
+
+### Stability + Validation
+- [x] Recursive stability pass 1: 166 tests pass, 0 TS errors, no browser errors (only expected auth redirect for unauth)
+- [x] Recursive stability pass 2 (convergence): 166 tests, 45 persona checks, 0 TS errors — 2 consecutive clean passes
+- [x] Virtual user persona validation (5 personas, 45 checks): all pass
+- [x] Documentation update: ARCHITECTURE v5.0, AFK_RUN_SUMMARY, AFK_RUN_FINAL_REPORT, all parity artifacts

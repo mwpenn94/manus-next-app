@@ -39,6 +39,8 @@ export const tasks = mysqlTable("tasks", {
   completedSteps: int("completedSteps"),
   /** Per-task system prompt override (null = use global default) */
   systemPrompt: text("systemPrompt"),
+  /** Optional project association (null = standalone task) */
+  projectId: int("projectId"),
   /** Soft-delete flag: archived tasks are hidden from sidebar but preserved */
   archived: int("archived").default(0).notNull(),
   /** Favorite/bookmark flag for quick access */
@@ -217,6 +219,46 @@ export const scheduledTasks = mysqlTable("scheduled_tasks", {
 
 export type ScheduledTask = typeof scheduledTasks.$inferSelect;
 export type InsertScheduledTask = typeof scheduledTasks.$inferInsert;
+
+// ── Projects (workspace concept — Capability #11) ──
+export const projects = mysqlTable("projects", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** Project name */
+  name: varchar("name", { length: 500 }).notNull(),
+  /** Project description / master instructions */
+  description: text("description"),
+  /** Project-level system prompt (applied to all tasks in this project) */
+  systemPrompt: text("systemPrompt"),
+  /** Project icon emoji or URL */
+  icon: varchar("icon", { length: 128 }),
+  /** Archived flag */
+  archived: int("archived").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Project = typeof projects.$inferSelect;
+export type InsertProject = typeof projects.$inferInsert;
+
+// ── Project Knowledge (files/instructions attached to a project) ──
+export const projectKnowledge = mysqlTable("project_knowledge", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  /** Knowledge type: instruction, file, note */
+  type: mysqlEnum("type", ["instruction", "file", "note"]).default("note").notNull(),
+  /** Title/label */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Content (text for instructions/notes, URL for files) */
+  content: text("content").notNull(),
+  /** File URL if type is file */
+  fileUrl: text("fileUrl"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectKnowledge = typeof projectKnowledge.$inferSelect;
+export type InsertProjectKnowledge = typeof projectKnowledge.$inferInsert;
 
 // ── Task Events (for session replay) ──
 export const taskEvents = mysqlTable("task_events", {

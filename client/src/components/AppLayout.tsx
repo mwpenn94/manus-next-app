@@ -45,6 +45,7 @@ import {
   Brain,
   Clock as ClockIcon,
   Film,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -458,6 +459,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <Brain className="w-4 h-4" />
           Memory
+        </Link>
+        <Link
+          href="/projects"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/projects" || location.startsWith("/project/")
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <FolderOpen className="w-4 h-4" />
+          Projects
         </Link>
         <Link
           href="/schedule"

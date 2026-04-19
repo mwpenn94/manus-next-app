@@ -387,12 +387,82 @@ async function validateAdmin() {
   });
 
   // Phase 4: ARCHITECTURE.md is v4.0
-  await check("Admin", "ARCHITECTURE.md is v4.0", async () => {
+  await check("Admin", "ARCHITECTURE.md is v5.0", async () => {
     const fs = await import("fs");
     const src = fs.readFileSync("ARCHITECTURE.md", "utf-8");
-    assert(src.includes("4.0"), "ARCHITECTURE.md not updated to v4.0");
+    assert(src.includes("5.0"), "ARCHITECTURE.md not updated to v5.0");
     assert(src.includes("wide_research"), "ARCHITECTURE.md missing wide_research");
     assert(src.includes("scheduler"), "ARCHITECTURE.md missing scheduler");
+  });
+
+  // Phase 5: Projects page exists
+  await check("Admin", "Projects page exists", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("client/src/pages/ProjectsPage.tsx"), "ProjectsPage.tsx missing");
+    const src = fs.readFileSync("client/src/pages/ProjectsPage.tsx", "utf-8");
+    assert(src.includes("trpc.project"), "ProjectsPage not using trpc.project");
+  });
+
+  // Phase 5: TTS hook exists
+  await check("Admin", "TTS hook exists", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("client/src/hooks/useTTS.ts"), "useTTS.ts missing");
+    const src = fs.readFileSync("client/src/hooks/useTTS.ts", "utf-8");
+    assert(src.includes("speechSynthesis"), "useTTS not using speechSynthesis");
+  });
+
+  // Phase 5: ManusNextChat types exist
+  await check("Admin", "ManusNextChat type definitions exist", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("shared/ManusNextChat.types.ts"), "ManusNextChat.types.ts missing");
+    const src = fs.readFileSync("shared/ManusNextChat.types.ts", "utf-8");
+    assert(src.includes("ManusNextChatProps"), "Missing ManusNextChatProps");
+    assert(src.includes("ManusNextChatHandle"), "Missing ManusNextChatHandle");
+  });
+
+  // Phase 5: Theme presets exist
+  await check("Admin", "ManusNextChat theme presets exist", async () => {
+    const fs = await import("fs");
+    assert(fs.existsSync("shared/ManusNextChat.themes.ts"), "ManusNextChat.themes.ts missing");
+    const src = fs.readFileSync("shared/ManusNextChat.themes.ts", "utf-8");
+    assert(src.includes("manus-dark"), "Missing manus-dark theme");
+    assert(src.includes("manus-light"), "Missing manus-light theme");
+    assert(src.includes("stewardly-dark"), "Missing stewardly-dark theme");
+  });
+
+  // Phase 5: Parity artifacts exist
+  await check("Admin", "Parity artifacts complete", async () => {
+    const fs = await import("fs");
+    const required = [
+      "docs/parity/MANIFEST.json",
+      "docs/parity/STATE_MANIFEST.json",
+      "docs/parity/PARITY_BACKLOG.md",
+      "docs/parity/COMPREHENSION_ESSAY.md",
+      "docs/parity/AFK_DECISIONS.md",
+      "docs/parity/AFK_BLOCKED.md",
+      "docs/parity/INFRA_DECISIONS.md",
+      "docs/parity/PREREQ_READY.md",
+      "docs/parity/AFK_RUN_SUMMARY.md",
+      "docs/parity/AFK_RUN_FINAL_REPORT.md",
+    ];
+    for (const f of required) {
+      assert(fs.existsSync(f), `Missing parity artifact: ${f}`);
+    }
+  });
+
+  // Phase 5: ModeToggle has Max tier
+  await check("Admin", "ModeToggle has Max tier", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("client/src/components/ModeToggle.tsx", "utf-8");
+    assert(src.includes("max"), "ModeToggle missing max tier");
+  });
+
+  // Phase 5: Projects in sidebar
+  await check("Admin", "Projects link in sidebar", async () => {
+    const fs = await import("fs");
+    const src = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
+    assert(src.includes("/projects"), "Sidebar missing /projects link");
+    assert(src.includes("FolderOpen"), "Sidebar missing FolderOpen icon");
   });
 }
 

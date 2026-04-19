@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -476,4 +476,82 @@ export async function getTaskEvents(taskId: number) {
     .where(eq(taskEvents.taskId, taskId))
     .orderBy(taskEvents.offsetMs)
     .limit(500);
+}
+
+// ── Project Queries (Capability #11) ──
+export async function createProject(project: InsertProject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(projects).values(project);
+  const [created] = await db.select().from(projects)
+    .where(eq(projects.externalId, project.externalId!))
+    .limit(1);
+  return created;
+}
+
+export async function getUserProjects(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(projects)
+    .where(and(eq(projects.userId, userId), eq(projects.archived, 0)))
+    .orderBy(desc(projects.updatedAt))
+    .limit(50);
+}
+
+export async function getProjectByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [project] = await db.select().from(projects)
+    .where(eq(projects.externalId, externalId))
+    .limit(1);
+  return project ?? null;
+}
+
+export async function updateProject(id: number, updates: Partial<{ name: string; description: string; systemPrompt: string; icon: string; archived: number }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(projects).set(updates).where(eq(projects.id, id));
+}
+
+export async function deleteProject(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(projects).set({ archived: 1 }).where(eq(projects.id, id));
+}
+
+export async function getProjectTasks(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tasks)
+    .where(and(eq(tasks.projectId, projectId), eq(tasks.archived, 0)))
+    .orderBy(desc(tasks.updatedAt))
+    .limit(100);
+}
+
+export async function assignTaskToProject(taskId: number, projectId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tasks).set({ projectId }).where(eq(tasks.id, taskId));
+}
+
+// ── Project Knowledge Queries ──
+export async function addProjectKnowledge(knowledge: InsertProjectKnowledge) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(projectKnowledge).values(knowledge);
+}
+
+export async function getProjectKnowledgeItems(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(projectKnowledge)
+    .where(eq(projectKnowledge.projectId, projectId))
+    .orderBy(desc(projectKnowledge.createdAt))
+    .limit(100);
+}
+
+export async function deleteProjectKnowledge(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(projectKnowledge).where(eq(projectKnowledge.id, id));
 }

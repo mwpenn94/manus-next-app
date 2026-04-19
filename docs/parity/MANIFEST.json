@@ -1,0 +1,21 @@
+{
+  "spec_version": "v8.3",
+  "repo": "manus-next-app",
+  "test_baseline": 166,
+  "capabilities_target": 67,
+  "benchmark_tasks": 65,
+  "in_scope_capabilities": 62,
+  "out_of_scope": [44, 54, 55, 63, 64],
+  "integration_strategy": "consume-packages",
+  "phase": "A",
+  "hosting": {
+    "current": "manus-hosting (manusnext-mlromfub.manus.space)",
+    "target_frontend": "Cloudflare Pages",
+    "target_backend": "Railway",
+    "target_db": "Neon (free tier; PlanetScale free tier killed April 2024)",
+    "target_auth": "Clerk (free tier ≤10K MAU)",
+    "target_cache": "Upstash Redis (free tier)"
+  },
+  "upstream_packages_status": "not-yet-published",
+  "created_at": "2026-04-18T21:29:00Z"
+}

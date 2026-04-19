@@ -20,6 +20,7 @@ const SharedTaskView = lazy(() => import("./pages/SharedTaskView"));
 const MemoryPage = lazy(() => import("./pages/MemoryPage"));
 const SchedulePage = lazy(() => import("./pages/SchedulePage"));
 const ReplayPage = lazy(() => import("./pages/ReplayPage"));
+const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 
 function PageLoader() {
   return (
@@ -68,6 +69,16 @@ function Router() {
       <Route path="/replay">
         <Suspense fallback={<PageLoader />}>
           <ReplayPage />
+        </Suspense>
+      </Route>
+      <Route path="/projects">
+        <Suspense fallback={<PageLoader />}>
+          <ProjectsPage />
+        </Suspense>
+      </Route>
+      <Route path="/project/:id">
+        <Suspense fallback={<PageLoader />}>
+          <ProjectsPage />
         </Suspense>
       </Route>
       <Route path="/shared/:token">

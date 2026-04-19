@@ -53,6 +53,9 @@ import {
   Settings2,
   Check,
   Download,
+  Volume2,
+  VolumeX,
+  Pause,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -60,6 +63,7 @@ import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
 import ShareDialog from "@/components/ShareDialog";
+import { useTTS } from "@/hooks/useTTS";
 
 // ── Action rendering ──
 
@@ -159,6 +163,7 @@ function TypingIndicator() {
 
 function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
+  const tts = useTTS();
   const isUser = message.role === "user";
   const hasActions = message.actions && message.actions.length > 0;
   const doneCount = message.actions?.filter(a => a.status === "done").length ?? 0;
@@ -239,17 +244,55 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
           </div>
         )}
 
-        {/* Regenerate button for last assistant message */}
-        {!isUser && isLast && canRegenerate && onRegenerate && (
+        {/* Action buttons for assistant messages */}
+        {!isUser && (
           <div className="mt-2 flex items-center gap-1">
-            <button
-              onClick={onRegenerate}
-              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
-              title="Regenerate response"
-            >
-              <RefreshCw className="w-3 h-3" />
-              Regenerate
-            </button>
+            {/* TTS button — Capability #59 */}
+            {tts.isSupported && (
+              <button
+                onClick={() => {
+                  if (tts.isSpeaking && !tts.isPaused) {
+                    tts.pause();
+                  } else if (tts.isPaused) {
+                    tts.resume();
+                  } else {
+                    tts.speak(message.content);
+                  }
+                }}
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
+                title={tts.isSpeaking ? (tts.isPaused ? "Resume" : "Pause") : "Read aloud"}
+                aria-label={tts.isSpeaking ? (tts.isPaused ? "Resume speech" : "Pause speech") : "Read message aloud"}
+              >
+                {tts.isSpeaking ? (
+                  tts.isPaused ? <Volume2 className="w-3 h-3" /> : <Pause className="w-3 h-3" />
+                ) : (
+                  <Volume2 className="w-3 h-3" />
+                )}
+                {tts.isSpeaking ? (tts.isPaused ? "Resume" : "Pause") : "Listen"}
+              </button>
+            )}
+            {tts.isSpeaking && (
+              <button
+                onClick={() => tts.stop()}
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
+                title="Stop reading"
+                aria-label="Stop speech"
+              >
+                <VolumeX className="w-3 h-3" />
+                Stop
+              </button>
+            )}
+            {/* Regenerate button for last assistant message */}
+            {isLast && canRegenerate && onRegenerate && (
+              <button
+                onClick={onRegenerate}
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
+                title="Regenerate response"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Regenerate
+              </button>
+            )}
           </div>
         )}
 
@@ -1324,10 +1367,10 @@ export default function TaskView() {
             {(task.status === "running" || task.status === "completed") && (
               <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 mr-1" title="Estimated task cost">
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  {agentMode === "speed" ? "~$0.02" : "~$0.15"}
+                  {agentMode === "speed" ? "~$0.02" : agentMode === "max" ? "~$0.50" : "~$0.15"}
                 </span>
                 <span className="text-[9px] text-muted-foreground/60">
-                  {agentMode === "speed" ? "speed" : "quality"}
+                  {agentMode === "speed" ? "speed" : agentMode === "max" ? "max" : "quality"}
                 </span>
               </div>
             )}

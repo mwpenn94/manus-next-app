@@ -1,0 +1,1 @@
+# CONVERGENCE_DIRECTIVE_CHECK — manus-next-app

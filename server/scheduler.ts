@@ -19,6 +19,7 @@ import { nanoid } from "nanoid";
 const POLL_INTERVAL_MS = 60_000; // Check every 60 seconds
 let schedulerTimer: ReturnType<typeof setInterval> | null = null;
 let isRunning = false;
+let lastPollErrLog = 0;
 
 /**
  * Calculate the next run time for a scheduled task.
@@ -243,7 +244,12 @@ async function pollDueTasks(): Promise<void> {
       }
     }
   } catch (err: any) {
-    console.error("[Scheduler] Poll error:", err.message);
+    // Suppress repeated connection errors — only log once per 10 minutes
+    const now = Date.now();
+    if (now - lastPollErrLog > 600_000) {
+      console.warn("[Scheduler] Poll error (suppressing repeats for 10m):", err.message?.slice(0, 120));
+      lastPollErrLog = now;
+    }
   } finally {
     isRunning = false;
   }

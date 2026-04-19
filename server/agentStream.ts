@@ -124,8 +124,9 @@ You are an AGENT, not a chatbot. Act like one.`;
  * Agent execution mode.
  * - `speed`: Lower temperature (0.3), shorter max_tokens (1024), fewer tool turns, concise responses.
  * - `quality`: Higher temperature (0.7), longer max_tokens (4096), thorough research, detailed responses.
+ * - `max`: Highest temperature (0.8), longest max_tokens (8192), maximum tool turns (12), deepest research, most thorough responses.
  */
-export type AgentMode = "speed" | "quality";
+export type AgentMode = "speed" | "quality" | "max";
 
 /**
  * Configuration options for the agentic streaming loop.
@@ -205,6 +206,8 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     // Mode-specific instructions
     if (mode === "speed") {
       systemPrompt += `\n\n## MODE: SPEED\nPrioritize fast, concise responses. Use fewer tool calls. Give direct answers when confident. Skip deep research unless explicitly asked.`;
+    } else if (mode === "max") {
+      systemPrompt += `\n\n## MODE: MAX (Flagship Tier)\nYou are operating at maximum capability. Use ALL available tools extensively. Conduct thorough multi-source research with wide_research when appropriate. Provide the most detailed, comprehensive, and well-sourced responses possible. Use multiple tool turns. Cross-reference information. Generate visualizations and documents when they add value. Leave no stone unturned.`;
     }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
@@ -212,7 +215,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
       conversation = [{ role: "system", content: systemPrompt }, ...conversation];
     }
 
-    const maxTurns = mode === "speed" ? 4 : MAX_TOOL_TURNS;
+    const maxTurns = mode === "speed" ? 4 : mode === "max" ? 12 : MAX_TOOL_TURNS;
     let turn = 0;
     let finalContent = "";
     let totalToolCalls = 0;

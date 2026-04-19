@@ -1,13 +1,13 @@
 # Manus Next — Architecture Documentation
 
-**Version:** 4.0 (Phase 4 Complete — v8.2 Parity)
+**Version:** 5.0 (Phase 5 Complete — v8.3 Parity Gate A)
 **Last Updated:** April 18, 2026
 
 ---
 
 ## Overview
 
-Manus Next is an open-source autonomous AI agent platform that provides a web-based interface for conversational and agentic AI interactions. It is built on a React 19 + Express + tRPC stack with server-sent events (SSE) for real-time streaming, cross-session memory, task scheduling with server-side polling, parallel wide research, session replay, document generation, and PWA installability.
+Manus Next is an open-source autonomous AI agent platform that provides a web-based interface for conversational and agentic AI interactions. It is built on a React 19 + Express + tRPC stack with server-sent events (SSE) for real-time streaming, cross-session memory, task scheduling with server-side polling, parallel wide research, session replay, document generation, project workspaces, voice TTS, 3-tier agent modes, and PWA installability. The ManusNextChat reusable component interface is defined for future npm extraction.
 
 ---
 
