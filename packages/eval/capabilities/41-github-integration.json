@@ -1,0 +1,38 @@
+{
+  "id": 41,
+  "name": "github-integration",
+  "title": "GitHub Integration",
+  "category": "developer-tools",
+  "status": "YELLOW",
+  "task": {
+    "prompt": "Sync the project with a GitHub repository.",
+    "expected_behavior": "Code pushed to GitHub, bidirectional sync active.",
+    "scoring_criteria": [
+      "GitHub connected",
+      "Code pushed",
+      "Sync works"
+    ]
+  },
+  "scoring": {
+    "dimensions": [
+      "correctness",
+      "completeness",
+      "efficiency",
+      "robustness",
+      "user_experience",
+      "maintainability",
+      "innovation"
+    ],
+    "weights": {
+      "correctness": 0.2,
+      "completeness": 0.15,
+      "efficiency": 0.1,
+      "robustness": 0.15,
+      "user_experience": 0.15,
+      "maintainability": 0.1,
+      "innovation": 0.15
+    },
+    "threshold": 0.8
+  },
+  "result": null
+}

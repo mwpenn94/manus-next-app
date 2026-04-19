@@ -1,0 +1,116 @@
+{
+  "capability": "Multi-Tool Chain",
+  "id": "orch-1",
+  "judges": {
+    "A": {
+      "composite": 0.154,
+      "scores": {
+        "correctness": {
+          "score": 0.18,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.09,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.22,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.11,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.18,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.16,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.15,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.154,
+        "assessment": "Capability \"Multi-Tool Chain\" is undefined. Composite score: 0.154."
+      }
+    },
+    "B": {
+      "composite": 0.147,
+      "scores": {
+        "correctness": {
+          "score": 0.2,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.19,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.05,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.18,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.09,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.13,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.13,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.147,
+        "assessment": "Capability \"Multi-Tool Chain\" is undefined. Composite score: 0.147."
+      }
+    },
+    "C": {
+      "composite": 0.168,
+      "scores": {
+        "correctness": {
+          "score": 0.21,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.12,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.22,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.09,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.24,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.2,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.11,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.168,
+        "assessment": "Capability \"Multi-Tool Chain\" is undefined. Composite score: 0.168."
+      }
+    }
+  },
+  "median_composite": 0.154,
+  "spread": 0.021,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.479Z"
+}

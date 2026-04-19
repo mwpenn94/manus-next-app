@@ -133,19 +133,109 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
         events?.onSend?.(text);
         events?.onAgentStart?.();
 
-        // In the extracted package, this would call config.apiUrl
-        // For now, simulate the agent response pattern
-        setTimeout(() => {
-          const assistantMessage: ChatMessage = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: "This is the ManusNextChat component shell. Connect to a real agent backend via `config.apiUrl` to enable full functionality.",
-            timestamp: new Date(),
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
-          setIsStreaming(false);
-          events?.onAgentComplete?.(assistantMessage);
-        }, 1000);
+        // Stream from real agent backend via SSE
+        const assistantId = crypto.randomUUID();
+        const assistantMessage: ChatMessage = {
+          id: assistantId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+
+        const streamUrl = config.apiUrl?.replace(/\/trpc$/, "/stream") ?? "/api/stream";
+        const body = JSON.stringify({
+          message: text,
+          mode,
+          history: messages.slice(-10).map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        });
+
+        fetch(streamUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body,
+        })
+          .then(async (res) => {
+            if (!res.ok || !res.body) {
+              throw new Error(`Stream failed: ${res.status}`);
+            }
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            let accumulated = "";
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n");
+              buffer = lines.pop() ?? "";
+
+              for (const line of lines) {
+                if (!line.startsWith("data: ")) continue;
+                const raw = line.slice(6);
+                if (raw === "[DONE]") continue;
+                try {
+                  const data = JSON.parse(raw);
+                  if (data.token) {
+                    accumulated += data.token;
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === assistantId ? { ...m, content: accumulated } : m
+                      )
+                    );
+                  }
+                  if (data.image) {
+                    accumulated += `\n![image](${data.image})\n`;
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === assistantId ? { ...m, content: accumulated } : m
+                      )
+                    );
+                  }
+                  if (data.document) {
+                    accumulated += `\n[Download ${data.document.title || "Document"}](${data.document.url})\n`;
+                    setMessages((prev) =>
+                      prev.map((m) =>
+                        m.id === assistantId ? { ...m, content: accumulated } : m
+                      )
+                    );
+                  }
+                } catch {
+                  // Skip malformed SSE lines
+                }
+              }
+            }
+
+            const finalMsg: ChatMessage = {
+              id: assistantId,
+              role: "assistant",
+              content: accumulated,
+              timestamp: new Date(),
+            };
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? finalMsg : m))
+            );
+            setIsStreaming(false);
+            events?.onAgentComplete?.(finalMsg);
+          })
+          .catch((err) => {
+            const errorMsg: ChatMessage = {
+              id: assistantId,
+              role: "assistant",
+              content: `Connection error: ${err.message}. Please check your configuration and try again.`,
+              timestamp: new Date(),
+            };
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? errorMsg : m))
+            );
+            setIsStreaming(false);
+            events?.onError?.(err);
+          });
       },
       [input, isStreaming, disabled, events]
     );

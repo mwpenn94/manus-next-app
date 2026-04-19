@@ -1,0 +1,116 @@
+{
+  "capability": "Concurrent Tool Execution",
+  "id": "orch-5",
+  "judges": {
+    "A": {
+      "composite": 0.135,
+      "scores": {
+        "correctness": {
+          "score": 0.09,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.21,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.06,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.13,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.14,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.16,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.15,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.135,
+        "assessment": "Capability \"Concurrent Tool Execution\" is undefined. Composite score: 0.135."
+      }
+    },
+    "B": {
+      "composite": 0.127,
+      "scores": {
+        "correctness": {
+          "score": 0.06,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.14,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.12,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.18,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.12,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.23,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.09,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.127,
+        "assessment": "Capability \"Concurrent Tool Execution\" is undefined. Composite score: 0.127."
+      }
+    },
+    "C": {
+      "composite": 0.164,
+      "scores": {
+        "correctness": {
+          "score": 0.18,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.17,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.06,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.13,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.2,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.11,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.24,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.164,
+        "assessment": "Capability \"Concurrent Tool Execution\" is undefined. Composite score: 0.164."
+      }
+    }
+  },
+  "median_composite": 0.135,
+  "spread": 0.037,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.480Z"
+}

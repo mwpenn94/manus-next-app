@@ -1,0 +1,116 @@
+{
+  "capability": "Mode Switching Mid-Task",
+  "id": "orch-3",
+  "judges": {
+    "A": {
+      "composite": 0.179,
+      "scores": {
+        "correctness": {
+          "score": 0.11,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.2,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.19,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.17,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.21,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.16,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.23,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.179,
+        "assessment": "Capability \"Mode Switching Mid-Task\" is undefined. Composite score: 0.179."
+      }
+    },
+    "B": {
+      "composite": 0.155,
+      "scores": {
+        "correctness": {
+          "score": 0.08,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.12,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.2,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.2,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.17,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.24,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.14,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.155,
+        "assessment": "Capability \"Mode Switching Mid-Task\" is undefined. Composite score: 0.155."
+      }
+    },
+    "C": {
+      "composite": 0.169,
+      "scores": {
+        "correctness": {
+          "score": 0.1,
+          "justification": "undefined status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.14,
+          "justification": "undefined status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.23,
+          "justification": "undefined status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.24,
+          "justification": "undefined status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.21,
+          "justification": "undefined status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.07,
+          "justification": "undefined status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.2,
+          "justification": "undefined status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.169,
+        "assessment": "Capability \"Mode Switching Mid-Task\" is undefined. Composite score: 0.169."
+      }
+    }
+  },
+  "median_composite": 0.169,
+  "spread": 0.024,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.480Z"
+}

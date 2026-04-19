@@ -1,0 +1,117 @@
+{
+  "capability": "Version Rollback",
+  "id": 48,
+  "status": "YELLOW",
+  "judges": {
+    "A": {
+      "composite": 0.537,
+      "scores": {
+        "correctness": {
+          "score": 0.47,
+          "justification": "YELLOW status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.6,
+          "justification": "YELLOW status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.56,
+          "justification": "YELLOW status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.54,
+          "justification": "YELLOW status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.46,
+          "justification": "YELLOW status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.52,
+          "justification": "YELLOW status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.63,
+          "justification": "YELLOW status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.537,
+        "assessment": "Capability \"Version Rollback\" is YELLOW. Composite score: 0.537."
+      }
+    },
+    "B": {
+      "composite": 0.536,
+      "scores": {
+        "correctness": {
+          "score": 0.5,
+          "justification": "YELLOW status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.6,
+          "justification": "YELLOW status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.49,
+          "justification": "YELLOW status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.64,
+          "justification": "YELLOW status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.54,
+          "justification": "YELLOW status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.49,
+          "justification": "YELLOW status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.47,
+          "justification": "YELLOW status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.536,
+        "assessment": "Capability \"Version Rollback\" is YELLOW. Composite score: 0.536."
+      }
+    },
+    "C": {
+      "composite": 0.562,
+      "scores": {
+        "correctness": {
+          "score": 0.59,
+          "justification": "YELLOW status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.6,
+          "justification": "YELLOW status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.57,
+          "justification": "YELLOW status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.5,
+          "justification": "YELLOW status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.58,
+          "justification": "YELLOW status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.49,
+          "justification": "YELLOW status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.57,
+          "justification": "YELLOW status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.562,
+        "assessment": "Capability \"Version Rollback\" is YELLOW. Composite score: 0.562."
+      }
+    }
+  },
+  "median_composite": 0.537,
+  "spread": 0.026,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.474Z"
+}

@@ -1,0 +1,117 @@
+{
+  "capability": "Rule 17a-4 WORM",
+  "id": 64,
+  "status": "N/A",
+  "judges": {
+    "A": {
+      "composite": 0,
+      "scores": {
+        "correctness": {
+          "score": 0,
+          "justification": "N/A status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0,
+          "justification": "N/A status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0,
+          "justification": "N/A status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0,
+          "justification": "N/A status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0,
+          "justification": "N/A status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0,
+          "justification": "N/A status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0,
+          "justification": "N/A status: innovation scored based on implementation evidence."
+        },
+        "composite": 0,
+        "assessment": "Capability \"Rule 17a-4 WORM\" is N/A. Composite score: 0.000."
+      }
+    },
+    "B": {
+      "composite": 0,
+      "scores": {
+        "correctness": {
+          "score": 0,
+          "justification": "N/A status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0,
+          "justification": "N/A status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0,
+          "justification": "N/A status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0,
+          "justification": "N/A status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0,
+          "justification": "N/A status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0,
+          "justification": "N/A status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0,
+          "justification": "N/A status: innovation scored based on implementation evidence."
+        },
+        "composite": 0,
+        "assessment": "Capability \"Rule 17a-4 WORM\" is N/A. Composite score: 0.000."
+      }
+    },
+    "C": {
+      "composite": 0,
+      "scores": {
+        "correctness": {
+          "score": 0,
+          "justification": "N/A status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0,
+          "justification": "N/A status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0,
+          "justification": "N/A status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0,
+          "justification": "N/A status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0,
+          "justification": "N/A status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0,
+          "justification": "N/A status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0,
+          "justification": "N/A status: innovation scored based on implementation evidence."
+        },
+        "composite": 0,
+        "assessment": "Capability \"Rule 17a-4 WORM\" is N/A. Composite score: 0.000."
+      }
+    }
+  },
+  "median_composite": 0,
+  "spread": 0,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.478Z"
+}

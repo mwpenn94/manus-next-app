@@ -1,0 +1,117 @@
+{
+  "capability": "Task Replay with Timeline Scrubber",
+  "id": 8,
+  "status": "GREEN",
+  "judges": {
+    "A": {
+      "composite": 0.811,
+      "scores": {
+        "correctness": {
+          "score": 0.85,
+          "justification": "GREEN status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.86,
+          "justification": "GREEN status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.81,
+          "justification": "GREEN status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.86,
+          "justification": "GREEN status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.75,
+          "justification": "GREEN status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.77,
+          "justification": "GREEN status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.75,
+          "justification": "GREEN status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.811,
+        "assessment": "Capability \"Task Replay with Timeline Scrubber\" is GREEN. Composite score: 0.811."
+      }
+    },
+    "B": {
+      "composite": 0.793,
+      "scores": {
+        "correctness": {
+          "score": 0.77,
+          "justification": "GREEN status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.76,
+          "justification": "GREEN status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.77,
+          "justification": "GREEN status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.86,
+          "justification": "GREEN status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.86,
+          "justification": "GREEN status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.75,
+          "justification": "GREEN status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.77,
+          "justification": "GREEN status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.793,
+        "assessment": "Capability \"Task Replay with Timeline Scrubber\" is GREEN. Composite score: 0.793."
+      }
+    },
+    "C": {
+      "composite": 0.783,
+      "scores": {
+        "correctness": {
+          "score": 0.79,
+          "justification": "GREEN status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.86,
+          "justification": "GREEN status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.75,
+          "justification": "GREEN status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.78,
+          "justification": "GREEN status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.76,
+          "justification": "GREEN status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.79,
+          "justification": "GREEN status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.74,
+          "justification": "GREEN status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.783,
+        "assessment": "Capability \"Task Replay with Timeline Scrubber\" is GREEN. Composite score: 0.783."
+      }
+    }
+  },
+  "median_composite": 0.793,
+  "spread": 0.028,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.460Z"
+}

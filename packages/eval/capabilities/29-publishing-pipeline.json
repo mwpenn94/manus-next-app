@@ -1,0 +1,38 @@
+{
+  "id": 29,
+  "name": "publishing-pipeline",
+  "title": "Publishing Pipeline",
+  "category": "website-builder",
+  "status": "RED",
+  "task": {
+    "prompt": "Publish the generated app to a public URL.",
+    "expected_behavior": "App deployed and accessible at public URL.",
+    "scoring_criteria": [
+      "Deployment triggered",
+      "Public URL generated",
+      "App accessible"
+    ]
+  },
+  "scoring": {
+    "dimensions": [
+      "correctness",
+      "completeness",
+      "efficiency",
+      "robustness",
+      "user_experience",
+      "maintainability",
+      "innovation"
+    ],
+    "weights": {
+      "correctness": 0.2,
+      "completeness": 0.15,
+      "efficiency": 0.1,
+      "robustness": 0.15,
+      "user_experience": 0.15,
+      "maintainability": 0.1,
+      "innovation": 0.15
+    },
+    "threshold": 0.8
+  },
+  "result": null
+}

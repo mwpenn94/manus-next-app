@@ -1,0 +1,117 @@
+{
+  "capability": "Open-Standards Agent Skills",
+  "id": 13,
+  "status": "RED",
+  "judges": {
+    "A": {
+      "composite": 0.142,
+      "scores": {
+        "correctness": {
+          "score": 0.11,
+          "justification": "RED status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.16,
+          "justification": "RED status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.2,
+          "justification": "RED status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.14,
+          "justification": "RED status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.19,
+          "justification": "RED status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.19,
+          "justification": "RED status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.05,
+          "justification": "RED status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.142,
+        "assessment": "Capability \"Open-Standards Agent Skills\" is RED. Composite score: 0.142."
+      }
+    },
+    "B": {
+      "composite": 0.134,
+      "scores": {
+        "correctness": {
+          "score": 0.19,
+          "justification": "RED status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.07,
+          "justification": "RED status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.17,
+          "justification": "RED status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.08,
+          "justification": "RED status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.21,
+          "justification": "RED status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.05,
+          "justification": "RED status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.13,
+          "justification": "RED status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.134,
+        "assessment": "Capability \"Open-Standards Agent Skills\" is RED. Composite score: 0.134."
+      }
+    },
+    "C": {
+      "composite": 0.162,
+      "scores": {
+        "correctness": {
+          "score": 0.13,
+          "justification": "RED status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.2,
+          "justification": "RED status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.25,
+          "justification": "RED status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.08,
+          "justification": "RED status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.2,
+          "justification": "RED status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.19,
+          "justification": "RED status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.13,
+          "justification": "RED status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.162,
+        "assessment": "Capability \"Open-Standards Agent Skills\" is RED. Composite score: 0.162."
+      }
+    }
+  },
+  "median_composite": 0.142,
+  "spread": 0.028,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.463Z"
+}

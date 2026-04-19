@@ -1,0 +1,117 @@
+{
+  "capability": "Built-in AI Capabilities",
+  "id": 30,
+  "status": "YELLOW",
+  "judges": {
+    "A": {
+      "composite": 0.551,
+      "scores": {
+        "correctness": {
+          "score": 0.5,
+          "justification": "YELLOW status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.51,
+          "justification": "YELLOW status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.53,
+          "justification": "YELLOW status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.58,
+          "justification": "YELLOW status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.57,
+          "justification": "YELLOW status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.63,
+          "justification": "YELLOW status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.57,
+          "justification": "YELLOW status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.551,
+        "assessment": "Capability \"Built-in AI Capabilities\" is YELLOW. Composite score: 0.551."
+      }
+    },
+    "B": {
+      "composite": 0.603,
+      "scores": {
+        "correctness": {
+          "score": 0.64,
+          "justification": "YELLOW status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.61,
+          "justification": "YELLOW status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.58,
+          "justification": "YELLOW status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.61,
+          "justification": "YELLOW status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.5,
+          "justification": "YELLOW status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.63,
+          "justification": "YELLOW status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.64,
+          "justification": "YELLOW status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.603,
+        "assessment": "Capability \"Built-in AI Capabilities\" is YELLOW. Composite score: 0.603."
+      }
+    },
+    "C": {
+      "composite": 0.547,
+      "scores": {
+        "correctness": {
+          "score": 0.56,
+          "justification": "YELLOW status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.5,
+          "justification": "YELLOW status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.55,
+          "justification": "YELLOW status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.54,
+          "justification": "YELLOW status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.57,
+          "justification": "YELLOW status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.47,
+          "justification": "YELLOW status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.61,
+          "justification": "YELLOW status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.547,
+        "assessment": "Capability \"Built-in AI Capabilities\" is YELLOW. Composite score: 0.547."
+      }
+    }
+  },
+  "median_composite": 0.551,
+  "spread": 0.056,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.469Z"
+}

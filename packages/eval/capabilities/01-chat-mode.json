@@ -1,0 +1,38 @@
+{
+  "id": 1,
+  "name": "chat-mode",
+  "title": "Chat Mode",
+  "category": "agent-core",
+  "status": "GREEN",
+  "task": {
+    "prompt": "Say hello and ask me how my day is going.",
+    "expected_behavior": "Agent responds conversationally without using tools. Response is friendly and contextual.",
+    "scoring_criteria": [
+      "Responds without tool calls",
+      "Natural conversational tone",
+      "Under 3 seconds response time"
+    ]
+  },
+  "scoring": {
+    "dimensions": [
+      "correctness",
+      "completeness",
+      "efficiency",
+      "robustness",
+      "user_experience",
+      "maintainability",
+      "innovation"
+    ],
+    "weights": {
+      "correctness": 0.2,
+      "completeness": 0.15,
+      "efficiency": 0.1,
+      "robustness": 0.15,
+      "user_experience": 0.15,
+      "maintainability": 0.1,
+      "innovation": 0.15
+    },
+    "threshold": 0.8
+  },
+  "result": null
+}

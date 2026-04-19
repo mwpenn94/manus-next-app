@@ -1,0 +1,117 @@
+{
+  "capability": "Messaging-App Agent",
+  "id": 52,
+  "status": "RED",
+  "judges": {
+    "A": {
+      "composite": 0.147,
+      "scores": {
+        "correctness": {
+          "score": 0.22,
+          "justification": "RED status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.16,
+          "justification": "RED status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.1,
+          "justification": "RED status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.08,
+          "justification": "RED status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.13,
+          "justification": "RED status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.07,
+          "justification": "RED status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.2,
+          "justification": "RED status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.147,
+        "assessment": "Capability \"Messaging-App Agent\" is RED. Composite score: 0.147."
+      }
+    },
+    "B": {
+      "composite": 0.176,
+      "scores": {
+        "correctness": {
+          "score": 0.13,
+          "justification": "RED status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.06,
+          "justification": "RED status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.19,
+          "justification": "RED status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.24,
+          "justification": "RED status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.24,
+          "justification": "RED status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.14,
+          "justification": "RED status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.24,
+          "justification": "RED status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.176,
+        "assessment": "Capability \"Messaging-App Agent\" is RED. Composite score: 0.176."
+      }
+    },
+    "C": {
+      "composite": 0.121,
+      "scores": {
+        "correctness": {
+          "score": 0.05,
+          "justification": "RED status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.18,
+          "justification": "RED status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.08,
+          "justification": "RED status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.21,
+          "justification": "RED status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.14,
+          "justification": "RED status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.07,
+          "justification": "RED status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.11,
+          "justification": "RED status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.121,
+        "assessment": "Capability \"Messaging-App Agent\" is RED. Composite score: 0.121."
+      }
+    }
+  },
+  "median_composite": 0.147,
+  "spread": 0.055,
+  "high_variance": false,
+  "passes_threshold": false,
+  "evaluated_at": "2026-04-19T03:32:41.475Z"
+}

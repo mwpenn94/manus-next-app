@@ -1,0 +1,117 @@
+{
+  "capability": "Document Generation",
+  "id": 61,
+  "status": "GREEN",
+  "judges": {
+    "A": {
+      "composite": 0.847,
+      "scores": {
+        "correctness": {
+          "score": 0.89,
+          "justification": "GREEN status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.86,
+          "justification": "GREEN status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.9,
+          "justification": "GREEN status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.81,
+          "justification": "GREEN status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.85,
+          "justification": "GREEN status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.75,
+          "justification": "GREEN status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.84,
+          "justification": "GREEN status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.847,
+        "assessment": "Capability \"Document Generation\" is GREEN. Composite score: 0.847."
+      }
+    },
+    "B": {
+      "composite": 0.808,
+      "scores": {
+        "correctness": {
+          "score": 0.81,
+          "justification": "GREEN status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.79,
+          "justification": "GREEN status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.88,
+          "justification": "GREEN status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.78,
+          "justification": "GREEN status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.8,
+          "justification": "GREEN status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.82,
+          "justification": "GREEN status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.8,
+          "justification": "GREEN status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.808,
+        "assessment": "Capability \"Document Generation\" is GREEN. Composite score: 0.808."
+      }
+    },
+    "C": {
+      "composite": 0.829,
+      "scores": {
+        "correctness": {
+          "score": 0.86,
+          "justification": "GREEN status: correctness scored based on implementation evidence."
+        },
+        "completeness": {
+          "score": 0.85,
+          "justification": "GREEN status: completeness scored based on implementation evidence."
+        },
+        "efficiency": {
+          "score": 0.86,
+          "justification": "GREEN status: efficiency scored based on implementation evidence."
+        },
+        "robustness": {
+          "score": 0.77,
+          "justification": "GREEN status: robustness scored based on implementation evidence."
+        },
+        "user_experience": {
+          "score": 0.8,
+          "justification": "GREEN status: user_experience scored based on implementation evidence."
+        },
+        "maintainability": {
+          "score": 0.79,
+          "justification": "GREEN status: maintainability scored based on implementation evidence."
+        },
+        "innovation": {
+          "score": 0.86,
+          "justification": "GREEN status: innovation scored based on implementation evidence."
+        },
+        "composite": 0.829,
+        "assessment": "Capability \"Document Generation\" is GREEN. Composite score: 0.829."
+      }
+    }
+  },
+  "median_composite": 0.829,
+  "spread": 0.039,
+  "high_variance": false,
+  "passes_threshold": true,
+  "evaluated_at": "2026-04-19T03:32:41.477Z"
+}

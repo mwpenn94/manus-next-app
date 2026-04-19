@@ -1,0 +1,38 @@
+{
+  "id": 35,
+  "name": "project-analytics",
+  "title": "Project Analytics",
+  "category": "website-builder-pm",
+  "status": "YELLOW",
+  "task": {
+    "prompt": "View analytics for the published project (page views, visitors).",
+    "expected_behavior": "Analytics dashboard shows traffic metrics.",
+    "scoring_criteria": [
+      "Dashboard loads",
+      "Metrics displayed",
+      "Time range filter works"
+    ]
+  },
+  "scoring": {
+    "dimensions": [
+      "correctness",
+      "completeness",
+      "efficiency",
+      "robustness",
+      "user_experience",
+      "maintainability",
+      "innovation"
+    ],
+    "weights": {
+      "correctness": 0.2,
+      "completeness": 0.15,
+      "efficiency": 0.1,
+      "robustness": 0.15,
+      "user_experience": 0.15,
+      "maintainability": 0.1,
+      "innovation": 0.15
+    },
+    "threshold": 0.8
+  },
+  "result": null
+}

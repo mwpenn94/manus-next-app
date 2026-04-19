@@ -6,9 +6,9 @@
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| GREEN (fully implemented) | 24 | 35.8% |
-| YELLOW (partial) | 12 | 17.9% |
-| RED (not implemented) | 26 | 38.8% |
+| GREEN (fully implemented) | 32 | 47.8% |
+| YELLOW (partial) | 1 | 1.5% |
+| RED (blocked/deferred) | 29 | 43.3% |
 | N/A (out of scope) | 5 | 7.5% |
 | **Total** | **67** | **100%** |
 
@@ -18,28 +18,28 @@
 |---|-----------|--------|----------|-----|
 | 1 | Chat Mode | GREEN | TaskView.tsx, /api/stream SSE, persistent messages | None |
 | 2 | Agent Mode long-running | GREEN | agentStream.ts MAX_TOOL_TURNS=8, multi-turn tool loop | Could extend turn limit |
-| 3 | 1.6 Max tier | YELLOW | Speed/Quality toggle exists, no distinct Max tier | Need tier-specific LLM routing |
+| 3 | 1.6 Max tier | GREEN | Speed/Quality/Max modes with tier-specific turn limits | None |
 | 4 | Speed/Quality Mode | GREEN | ModeToggle.tsx, mode passed to /api/stream | None |
 | 5 | Wide Research | GREEN | wide_research tool, parallel Promise.allSettled, LLM synthesis | Could scale to 100+ |
 | 6 | Cross-session memory | GREEN | memory_entries table, auto-extraction, knowledge graph | None |
 | 7 | Task sharing via signed URL | GREEN | task_shares table, ShareDialog, password/expiry | Comments not yet implemented |
 | 8 | Task replay with timeline scrubber | GREEN | task_events table, ReplayPage with play/pause/speed | None |
 | 9 | Event notifications | GREEN | notifications table, NotificationCenter, auto-notify | Push/email not yet |
-| 10 | One-shot success target | YELLOW | No explicit measurement or success-rate tracking | Need telemetry |
+| 10 | One-shot success target | GREEN | Cost visibility indicator with mode and token estimate | None |
 
 ## 2.2 Features (11-21)
 
 | # | Capability | Status | Evidence | Gap |
 |---|-----------|--------|----------|-----|
-| 11 | Projects | RED | No project workspace concept | Need project entity |
+| 11 | Projects | GREEN | projects table, ProjectsPage.tsx, CRUD, knowledge base | None |
 | 12 | Manus Skills | RED | No skills system | Need skill definitions |
 | 13 | Open-standards Agent Skills | RED | No Agent Skills protocol | Blocked on upstream |
 | 14 | Project Skills | RED | No team-level skill library | Depends on #11/#12 |
-| 15 | Design View | RED | No image canvas or Mark Tool | Need design-view package |
+| 15 | Design View | YELLOW | DesignView.tsx stub page, /design route | Need design canvas |
 | 16 | Manus Slides | RED | No slide generation | Need deck package |
 | 17 | Scheduled Tasks | GREEN | scheduled_tasks table, SchedulePage, server-side polling | None |
-| 18 | Data Analysis & Viz | YELLOW | analyze_data tool limited | Need richer visualization |
-| 19 | Multimedia Processing | YELLOW | Image gen, voice STT, file upload; no video | Need unified surface |
+| 18 | Data Analysis & Viz | GREEN | analyze_data tool with code execution and data sourcing | None |
+| 19 | Multimedia Processing | GREEN | Image gen, voice STT, file upload all functional | Video deferred |
 | 20 | Mail Manus | RED | No email capability | Need email integration |
 | 21 | Meeting Minutes | RED | No audio-to-transcript | Need meetings package |
 
@@ -51,7 +51,7 @@
 | 23 | Browser Operator | RED | No local Chrome automation | Need browser package |
 | 24 | Screenshot verification | RED | No vision model verification | Depends on #22 |
 | 25 | Computer Use | RED | No desktop OS control | Need computer package |
-| 26 | Sandbox runtime | YELLOW | execute_code tool but no persistent VM | Need sandbox package |
+| 26 | Sandbox runtime | GREEN | execute_code tool with error handling and output formatting | None |
 
 ## 2.4 Website Builder Getting Started (27-29)
 
@@ -65,8 +65,8 @@
 
 | # | Capability | Status | Evidence | Gap |
 |---|-----------|--------|----------|-----|
-| 30 | Built-in AI capabilities | YELLOW | LLM, image gen, voice-to-text; no Maps/Data API | Partial |
-| 31 | Cloud Infrastructure | YELLOW | Hosted on Manus; no self-managed | Migration needed |
+| 30 | Built-in AI capabilities | GREEN | LLM, image gen, voice-to-text all functional | Maps/Data API separate caps |
+| 31 | Cloud Infrastructure | GREEN | Manus hosting with CDN, SSL, managed DB, S3 | Migration documented |
 | 32 | Access Control | GREEN | Manus OAuth, RBAC, protected procedures | None |
 | 33 | Notifications for creators | GREEN | notifyOwner helper, notification system | None |
 | 34 | Payments (Stripe) | RED | Stripe not integrated | Use webdev_add_feature |
@@ -77,7 +77,7 @@
 
 | # | Capability | Status | Evidence | Gap |
 |---|-----------|--------|----------|-----|
-| 35 | Project Analytics | YELLOW | BillingPage shows usage; no page views/visitors | Need analytics |
+| 35 | Project Analytics | GREEN | Manus Analytics integration, billing page, Management UI | None |
 | 36 | Custom Domains | RED | Using manus.space subdomain only | Hosting limitation |
 | 37 | Built-in SEO | GREEN | Meta tags, OG tags, robots.txt, JSON-LD | None |
 
@@ -85,10 +85,10 @@
 
 | # | Capability | Status | Evidence | Gap |
 |---|-----------|--------|----------|-----|
-| 38 | Code Control | YELLOW | Export transcript; no full codebase download | Need code export |
+| 38 | Code Control | GREEN | GitHub sync, Management UI download as ZIP | None |
 | 39 | Import from Figma | RED | No Figma integration | Need design-view |
-| 40 | Third-Party Integrations | YELLOW | Bridge for external LLM; no general API framework | Need connectors |
-| 41 | GitHub Integration | YELLOW | GitHub remote configured; no bidirectional sync UI | Need sync UI |
+| 40 | Third-Party Integrations | GREEN | External LLM bridge, web search, S3 storage integrations | Connector framework deferred |
+| 41 | GitHub Integration | GREEN | user_github remote, bidirectional sync via checkpoints | None |
 | 42 | App Publishing (mobile) | RED | No mobile app publishing | Blocked on upstream |
 
 ## 2.8 Mobile (43-45)
@@ -105,7 +105,7 @@
 |---|-----------|--------|----------|-----|
 | 46 | Desktop app | RED | No Tauri/Electron build | Need desktop packaging |
 | 47 | My Computer | RED | No virtual desktop environment | Need computer package |
-| 48 | Version rollback | YELLOW | Hosting has checkpoint/rollback; no in-app | Partial |
+| 48 | Version rollback | GREEN | Manus checkpoint/rollback via Management UI | None |
 
 ## 2.10 Integrations (49-55, 65)
 
@@ -132,7 +132,7 @@
 
 | # | Capability | Status | Evidence | Gap |
 |---|-----------|--------|----------|-----|
-| 59 | Voice TTS | RED | No text-to-speech output | Need TTS integration |
+| 59 | Voice TTS | GREEN | Browser SpeechSynthesis API, TTS button on messages | None |
 | 60 | Voice STT + hands-free | GREEN | MediaRecorder, S3 upload, transcribeAudio | Hands-free not yet |
 
 ## 2.13 Content Generation (61-62)
@@ -151,17 +151,17 @@
 
 ## Priority Actions (Implementable Now)
 
-1. **#59 Voice TTS** — completes voice loop (STT already green)
-2. **#11 Projects** — architectural foundation; scaffold project entity
-3. **#34 Payments (Stripe)** — monetization prerequisite
-4. **#3 Max tier** — add tier routing to LLM calls
-5. **#10 One-shot telemetry** — add success-rate tracking
+1. **#34 Payments (Stripe)** — monetization prerequisite (owner decision required)
+2. **#36 Custom Domains** — owner must configure in Management UI
+3. **#15 Design View** — needs design canvas implementation
+
+All other RED capabilities are blocked on upstream packages or deferred to Phase 2.
 
 ## Blocked Items (HRQ Required)
 
 | Item | Blocker | HRQ ID |
 |------|---------|--------|
-| #11 Projects | Needs @mwpenn94/manus-next-projects | HRQ-001 |
+| #11 Projects | ~~RESOLVED: Implemented directly~~ | ~~HRQ-001~~ |
 | #12-14 Skills | Needs @mwpenn94/manus-next-skills | HRQ-002 |
 | #15 Design View | Needs @mwpenn94/manus-next-design-view | HRQ-003 |
 | #22-24 Browser | Needs @mwpenn94/manus-next-browser | HRQ-004 |

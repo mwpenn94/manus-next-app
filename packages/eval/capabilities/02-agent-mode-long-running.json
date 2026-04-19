@@ -1,0 +1,39 @@
+{
+  "id": 2,
+  "name": "agent-mode-long-running",
+  "title": "Agent Mode Long-Running",
+  "category": "agent-core",
+  "status": "GREEN",
+  "task": {
+    "prompt": "Research the top 3 programming languages in 2025 and create a comparison table.",
+    "expected_behavior": "Agent uses web_search tool, processes results, and produces a formatted comparison table.",
+    "scoring_criteria": [
+      "Uses web_search tool",
+      "Multiple tool turns",
+      "Produces structured output",
+      "Completes within 60 seconds"
+    ]
+  },
+  "scoring": {
+    "dimensions": [
+      "correctness",
+      "completeness",
+      "efficiency",
+      "robustness",
+      "user_experience",
+      "maintainability",
+      "innovation"
+    ],
+    "weights": {
+      "correctness": 0.2,
+      "completeness": 0.15,
+      "efficiency": 0.1,
+      "robustness": 0.15,
+      "user_experience": 0.15,
+      "maintainability": 0.1,
+      "innovation": 0.15
+    },
+    "threshold": 0.8
+  },
+  "result": null
+}
