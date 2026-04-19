@@ -78,6 +78,13 @@
       "when": 1776577957955,
       "tag": "0010_perpetual_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1776581306168,
+      "tag": "0011_exotic_salo",
+      "breakpoints": true
     }
   ]
 }

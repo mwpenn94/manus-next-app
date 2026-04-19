@@ -2,10 +2,8 @@
  * MessagingAgentPage — Messaging Platform Integration
  * Capability #52: Messaging-app agent
  *
- * Webhook-based messaging bridge that connects the agent to:
- * - WhatsApp Business API
- * - Telegram Bot API
- * - Custom webhook endpoints
+ * Uses the connectors table (via connector tRPC procedures) for persistence.
+ * Messaging configs are stored as connectors with connectorId prefix "msg-".
  */
 import { useState, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -19,21 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   MessageSquare, Send, Plus, Loader2, LogIn, ArrowLeft,
-  CheckCircle2, AlertCircle, Settings, Webhook, Zap, Copy,
+  Trash2, Webhook, Copy,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
 type MessagingPlatform = "whatsapp" | "telegram" | "webhook";
-type MessagingConfig = {
-  id: string;
-  platform: MessagingPlatform;
-  name: string;
-  webhookUrl: string;
-  apiToken: string;
-  status: "active" | "inactive" | "error";
-  lastMessage?: string;
-};
 
 const PLATFORMS: { id: MessagingPlatform; label: string; description: string }[] = [
   { id: "whatsapp", label: "WhatsApp Business", description: "Connect via WhatsApp Business API" },
@@ -44,7 +33,6 @@ const PLATFORMS: { id: MessagingPlatform; label: string; description: string }[]
 export default function MessagingAgentPage() {
   const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
-  const [configs, setConfigs] = useState<MessagingConfig[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newPlatform, setNewPlatform] = useState<MessagingPlatform>("webhook");
   const [newName, setNewName] = useState("");
@@ -52,91 +40,91 @@ export default function MessagingAgentPage() {
   const [newApiToken, setNewApiToken] = useState("");
   const [testMessage, setTestMessage] = useState("");
   const [isTesting, setIsTesting] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Use real tRPC queries for persistence via the connectors table
+  const { data: connectors = [], isLoading } = trpc.connector.list.useQuery();
+  const utils = trpc.useUtils();
+
+  // Filter to messaging connectors only (connectorId starts with "msg-")
+  const messagingConnectors = connectors.filter((c: any) => c.connectorId?.startsWith("msg-"));
+
+  const addMutation = trpc.connector.connect.useMutation({
+    onSuccess: () => {
+      utils.connector.list.invalidate();
+      setShowAdd(false);
+      setNewName("");
+      setNewWebhookUrl("");
+      setNewApiToken("");
+      toast.success("Connection added");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const removeMutation = trpc.connector.disconnect.useMutation({
+    onSuccess: () => {
+      utils.connector.list.invalidate();
+      if (selectedId) setSelectedId(null);
+      toast.success("Connection removed");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   const addConfig = useCallback(() => {
     if (!newName.trim()) {
       toast.error("Enter a name for this connection");
       return;
     }
-    const config: MessagingConfig = {
-      id: Date.now().toString(),
-      platform: newPlatform,
+    addMutation.mutate({
+      connectorId: `msg-${newPlatform}`,
       name: newName,
-      webhookUrl: newWebhookUrl,
-      apiToken: newApiToken,
-      status: newWebhookUrl || newApiToken ? "active" : "inactive",
-    };
-    setConfigs((prev) => [...prev, config]);
-    setShowAdd(false);
-    setNewName("");
-    setNewWebhookUrl("");
-    setNewApiToken("");
-    toast.success(`${config.name} connection added`);
-  }, [newPlatform, newName, newWebhookUrl, newApiToken]);
-
-  const removeConfig = useCallback((id: string) => {
-    setConfigs((prev) => prev.filter((c) => c.id !== id));
-    if (selectedConfig === id) setSelectedConfig(null);
-    toast.success("Connection removed");
-  }, [selectedConfig]);
+      config: {
+        platform: newPlatform,
+        webhookUrl: newWebhookUrl,
+        apiToken: newApiToken,
+      },
+    });
+  }, [newPlatform, newName, newWebhookUrl, newApiToken, addMutation]);
 
   const sendTestMessage = useCallback(async () => {
-    if (!testMessage.trim() || !selectedConfig) return;
+    if (!testMessage.trim() || !selectedId) return;
     setIsTesting(true);
-    const config = configs.find((c) => c.id === selectedConfig);
-    if (!config) return;
+    const config = messagingConnectors.find((c: any) => c.id === selectedId);
+    if (!config) { setIsTesting(false); return; }
 
     try {
-      // Use the agent to process and send the message
+      const platform = (config.config as any)?.platform ?? "webhook";
+      const webhookUrl = (config.config as any)?.webhookUrl ?? "";
+
       const response = await fetch("/api/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: `Send this message via the ${config.platform} messaging integration "${config.name}": "${testMessage}". ${config.webhookUrl ? `Webhook URL: ${config.webhookUrl}` : ""} Respond with the delivery status.`,
+          prompt: `Send this message via the ${platform} messaging integration "${config.name}": "${testMessage}". ${webhookUrl ? `Webhook URL: ${webhookUrl}` : ""} Respond with the delivery status.`,
           mode: "speed",
         }),
       });
 
       if (!response.ok) throw new Error("Send failed");
 
+      // Read the stream to completion
       const reader = response.body?.getReader();
-      if (!reader) throw new Error("No stream");
-      const decoder = new TextDecoder();
-      let result = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split("\n")) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.content) result += data.content;
-            } catch { /* skip */ }
-          }
+      if (reader) {
+        while (true) {
+          const { done } = await reader.read();
+          if (done) break;
         }
       }
 
-      setConfigs((prev) =>
-        prev.map((c) =>
-          c.id === selectedConfig ? { ...c, lastMessage: testMessage, status: "active" as const } : c
-        )
-      );
       toast.success("Message sent!");
       setTestMessage("");
     } catch (err: any) {
       toast.error("Send failed: " + err.message);
-      setConfigs((prev) =>
-        prev.map((c) =>
-          c.id === selectedConfig ? { ...c, status: "error" as const } : c
-        )
-      );
     } finally {
       setIsTesting(false);
     }
-  }, [testMessage, selectedConfig, configs]);
+  }, [testMessage, selectedId, messagingConnectors]);
 
   const inboundWebhookUrl = `${window.location.origin}/api/messaging/webhook`;
 
@@ -227,7 +215,10 @@ export default function MessagingAgentPage() {
                 <Input type="password" value={newApiToken} onChange={(e) => setNewApiToken(e.target.value)} placeholder="Bot token or API key" />
               </div>
               <div className="flex gap-2">
-                <Button onClick={addConfig} size="sm"><Plus className="w-3 h-3 mr-1" /> Add</Button>
+                <Button onClick={addConfig} disabled={addMutation.isPending} size="sm">
+                  {addMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+                  Add
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => setShowAdd(false)}>Cancel</Button>
               </div>
             </CardContent>
@@ -237,8 +228,12 @@ export default function MessagingAgentPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Connections */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-foreground">Connections ({configs.length})</h3>
-            {configs.length === 0 ? (
+            <h3 className="text-sm font-medium text-foreground">Connections ({messagingConnectors.length})</h3>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : messagingConnectors.length === 0 ? (
               <Card className="bg-card border-border">
                 <CardContent className="p-8 text-center">
                   <MessageSquare className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
@@ -246,44 +241,49 @@ export default function MessagingAgentPage() {
                 </CardContent>
               </Card>
             ) : (
-              configs.map((config) => (
-                <Card
-                  key={config.id}
-                  className={`bg-card border cursor-pointer transition-all ${
-                    selectedConfig === config.id ? "border-primary" : "border-border hover:border-primary/30"
-                  }`}
-                  onClick={() => setSelectedConfig(config.id)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          config.status === "active" ? "bg-emerald-500/10" : config.status === "error" ? "bg-red-500/10" : "bg-muted"
-                        }`}>
-                          <MessageSquare className={`w-4 h-4 ${
-                            config.status === "active" ? "text-emerald-400" : config.status === "error" ? "text-red-400" : "text-muted-foreground"
-                          }`} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{config.name}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-[10px]">{config.platform}</Badge>
-                            <Badge variant={config.status === "active" ? "default" : "destructive"} className="text-[10px]">
-                              {config.status}
-                            </Badge>
+              messagingConnectors.map((config: any) => {
+                const platform = (config.config as any)?.platform ?? "webhook";
+                const status = config.status ?? "disconnected";
+                return (
+                  <Card
+                    key={config.id}
+                    className={`bg-card border cursor-pointer transition-all ${
+                      selectedId === config.id ? "border-primary" : "border-border hover:border-primary/30"
+                    }`}
+                    onClick={() => setSelectedId(config.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            status === "connected" ? "bg-emerald-500/10" : status === "error" ? "bg-red-500/10" : "bg-muted"
+                          }`}>
+                            <MessageSquare className={`w-4 h-4 ${
+                              status === "connected" ? "text-emerald-400" : status === "error" ? "text-red-400" : "text-muted-foreground"
+                            }`} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{config.name}</p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[10px]">{platform}</Badge>
+                              <Badge variant={status === "connected" ? "default" : "destructive"} className="text-[10px]">
+                                {status}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); removeMutation.mutate({ connectorId: config.connectorId }); }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); removeConfig(config.id); }}>
-                        <AlertCircle className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    {config.lastMessage && (
-                      <p className="text-xs text-muted-foreground mt-2 truncate">Last: {config.lastMessage}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
 
@@ -292,7 +292,7 @@ export default function MessagingAgentPage() {
             <h3 className="text-sm font-medium text-foreground mb-3">Test Message</h3>
             <Card className="bg-card border-border">
               <CardContent className="p-4">
-                {!selectedConfig ? (
+                {!selectedId ? (
                   <div className="text-center py-6">
                     <Send className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">Select a connection to send a test message</p>

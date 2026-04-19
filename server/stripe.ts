@@ -5,6 +5,9 @@
 import Stripe from "stripe";
 import type { Express, Request, Response } from "express";
 import { getProductById, PRODUCTS } from "./products";
+import { getDb } from "./db";
+import { users } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 let stripeInstance: Stripe | null = null;
 
@@ -75,7 +78,7 @@ export function registerStripeWebhook(app: Express): void {
   app.post(
     "/api/stripe/webhook",
     // Raw body for signature verification
-    (req: Request, res: Response) => {
+    async (req: Request, res: Response) => {
       const stripe = getStripe();
       const sig = req.headers["stripe-signature"];
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -102,26 +105,7 @@ export function registerStripeWebhook(app: Express): void {
       // Process events
       console.log(`[Stripe Webhook] Received: ${event.type} (${event.id})`);
 
-      switch (event.type) {
-        case "checkout.session.completed": {
-          const session = event.data.object as Stripe.Checkout.Session;
-          console.log(`[Stripe] Checkout completed: user=${session.metadata?.user_id}, product=${session.metadata?.product_id}`);
-          // Business logic: activate subscription, add credits, etc.
-          break;
-        }
-        case "invoice.paid": {
-          const invoice = event.data.object as Stripe.Invoice;
-          console.log(`[Stripe] Invoice paid: ${invoice.id}`);
-          break;
-        }
-        case "customer.subscription.deleted": {
-          const sub = event.data.object as Stripe.Subscription;
-          console.log(`[Stripe] Subscription cancelled: ${sub.id}`);
-          break;
-        }
-        default:
-          console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
-      }
+      await fulfillStripeEvent(event);
 
       return res.json({ received: true });
     }
@@ -159,27 +143,68 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
 
   console.log(`[Stripe Webhook] Received: ${event.type} (${event.id})`);
 
+  await fulfillStripeEvent(event);
+
+  res.json({ received: true });
+}
+
+/**
+ * Core fulfillment logic — persists Stripe IDs to the users table
+ */
+async function fulfillStripeEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log(`[Stripe] Checkout completed: user=${session.metadata?.user_id}, product=${session.metadata?.product_id}`);
+      const userId = session.metadata?.user_id ? parseInt(session.metadata.user_id) : null;
+      const customerId = typeof session.customer === "string" ? session.customer : session.customer?.toString();
+      const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.toString();
+
+      if (userId && customerId) {
+        const db = await getDb();
+        if (!db) break;
+        await db.update(users).set({
+          stripeCustomerId: customerId,
+          ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+        }).where(eq(users.id, userId));
+        console.log(`[Stripe] Persisted customer=${customerId} sub=${subscriptionId ?? "none"} for user=${userId}`);
+      } else {
+        console.warn(`[Stripe] checkout.session.completed missing userId or customerId`, session.metadata);
+      }
       break;
     }
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;
-      console.log(`[Stripe] Invoice paid: ${invoice.id}`);
+      const customerId = typeof invoice.customer === "string" ? invoice.customer : null;
+      if (customerId) {
+        console.log(`[Stripe] Invoice paid: ${invoice.id} for customer=${customerId}`);
+      }
       break;
     }
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      console.log(`[Stripe] Subscription cancelled: ${sub.id}`);
+      const customerId = typeof sub.customer === "string" ? sub.customer : null;
+      if (customerId) {
+        const db = await getDb();
+        if (!db) break;
+        await db.update(users).set({ stripeSubscriptionId: null }).where(eq(users.stripeCustomerId, customerId));
+        console.log(`[Stripe] Subscription cancelled for customer=${customerId}`);
+      }
+      break;
+    }
+    case "customer.subscription.updated": {
+      const sub = event.data.object as Stripe.Subscription;
+      const customerId = typeof sub.customer === "string" ? sub.customer : null;
+      if (customerId) {
+        const db2 = await getDb();
+        if (!db2) break;
+        await db2.update(users).set({ stripeSubscriptionId: sub.id }).where(eq(users.stripeCustomerId, customerId));
+        console.log(`[Stripe] Subscription updated: ${sub.id} for customer=${customerId}`);
+      }
       break;
     }
     default:
       console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
   }
-
-  res.json({ received: true });
 }
 
 /**

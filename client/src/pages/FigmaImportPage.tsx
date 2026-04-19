@@ -116,17 +116,12 @@ export default function FigmaImportPage() {
           throw new Error("no json");
         }
       } catch {
+        // No canned fallback — show the raw agent response as code
         setResult({
-          tokens: [
-            { type: "color", name: "Primary", value: "#6366f1", cssVar: "--color-primary" },
-            { type: "color", name: "Background", value: "#0a0a0b", cssVar: "--color-background" },
-            { type: "typography", name: "Heading", value: "Inter 24px/700", cssVar: "--font-heading" },
-            { type: "spacing", name: "Base", value: "16px", cssVar: "--spacing-base" },
-            { type: "radius", name: "Default", value: "8px", cssVar: "--radius" },
-          ],
-          components: ["Header", "Card", "Button", "Input"],
-          code: fullContent,
-          cssVariables: `:root {\n  --color-primary: #6366f1;\n  --color-background: #0a0a0b;\n}`,
+          tokens: [],
+          components: [],
+          code: fullContent || "The agent could not extract structured design tokens. Try providing a more detailed design description.",
+          cssVariables: "",
         });
       }
       toast.success("Design imported!");

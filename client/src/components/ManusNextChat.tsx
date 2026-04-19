@@ -73,6 +73,8 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
     const [mode, setMode] = useState<AgentMode>(config.defaultMode ?? "quality");
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Auto-scroll to bottom on new messages
     const scrollToBottom = useCallback(() => {
@@ -106,6 +108,8 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
         events?.onModeChange?.(newMode);
       },
       stopGeneration: () => {
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = null;
         setIsStreaming(false);
         events?.onStop?.();
       },
@@ -153,11 +157,15 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
           })),
         });
 
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
         fetch(streamUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body,
+          signal: controller.signal,
         })
           .then(async (res) => {
             if (!res.ok || !res.body) {
@@ -220,10 +228,15 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
             setMessages((prev) =>
               prev.map((m) => (m.id === assistantId ? finalMsg : m))
             );
+            abortControllerRef.current = null;
             setIsStreaming(false);
             events?.onAgentComplete?.(finalMsg);
           })
           .catch((err) => {
+            if (err.name === "AbortError") {
+              setIsStreaming(false);
+              return;
+            }
             const errorMsg: ChatMessage = {
               id: assistantId,
               role: "assistant",
@@ -237,7 +250,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
             events?.onError?.(err);
           });
       },
-      [input, isStreaming, disabled, events]
+      [input, isStreaming, disabled, events, messages, mode, config]
     );
 
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -392,19 +405,36 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
             />
             <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx,.txt,.csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleSend(`[Attached file: ${file.name} (${(file.size / 1024).toFixed(1)}KB)]`);
+                    }
+                    e.target.value = "";
+                  }}
+                />
                 {config.enableVoice !== false && (
                   <>
                     <button
+                      onClick={() => fileInputRef.current?.click()}
                       className="p-1.5 rounded-md transition-colors opacity-60 hover:opacity-100"
                       style={{ color: theme.colors.foreground }}
                       aria-label="Attach file"
+                      title="Attach a file"
                     >
                       <Paperclip className="w-4 h-4" />
                     </button>
                     <button
+                      onClick={() => events?.onError?.(new Error("Voice input requires microphone permission. Use the main TaskView for full voice support."))}
                       className="p-1.5 rounded-md transition-colors opacity-60 hover:opacity-100"
                       style={{ color: theme.colors.foreground }}
                       aria-label="Voice input"
+                      title="Voice input (available in TaskView)"
                     >
                       <Mic className="w-4 h-4" />
                     </button>
@@ -412,9 +442,17 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
                 )}
                 {config.enableTTS !== false && (
                   <button
+                    onClick={() => {
+                      const lastAssistant = messages.filter(m => m.role === "assistant").pop();
+                      if (lastAssistant && "speechSynthesis" in window) {
+                        const utterance = new SpeechSynthesisUtterance(lastAssistant.content.slice(0, 500));
+                        window.speechSynthesis.speak(utterance);
+                      }
+                    }}
                     className="p-1.5 rounded-md transition-colors opacity-60 hover:opacity-100"
                     style={{ color: theme.colors.foreground }}
                     aria-label="Text to speech"
+                    title="Read last response aloud"
                   >
                     <Volume2 className="w-4 h-4" />
                   </button>

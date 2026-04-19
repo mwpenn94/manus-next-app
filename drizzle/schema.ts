@@ -18,6 +18,10 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  /** Stripe customer ID — set on first checkout */
+  stripeCustomerId: varchar("stripeCustomerId", { length: 128 }),
+  /** Stripe subscription ID — set on subscription creation */
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
