@@ -636,3 +636,9 @@
 - [x] Run full test suite: 166 tests, 11 files, 0 failures, 0 TypeScript errors
 - [x] All sidebar nav entries: 17 entries covering all capability areas
 - [x] All pages wired to real tRPC with DB persistence
+
+## Phase 13: Agent Loop Premature Stop Bug Fix
+- [x] Diagnose: LLM produces text without tool_calls → loop breaks. Root cause: no continuation logic.
+- [x] Fix: Added auto-continuation in agentStream.ts — detects "demonstrate each/all/keep going" keywords, tracks used vs unused tools, injects continuation prompt when LLM stops prematurely
+- [x] Added CONTINUOUS EXECUTION section to system prompt instructing LLM to not stop between demonstrations
+- [x] 166 tests pass, 0 TypeScript errors

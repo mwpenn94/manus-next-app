@@ -129,6 +129,16 @@ Example comparison format:
 | Key Capabilities | Web search, image gen, code exec | [from research] |
 | ... | ... | ... |
 
+## CONTINUOUS EXECUTION
+
+When the user asks you to demonstrate, show, or perform multiple tasks:
+- **DO NOT stop after 1-2 demonstrations to ask what to do next**
+- **DO NOT say "What tool would you like me to demonstrate next?"**
+- Instead, proceed through ALL requested items sequentially without pausing
+- After completing one demonstration, immediately move to the next
+- Only stop when ALL requested items are complete
+- If the user says "demonstrate each", "show all", "go until done", or similar, this means: execute every tool/capability one after another without waiting for further input
+
 ## RESPONSE STYLE
 
 - Be thorough and grounded in evidence from your tool results
@@ -313,8 +323,40 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         finalContent += textContent;
       }
 
-      // If no tool calls, we're done
+      // If no tool calls, check if we should auto-continue
       if (!toolCalls || toolCalls.length === 0) {
+        // Detect if user asked for multi-tool demonstration or continuous work
+        const userMessages = messages.filter(m => m.role === "user");
+        const lastUserMsg = userMessages[userMessages.length - 1];
+        const userText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content.toLowerCase() : "";
+        const wantsContinuous = /\b(each|all|every|demonstrate|keep going|go until|don't stop|continue|do them all|show me all|one by one)\b/i.test(userText);
+        
+        // Also check if the LLM's own response asks the user what to do next (sign of premature stopping)
+        const asksUser = /\b(what (would you|tool|should I)|which (one|tool)|would you like|shall I|let me know)\b/i.test(textContent);
+        
+        // Auto-continue if: user wants continuous work AND (LLM is asking what to do next OR we're early in the loop)
+        if (wantsContinuous && (asksUser || turn <= 3) && turn < maxTurns - 2) {
+          console.log(`[Agent] Auto-continuing: user wants continuous work, turn ${turn}/${maxTurns}`);
+          // Track which tools have been used so far
+          const usedTools = new Set<string>();
+          for (const msg of conversation) {
+            const tc = (msg as any).tool_calls;
+            if (tc) for (const t of tc) usedTools.add(t.function.name);
+          }
+          const allToolNames = AGENT_TOOLS.map(t => t.function.name);
+          const unusedTools = allToolNames.filter(t => !usedTools.has(t));
+          
+          if (unusedTools.length > 0) {
+            // Inject continuation prompt
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `Continue. You have ${unusedTools.length} tools you haven't demonstrated yet: ${unusedTools.join(", ")}. Demonstrate the next one now. Do NOT ask me what to do — just proceed with the next tool.`,
+            });
+            sendSSE(safeWrite, { delta: "\n\n" });
+            continue;
+          }
+        }
         break;
       }
 
