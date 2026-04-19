@@ -119,7 +119,7 @@
 **Spec reference:** §L.4 prompt engineering, §L.12 substrate
 
 **Implementation evidence:**
-- Working application on Manus hosting with 17 pages, 14 agent tools, 23 DB tables
+- Working application on Manus hosting with 21 pages, 14 agent tools, 23 DB tables, 25 tRPC router namespaces
 - All scaffold pages converted to real tRPC+DB implementations (TeamPage, WebAppBuilderPage, DesignView, MessagingAgentPage)
 - Stripe webhook with real fulfillment logic (persists IDs to users table)
 - No canned/mock data in any page — all data from DB or agent

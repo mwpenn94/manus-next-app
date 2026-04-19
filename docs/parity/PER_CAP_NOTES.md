@@ -235,9 +235,9 @@
 - **Action:** None — fully implemented
 
 ### Cap 67: Data API Capability — GREEN
-- **Implementation:** tRPC API layer with 15 routers, structured data access for all entities
+- **Implementation:** tRPC API layer with 25 router namespaces, structured data access for all entities
 - **Quality:** Full CRUD API for tasks, projects, teams, webapps, designs, connectors, etc.
-- **Evidence:** 15 tRPC routers serve as the data API
+- **Evidence:** 25 tRPC routers serve as the data API
 - **Action:** None — fully implemented
 
 ---

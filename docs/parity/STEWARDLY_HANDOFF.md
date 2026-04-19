@@ -17,8 +17,8 @@ The project is handoff-ready for maintenance, feature development, and deploymen
 | Local development | Ready | `pnpm install && pnpm dev` — starts Vite + Express on auto-assigned port |
 | Database schema changes | Ready | Edit `drizzle/schema.ts` then `pnpm db:push` |
 | Adding new agent tools | Ready | Add tool definition + executor in `server/agentTools.ts`, register in `AGENT_TOOLS` array (currently 14 tools) |
-| Adding new tRPC procedures | Ready | Add to `server/routers.ts`, consume via `trpc.*` hooks (currently 15 router namespaces) |
-| Adding new pages | Ready | Create in `client/src/pages/`, register route in `App.tsx` (currently 17 pages) |
+| Adding new tRPC procedures | Ready | Add to `server/routers.ts`, consume via `trpc.*` hooks (currently 25 router namespaces) |
+| Adding new pages | Ready | Create in `client/src/pages/`, register route in `App.tsx` (currently 21 pages) |
 | Running tests | Ready | `pnpm test` — 166 tests across 11 files |
 | TypeScript checking | Ready | `npx tsc --noEmit` — 0 errors |
 | Deployment | Ready | Manus platform auto-deploys on checkpoint. Click Publish in Management UI. |
@@ -56,7 +56,7 @@ All major decisions are documented in `docs/parity/AFK_DECISIONS.md` and `docs/p
 server/
   agentStream.ts     ← Core agent loop (SSE streaming, tool dispatch, MAX_TOOL_TURNS)
   agentTools.ts      ← 14 tool definitions + executors
-  routers.ts         ← tRPC procedures (15 router namespaces: tasks, projects, skills, slides, connectors, meetings, teams, webapps, designs, payments, etc.)
+  routers.ts         ← tRPC procedures (25 router namespaces: system, auth, task, file, bridge, preferences, usage, workspace, voice, llm, memory, share, schedule, replay, notification, project (with knowledge sub-router), skill, slides, connector, meeting, team, webapp, design, payment)
   db.ts              ← Database query helpers (50+ functions)
   stripe.ts          ← Stripe checkout + webhook + fulfillment
   products.ts        ← Stripe product definitions

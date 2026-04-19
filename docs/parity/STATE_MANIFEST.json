@@ -98,7 +98,7 @@
     "PARITY_BACKLOG": "current (57 GREEN, 0 YELLOW)",
     "GATE_A_VERIFICATION": "current (14/14 PASS)",
     "CONVERGENCE_DIRECTIVE_CHECK": "current (57 GREEN, 14 tools, MAX_TOOL_TURNS=20)",
-    "STEWARDLY_HANDOFF": "current (14 tools, 15 routers, 23 tables)",
+    "STEWARDLY_HANDOFF": "current (14 tools, 25 routers, 23 tables, 21 pages)",
     "STRICT_WINS": "current (14 tools, MAX_TOOL_TURNS=20)",
     "COMPREHENSION_ESSAY": "current",
     "STATE_MANIFEST": "current",
