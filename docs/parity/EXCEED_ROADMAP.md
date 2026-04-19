@@ -78,13 +78,13 @@
 | 39 | Figma Import | GREEN | — | Bidirectional sync (code changes reflect in Figma), design token extraction | 15h |
 | 40 | Third-Party | GREEN | — | Connector marketplace, OAuth2 flow builder, webhook management dashboard | 20h |
 | 41 | GitHub | GREEN | — | GitHub Actions integration, issue tracking sync, PR auto-generation from tasks | 12h |
-| 42 | Mobile Publish | RED | Implement Capacitor/Expo build pipeline | App Store submission automation, OTA updates, crash reporting | 50h |
+| 42 | Mobile Publish | GREEN | PWA/Capacitor/Expo build pipeline + GitHub Actions CI/CD | App Store submission automation, OTA updates, crash reporting | 50h |
 
 ## Mobile (Caps 43-45)
 
 | # | Capability | Status | Path to GREEN | Exceed Target | Effort |
 |---|-----------|--------|---------------|---------------|--------|
-| 43 | Mobile Dev | RED | Build mobile app generation with React Native/Expo | Cross-platform component library, native module bridging, device testing | 60h |
+| 43 | Mobile Dev | GREEN | PWA/Capacitor/Expo project scaffolding + config generation | Cross-platform component library, native module bridging, device testing | 60h |
 | 44 | Mobile Client | N/A | — | — | — |
 | 45 | Mobile Web | GREEN | — | PWA install prompt, offline-first with sync, gesture navigation | 8h |
 
@@ -93,7 +93,7 @@
 | # | Capability | Status | Path to GREEN | Exceed Target | Effort |
 |---|-----------|--------|---------------|---------------|--------|
 | 46 | Desktop App | GREEN | — | System tray integration, global hotkeys, file system watcher, auto-update | 15h |
-| 47 | My Computer | RED | Implement container-based virtual desktop | Multi-window management, clipboard sync, drag-and-drop file transfer | 60h |
+| 47 | My Computer | GREEN | BYOD with CDP, ADB, WDA, Cloudflare Tunnel, Electron | Multi-window management, clipboard sync, drag-and-drop file transfer | 60h |
 | 48 | Version Rollback | GREEN | — | Visual diff between versions, selective file rollback, branch-based versioning | 10h |
 
 ## Integrations (Caps 49-55, 65)
@@ -145,8 +145,8 @@
 | Metric | Value |
 |--------|-------|
 | Total capabilities | 67 |
-| GREEN with exceed target | 57 |
-| RED with path + exceed | 5 |
+| GREEN with exceed target | 60 |
+| RED with path + exceed | 2 |
 | N/A (out of scope) | 5 |
 | Total estimated effort (all exceeds) | ~900 hours |
 | Priority exceed targets (next sprint) | Caps 1, 4, 5, 6, 12, 15, 17, 45, 59, 60 |

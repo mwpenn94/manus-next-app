@@ -17,9 +17,9 @@ The project is handoff-ready for maintenance, feature development, and deploymen
 | Local development | Ready | `pnpm install && pnpm dev` — starts Vite + Express on auto-assigned port |
 | Database schema changes | Ready | Edit `drizzle/schema.ts` then `pnpm db:push` |
 | Adding new agent tools | Ready | Add tool definition + executor in `server/agentTools.ts`, register in `AGENT_TOOLS` array (currently 14 tools) |
-| Adding new tRPC procedures | Ready | Add to `server/routers.ts`, consume via `trpc.*` hooks (currently 25 router namespaces) |
-| Adding new pages | Ready | Create in `client/src/pages/`, register route in `App.tsx` (currently 21 pages) |
-| Running tests | Ready | `pnpm test` — 166 tests across 11 files |
+| Adding new tRPC procedures | Ready | Add to `server/routers.ts`, consume via `trpc.*` hooks (currently 28 router namespaces) |
+| Adding new pages | Ready | Create in `client/src/pages/`, register route in `App.tsx` (currently 24 pages) |
+| Running tests | Ready | `pnpm test` — 191 tests across 12 files |
 | TypeScript checking | Ready | `npx tsc --noEmit` — 0 errors |
 | Deployment | Ready | Manus platform auto-deploys on checkpoint. Click Publish in Management UI. |
 | Stripe payments | Ready | Sandbox provisioned, webhook handler at `/api/stripe/webhook`, fulfillment persists IDs to users table |
@@ -80,7 +80,7 @@ client/src/
   pages/BillingPage.tsx     ← Stripe checkout + usage
   components/               ← Reusable UI (ManusNextChat, AppLayout, FeedbackWidget, etc.)
 
-drizzle/schema.ts    ← All database tables (23 tables)
+drizzle/schema.ts    ← All database tables (28 tables)
 docs/parity/         ← Spec compliance tracking (40+ files)
 docs/manus-study/    ← Manus design research
 packages/            ← 13 upstream package stubs
@@ -91,8 +91,8 @@ packages/            ← 13 upstream package stubs
 1. **TaskView.tsx is large.** Should be split into sub-components (MessageList, ToolPanel, InputArea).
 2. **No E2E tests.** Only unit tests via Vitest. Playwright E2E recommended.
 3. **i18n implemented (English + Spanish).** react-intl with 80+ keys per locale. Additional locales (French, etc.) planned but not yet added.
-4. **5 RED capabilities blocked on external infrastructure.** See PARITY_BACKLOG.md for details.
-5. **ComputerUsePage uses client-side simulation.** Real sandboxed execution would require a container runtime.
+4. **2 RED capabilities blocked on external infrastructure (#53 Microsoft 365, #62 Veo3).** See PARITY_BACKLOG.md for details.
+5. **ComputerUsePage uses client-side simulation + BYOD device connection.** Real sandboxed execution via BYOD (CDP, ADB, WDA, Cloudflare Tunnel, Electron companion app).
 
 ## Emergency Procedures
 

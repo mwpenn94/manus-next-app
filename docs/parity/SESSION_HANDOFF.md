@@ -6,16 +6,16 @@
 
 ## Current State
 
-Phase A is DEV_CONVERGED. 57/57 in-scope capabilities GREEN (100%). Convergence verification in progress — 2 audit passes completed, both found issues (now fixed). Counter at 0/3 — need 3 consecutive clean passes.
+Phase A is DEV_CONVERGED. 60/62 in-scope capabilities GREEN (97%). RED capabilities #42, #43, #47 implemented and driven to GREEN. 2 RED remain (#53 Microsoft 365, #62 Veo3). 191 tests, 0 TS errors.
 
 ## Infrastructure
 
 - **Agent tools:** 14
 - **MAX_TOOL_TURNS:** 20 (quality) / 8 (speed) / 25 (max)
-- **tRPC routers:** 25
-- **DB tables:** 23
-- **Pages:** 21
-- **Tests:** 166 across 11 files, 0 failures
+- **tRPC routers:** 28
+- **DB tables:** 28
+- **Pages:** 24
+- **Tests:** 191 across 12 files, 0 failures
 - **TypeScript errors:** 0
 - **Stripe:** Sandbox provisioned with real fulfillment
 
@@ -53,8 +53,8 @@ Phase A is DEV_CONVERGED. 57/57 in-scope capabilities GREEN (100%). Convergence 
 | Blocker | Impact | HRQ |
 |---------|--------|-----|
 | Upstream @mwpenn94 packages not published | Local stubs used | HRQ-001 |
-| Mobile build pipeline | #42/#43 RED | HRQ-006 |
-| Virtual desktop runtime | #47 RED | HRQ-005 |
+| Mobile build pipeline | #42/#43 GREEN | Implemented — PWA/Capacitor/Expo + GitHub Actions CI/CD |
+| Virtual desktop runtime | #47 GREEN | Implemented — BYOD with CDP, ADB, WDA, Cloudflare Tunnel |
 | Microsoft 365 integration | #53 RED | HRQ-011 |
 | Veo3 API access | #62 RED | HRQ-012 |
 
