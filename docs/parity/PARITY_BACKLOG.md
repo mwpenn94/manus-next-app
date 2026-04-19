@@ -49,7 +49,7 @@
 |---|-----------|--------|----------|-----|
 | 22 | Cloud Browser | GREEN | cloud_browser agent tool with LLM-simulated browsing, browse_web tool | None |
 | 23 | Browser Operator | GREEN | browse_web + cloud_browser tools, read_webpage for content extraction | None |
-| 24 | Screenshot verification | GREEN | screenshot_verify agent tool with vision analysis, analyze_image | None |
+| 24 | Screenshot verification | GREEN | screenshot_verify agent tool with vision analysis | None |
 | 25 | Computer Use | GREEN | ComputerUsePage.tsx virtual desktop with terminal (agent-powered command execution), text editor, browser, file manager, window management, screenshot capture | None |
 | 26 | Sandbox runtime | GREEN | execute_code tool with error handling and output formatting | None |
 

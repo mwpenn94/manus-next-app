@@ -12,9 +12,9 @@ Phase A is DEV_CONVERGED. 57/57 in-scope capabilities GREEN (100%). Convergence 
 
 - **Agent tools:** 14
 - **MAX_TOOL_TURNS:** 20 (quality) / 8 (speed) / 25 (max)
-- **tRPC routers:** 15
+- **tRPC routers:** 25
 - **DB tables:** 23
-- **Pages:** 17
+- **Pages:** 21
 - **Tests:** 166 across 11 files, 0 failures
 - **TypeScript errors:** 0
 - **Stripe:** Sandbox provisioned with real fulfillment

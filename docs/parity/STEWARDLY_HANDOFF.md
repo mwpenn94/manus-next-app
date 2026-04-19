@@ -90,7 +90,7 @@ packages/            ← 13 upstream package stubs
 
 1. **TaskView.tsx is large.** Should be split into sub-components (MessageList, ToolPanel, InputArea).
 2. **No E2E tests.** Only unit tests via Vitest. Playwright E2E recommended.
-3. **No i18n.** All strings are hardcoded in English.
+3. **i18n implemented (English + Spanish).** react-intl with 80+ keys per locale. Additional locales (French, etc.) planned but not yet added.
 4. **5 RED capabilities blocked on external infrastructure.** See PARITY_BACKLOG.md for details.
 5. **ComputerUsePage uses client-side simulation.** Real sandboxed execution would require a container runtime.
 

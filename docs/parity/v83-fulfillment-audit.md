@@ -58,7 +58,7 @@ After thorough line-by-line audit and subsequent implementation, all 30 identifi
 10. **STRICT_WINS.md** — ✅ 7 measurable wins documented with evidence
 11. **QUALITY_WINS.md** — ✅ 5 UX quality wins documented
 12. **CONVERGENCE_DIRECTIVE_CHECK.md** — ✅ Populated with checklist
-13. **BENCHMARK_EXECUTE** — ✅ BENCHMARK_EXECUTE.md with 6-dimension scoring (composite 8.50/10)
+13. **BENCHMARK_EXECUTE** — ✅ BENCHMARK_EXECUTE.md with 6-dimension scoring (composite 8.90/10)
 14. **ADVERSARIAL pass** — ✅ ADVERSARIAL_RESULTS.md: 26 tests, 24 pass, 0 fail, 1 advisory
 15. **Per-cap-notes/** — ✅ 13 per-cap-notes written for GREEN capabilities
 16. **MANUS_BASELINE_BUDGET.md** — ✅ Populated

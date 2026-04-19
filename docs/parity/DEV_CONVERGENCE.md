@@ -34,7 +34,7 @@ Phase A execution completed through the following pass sequence:
 5. CAPABILITY_GAP_SCAN — all 67 capabilities assessed in PARITY_BACKLOG.md
 6. MANUS_DEEP_STUDY — quality principles documented from Manus blog, docs, and live observation
 7. BENCHMARK_BOOTSTRAP — 72 task shells created with LLM-judge scoring infrastructure
-8. CAPABILITY_WIRE × N — all 62 in-scope capabilities wired to GREEN status
+8. CAPABILITY_WIRE × N — 57/62 in-scope capabilities wired to GREEN status (5 RED blocked on external infra)
 9. REUSABILITY_SCAFFOLD — ManusNextChat extracted as mountable component
 10. REUSABILITY_VERIFY — smoke test passed 15/15 criteria
 11. UI_POLISH — three-panel layout, live canvas, replay, share, welcome, toolbar

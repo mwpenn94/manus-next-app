@@ -36,7 +36,7 @@
 ## Win 4: Agent Streaming with 14 Tools and Extended Multi-Turn Execution
 
 **Manus Pro:** Agent streams text while executing tools with inline status indicators.
-**Manus Next:** SSE-based streaming with 14 tools (web_search, wide_research, generate_document, analyze_data, generate_image, execute_code, manage_memory, analyze_image, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify), MAX_TOOL_TURNS=20 (quality mode) / 8 (speed) / 25 (max), real-time ActionStep rendering, typing indicator, stop generation with AbortController.
+**Manus Next:** SSE-based streaming with 14 tools (web_search, read_webpage, generate_image, analyze_data, generate_document, browse_web, wide_research, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify, execute_code), MAX_TOOL_TURNS=20 (quality mode) / 8 (speed) / 25 (max), real-time ActionStep rendering, typing indicator, stop generation with AbortController.
 **Depth:** Exceeds — 14 tools vs Manus's ~10 visible tools, higher turn limits.
 **Evidence:** `agentStream.ts` multi-turn loop with mode-specific limits + `agentTools.ts` 14 tool executors + `TaskView.tsx` SSE handler.
 
