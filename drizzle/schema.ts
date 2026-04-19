@@ -346,3 +346,107 @@ export const meetingSessions = mysqlTable("meeting_sessions", {
 });
 export type MeetingSession = typeof meetingSessions.$inferSelect;
 export type InsertMeetingSession = typeof meetingSessions.$inferInsert;
+
+
+// ── Teams (Capability #56/#57/#58 — real collaboration) ──
+export const teams = mysqlTable("teams", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  name: varchar("name", { length: 256 }).notNull(),
+  ownerId: int("ownerId").notNull(),
+  /** Invite code for joining the team */
+  inviteCode: varchar("inviteCode", { length: 32 }).notNull().unique().$defaultFn(() => nanoid(12)),
+  /** Plan tier: free, pro, enterprise */
+  plan: mysqlEnum("plan", ["free", "pro", "enterprise"]).default("free").notNull(),
+  /** Shared credit pool balance */
+  creditBalance: int("creditBalance").default(1000).notNull(),
+  /** Max seats allowed */
+  maxSeats: int("maxSeats").default(5).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = typeof teams.$inferInsert;
+
+// ── Team Members (junction table) ──
+export const teamMembers = mysqlTable("team_members", {
+  id: int("id").autoincrement().primaryKey(),
+  teamId: int("teamId").notNull(),
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["owner", "admin", "member"]).default("member").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+// ── Team Sessions (shared collaborative sessions) ──
+export const teamSessions = mysqlTable("team_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  teamId: int("teamId").notNull(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }).notNull(),
+  createdBy: int("createdBy").notNull(),
+  /** Active participants count */
+  activeParticipants: int("activeParticipants").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TeamSession = typeof teamSessions.$inferSelect;
+export type InsertTeamSession = typeof teamSessions.$inferInsert;
+
+// ── WebApp Builds (Capability #27/#28/#29 — real persistence + publishing) ──
+export const webappBuilds = mysqlTable("webapp_builds", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** User's original prompt */
+  prompt: text("prompt").notNull(),
+  /** Generated HTML/code content */
+  generatedHtml: text("generatedHtml"),
+  /** Generated source code (full) */
+  sourceCode: text("sourceCode"),
+  /** S3 URL of published build */
+  publishedUrl: text("publishedUrl"),
+  /** S3 key for the published build */
+  publishedKey: text("publishedKey"),
+  /** Publish status */
+  status: mysqlEnum("status", ["draft", "generating", "ready", "published", "error"]).default("draft").notNull(),
+  /** App name/title */
+  title: varchar("title", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WebappBuild = typeof webappBuilds.$inferSelect;
+export type InsertWebappBuild = typeof webappBuilds.$inferInsert;
+
+// ── Designs (Capability #15 — real canvas persistence) ──
+export const designs = mysqlTable("designs", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** Design name */
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Canvas state as JSON (layers, positions, etc.) */
+  canvasState: json("canvasState").$type<{
+    layers: Array<{
+      id: string;
+      type: "image" | "text";
+      content: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      fontSize?: number;
+      color?: string;
+    }>;
+    width: number;
+    height: number;
+    background: string;
+  }>(),
+  /** Thumbnail URL (S3) */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Exported PNG URL (S3) */
+  exportUrl: text("exportUrl"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Design = typeof designs.$inferSelect;
+export type InsertDesign = typeof designs.$inferInsert;

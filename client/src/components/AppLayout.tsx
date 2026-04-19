@@ -53,6 +53,8 @@ import {
   Plug,
   Wrench,
   Users,
+  Monitor,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -586,6 +588,54 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <Users className="w-4 h-4" />
           Team
+        </Link>
+        <Link
+          href="/computer"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/computer"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Monitor className="w-4 h-4" />
+          Computer
+        </Link>
+        <Link
+          href="/figma-import"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/figma-import"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Paintbrush className="w-4 h-4" />
+          Figma Import
+        </Link>
+        <Link
+          href="/desktop-app"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/desktop-app"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Wrench className="w-4 h-4" />
+          Desktop App
+        </Link>
+        <Link
+          href="/messaging"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/messaging"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <MessageSquare className="w-4 h-4" />
+          Messaging
         </Link>
         <Link
           href="/settings"

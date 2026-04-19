@@ -1,15 +1,17 @@
 /**
- * DesignView — Visual Design Canvas
+ * DesignView — Visual Design Canvas with DB persistence
  *
- * Real canvas for AI-generated visual compositions:
- * - Generate images from text prompts
+ * Capability #15: Real canvas for AI-generated visual compositions
+ * - Generate images from text prompts via agent
  * - Add text overlays with positioning
  * - Layer management (image + text layers)
- * - Export as image artifact
- * - Template presets (poster, banner, card, social)
+ * - Export to S3 (real publish, not "coming soon")
+ * - Template presets (poster, banner, card, social, mockup, infographic)
+ * - Save/load designs from database
  */
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,16 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Paintbrush,
-  Image,
-  Type,
-  Layers,
-  Download,
-  ArrowLeft,
-  Loader2,
-  Plus,
-  Trash2,
-  Sparkles,
+  Paintbrush, Image, Type, Layers, Download, ArrowLeft,
+  Loader2, Plus, Trash2, Sparkles, Save, FolderOpen,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -56,7 +50,7 @@ const TEMPLATES = [
 ];
 
 export default function DesignView() {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [template, setTemplate] = useState(TEMPLATES[0]);
   const [layers, setLayers] = useState<DesignLayer[]>([]);
@@ -64,7 +58,39 @@ export default function DesignView() {
   const [prompt, setPrompt] = useState("");
   const [textInput, setTextInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [designTitle, setDesignTitle] = useState("Untitled Design");
+  const [currentDesignId, setCurrentDesignId] = useState<number | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Real tRPC queries and mutations
+  const designsQuery = trpc.design.list.useQuery(undefined, { enabled: !!user });
+  const utils = trpc.useUtils();
+
+  const createDesignMut = trpc.design.create.useMutation({
+    onSuccess: (data: any) => {
+      utils.design.list.invalidate();
+      setCurrentDesignId(data.id);
+      toast.success("Design saved!");
+    },
+    onError: (err: any) => toast.error("Save failed: " + err.message),
+  });
+
+  const updateDesignMut = trpc.design.update.useMutation({
+    onSuccess: () => {
+      utils.design.list.invalidate();
+      toast.success("Design updated!");
+    },
+    onError: (err: any) => toast.error("Update failed: " + err.message),
+  });
+
+  const exportDesign = trpc.design.export.useMutation({
+    onSuccess: (data: any) => {
+      toast.success("Exported! Opening in new tab...");
+      window.open(data.url, "_blank");
+    },
+    onError: (err: any) => toast.error("Export failed: " + err.message),
+  });
 
   const generateImage = useCallback(async () => {
     if (!prompt.trim()) {
@@ -101,9 +127,7 @@ export default function DesignView() {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.image) imageUrl = data.image;
-            } catch {
-              /* skip */
-            }
+            } catch { /* skip */ }
           }
         }
       }
@@ -118,9 +142,6 @@ export default function DesignView() {
           y: 0,
           width: template.width,
           height: template.height,
-          fontSize: undefined,
-          color: undefined,
-          fontWeight: undefined,
         };
         setLayers((prev) => [...prev, newLayer]);
         setSelectedLayer(newLayer.id);
@@ -163,6 +184,54 @@ export default function DesignView() {
     setSelectedLayer(null);
   }, []);
 
+  const handleSave = useCallback(() => {
+    const canvasState = {
+      template: template.id,
+      layers,
+      width: template.width,
+      height: template.height,
+    };
+    if (currentDesignId) {
+      updateDesignMut.mutate({
+        id: currentDesignId,
+        name: designTitle,
+        canvasState,
+      });
+    } else {
+      createDesignMut.mutate({
+        name: designTitle,
+        canvasState,
+      });
+    }
+  }, [currentDesignId, designTitle, template, layers, createDesignMut, updateDesignMut]);
+
+  const handleExport = useCallback(() => {
+    if (!currentDesignId) {
+      toast.error("Save the design first before exporting");
+      return;
+    }
+    exportDesign.mutate({
+      id: currentDesignId,
+      format: "png",
+    });
+  }, [currentDesignId, exportDesign]);
+
+  const loadDesign = useCallback((design: any) => {
+    setCurrentDesignId(design.id);
+    setDesignTitle(design.name ?? design.title ?? "Untitled");
+    try {
+      const raw = design.canvasState ?? design.canvasData;
+      const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+      const t = TEMPLATES.find((t) => t.id === data.template);
+      if (t) setTemplate(t);
+      setLayers(data.layers ?? []);
+    } catch {
+      toast.error("Failed to load design data");
+    }
+    setShowHistory(false);
+    toast.success("Design loaded");
+  }, []);
+
   if (!isAuthenticated) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -178,6 +247,8 @@ export default function DesignView() {
     );
   }
 
+  const designs = designsQuery.data ?? [];
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -187,35 +258,80 @@ export default function DesignView() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex-1">
-            <h1
-              className="text-2xl font-semibold text-foreground"
+            <Input
+              value={designTitle}
+              onChange={(e) => setDesignTitle(e.target.value)}
+              className="text-xl font-semibold bg-transparent border-none p-0 h-auto focus-visible:ring-0"
               style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Design Canvas
-            </h1>
+            />
             <p className="text-sm text-muted-foreground">
               Create visual compositions with AI-generated images and text
             </p>
           </div>
-          <Select
-            value={template.id}
-            onValueChange={(v) => {
-              const t = TEMPLATES.find((t) => t.id === v);
-              if (t) setTemplate(t);
-            }}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TEMPLATES.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
+              <FolderOpen className="w-4 h-4 mr-2" />
+              History ({designs.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleSave} disabled={createDesignMut.isPending || updateDesignMut.isPending}>
+              {(createDesignMut.isPending || updateDesignMut.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={exportDesign.isPending || layers.length === 0}>
+              {exportDesign.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+              Export
+            </Button>
+            <Select
+              value={template.id}
+              onValueChange={(v) => {
+                const t = TEMPLATES.find((t) => t.id === v);
+                if (t) setTemplate(t);
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TEMPLATES.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        {/* Design History Panel */}
+        {showHistory && (
+          <Card className="bg-card border-border mb-6">
+            <CardHeader>
+              <CardTitle className="text-base">Saved Designs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {designsQuery.isLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : designs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No saved designs yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {designs.map((d: any) => (
+                    <div
+                      key={d.id}
+                      onClick={() => loadDesign(d)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:border-primary/30 ${currentDesignId === d.id ? "border-primary bg-primary/5" : "border-border"}`}
+                    >
+                      <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(d.updatedAt).toLocaleDateString()}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Tools Panel */}
@@ -295,7 +411,7 @@ export default function DesignView() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {layers.map((layer, i) => (
+                    {layers.map((layer) => (
                       <div
                         key={layer.id}
                         onClick={() => setSelectedLayer(layer.id)}
@@ -310,14 +426,9 @@ export default function DesignView() {
                         ) : (
                           <Type className="w-3.5 h-3.5 text-primary shrink-0" />
                         )}
-                        <span className="truncate flex-1">
-                          {layer.content.slice(0, 30)}
-                        </span>
+                        <span className="truncate flex-1">{layer.content.slice(0, 30)}</span>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeLayer(layer.id);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}
                           className="text-muted-foreground hover:text-red-400"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -338,10 +449,11 @@ export default function DesignView() {
                   <Badge variant="secondary" className="text-xs">
                     {template.label} — {template.width}×{template.height}
                   </Badge>
-                  <Button variant="outline" size="sm" onClick={() => toast.info("Export coming soon")}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
+                  {currentDesignId && (
+                    <Badge variant="outline" className="text-xs">
+                      Saved · ID: {currentDesignId}
+                    </Badge>
+                  )}
                 </div>
                 <div
                   ref={canvasRef}
@@ -367,21 +479,13 @@ export default function DesignView() {
                         key={layer.id}
                         onClick={() => setSelectedLayer(layer.id)}
                         className={`absolute transition-shadow ${
-                          selectedLayer === layer.id
-                            ? "ring-2 ring-primary ring-offset-1"
-                            : ""
+                          selectedLayer === layer.id ? "ring-2 ring-primary ring-offset-1" : ""
                         }`}
                         style={{
                           left: `${(layer.x / template.width) * 100}%`,
                           top: `${(layer.y / template.height) * 100}%`,
-                          width:
-                            layer.type === "image"
-                              ? "100%"
-                              : `${(layer.width / template.width) * 100}%`,
-                          height:
-                            layer.type === "image"
-                              ? "100%"
-                              : "auto",
+                          width: layer.type === "image" ? "100%" : `${(layer.width / template.width) * 100}%`,
+                          height: layer.type === "image" ? "100%" : "auto",
                           cursor: "pointer",
                         }}
                       >

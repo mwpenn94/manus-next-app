@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -670,4 +670,198 @@ export async function getMeetingSession(id: number) {
   if (!db) return null;
   const rows = await db.select().from(meetingSessions).where(eq(meetingSessions.id, id)).limit(1);
   return rows[0] ?? null;
+}
+
+
+// ── Team Queries (Capability #56/#57/#58) ──
+
+export async function createTeam(team: { name: string; ownerId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(teams).values(team).$returningId();
+  // Also add owner as team member
+  await db.insert(teamMembers).values({ teamId: result.id, userId: team.ownerId, role: "owner" });
+  const [created] = await db.select().from(teams).where(eq(teams.id, result.id)).limit(1);
+  return created;
+}
+
+export async function getUserTeams(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const memberships = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));
+  if (memberships.length === 0) return [];
+  const teamIds = memberships.map(m => m.teamId);
+  const result = [];
+  for (const teamId of teamIds) {
+    const [team] = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+    if (team) result.push({ ...team, memberRole: memberships.find(m => m.teamId === teamId)!.role });
+  }
+  return result;
+}
+
+export async function getTeamById(teamId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [team] = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+  return team ?? null;
+}
+
+export async function getTeamByInviteCode(inviteCode: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [team] = await db.select().from(teams).where(eq(teams.inviteCode, inviteCode)).limit(1);
+  return team ?? null;
+}
+
+export async function getTeamMembers(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const members = await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+  const result = [];
+  for (const m of members) {
+    const [user] = await db.select().from(users).where(eq(users.id, m.userId)).limit(1);
+    if (user) result.push({ ...m, user: { id: user.id, name: user.name, email: user.email } });
+  }
+  return result;
+}
+
+export async function joinTeam(teamId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check if already a member
+  const existing = await db.select().from(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId))).limit(1);
+  if (existing.length > 0) return existing[0];
+  // Check seat limit
+  const team = await getTeamById(teamId);
+  if (!team) throw new Error("Team not found");
+  const memberCount = await db.select({ count: sql<number>`count(*)` }).from(teamMembers)
+    .where(eq(teamMembers.teamId, teamId));
+  if (Number(memberCount[0]?.count ?? 0) >= team.maxSeats) throw new Error("Team is full");
+  await db.insert(teamMembers).values({ teamId, userId, role: "member" });
+  return { teamId, userId, role: "member" as const };
+}
+
+export async function removeTeamMember(teamId: number, userId: number, requesterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Only owner/admin can remove
+  const [requester] = await db.select().from(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, requesterId))).limit(1);
+  if (!requester || (requester.role !== "owner" && requester.role !== "admin")) {
+    throw new Error("Not authorized to remove members");
+  }
+  await db.delete(teamMembers).where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
+}
+
+export async function updateTeamCredits(teamId: number, amount: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(teams).set({ creditBalance: sql`${teams.creditBalance} + ${amount}` }).where(eq(teams.id, teamId));
+}
+
+// ── Team Sessions ──
+
+export async function createTeamSession(session: { teamId: number; taskExternalId: string; createdBy: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(teamSessions).values(session);
+}
+
+export async function getTeamSessions(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teamSessions).where(eq(teamSessions.teamId, teamId)).orderBy(desc(teamSessions.createdAt)).limit(50);
+}
+
+// ── WebApp Build Queries (Capability #27/#28/#29) ──
+
+export async function createWebappBuild(build: { userId: number; prompt: string; title?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(webappBuilds).values({
+    userId: build.userId,
+    prompt: build.prompt,
+    title: build.title ?? "Untitled App",
+    status: "generating",
+  }).$returningId();
+  const [created] = await db.select().from(webappBuilds).where(eq(webappBuilds.id, result.id)).limit(1);
+  return created;
+}
+
+export async function updateWebappBuild(id: number, updates: Partial<{
+  generatedHtml: string;
+  sourceCode: string;
+  publishedUrl: string;
+  publishedKey: string;
+  status: "draft" | "generating" | "ready" | "published" | "error";
+  title: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(webappBuilds).set(updates).where(eq(webappBuilds.id, id));
+}
+
+export async function getUserWebappBuilds(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(webappBuilds).where(eq(webappBuilds.userId, userId)).orderBy(desc(webappBuilds.createdAt)).limit(50);
+}
+
+export async function getWebappBuild(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [build] = await db.select().from(webappBuilds).where(eq(webappBuilds.id, id)).limit(1);
+  return build ?? null;
+}
+
+export async function getWebappBuildByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [build] = await db.select().from(webappBuilds).where(eq(webappBuilds.externalId, externalId)).limit(1);
+  return build ?? null;
+}
+
+// ── Design Queries (Capability #15) ──
+
+export async function createDesign(design: { userId: number; name: string; canvasState?: any }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(designs).values({
+    userId: design.userId,
+    name: design.name,
+    canvasState: design.canvasState ?? { layers: [], width: 1024, height: 768, background: "#ffffff" },
+  }).$returningId();
+  const [created] = await db.select().from(designs).where(eq(designs.id, result.id)).limit(1);
+  return created;
+}
+
+export async function updateDesign(id: number, updates: Partial<{
+  name: string;
+  canvasState: any;
+  thumbnailUrl: string;
+  exportUrl: string;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(designs).set(updates).where(eq(designs.id, id));
+}
+
+export async function getUserDesigns(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(designs).where(eq(designs.userId, userId)).orderBy(desc(designs.createdAt)).limit(50);
+}
+
+export async function getDesign(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [design] = await db.select().from(designs).where(eq(designs.id, id)).limit(1);
+  return design ?? null;
+}
+
+export async function deleteDesign(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(designs).where(and(eq(designs.id, id), eq(designs.userId, userId)));
 }

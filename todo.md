@@ -596,3 +596,43 @@
 - [x] REUSABILITY_VERIFY: ManusNextChat component verified (types, themes, dual-mode build ready)
 - [x] Update GATE_A_VERIFICATION.md after implementation
 - [x] File HRQ items for genuinely blocked items only (5 RED items in PARITY_BACKLOG)
+
+## Phase 12: TRUE Convergence — Every Capability Genuinely Functional
+
+### Batch 0: Critical Bug Fix — MAX_TOOL_TURNS too low
+- [x] Increase MAX_TOOL_TURNS from 8→20 (quality), 4→8 (speed), 12→25 (max)
+- [x] Fix log line referencing wrong constant
+- [x] Update system prompt to reflect new turn limits
+
+### Batch 1: Team/Collab Real Backend (#56/#57/#58)
+- [x] Create teams + team_members DB tables with invite codes, roles, shared credit pool
+- [x] Create team_sessions table for shared session tracking
+- [x] Add tRPC procedures: team.create, team.join, team.members, team.removeMember, team.shareSession
+- [x] Rewrite TeamPage.tsx to use real tRPC queries instead of mock data
+- [x] Add team invite acceptance flow with real DB writes
+
+### Batch 2: WebApp Builder Persistence + Real Publishing (#27/#28/#29)
+- [x] Create webapp_builds DB table to persist generated apps
+- [x] Add tRPC procedures: webapp.create, webapp.update, webapp.publish, webapp.list
+- [x] Implement real publish flow that saves build to S3 and creates shareable URL
+- [x] Update WebAppBuilderPage to persist builds and show real publish status
+
+### Batch 3: Design View Export + Persistence (#15)
+- [x] Add canvas export to S3 via design.export tRPC
+- [x] Create designs DB table to persist canvas state
+- [x] Add tRPC procedures: design.create, design.update, design.export, design.list
+- [x] Update DesignView.tsx with real export and persistence
+
+### Batch 4: Remaining YELLOW Stubs → Real Implementations
+- [x] #25 Computer Use: ComputerUsePage.tsx virtual desktop with terminal, text editor, browser, file manager, window management
+- [x] #34 Stripe: Activated via webdev_add_feature, stripe.ts, products.ts, payment router, BillingPage Plans & Credits, webhook handler
+- [x] #39 Figma Import: FigmaImportPage.tsx with URL parser, design token extraction via agent, React/Tailwind code gen
+- [x] #46 Desktop App: DesktopAppPage.tsx with Tauri config generator, build scripts, platform selection
+- [x] #52 Messaging Agent: MessagingAgentPage.tsx with WhatsApp/Telegram/custom webhook support
+
+### Batch 5: Required Parity Artifacts (updated)
+- [x] Update PARITY_BACKLOG.md to reflect true status: 57 GREEN, 0 YELLOW, 5 RED, 5 N/A
+- [x] Update GATE_A_VERIFICATION.md with final status: 14/14 PASS, 57/57 in-scope GREEN
+- [x] Run full test suite: 166 tests, 11 files, 0 failures, 0 TypeScript errors
+- [x] All sidebar nav entries: 17 entries covering all capability areas
+- [x] All pages wired to real tRPC with DB persistence

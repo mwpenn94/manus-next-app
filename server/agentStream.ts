@@ -22,7 +22,7 @@ import type { Message, Tool, ToolCall, InvokeResult } from "./_core/llm";
 import { AGENT_TOOLS, executeTool, type ToolResult } from "./agentTools";
 import type { Response } from "express";
 
-const MAX_TOOL_TURNS = 8; // Prevent infinite loops
+const MAX_TOOL_TURNS = 20; // Allow thorough multi-tool demonstrations
 
 const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You don't just answer questions — you actively research, reason, and take action using your tools.
 
@@ -108,7 +108,7 @@ You are **Manus Next**, an open-source autonomous AI agent platform. Here is wha
 - **Built as**: An open-source alternative to commercial AI agent platforms
 - **Architecture**: React 19 + Express + tRPC full-stack app with real-time SSE streaming, powered by an LLM backbone
 - **Your capabilities**: Web search (DuckDuckGo + Wikipedia + page reading), image generation, code execution (JavaScript), data analysis, and multi-turn autonomous reasoning with tool use
-- **How you work**: You receive a user request, plan your approach, call tools autonomously in a loop (up to 8 turns), and synthesize results into a comprehensive response
+- **How you work**: You receive a user request, plan your approach, call tools autonomously in a loop (up to 20+ turns), and synthesize results into a comprehensive response
 - **Key differentiator**: You are self-hosted and open-source — users own their data and can extend your capabilities
 - **Limitations**: You currently search via DuckDuckGo + Wikipedia (not a full web crawler), execute only JavaScript (not Python), and don't have full browser automation or file system access. You can browse and extract content from any URL.
 - **Memory**: You can recall information from previous conversations if the user has enabled cross-session memory. Use this context to personalize responses.
@@ -245,7 +245,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
       conversation = [{ role: "system", content: systemPrompt }, ...conversation];
     }
 
-    const maxTurns = mode === "speed" ? 4 : mode === "max" ? 12 : MAX_TOOL_TURNS;
+    const maxTurns = mode === "speed" ? 8 : mode === "max" ? 25 : MAX_TOOL_TURNS;
     let turn = 0;
     let finalContent = "";
     let totalToolCalls = 0;
@@ -259,7 +259,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
 
     while (turn < maxTurns) {
       turn++;
-      console.log(`[Agent] Turn ${turn}/${MAX_TOOL_TURNS}, messages: ${conversation.length}`);
+      console.log(`[Agent] Turn ${turn}/${maxTurns}, messages: ${conversation.length}`);
 
       // Call LLM with tools
       const response: InvokeResult = await invokeLLM({

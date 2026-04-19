@@ -71,6 +71,25 @@ import {
   createMeetingSession,
   updateMeetingSession,
   getMeetingSession,
+  createTeam,
+  getUserTeams,
+  getTeamById,
+  getTeamByInviteCode,
+  getTeamMembers,
+  joinTeam,
+  removeTeamMember,
+  updateTeamCredits,
+  createTeamSession,
+  getTeamSessions,
+  createWebappBuild,
+  updateWebappBuild,
+  getUserWebappBuilds,
+  getWebappBuild,
+  createDesign,
+  updateDesign,
+  getUserDesigns,
+  getDesign,
+  deleteDesign,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -1026,6 +1045,177 @@ export const appRouter = router({
           }
         })();
         return { id };
+      }),
+  }),
+
+  // ── Team / Collaboration (#56/#57/#58) ──
+  team: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserTeams(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({ name: z.string().min(1).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        return createTeam({ name: input.name, ownerId: ctx.user.id });
+      }),
+    get: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamById(input.teamId);
+      }),
+    members: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamMembers(input.teamId);
+      }),
+    join: protectedProcedure
+      .input(z.object({ inviteCode: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const team = await getTeamByInviteCode(input.inviteCode);
+        if (!team) throw new Error("Invalid invite code");
+        return joinTeam(team.id, ctx.user.id);
+      }),
+    removeMember: protectedProcedure
+      .input(z.object({ teamId: z.number(), userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await removeTeamMember(input.teamId, input.userId, ctx.user.id);
+        return { success: true };
+      }),
+    addCredits: protectedProcedure
+      .input(z.object({ teamId: z.number(), amount: z.number().min(1) }))
+      .mutation(async ({ input }) => {
+        await updateTeamCredits(input.teamId, input.amount);
+        return { success: true };
+      }),
+    sessions: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamSessions(input.teamId);
+      }),
+    shareSession: protectedProcedure
+      .input(z.object({ teamId: z.number(), taskExternalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await createTeamSession({ teamId: input.teamId, taskExternalId: input.taskExternalId, createdBy: ctx.user.id });
+        return { success: true };
+      }),
+  }),
+
+  // ── WebApp Builder (#27/#28/#29) ──
+  webapp: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserWebappBuilds(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getWebappBuild(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1).max(10000),
+        title: z.string().max(200).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return createWebappBuild({ userId: ctx.user.id, prompt: input.prompt, title: input.title });
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        generatedHtml: z.string().optional(),
+        sourceCode: z.string().optional(),
+        status: z.enum(["draft", "generating", "ready", "published", "error"]).optional(),
+        title: z.string().max(200).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        await updateWebappBuild(id, updates);
+        return { success: true };
+      }),
+    publish: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const build = await getWebappBuild(input.id);
+        if (!build || !build.generatedHtml) throw new Error("No HTML to publish");
+        const { storagePut } = await import("./storage");
+        const { nanoid } = await import("nanoid");
+        const key = `webapps/${nanoid(12)}/index.html`;
+        const { url } = await storagePut(key, Buffer.from(build.generatedHtml, "utf-8"), "text/html");
+        await updateWebappBuild(input.id, { publishedUrl: url, publishedKey: key, status: "published" });
+        return { url, key };
+      }),
+  }),
+
+  // ── Design Canvas (#15) ──
+  design: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserDesigns(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getDesign(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(200),
+        canvasState: z.any().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return createDesign({ userId: ctx.user.id, name: input.name, canvasState: input.canvasState });
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().max(200).optional(),
+        canvasState: z.any().optional(),
+        thumbnailUrl: z.string().max(2000).optional(),
+        exportUrl: z.string().max(2000).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        await updateDesign(id, updates);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteDesign(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    export: protectedProcedure
+      .input(z.object({ id: z.number(), format: z.enum(["png", "svg"]).optional() }))
+      .mutation(async ({ input }) => {
+        const design = await getDesign(input.id);
+        if (!design) throw new Error("Design not found");
+        const { storagePut } = await import("./storage");
+        const { nanoid } = await import("nanoid");
+        const key = `designs/${nanoid(12)}.json`;
+        const { url } = await storagePut(key, Buffer.from(JSON.stringify(design.canvasState), "utf-8"), "application/json");
+        await updateDesign(input.id, { exportUrl: url });
+        return { url };
+      }),
+  }),
+
+  // ── Stripe Payments (#34) ──────────────────────────────────────────
+  payment: router({
+    products: publicProcedure.query(async () => {
+      const { listProducts } = await import("./stripe");
+      return listProducts();
+    }),
+    createCheckout: protectedProcedure
+      .input(z.object({
+        productId: z.string(),
+        origin: z.string().url(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createCheckoutSession } = await import("./stripe");
+        return createCheckoutSession({
+          productId: input.productId,
+          userId: ctx.user.id,
+          userEmail: ctx.user.openId ?? "",
+          userName: ctx.user.name ?? "",
+          origin: input.origin,
+        });
       }),
   }),
 });

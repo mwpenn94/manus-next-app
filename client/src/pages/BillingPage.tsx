@@ -4,7 +4,7 @@
  * Shows actual task statistics from the database.
  * No hardcoded demo data. No fake transactions.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Sparkles,
   Zap,
@@ -13,7 +13,10 @@ import {
   Loader2,
   BarChart3,
   LogIn,
+  CreditCard,
+  ExternalLink,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { trpc } from "@/lib/trpc";
@@ -34,6 +37,27 @@ export default function BillingPage() {
     enabled: isAuthenticated,
     retry: false,
   });
+
+  // Stripe products
+  const productsQuery = trpc.payment.products.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const checkoutMutation = trpc.payment.createCheckout.useMutation({
+    onSuccess: (data) => {
+      toast.success("Redirecting to checkout...");
+      window.open(data.url, "_blank");
+    },
+    onError: (err) => toast.error("Checkout failed: " + err.message),
+  });
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
+
+  const handleCheckout = (productId: string) => {
+    setCheckingOut(productId);
+    checkoutMutation.mutate(
+      { productId, origin: window.location.origin },
+      { onSettled: () => setCheckingOut(null) }
+    );
+  };
 
   const stats = statsQuery.data;
   const recentTasks = useMemo(() => {
@@ -146,6 +170,47 @@ export default function BillingPage() {
             </p>
           </motion.div>
         )}
+
+        {/* Plans & Payments */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.25 }}
+          className="mt-6"
+        >
+          <h3 className="text-sm font-medium text-foreground mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+            <CreditCard className="w-4 h-4 inline mr-2" />
+            Plans & Credits
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(productsQuery.data ?? []).map((product: any) => (
+              <div key={product.id} className="bg-card border border-border rounded-xl p-4">
+                <h4 className="text-sm font-semibold text-foreground">{product.name}</h4>
+                <p className="text-xs text-muted-foreground mt-1 mb-3">{product.description}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-foreground">
+                    ${product.price}{product.interval ? `/${product.interval === "month" ? "mo" : "yr"}` : ""}
+                  </span>
+                  <button
+                    onClick={() => handleCheckout(product.id)}
+                    disabled={checkingOut === product.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {checkingOut === product.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <ExternalLink className="w-3 h-3" />
+                    )}
+                    {product.mode === "subscription" ? "Subscribe" : "Buy"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            Test with card 4242 4242 4242 4242. Payments processed by Stripe.
+          </p>
+        </motion.div>
 
         {/* Recent Activity */}
         <motion.div

@@ -71,6 +71,13 @@
       "when": 1776573819132,
       "tag": "0009_thankful_nicolaos",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1776577957955,
+      "tag": "0010_perpetual_dagger",
+      "breakpoints": true
     }
   ]
 }

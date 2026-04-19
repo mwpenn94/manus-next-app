@@ -29,6 +29,10 @@ const ConnectorsPage = lazy(() => import("./pages/ConnectorsPage"));
 const MeetingsPage = lazy(() => import("./pages/MeetingsPage"));
 const WebAppBuilderPage = lazy(() => import("./pages/WebAppBuilderPage"));
 const TeamPage = lazy(() => import("./pages/TeamPage"));
+const ComputerUsePage = lazy(() => import("./pages/ComputerUsePage"));
+const FigmaImportPage = lazy(() => import("./pages/FigmaImportPage"));
+const DesktopAppPage = lazy(() => import("./pages/DesktopAppPage"));
+const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
 
 function PageLoader() {
   return (
@@ -122,6 +126,26 @@ function Router() {
       <Route path="/team">
         <Suspense fallback={<PageLoader />}>
           <TeamPage />
+        </Suspense>
+      </Route>
+      <Route path="/computer">
+        <Suspense fallback={<PageLoader />}>
+          <ComputerUsePage />
+        </Suspense>
+      </Route>
+      <Route path="/figma-import">
+        <Suspense fallback={<PageLoader />}>
+          <FigmaImportPage />
+        </Suspense>
+      </Route>
+      <Route path="/desktop-app">
+        <Suspense fallback={<PageLoader />}>
+          <DesktopAppPage />
+        </Suspense>
+      </Route>
+      <Route path="/messaging">
+        <Suspense fallback={<PageLoader />}>
+          <MessagingAgentPage />
         </Suspense>
       </Route>
       <Route path="/shared/:token">
