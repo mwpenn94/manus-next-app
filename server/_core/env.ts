@@ -7,4 +7,13 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Connector OAuth credentials (optional — falls back to API key entry when not set)
+  GITHUB_OAUTH_CLIENT_ID: process.env.GITHUB_OAUTH_CLIENT_ID ?? "",
+  GITHUB_OAUTH_CLIENT_SECRET: process.env.GITHUB_OAUTH_CLIENT_SECRET ?? "",
+  GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID ?? "",
+  GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "",
+  NOTION_OAUTH_CLIENT_ID: process.env.NOTION_OAUTH_CLIENT_ID ?? "",
+  NOTION_OAUTH_CLIENT_SECRET: process.env.NOTION_OAUTH_CLIENT_SECRET ?? "",
+  SLACK_OAUTH_CLIENT_ID: process.env.SLACK_OAUTH_CLIENT_ID ?? "",
+  SLACK_OAUTH_CLIENT_SECRET: process.env.SLACK_OAUTH_CLIENT_SECRET ?? "",
 };

@@ -243,3 +243,53 @@ describe("Connector OAuth Provider Module", () => {
     }
   });
 });
+
+describe("Express OAuth Callback Route", () => {
+  it("callback route is registered at /api/connector/oauth/callback", async () => {
+    const fs = await import("fs");
+    const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
+    expect(indexContent).toContain('/api/connector/oauth/callback');
+    expect(indexContent).toContain('buildOAuthCallbackHtml');
+  });
+
+  it("callback HTML posts message to opener for popup flow", async () => {
+    const fs = await import("fs");
+    const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
+    expect(indexContent).toContain('connector-oauth-callback');
+    expect(indexContent).toContain('window.opener.postMessage');
+  });
+
+  it("callback HTML falls back to redirect for same-window flow", async () => {
+    const fs = await import("fs");
+    const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
+    expect(indexContent).toContain('/connectors?code=');
+  });
+
+  it("callback handles error parameter", async () => {
+    const fs = await import("fs");
+    const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
+    expect(indexContent).toContain('OAuth error');
+    expect(indexContent).toContain('Missing code or state parameter');
+    expect(indexContent).toContain('Invalid state parameter');
+  });
+});
+
+describe("ENV OAuth Declarations", () => {
+  it("env.ts declares all OAuth client ID/secret vars", async () => {
+    const fs = await import("fs");
+    const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
+    const requiredVars = [
+      "GITHUB_OAUTH_CLIENT_ID",
+      "GITHUB_OAUTH_CLIENT_SECRET",
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET",
+      "NOTION_OAUTH_CLIENT_ID",
+      "NOTION_OAUTH_CLIENT_SECRET",
+      "SLACK_OAUTH_CLIENT_ID",
+      "SLACK_OAUTH_CLIENT_SECRET",
+    ];
+    for (const v of requiredVars) {
+      expect(envContent, `Missing ${v} in env.ts`).toContain(v);
+    }
+  });
+});

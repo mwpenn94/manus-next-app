@@ -120,7 +120,7 @@
 
 | Metric | Manus | Manus Next | Parity |
 |--------|-------|------------|--------|
-| Test coverage | Unknown | 217 tests | GREEN |
+| Test coverage | Unknown | 222 tests | GREEN |
 | TypeScript errors | Unknown | 0 | GREEN |
 | tRPC routers | N/A | 27 | GREEN |
 | Database tables | N/A | 27 | GREEN |

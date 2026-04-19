@@ -116,9 +116,16 @@ function startHeartbeat() {
   }, HEARTBEAT_INTERVAL);
 }
 
+// ── Playwright Bridge ──
+const { handleBrowserCommand } = require("./playwright-bridge");
+
+// ── Auto-Updater ──
+const { initAutoUpdater } = require("./auto-updater");
+
 // ── Command Handler ──
 async function handleCommand(msg) {
   switch (msg.type) {
+    // Native OS automation
     case "screenshot": {
       return await takeScreenshot();
     }
@@ -134,13 +141,34 @@ async function handleCommand(msg) {
     case "scroll": {
       return await performScroll(msg.x, msg.y, msg.deltaX || 0, msg.deltaY || 0);
     }
+
+    // Raw CDP commands (legacy)
     case "eval": {
-      // CDP browser eval — forward to local Chrome
       return await cdpEval(msg.expression, msg.cdpPort || 9222);
     }
     case "navigate": {
       return await cdpNavigate(msg.url, msg.cdpPort || 9222);
     }
+
+    // Playwright browser commands (preferred)
+    case "browser_navigate":
+    case "browser_screenshot":
+    case "browser_eval":
+    case "browser_click":
+    case "browser_fill":
+    case "browser_type":
+    case "browser_wait":
+    case "browser_extract":
+    case "browser_pdf":
+    case "browser_close": {
+      try {
+        return await handleBrowserCommand(msg);
+      } catch (err) {
+        return { type: "error", error: `Browser command failed: ${err.message}` };
+      }
+    }
+
+    // System
     case "get_info": {
       return getSystemInfo();
     }
@@ -388,6 +416,7 @@ ipcMain.handle("test-screenshot", async () => {
 app.whenReady().then(() => {
   createWindow();
   createTray();
+  initAutoUpdater(mainWindow);
 
   const savedServer = store.get("serverUrl");
   if (savedServer) {

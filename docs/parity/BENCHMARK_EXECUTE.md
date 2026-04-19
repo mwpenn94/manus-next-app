@@ -76,7 +76,7 @@
 | Metric | Score | Evidence |
 |--------|-------|----------|
 | TypeScript strict mode | Yes | tsconfig.json strict: true |
-| Test coverage | ~65% | 217 tests across 13 files |
+| Test coverage | ~65% | 222 tests across 13 files |
 | Documentation files | 25+ | ARCHITECTURE, README, PARITY_*, CHANGELOG, per-cap-notes |
 | Code organization | Clean | server/ client/ shared/ drizzle/ packages/ docs/ |
 | Naming conventions | Consistent | camelCase functions, PascalCase components, kebab-case files |

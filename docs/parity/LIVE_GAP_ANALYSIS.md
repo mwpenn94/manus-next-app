@@ -62,8 +62,8 @@ No CSRF tokens or SameSite cookie enforcement found beyond what the framework pr
 ### GAP-010: 0 TypeScript errors (GREEN)
 TypeScript compilation passes cleanly.
 
-### GAP-011: 217 tests all passing (GREEN)
-Full test suite passes: 13 test files, 217 tests.
+### GAP-011: 222 tests all passing (GREEN)
+Full test suite passes: 13 test files, 222 tests.
 
 ### GAP-012: 287 Zod validations in routers (GREEN)
 Strong input validation throughout.

@@ -8,7 +8,7 @@
 
 The project is handoff-ready for maintenance, feature development, and deployment. Infrastructure migration and upstream package publishing require owner decisions.
 
-**Current parity status:** 60 GREEN (96.8% of in-scope), 2 RED (#53 Microsoft 365, #62 Veo3 — blocked on external infrastructure), 5 N/A. 217 tests, 0 TS errors.
+**Current parity status:** 60 GREEN (96.8% of in-scope), 2 RED (#53 Microsoft 365, #62 Veo3 — blocked on external infrastructure), 5 N/A. 222 tests, 0 TS errors.
 
 ---
 
@@ -21,7 +21,7 @@ The project is handoff-ready for maintenance, feature development, and deploymen
 | Adding new agent tools | Ready | Add tool definition + executor in `server/agentTools.ts`, register in `AGENT_TOOLS` array (currently 14 tools) |
 | Adding new tRPC procedures | Ready | Add to `server/routers.ts`, consume via `trpc.*` hooks (currently 27 router namespaces) |
 | Adding new pages | Ready | Create in `client/src/pages/`, register route in `App.tsx` (currently 24 pages) |
-| Running tests | Ready | `pnpm test` — 217 tests across 13 files |
+| Running tests | Ready | `pnpm test` — 222 tests across 13 files |
 | TypeScript checking | Ready | `npx tsc --noEmit` — 0 errors |
 | Deployment | Ready | Manus platform auto-deploys on checkpoint. Click Publish in Management UI. |
 | Stripe payments | Ready | Sandbox provisioned, webhook handler at `/api/stripe/webhook`, fulfillment persists IDs to users table |

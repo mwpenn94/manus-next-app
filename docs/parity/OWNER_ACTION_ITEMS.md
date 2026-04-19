@@ -53,5 +53,5 @@ All 60 in-scope capabilities are GREEN. The items above are enhancements, not bl
 | RED (genuinely blocked) | 2 (#53 Microsoft 365, #62 Veo3) |
 | N/A | 5 |
 | Gate A | 14/14 PASS |
-| Tests | 217 across 13 files |
+| Tests | 222 across 13 files |
 | TS errors | 0 |

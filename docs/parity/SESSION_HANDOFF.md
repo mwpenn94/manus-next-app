@@ -6,7 +6,7 @@
 
 ## Current State
 
-Phase A is DEV_CONVERGED. 60/62 in-scope capabilities GREEN (97%). RED capabilities #42, #43, #47 implemented and driven to GREEN. 2 RED remain (#53 Microsoft 365, #62 Veo3). 217 tests, 0 TS errors.
+Phase A is DEV_CONVERGED. 60/62 in-scope capabilities GREEN (97%). RED capabilities #42, #43, #47 implemented and driven to GREEN. 2 RED remain (#53 Microsoft 365, #62 Veo3). 222 tests, 0 TS errors.
 
 ## Infrastructure
 
@@ -15,7 +15,7 @@ Phase A is DEV_CONVERGED. 60/62 in-scope capabilities GREEN (97%). RED capabilit
 - **tRPC routers:** 27
 - **DB tables:** 27
 - **Pages:** 24
-- **Tests:** 217 across 13 files, 0 failures
+- **Tests:** 222 across 13 files, 0 failures
 - **TypeScript errors:** 0
 - **Stripe:** Sandbox provisioned with real fulfillment
 

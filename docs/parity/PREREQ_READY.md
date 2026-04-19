@@ -56,7 +56,7 @@
 
 | Prerequisite | Status |
 |-------------|--------|
-| All tests pass | READY (217 tests) |
+| All tests pass | READY (222 tests) |
 | 0 TypeScript errors | READY |
 | Capability gap scan complete | READY |
 | AFK artifacts produced | READY |

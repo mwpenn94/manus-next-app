@@ -7,9 +7,11 @@ A lightweight Electron desktop app that connects your computer to Manus Next for
 - **Native Desktop Control** — Mouse clicks, keyboard input, scrolling via nut.js
 - **Screenshot Capture** — Full-screen screenshots via screenshot-desktop
 - **CDP Browser Bridge** — Direct Chrome DevTools Protocol control for browser automation
+- **Playwright Browser Bridge** — Robust browser automation with Playwright/Puppeteer fallback
 - **WebSocket Relay** — Secure outbound connection to Manus Next (works through firewalls/NAT)
 - **System Tray** — Runs in background with status indicator
 - **Pairing Code** — Secure device pairing with 6-character code
+- **Auto-Update** — Automatic updates via electron-updater
 - **Cross-Platform** — Windows, macOS, Linux builds via electron-builder
 
 ## Quick Start
@@ -17,6 +19,9 @@ A lightweight Electron desktop app that connects your computer to Manus Next for
 ```bash
 # Install dependencies
 npm install
+
+# Generate tray icon placeholder (first time only)
+node scripts/create-tray-icon.js
 
 # Run in development
 npm start
@@ -46,13 +51,13 @@ npm run build:all    # All platforms
 │  - Send commands │                     │  - screenshot    │
 │  - View screen   │                     │  - click/type    │
 │  - CDP eval      │                     │  - CDP bridge    │
+│  - Playwright    │                     │  - Playwright    │
 └──────────────────┘                     └──────────────────┘
 ```
 
-## Command Protocol
+## Command Reference
 
-The companion app responds to JSON commands over WebSocket:
-
+### Native OS Commands
 | Command | Parameters | Description |
 |---------|-----------|-------------|
 | `screenshot` | — | Capture full screen as PNG base64 |
@@ -60,9 +65,27 @@ The companion app responds to JSON commands over WebSocket:
 | `type` | `text` | Type text via keyboard |
 | `keypress` | `key`, `modifiers[]` | Press key combo (e.g., Ctrl+C) |
 | `scroll` | `x`, `y`, `deltaX`, `deltaY` | Scroll at position |
+| `get_info` | — | Get system info (OS, displays, CPU, RAM) |
+
+### Raw CDP Commands (Legacy)
+| Command | Parameters | Description |
+|---------|-----------|-------------|
 | `eval` | `expression`, `cdpPort` | Evaluate JS in Chrome via CDP |
 | `navigate` | `url`, `cdpPort` | Navigate Chrome tab via CDP |
-| `get_info` | — | Get system info (OS, displays, CPU, RAM) |
+
+### Playwright Browser Commands (Preferred)
+| Command | Parameters | Description |
+|---------|-----------|-------------|
+| `browser_navigate` | `url`, `waitUntil`, `timeout` | Navigate to URL |
+| `browser_screenshot` | `fullPage`, `selector` | Page screenshot |
+| `browser_eval` | `expression` | Evaluate JS |
+| `browser_click` | `selector` or `x`/`y` | Click element |
+| `browser_fill` | `selector`, `value` | Fill input |
+| `browser_type` | `selector`, `text`, `delay` | Type with delay |
+| `browser_wait` | `selector`, `url`, `ms` | Wait for condition |
+| `browser_extract` | `selector`, `html` | Extract content |
+| `browser_pdf` | — | Generate PDF |
+| `browser_close` | — | Close browser |
 
 ## Security
 
@@ -71,8 +94,25 @@ The companion app responds to JSON commands over WebSocket:
 - **Electron context isolation** — Renderer has no direct Node.js access
 - **Local storage encryption** — Credentials stored via electron-store
 
+## File Structure
+
+```
+src/
+  main.js              ← Electron main process (WS relay, native automation, CDP)
+  preload.js           ← Secure IPC bridge (contextIsolation)
+  renderer.html        ← Connection management UI
+  playwright-bridge.js ← Playwright/Puppeteer browser automation
+  auto-updater.js      ← Automatic update handling
+scripts/
+  entitlements.mac.plist ← macOS code signing entitlements
+  create-tray-icon.js    ← Generate placeholder tray icon
+assets/
+  tray-icon.png        ← System tray icon
+```
+
 ## Requirements
 
 - Node.js 18+
 - Electron 33+
 - For CDP bridge: Chrome/Chromium with `--remote-debugging-port=9222`
+- For Playwright bridge: `playwright-core` (included in dependencies)

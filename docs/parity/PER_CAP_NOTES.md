@@ -11,7 +11,7 @@
 ### Cap 1: Chat Mode — GREEN
 - **Implementation:** `TaskView.tsx` SSE streaming, `/api/stream` endpoint, persistent messages in `task_messages` table
 - **Quality:** Full conversational flow with markdown rendering via Streamdown, typing indicators, error recovery
-- **Evidence:** 217 tests pass, live demo functional
+- **Evidence:** 222 tests pass, live demo functional
 - **Action:** None — fully implemented
 
 ### Cap 2: Agent Mode Long-Running — GREEN

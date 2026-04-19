@@ -27,6 +27,38 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+/**
+ * Builds an HTML page for the OAuth callback popup.
+ * If opened as a popup, posts the code back to the opener via postMessage.
+ * If opened as same-window redirect, redirects to /connectors with code+state params.
+ */
+function buildOAuthCallbackHtml(
+  connectorId: string | null,
+  code: string | null,
+  error: string | null,
+  state?: string
+): string {
+  if (error) {
+    return `<!DOCTYPE html><html><body><h2>OAuth Error</h2><p>${error}</p><script>setTimeout(()=>window.close(),3000)</script></body></html>`;
+  }
+  return `<!DOCTYPE html><html><body>
+<p>Connecting...</p>
+<script>
+  (function() {
+    var connectorId = ${JSON.stringify(connectorId)};
+    var code = ${JSON.stringify(code)};
+    var state = ${JSON.stringify(state || "")};
+    if (window.opener) {
+      window.opener.postMessage({ type: "connector-oauth-callback", connectorId: connectorId, code: code }, "*");
+      setTimeout(function() { window.close(); }, 500);
+    } else {
+      window.location.href = "/connectors?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state);
+    }
+  })();
+</script>
+</body></html>`;
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
@@ -50,6 +82,38 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // ── Connector OAuth callback (receives redirect from GitHub/Google/Notion/Slack) ──
+  app.get("/api/connector/oauth/callback", async (req, res) => {
+    try {
+      const code = req.query.code as string;
+      const stateRaw = req.query.state as string;
+      const error = req.query.error as string;
+
+      if (error) {
+        return res.status(400).send(buildOAuthCallbackHtml(null, null, `OAuth error: ${error}`));
+      }
+      if (!code || !stateRaw) {
+        return res.status(400).send(buildOAuthCallbackHtml(null, null, "Missing code or state parameter"));
+      }
+
+      // Decode state to extract connectorId and origin
+      let state: { connectorId: string; userId: number; origin: string };
+      try {
+        state = JSON.parse(Buffer.from(stateRaw, "base64url").toString());
+      } catch {
+        return res.status(400).send(buildOAuthCallbackHtml(null, null, "Invalid state parameter"));
+      }
+
+      // Send HTML that posts the code back to the opener window (popup flow)
+      // or redirects to /connectors with query params (same-window flow)
+      res.send(buildOAuthCallbackHtml(state.connectorId, code, null, stateRaw));
+    } catch (err: any) {
+      console.error("[Connector OAuth Callback] Error:", err);
+      res.status(500).send(buildOAuthCallbackHtml(null, null, err.message || "OAuth callback failed"));
+    }
+  });
+
   // ── File upload endpoint ──
   app.post("/api/upload", async (req, res) => {
     try {
@@ -222,6 +286,13 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Initialize WebSocket relay for desktop companion devices
+  import("../deviceRelay").then(({ initDeviceRelay }) => {
+    initDeviceRelay(server);
+  }).catch((err) => {
+    console.error("[Server] Failed to init device relay:", err);
+  });
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
