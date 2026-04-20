@@ -174,6 +174,30 @@ export default defineConfig({
           if (id.includes('node_modules/katex')) {
             return 'vendor-katex';
           }
+          // Framer-motion is ~130KB minified — split from main
+          if (id.includes('node_modules/framer-motion') || id.includes('node_modules/motion')) {
+            return 'vendor-framer-motion';
+          }
+          // Radix UI primitives are used across many pages — split from main
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'vendor-radix';
+          }
+          // Recharts is only used on BillingPage — split from main
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'vendor-recharts';
+          }
+          // tRPC + TanStack Query are core but can be split
+          if (id.includes('node_modules/@tanstack') || id.includes('node_modules/@trpc')) {
+            return 'vendor-trpc';
+          }
+          // Lucide icons are individually tree-shaken but still add up
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-lucide';
+          }
+          // React core + React DOM — the largest unavoidable deps
+          if (id.includes('node_modules/react-dom') || (id.includes('node_modules/react/') && !id.includes('react-'))) {
+            return 'vendor-react';
+          }
           // Let Vite handle all other chunking automatically to avoid
           // circular dependency issues between React and markdown libs
         },

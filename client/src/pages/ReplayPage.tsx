@@ -14,6 +14,7 @@ import {
   Loader2,
   Clock,
   ChevronLeft,
+  AlertCircle,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -146,6 +147,22 @@ export default function ReplayPage() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
+        ) : eventsQuery.isError ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3 opacity-50" />
+              <p className="text-muted-foreground">Failed to load replay events</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {eventsQuery.error?.message || "An unexpected error occurred"}
+              </p>
+              <button
+                onClick={() => eventsQuery.refetch()}
+                className="mt-3 text-xs text-primary hover:underline"
+              >
+                Try again
+              </button>
+            </CardContent>
+          </Card>
         ) : events.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">

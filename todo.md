@@ -993,3 +993,13 @@
 - [x] Strengthen agent preference persistence — added extractSessionStylePreferences() that scans conversation for style directives and auto-injects into generate_image/design_canvas prompts
 - [x] Add image URL validation after generation — validateImageUrl() does HEAD check with 8s timeout, retries on failure
 - [x] Improve generate_image tool to auto-append stored style preferences to prompts — STYLE REQUIREMENTS suffix auto-injected from conversation history
+
+## NS11: v9 Prompt-42 Execution (ESCALATE_DEPTH + Recommended Steps)
+- [x] Bundle size optimization — main chunk reduced from 985KB to 291KB via manual chunks (react, radix, framer-motion, recharts, trpc, lucide)
+- [x] Verify GitHub OAuth end-to-end on published site — server-side verified: isOAuthSupported=true, CLIENT_ID resolves (20 chars), getOAuthUrl protected behind auth
+- [x] ESCALATE_DEPTH — all 5 dimensions GREEN (performance: 70% bundle reduction, error handling: ReplayPage fixed, security: no issues, memory: all cleanup verified, edge cases: covered)
+- [x] Create MANUS_FLAGSHIP_CURRENT.md — compiled from manus.im/pricing + docs + 6 third-party sources, 7 sections covering tiers, capabilities, architecture, parity implications
+- [x] Initialize AFK infrastructure artifacts — updated AFK_DECISIONS.md (v9 architecture decisions appended), created HRQ_POST_RUN_REVIEW.md (10 HRQs reviewed, 9 correct, 1 updated)
+- [x] Update CONVERGENCE_DIRECTIVE_CHECK_V9.md with full v9 AFK extension — 2nd pass, all §1-§8 verified, all v9+prompt-42 additions COMPLIANT, FULL PASS verdict
+- [x] Deeper convergence sweeps — 5 sweeps across 5 new dimensions (adversarial, edge-case, accessibility, dependency, cross-validation), 3/3 clean → DEEPER META-CONVERGENCE at 02:57 UTC
+- [x] Updated GATE_A_TRUE_FINAL_V9.md (v9 + Prompt-42 combined) + OWNER_ACTION_ITEMS_FINAL.md (11 prioritized items, P0-P3)

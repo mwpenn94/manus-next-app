@@ -35,3 +35,35 @@
 | #43 Mobile Development | Requires mobile package |
 | #46 Desktop App | Requires Tauri/Electron build pipeline |
 | #62 Veo3 Video | Requires Veo3 API access |
+
+
+---
+
+## v9 Prompt-42 AFK Architecture Decisions (2026-04-20)
+
+### 7. AFK State Machine Architecture
+
+The v9 prompt specifies a complete AFK execution state machine: IDENTIFY → OPTIMIZE → VALIDATE → COMMIT/REVERT → CHECKPOINT → REPORT → REALITY_CHECK → EXIT. This is documented as an infrastructure specification. The current architecture already supports the core primitives (scheduled tasks, task persistence, notifyOwner), but the orchestration layer that chains these into the I→O→V cycle is a future requirement.
+
+### 8. Checkpoint and Report Cadence
+
+| Parameter | Value | Current Support |
+|-----------|-------|----------------|
+| Checkpoint interval | 30 min | webdev_save_checkpoint (project-level); task-level needed |
+| Progress report interval | 2 hr | notifyOwner helper exists; scheduling logic needed |
+| Max cycles | 200 | Future env var: AFK_MAX_CYCLES |
+| Max wall-clock | 168 hr | Future env var: AFK_MAX_HOURS |
+
+### 9. Failover Doctrine (§L.25)
+
+The 10-layer failover tree requires error classification and recovery beyond the current try/catch pattern. Three legitimate global halt conditions: (1) unrecoverable data corruption, (2) security breach detection, (3) resource exhaustion beyond configured limits. All other failures trigger failover, not halt.
+
+### 10. Updated Skipped Capabilities Status
+
+Several previously-skipped capabilities have been resolved since the initial AFK pass:
+
+| Capability | Previous Status | Current Status |
+|-----------|----------------|----------------|
+| #43 Mobile Development | Skipped (requires mobile package) | GREEN (responsive PWA approach) |
+| #62 Veo3 Video | Skipped (requires API access) | YELLOW (scaffold + multi-provider UI) |
+| #53 Microsoft Agent365 | Not listed | YELLOW (Azure AD OAuth scaffold) |

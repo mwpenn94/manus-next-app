@@ -155,7 +155,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const { tasks, activeTaskId, setActiveTask } = useTask();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Server-side search when query is long enough
   const searchEnabled = isAuthenticated && searchQuery.trim().length >= 2;
