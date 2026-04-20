@@ -912,3 +912,18 @@
 - [x] VU3-CP-1: Convergence Pass 1 — CLEAN (0 TS errors, 254/254 tests, all console errors non-actionable)
 - [x] VU3-CP-2: Convergence Pass 2 — CLEAN (0 TS errors, 254/254 tests, prod build succeeds, code review clean)
 - [x] VU3-CP-3: Convergence Pass 3 — CLEAN — CONVERGENCE ACHIEVED (3/3 consecutive clean passes, 0 TS errors, 254/254 tests, prod build clean, visual verification confirmed)
+
+## Next Steps Implementation Round 4 (April 19)
+- [x] NS4-1: Persist task ratings to DB — taskRatings table added + db:push applied
+- [x] NS4-2: Persist task ratings to DB — upsertTaskRating + getTaskRating helpers added
+- [x] NS4-3: Persist task ratings to DB — task.rateTask mutation + task.getTaskRating query added
+- [x] NS4-4: Persist task ratings to DB — TaskRating wired to tRPC mutation + loads existing rating on mount
+- [x] NS4-5: Code-split large bundles — manualChunks config added to vite.config.ts
+- [x] NS4-6: Code-split large bundles — shiki/mermaid already lazy-loaded by streamdown internally
+- [x] NS4-7: Code-split large bundles — main bundle 983KB→240KB (75% reduction), vendor chunks cached independently
+- [x] NS4-8: Write vitest tests for task rating procedures — 8 tests (create, feedback, validation, upsert, get null, get existing)
+- [x] NS4-9: Exhaustive VU assessment — 6 dimensions all excellent, 1 minor cleanup found
+- [x] NS4-10: Fix: Removed console.log from TaskRating onRate, made onRate optional since ratings persist to DB via tRPC
+- [x] NS4-11: Convergence Pass 1 — CLEAN (0 TS errors, 262/262 tests, prod build clean, 0 console.log in client)
+- [x] NS4-12: Convergence Pass 2 — CLEAN (0 TS errors, 262/262 tests, prod build clean, adversarial scan clean)
+- [x] NS4-13: Convergence Pass 3 — CLEAN (0 TS errors, 262/262 tests, prod build clean, deep adversarial scan clean) — CONVERGENCE ACHIEVED 3/3

@@ -106,15 +106,31 @@ function getFollowUpSuggestions(messages: Message[]): string[] {
 
 // ── Task Quality Rating (Gap 5) ──
 
-function TaskRating({ taskId, onRate }: { taskId: string; onRate: (rating: number) => void }) {
+function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: number) => void }) {
   const [hoveredStar, setHoveredStar] = useState(0);
   const [selectedRating, setSelectedRating] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
+  // Load existing rating from DB
+  const { data: existingRating } = trpc.task.getTaskRating.useQuery(
+    { taskExternalId: taskId },
+    { enabled: !!taskId }
+  );
+  const rateMutation = trpc.task.rateTask.useMutation();
+
+  // Sync existing rating on load
+  useEffect(() => {
+    if (existingRating?.rating && !submitted) {
+      setSelectedRating(existingRating.rating);
+      setSubmitted(true);
+    }
+  }, [existingRating, submitted]);
+
   const handleRate = (rating: number) => {
     setSelectedRating(rating);
     setSubmitted(true);
-    onRate(rating);
+    onRate?.(rating);
+    rateMutation.mutate({ taskExternalId: taskId, rating });
     toast.success(`Rated ${rating}/5 — thank you for your feedback!`);
   };
 
@@ -1739,7 +1755,7 @@ export default function TaskView() {
                   </span>
                 )}
               </div>
-              <TaskRating taskId={task.id} onRate={(r) => console.log(`Task ${task.id} rated ${r}/5`)} />
+              <TaskRating taskId={task.id} />
             </div>
             {/* Suggested follow-ups */}
             <div className="flex flex-wrap gap-2">

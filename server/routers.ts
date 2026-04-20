@@ -116,6 +116,8 @@ import {
   updateBuildStoreMetadata,
   updateConnectorOAuthTokens,
   getConnectorById,
+  upsertTaskRating,
+  getTaskRating,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -246,6 +248,23 @@ export const appRouter = router({
           actions: input.actions ?? null,
         });
         return { success: true, externalId };
+      }),
+
+    rateTask: protectedProcedure
+      .input(z.object({
+        taskExternalId: z.string().min(1).max(64),
+        rating: z.number().int().min(1).max(5),
+        feedback: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const result = await upsertTaskRating(input.taskExternalId, ctx.user.id, input.rating, input.feedback);
+        return { success: true, rating: result };
+      }),
+
+    getTaskRating: protectedProcedure
+      .input(z.object({ taskExternalId: z.string().min(1).max(64) }))
+      .query(async ({ input }) => {
+        return getTaskRating(input.taskExternalId);
       }),
   }),
 

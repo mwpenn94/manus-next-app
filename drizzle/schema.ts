@@ -56,6 +56,20 @@ export const tasks = mysqlTable("tasks", {
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
 
+// ── Task Ratings ──
+export const taskRatings = mysqlTable("task_ratings", {
+  id: int("id").autoincrement().primaryKey(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  rating: int("rating").notNull(), // 1-5 stars
+  feedback: text("feedback"), // Optional text feedback
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TaskRating = typeof taskRatings.$inferSelect;
+export type InsertTaskRating = typeof taskRatings.$inferInsert;
+
 // ── Task Messages ──
 export const taskMessages = mysqlTable("task_messages", {
   id: int("id").autoincrement().primaryKey(),

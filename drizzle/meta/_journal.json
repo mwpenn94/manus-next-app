@@ -99,6 +99,13 @@
       "when": 1776618882705,
       "tag": "0013_orange_kree",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1776647350014,
+      "tag": "0014_yielding_red_wolf",
+      "breakpoints": true
     }
   ]
 }

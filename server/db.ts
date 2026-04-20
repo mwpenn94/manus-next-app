@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -174,6 +174,30 @@ export async function searchTasks(userId: number, query: string) {
     if (msgs.length > 0) messageMatches.push(t);
   }
   return [...titleMatches, ...messageMatches];
+}
+
+// ── Task Rating Queries ──
+
+export async function upsertTaskRating(taskExternalId: string, userId: number, rating: number, feedback?: string | null) {
+  const db = await getDb();
+  if (!db) return null;
+  await db.insert(taskRatings).values({
+    taskExternalId,
+    userId,
+    rating,
+    feedback: feedback ?? null,
+  }).onDuplicateKeyUpdate({
+    set: { rating, feedback: feedback ?? null },
+  });
+  const [row] = await db.select().from(taskRatings).where(eq(taskRatings.taskExternalId, taskExternalId)).limit(1);
+  return row ?? null;
+}
+
+export async function getTaskRating(taskExternalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(taskRatings).where(eq(taskRatings.taskExternalId, taskExternalId)).limit(1);
+  return row ?? null;
 }
 
 // ── Task Message Queries ──
