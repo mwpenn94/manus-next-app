@@ -153,9 +153,15 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           actions: sm.actions ? (typeof sm.actions === "string" ? JSON.parse(sm.actions) : sm.actions) : undefined,
         }));
 
-        // Merge: server messages first, then any local messages not already in server set
-        const serverMsgIds = new Set(serverMsgs.map(m => m.content));
-        const uniqueLocalMsgs = t.messages.filter(m => !serverMsgIds.has(m.content));
+        // Merge: server messages first, then any local messages not already in server set.
+        // Dedup by role + normalized content (first 300 chars) to handle dual persistence
+        // (both client and server may save the same assistant message).
+        const serverMsgKeys = new Set(
+          serverMsgs.map(m => `${m.role}:${m.content.slice(0, 300).trim()}`)
+        );
+        const uniqueLocalMsgs = t.messages.filter(
+          m => !serverMsgKeys.has(`${m.role}:${m.content.slice(0, 300).trim()}`)
+        );
         
         return { ...t, messages: [...serverMsgs, ...uniqueLocalMsgs], messagesLoaded: true };
       })

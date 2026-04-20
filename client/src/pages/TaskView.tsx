@@ -851,6 +851,10 @@ export default function TaskView() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const dragCounterRef = useRef(0);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  // Refs for saving partial content on navigation/unmount
+  const accumulatedRef = useRef<string>("");
+  const streamingTaskIdRef = useRef<string | null>(null);
+  const actionsRef = useRef<AgentAction[]>([]);
   const taskExternalId = activeTask?.id || params?.id;
   const { files, uploading, progress, error: uploadError, upload, openPicker, handleFileChange, removeFile, clearFiles, inputRef: fileInputRef } = useFileUpload(taskExternalId);
 
@@ -939,6 +943,39 @@ export default function TaskView() {
     inputRef.current?.focus();
   }, [task?.id]);
 
+  // Save partial streaming content on page unload or component unmount
+  // This ensures in-progress assistant messages aren't lost when the user navigates away
+  useEffect(() => {
+    const savePartialContent = () => {
+      const taskId = streamingTaskIdRef.current;
+      const content = accumulatedRef.current;
+      if (taskId && content.trim()) {
+        // Use addMessage to persist the partial content
+        addMessage(taskId, {
+          role: "assistant",
+          content: content + "\n\n*[Response interrupted — partial content saved]*",
+          actions: actionsRef.current.length > 0 ? actionsRef.current : undefined,
+        });
+        // Clear refs to prevent double-save
+        streamingTaskIdRef.current = null;
+        accumulatedRef.current = "";
+        actionsRef.current = [];
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      savePartialContent();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup on unmount: save partial content if still streaming
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      savePartialContent();
+    };
+  }, [addMessage]);
+
   // Auto-stream for initial message in a newly created task
   // When navigating from Home, createTask adds the first user message but never calls /api/stream.
   // This effect detects that pattern and triggers the LLM stream automatically.
@@ -969,6 +1006,9 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setStreamImages([]);
+      streamingTaskIdRef.current = task.id;
+      accumulatedRef.current = "";
+      actionsRef.current = [];
       let accumulated = "";
       const actions: AgentAction[] = [];
       const images: string[] = [];
@@ -1008,6 +1048,7 @@ export default function TaskView() {
               const data = JSON.parse(line.slice(6));
               if (data.delta) {
                 accumulated += data.delta;
+                accumulatedRef.current = accumulated;
                 setStreamContent(accumulated);
               }
               if (data.tool_start) {
@@ -1015,6 +1056,7 @@ export default function TaskView() {
                 const actionType = display.type || "thinking";
                 const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
                 actions.push(newAction);
+                actionsRef.current = [...actions];
                 setAgentActions([...actions]);
               }
               if (data.tool_result) {
@@ -1023,6 +1065,7 @@ export default function TaskView() {
                 if (idx >= 0) {
                   const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
                   actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                  actionsRef.current = [...actions];
                   setAgentActions([...actions]);
                 }
               }
@@ -1030,21 +1073,25 @@ export default function TaskView() {
                 images.push(data.image);
                 setStreamImages([...images]);
                 accumulated += `\n\n![Generated Image](${data.image})\n\n`;
+                accumulatedRef.current = accumulated;
                 setStreamContent(accumulated);
               }
               if (data.document) {
                 const docTitle = data.document.title || "Document";
                 const docUrl = data.document.url;
                 accumulated += `\n\n📄 **${docTitle}** — [Download Document](${docUrl})\n\n`;
+                accumulatedRef.current = accumulated;
                 setStreamContent(accumulated);
               }
               if (data.done) {
                 accumulated = data.content || accumulated;
+                accumulatedRef.current = accumulated;
                 // Append images to content if they were generated
                 if (images.length > 0 && !accumulated.includes(images[0])) {
                   for (const img of images) {
                     accumulated += `\n\n![Generated Image](${img})`;
                   }
+                  accumulatedRef.current = accumulated;
                 }
               }
               if (data.status) {
@@ -1056,6 +1103,7 @@ export default function TaskView() {
               }
               if (data.error) {
                 accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
+                accumulatedRef.current = accumulated;
                 setStreamContent(accumulated);
               }
             } catch { /* skip malformed lines */ }
@@ -1072,13 +1120,25 @@ export default function TaskView() {
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
           }
         } else {
+          // Provide user-friendly error messages instead of raw browser errors
+          let errorMsg = "Something went wrong. Please try again.";
+          if (err.message === "Load failed" || err.message === "Failed to fetch" || err.message === "NetworkError when attempting to fetch resource.") {
+            errorMsg = "Connection lost. The server may have restarted. Please try again.";
+          } else if (err.message?.includes("timeout")) {
+            errorMsg = "The request timed out. Please try again with a shorter message.";
+          } else if (err.message) {
+            errorMsg = `I encountered an error: ${err.message}. Please try again.`;
+          }
           addMessage(task.id, {
             role: "assistant",
-            content: `I encountered an error: ${err.message}. Please try again.`,
+            content: errorMsg,
           });
         }
       } finally {
         abortControllerRef.current = null;
+        streamingTaskIdRef.current = null;
+        accumulatedRef.current = "";
+        actionsRef.current = [];
         setStreaming(false);
         setStreamContent("");
         setAgentActions([]);
@@ -1142,6 +1202,9 @@ export default function TaskView() {
     setStreamContent("");
     setAgentActions([]);
     setStreamImages([]);
+    streamingTaskIdRef.current = task.id;
+    accumulatedRef.current = "";
+    actionsRef.current = [];
 
     let accumulated = "";
     const actions: AgentAction[] = [];
@@ -1216,6 +1279,7 @@ export default function TaskView() {
             const data = JSON.parse(line.slice(6));
             if (data.delta) {
               accumulated += data.delta;
+              accumulatedRef.current = accumulated;
               setStreamContent(accumulated);
             }
             if (data.tool_start) {
@@ -1223,6 +1287,7 @@ export default function TaskView() {
               const actionType = display.type || "thinking";
               const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
               actions.push(newAction);
+              actionsRef.current = [...actions];
               setAgentActions([...actions]);
             }
             if (data.tool_result) {
@@ -1230,6 +1295,7 @@ export default function TaskView() {
               if (idx >= 0) {
                 const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
                 actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                actionsRef.current = [...actions];
                 setAgentActions([...actions]);
               }
             }
@@ -1237,6 +1303,7 @@ export default function TaskView() {
               images.push(data.image);
               setStreamImages([...images]);
               accumulated += `\n\n![Generated Image](${data.image})\n\n`;
+              accumulatedRef.current = accumulated;
               setStreamContent(accumulated);
             }
             if (data.document) {
@@ -1244,14 +1311,17 @@ export default function TaskView() {
               const docTitle = data.document.title || "Document";
               const docUrl = data.document.url;
               accumulated += `\n\n📄 **${docTitle}** — [Download Document](${docUrl})\n\n`;
+              accumulatedRef.current = accumulated;
               setStreamContent(accumulated);
             }
             if (data.done) {
               accumulated = data.content || accumulated;
+              accumulatedRef.current = accumulated;
               if (images.length > 0 && !accumulated.includes(images[0])) {
                 for (const img of images) {
                   accumulated += `\n\n![Generated Image](${img})`;
                 }
+                accumulatedRef.current = accumulated;
               }
             }
             if (data.status) {
@@ -1263,6 +1333,7 @@ export default function TaskView() {
             }
             if (data.error) {
               accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
+              accumulatedRef.current = accumulated;
               setStreamContent(accumulated);
             }
           } catch { /* skip malformed lines */ }
@@ -1278,13 +1349,25 @@ export default function TaskView() {
           addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
+        // Provide user-friendly error messages instead of raw browser errors
+        let errorMsg = "Something went wrong. Please try again.";
+        if (err.message === "Load failed" || err.message === "Failed to fetch" || err.message === "NetworkError when attempting to fetch resource.") {
+          errorMsg = "Connection lost. The server may have restarted. Please try again.";
+        } else if (err.message?.includes("timeout")) {
+          errorMsg = "The request timed out. Please try again with a shorter message.";
+        } else if (err.message) {
+          errorMsg = `I encountered an error: ${err.message}. Please try again.`;
+        }
         addMessage(task.id, {
           role: "assistant",
-          content: `I encountered an error: ${err.message}. Please try again.`,
+          content: errorMsg,
         });
       }
     } finally {
       abortControllerRef.current = null;
+      streamingTaskIdRef.current = null;
+      accumulatedRef.current = "";
+      actionsRef.current = [];
       setStreaming(false);
       setStreamContent("");
       setAgentActions([]);
@@ -1314,6 +1397,9 @@ export default function TaskView() {
     setStreamContent("");
     setAgentActions([]);
     setStreamImages([]);
+    streamingTaskIdRef.current = task.id;
+    accumulatedRef.current = "";
+    actionsRef.current = [];
     let accumulated = "";
     const actions: AgentAction[] = [];
     const images: string[] = [];
@@ -1350,11 +1436,12 @@ export default function TaskView() {
           if (!line.startsWith("data: ")) continue;
           try {
             const data = JSON.parse(line.slice(6));
-            if (data.delta) { accumulated += data.delta; setStreamContent(accumulated); }
+            if (data.delta) { accumulated += data.delta; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
             if (data.tool_start) {
               const display = data.tool_start.display || {};
               const actionType = display.type || "thinking";
               actions.push(mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active"));
+              actionsRef.current = [...actions];
               setAgentActions([...actions]);
             }
             if (data.tool_result) {
@@ -1362,18 +1449,19 @@ export default function TaskView() {
               if (idx >= 0) {
                 const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
                 actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                actionsRef.current = [...actions];
                 setAgentActions([...actions]);
               }
             }
-            if (data.image) { images.push(data.image); setStreamImages([...images]); accumulated += `\n\n![Generated Image](${data.image})\n\n`; setStreamContent(accumulated); }
-            if (data.document) { accumulated += `\n\n📄 **${data.document.title || "Document"}** — [Download Document](${data.document.url})\n\n`; setStreamContent(accumulated); }
-            if (data.done) { accumulated = data.content || accumulated; }
+            if (data.image) { images.push(data.image); setStreamImages([...images]); accumulated += `\n\n![Generated Image](${data.image})\n\n`; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
+            if (data.document) { accumulated += `\n\n📄 **${data.document.title || "Document"}** — [Download Document](${data.document.url})\n\n`; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
+            if (data.done) { accumulated = data.content || accumulated; accumulatedRef.current = accumulated; }
             if (data.status) {
               if (data.status === "running") updateTaskStatus(task.id, "running");
               if (data.status === "completed") updateTaskStatus(task.id, "completed");
             }
             if (data.step_progress) setStepProgress(data.step_progress);
-            if (data.error) { accumulated += `\n\n\u26a0\ufe0f ${data.error}`; setStreamContent(accumulated); }
+            if (data.error) { accumulated += `\n\n\u26a0\ufe0f ${data.error}`; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
           } catch { /* skip */ }
         }
       }
@@ -1385,10 +1473,21 @@ export default function TaskView() {
       if (err.name === "AbortError") {
         if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
       } else {
-        addMessage(task.id, { role: "assistant", content: `I encountered an error: ${err.message}. Please try again.` });
+        let errorMsg = "Something went wrong. Please try again.";
+        if (err.message === "Load failed" || err.message === "Failed to fetch" || err.message === "NetworkError when attempting to fetch resource.") {
+          errorMsg = "Connection lost. The server may have restarted. Please try again.";
+        } else if (err.message?.includes("timeout")) {
+          errorMsg = "The request timed out. Please try again with a shorter message.";
+        } else if (err.message) {
+          errorMsg = `I encountered an error: ${err.message}. Please try again.`;
+        }
+        addMessage(task.id, { role: "assistant", content: errorMsg });
       }
     } finally {
       abortControllerRef.current = null;
+      streamingTaskIdRef.current = null;
+      accumulatedRef.current = "";
+      actionsRef.current = [];
       setStreaming(false);
       setStreamContent("");
       setAgentActions([]);

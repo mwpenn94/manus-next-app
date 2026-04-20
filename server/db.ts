@@ -1,4 +1,4 @@
-import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -236,7 +236,10 @@ export async function addTaskMessage(message: InsertTaskMessage) {
 export async function getTaskMessages(taskId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(taskMessages).where(eq(taskMessages.taskId, taskId)).limit(500);
+  return db.select().from(taskMessages)
+    .where(eq(taskMessages.taskId, taskId))
+    .orderBy(asc(taskMessages.createdAt))
+    .limit(500);
 }
 
 // ── Bridge Config Queries ──

@@ -260,6 +260,8 @@ export interface AgentStreamOptions {
   mode?: AgentMode;
   /** Cross-session memory entries to inject into context */
   memoryContext?: string;
+  /** Optional callback when the stream completes with the final assistant content (for server-side message persistence) */
+  onComplete?: (content: string, actions?: Array<{ type: string; label?: string; status: string }>) => void;
 }
 
 function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknown>): boolean {
@@ -607,6 +609,15 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     sendSSE(safeWrite, { done: true, content: finalContent });
     safeEnd();
     console.log("[Agent] Stream complete after", turn, "turns,", completedToolCalls, "tool calls");
+
+    // Persist the final assistant message server-side (fire-and-forget)
+    if (options.onComplete && finalContent.trim()) {
+      try {
+        options.onComplete(finalContent);
+      } catch (e) {
+        console.error("[Agent] onComplete callback error:", e);
+      }
+    }
   } catch (err: any) {
     console.error("[Agent] Error:", err);
     let userMessage = err.message || "Agent execution failed";

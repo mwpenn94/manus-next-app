@@ -296,6 +296,24 @@ async function startServer() {
         safeEnd,
         mode,
         memoryContext,
+        // Persist the final assistant response server-side so it survives client disconnects
+        onComplete: async (content) => {
+          if (!taskServerId || !content.trim()) return;
+          try {
+            const { addTaskMessage } = await import("../db");
+            const { nanoid } = await import("nanoid");
+            await addTaskMessage({
+              taskId: taskServerId,
+              externalId: `srv-${nanoid(12)}`,
+              role: "assistant",
+              content,
+              actions: null,
+            });
+            console.log("[Stream] Assistant message persisted server-side for task", taskServerId);
+          } catch (err) {
+            console.error("[Stream] Failed to persist assistant message:", err);
+          }
+        },
         onArtifact: async (artifact) => {
           console.log("[Stream] Artifact produced:", artifact.type, artifact.label);
           if (taskServerId) {
