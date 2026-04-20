@@ -92,7 +92,7 @@ async function startServer() {
   // General API rate limit
   const apiLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 200, // 200 requests per minute
+    max: 600, // 600 requests per minute (batched tRPC calls fire many at once)
     message: { error: "Rate limit exceeded. Please try again shortly." },
     standardHeaders: true,
     legacyHeaders: false,
@@ -274,14 +274,27 @@ async function startServer() {
   });
 
   // ── TTS voices endpoint — list available voices ──
-  app.get("/api/tts/voices", async (_req, res) => {
+  app.get("/api/tts/voices", async (req, res) => {
     try {
-      const { getAvailableVoices, DEFAULT_VOICES } = await import("../tts");
-      const voices = await getAvailableVoices();
+      const { getVoicesByLanguage, DEFAULT_VOICES } = await import("../tts");
+      const lang = (req.query.lang as string) || "en";
+      const voices = await getVoicesByLanguage(lang);
       res.json({ voices, defaults: DEFAULT_VOICES });
     } catch (err: any) {
       console.error("[TTS Voices] Error:", err);
       res.status(500).json({ error: err.message || "Failed to list voices" });
+    }
+  });
+
+  // ── TTS available languages ──
+  app.get("/api/tts/languages", async (_req, res) => {
+    try {
+      const { getAvailableLanguages } = await import("../tts");
+      const languages = await getAvailableLanguages();
+      res.json({ languages });
+    } catch (err: any) {
+      console.error("[TTS Languages] Error:", err);
+      res.status(500).json({ error: err.message || "Failed to list languages" });
     }
   });
 

@@ -1,10 +1,11 @@
 /**
- * Library — Cross-task artifact & file browser (P15)
+ * Library — Cross-task artifact & file browser (P15/P16)
  * 
  * Aggregates workspace artifacts (screenshots, code, documents, images)
  * and uploaded files across all tasks into a unified, searchable view.
+ * P16: Added inline preview for images, code, and documents.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,10 @@ import {
   File,
   Paperclip,
   ChevronDown,
+  X,
+  Maximize2,
+  Copy,
+  Check,
 } from "lucide-react";
 
 const ARTIFACT_FILTERS = [
@@ -83,6 +88,168 @@ function formatDate(date: Date | string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function isImageType(artifactType: string) {
+  return artifactType === "browser_screenshot" || artifactType === "generated_image";
+}
+
+function isCodeType(artifactType: string) {
+  return artifactType === "code" || artifactType === "terminal";
+}
+
+// ── Preview Modal ──
+function PreviewModal({ item, onClose }: { item: any; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    const text = item.content || item.url || "";
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [item]);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const isImage = item.artifactType ? isImageType(item.artifactType) : item.mimeType?.startsWith("image/");
+  const isCode = item.artifactType ? isCodeType(item.artifactType) : (item.mimeType?.startsWith("text/") || item.mimeType?.includes("json"));
+  const hasContent = !!(item.content);
+  const hasUrl = !!(item.url);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 md:p-8"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="bg-card border border-border rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-medium text-foreground truncate">
+              {item.label || item.fileName || item.artifactType?.replace(/_/g, " ") || "Preview"}
+            </span>
+            {item.taskTitle && (
+              <span className="text-xs text-muted-foreground truncate hidden sm:inline">
+                — {item.taskTitle}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {(hasContent || hasUrl) && (
+              <button
+                onClick={handleCopy}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                title={copied ? "Copied!" : "Copy content"}
+              >
+                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              </button>
+            )}
+            {hasUrl && (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                title="Open in new tab"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+            {hasUrl && (
+              <a
+                href={item.url}
+                download={item.fileName || item.label || "download"}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                title="Download"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto">
+          {isImage && hasUrl ? (
+            <div className="flex items-center justify-center p-4 min-h-[300px]">
+              <img
+                src={item.url}
+                alt={item.label || item.fileName || "Preview"}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            </div>
+          ) : isCode || (hasContent && !isImage) ? (
+            <div className="relative">
+              <pre className="p-4 text-sm text-foreground/90 font-mono leading-relaxed overflow-auto max-h-[70vh] whitespace-pre-wrap break-words bg-muted/20">
+                {item.content || "No content available"}
+              </pre>
+            </div>
+          ) : hasUrl && item.mimeType?.includes("pdf") ? (
+            <iframe
+              src={item.url}
+              className="w-full h-[70vh] border-0"
+              title="PDF Preview"
+            />
+          ) : hasUrl ? (
+            <div className="flex flex-col items-center justify-center p-8 gap-4 min-h-[200px]">
+              <div className="w-16 h-16 rounded-xl bg-muted/50 flex items-center justify-center">
+                <File className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in new tab
+              </a>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center p-8 min-h-[200px]">
+              <p className="text-sm text-muted-foreground">No preview available</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer metadata */}
+        <div className="flex items-center justify-between px-4 py-2 border-t border-border text-[11px] text-muted-foreground shrink-0">
+          <span>{item.artifactType?.replace(/_/g, " ") || item.mimeType || "Unknown type"}</span>
+          <div className="flex items-center gap-3">
+            {item.size && <span>{formatBytes(item.size)}</span>}
+            <span>{formatDate(item.createdAt)}</span>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function Library() {
   const [, navigate] = useLocation();
   const [tab, setTab] = useState<Tab>("artifacts");
@@ -90,6 +257,7 @@ export default function Library() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [previewItem, setPreviewItem] = useState<any>(null);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -259,30 +427,37 @@ export default function Library() {
           viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {artifacts.map((artifact, i) => (
-                <ArtifactCard key={artifact.id} artifact={artifact} index={i} onNavigate={navigate} />
+                <ArtifactCard key={artifact.id} artifact={artifact} index={i} onNavigate={navigate} onPreview={setPreviewItem} />
               ))}
             </div>
           ) : (
             <div className="space-y-1">
               {artifacts.map((artifact, i) => (
-                <ArtifactRow key={artifact.id} artifact={artifact} index={i} onNavigate={navigate} />
+                <ArtifactRow key={artifact.id} artifact={artifact} index={i} onNavigate={navigate} onPreview={setPreviewItem} />
               ))}
             </div>
           )
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {files.map((file, i) => (
-              <FileCard key={file.id} file={file} index={i} />
+              <FileCard key={file.id} file={file} index={i} onPreview={setPreviewItem} />
             ))}
           </div>
         ) : (
           <div className="space-y-1">
             {files.map((file, i) => (
-              <FileRow key={file.id} file={file} index={i} />
+              <FileRow key={file.id} file={file} index={i} onPreview={setPreviewItem} />
             ))}
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      <AnimatePresence>
+        {previewItem && (
+          <PreviewModal item={previewItem} onClose={() => setPreviewItem(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -301,28 +476,57 @@ function EmptyState({ icon: Icon, title, description }: { icon: typeof FolderOpe
   );
 }
 
-function ArtifactCard({ artifact, index, onNavigate }: { artifact: any; index: number; onNavigate: (path: string) => void }) {
+function ArtifactCard({ artifact, index, onNavigate, onPreview }: { artifact: any; index: number; onNavigate: (path: string) => void; onPreview: (item: any) => void }) {
   const Icon = getArtifactIcon(artifact.artifactType);
-  const isImage = artifact.artifactType === "browser_screenshot" || artifact.artifactType === "generated_image";
+  const isImage = isImageType(artifact.artifactType);
+  const isCode = isCodeType(artifact.artifactType);
+  const hasContent = !!(artifact.content);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.02 }}
-      className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all cursor-pointer"
-      onClick={() => artifact.taskExternalId && onNavigate(`/task/${artifact.taskExternalId}`)}
+      className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all cursor-pointer"
+      onClick={() => onPreview(artifact)}
     >
       {/* Preview area */}
       {isImage && artifact.url ? (
         <div className="aspect-video bg-muted/30 overflow-hidden">
           <img src={artifact.url} alt={artifact.label || "Artifact"} className="w-full h-full object-cover" loading="lazy" />
         </div>
+      ) : isCode && hasContent ? (
+        <div className="aspect-video bg-muted/20 overflow-hidden p-3">
+          <pre className="text-[10px] text-muted-foreground font-mono leading-tight overflow-hidden line-clamp-[8]">
+            {artifact.content.slice(0, 500)}
+          </pre>
+        </div>
       ) : (
         <div className="aspect-video bg-muted/20 flex items-center justify-center">
           <Icon className="w-8 h-8 text-muted-foreground/40" />
         </div>
       )}
+
+      {/* Hover actions */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onPreview(artifact); }}
+          className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
+          title="Preview"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+        {artifact.taskExternalId && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onNavigate(`/task/${artifact.taskExternalId}`); }}
+            className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
+            title="Go to task"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
       {/* Info */}
       <div className="p-3">
         <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
@@ -341,8 +545,9 @@ function ArtifactCard({ artifact, index, onNavigate }: { artifact: any; index: n
   );
 }
 
-function ArtifactRow({ artifact, index, onNavigate }: { artifact: any; index: number; onNavigate: (path: string) => void }) {
+function ArtifactRow({ artifact, index, onNavigate, onPreview }: { artifact: any; index: number; onNavigate: (path: string) => void; onPreview: (item: any) => void }) {
   const Icon = getArtifactIcon(artifact.artifactType);
+  const isImage = isImageType(artifact.artifactType);
 
   return (
     <motion.div
@@ -350,11 +555,18 @@ function ArtifactRow({ artifact, index, onNavigate }: { artifact: any; index: nu
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.15, delay: index * 0.01 }}
       className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => artifact.taskExternalId && onNavigate(`/task/${artifact.taskExternalId}`)}
+      onClick={() => onPreview(artifact)}
     >
-      <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-muted-foreground" />
-      </div>
+      {/* Thumbnail */}
+      {isImage && artifact.url ? (
+        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted/30">
+          <img src={artifact.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+        </div>
+      ) : (
+        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground truncate group-hover:text-primary transition-colors">
           {artifact.label || artifact.artifactType.replace(/_/g, " ")}
@@ -365,6 +577,13 @@ function ArtifactRow({ artifact, index, onNavigate }: { artifact: any; index: nu
         {formatDate(artifact.createdAt)}
       </span>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); onPreview(artifact); }}
+          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+          title="Preview"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
         {artifact.url && (
           <a
             href={artifact.url}
@@ -382,7 +601,7 @@ function ArtifactRow({ artifact, index, onNavigate }: { artifact: any; index: nu
   );
 }
 
-function FileCard({ file, index }: { file: any; index: number }) {
+function FileCard({ file, index, onPreview }: { file: any; index: number; onPreview: (item: any) => void }) {
   const Icon = getFileIcon(file.mimeType);
   const isImage = file.mimeType?.startsWith("image/");
 
@@ -391,7 +610,8 @@ function FileCard({ file, index }: { file: any; index: number }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.02 }}
-      className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all"
+      className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all cursor-pointer"
+      onClick={() => onPreview(file)}
     >
       {isImage ? (
         <div className="aspect-video bg-muted/30 overflow-hidden">
@@ -411,6 +631,13 @@ function FileCard({ file, index }: { file: any; index: number }) {
       </div>
       {/* Hover actions */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onPreview(file); }}
+          className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
+          title="Preview"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
         <a
           href={file.url}
           download={file.fileName}
@@ -425,19 +652,28 @@ function FileCard({ file, index }: { file: any; index: number }) {
   );
 }
 
-function FileRow({ file, index }: { file: any; index: number }) {
+function FileRow({ file, index, onPreview }: { file: any; index: number; onPreview: (item: any) => void }) {
   const Icon = getFileIcon(file.mimeType);
+  const isImage = file.mimeType?.startsWith("image/");
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.15, delay: index * 0.01 }}
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+      onClick={() => onPreview(file)}
     >
-      <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-muted-foreground" />
-      </div>
+      {/* Thumbnail */}
+      {isImage ? (
+        <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted/30">
+          <img src={file.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+        </div>
+      ) : (
+        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-muted-foreground" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground truncate">{file.fileName}</p>
         <p className="text-[11px] text-muted-foreground">{file.mimeType || "Unknown type"}</p>
@@ -445,6 +681,13 @@ function FileRow({ file, index }: { file: any; index: number }) {
       <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{formatBytes(file.size)}</span>
       <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{formatDate(file.createdAt)}</span>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); onPreview(file); }}
+          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+          title="Preview"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
         <a
           href={file.url}
           download={file.fileName}

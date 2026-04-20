@@ -1284,6 +1284,7 @@ export default function TaskView() {
   // ── User Preferences for TTS (P15) ──
   const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
   const userTTSVoice = (prefsQuery.data?.generalSettings as any)?.ttsVoice || "en-US-AriaNeural";
+  const userTTSLanguage = (prefsQuery.data?.generalSettings as any)?.ttsLanguage || "en";
   const userTTSRate = (prefsQuery.data?.generalSettings as any)?.ttsRate || 1.0;
   const ttsRateStr = userTTSRate === 1.0 ? undefined : `${userTTSRate > 1 ? "+" : ""}${Math.round((userTTSRate - 1) * 100)}%`;
 
@@ -1291,6 +1292,7 @@ export default function TaskView() {
   const handsFreeInputRef = useRef<string>("");
   const handsFree = useHandsFreeMode({
     voice: userTTSVoice,
+    language: userTTSLanguage,
     autoListen: true,
     soundEffects: true,
     onTranscription: (text) => {

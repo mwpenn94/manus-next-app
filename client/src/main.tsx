@@ -21,22 +21,48 @@ if (import.meta.env.DEV) {
 
 const queryClient = new QueryClient();
 
+/**
+ * Smart auth redirect: only redirect to login if the user was previously
+ * authenticated (session expired) — NOT on first visit when they haven't
+ * logged in yet. This prevents redirect loops on the homepage.
+ */
+let hasEverBeenAuthenticated = Boolean(
+  localStorage.getItem("manus-runtime-user-info") &&
+  localStorage.getItem("manus-runtime-user-info") !== "null"
+);
+
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
+  if (error.message !== UNAUTHED_ERR_MSG) return;
 
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  // Only redirect if user was previously logged in (session expired)
+  // First-time visitors should see the homepage, not a redirect loop
+  if (!hasEverBeenAuthenticated) return;
 
-  if (!isUnauthorized) return;
-
+  // Clear stale auth data and redirect once
+  hasEverBeenAuthenticated = false;
+  localStorage.removeItem("manus-runtime-user-info");
   window.location.href = getLoginUrl();
 };
 
+// Track when user becomes authenticated
 queryClient.getQueryCache().subscribe(event => {
+  if (event.type === "updated" && event.action.type === "success") {
+    const queryKey = event.query.queryKey;
+    const isAuthMeQuery = Array.isArray(queryKey) && queryKey.some(
+      (k: unknown) => Array.isArray(k) && k.includes("auth") && k.includes("me")
+    );
+    if (isAuthMeQuery && event.query.state.data) {
+      hasEverBeenAuthenticated = true;
+    }
+  }
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Query Error]", error);
+    if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
+      console.error("[API Query Error]", error);
+    }
   }
 });
 
@@ -44,7 +70,9 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
+    if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
+      console.error("[API Mutation Error]", error);
+    }
   }
 });
 

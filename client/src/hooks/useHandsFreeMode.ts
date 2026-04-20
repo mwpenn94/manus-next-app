@@ -32,6 +32,7 @@ export type HandsFreeState = "idle" | "listening" | "transcribing" | "processing
 
 export interface HandsFreeConfig {
   voice?: string;
+  language?: string;          // ISO 639-1 language code for Whisper transcription (default: "en")
   autoListen?: boolean;       // Auto-restart mic after TTS finishes
   soundEffects?: boolean;     // Play audible cues
   onTranscription?: (text: string) => void;  // Called when speech is transcribed
@@ -161,7 +162,7 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              json: { audioUrl: url, language: "en" },
+              json: { audioUrl: url, language: configRef.current.language || "en" },
             }),
           });
 

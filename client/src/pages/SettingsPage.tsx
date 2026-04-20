@@ -84,6 +84,7 @@ interface GeneralSettings {
   selfDiscovery: boolean;
   handsFreeAudio: boolean;
   ttsVoice: string;
+  ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
 }
 
@@ -95,23 +96,23 @@ const DEFAULT_GENERAL: GeneralSettings = {
   selfDiscovery: false,
   handsFreeAudio: false,
   ttsVoice: "en-US-AriaNeural",
+  ttsLanguage: "en",
   ttsRate: 1.0,
 };
 
-const TTS_VOICES = [
-  { id: "en-US-AriaNeural", name: "Aria", gender: "Female", description: "Warm, conversational" },
-  { id: "en-US-AvaNeural", name: "Ava", gender: "Female", description: "Clear, professional" },
-  { id: "en-US-EmmaNeural", name: "Emma", gender: "Female", description: "Friendly, natural" },
-  { id: "en-US-JennyNeural", name: "Jenny", gender: "Female", description: "Bright, engaging" },
-  { id: "en-US-MichelleNeural", name: "Michelle", gender: "Female", description: "Smooth, elegant" },
-  { id: "en-US-AndrewNeural", name: "Andrew", gender: "Male", description: "Calm, professional" },
-  { id: "en-US-BrianNeural", name: "Brian", gender: "Male", description: "Warm, conversational" },
-  { id: "en-US-GuyNeural", name: "Guy", gender: "Male", description: "Deep, authoritative" },
-  { id: "en-US-ChristopherNeural", name: "Christopher", gender: "Male", description: "Clear, articulate" },
-  { id: "en-US-RogerNeural", name: "Roger", gender: "Male", description: "Mature, distinguished" },
-  { id: "en-GB-SoniaNeural", name: "Sonia (UK)", gender: "Female", description: "British female" },
-  { id: "en-GB-RyanNeural", name: "Ryan (UK)", gender: "Male", description: "British male" },
-];
+// TTS voices are now loaded dynamically from the server based on selected language
+interface TTSVoiceOption {
+  id: string;
+  name: string;
+  gender: string;
+  description: string;
+  language?: string;
+}
+interface TTSLanguageOption {
+  code: string;
+  name: string;
+  voiceCount: number;
+}
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
@@ -208,6 +209,34 @@ export default function SettingsPage() {
   const [globalSystemPrompt, setGlobalSystemPrompt] = useState("");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [bridgeConfigLoaded, setBridgeConfigLoaded] = useState(false);
+
+  // ── Dynamic TTS language & voice catalog ──
+  const [ttsLanguages, setTtsLanguages] = useState<TTSLanguageOption[]>([]);
+  const [ttsVoices, setTtsVoices] = useState<TTSVoiceOption[]>([]);
+  const [ttsVoicesLoading, setTtsVoicesLoading] = useState(false);
+
+  // Fetch available languages on mount
+  useEffect(() => {
+    fetch("/api/tts/languages")
+      .then(r => r.json())
+      .then(data => {
+        if (data.languages) setTtsLanguages(data.languages);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Fetch voices when language changes
+  useEffect(() => {
+    const lang = generalSettings.ttsLanguage || "en";
+    setTtsVoicesLoading(true);
+    fetch(`/api/tts/voices?lang=${encodeURIComponent(lang)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.voices) setTtsVoices(data.voices);
+      })
+      .catch(() => {})
+      .finally(() => setTtsVoicesLoading(false));
+  }, [generalSettings.ttsLanguage]);
 
   // Hydrate local state from server on first load
   useEffect(() => {
@@ -438,7 +467,40 @@ export default function SettingsPage() {
                 ))}
               </div>
 
-              {/* ── TTS Voice Selection ── */}
+              {/* ── TTS Language & Voice Selection ── */}
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  TTS Language
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Select a language to see available voices. Supports 75+ languages with 400+ neural voices.
+                </p>
+                <select
+                  value={generalSettings.ttsLanguage || "en"}
+                  onChange={(e) => {
+                    const lang = e.target.value;
+                    setGeneralSettings((prev) => {
+                      const updated = { ...prev, ttsLanguage: lang };
+                      if (isAuthenticated) {
+                        savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                      }
+                      return updated;
+                    });
+                  }}
+                  className="w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/30 appearance-none cursor-pointer"
+                >
+                  {ttsLanguages.length === 0 && (
+                    <option value="en">English (loading more...)</option>
+                  )}
+                  {ttsLanguages.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name} ({lang.voiceCount} voices)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="mt-4">
                 <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
                   <Headphones className="w-4 h-4 text-muted-foreground" />
@@ -447,36 +509,42 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-3">
                   Choose the voice for text-to-speech in hands-free mode and message read-aloud.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {TTS_VOICES.map((voice) => (
-                    <button
-                      key={voice.id}
-                      onClick={() => {
-                        setGeneralSettings((prev) => {
-                          const updated = { ...prev, ttsVoice: voice.id };
-                          if (isAuthenticated) {
-                            savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
-                          }
-                          return updated;
-                        });
-                        toast.success(`Voice changed to ${voice.name}`);
-                      }}
-                      className={`text-left p-3 rounded-xl border transition-all ${
-                        generalSettings.ttsVoice === voice.id
-                          ? "border-primary/50 bg-primary/5"
-                          : "border-border bg-card hover:border-primary/20"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">{voice.name}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {voice.gender}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{voice.description}</p>
-                    </button>
-                  ))}
-                </div>
+                {ttsVoicesLoading ? (
+                  <div className="text-center py-4 text-sm text-muted-foreground">Loading voices...</div>
+                ) : ttsVoices.length === 0 ? (
+                  <div className="text-center py-4 text-sm text-muted-foreground">No voices available for this language.</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                    {ttsVoices.map((voice: TTSVoiceOption) => (
+                      <button
+                        key={voice.id}
+                        onClick={() => {
+                          setGeneralSettings((prev) => {
+                            const updated = { ...prev, ttsVoice: voice.id };
+                            if (isAuthenticated) {
+                              savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                            }
+                            return updated;
+                          });
+                          toast.success(`Voice changed to ${voice.name}`);
+                        }}
+                        className={`text-left p-3 rounded-xl border transition-all ${
+                          generalSettings.ttsVoice === voice.id
+                            ? "border-primary/50 bg-primary/5"
+                            : "border-border bg-card hover:border-primary/20"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">{voice.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            {voice.gender}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{voice.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ── Voice Speed Control ── */}

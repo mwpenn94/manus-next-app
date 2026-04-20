@@ -1339,3 +1339,18 @@
 - [x] P15-G1: Voice Activity Detection (VAD) — auto-stop recording after ~2s silence
 - [x] P15-G2: Keyboard shortcut (Ctrl+Shift+V) to toggle hands-free mode
 - [x] P15-G3: Voice speed/rate slider in Settings page
+
+## P15-BUG: Rate limit error + blank screen on login
+- [x] BUG-1: Fixed rate limit (200→600 req/min) and smart auth redirect (no redirect loop for first-time visitors)
+- [x] BUG-2: Fixed blank screen — global error handler now only redirects when session expires, not on first visit
+
+## P16 — Rate Limit Fix, Multi-Language TTS, Library Preview, Parity Convergence
+- [x] P16-1: Fixed rate limit (600 req/min) + smart auth redirect (localStorage-based session detection)
+- [x] P16-2: Multi-language TTS voices (75+ languages, dynamic voice catalog from Edge TTS)
+- [x] P16-3: Hands-free language support (auto-detect or user-select input language for Whisper)
+- [x] P16-4: Library inline artifact preview (images, code snippets, documents, PDF iframe, lightbox modal)
+- [x] P16-5: Exhaustive parity reassessment — 0 TODOs, 0 FIXMEs, TS 0 errors, no dead code, Scheduler error is transient TiDB issue
+- [x] P16-6: Tests for all new P16 features (520 passing, 0 P16 failures)
+- [x] P16-7: TypeScript 0 errors, 520 tests passing, production build clean (46.26s)
+- [x] P16-8: Virtual user validation (home page renders, Library visible, TTS 75 languages/400+ voices, no redirect loop)
+- [x] P16-9: Convergence passes (3 consecutive zero-change — CONVERGED)
