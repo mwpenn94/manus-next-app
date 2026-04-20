@@ -39,6 +39,7 @@ const AppPublishPage = lazy(() => import("./pages/AppPublishPage"));
 const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
 const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
+const Library = lazy(() => import("./pages/Library"));
 
 function PageLoader() {
   return (
@@ -172,6 +173,11 @@ function Router() {
       <Route path="/video">
         <Suspense fallback={<PageLoader />}>
           <VideoGeneratorPage />
+        </Suspense>
+      </Route>
+      <Route path="/library">
+        <Suspense fallback={<PageLoader />}>
+          <Library />
         </Suspense>
       </Route>
       <Route path="/github">

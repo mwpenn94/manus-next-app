@@ -97,8 +97,17 @@ async function startServer() {
     standardHeaders: true,
     legacyHeaders: false,
   });
+  // TTS rate limit (generous but bounded)
+  const ttsLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60, // 60 TTS requests per minute per IP
+    message: { error: "TTS rate limit exceeded. Please slow down." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
   app.use("/api/stream", streamLimiter);
   app.use("/api/upload", uploadLimiter);
+  app.use("/api/tts", ttsLimiter);
   app.use("/api/trpc", apiLimiter);
 
   // ── Stripe webhook (raw body required BEFORE json parser) ──
@@ -188,6 +197,91 @@ async function startServer() {
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message || "Upload failed" });
+    }
+  });
+
+  // ── TTS endpoint — Edge TTS neural voice synthesis ──
+  app.post("/api/tts", async (req, res) => {
+    try {
+      const { text, voice, rate, pitch, volume } = req.body || {};
+      if (!text || typeof text !== "string" || text.trim().length === 0) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      // Limit text length to prevent abuse (max ~5000 chars ≈ 3 minutes of speech)
+      if (text.length > 5000) {
+        return res.status(400).json({ error: "Text too long. Maximum 5000 characters." });
+      }
+
+      const { synthesizeSpeech } = await import("../tts");
+      const audioBuffer = await synthesizeSpeech({
+        text: text.trim(),
+        voice: voice || undefined,
+        rate: rate || undefined,
+        pitch: pitch || undefined,
+        volume: volume || undefined,
+      });
+
+      res.set({
+        "Content-Type": "audio/mpeg",
+        "Content-Length": audioBuffer.length.toString(),
+        "Cache-Control": "public, max-age=3600",
+      });
+      res.send(audioBuffer);
+    } catch (err: any) {
+      console.error("[TTS] Error:", err);
+      res.status(500).json({ error: err.message || "TTS synthesis failed" });
+    }
+  });
+
+  // ── TTS streaming endpoint — sentence-by-sentence for low latency ──
+  app.post("/api/tts/stream", async (req, res) => {
+    try {
+      const { text, voice, rate, pitch, volume } = req.body || {};
+      if (!text || typeof text !== "string" || text.trim().length === 0) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      if (text.length > 5000) {
+        return res.status(400).json({ error: "Text too long. Maximum 5000 characters." });
+      }
+
+      const { synthesizeSpeechStream } = await import("../tts");
+
+      res.set({
+        "Content-Type": "audio/mpeg",
+        "Transfer-Encoding": "chunked",
+        "Cache-Control": "no-cache",
+      });
+
+      for await (const chunk of synthesizeSpeechStream({
+        text: text.trim(),
+        voice: voice || undefined,
+        rate: rate || undefined,
+        pitch: pitch || undefined,
+        volume: volume || undefined,
+      })) {
+        if (res.destroyed) break;
+        res.write(chunk);
+      }
+      res.end();
+    } catch (err: any) {
+      console.error("[TTS Stream] Error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: err.message || "TTS streaming failed" });
+      } else {
+        res.end();
+      }
+    }
+  });
+
+  // ── TTS voices endpoint — list available voices ──
+  app.get("/api/tts/voices", async (_req, res) => {
+    try {
+      const { getAvailableVoices, DEFAULT_VOICES } = await import("../tts");
+      const voices = await getAvailableVoices();
+      res.json({ voices, defaults: DEFAULT_VOICES });
+    } catch (err: any) {
+      console.error("[TTS Voices] Error:", err);
+      res.status(500).json({ error: err.message || "Failed to list voices" });
     }
   });
 

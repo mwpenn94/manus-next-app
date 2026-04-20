@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, ne, sql, lte, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -347,6 +347,75 @@ export async function getLatestArtifactByType(taskId: number, type: string) {
     and(eq(workspaceArtifacts.taskId, taskId), eq(workspaceArtifacts.artifactType, type as any))
   ).orderBy(desc(workspaceArtifacts.createdAt)).limit(1);
   return result[0] ?? null;
+}
+
+// ── Library Queries (cross-task aggregation for Library page) ──
+
+export async function getUserLibraryArtifacts(userId: number, opts?: { type?: string; search?: string; limit?: number; offset?: number }) {
+  const db = await getDb();
+  if (!db) return { items: [], total: 0 };
+  const limit = opts?.limit ?? 50;
+  const offset = opts?.offset ?? 0;
+
+  // Get all task IDs for this user
+  const userTasks = await db.select({ id: tasks.id, title: tasks.title, externalId: tasks.externalId })
+    .from(tasks)
+    .where(eq(tasks.userId, userId))
+    .limit(1000);
+  if (userTasks.length === 0) return { items: [], total: 0 };
+  const taskIds = userTasks.map(t => t.id);
+  const taskMap = new Map(userTasks.map(t => [t.id, { title: t.title, externalId: t.externalId }]));
+
+  const conditions: any[] = [inArray(workspaceArtifacts.taskId, taskIds)];
+  if (opts?.type) {
+    conditions.push(eq(workspaceArtifacts.artifactType, opts.type as any));
+  }
+  if (opts?.search) {
+    conditions.push(like(workspaceArtifacts.label, `%${opts.search}%`));
+  }
+
+  const [items, countResult] = await Promise.all([
+    db.select().from(workspaceArtifacts)
+      .where(and(...conditions))
+      .orderBy(desc(workspaceArtifacts.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ count: sql<number>`count(*)` }).from(workspaceArtifacts)
+      .where(and(...conditions)),
+  ]);
+
+  return {
+    items: items.map(item => ({
+      ...item,
+      taskTitle: taskMap.get(item.taskId)?.title ?? "Unknown Task",
+      taskExternalId: taskMap.get(item.taskId)?.externalId ?? "",
+    })),
+    total: Number(countResult[0]?.count ?? 0),
+  };
+}
+
+export async function getUserLibraryFiles(userId: number, opts?: { search?: string; limit?: number; offset?: number }) {
+  const db = await getDb();
+  if (!db) return { items: [], total: 0 };
+  const limit = opts?.limit ?? 50;
+  const offset = opts?.offset ?? 0;
+
+  const conditions: any[] = [eq(taskFiles.userId, userId)];
+  if (opts?.search) {
+    conditions.push(like(taskFiles.fileName, `%${opts.search}%`));
+  }
+
+  const [items, countResult] = await Promise.all([
+    db.select().from(taskFiles)
+      .where(and(...conditions))
+      .orderBy(desc(taskFiles.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ count: sql<number>`count(*)` }).from(taskFiles)
+      .where(and(...conditions)),
+  ]);
+
+  return { items, total: Number(countResult[0]?.count ?? 0) };
 }
 
 // ── Memory Entry Queries ──

@@ -2387,5 +2387,31 @@ export const appRouter = router({
       return getCacheMetrics();
     }),
   }),
+
+  /** Library — cross-task artifact and file browsing (P15) */
+  library: router({
+    artifacts: protectedProcedure
+      .input(z.object({
+        type: z.string().optional(),
+        search: z.string().optional(),
+        limit: z.number().min(1).max(100).optional(),
+        offset: z.number().min(0).optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const { getUserLibraryArtifacts } = await import("./db");
+        return getUserLibraryArtifacts(ctx.user.id, input);
+      }),
+
+    files: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        limit: z.number().min(1).max(100).optional(),
+        offset: z.number().min(0).optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const { getUserLibraryFiles } = await import("./db");
+        return getUserLibraryFiles(ctx.user.id, input);
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

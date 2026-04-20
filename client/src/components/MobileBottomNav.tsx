@@ -9,7 +9,7 @@ import {
   Home, ListTodo, CreditCard, Settings, MoreHorizontal, X,
   Brain, FolderOpen, Clock, Film, Puzzle, Presentation,
   Paintbrush, FileText, Plug, Wrench, Users, Monitor,
-  MessageSquare, Video,
+  MessageSquare, Video, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -30,6 +30,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 const MORE_ITEMS: NavItem[] = [
   { path: "/memory", label: "Memory", icon: Brain },
   { path: "/projects", label: "Projects", icon: FolderOpen },
+  { path: "/library", label: "Library", icon: BookOpen },
   { path: "/schedule", label: "Schedules", icon: Clock },
   { path: "/replay", label: "Replay", icon: Film },
   { path: "/skills", label: "Skills", icon: Puzzle },

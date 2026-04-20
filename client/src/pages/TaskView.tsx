@@ -87,6 +87,10 @@ import TaskCompletedCard from "@/components/TaskCompletedCard";
 import PublishSheet from "@/components/PublishSheet";
 import SiteLiveSheet from "@/components/SiteLiveSheet";
 import { MediaCapturePanel } from "@/components/MediaCapturePanel";
+import HandsFreeOverlay from "@/components/HandsFreeOverlay";
+import { useHandsFreeMode } from "@/hooks/useHandsFreeMode";
+import { useEdgeTTS, splitSentences } from "@/hooks/useEdgeTTS";
+import { Headphones } from "lucide-react";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -321,9 +325,9 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
-  const tts = useTTS();
+  const tts = useEdgeTTS();
   const isUser = message.role === "user";
   const hasActions = message.actions && message.actions.length > 0;
   const doneCount = message.actions?.filter(a => a.status === "done").length ?? 0;
@@ -486,41 +490,31 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
         {/* Action buttons for assistant messages */}
         {!isUser && (
           <div className="mt-2 flex items-center gap-1">
-            {/* TTS button — Capability #59 */}
-            {tts.isSupported && (
-              <button
-                onClick={() => {
-                  if (tts.isSpeaking && !tts.isPaused) {
-                    tts.pause();
-                  } else if (tts.isPaused) {
-                    tts.resume();
-                  } else {
-                    tts.speak(message.content);
-                  }
-                }}
-                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
-                title={tts.isSpeaking ? (tts.isPaused ? "Resume" : "Pause") : "Read aloud"}
-                aria-label={tts.isSpeaking ? (tts.isPaused ? "Resume speech" : "Pause speech") : "Read message aloud"}
-              >
-                {tts.isSpeaking ? (
-                  tts.isPaused ? <Volume2 className="w-3 h-3" /> : <Pause className="w-3 h-3" />
-                ) : (
-                  <Volume2 className="w-3 h-3" />
-                )}
-                {tts.isSpeaking ? (tts.isPaused ? "Resume" : "Pause") : "Listen"}
-              </button>
-            )}
-            {tts.isSpeaking && (
-              <button
-                onClick={() => tts.stop()}
-                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent/50"
-                title="Stop reading"
-                aria-label="Stop speech"
-              >
+            {/* TTS button — Edge TTS Neural Voice (P15) */}
+            <button
+              onClick={() => {
+                if (tts.isSpeaking) {
+                  tts.stop();
+                } else {
+                  tts.speak(message.content, { voice: userTTSVoice, rate: ttsRateStr });
+                }
+              }}
+              className={cn(
+                "flex items-center gap-1.5 text-[11px] transition-colors px-2 py-1 rounded-md hover:bg-accent/50",
+                tts.isSpeaking ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              )}
+              title={tts.isSpeaking ? "Stop reading" : "Read aloud (Edge TTS)"}
+              aria-label={tts.isSpeaking ? "Stop speech" : "Read message aloud"}
+            >
+              {tts.isLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : tts.isSpeaking ? (
                 <VolumeX className="w-3 h-3" />
-                Stop
-              </button>
-            )}
+              ) : (
+                <Volume2 className="w-3 h-3" />
+              )}
+              {tts.isLoading ? "Loading..." : tts.isSpeaking ? "Stop" : "Listen"}
+            </button>
             {/* Regenerate button for last assistant message */}
             {isLast && canRegenerate && onRegenerate && (
               <button
@@ -1287,6 +1281,49 @@ export default function TaskView() {
   }, []);
   const { recording, transcribing, voiceError, startRecording, stopRecording, cancelRecording, clearVoiceError } = useVoiceRecorder(handleTranscription);
 
+  // ── User Preferences for TTS (P15) ──
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
+  const userTTSVoice = (prefsQuery.data?.generalSettings as any)?.ttsVoice || "en-US-AriaNeural";
+  const userTTSRate = (prefsQuery.data?.generalSettings as any)?.ttsRate || 1.0;
+  const ttsRateStr = userTTSRate === 1.0 ? undefined : `${userTTSRate > 1 ? "+" : ""}${Math.round((userTTSRate - 1) * 100)}%`;
+
+  // ── Hands-Free Voice Mode (P15) ──
+  const handsFreeInputRef = useRef<string>("");
+  const handsFree = useHandsFreeMode({
+    voice: userTTSVoice,
+    autoListen: true,
+    soundEffects: true,
+    onTranscription: (text) => {
+      handsFreeInputRef.current = text;
+    },
+    onSendMessage: (text) => {
+      // Auto-send the transcribed message
+      if (!task) return;
+      addMessage(task.id, { role: "user", content: text });
+      // Trigger streaming
+      handleHandsFreeSend(text);
+    },
+  });
+
+  // Keyboard shortcut: Ctrl+Shift+V to toggle hands-free mode (Grok parity)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "V") {
+        e.preventDefault();
+        if (handsFree.isActive) {
+          handsFree.deactivate();
+        } else {
+          handsFree.activate();
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handsFree.isActive, handsFree.activate, handsFree.deactivate]);
+
+  // Edge TTS for per-message read-aloud (replaces browser SpeechSynthesis)
+  const edgeTTS = useEdgeTTS();
+
   // Load per-task system prompt when task changes — only initialize once per task
   const promptInitRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1794,6 +1831,128 @@ export default function TaskView() {
     }
   }, [input, task, addMessage, bridgeStatus, bridgeSend, files, clearFiles]);
 
+  // ── Hands-Free Send (P15) — streams and auto-speaks response ──
+  const handleHandsFreeSend = useCallback(async (spokenText: string) => {
+    if (!task) return;
+    handsFree.notifyProcessing();
+    setStreaming(true);
+    setStreamContent("");
+    setAgentActions([]);
+    setStreamImages([]);
+    streamingTaskIdRef.current = task.id;
+    accumulatedRef.current = "";
+    actionsRef.current = [];
+
+    let accumulated = "";
+    const actions: AgentAction[] = [];
+    const images: string[] = [];
+
+    try {
+      const conversationMessages = task.messages.slice(-10).map(m => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: m.content,
+      }));
+      const messages = [
+        ...conversationMessages,
+        { role: "user" as const, content: spokenText },
+      ];
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const response = await fetch("/api/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messages, taskExternalId: task.id, mode: agentMode }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) throw new Error("Stream failed");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        const lines = text.split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.delta) {
+              accumulated += data.delta;
+              accumulatedRef.current = accumulated;
+              setStreamContent(accumulated);
+            }
+            if (data.tool_start) {
+              const display = data.tool_start.display || {};
+              const actionType = display.type || "thinking";
+              const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
+              actions.push(newAction);
+              actionsRef.current = [...actions];
+              setAgentActions([...actions]);
+            }
+            if (data.tool_result) {
+              const idx = actions.findIndex(a => a.status === "active");
+              if (idx >= 0) {
+                const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
+                actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
+                actionsRef.current = [...actions];
+                setAgentActions([...actions]);
+              }
+            }
+            if (data.image) {
+              images.push(data.image);
+              setStreamImages([...images]);
+              accumulated += `\n\n![Generated Image](${data.image})\n\n`;
+              accumulatedRef.current = accumulated;
+              setStreamContent(accumulated);
+            }
+            if (data.done) {
+              accumulated = data.content || accumulated;
+              accumulatedRef.current = accumulated;
+            }
+            if (data.error) {
+              accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
+              accumulatedRef.current = accumulated;
+              setStreamContent(accumulated);
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
+
+      setStepProgress(null);
+      const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+
+      // ── Auto-speak the response via Edge TTS ──
+      handsFree.notifyComplete(accumulated);
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        if (accumulated.trim()) {
+          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped]*", actions: actions.length > 0 ? actions : undefined });
+        }
+      } else {
+        const errorMsg = "Something went wrong. Please try again.";
+        addMessage(task.id, { role: "assistant", content: errorMsg });
+        handsFree.notifyError(errorMsg);
+      }
+    } finally {
+      abortControllerRef.current = null;
+      streamingTaskIdRef.current = null;
+      accumulatedRef.current = "";
+      actionsRef.current = [];
+      setStreaming(false);
+      setStreamContent("");
+      setAgentActions([]);
+      setStreamImages([]);
+      setStepProgress(null);
+    }
+  }, [task, addMessage, agentMode, handsFree]);
+
   const handleStopGeneration = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -2254,6 +2413,8 @@ export default function TaskView() {
               isLast={i === task.messages.length - 1}
               canRegenerate={!streaming && msg.role === "assistant" && i === task.messages.length - 1}
               onRegenerate={handleRegenerate}
+              userTTSVoice={userTTSVoice}
+              ttsRateStr={ttsRateStr}
             />
           ))}
           {isTyping && <TypingIndicator />}
@@ -2496,6 +2657,20 @@ export default function TaskView() {
                 >
                   <Mic className="w-4 h-4" />
                 </button>
+                {/* Hands-free mode button (P15) */}
+                <button
+                  onClick={() => handsFree.isActive ? handsFree.deactivate() : handsFree.activate()}
+                  className={cn(
+                    "p-2 md:p-1.5 rounded-md transition-colors active:scale-95",
+                    handsFree.isActive
+                      ? "text-primary bg-primary/10 hover:bg-primary/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                  title={handsFree.isActive ? "Exit hands-free mode" : "Hands-free voice mode"}
+                  aria-label={handsFree.isActive ? "Exit hands-free mode" : "Hands-free voice mode"}
+                >
+                  <Headphones className="w-4 h-4" />
+                </button>
               </div>
               <div className="flex items-center gap-1">
                 {streaming ? (
@@ -2565,6 +2740,14 @@ export default function TaskView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hands-Free Overlay (P15) */}
+      <HandsFreeOverlay
+        state={handsFree.state}
+        isActive={handsFree.isActive}
+        onInterrupt={handsFree.interrupt}
+        onDeactivate={handsFree.deactivate}
+      />
 
       {/* Share Dialog */}
       <ShareDialog

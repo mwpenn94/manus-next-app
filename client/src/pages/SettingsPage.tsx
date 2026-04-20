@@ -83,6 +83,8 @@ interface GeneralSettings {
   compactMode: boolean;
   selfDiscovery: boolean;
   handsFreeAudio: boolean;
+  ttsVoice: string;
+  ttsRate: number; // 0.5 to 2.0, default 1.0
 }
 
 const DEFAULT_GENERAL: GeneralSettings = {
@@ -92,7 +94,24 @@ const DEFAULT_GENERAL: GeneralSettings = {
   compactMode: false,
   selfDiscovery: false,
   handsFreeAudio: false,
+  ttsVoice: "en-US-AriaNeural",
+  ttsRate: 1.0,
 };
+
+const TTS_VOICES = [
+  { id: "en-US-AriaNeural", name: "Aria", gender: "Female", description: "Warm, conversational" },
+  { id: "en-US-AvaNeural", name: "Ava", gender: "Female", description: "Clear, professional" },
+  { id: "en-US-EmmaNeural", name: "Emma", gender: "Female", description: "Friendly, natural" },
+  { id: "en-US-JennyNeural", name: "Jenny", gender: "Female", description: "Bright, engaging" },
+  { id: "en-US-MichelleNeural", name: "Michelle", gender: "Female", description: "Smooth, elegant" },
+  { id: "en-US-AndrewNeural", name: "Andrew", gender: "Male", description: "Calm, professional" },
+  { id: "en-US-BrianNeural", name: "Brian", gender: "Male", description: "Warm, conversational" },
+  { id: "en-US-GuyNeural", name: "Guy", gender: "Male", description: "Deep, authoritative" },
+  { id: "en-US-ChristopherNeural", name: "Christopher", gender: "Male", description: "Clear, articulate" },
+  { id: "en-US-RogerNeural", name: "Roger", gender: "Male", description: "Mature, distinguished" },
+  { id: "en-GB-SoniaNeural", name: "Sonia (UK)", gender: "Female", description: "British female" },
+  { id: "en-GB-RyanNeural", name: "Ryan (UK)", gender: "Male", description: "British male" },
+];
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
@@ -417,6 +436,90 @@ export default function SettingsPage() {
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* ── TTS Voice Selection ── */}
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Headphones className="w-4 h-4 text-muted-foreground" />
+                  TTS Voice
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Choose the voice for text-to-speech in hands-free mode and message read-aloud.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {TTS_VOICES.map((voice) => (
+                    <button
+                      key={voice.id}
+                      onClick={() => {
+                        setGeneralSettings((prev) => {
+                          const updated = { ...prev, ttsVoice: voice.id };
+                          if (isAuthenticated) {
+                            savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                          }
+                          return updated;
+                        });
+                        toast.success(`Voice changed to ${voice.name}`);
+                      }}
+                      className={`text-left p-3 rounded-xl border transition-all ${
+                        generalSettings.ttsVoice === voice.id
+                          ? "border-primary/50 bg-primary/5"
+                          : "border-border bg-card hover:border-primary/20"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{voice.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          {voice.gender}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{voice.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Voice Speed Control ── */}
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Headphones className="w-4 h-4 text-muted-foreground" />
+                  Voice Speed
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Adjust the speaking rate for text-to-speech. Default is 1.0x.
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-8">0.5x</span>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.1"
+                    value={generalSettings.ttsRate}
+                    onChange={(e) => {
+                      const rate = parseFloat(e.target.value);
+                      setGeneralSettings((prev) => {
+                        const updated = { ...prev, ttsRate: rate };
+                        return updated;
+                      });
+                    }}
+                    onMouseUp={() => {
+                      if (isAuthenticated) {
+                        savePrefsMutation.mutate({ generalSettings, capabilities: capabilityToggles });
+                      }
+                    }}
+                    onTouchEnd={() => {
+                      if (isAuthenticated) {
+                        savePrefsMutation.mutate({ generalSettings, capabilities: capabilityToggles });
+                      }
+                    }}
+                    className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
+                  />
+                  <span className="text-xs text-muted-foreground w-8">2.0x</span>
+                  <span className="text-sm font-medium text-foreground w-10 text-center tabular-nums">
+                    {generalSettings.ttsRate.toFixed(1)}x
+                  </span>
+                </div>
               </div>
 
               {/* ── Global System Prompt ── */}

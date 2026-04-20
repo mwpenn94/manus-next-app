@@ -60,6 +60,7 @@ import {
   Sparkles,
   Coins,
   GitBranch,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -547,6 +548,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <FolderOpen className="w-4 h-4" />
           Projects
+        </Link>
+        <Link
+          href="/library"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/library"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <BookOpen className="w-4 h-4" />
+          Library
         </Link>
         <Link
           href="/schedule"
