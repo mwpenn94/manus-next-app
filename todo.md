@@ -1354,3 +1354,23 @@
 - [x] P16-7: TypeScript 0 errors, 520 tests passing, production build clean (46.26s)
 - [x] P16-8: Virtual user validation (home page renders, Library visible, TTS 75 languages/400+ voices, no redirect loop)
 - [x] P16-9: Convergence passes (3 consecutive zero-change — CONVERGED)
+
+## P17 — Enable Packages + Voice Cloning Research
+- [x] P17-1: Investigated — status flags in SettingsPage.tsx CAPABILITIES array, all 4 flipped to live/defaultEnabled:true
+- [x] P17-2: Webapp Builder already fully built (569 lines), status flipped to live/enabled
+- [x] P17-3: Client Inference page built — WebGPU detection, 4 models, TTS demo, voice cloning, model cache
+- [x] P17-4: Desktop Agent already fully built (341 lines), status flipped to live/enabled
+- [x] P17-5: Researched — Kokoro TTS (kokoro-js) for browser TTS, Chatterbox TTS for zero-shot voice cloning
+- [x] P17-6: Voice cloning UI built in Client Inference page — record/upload sample, clone & generate
+- [x] P17-7: Tests for all new packages (33 tests in p17.test.ts)
+- [x] P17-8: TypeScript 0 errors, 564 tests passing, production build clean
+- [x] P17-9: Virtual user validation and 3 consecutive zero-change convergence passes
+
+## P17b — Real Kokoro TTS Client-Side Integration
+- [x] P17b-1: kokoro-js installed, API researched (KokoroTTS.from_pretrained, generate, list_voices)
+- [x] P17b-2: useKokoroTTS hook created — loadModel, speak, generateBlob, stop, unloadModel, WAV encoding
+- [x] P17b-3: ClientInferencePage rewritten — real kokoro.loadModel()/speak(), voice selector, Running Locally badge, server fallback
+- [x] P17b-4: Progress callback wired to UI, model cached by browser (ONNX cache), WebGPU/WASM auto-detect
+- [x] P17b-5: Kokoro available as local TTS option; hands-free still uses Edge TTS for reliability (Kokoro available via Client Inference page)
+- [x] P17b-6: 33 P17 tests (16 Kokoro-specific), 0 TS errors, build clean
+- [x] P17b-7: 3 consecutive zero-change convergence passes achieved (passes 2-4)

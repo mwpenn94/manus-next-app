@@ -40,6 +40,7 @@ const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
 const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
+const ClientInferencePage = lazy(() => import("./pages/ClientInferencePage"));
 
 function PageLoader() {
   return (
@@ -178,6 +179,11 @@ function Router() {
       <Route path="/library">
         <Suspense fallback={<PageLoader />}>
           <Library />
+        </Suspense>
+      </Route>
+      <Route path="/client-inference">
+        <Suspense fallback={<PageLoader />}>
+          <ClientInferencePage />
         </Suspense>
       </Route>
       <Route path="/github">

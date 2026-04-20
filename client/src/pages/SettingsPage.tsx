@@ -68,12 +68,12 @@ const CAPABILITY_DEFINITIONS: CapabilityDef[] = [
   { name: "Web Browsing", package: "@manus-next/browser-advanced", icon: Monitor, description: "Navigate to URLs and extract structured content including metadata, headings, links, images, and full text via the browse_web agent tool.", defaultEnabled: true, status: "live" },
   { name: "Wide Research", package: "@manus-next/wide-research", icon: Search, description: "Parallel multi-query research that runs up to 5 concurrent web searches and synthesizes results using LLM analysis.", defaultEnabled: true, status: "live" },
   { name: "Keyboard Shortcuts", package: "@manus-next/shortcuts", icon: Settings, description: "Global keyboard shortcuts: Cmd+K (search), Cmd+N (new task), Cmd+/ (help), Cmd+Shift+S (sidebar), Escape (close).", defaultEnabled: true, status: "live" },
-  { name: "Slide Decks", package: "@manus-next/deck", icon: Presentation, description: "Generate presentation slides with layouts, charts, and speaker notes.", defaultEnabled: false, status: "planned", statusNote: "Coming in a future release" },
+  { name: "Slide Decks", package: "@manus-next/deck", icon: Presentation, description: "Generate presentation slides with layouts, charts, and speaker notes.", defaultEnabled: true, status: "live" },
   { name: "Task Scheduling", package: "@manus-next/scheduled", icon: Calendar, description: "Create cron-based and interval-based recurring tasks. Manage schedules from the Schedules page in the sidebar.", defaultEnabled: true, status: "live" },
   { name: "Session Replay", package: "@manus-next/replay", icon: Play, description: "Record task events and replay agent sessions with timeline scrubbing, speed control, and event inspection.", defaultEnabled: true, status: "live" },
-  { name: "Webapp Builder", package: "@manus-next/webapp-builder", icon: Code, description: "Scaffold, build, and deploy web applications from prompts.", defaultEnabled: false, status: "planned", statusNote: "Coming in a future release" },
-  { name: "Client Inference", package: "@manus-next/client-inference", icon: Cpu, description: "Run small models locally via WebGPU/WASM for offline capabilities.", defaultEnabled: false, status: "planned", statusNote: "Experimental — requires WebGPU support" },
-  { name: "Desktop Agent", package: "@manus-next/desktop", icon: Laptop, description: "Native desktop integration with system tray and global shortcuts.", defaultEnabled: false, status: "planned", statusNote: "Requires native app build" },
+  { name: "Webapp Builder", package: "@manus-next/webapp-builder", icon: Code, description: "Scaffold, build, and deploy web applications from prompts.", defaultEnabled: true, status: "live" },
+  { name: "Client Inference", package: "@manus-next/client-inference", icon: Cpu, description: "Run small models locally via WebGPU/WASM for offline capabilities.", defaultEnabled: true, status: "live" },
+  { name: "Desktop Agent", package: "@manus-next/desktop", icon: Laptop, description: "Native desktop integration with system tray and global shortcuts.", defaultEnabled: true, status: "live" },
 ];
 
 interface GeneralSettings {
