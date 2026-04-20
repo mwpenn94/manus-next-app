@@ -1135,54 +1135,54 @@
 ## NS19 — Manus UI Parity from Live Screenshots
 
 ### P1: Task Progress Card in Chat
-- [ ] Create TaskProgressCard component showing "Task Progress X/Y" with collapsible phase list
-- [ ] Each phase shows status icon: green check (completed), blue dot + timer (active), clock (pending)
-- [ ] Embed TaskProgressCard in the streaming section of TaskView chat
-- [ ] Wire to agentActions to derive phase tracking from tool usage
+- [x] Create TaskProgressCard component showing "Task Progress X/Y" with collapsible phase list
+- [x] Each phase shows status icon: green check (completed), blue dot + timer (active), clock (pending)
+- [x] Embed TaskProgressCard in the streaming section of TaskView chat
+- [x] Wire to agentActions to derive phase tracking from tool usage
 
 ### P2: "Agent is using [Tool]" Live Indicator
-- [ ] Create ToolUsageIndicator showing "Manus Next is using Editor / Browser / Terminal"
-- [ ] Show context line: "Reading file manus-next-app/client/..." or "Searching file client/**/*"
-- [ ] Display during streaming when agent actions are in progress
-- [ ] Icon per tool type (editor pencil, browser globe, terminal square)
+- [x] Create ToolUsageIndicator showing "Manus Next is using Editor / Browser / Terminal"
+- [x] Show context line: "Reading file manus-next-app/client/..." or "Searching file client/**/*"
+- [x] Display during streaming when agent actions are in progress
+- [x] Icon per tool type (editor pencil, browser globe, terminal square)
 
 ### P3: Sandbox Viewer Panel (Agent's Computer)
-- [ ] Create SandboxViewer component with header "Agent's Computer" + close/takeover buttons
-- [ ] Add Diff/Original/Modified tab switcher for code files
-- [ ] Show file name header above code content
-- [ ] Add progress scrubber bar with Live indicator and forward/back controls
-- [ ] Add floating sidebar toolbar (back, interact, keyboard, clipboard, phone, close)
+- [x] Create SandboxViewer component with header "Agent's Computer" + close/takeover buttons
+- [x] Add Diff/Original/Modified tab switcher for code files
+- [x] Show file name header above code content
+- [x] Add progress scrubber bar with Live indicator and forward/back controls
+- [x] Add floating sidebar toolbar (back, interact, keyboard, clipboard, phone, close)
 
 ### P4: Input Bar Enhancements
-- [ ] Add "+" button to left of input for attachment menu (files, images, code)
-- [ ] Show attachment badges (e.g., GitHub icon with "+1" count) when files are attached
-- [ ] Ensure microphone button is visible and properly positioned
-- [ ] Match Manus input bar layout: [+] [attachment badges] [input] [mic] [send]
+- [x] Add "+" button to left of input for attachment menu (files, images, code)
+- [x] Show attachment badges (e.g., GitHub icon with "+1" count) when files are attached
+- [x] Ensure microphone button is visible and properly positioned
+- [x] Match Manus input bar layout: [+] [attachment badges] [input] [mic] [send]
 
 ### P5: Convergence
-- [ ] TypeScript 0 errors
-- [ ] All tests passing
-- [ ] Production build clean
-- [ ] 3 consecutive zero-change passes
+- [x] TypeScript 0 errors
+- [x] All tests passing
+- [x] Production build clean
+- [x] 3 consecutive zero-change passes
 
 ### P6: Sidebar Task Card Visual Parity (from new screenshots)
-- [ ] Add colored status dots to sidebar task items (green=running, check=done, red=error)
-- [ ] Show relative timestamps on task cards (e.g., "2m ago")
-- [ ] Highlight active task with accent background in sidebar
+- [x] Add colored status dots to sidebar task items (green=running, check=done, red=error)
+- [x] Show relative timestamps on task cards (e.g., "2m ago")
+- [x] Highlight active task with accent background in sidebar
 
 ### P7: Chat Message Visual Refinements (from new screenshots)
-- [ ] Ensure agent avatar + "manus next" label matches screenshot styling
-- [ ] Action steps collapsible with done count badge (e.g., "3/5 steps")
-- [ ] Streaming bounce dots match Manus styling (3 dots, primary color)
+- [x] Ensure agent avatar + "manus next" label matches screenshot styling
+- [x] Action steps collapsible with done count badge (e.g., "3/5 steps")
+- [x] Streaming bounce dots match Manus styling (3 dots, primary color)
 
 ### P8: Additional Manus Parity from Batch 3 Screenshots (IMG_6903-6913)
-- [ ] NS19-P8a: Model selector dropdown (Manus 1.6 Max / 1.6 / 1.6 Lite) with descriptions
-- [ ] NS19-P8b: Voice recording UI with waveform visualization, timer, cancel/confirm buttons
-- [ ] NS19-P8c: Enhanced + menu bottom sheet with full Manus feature list
-- [ ] NS19-P8d: Photos section in + menu with camera + recent images
-- [ ] NS19-P8e: Task rename dialog modal
-- [ ] NS19-P8f: Task details page (Name, Create at, Credits count)
-- [ ] NS19-P8g: Files browser with All/Documents/Images/Code files filter tabs
+- [x] NS19-P8a: Model selector dropdown (Manus 1.6 Max / 1.6 / 1.6 Lite) with descriptions
+- [x] NS19-P8b: Voice recording UI with waveform visualization, timer, cancel/confirm buttons
+- [x] NS19-P8c: Enhanced + menu bottom sheet with full Manus feature list
+- [x] NS19-P8d: Photos section in + menu with camera + recent images
+- [x] NS19-P8e: Task rename dialog modal
+- [x] NS19-P8f: Task details page (Name, Create at, Credits count)
+- [x] NS19-P8g: Files browser with All/Documents/Images/Code files filter tabs
 
 ### P9: Full Manus Parity — New Features (NS19 Expansion)
 - [x] NS19-P9a: Task pause/guidance request UI — agent can pause and ask user for input with inline prompt card and action buttons
