@@ -1096,7 +1096,24 @@ export default function TaskView() {
 
 
   const handleSend = useCallback(async () => {
-    if (!input.trim() || !task || streaming) return;
+    if (!input.trim() || !task) return;
+    // If currently streaming, queue the follow-up: add user message, abort current stream,
+    // and let the user's new message trigger a fresh stream with full conversation history.
+    if (streaming && abortControllerRef.current) {
+      // Add the user message to the conversation immediately
+      const userContent = files.length > 0
+        ? `${input}\n\n📎 Attached: ${files.map(f => f.fileName).join(", ")}`
+        : input;
+      addMessage(task.id, { role: "user", content: userContent });
+      setInput("");
+      clearFiles();
+      inputRef.current?.focus();
+      // Abort the current stream — the finally block will reset streaming state,
+      // and the user can send again (or we could auto-trigger, but matching Manus
+      // behavior: the new message appears and the agent picks it up on next interaction)
+      abortControllerRef.current.abort();
+      return;
+    }
     const userContent = files.length > 0
       ? `${input}\n\n📎 Attached: ${files.map(f => f.fileName).join(", ")}`
       : input;
@@ -1802,13 +1819,12 @@ export default function TaskView() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !streaming) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
               }}
-              disabled={streaming}
-              placeholder={streaming ? "Generating response..." : "Send a message..."}
+              placeholder={streaming ? "Type a follow-up message..." : "Send a message..."}
               aria-label="Chat message input"
               rows={1}
               className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"
@@ -1883,16 +1899,17 @@ export default function TaskView() {
                   )}
                 </button>
               </div>
-              {streaming ? (
-                <button
-                  onClick={handleStopGeneration}
-                  className="w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95 bg-destructive/80 text-destructive-foreground hover:bg-destructive"
-                  title="Stop generation"
-                  aria-label="Stop generation"
-                >
-                  <Square className="w-3.5 h-3.5" />
-                </button>
-              ) : (
+              <div className="flex items-center gap-1">
+                {streaming && (
+                  <button
+                    onClick={handleStopGeneration}
+                    className="w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95 bg-destructive/80 text-destructive-foreground hover:bg-destructive"
+                    title="Stop generation"
+                    aria-label="Stop generation"
+                  >
+                    <Square className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={handleSend}
                   disabled={!input.trim()}
@@ -1907,7 +1924,7 @@ export default function TaskView() {
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
-              )}
+              </div>
             </div>
           </div>
           {voiceError && (

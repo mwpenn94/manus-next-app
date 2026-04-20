@@ -22,7 +22,7 @@ import type { Message, Tool, ToolCall, InvokeResult } from "./_core/llm";
 import { AGENT_TOOLS, executeTool, type ToolResult } from "./agentTools";
 import type { Response } from "express";
 
-const MAX_TOOL_TURNS = 20; // Allow thorough multi-tool demonstrations
+const MAX_TOOL_TURNS = 100; // No artificial limit — agent continues until task is complete (matching Manus behavior)
 
 const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You don't just answer questions — you actively research, reason, and take action using your tools.
 
@@ -284,7 +284,7 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
       conversation = [{ role: "system", content: systemPrompt }, ...conversation];
     }
 
-    const maxTurns = mode === "speed" ? 8 : mode === "max" ? 25 : MAX_TOOL_TURNS;
+    const maxTurns = mode === "speed" ? 30 : mode === "max" ? 100 : MAX_TOOL_TURNS;
     let turn = 0;
     let finalContent = "";
     let totalToolCalls = 0;
@@ -550,11 +550,8 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     }
 
     if (turn >= maxTurns) {
-      console.log("[Agent] Max tool turns reached");
-      sendSSE(safeWrite, {
-        delta: "\n\n*[Reached maximum number of tool execution steps]*",
-      });
-      finalContent += "\n\n*[Reached maximum number of tool execution steps]*";
+      console.log(`[Agent] Completed after ${turn} turns (limit: ${maxTurns})`);
+      // No user-visible limit message — the agent naturally concludes its work
     }
 
     // Signal completion

@@ -131,6 +131,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     {
       enabled: isAuthenticated && !!needsMessageLoad,
       retry: false,
+      staleTime: 0, // Always refetch when re-enabled (task switch)
     }
   );
 
@@ -213,8 +214,18 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, createTaskMutation, addMessageMutation]);
 
   const setActiveTask = useCallback((id: string | null) => {
+    // When switching away from a task, reset messagesLoaded so messages
+    // will be re-fetched from the server next time the task is opened.
+    // This ensures chat persistence across page navigations.
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === activeTaskId && t.serverId
+          ? { ...t, messagesLoaded: false }
+          : t
+      )
+    );
     setActiveTaskId(id);
-  }, []);
+  }, [activeTaskId]);
 
   const addMessage = useCallback(
     (taskId: string, message: Omit<Message, "id" | "timestamp">) => {

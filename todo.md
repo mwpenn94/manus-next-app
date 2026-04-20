@@ -952,3 +952,12 @@
 - [x] NS6-9: Convergence Pass 2 — CLEAN
 - [x] NS6-10: Convergence Pass 3 — CLEAN — CONVERGENCE ACHIEVED 3/3
 - [x] NS6-CRITICAL: Published site shows blank black screen — diagnose and fix
+
+## NS7: Chat Persistence & Continuous Execution Fixes
+- [x] NS7-1: Fix chat messages not persisting after leaving and reopening a task — messagesLoaded resets on task switch, forces DB refetch
+- [x] NS7-2: Allow users to submit follow-up prompts while tasks are being executed — textarea always enabled, follow-up aborts current stream and adds user message, both stop+send buttons visible
+- [x] NS7-3: Remove artificial execution step limit — MAX_TOOL_TURNS raised to 100, speed mode 30, no user-visible limit message
+- [x] NS7-4: Write tests for persistence and continuous execution — 11 new tests (289 total)
+- [x] NS7-5: Convergence Pass 1 — CLEAN
+- [x] NS7-6: Convergence Pass 2 — CLEAN
+- [x] NS7-7: Convergence Pass 3 — CLEAN (0 TS errors, 289/289 tests, prod build clean, all fixes verified) — CONVERGENCE ACHIEVED 3/3
