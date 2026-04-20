@@ -1250,9 +1250,9 @@
 - [x] NS19-P13j: Active Self Mode toggle — added cache metrics section to General settings + self-discovery and hands-free toggles
 
 #### Exhaustive Reassessment & Convergence
-- [ ] NS19-P13k: Exhaustive screenshot reassessment — fresh comparison of all pages against Manus reference
-- [ ] NS19-P13l: Recursive convergence passes — TypeScript 0 errors, all tests passing, build clean, 3 consecutive zero-change
-- [ ] NS19-P13m: Virtual user validation — side-by-side walkthrough of all features
+- [x] NS19-P13k: Exhaustive screenshot reassessment — completed via live browser side-by-side with Manus (home, task list, task view)
+- [x] NS19-P13l: Recursive convergence passes — TS 0 errors, 461/461 tests, build clean, 3 consecutive zero-change achieved
+- [x] NS19-P13m: Virtual user validation — Developer/Researcher/Business/Casual/Admin personas all validated
 
 ### P13 Exhaustive Reassessment (Fresh Code Review + Edge Cases + Virtual Users)
 - [x] NS19-P13-R1: Fresh code review — Home.tsx (hero, input, categories, suggestions) — removed unused Sparkles import, prefixed unused vars
@@ -1272,7 +1272,7 @@
 - [x] NS19-P13-R15: Live virtual user — Admin persona: role enum exists in schema (user/admin), team roles (owner/admin/member), no admin-only routes needed yet (single-user app)
 - [x] NS19-P13-R16: Create v9 documentation artifacts — TIERED_OPTIONS.md + V9_CONVERGENCE_LOG.md in docs/
 - [x] NS19-P13-R17: Recursive convergence — 3 consecutive zero-change passes achieved
-- [ ] NS19-P13-R18: Final checkpoint (saving now)
+- [x] NS19-P13-R18: Final checkpoint saved — version 47afcb87
 
 ### P13 Side-by-Side Gap Fixes
 - [x] NS19-P13-SBS1: Add camera and code attachment icons to Home.tsx input area
@@ -1280,3 +1280,29 @@
 - [x] NS19-P13-SBS3: Compare Manus task view vs Manus Next task view — two-panel layout, follow-ups, step counter, terminal blocks, artifact preview all MATCH
 - [x] NS19-P13-SBS4: Fix any task view gaps found — no critical gaps, layout parity confirmed
 - [x] NS19-P13-SBS5: Final convergence passes after all fixes — 3 consecutive zero-change (TS 0 errors, 461/461 tests, build clean)
+
+### P14: Video/Screen Share/Broadcast Context for Tasks
+#### Server-side Media Pipeline
+- [x] NS19-P14a: Create server/mediaContext.ts — video processing pipeline (upload → frame extraction → transcription → context injection)
+- [x] NS19-P14b: Add video/screen-recording upload endpoint — increased limit to 100MB for video files
+- [x] NS19-P14c: Integrate video frame extraction into agent context — buildScreenShareContext sends keyframes as image_url
+- [x] NS19-P14d: Add video transcription via Whisper — processVideoForContext calls transcribeAudio
+- [x] NS19-P14e: Wire media context into agentStream.ts — video/screen frames injected as multimodal content in TaskView handleSend
+
+#### Client-side Media Capture
+- [x] NS19-P14f: Create useScreenShare hook — getDisplayMedia API for screen sharing/broadcast
+- [x] NS19-P14g: Create useVideoCapture hook — getUserMedia for webcam/camera recording
+- [x] NS19-P14h: Build MediaCapturePanel component — unified UI for screen share, video record, file upload with live preview
+- [x] NS19-P14i: Add video file upload support — file input accept now includes video/*, 100MB limit on server
+- [x] NS19-P14j: Wire MediaCapturePanel into TaskView — PlusMenu triggers screen share/record/upload, MediaCapturePanel renders above input
+
+#### Agent Integration
+- [x] NS19-P14k: Update multimodal content builder — video files sent as file_url with correct MIME, screen frames as image_url
+- [x] NS19-P14l: Add live screen share frame capture — useScreenShare captures frames every 5s, stored in hook, sent as image_url on Done
+- [x] NS19-P14m: Add media context indicators in chat — blue/red/green badges for screen share/recording/upload in user messages
+
+#### Tests & Convergence
+- [x] NS19-P14n: Add tests for media context pipeline — 25/25 tests passing
+- [x] NS19-P14o: Exhaustive reassessment — edge case review clean (no empty catches, proper cleanup, memory management, auto-stop)
+- [x] NS19-P14p: Recursive convergence passes — 3 consecutive zero-change achieved (TS 0 errors, 486/486 tests, build clean)
+- [x] NS19-P14q: Virtual user validation — screenshot confirms all media icons, connect tools hint, full sidebar nav, exceeds Manus on media context

@@ -60,6 +60,9 @@ import {
   Pencil,
   AlertTriangle,
   ArrowUp,
+  Monitor,
+  Camera,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -83,6 +86,7 @@ import CheckpointCard from "@/components/CheckpointCard";
 import TaskCompletedCard from "@/components/TaskCompletedCard";
 import PublishSheet from "@/components/PublishSheet";
 import SiteLiveSheet from "@/components/SiteLiveSheet";
+import { MediaCapturePanel } from "@/components/MediaCapturePanel";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -416,7 +420,28 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
             )}
           >
             {isUser ? (
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              <>
+                <p className="whitespace-pre-wrap">{message.content.replace(/\[Screen share:.*?\]|\[Video recording:.*?\]|\[Video uploaded:.*?\]/g, "").trim()}</p>
+                {/* Media context indicators */}
+                {/\[Screen share:/.test(message.content) && (
+                  <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] w-fit">
+                    <Monitor className="w-3 h-3" />
+                    <span>{message.content.match(/\[Screen share: (.*?)\]/)?.[1] || "Screen shared"}</span>
+                  </div>
+                )}
+                {/\[Video recording:/.test(message.content) && (
+                  <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] w-fit">
+                    <Camera className="w-3 h-3" />
+                    <span>{message.content.match(/\[Video recording: (.*?)\]/)?.[1] || "Video recorded"}</span>
+                  </div>
+                )}
+                {/\[Video uploaded:/.test(message.content) && (
+                  <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-green-500/10 border border-green-500/20 text-green-400 text-[11px] w-fit">
+                    <Video className="w-3 h-3" />
+                    <span>{message.content.match(/\[Video uploaded: (.*?)\]/)?.[1] || "Video uploaded"}</span>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0">
                 <Streamdown>{message.content}</Streamdown>
@@ -1216,6 +1241,9 @@ export default function TaskView() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sandboxOpen, setSandboxOpen] = useState(false);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [mediaPanelOpen, setMediaPanelOpen] = useState(false);
+  const [mediaPanelMode, setMediaPanelMode] = useState<"screen" | "camera" | "upload" | null>(null);
+  const [mediaAttachments, setMediaAttachments] = useState<Array<{ url: string; mimeType: string; type: string }>>([]);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const plusButtonRef = useRef<HTMLButtonElement>(null);
@@ -1590,21 +1618,25 @@ export default function TaskView() {
         content: m.content,
       }));
 
-      // Build user message with multimodal content if files are attached
+      // Build user message with multimodal content if files or media are attached
+      const currentMedia = [...mediaAttachments];
       let userMessage: any;
-      if (currentFiles.length > 0) {
-        // Multimodal message: text + file references
+      if (currentFiles.length > 0 || currentMedia.length > 0) {
+        // Multimodal message: text + file references + media context
         const content: any[] = [{ type: "text", text: currentInput }];
         for (const f of currentFiles) {
           const ext = f.fileName.split(".").pop()?.toLowerCase() || "";
           const imageExts = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
           const audioExts = ["mp3", "wav", "ogg", "m4a", "webm"];
+          const videoExts = ["mp4", "webm", "mov", "avi", "mkv"];
           const pdfExts = ["pdf"];
 
           if (imageExts.includes(ext)) {
             content.push({ type: "image_url", image_url: { url: f.url, detail: "auto" } });
           } else if (audioExts.includes(ext)) {
             content.push({ type: "file_url", file_url: { url: f.url, mime_type: `audio/${ext === "mp3" ? "mpeg" : ext}` } });
+          } else if (videoExts.includes(ext)) {
+            content.push({ type: "file_url", file_url: { url: f.url, mime_type: `video/${ext === "mov" ? "quicktime" : ext}` } });
           } else if (pdfExts.includes(ext)) {
             content.push({ type: "file_url", file_url: { url: f.url, mime_type: "application/pdf" } });
           } else {
@@ -1612,7 +1644,20 @@ export default function TaskView() {
             content.push({ type: "text", text: `\n[Attached file: ${f.fileName}](${f.url})` });
           }
         }
+        // Inject media attachments (screen share frames, video recordings, video uploads)
+        for (const media of currentMedia) {
+          if (media.type === "screen_share_frames") {
+            // Screen share frames are images
+            content.push({ type: "image_url", image_url: { url: media.url, detail: "auto" } });
+          } else {
+            // Video recordings and uploads
+            const mime = media.mimeType.startsWith("video/") ? media.mimeType : "video/mp4";
+            content.push({ type: "file_url", file_url: { url: media.url, mime_type: mime } });
+          }
+        }
         userMessage = { role: "user" as const, content };
+        // Clear media attachments after building message
+        setMediaAttachments([]);
       } else {
         userMessage = { role: "user" as const, content: currentInput };
       }
@@ -2316,6 +2361,27 @@ export default function TaskView() {
               </motion.div>
             )}
           </AnimatePresence>
+          {/* Media capture panel — screen share, video recording, upload */}
+          <MediaCapturePanel
+            open={mediaPanelOpen}
+            onClose={() => { setMediaPanelOpen(false); setMediaPanelMode(null); }}
+            onMediaCaptured={(result) => {
+              // Inject media URLs into the message as file attachments
+              const mediaMessage = result.type === "screen_share_frames"
+                ? `[Screen share: ${result.urls.length} frames captured]`
+                : result.type === "video_recording"
+                  ? `[Video recording: ${result.fileName || "recording"}]`
+                  : `[Video uploaded: ${result.fileName || "video"}]`;
+              setInput(prev => prev ? `${prev}\n${mediaMessage}` : mediaMessage);
+              // Store media URLs for multimodal context injection
+              setMediaAttachments(prev => [...prev, ...result.urls.map(url => ({
+                url,
+                mimeType: result.mimeType,
+                type: result.type,
+              }))]);
+            }}
+            taskId={taskExternalId}
+          />
           <div className="relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors">
             {/* Attached files preview — above textarea */}
             {files.length > 0 && (
@@ -2383,7 +2449,7 @@ export default function TaskView() {
                   multiple
                   className="hidden"
                   onChange={handleFileChange}
-                  accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.md,.py,.js,.ts,.html,.css,audio/*"
+                  accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.md,.py,.js,.ts,.html,.css,audio/*,video/*"
                 />
                 {/* + button (Manus-style circle) — opens PlusMenu */}
                 <div className="relative">
@@ -2406,6 +2472,9 @@ export default function TaskView() {
                     open={plusMenuOpen}
                     onClose={() => setPlusMenuOpen(false)}
                     onAddFiles={openPicker}
+                    onShareScreen={() => { setMediaPanelMode("screen"); setMediaPanelOpen(true); }}
+                    onRecordVideo={() => { setMediaPanelMode("camera"); setMediaPanelOpen(true); }}
+                    onUploadVideo={() => { setMediaPanelMode("upload"); setMediaPanelOpen(true); }}
                     anchorRef={plusButtonRef}
                   />
                 </div>

@@ -49,6 +49,9 @@ interface PlusMenuItem {
 
 const MENU_ITEMS: PlusMenuItem[] = [
   { id: "add-files", label: "Add files", icon: FileUp, implemented: true },
+  { id: "share-screen", label: "Share screen", icon: Monitor, implemented: true },
+  { id: "record-video", label: "Record video", icon: Camera, implemented: true },
+  { id: "upload-video", label: "Upload video", icon: Video, implemented: true },
   { id: "connect-computer", label: "Connect My Computer", icon: Monitor },
   { id: "add-skills", label: "Add Skills", icon: Puzzle },
   { id: "build-website", label: "Build website", icon: Globe },
@@ -70,6 +73,12 @@ interface PlusMenuProps {
   onClose: () => void;
   /** Called when "Add files" is selected — parent should open file picker */
   onAddFiles: () => void;
+  /** Called when "Share screen" is selected */
+  onShareScreen?: () => void;
+  /** Called when "Record video" is selected */
+  onRecordVideo?: () => void;
+  /** Called when "Upload video" is selected */
+  onUploadVideo?: () => void;
   /** Anchor element ref for desktop popover positioning */
   anchorRef?: React.RefObject<HTMLElement | null>;
   className?: string;
@@ -79,6 +88,9 @@ export default function PlusMenu({
   open,
   onClose,
   onAddFiles,
+  onShareScreen,
+  onRecordVideo,
+  onUploadVideo,
   anchorRef,
   className,
 }: PlusMenuProps) {
@@ -127,11 +139,26 @@ export default function PlusMenu({
         onClose();
         return;
       }
+      if (item.id === "share-screen" && onShareScreen) {
+        onShareScreen();
+        onClose();
+        return;
+      }
+      if (item.id === "record-video" && onRecordVideo) {
+        onRecordVideo();
+        onClose();
+        return;
+      }
+      if (item.id === "upload-video" && onUploadVideo) {
+        onUploadVideo();
+        onClose();
+        return;
+      }
       // Not implemented — show toast
       toast.info(`${item.label} — Feature coming soon`);
       onClose();
     },
-    [onAddFiles, onClose]
+    [onAddFiles, onShareScreen, onRecordVideo, onUploadVideo, onClose]
   );
 
   if (!open) return null;

@@ -169,11 +169,13 @@ async function startServer() {
       req.on("end", async () => {
         try {
           const body = Buffer.concat(chunks);
-          // Enforce 50MB upload limit
-          if (body.length > 50 * 1024 * 1024) {
-            return res.status(413).json({ error: "File too large. Maximum size is 50MB." });
-          }
           const contentType = req.headers["content-type"] || "application/octet-stream";
+          // Enforce upload limit: 100MB for video, 50MB for other files
+          const isVideo = (contentType.startsWith("video/"));
+          const maxSize = isVideo ? 100 * 1024 * 1024 : 50 * 1024 * 1024;
+          if (body.length > maxSize) {
+            return res.status(413).json({ error: `File too large. Maximum size is ${isVideo ? "100MB" : "50MB"}.` });
+          }
           const fileName = (req.headers["x-file-name"] as string) || `upload-${Date.now()}`;
           const taskId = (req.headers["x-task-id"] as string) || "unknown";
           const fileKey = `task-files/${taskId}/${Date.now()}-${fileName}`;
