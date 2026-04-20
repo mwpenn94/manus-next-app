@@ -1,6 +1,6 @@
 import { eq, desc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1137,4 +1137,42 @@ export async function getConnectorById(id: number) {
   if (!db) return null;
   const rows = await db.select().from(connectors).where(eq(connectors.id, id));
   return rows[0] ?? null;
+}
+
+// ── Video Projects (#62) ──
+export async function createVideoProject(project: InsertVideoProject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(videoProjects).values(project);
+  const [result] = await db.select().from(videoProjects).where(eq(videoProjects.externalId, project.externalId)).limit(1);
+  return result;
+}
+
+export async function getUserVideoProjects(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(videoProjects).where(eq(videoProjects.userId, userId)).orderBy(desc(videoProjects.createdAt)).limit(100);
+}
+
+export async function getVideoProjectByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [project] = await db.select().from(videoProjects).where(eq(videoProjects.externalId, externalId));
+  return project ?? null;
+}
+
+export async function updateVideoProjectStatus(
+  id: number,
+  status: "pending" | "generating" | "ready" | "error",
+  extras?: { videoUrl?: string; thumbnailUrl?: string; duration?: number; errorMessage?: string; completedAt?: Date }
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(videoProjects).set({ status, ...extras }).where(eq(videoProjects.id, id));
+}
+
+export async function deleteVideoProject(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(videoProjects).where(and(eq(videoProjects.id, id), eq(videoProjects.userId, userId)));
 }

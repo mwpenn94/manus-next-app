@@ -655,3 +655,34 @@ export const appBuilds = mysqlTable("app_builds", {
 });
 export type AppBuild = typeof appBuilds.$inferSelect;
 export type InsertAppBuild = typeof appBuilds.$inferInsert;
+
+
+// ── Video Generation Projects (#62 — Veo3 parity) ──
+export const videoProjects = mysqlTable("video_projects", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 512 }).notNull(),
+  /** Text prompt for video generation */
+  prompt: text("prompt").notNull(),
+  /** Provider used: ffmpeg-slideshow | replicate-svd | veo3 */
+  provider: varchar("provider", { length: 64 }).default("ffmpeg-slideshow").notNull(),
+  /** Source images for slideshow / img2vid (S3 URLs as JSON array) */
+  sourceImages: json("sourceImages").$type<string[]>(),
+  /** Generated video S3 URL */
+  videoUrl: text("videoUrl"),
+  /** Thumbnail S3 URL */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Duration in seconds */
+  duration: int("duration"),
+  /** Resolution e.g. "1920x1080" */
+  resolution: varchar("resolution", { length: 32 }).default("1280x720"),
+  status: mysqlEnum("status", ["pending", "generating", "ready", "error"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  /** Generation metadata (model params, seed, etc.) */
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+export type VideoProject = typeof videoProjects.$inferSelect;
+export type InsertVideoProject = typeof videoProjects.$inferInsert;

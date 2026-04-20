@@ -36,6 +36,7 @@ const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
 const ConnectDevicePage = lazy(() => import("./pages/ConnectDevicePage"));
 const MobileProjectsPage = lazy(() => import("./pages/MobileProjectsPage"));
 const AppPublishPage = lazy(() => import("./pages/AppPublishPage"));
+const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
 
 function PageLoader() {
   return (
@@ -164,6 +165,11 @@ function Router() {
       <Route path="/app-publish">
         <Suspense fallback={<PageLoader />}>
           <AppPublishPage />
+        </Suspense>
+      </Route>
+      <Route path="/video">
+        <Suspense fallback={<PageLoader />}>
+          <VideoGeneratorPage />
         </Suspense>
       </Route>
       <Route path="/shared/:token">

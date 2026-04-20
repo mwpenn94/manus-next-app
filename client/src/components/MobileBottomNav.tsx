@@ -9,7 +9,7 @@ import {
   Home, ListTodo, CreditCard, Settings, MoreHorizontal, X,
   Brain, FolderOpen, Clock, Film, Puzzle, Presentation,
   Paintbrush, FileText, Plug, Wrench, Users, Monitor,
-  MessageSquare,
+  MessageSquare, Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -41,6 +41,7 @@ const MORE_ITEMS: NavItem[] = [
   { path: "/team", label: "Team", icon: Users },
   { path: "/computer", label: "Computer", icon: Monitor },
   { path: "/messaging", label: "Messaging", icon: MessageSquare },
+  { path: "/video", label: "Video", icon: Video },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 

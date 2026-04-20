@@ -45,6 +45,7 @@ import {
   Brain,
   Clock as ClockIcon,
   Film,
+  Video,
   FolderOpen,
   Paintbrush,
   Presentation,
@@ -661,6 +662,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <MessageSquare className="w-4 h-4" />
           Messaging
+        </Link>
+        <Link
+          href="/video"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/video"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Video className="w-4 h-4" />
+          Video
         </Link>
         <Link
           href="/settings"

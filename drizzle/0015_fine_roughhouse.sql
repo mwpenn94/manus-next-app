@@ -1,0 +1,20 @@
+CREATE TABLE `video_projects` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`externalId` varchar(64) NOT NULL,
+	`userId` int NOT NULL,
+	`title` varchar(512) NOT NULL,
+	`prompt` text NOT NULL,
+	`provider` varchar(64) NOT NULL DEFAULT 'ffmpeg-slideshow',
+	`sourceImages` json,
+	`videoUrl` text,
+	`thumbnailUrl` text,
+	`duration` int,
+	`resolution` varchar(32) DEFAULT '1280x720',
+	`status` enum('pending','generating','ready','error') NOT NULL DEFAULT 'pending',
+	`errorMessage` text,
+	`metadata` json,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`completedAt` timestamp,
+	CONSTRAINT `video_projects_id` PRIMARY KEY(`id`),
+	CONSTRAINT `video_projects_externalId_unique` UNIQUE(`externalId`)
+);

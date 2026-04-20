@@ -1832,15 +1832,21 @@ export default function TaskView() {
             {/* Attached files preview */}
             {files.length > 0 && (
               <div className="flex flex-wrap gap-2 px-4 pb-2">
-                {files.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
-                    <FileIcon className="w-3 h-3 text-primary" />
-                    <span className="text-foreground/80 max-w-[120px] truncate">{f.fileName}</span>
-                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+                {files.map((f, i) => {
+                  const ext = f.fileName.split(".").pop()?.toUpperCase() || "FILE";
+                  const sizeKB = f.size ? Math.round(f.size / 1024) : null;
+                  const sizeLabel = sizeKB ? (sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`) : null;
+                  return (
+                    <div key={i} className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
+                      <FileIcon className="w-3 h-3 text-primary" />
+                      <span className="text-foreground/80 max-w-[150px] truncate">{f.fileName}</span>
+                      <span className="text-muted-foreground/60 text-[10px] shrink-0">{ext}{sizeLabel ? ` · ${sizeLabel}` : ""}</span>
+                      <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
             {uploading && (

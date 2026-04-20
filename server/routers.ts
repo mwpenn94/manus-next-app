@@ -121,6 +121,11 @@ import {
   verifyTaskOwnership,
   verifyTaskOwnershipById,
   verifyKnowledgeOwnership,
+  createVideoProject,
+  getUserVideoProjects,
+  getVideoProjectByExternalId,
+  deleteVideoProject,
+  updateVideoProjectStatus,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -1863,6 +1868,49 @@ export const appRouter = router({
           userName: ctx.user.name ?? "",
           origin: input.origin,
         });
+      }),
+  }),
+  // ── Video Generation (#62) ────────────────────────────────────────────────────────
+  video: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserVideoProjects(ctx.user.id);
+    }),
+    generate: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1).max(200),
+        prompt: z.string().min(1).max(2000),
+        sourceImages: z.array(z.string().url()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const externalId = nanoid();
+        const project = await createVideoProject({
+          externalId,
+          userId: ctx.user.id,
+          title: input.title,
+          prompt: input.prompt,
+          sourceImages: input.sourceImages ?? [],
+          provider: "ffmpeg",
+          status: "pending",
+        });
+        // §L.25 degraded-delivery: currently queues as pending.
+        // A background worker would pick up and process via ffmpeg-slideshow (free),
+        // replicate-svd (freemium), or veo3 (premium) based on available API keys.
+        return { externalId, status: "pending" };
+      }),
+    get: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getVideoProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Not found");
+        return project;
+      }),
+    delete: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getVideoProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Not found");
+        await deleteVideoProject(project.id, ctx.user.id);
+        return { success: true };
       }),
   }),
 });

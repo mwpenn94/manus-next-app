@@ -11,7 +11,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
 /** OAuth-capable connectors get a "Sign in with X" button as the primary flow */
-const OAUTH_CONNECTORS = new Set(["github", "google-drive", "notion", "slack", "calendar"]);
+const OAUTH_CONNECTORS = new Set(["github", "google-drive", "notion", "slack", "calendar", "microsoft-365"]);
 
 const AVAILABLE_CONNECTORS = [
   {
@@ -58,6 +58,12 @@ const AVAILABLE_CONNECTORS = [
       { key: "user", label: "Username", placeholder: "you@example.com" },
       { key: "pass", label: "Password", placeholder: "app-password" },
     ],
+  },
+  {
+    id: "microsoft-365", name: "Microsoft 365", description: "Access Outlook, OneDrive, Teams, and Office apps",
+    category: "Productivity", icon: "\u{1F4BC}",
+    oauthLabel: "Sign in with Microsoft",
+    configFields: [{ key: "clientId", label: "Azure App Client ID", placeholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" }],
   },
   {
     id: "mcp", name: "MCP Protocol", description: "Model Context Protocol server integration",

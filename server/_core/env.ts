@@ -17,6 +17,9 @@ export const ENV = {
   NOTION_OAUTH_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET ?? process.env.NOTION_OAUTH_CLIENT_SECRET ?? "",
   SLACK_OAUTH_CLIENT_ID: process.env.SLACK_CLIENT_ID ?? process.env.SLACK_OAUTH_CLIENT_ID ?? "",
   SLACK_OAUTH_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET ?? process.env.SLACK_OAUTH_CLIENT_SECRET ?? "",
+  // Microsoft 365 / Azure AD OAuth
+  MICROSOFT_365_OAUTH_CLIENT_ID: process.env.MICROSOFT_365_CLIENT_ID ?? process.env.MICROSOFT_365_OAUTH_CLIENT_ID ?? "",
+  MICROSOFT_365_OAUTH_CLIENT_SECRET: process.env.MICROSOFT_365_CLIENT_SECRET ?? process.env.MICROSOFT_365_OAUTH_CLIENT_SECRET ?? "",
   // Stripe payment integration (auto-injected by platform)
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ?? "",

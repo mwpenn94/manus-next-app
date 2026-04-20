@@ -969,3 +969,21 @@
 - [x] Ensure all 4 connectors (GitHub, Google, Slack, Notion) properly detect OAuth availability — all 8 env vars now read both naming conventions with fallback
 - [x] Write tests for connector OAuth flow — updated existing tests + added 5 new tests (env var fallback chain, platform name detection, GitHub URL with actual client_id)
 - [x] Run 3 consecutive clean convergence passes — CP1 CLEAN (0 TS errors, 293/293 tests, build clean), CP2 CLEAN, CP3 CLEAN — CONVERGENCE ACHIEVED 3/3
+
+## NS9: Chat-Log Issues (from pasted_content_2.txt user session)
+- [x] Fix agent auto-demonstration behavior — added ANTI-AUTO-DEMONSTRATION, SESSION PREFERENCES, and INSTRUCTION ORDERING sections to system prompt
+- [x] Add session preference persistence — added SESSION PREFERENCES section to system prompt with examples and enforcement rules
+- [x] Fix agent instruction ordering — added INSTRUCTION ORDERING section to system prompt
+- [x] Add regenerate button on messages — already implemented in TaskView.tsx (handleRegenerate + MessageBubble)
+- [x] Improve file upload UX — attachment chips now show file extension badge and size (KB/MB)
+
+## NS9: V9 RED Capability Scaffolds
+- [x] #53 Microsoft Agent365 — added microsoft-365 to ConnectorsPage AVAILABLE_CONNECTORS + OAUTH_CONNECTORS
+- [x] #53 Microsoft Agent365 — added full Azure AD OAuth provider in connectorOAuth.ts (authorize, token exchange, refresh, getUserInfo)
+- [x] #53 Microsoft Agent365 — connector available via ConnectorsPage OAuth flow (no separate page needed)
+- [x] #53 Microsoft Agent365 — added MICROSOFT_365_OAUTH_CLIENT_ID/SECRET to env.ts with platform fallback
+- [x] #62 Veo3 Video — created VideoGeneratorPage.tsx with prompt input, project grid, preview dialog, and provider badges
+- [x] #62 Veo3 Video — added video.generate, video.list, video.get, video.delete tRPC procedures
+- [x] #62 Veo3 Video — added /video route to App.tsx + sidebar nav (AppLayout) + mobile nav (MobileBottomNav)
+- [ ] #62 Veo3 Video — write tests for video project CRUD (pending)
+- [ ] V9 convergence passes (TypeScript, tests, build) (pending)

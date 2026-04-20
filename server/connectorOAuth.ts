@@ -256,6 +256,84 @@ const slackProvider: OAuthProvider = {
   },
 };
 
+// ── Microsoft 365 OAuth (Azure AD) ──
+const microsoftProvider: OAuthProvider = {
+  id: "microsoft-365",
+  name: "Microsoft 365",
+  authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+  tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+  scopes: ["openid", "profile", "email", "User.Read", "Mail.Read", "Files.ReadWrite", "Calendars.Read"],
+
+  getAuthUrl(redirectUri: string, state: string) {
+    const clientId = env.MICROSOFT_365_OAUTH_CLIENT_ID || "";
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: this.scopes.join(" "),
+      state,
+      response_type: "code",
+      response_mode: "query",
+    });
+    return `${this.authorizeUrl}?${params}`;
+  },
+
+  async exchangeCode(code: string, redirectUri: string) {
+    const resp = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: env.MICROSOFT_365_OAUTH_CLIENT_ID || "",
+        client_secret: env.MICROSOFT_365_OAUTH_CLIENT_SECRET || "",
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+    const data = await resp.json() as Record<string, any>;
+    if (data.error) throw new Error(`Microsoft OAuth error: ${data.error_description || data.error}`);
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+      scope: data.scope,
+      tokenType: data.token_type,
+    };
+  },
+
+  async refreshToken(refreshToken: string) {
+    const resp = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: env.MICROSOFT_365_OAUTH_CLIENT_ID || "",
+        client_secret: env.MICROSOFT_365_OAUTH_CLIENT_SECRET || "",
+        grant_type: "refresh_token",
+      }),
+    });
+    const data = await resp.json() as Record<string, any>;
+    if (data.error) throw new Error(`Microsoft refresh error: ${data.error_description || data.error}`);
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token || refreshToken,
+      expiresIn: data.expires_in,
+      scope: data.scope,
+      tokenType: data.token_type,
+    };
+  },
+
+  async getUserInfo(accessToken: string) {
+    const resp = await fetch("https://graph.microsoft.com/v1.0/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await resp.json() as Record<string, string>;
+    return {
+      name: data.displayName || "Microsoft User",
+      email: data.mail || data.userPrincipalName,
+    };
+  },
+};
+
 // ── Provider Registry ──
 export const oauthProviders: Record<string, OAuthProvider> = {
   github: githubProvider,
@@ -263,6 +341,7 @@ export const oauthProviders: Record<string, OAuthProvider> = {
   calendar: googleProvider,
   notion: notionProvider,
   slack: slackProvider,
+  "microsoft-365": microsoftProvider,
 };
 
 export function getOAuthProvider(connectorId: string): OAuthProvider | undefined {
@@ -283,6 +362,8 @@ export function isOAuthSupported(connectorId: string): boolean {
       return !!(env.NOTION_OAUTH_CLIENT_ID && env.NOTION_OAUTH_CLIENT_SECRET);
     case "slack":
       return !!(env.SLACK_OAUTH_CLIENT_ID && env.SLACK_OAUTH_CLIENT_SECRET);
+    case "microsoft-365":
+      return !!(env.MICROSOFT_365_OAUTH_CLIENT_ID && env.MICROSOFT_365_OAUTH_CLIENT_SECRET);
     default:
       return false;
   }
