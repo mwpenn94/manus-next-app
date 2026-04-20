@@ -27,6 +27,18 @@ vi.mock("./_core/imageGeneration", () => ({
   })),
 }));
 
+// Mock global fetch for URL validation (HEAD checks) and storage re-upload
+const originalFetch = globalThis.fetch;
+vi.stubGlobal("fetch", vi.fn(async (input: any, init?: any) => {
+  const url = typeof input === "string" ? input : input?.url || "";
+  // Mock HEAD requests for URL validation (NS10)
+  if (init?.method === "HEAD") {
+    return { ok: true, status: 200, headers: new Headers() };
+  }
+  // Fall through to original fetch for other requests
+  return originalFetch(input, init);
+}));
+
 describe("Agent Tools", () => {
   beforeEach(() => {
     vi.clearAllMocks();

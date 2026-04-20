@@ -985,5 +985,11 @@
 - [x] #62 Veo3 Video — created VideoGeneratorPage.tsx with prompt input, project grid, preview dialog, and provider badges
 - [x] #62 Veo3 Video — added video.generate, video.list, video.get, video.delete tRPC procedures
 - [x] #62 Veo3 Video — added /video route to App.tsx + sidebar nav (AppLayout) + mobile nav (MobileBottomNav)
-- [ ] #62 Veo3 Video — write tests for video project CRUD (pending)
+- [x] #62 Veo3 Video — wrote 12 tests for video project CRUD (create, list, get, delete, status updates, provider tiers)
 - [ ] V9 convergence passes (TypeScript, tests, build) (pending)
+
+## NS10: Chat-Log-3 Issues (image AccessDenied, style persistence)
+- [x] Fix generated image URLs returning "AccessDenied" — added validateImageUrl() HEAD check + re-upload fallback to S3 via storagePut()
+- [x] Strengthen agent preference persistence — added extractSessionStylePreferences() that scans conversation for style directives and auto-injects into generate_image/design_canvas prompts
+- [x] Add image URL validation after generation — validateImageUrl() does HEAD check with 8s timeout, retries on failure
+- [x] Improve generate_image tool to auto-append stored style preferences to prompts — STYLE REQUIREMENTS suffix auto-injected from conversation history

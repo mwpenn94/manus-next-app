@@ -951,8 +951,23 @@ async function executeReadWebpage(args: { url: string }): Promise<ToolResult> {
 }
 
 /**
+ * Validate that an image URL is publicly accessible via HEAD request.
+ * Returns true if the URL returns 2xx, false otherwise.
+ */
+async function validateImageUrl(url: string): Promise<boolean> {
+  try {
+    const resp = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(8000) });
+    return resp.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Generate an image using the built-in image generation helper.
  * CHAT-003: Includes retry with exponential backoff and unique seed per call.
+ * NS10: Added URL validation — verifies the generated URL is accessible before returning.
+ * If URL fails validation, re-uploads the image to S3 as a fallback.
  */
 async function executeGenerateImage(args: {
   prompt: string;
@@ -977,6 +992,44 @@ async function executeGenerateImage(args: {
         return {
           success: false,
           result: "Image generation completed but no URL was returned after multiple attempts.",
+        };
+      }
+
+      // NS10: Validate the URL is publicly accessible
+      const isAccessible = await validateImageUrl(url);
+      if (!isAccessible) {
+        console.warn(`[Agent] Generated image URL not accessible (attempt ${attempt}): ${url}`);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 2000 * attempt));
+          continue;
+        }
+        // Last attempt — try to re-fetch the image and re-upload to S3
+        try {
+          const { storagePut } = await import("./storage");
+          const imgResp = await fetch(url);
+          if (imgResp.ok) {
+            const buffer = Buffer.from(await imgResp.arrayBuffer());
+            const contentType = imgResp.headers.get("content-type") || "image/png";
+            const { url: reuploadedUrl } = await storagePut(
+              `generated/reupload-${Date.now()}.png`,
+              buffer,
+              contentType
+            );
+            console.log(`[Agent] Re-uploaded image to S3: ${reuploadedUrl}`);
+            return {
+              success: true,
+              result: `Image generated successfully.\n\n![Generated Image](${reuploadedUrl})`,
+              url: reuploadedUrl,
+              artifactType: "generated_image",
+              artifactLabel: args.prompt.slice(0, 100),
+            };
+          }
+        } catch (reuploadErr) {
+          console.error(`[Agent] Re-upload fallback failed:`, reuploadErr);
+        }
+        return {
+          success: false,
+          result: "Image was generated but the URL is not accessible. Please try again.",
         };
       }
 

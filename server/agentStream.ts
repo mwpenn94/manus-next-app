@@ -496,16 +496,32 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
         step_progress: { completed: completedToolCalls, total: totalToolCalls, turn },
       });
 
+      // NS10: Extract in-session style preferences from conversation history.
+      // Scans user messages for explicit style directives ("all maps should...", "going forward...", etc.)
+      // and appends them to generate_image prompts automatically.
+      const stylePreferences = extractSessionStylePreferences(conversation);
+
       // Execute each tool call
       for (const toolCall of toolCalls) {
         const toolName = toolCall.function.name;
-        const toolArgs = toolCall.function.arguments;
+        let toolArgs = toolCall.function.arguments;
 
         // Parse args for display
         let parsedArgs: any = {};
         try {
           parsedArgs = JSON.parse(toolArgs);
         } catch { /* ignore */ }
+
+        // NS10: For image generation tools, auto-append session style preferences to the prompt
+        if ((toolName === "generate_image" || toolName === "design_canvas") && stylePreferences.length > 0 && parsedArgs.prompt) {
+          const prefSuffix = stylePreferences.map(p => p.trim()).join(". ");
+          // Only append if the prompt doesn't already contain the preference text
+          if (!parsedArgs.prompt.toLowerCase().includes(prefSuffix.toLowerCase().slice(0, 30))) {
+            parsedArgs.prompt = `${parsedArgs.prompt}. STYLE REQUIREMENTS: ${prefSuffix}`;
+            toolArgs = JSON.stringify(parsedArgs);
+            console.log(`[Agent] Injected ${stylePreferences.length} style preferences into ${toolName} prompt`);
+          }
+        }
 
         // Send tool_start event
         sendSSE(safeWrite, {
@@ -610,8 +626,70 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
 }
 
 /**
- * Get human-readable display info for a tool call
+ * NS10: Extract in-session style preferences from the conversation history.
+ * Scans user messages for explicit style directives like:
+ * - "all maps should have a 1x1 grid"
+ * - "going forward, use flat top-down style"
+ * - "the way you generated X is exactly how I want Y going forward"
+ * - "always include [feature] in [type]"
+ * Returns an array of preference strings to inject into tool prompts.
  */
+function extractSessionStylePreferences(conversation: Message[]): string[] {
+  const preferences: string[] = [];
+  const seen = new Set<string>();
+
+  // Patterns that indicate a user is stating a persistent preference
+  const prefPatterns = [
+    /(?:all|every|each)\s+(?:future\s+)?(?:maps?|images?|designs?|generations?)\s+should\s+(.{10,200})/i,
+    /(?:going forward|from now on|always|for all future)\s*[,:]?\s*(.{10,200})/i,
+    /(?:the way you (?:generated?|created?|made|drew))\s+.{5,80}?\s+(?:is (?:exactly |the exact )?(?:how|what) I want|that's (?:exactly |the )?(?:how|what) I want)\s*(.{0,200})/i,
+    /(?:I want|I need|I prefer|please (?:always|make sure))\s+(?:all|every|each)?\s*(?:maps?|images?|designs?|generations?)\s+(?:to (?:have|be|include|use)|with)\s+(.{10,200})/i,
+    /(?:use|include|add)\s+(?:a\s+)?(.{5,100})\s+(?:on|in|for)\s+(?:all|every|each)\s+(?:maps?|images?|designs?)/i,
+    /(?:make (?:all|every|each)|ensure (?:all|every|each))\s+(?:maps?|images?|designs?)\s+(.{10,200})/i,
+    /(?:flat|top-down|isometric|3d|hand-drawn|realistic|pixel art|watercolor|sketch)\s+(?:style|view|perspective)\s+(?:for|on)\s+(?:all|every|each|future)/i,
+  ];
+
+  for (const msg of conversation) {
+    if (msg.role !== "user") continue;
+    const text = typeof msg.content === "string" ? msg.content : "";
+    if (!text) continue;
+
+    for (const pattern of prefPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        // Use the full match for the last pattern (no capture group), or the captured group
+        const pref = (match[1] || match[0]).trim().replace(/[.!]+$/, "");
+        const key = pref.toLowerCase().slice(0, 50);
+        if (!seen.has(key) && pref.length > 5) {
+          seen.add(key);
+          preferences.push(pref);
+        }
+      }
+    }
+
+    // Also detect explicit style references like "1x1 grid", "flat top-down", "hand-drawn"
+    const styleKeywords = [
+      /\b(1x1 grid(?:\s+(?:for|on)\s+(?:player\s+)?miniatures?)?)\b/i,
+      /\b(flat[,\s]+top-down(?:\s+(?:view|style|perspective))?)\b/i,
+      /\b(hand-drawn\s+(?:style|aesthetic|look))\b/i,
+      /\b(battle map\s+style:\s*.{10,100})\b/i,
+    ];
+    for (const kw of styleKeywords) {
+      const kwMatch = text.match(kw);
+      if (kwMatch) {
+        const pref = kwMatch[1].trim();
+        const key = pref.toLowerCase().slice(0, 50);
+        if (!seen.has(key)) {
+          seen.add(key);
+          preferences.push(pref);
+        }
+      }
+    }
+  }
+
+  return preferences;
+}
+
 function getToolDisplayInfo(
   toolName: string,
   args: any
