@@ -115,7 +115,7 @@ export default function AppPublishPage() {
           ) : !allBuilds.data?.length ? (
             <Card className="border-dashed">
               <CardContent className="py-12 text-center">
-                <Rocket className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-2">No builds yet</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Create a mobile project first, then start a build to package your app.

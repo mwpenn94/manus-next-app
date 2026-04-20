@@ -208,7 +208,7 @@ export default function FigmaImportPage() {
             {!result ? (
               <Card className="bg-card border-border">
                 <CardContent className="p-8 text-center">
-                  <Layers className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">Import a design to see results</p>
                 </CardContent>
               </Card>

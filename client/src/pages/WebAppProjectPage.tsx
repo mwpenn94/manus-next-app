@@ -203,9 +203,9 @@ export default function WebAppProjectPage() {
                 />
               ) : (
                 <div className="text-center">
-                  <Eye className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">No preview available</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Deploy your project to see a live preview</p>
+                  <p className="text-xs text-muted-foreground mt-1">Deploy your project to see a live preview</p>
                 </div>
               )}
             </div>
@@ -237,9 +237,9 @@ export default function WebAppProjectPage() {
             ) : (
               <Card className="border-border border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileCode className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                  <FileCode className="w-10 h-10 text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground mb-1">No GitHub repository connected</p>
-                  <p className="text-xs text-muted-foreground/60 mb-4">Connect a repo to manage code with version control</p>
+                  <p className="text-xs text-muted-foreground mb-4">Connect a repo to manage code with version control</p>
                   <Button variant="outline" size="sm" onClick={() => { setActivePanel("settings"); setSettingsTab("github"); }}>
                     <GitBranch className="w-3.5 h-3.5 mr-1" /> Connect GitHub
                   </Button>
@@ -397,9 +397,9 @@ export default function WebAppProjectPage() {
               {deploymentsQuery.data?.length === 0 && (
                 <Card className="border-border border-dashed">
                   <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Rocket className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                    <Rocket className="w-10 h-10 text-muted-foreground mb-3" />
                     <p className="text-sm text-muted-foreground">No deployments yet</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Click Publish to create your first deployment</p>
+                    <p className="text-xs text-muted-foreground mt-1">Click Publish to create your first deployment</p>
                   </CardContent>
                 </Card>
               )}
@@ -580,7 +580,7 @@ export default function WebAppProjectPage() {
                         </div>
                       ) : (
                         <div className="text-center py-6">
-                          <Shield className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                          <Shield className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm text-muted-foreground">No environment variables configured</p>
                         </div>
                       )}
@@ -618,9 +618,9 @@ export default function WebAppProjectPage() {
                   ) : (
                     <Card className="border-border border-dashed">
                       <CardContent className="flex flex-col items-center justify-center py-12">
-                        <GitBranch className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                        <GitBranch className="w-10 h-10 text-muted-foreground mb-3" />
                         <p className="text-sm text-muted-foreground mb-1">No GitHub repository connected</p>
-                        <p className="text-xs text-muted-foreground/60 mb-4">Connect a repo to enable version control and CI/CD</p>
+                        <p className="text-xs text-muted-foreground mb-4">Connect a repo to enable version control and CI/CD</p>
                         <Button variant="outline" size="sm" onClick={() => navigate("/github")}>
                           <GitBranch className="w-3.5 h-3.5 mr-1" /> Connect Repository
                         </Button>

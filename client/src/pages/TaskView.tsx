@@ -167,7 +167,7 @@ function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: numb
         <span className="text-[11px] text-muted-foreground">Rated</span>
         <div className="flex gap-0.5">
           {[1, 2, 3, 4, 5].map(star => (
-            <span key={star} className={cn("text-sm", star <= selectedRating ? "text-amber-400" : "text-muted-foreground/30")}>
+            <span key={star} className={cn("text-sm", star <= selectedRating ? "text-amber-400" : "text-muted-foreground")}>
               ★
             </span>
           ))}
@@ -190,7 +190,7 @@ function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: numb
             title={`Rate ${star}/5`}
           >
             <span className={cn(
-              star <= (hoveredStar || selectedRating) ? "text-amber-400" : "text-muted-foreground/30"
+              star <= (hoveredStar || selectedRating) ? "text-amber-400" : "text-muted-foreground"
             )}>
               ★
             </span>
@@ -277,17 +277,17 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                   const title = line.replace(urlMatch?.[0] || "", "").trim() || urlMatch?.[1];
                   return (
                     <div key={i} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/30 transition-colors">
-                      <Globe className="w-3 h-3 shrink-0 text-muted-foreground/60" />
+                      <Globe className="w-3 h-3 shrink-0 text-muted-foreground" />
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] text-foreground/70 truncate">{title}</p>
                         {urlMatch && (
-                          <p className="text-[9px] text-muted-foreground/50 font-mono truncate">{urlMatch[1]}</p>
+                          <p className="text-[9px] text-muted-foreground font-mono truncate">{urlMatch[1]}</p>
                         )}
                       </div>
                       {urlMatch && (
                         <button
                           onClick={() => window.open(urlMatch[1], "_blank")}
-                          className="p-0.5 text-muted-foreground/40 hover:text-foreground transition-colors shrink-0"
+                          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
                         >
                           <ExternalLink className="w-2.5 h-2.5" />
                         </button>
@@ -820,7 +820,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                           <tbody>
                             {lines.map((line, i) => (
                               <tr key={i} className="hover:bg-muted/30 transition-colors">
-                                <td className="text-right pr-4 pl-4 py-0 select-none text-muted-foreground/40 text-[10px] w-10 align-top">
+                                <td className="text-right pr-4 pl-4 py-0 select-none text-muted-foreground text-[10px] w-10 align-top">
                                   {i + 1}
                                 </td>
                                 <td className="pr-4 py-0 whitespace-pre-wrap text-foreground/80">
@@ -2196,7 +2196,7 @@ export default function TaskView() {
                 <span className="text-[10px] text-muted-foreground font-mono">
                   {agentMode === "speed" ? "~$0.02" : agentMode === "max" ? "~$0.50" : "~$0.15"}
                 </span>
-                <span className="text-[9px] text-muted-foreground/60">
+                <span className="text-[9px] text-muted-foreground">
                   {agentMode === "speed" ? "speed" : agentMode === "max" ? "max" : "quality"}
                 </span>
               </span>
@@ -2557,7 +2557,7 @@ export default function TaskView() {
                     <div key={i} className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
                       <FileIcon className="w-3 h-3 text-primary" />
                       <span className="text-foreground/80 max-w-[150px] truncate">{f.fileName}</span>
-                      <span className="text-muted-foreground/60 text-[10px] shrink-0">{ext}{sizeLabel ? ` · ${sizeLabel}` : ""}</span>
+                      <span className="text-muted-foreground text-[10px] shrink-0">{ext}{sizeLabel ? ` · ${sizeLabel}` : ""}</span>
                       <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
                         <X className="w-3 h-3" />
                       </button>

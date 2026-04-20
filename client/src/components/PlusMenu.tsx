@@ -260,9 +260,9 @@ function PhotosSection({ compact = false }: { compact?: boolean }) {
             )}
           >
             {i === 0 ? (
-              <Camera className="w-4 h-4 text-muted-foreground/60" />
+              <Camera className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <ImageLucide className="w-4 h-4 text-muted-foreground/30" />
+              <ImageLucide className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
         ))}

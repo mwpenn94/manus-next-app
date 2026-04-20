@@ -236,7 +236,7 @@ export default function MessagingAgentPage() {
             ) : messagingConnectors.length === 0 ? (
               <Card className="bg-card border-border">
                 <CardContent className="p-8 text-center">
-                  <MessageSquare className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">No connections yet. Add one to get started.</p>
                 </CardContent>
               </Card>
@@ -294,7 +294,7 @@ export default function MessagingAgentPage() {
               <CardContent className="p-4">
                 {!selectedId ? (
                   <div className="text-center py-6">
-                    <Send className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <Send className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">Select a connection to send a test message</p>
                   </div>
                 ) : (

@@ -168,7 +168,7 @@ export default function TeamPage() {
         ) : teams.length === 0 ? (
           <Card className="bg-card border-border">
             <CardContent className="py-12 text-center">
-              <Users className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">No teams yet. Create one or join with an invite code.</p>
             </CardContent>
           </Card>

@@ -774,7 +774,7 @@ function ArtifactCard({ artifact, index, onNavigate, onPreview, selectMode, sele
         </div>
       ) : (
         <div className="aspect-video bg-muted/20 flex items-center justify-center">
-          <Icon className="w-8 h-8 text-muted-foreground/40" />
+          <Icon className="w-8 h-8 text-muted-foreground" />
         </div>
       )}
 
@@ -946,7 +946,7 @@ function FileCard({ file, index, onPreview, selectMode, selected, onToggleSelect
         </div>
       ) : (
         <div className="aspect-video bg-muted/20 flex items-center justify-center">
-          <Icon className="w-8 h-8 text-muted-foreground/40" />
+          <Icon className="w-8 h-8 text-muted-foreground" />
         </div>
       )}
       <div className="p-3">

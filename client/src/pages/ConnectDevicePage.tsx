@@ -190,7 +190,7 @@ export default function ConnectDevicePage() {
         ) : !devices.data?.length ? (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center">
-              <Monitor className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <Monitor className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No devices connected</h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
                 Connect your desktop, Android phone, or iOS device to let the agent control it remotely. All methods are free.

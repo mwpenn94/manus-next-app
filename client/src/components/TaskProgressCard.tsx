@@ -62,7 +62,7 @@ function PhaseStatusIcon({ status }: { status: Phase["status"] }) {
       </div>
     );
   }
-  return <Clock className="w-4 h-4 text-muted-foreground/40 shrink-0" />;
+  return <Clock className="w-4 h-4 text-muted-foreground shrink-0" />;
 }
 
 // ── Derive phases from actions ──
@@ -193,7 +193,7 @@ export default function TaskProgressCard({ actions, stepProgress, streaming }: T
                       "text-sm flex-1 truncate",
                       phase.status === "completed" && "text-foreground",
                       phase.status === "active" && "text-foreground font-medium",
-                      phase.status === "pending" && "text-muted-foreground/50"
+                      phase.status === "pending" && "text-muted-foreground"
                     )}
                   >
                     {phase.label}

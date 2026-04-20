@@ -287,8 +287,8 @@ export default function Home() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <Plug className="w-3.5 h-3.5 text-muted-foreground/60" />
-          <span className="text-xs text-muted-foreground/60">Connect your tools to Manus Next</span>
+          <Plug className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">Connect your tools to Manus Next</span>
           <div className="flex items-center gap-1 ml-1">
             {QUICK_CONNECTORS.map((c) => (
               <span
@@ -391,7 +391,7 @@ export default function Home() {
           transition={{ duration: 0.4, delay: 0.5 }}
         >
           <div className="flex items-center justify-center gap-3">
-            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Connect</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Connect</span>
             {QUICK_CONNECTORS.map((connector) => (
               <Link
                 key={connector.id}
@@ -420,11 +420,11 @@ export default function Home() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <span className="text-[10px] text-muted-foreground/60 mr-1.5 uppercase tracking-wider">Powered by</span>
+          <span className="text-[10px] text-muted-foreground mr-1.5 uppercase tracking-wider">Powered by</span>
           {PACKAGES.map((pkg) => (
             <span
               key={pkg}
-              className="text-[9px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground/60 border border-border/50"
+              className="text-[9px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/50"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               {pkg}

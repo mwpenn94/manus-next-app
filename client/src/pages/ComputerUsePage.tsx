@@ -248,8 +248,8 @@ export default function ComputerUsePage() {
         {windows.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <Monitor className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground/50">
+              <Monitor className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm text-muted-foreground">
                 Open an application from the taskbar to get started
               </p>
               <div className="grid grid-cols-4 gap-6 mt-8">

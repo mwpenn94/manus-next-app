@@ -67,7 +67,7 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
         type === "removed" && "bg-red-500/10"
       )}
     >
-      <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground/30 border-r border-border/30">
+      <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground border-r border-border/30">
         {lineNum}
       </span>
       <span
@@ -75,7 +75,7 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
           "w-5 shrink-0 text-center select-none",
           type === "added" && "text-emerald-400",
           type === "removed" && "text-red-400",
-          type === "unchanged" && "text-muted-foreground/20"
+          type === "unchanged" && "text-muted-foreground"
         )}
       >
         {type === "added" ? "+" : type === "removed" ? "-" : " "}
@@ -136,7 +136,7 @@ function computeSimpleDiff(
 function CodeLine({ line, lineNum }: { line: string; lineNum: number }) {
   return (
     <div className="flex font-mono text-xs leading-6 whitespace-pre-wrap break-all">
-      <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground/30 border-r border-border/30">
+      <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground border-r border-border/30">
         {lineNum}
       </span>
       <span className="flex-1 px-3 text-foreground/90">{line || " "}</span>

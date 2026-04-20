@@ -71,7 +71,7 @@ export default function TaskCompletedCard({ taskId, onRate, className }: TaskCom
                   "w-5 h-5 transition-colors",
                   value <= displayRating
                     ? "text-amber-400 fill-amber-400"
-                    : "text-muted-foreground/40"
+                    : "text-muted-foreground"
                 )}
               />
             </button>

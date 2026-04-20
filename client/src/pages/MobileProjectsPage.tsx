@@ -165,7 +165,7 @@ export default function MobileProjectsPage() {
         ) : !projects.data?.length ? (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center">
-              <Smartphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <Smartphone className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No mobile projects yet</h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
                 Create a mobile project to package your web app for phones and tablets. PWA is the easiest free option.
@@ -477,7 +477,7 @@ export default function MobileProjectsPage() {
                   <img src={project.iconUrl} alt="App icon" className="w-24 h-24 rounded-2xl border border-border" />
                 ) : (
                   <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-border flex items-center justify-center">
-                    <Palette className="w-8 h-8 text-muted-foreground/30" />
+                    <Palette className="w-8 h-8 text-muted-foreground" />
                   </div>
                 )}
                 <p className="text-xs text-muted-foreground mt-2">

@@ -271,7 +271,7 @@ echo "Installers are in src-tauri/target/release/bundle/"
             {!config ? (
               <Card className="bg-card border-border">
                 <CardContent className="p-8 text-center">
-                  <Monitor className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <Monitor className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">Configure and generate to see output</p>
                 </CardContent>
               </Card>

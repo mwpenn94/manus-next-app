@@ -814,7 +814,7 @@ export default function SettingsPage() {
                         {cap.statusNote && (
                           <p className="text-[10px] text-amber-400/70 mt-0.5 italic">{cap.statusNote}</p>
                         )}
-                        <p className="text-[10px] text-muted-foreground/60 mt-1 font-mono">{cap.package}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 font-mono">{cap.package}</p>
                       </div>
                       <Toggle
                         checked={cap.enabled}
@@ -957,7 +957,7 @@ export default function SettingsPage() {
                     <div className="bg-muted/30 rounded-lg p-3 max-h-40 overflow-y-auto space-y-1 font-mono text-[11px]">
                       {events.slice(-10).reverse().map((evt, i) => (
                         <div key={i} className="flex items-center gap-2">
-                          <span className="text-muted-foreground/60 shrink-0">
+                          <span className="text-muted-foreground shrink-0">
                             {evt.timestamp.toLocaleTimeString()}
                           </span>
                           <span className={cn(

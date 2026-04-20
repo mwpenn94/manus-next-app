@@ -126,7 +126,7 @@ export default function NotificationCenter() {
                       {n.content && (
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.content}</p>
                       )}
-                      <p className="text-[10px] text-muted-foreground/60 mt-1">
+                      <p className="text-[10px] text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                       </p>
                     </div>

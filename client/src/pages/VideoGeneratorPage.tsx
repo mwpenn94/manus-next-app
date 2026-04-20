@@ -128,9 +128,9 @@ export default function VideoGeneratorPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-16">
-            <Video className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+            <Video className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-2">No video projects yet</p>
-            <p className="text-xs text-muted-foreground/60 mb-4">Create your first video from a text prompt</p>
+            <p className="text-xs text-muted-foreground mb-4">Create your first video from a text prompt</p>
             <Button onClick={() => setShowCreate(true)} variant="outline" size="sm" className="gap-1.5">
               <Plus className="w-4 h-4" />
               Create Video
@@ -159,11 +159,11 @@ export default function VideoGeneratorPage() {
                     {project.thumbnailUrl ? (
                       <img src={project.thumbnailUrl} alt="" className="w-full h-full object-cover" />
                     ) : project.status === "generating" ? (
-                      <Loader2 className="w-8 h-8 text-muted-foreground/30 animate-spin" />
+                      <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
                     ) : project.status === "ready" ? (
                       <Play className="w-8 h-8 text-primary/50 group-hover:text-primary transition-colors" />
                     ) : (
-                      <Film className="w-8 h-8 text-muted-foreground/20" />
+                      <Film className="w-8 h-8 text-muted-foreground" />
                     )}
                   </div>
 

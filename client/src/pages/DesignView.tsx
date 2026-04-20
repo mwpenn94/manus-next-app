@@ -467,8 +467,8 @@ export default function DesignView() {
                   {layers.length === 0 ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
-                        <Paintbrush className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                        <p className="text-sm text-muted-foreground/50">
+                        <Paintbrush className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground">
                           Generate an image or add text to start designing
                         </p>
                       </div>

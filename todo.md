@@ -1397,3 +1397,7 @@
 ## Bug Fix — Accessibility (axe-core)
 - [x] Fix color contrast failures on home page (increased muted-foreground from oklch 0.65 to 0.72 for 4.5:1 ratio)
 - [x] Fix landmark region issue — sidebar changed from <aside> to <nav> with aria-labels, MobileBottomNav gets aria-label
+
+## Bug Fix — Accessibility Round 2 (axe-core persistent)
+- [x] Replace all text-muted-foreground opacity modifiers (/60, /50, /40, /30, /20, /80) with solid text-muted-foreground across 22 files
+- [x] Fix remaining landmark issue — top bar wrapped in <header>, sidebar uses <nav>, <main> wraps page content

@@ -82,8 +82,8 @@ export default function WebappPreviewCard({
       {!screenshotUrl && (
         <div className="w-full aspect-[16/10] bg-muted/50 flex items-center justify-center">
           <div className="text-center">
-            <Globe className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground/60">Preview not available</p>
+            <Globe className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">Preview not available</p>
           </div>
         </div>
       )}

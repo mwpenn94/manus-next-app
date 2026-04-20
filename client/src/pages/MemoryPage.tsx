@@ -508,7 +508,7 @@ export default function MemoryPage() {
         <div className="space-y-2">
           {displayMemories.length === 0 ? (
             <div className="py-12 text-center">
-              <Sparkles className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+              <Sparkles className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">
                 {searchQuery
                   ? "No matching memories found"
@@ -531,13 +531,13 @@ export default function MemoryPage() {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">{m.value}</p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                    <p className="text-[10px] text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}
                     </p>
                   </div>
                   <button
                     onClick={() => deleteMemory.mutate({ id: m.id })}
-                    className="p-1.5 rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
                     title="Delete memory"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

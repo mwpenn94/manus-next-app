@@ -482,7 +482,7 @@ Generate the complete HTML code now.`,
             ) : !projectsQuery.data?.length ? (
               <Card className="border-border border-dashed">
                 <CardContent className="flex flex-col items-center justify-center py-16">
-                  <FolderKanban className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                  <FolderKanban className="w-12 h-12 text-muted-foreground mb-3" />
                   <h3 className="text-lg font-medium mb-1">No projects yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">Create a project to manage deployments, domains, and settings</p>
                   <Button onClick={() => createProjectMut.mutate({ name: "My App", framework: "react" })} disabled={createProjectMut.isPending}>
