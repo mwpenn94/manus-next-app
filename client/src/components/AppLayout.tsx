@@ -141,6 +141,30 @@ function BridgeStatusBadge() {
 
 type StatusFilter = "all" | "running" | "completed" | "error";
 
+// ── Sidebar status badges ──
+
+function ConnectorStatusBadge() {
+  const connectors = trpc.connector.list.useQuery(undefined, { staleTime: 60_000 });
+  const connected = connectors.data?.filter((c: any) => c.status === "connected").length ?? 0;
+  if (!connected) return null;
+  return (
+    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+      {connected}
+    </span>
+  );
+}
+
+function GitHubStatusBadge() {
+  const repos = trpc.github.repos.useQuery(undefined, { staleTime: 60_000 });
+  const count = repos.data?.length ?? 0;
+  if (!count) return null;
+  return (
+    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+      {count}
+    </span>
+  );
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { showHelp, setShowHelp } = useKeyboardShortcuts({
@@ -590,7 +614,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           )}
         >
           <Plug className="w-4 h-4" />
-          Connectors
+          <span className="flex-1">Connectors</span>
+          <ConnectorStatusBadge />
         </Link>
         <Link
           href="/github"
@@ -602,7 +627,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           )}
         >
           <GitBranch className="w-4 h-4" />
-          GitHub
+          <span className="flex-1">GitHub</span>
+          <GitHubStatusBadge />
         </Link>
         <Link
           href="/webapp-builder"

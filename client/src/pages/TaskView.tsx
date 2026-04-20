@@ -242,8 +242,36 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
           )}
         </div>
         {previewExpanded && action.preview && (
-          <div className="mt-1.5 p-2 rounded bg-muted/50 border border-border/50 text-[11px] text-muted-foreground font-mono leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap">
-            {action.preview}
+          <div className="mt-1.5 rounded bg-muted/50 border border-border/50 text-[11px] text-muted-foreground leading-relaxed max-h-40 overflow-y-auto">
+            {action.type === "searching" && action.preview.includes("http") ? (
+              <div className="divide-y divide-border/50">
+                {action.preview.split("\n").filter(Boolean).slice(0, 5).map((line, i) => {
+                  const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
+                  const title = line.replace(urlMatch?.[0] || "", "").trim() || urlMatch?.[1];
+                  return (
+                    <div key={i} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/30 transition-colors">
+                      <Globe className="w-3 h-3 shrink-0 text-muted-foreground/60" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-foreground/70 truncate">{title}</p>
+                        {urlMatch && (
+                          <p className="text-[9px] text-muted-foreground/50 font-mono truncate">{urlMatch[1]}</p>
+                        )}
+                      </div>
+                      {urlMatch && (
+                        <button
+                          onClick={() => window.open(urlMatch[1], "_blank")}
+                          className="p-0.5 text-muted-foreground/40 hover:text-foreground transition-colors shrink-0"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-2 font-mono whitespace-pre-wrap">{action.preview}</div>
+            )}
           </div>
         )}
       </div>
@@ -423,6 +451,9 @@ type WorkspaceTab = "browser" | "code" | "terminal" | "images" | "documents";
 function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("browser");
+  const [selectedCodeIdx, setSelectedCodeIdx] = useState(0);
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
+  const [selectedDocIdx, setSelectedDocIdx] = useState(0);
 
   // Fetch real artifacts from DB — queries auto-enable when serverId becomes available
   const serverId = task?.serverId ?? 0;
@@ -632,25 +663,82 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
         )}
 
         {activeTab === "code" && (
-          <div className="p-4 h-full overflow-y-auto">
-            {latestCode ? (
-              <>
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground font-mono">{latestCode.label || "output"}</span>
-                  <button
-                    onClick={() => {
-                      if (latestCode.content) navigator.clipboard.writeText(latestCode.content);
-                    }}
-                    className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
-                    title="Copy"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
-                </div>
-                <pre className="text-xs text-foreground/80 font-mono leading-relaxed whitespace-pre-wrap">
-                  {latestCode.content}
-                </pre>
-              </>
+          <div className="h-full overflow-y-auto">
+            {codeArtifacts.data && codeArtifacts.data.length > 0 ? (
+              <div className="flex flex-col h-full">
+                {/* File tabs for multiple code artifacts */}
+                {codeArtifacts.data.length > 1 && (
+                  <div className="flex items-center gap-0 border-b border-border px-2 pt-1 overflow-x-auto shrink-0">
+                    {codeArtifacts.data.map((artifact: any, idx: number) => (
+                      <button
+                        key={artifact.id || idx}
+                        onClick={() => setSelectedCodeIdx?.(idx)}
+                        className={cn(
+                          "px-3 py-1.5 text-[10px] font-mono border-b-2 transition-colors whitespace-nowrap",
+                          (selectedCodeIdx ?? 0) === idx
+                            ? "border-primary text-foreground"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {artifact.label || `file-${idx + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Code viewer with line numbers */}
+                {(() => {
+                  const activeCode = codeArtifacts.data[(selectedCodeIdx ?? 0)] || codeArtifacts.data[0];
+                  if (!activeCode) return null;
+                  const lines = (activeCode.content || "").split("\n");
+                  return (
+                    <div className="flex-1 overflow-auto">
+                      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
+                        <span className="text-[10px] text-muted-foreground font-mono">{activeCode.label || "output"}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-muted-foreground">{lines.length} lines</span>
+                          <button
+                            onClick={() => {
+                              if (activeCode.content) {
+                                navigator.clipboard.writeText(activeCode.content);
+                                toast.success("Copied to clipboard");
+                              }
+                            }}
+                            className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copy code"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          {activeCode.url && (
+                            <button
+                              onClick={() => activeCode.url && window.open(activeCode.url, "_blank")}
+                              className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                              title="Open file"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="font-mono text-xs leading-relaxed">
+                        <table className="w-full border-collapse">
+                          <tbody>
+                            {lines.map((line, i) => (
+                              <tr key={i} className="hover:bg-muted/30 transition-colors">
+                                <td className="text-right pr-4 pl-4 py-0 select-none text-muted-foreground/40 text-[10px] w-10 align-top">
+                                  {i + 1}
+                                </td>
+                                <td className="pr-4 py-0 whitespace-pre-wrap text-foreground/80">
+                                  {line || " "}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full text-center text-muted-foreground">
                 <div>
@@ -682,25 +770,77 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
         )}
 
         {activeTab === "images" && (
-          <div className="p-4 h-full overflow-y-auto">
+          <div className="h-full overflow-hidden flex flex-col">
             {imageArtifacts.data && imageArtifacts.data.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {imageArtifacts.data.map((img: any, i: number) => (
-                  <div key={img.id || i} className="group relative rounded-lg overflow-hidden border border-border bg-muted">
-                    <img
-                      src={img.url}
-                      alt={img.label || `Generated image ${i + 1}`}
-                      className="w-full aspect-square object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => img.url && window.open(img.url, "_blank")}
-                    />
-                    {img.label && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                        <p className="text-[10px] text-white truncate">{img.label}</p>
+              <>
+                {/* Selected image preview */}
+                {(() => {
+                  const selected = imageArtifacts.data[selectedImageIdx ?? 0] as any;
+                  if (!selected) return null;
+                  return (
+                    <div className="flex-1 flex items-center justify-center p-4 bg-black/5 relative">
+                      <img
+                        src={selected.url}
+                        alt={selected.label || "Generated image"}
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                      />
+                      <div className="absolute top-3 right-3 flex items-center gap-1">
+                        <button
+                          onClick={() => selected.url && window.open(selected.url, "_blank")}
+                          className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
+                          title="Open full size"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (selected.url) {
+                              const a = document.createElement("a");
+                              a.href = selected.url;
+                              a.download = selected.label || "image";
+                              a.click();
+                            }
+                          }}
+                          className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
+                          title="Download"
+                        >
+                          <Download className="w-3 h-3" />
+                        </button>
                       </div>
-                    )}
+                      {selected.label && (
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <p className="text-[11px] text-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded truncate">
+                            {selected.label}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {/* Thumbnail strip */}
+                <div className="shrink-0 border-t border-border p-2 overflow-x-auto">
+                  <div className="flex items-center gap-2">
+                    {imageArtifacts.data.map((img: any, i: number) => (
+                      <button
+                        key={img.id || i}
+                        onClick={() => setSelectedImageIdx(i)}
+                        className={cn(
+                          "w-14 h-14 rounded-md overflow-hidden border-2 shrink-0 transition-all",
+                          (selectedImageIdx ?? 0) === i
+                            ? "border-primary shadow-sm shadow-primary/20"
+                            : "border-border hover:border-foreground/30"
+                        )}
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.label || `Image ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              </>
             ) : (
               <div className="flex items-center justify-center h-full text-center text-muted-foreground">
                 <div>
@@ -714,55 +854,102 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
         )}
 
         {activeTab === "documents" && (
-          <div className="p-4 h-full overflow-y-auto">
+          <div className="h-full overflow-hidden flex flex-col">
             {allDocuments.length > 0 ? (
-              <div className="space-y-2">
-                {allDocuments.map((doc, i) => {
-                  const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : "📋";
+              <>
+                {/* Document list */}
+                <div className="shrink-0 border-b border-border overflow-x-auto">
+                  <div className="flex items-center gap-0 px-2 pt-1">
+                    {allDocuments.map((doc, i) => {
+                      const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : "📋";
+                      return (
+                        <button
+                          key={doc.id || i}
+                          onClick={() => setSelectedDocIdx(i)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 text-[10px] border-b-2 transition-colors whitespace-nowrap",
+                            (selectedDocIdx ?? 0) === i
+                              ? "border-primary text-foreground"
+                              : "border-transparent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <span className="text-xs">{icon}</span>
+                          {doc.label || `Document ${i + 1}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Document preview */}
+                {(() => {
+                  const doc = allDocuments[selectedDocIdx ?? 0];
+                  if (!doc) return null;
                   const ext = doc.docType === "pdf" ? ".pdf" : doc.docType === "docx" ? ".docx" : ".md";
-                  const label = doc.label || `Document ${i + 1}`;
                   return (
-                    <div
-                      key={doc.id || i}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors group"
-                    >
-                      <span className="text-lg shrink-0">{icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">{label}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {ext.toUpperCase().slice(1)} &middot; {new Date(doc.createdAt).toLocaleTimeString()}
-                        </p>
+                    <div className="flex-1 overflow-auto">
+                      {/* Toolbar */}
+                      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
+                        <span className="text-[10px] text-muted-foreground">
+                          {doc.label || "Document"} &middot; {ext.toUpperCase().slice(1)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {doc.url && (
+                            <button
+                              onClick={() => window.open(doc.url!, "_blank")}
+                              className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                              title="Open in new tab"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (doc.url) {
+                                const a = document.createElement("a");
+                                a.href = doc.url;
+                                a.download = (doc.label || "document") + ext;
+                                a.click();
+                              } else if (doc.content) {
+                                const blob = new Blob([doc.content], { type: "text/markdown" });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = (doc.label || "document") + ext;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }
+                            }}
+                            className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                            title="Download"
+                          >
+                            <Download className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
-                      {doc.url && (
-                        <button
-                          onClick={() => window.open(doc.url!, "_blank")}
-                          className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
-                          title={`Download ${ext}`}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {doc.content && !doc.url && (
-                        <button
-                          onClick={() => {
-                            const blob = new Blob([doc.content!], { type: "text/markdown" });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `${label}${ext}`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
-                          title="Download"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
+                      {/* Preview content */}
+                      {doc.docType === "pdf" && doc.url ? (
+                        <iframe
+                          src={doc.url}
+                          className="w-full h-full border-0"
+                          title={doc.label || "PDF Preview"}
+                        />
+                      ) : doc.content ? (
+                        <div className="p-4 prose prose-sm dark:prose-invert max-w-none">
+                          <Streamdown>{doc.content}</Streamdown>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                          <div>
+                            <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                            <p className="text-xs">Preview not available</p>
+                            <p className="text-[10px] mt-1 opacity-60">Click download to view this file</p>
+                          </div>
+                        </div>
                       )}
                     </div>
                   );
-                })}
-              </div>
+                })()}
+              </>
             ) : (
               <div className="flex items-center justify-center h-full text-center text-muted-foreground">
                 <div>
@@ -2067,29 +2254,46 @@ export default function TaskView() {
                 >
                   {uploading ? <Upload className="w-4 h-4 animate-pulse" /> : <Paperclip className="w-4 h-4" />}
                 </button>
-                {/* Voice input */}
-                <button
-                  onClick={recording ? stopRecording : startRecording}
-                  disabled={transcribing}
-                  className={cn(
-                    "p-2 md:p-1.5 rounded-md transition-colors active:scale-95",
-                    recording
-                      ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
-                      : transcribing
-                        ? "text-muted-foreground opacity-50 cursor-not-allowed"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                {/* Voice input with waveform indicator */}
+                <div className="flex items-center gap-1">
+                  {recording && (
+                    <div className="flex items-center gap-[2px] h-4 px-1">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className="w-[3px] bg-destructive rounded-full"
+                          style={{
+                            height: `${8 + Math.random() * 8}px`,
+                            animation: `voiceWave 0.5s ease-in-out ${i * 0.1}s infinite alternate`,
+                          }}
+                        />
+                      ))}
+                      <style>{`@keyframes voiceWave { 0% { height: 4px; } 100% { height: 16px; } }`}</style>
+                    </div>
                   )}
-                  title={recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input"}
-                  aria-label={recording ? "Stop recording" : transcribing ? "Transcribing" : "Voice input"}
-                >
-                  {transcribing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : recording ? (
-                    <MicOff className="w-4 h-4" />
-                  ) : (
-                    <Mic className="w-4 h-4" />
-                  )}
-                </button>
+                  <button
+                    onClick={recording ? stopRecording : startRecording}
+                    disabled={transcribing}
+                    className={cn(
+                      "p-2 md:p-1.5 rounded-md transition-colors active:scale-95",
+                      recording
+                        ? "text-destructive bg-destructive/10 hover:bg-destructive/20 animate-pulse"
+                        : transcribing
+                          ? "text-muted-foreground opacity-50 cursor-not-allowed"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                    )}
+                    title={recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input"}
+                    aria-label={recording ? "Stop recording" : transcribing ? "Transcribing" : "Voice input"}
+                  >
+                    {transcribing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : recording ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 {streaming && (

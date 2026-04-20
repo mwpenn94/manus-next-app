@@ -1503,7 +1503,61 @@ async function executeGenerateSlides(args: {
     const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
     const slides = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 
-    // Build markdown document from slides
+    // Build HTML slide deck with keyboard navigation
+    const slideHtml = slides.map((s: any, i: number) => {
+      const contentHtml = (s.content || "").replace(/^- /gm, "<li>").replace(/<li>/g, "</li><li>");
+      return `<section class="slide" id="slide-${i}" style="display:${i === 0 ? 'flex' : 'none'}">
+        <div class="slide-number">${i + 1} / ${slides.length}</div>
+        <h2>${s.title}</h2>
+        <div class="slide-content">${contentHtml.includes("<li>") ? `<ul>${contentHtml}</ul>` : `<p>${s.content}</p>`}</div>
+        ${s.notes ? `<div class="speaker-notes"><strong>Notes:</strong> ${s.notes}</div>` : ""}
+      </section>`;
+    }).join("\n");
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${args.topic}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#e5e5e5;overflow:hidden;height:100vh}
+.slide{flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:4rem 6rem;text-align:center;position:relative}
+.slide h2{font-size:2.8rem;font-weight:700;margin-bottom:2rem;background:linear-gradient(135deg,#c8a97e,#e5d4b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.slide-content{font-size:1.3rem;line-height:1.8;max-width:800px;text-align:left}
+.slide-content ul{list-style:none;padding:0}
+.slide-content li{padding:0.5rem 0;padding-left:1.5rem;position:relative}
+.slide-content li:before{content:"\u25B8";position:absolute;left:0;color:#c8a97e}
+.slide-number{position:absolute;top:1.5rem;right:2rem;font-size:0.8rem;opacity:0.4}
+.speaker-notes{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);font-size:0.75rem;opacity:0.3;max-width:600px}
+.controls{position:fixed;bottom:2rem;right:2rem;display:flex;gap:0.5rem;z-index:10}
+.controls button{background:rgba(200,169,126,0.15);border:1px solid rgba(200,169,126,0.3);color:#c8a97e;padding:0.5rem 1rem;border-radius:0.5rem;cursor:pointer;font-size:0.9rem}
+.controls button:hover{background:rgba(200,169,126,0.25)}
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#c8a97e,#e5d4b8);transition:width 0.3s}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+${slideHtml}
+<div class="controls">
+<button onclick="prev()">\u25C0 Prev</button>
+<button onclick="next()">Next \u25B6</button>
+</div>
+<script>
+let current=0;const total=${slides.length};
+function show(n){document.querySelectorAll('.slide').forEach((s,i)=>{s.style.display=i===n?'flex':'none'});document.getElementById('progress').style.width=((n+1)/total*100)+'%'}
+function next(){if(current<total-1){current++;show(current)}}
+function prev(){if(current>0){current--;show(current)}}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')next();if(e.key==='ArrowLeft')prev();if(e.key==='f'){document.documentElement.requestFullscreen?.()}});
+show(0);
+</script>
+</body>
+</html>`;
+
+    const htmlFileName = `slides-${nanoid(6)}.html`;
+    const { url: htmlUrl } = await storagePut(`slides/${htmlFileName}`, Buffer.from(html, "utf-8"), "text/html");
+
+    // Also build markdown summary
     let markdown = `# ${args.topic}\n\n`;
     for (let i = 0; i < slides.length; i++) {
       const s = slides[i];
@@ -1511,13 +1565,10 @@ async function executeGenerateSlides(args: {
       if (s.notes) markdown += `> **Speaker Notes:** ${s.notes}\n\n`;
     }
 
-    const fileName = `slides-${nanoid(6)}.md`;
-    const { url } = await storagePut(`slides/${fileName}`, Buffer.from(markdown, "utf-8"), "text/markdown");
-
     return {
       success: true,
-      result: `Presentation generated: **${args.topic}** (${slides.length} slides, ${style} style)\n\n[Download Slides](${url})\n\n${markdown.slice(0, 3000)}`,
-      url,
+      result: `Presentation generated: **${args.topic}** (${slides.length} slides, ${style} style)\n\n[\u25B6 Present Slides](${htmlUrl})\n\n${markdown.slice(0, 3000)}`,
+      url: htmlUrl,
       artifactType: "document",
       artifactLabel: `Slides: ${args.topic.slice(0, 60)}`,
     };
