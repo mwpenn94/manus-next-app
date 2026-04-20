@@ -1,14 +1,14 @@
 # PARITY_BACKLOG — Manus Next v8.4
 
-**Spec version:** v8.4 | **Audit date:** April 19, 2026 | **Auditor:** Agent (Convergence Pass 12)
+**Spec version:** v9 | **Audit date:** April 20, 2026 | **Auditor:** Agent (v9 Convergence Sweep 2)
 
 ## Summary
 
 | Status | Count | Percentage |
 |--------|-------|------------|
 | GREEN (fully implemented) | 60 | 89.6% |
-| YELLOW (partial / stub with failover) | 0 | 0% |
-| RED (blocked, no workaround) | 2 | 3.0% |
+| YELLOW (partial / stub with failover) | 2 | 3.0% |
+| RED (blocked, no workaround) | 0 | 0% |
 | N/A (out of scope) | 5 | 7.5% |
 | **Total** | **67** | **100%** |
 
@@ -115,7 +115,7 @@
 | 50 | MCP | GREEN | Connector framework supports webhook-based MCP protocol, connector.execute with type routing | None |
 | 51 | Slack integration | GREEN | Slack connector with webhook execution via connector.execute, ConnectorsPage UI | None |
 | 52 | Messaging-app agent | GREEN | MessagingAgentPage.tsx with WhatsApp/Telegram/custom webhook support, connection management, test messaging via agent, inbound webhook URL generation | None |
-| 53 | Microsoft Agent365 | RED | No Microsoft integration | Enterprise scope, blocked |
+| 53 | Microsoft Agent365 | YELLOW | ConnectorsPage microsoft-365 entry, Azure AD OAuth scaffold (connectorOAuth.ts), env.ts vars | Needs Azure AD app credentials to activate; §L.25 degraded-delivery |
 | 54 | GoHighLevel | N/A | Out of scope | — |
 | 55 | Meta Ads Manager | N/A | Out of scope | — |
 | 65 | Zapier Integration | GREEN | Zapier connector with webhook execution via connector.execute, ConnectorsPage UI | None |
@@ -140,7 +140,7 @@
 | # | Capability | Status | Evidence | Gap |
 |---|-----------|--------|----------|-----|
 | 61 | Document generation | GREEN | generate_document tool, S3 upload, download links | None |
-| 62 | Veo3 video generation | RED | No video generation | Need Veo3 API access |
+| 62 | Veo3 video generation | YELLOW | VideoGeneratorPage.tsx, video tRPC router (generate/list/get/delete), videoProjects schema, provider tier badges | Needs Veo3 API key; §L.25 degraded-delivery with placeholder UI |
 
 ## 2.14 Compliance (63-64)
 
@@ -158,7 +158,7 @@ All previously YELLOW items have been implemented:
 - #46 Desktop App → DesktopAppPage.tsx with Tauri config generator
 - #52 Messaging Agent → MessagingAgentPage.tsx with webhook bridge
 
-## Blocked Items (RED, 2)
+## Degraded Items (YELLOW, 2)
 
 | Item | Blocker | HRQ ID | Status |
 |------|---------|--------|--------|
@@ -175,6 +175,6 @@ All previously YELLOW items have been implemented:
 
 ## Gate A Status
 
-**60 GREEN / 0 YELLOW / 2 RED / 5 N/A** — 60/62 in-scope capabilities GREEN (96.8%). 2 RED remain (#53 Microsoft 365, #62 Veo3), blocked on external infrastructure.
+**60 GREEN / 2 YELLOW / 0 RED / 5 N/A** — 60/62 in-scope capabilities GREEN (96.8%). 2 YELLOW (#53 Microsoft 365, #62 Veo3) have scaffolds with §L.25 degraded-delivery; full activation requires external credentials.
 
-Note: The 2 RED items are blocked on capabilities that require upstream platform features (Microsoft enterprise integration, Veo3 API) that cannot be implemented within the current sandbox. These are documented with HRQ IDs for tracking.
+Note: The 2 YELLOW items have full UI scaffolds, tRPC routers, and database schemas. They operate in degraded-delivery mode per §L.25 until external credentials (Azure AD app, Veo3 API key) are provided. No RED items remain.

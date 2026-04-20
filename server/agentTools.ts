@@ -1600,10 +1600,31 @@ async function executeDesignCanvas(args: {
       return { success: false, result: "Design generation completed but no image was returned." };
     }
 
+    // NS10: Validate URL accessibility (same as generate_image)
+    const isAccessible = await validateImageUrl(url);
+    let finalUrl = url;
+    if (!isAccessible) {
+      console.warn(`[design_canvas] URL not accessible, attempting re-upload: ${url}`);
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const buffer = Buffer.from(await response.arrayBuffer());
+          const { storagePut } = await import("./storage");
+          const { url: reuploadedUrl } = await storagePut(
+            `designs/${Date.now()}.png`, buffer, "image/png"
+          );
+          finalUrl = reuploadedUrl;
+          console.log(`[design_canvas] Re-uploaded to: ${finalUrl}`);
+        }
+      } catch (reuploadErr) {
+        console.error(`[design_canvas] Re-upload failed:`, reuploadErr);
+      }
+    }
+
     return {
       success: true,
-      result: `Design created: **${format}** — ${args.description.slice(0, 100)}\n\n![Design](${url})\n\n${args.text_overlay ? `**Text overlay:** ${args.text_overlay}` : ""}`,
-      url,
+      result: `Design created: **${format}** — ${args.description.slice(0, 100)}\n\n![Design](${finalUrl})\n\n${args.text_overlay ? `**Text overlay:** ${args.text_overlay}` : ""}`,
+      url: finalUrl,
       artifactType: "generated_image",
       artifactLabel: `Design: ${args.description.slice(0, 60)}`,
     };
