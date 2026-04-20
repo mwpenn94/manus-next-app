@@ -179,6 +179,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [location, navigate] = useLocation();
   const { tasks, activeTaskId, setActiveTask } = useTask();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -186,7 +189,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   // Server-side search when query is long enough
   const searchEnabled = isAuthenticated && searchQuery.trim().length >= 2;
   const serverSearch = trpc.task.search.useQuery(
-    { query: searchQuery.trim() },
+    {
+      query: searchQuery.trim(),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo ? { dateTo } : {}),
+      ...(statusFilter !== "all" ? { statusFilter } : {}),
+    },
     { enabled: searchEnabled, placeholderData: (prev: any) => prev }
   );
 
@@ -254,6 +262,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     }
     if (statusFilter !== "all") {
       filtered = filtered.filter((t) => t.status === statusFilter);
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      filtered = filtered.filter((t) => t.createdAt >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo + "T23:59:59");
+      filtered = filtered.filter((t) => t.createdAt <= to);
     }
     return filtered.map((t) => ({
       id: t.id,
@@ -345,17 +361,60 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             placeholder="Search tasks & messages..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 md:h-8 pl-8 pr-3 text-sm bg-sidebar-accent rounded-md border-0 text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-sidebar-ring"
+            className="w-full h-9 md:h-8 pl-8 pr-10 text-sm bg-sidebar-accent rounded-md border-0 text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-sidebar-ring"
           />
-          {searchQuery && (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="p-0.5 rounded text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
             <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-muted-foreground hover:text-foreground"
+              onClick={() => setShowDateFilter(!showDateFilter)}
+              className={cn(
+                "p-0.5 rounded transition-colors",
+                showDateFilter || dateFrom || dateTo
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Date range filter"
             >
-              <X className="w-3 h-3" />
+              <Filter className="w-3 h-3" />
             </button>
-          )}
+          </div>
         </div>
+        {/* Date range filter */}
+        {showDateFilter && (
+          <div className="mt-2 flex gap-1.5 items-center">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="flex-1 h-7 px-2 text-[10px] bg-sidebar-accent rounded border-0 text-sidebar-foreground focus:outline-none focus:ring-1 focus:ring-sidebar-ring"
+              placeholder="From"
+            />
+            <span className="text-[10px] text-muted-foreground">–</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="flex-1 h-7 px-2 text-[10px] bg-sidebar-accent rounded border-0 text-sidebar-foreground focus:outline-none focus:ring-1 focus:ring-sidebar-ring"
+              placeholder="To"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="p-0.5 rounded text-muted-foreground hover:text-foreground"
+                title="Clear date filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Status Filter Tabs */}
@@ -805,24 +864,26 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* ── LEFT SIDEBAR (Desktop) ── */}
-      <aside
+      <nav
+        aria-label="Main navigation"
         className={cn(
           "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200",
           sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden"
         )}
       >
         {sidebarContent}
-      </aside>
+      </nav>
 
       {/* ── LEFT SIDEBAR (Mobile Drawer) ── */}
-      <aside
+      <nav
+        aria-label="Mobile navigation"
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col w-[300px] max-w-[85vw] bg-sidebar border-r border-sidebar-border transition-transform duration-200 ease-out md:hidden",
           mobileDrawerOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {sidebarContent}
-      </aside>
+      </nav>
 
       {/* ── MAIN CONTENT ── */}
       <div className="flex-1 flex flex-col min-w-0">

@@ -183,17 +183,30 @@ export async function updateTaskSystemPrompt(externalId: string, userId: number,
   await db.update(tasks).set({ systemPrompt }).where(eq(tasks.externalId, externalId));
 }
 
-export async function searchTasks(userId: number, query: string) {
+export async function searchTasks(userId: number, query: string, opts?: { dateFrom?: Date; dateTo?: Date; statusFilter?: string }) {
   const db = await getDb();
   if (!db) return [];
   const pattern = `%${query}%`;
+
+  // Build base conditions
+  const baseConds = [eq(tasks.userId, userId), eq(tasks.archived, 0)];
+  if (opts?.statusFilter && opts.statusFilter !== "all") {
+    baseConds.push(eq(tasks.status, opts.statusFilter as any));
+  }
+  if (opts?.dateFrom) {
+    baseConds.push(gte(tasks.createdAt, opts.dateFrom));
+  }
+  if (opts?.dateTo) {
+    baseConds.push(lte(tasks.createdAt, opts.dateTo));
+  }
+
   // Search in task titles
   const titleMatches = await db.select().from(tasks).where(
-    and(eq(tasks.userId, userId), eq(tasks.archived, 0), like(tasks.title, pattern))
+    and(...baseConds, like(tasks.title, pattern))
   ).orderBy(desc(tasks.updatedAt)).limit(50);
   // Search in message content
   const allUserTasks = await db.select().from(tasks).where(
-    and(eq(tasks.userId, userId), eq(tasks.archived, 0))
+    and(...baseConds)
   ).limit(200);
   const taskIds = allUserTasks.map(t => t.id);
   if (taskIds.length === 0) return titleMatches;

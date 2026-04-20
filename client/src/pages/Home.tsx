@@ -140,7 +140,7 @@ export default function Home() {
   }, [input, createTask, navigate, isAuthenticated]);
 
   return (
-    <div className="h-full overflow-y-auto relative">
+    <div className="h-full overflow-y-auto relative" role="region" aria-label="Home">
       {/* Subtle background image */}
       <div
         className="absolute inset-0 opacity-[0.12] pointer-events-none"

@@ -1385,3 +1385,15 @@
 - [x] P18-4: Offline mode indicator — Go Offline toggle in Settings General tab + amber NetworkBanner showing "Offline mode" when enabled
 - [x] P18-5: Manus UI/UX parity audit — Home, Settings, Library pages verified, no regressions, all new features render correctly
 - [x] P18-6: Recursive convergence passes — 3 consecutive zero-change (passes 2-4): 0 TS errors, 593 tests passing, build clean
+
+## P19 — Platform Hardening + UX Enhancements + Convergence
+- [x] P19-1: Fix Scheduler table — DB migration confirmed applied, server restart resolved stale connection poll errors
+- [x] P19-2: Knowledge base file upload improvements — drag-and-drop multi-file upload with progress bars, auto-categorization, bulk import via memory.bulkAdd
+- [x] P19-3: Task history search and filtering — date range filters (From/To date pickers), status filters, full-text search across titles and messages, server-side + client-side filtering
+- [x] P19-4: Write P19 tests covering all new features (28 tests in p19.test.ts, 617 total passing)
+- [x] P19-5: Manus UI/UX parity audit — Home, Settings, Memory, Library verified; accessibility fixes applied
+- [x] P19-6: Recursive convergence passes — 3 consecutive zero-change (passes 1-3): 0 TS errors, 617 tests passing
+
+## Bug Fix — Accessibility (axe-core)
+- [x] Fix color contrast failures on home page (increased muted-foreground from oklch 0.65 to 0.72 for 4.5:1 ratio)
+- [x] Fix landmark region issue — sidebar changed from <aside> to <nav> with aria-labels, MobileBottomNav gets aria-label

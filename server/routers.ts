@@ -259,9 +259,18 @@ export const appRouter = router({
       }),
 
     search: protectedProcedure
-      .input(z.object({ query: z.string().min(1) }))
+      .input(z.object({
+        query: z.string().min(1),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        statusFilter: z.string().optional(),
+      }))
       .query(async ({ ctx, input }) => {
-        return searchTasks(ctx.user.id, input.query);
+        return searchTasks(ctx.user.id, input.query, {
+          dateFrom: input.dateFrom ? new Date(input.dateFrom) : undefined,
+          dateTo: input.dateTo ? new Date(input.dateTo) : undefined,
+          statusFilter: input.statusFilter,
+        });
       }),
 
     messages: protectedProcedure
@@ -519,6 +528,30 @@ export const appRouter = router({
       .input(z.object({ query: z.string().min(1), limit: z.number().optional() }))
       .query(async ({ ctx, input }) => {
         return searchMemories(ctx.user.id, input.query, input.limit ?? 10);
+      }),
+
+    /** Bulk add memory entries (for file import) */
+    bulkAdd: protectedProcedure
+      .input(z.object({
+        entries: z.array(z.object({
+          key: z.string().min(1).max(500),
+          value: z.string().min(1).max(5000),
+          source: z.enum(["auto", "user"]).optional(),
+        })).min(1).max(100),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        let added = 0;
+        for (const entry of input.entries) {
+          await addMemoryEntry({
+            userId: ctx.user.id,
+            key: entry.key,
+            value: entry.value,
+            source: entry.source ?? "user",
+            taskExternalId: null,
+          });
+          added++;
+        }
+        return { success: true, added };
       }),
   }),
 
