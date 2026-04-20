@@ -961,3 +961,11 @@
 - [x] NS7-5: Convergence Pass 1 — CLEAN
 - [x] NS7-6: Convergence Pass 2 — CLEAN
 - [x] NS7-7: Convergence Pass 3 — CLEAN (0 TS errors, 289/289 tests, prod build clean, all fixes verified) — CONVERGENCE ACHIEVED 3/3
+
+## NS8: GitHub OAuth Connector Fix
+- [x] Diagnose why GitHub connector shows "OAuth not configured" despite GITHUB_CLIENT_ID/SECRET being set — ROOT CAUSE: env.ts reads GITHUB_OAUTH_CLIENT_ID but platform injects GITHUB_CLIENT_ID
+- [x] Fix OAuth initiation flow to properly redirect to GitHub authorization URL — env.ts now reads GITHUB_CLIENT_ID with fallback to GITHUB_OAUTH_CLIENT_ID
+- [x] Fix OAuth callback to exchange code for access token and store in DB — callback route already existed, now works because env vars resolve correctly
+- [x] Ensure all 4 connectors (GitHub, Google, Slack, Notion) properly detect OAuth availability — all 8 env vars now read both naming conventions with fallback
+- [x] Write tests for connector OAuth flow — updated existing tests + added 5 new tests (env var fallback chain, platform name detection, GitHub URL with actual client_id)
+- [x] Run 3 consecutive clean convergence passes — CP1 CLEAN (0 TS errors, 293/293 tests, build clean), CP2 CLEAN, CP3 CLEAN — CONVERGENCE ACHIEVED 3/3
