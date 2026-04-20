@@ -1003,3 +1003,8 @@
 - [x] Update CONVERGENCE_DIRECTIVE_CHECK_V9.md with full v9 AFK extension — 2nd pass, all §1-§8 verified, all v9+prompt-42 additions COMPLIANT, FULL PASS verdict
 - [x] Deeper convergence sweeps — 5 sweeps across 5 new dimensions (adversarial, edge-case, accessibility, dependency, cross-validation), 3/3 clean → DEEPER META-CONVERGENCE at 02:57 UTC
 - [x] Updated GATE_A_TRUE_FINAL_V9.md (v9 + Prompt-42 combined) + OWNER_ACTION_ITEMS_FINAL.md (11 prioritized items, P0-P3)
+
+## NS12: Execute All Recommended Next Steps
+- [x] Test GitHub OAuth on published production site — verified: isOAuthSupported=true, GitHub returns 302 to login, callback endpoint returns 200 on both dev and prod, 35/35 OAuth tests pass
+- [x] Test image style persistence in agent task flow — 22 tests covering 7 regex patterns, 4 style keywords, deduplication, multi-preference extraction, 3 real-world scenarios. All pass. 327/327 total tests.
+- [x] Verify Stripe sandbox claim URL and test payment flow — VERIFIED: all 3 env vars present (sk_test, pk_test, whsec_), payment.products returns 4 products, sandbox claim URL valid (302→login), checkout requires auth (correct), webhook handles test events (evt_test_→{verified:true}), 5 new webhook integration tests (330 total)

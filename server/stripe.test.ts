@@ -159,13 +159,133 @@ describe("Stripe Integration", () => {
   });
 
   describe("Webhook", () => {
-    it("test events return verified: true", async () => {
-      // Simulate the test event detection logic from stripe.ts
-      const eventId = "evt_test_webhook_12345";
-      expect(eventId.startsWith("evt_test_")).toBe(true);
+    it("test events return verified: true via handleStripeWebhook", async () => {
+      // Mock constructEvent to return a test event
+      mockWebhooksConstructEvent.mockReturnValueOnce({
+        id: "evt_test_webhook_12345",
+        type: "payment_intent.succeeded",
+        data: { object: { id: "pi_test_123" } },
+      });
+
+      const { handleStripeWebhook } = await import("./stripe");
+
+      const mockReq = {
+        headers: { "stripe-signature": "t=123,v1=sig" },
+        body: Buffer.from(JSON.stringify({ id: "evt_test_webhook_12345" })),
+      } as any;
+
+      let statusCode = 200;
+      let responseBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (body: any) => {
+          responseBody = body;
+          return mockRes;
+        },
+      } as any;
+
+      await handleStripeWebhook(mockReq, mockRes);
+
+      expect(statusCode).toBe(200);
+      expect(responseBody).toEqual({ verified: true });
     });
 
-    it("non-test events are processed normally", () => {
+    it("real events return received: true via handleStripeWebhook", async () => {
+      // Mock constructEvent to return a real event
+      mockWebhooksConstructEvent.mockReturnValueOnce({
+        id: "evt_1NB8a2345678",
+        type: "invoice.paid",
+        data: { object: { id: "in_test_123", customer: "cus_test_123" } },
+      });
+
+      const { handleStripeWebhook } = await import("./stripe");
+
+      const mockReq = {
+        headers: { "stripe-signature": "t=123,v1=realsig" },
+        body: Buffer.from(JSON.stringify({ id: "evt_1NB8a2345678" })),
+      } as any;
+
+      let statusCode = 200;
+      let responseBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (body: any) => {
+          responseBody = body;
+          return mockRes;
+        },
+      } as any;
+
+      await handleStripeWebhook(mockReq, mockRes);
+
+      expect(statusCode).toBe(200);
+      expect(responseBody).toEqual({ received: true });
+    });
+
+    it("returns 400 when signature verification fails", async () => {
+      mockWebhooksConstructEvent.mockImplementationOnce(() => {
+        throw new Error("Invalid signature");
+      });
+
+      const { handleStripeWebhook } = await import("./stripe");
+
+      const mockReq = {
+        headers: { "stripe-signature": "t=123,v1=badsig" },
+        body: Buffer.from("invalid"),
+      } as any;
+
+      let statusCode = 200;
+      let responseBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (body: any) => {
+          responseBody = body;
+          return mockRes;
+        },
+      } as any;
+
+      await handleStripeWebhook(mockReq, mockRes);
+
+      expect(statusCode).toBe(400);
+      expect(responseBody).toEqual({ error: "Webhook signature verification failed" });
+    });
+
+    it("returns 400 when signature header is missing", async () => {
+      const { handleStripeWebhook } = await import("./stripe");
+
+      const mockReq = {
+        headers: {},
+        body: Buffer.from("{}"),
+      } as any;
+
+      let statusCode = 200;
+      let responseBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (body: any) => {
+          responseBody = body;
+          return mockRes;
+        },
+      } as any;
+
+      await handleStripeWebhook(mockReq, mockRes);
+
+      expect(statusCode).toBe(400);
+      expect(responseBody).toEqual({ error: "Missing signature or webhook secret" });
+    });
+
+    it("non-test event IDs do not start with evt_test_", () => {
       const eventId = "evt_1234567890";
       expect(eventId.startsWith("evt_test_")).toBe(false);
     });
