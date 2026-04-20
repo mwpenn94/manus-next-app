@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` MODIFY COLUMN `status` enum('idle','running','completed','error','paused','stopped') NOT NULL DEFAULT 'idle';

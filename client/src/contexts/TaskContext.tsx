@@ -29,18 +29,30 @@ export type AgentAction =
   | { type: "writing"; label?: string; status: "active" | "done"; preview?: string }
   | { type: "researching"; label?: string; status: "active" | "done"; preview?: string };
 
+export type CardType =
+  | "browser_auth"
+  | "task_pause"
+  | "take_control"
+  | "webapp_preview"
+  | "checkpoint"
+  | "task_completed";
+
 export interface Message {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: Date;
   actions?: AgentAction[];
+  /** Special inline card type — renders a rich card instead of plain text */
+  cardType?: CardType;
+  /** Data payload for the card */
+  cardData?: Record<string, unknown>;
 }
 
 export interface Task {
   id: string; // Always the server externalId (nanoid) — stable from creation
   title: string;
-  status: "idle" | "running" | "completed" | "error";
+  status: "idle" | "running" | "completed" | "error" | "paused" | "stopped";
   messages: Message[];
   createdAt: Date;
   updatedAt: Date;
@@ -62,6 +74,7 @@ interface TaskContextValue {
   addMessage: (taskId: string, message: Omit<Message, "id" | "timestamp">) => void;
   removeLastMessage: (taskId: string) => Message | null;
   updateTaskStatus: (taskId: string, status: Task["status"]) => void;
+  renameTask: (taskId: string, title: string) => void;
   markAutoStreamed: (taskId: string) => void;
 }
 
@@ -82,6 +95,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const createTaskMutation = trpc.task.create.useMutation();
   const addMessageMutation = trpc.task.addMessage.useMutation();
   const updateStatusMutation = trpc.task.updateStatus.useMutation();
+  const renameMutation = trpc.task.rename.useMutation();
   const addArtifactMutation = trpc.workspace.addArtifact.useMutation();
 
   // Fetch server tasks when authenticated
@@ -300,6 +314,21 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       });
     },
     [isAuthenticated, updateStatusMutation]
+  );
+
+  const renameTask = useCallback(
+    (taskId: string, title: string) => {
+      setTasks((prev) => {
+        const task = prev.find((t) => t.id === taskId);
+        if (task?.id && isAuthenticated) {
+          renameMutation.mutate({ externalId: task.id, title });
+        }
+        return prev.map((t) =>
+          t.id === taskId ? { ...t, title, updatedAt: new Date() } : t
+        );
+      });
+    },
+    [isAuthenticated, renameMutation]
   );
 
   // ── Wire bridge events into task state ──
@@ -542,6 +571,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         addMessage,
         removeLastMessage,
         updateTaskStatus,
+        renameTask,
         markAutoStreamed,
       }}
     >

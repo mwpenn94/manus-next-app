@@ -48,6 +48,7 @@ import {
   PanelBottomClose,
   Square,
   Mic,
+  Plus,
   MicOff,
   Trash2,
   Settings2,
@@ -56,6 +57,9 @@ import {
   Volume2,
   VolumeX,
   Pause,
+  Pencil,
+  AlertTriangle,
+  ArrowUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -63,7 +67,22 @@ import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
 import ShareDialog from "@/components/ShareDialog";
+import TaskProgressCard from "@/components/TaskProgressCard";
+import ActiveToolIndicator from "@/components/ActiveToolIndicator";
+import SandboxViewer from "@/components/SandboxViewer";
+import ModelSelector from "@/components/ModelSelector";
+import PlusMenu from "@/components/PlusMenu";
+import GitHubBadge from "@/components/GitHubBadge";
+import VoiceRecordingUI, { VoiceWaveStyles } from "@/components/VoiceRecordingUI";
 import { useTTS } from "@/hooks/useTTS";
+import BrowserAuthCard from "@/components/BrowserAuthCard";
+import TaskPauseCard from "@/components/TaskPauseCard";
+import TakeControlCard from "@/components/TakeControlCard";
+import WebappPreviewCard from "@/components/WebappPreviewCard";
+import CheckpointCard from "@/components/CheckpointCard";
+import TaskCompletedCard from "@/components/TaskCompletedCard";
+import PublishSheet from "@/components/PublishSheet";
+import SiteLiveSheet from "@/components/SiteLiveSheet";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -331,22 +350,74 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
           </div>
         )}
 
-        <div
-          className={cn(
-            "rounded-xl text-sm leading-relaxed",
-            isUser
-              ? "bg-primary/12 border border-primary/20 text-foreground px-4 py-3"
-              : "text-foreground/90"
-          )}
-        >
-          {isUser ? (
-            <p className="whitespace-pre-wrap">{message.content}</p>
-          ) : (
-            <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0">
-              <Streamdown>{message.content}</Streamdown>
-            </div>
-          )}
-        </div>
+        {/* Card-type messages render special inline cards */}
+        {message.cardType === "browser_auth" ? (
+          <BrowserAuthCard
+            onChoice={(choice) => {
+              toast.info(`Browser mode: ${choice}`);
+            }}
+          />
+        ) : message.cardType === "task_pause" ? (
+          <TaskPauseCard
+            reason={(message.cardData?.reason as any) ?? "needs_guidance"}
+            message={message.content || "The agent needs your input to continue."}
+            onProvideInput={() => toast.info("Provide input")}
+            onSkip={() => toast.info("Skipped")}
+          />
+        ) : message.cardType === "take_control" ? (
+          <TakeControlCard
+            reason={message.content || "The agent needs you to complete an action."}
+            userHasControl={!!message.cardData?.userHasControl}
+            onTakeControl={() => toast.info("Taking control...")}
+            onReturnControl={() => toast.info("Returning control...")}
+          />
+        ) : message.cardType === "webapp_preview" ? (
+          <WebappPreviewCard
+            appName={(message.cardData?.appName as string) ?? "App"}
+            domain={message.cardData?.domain as string}
+            status={(message.cardData?.status as any) ?? "not_published"}
+            screenshotUrl={message.cardData?.screenshotUrl as string}
+            previewUrl={message.cardData?.previewUrl as string}
+            onSettings={() => toast.info("Opening settings...")}
+            onPublish={() => toast.info("Publishing...")}
+            onVisit={() => {
+              const url = message.cardData?.previewUrl as string;
+              if (url) window.open(url, "_blank");
+            }}
+            hasUnpublishedChanges={!!message.cardData?.hasUnpublishedChanges}
+          />
+        ) : message.cardType === "checkpoint" ? (
+          <CheckpointCard
+            description={message.content || "Checkpoint saved"}
+            screenshotUrl={message.cardData?.screenshotUrl as string}
+            isLatest={!!message.cardData?.isLatest}
+            onPreview={() => toast.info("Opening preview...")}
+            onRollback={() => toast.info("Rolling back...")}
+          />
+        ) : message.cardType === "task_completed" ? (
+          <TaskCompletedCard
+            taskId={(message.cardData?.taskId as string) ?? ""}
+            onRate={(id, rating) => toast.success(`Rated ${rating} stars`)}
+          />
+        ) : (
+          /* Standard text message rendering */
+          <div
+            className={cn(
+              "rounded-xl text-sm leading-relaxed",
+              isUser
+                ? "bg-primary/12 border border-primary/20 text-foreground px-4 py-3"
+                : "text-foreground/90"
+            )}
+          >
+            {isUser ? (
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            ) : (
+              <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0">
+                <Streamdown>{message.content}</Streamdown>
+              </div>
+            )}
+          </div>
+        )}
 
         {hasActions && (
           <div className="mt-2.5">
@@ -1065,7 +1136,24 @@ function useVoiceRecorder(onTranscription: (text: string) => void) {
     }
   }, []);
 
-  return { recording, transcribing, voiceError, startRecording, stopRecording, clearVoiceError: () => setVoiceError(null) };
+  /** Cancel recording — stops mic and discards audio without transcribing */
+  const cancelRecording = useCallback(() => {
+    if (mediaRecorderRef.current) {
+      // Remove the onstop handler so it doesn't trigger transcription
+      mediaRecorderRef.current.onstop = () => {
+        // Stop all tracks to release microphone
+        mediaRecorderRef.current?.stream?.getTracks().forEach(t => t.stop());
+      };
+      if (mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+    }
+    chunksRef.current = [];
+    setRecording(false);
+    setVoiceError(null);
+  }, []);
+
+  return { recording, transcribing, voiceError, startRecording, stopRecording, cancelRecording, clearVoiceError: () => setVoiceError(null) };
 }
 
 // ── Helper: Map tool display type to AgentAction ──
@@ -1102,7 +1190,7 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, markAutoStreamed } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -1120,6 +1208,11 @@ export default function TaskView() {
   const [shareCopied, setShareCopied] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>("quality");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [sandboxOpen, setSandboxOpen] = useState(false);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState("");
+  const plusButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -1158,7 +1251,7 @@ export default function TaskView() {
     setInput(prev => prev ? `${prev} ${text}` : text);
     inputRef.current?.focus();
   }, []);
-  const { recording, transcribing, voiceError, startRecording, stopRecording, clearVoiceError } = useVoiceRecorder(handleTranscription);
+  const { recording, transcribing, voiceError, startRecording, stopRecording, cancelRecording, clearVoiceError } = useVoiceRecorder(handleTranscription);
 
   // Load per-task system prompt when task changes — only initialize once per task
   const promptInitRef = useRef<string | null>(null);
@@ -1911,8 +2004,19 @@ export default function TaskView() {
                 <PanelBottomOpen className="w-4 h-4" />
               )}
             </button>
+            {/* Model Selector — NS19 */}
+            <ModelSelector compact className="hidden md:flex" />
             {/* Mode Toggle */}
             <ModeToggle mode={agentMode} onChange={setAgentMode} className="hidden md:flex mr-1" />
+            {/* Sandbox Viewer toggle — NS19 */}
+            <button
+              onClick={() => setSandboxOpen(true)}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+              title="Manus's computer"
+              aria-label="Open sandbox viewer"
+            >
+              <MonitorPlay className="w-3.5 h-3.5" />
+            </button>
             {/* Share */}
             <button
               onClick={handleShareDialog}
@@ -1956,6 +2060,18 @@ export default function TaskView() {
                     transition={{ duration: 0.1 }}
                     className="absolute right-0 top-full mt-1 w-56 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-50 py-1"
                   >
+                    <button
+                      onClick={() => {
+                        if (!task) return;
+                        setRenameDraft(task.title);
+                        setRenameDialogOpen(true);
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Rename Task
+                    </button>
                     <button
                       onClick={() => { setShowSystemPrompt(!showSystemPrompt); }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
@@ -2104,6 +2220,12 @@ export default function TaskView() {
                   <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>manus next</span>
                   <Loader2 className="w-3 h-3 text-primary animate-spin" />
                 </div>
+                {/* Task Progress Card — NS19 */}
+                <TaskProgressCard
+                  actions={agentActions}
+                  stepProgress={stepProgress}
+                  streaming={streaming}
+                />
                 {/* Agent action steps */}
                 {agentActions.length > 0 && (
                   <div className="mb-2 bg-card/50 rounded-lg border border-border/50 py-1">
@@ -2124,6 +2246,8 @@ export default function TaskView() {
                     <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                 )}
+                {/* Active Tool Indicator — NS19 */}
+                <ActiveToolIndicator actions={agentActions} streaming={streaming} />
               </div>
             </motion.div>
           )}
@@ -2187,24 +2311,9 @@ export default function TaskView() {
             )}
           </AnimatePresence>
           <div className="relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={streaming ? "Type a follow-up message..." : "Send a message..."}
-              aria-label="Chat message input"
-              rows={1}
-              className="w-full resize-none bg-transparent px-4 pt-3 pb-10 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"
-            />
-            {/* Attached files preview */}
+            {/* Attached files preview — above textarea */}
             {files.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-4 pb-2">
+              <div className="flex flex-wrap gap-2 px-4 pt-3">
                 {files.map((f, i) => {
                   const ext = f.fileName.split(".").pop()?.toUpperCase() || "FILE";
                   const sizeKB = f.size ? Math.round(f.size / 1024) : null;
@@ -2223,15 +2332,43 @@ export default function TaskView() {
               </div>
             )}
             {uploading && (
-              <div className="px-4 pb-2">
+              <div className="px-4 pt-2">
                 <div className="h-1 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-primary transition-all duration-300 rounded-full" style={{ width: `${progress}%` }} />
                 </div>
               </div>
             )}
             {uploadError && (
-              <p className="px-4 pb-2 text-xs text-destructive">{uploadError}</p>
+              <p className="px-4 pt-2 text-xs text-destructive">{uploadError}</p>
             )}
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={streaming ? "Type a follow-up message..." : "Send a message..."}
+              aria-label="Chat message input"
+              rows={1}
+              className="w-full resize-none bg-transparent px-4 pt-3 pb-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"
+            />
+            <VoiceWaveStyles />
+            {/* Bottom toolbar: recording mode vs normal mode */}
+            {(recording || transcribing) ? (
+              /* Voice Recording UI — replaces normal toolbar when recording */
+              <div className="absolute bottom-1 left-1 right-1">
+                <VoiceRecordingUI
+                  recording={recording}
+                  transcribing={transcribing}
+                  onCancel={cancelRecording}
+                  onConfirm={stopRecording}
+                />
+              </div>
+            ) : (
             <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <input
@@ -2242,86 +2379,78 @@ export default function TaskView() {
                   onChange={handleFileChange}
                   accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.md,.py,.js,.ts,.html,.css,audio/*"
                 />
-                <button
-                  onClick={openPicker}
-                  disabled={uploading}
-                  className={cn(
-                    "p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95",
-                    uploading && "opacity-50 cursor-not-allowed"
-                  )}
-                  title="Attach file"
-                  aria-label="Attach file"
-                >
-                  {uploading ? <Upload className="w-4 h-4 animate-pulse" /> : <Paperclip className="w-4 h-4" />}
-                </button>
-                {/* Voice input with waveform indicator */}
-                <div className="flex items-center gap-1">
-                  {recording && (
-                    <div className="flex items-center gap-[2px] h-4 px-1">
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <div
-                          key={i}
-                          className="w-[3px] bg-destructive rounded-full"
-                          style={{
-                            height: `${8 + Math.random() * 8}px`,
-                            animation: `voiceWave 0.5s ease-in-out ${i * 0.1}s infinite alternate`,
-                          }}
-                        />
-                      ))}
-                      <style>{`@keyframes voiceWave { 0% { height: 4px; } 100% { height: 16px; } }`}</style>
-                    </div>
-                  )}
+                {/* + button (Manus-style circle) — opens PlusMenu */}
+                <div className="relative">
                   <button
-                    onClick={recording ? stopRecording : startRecording}
-                    disabled={transcribing}
+                    ref={plusButtonRef}
+                    onClick={() => setPlusMenuOpen(!plusMenuOpen)}
+                    disabled={uploading}
                     className={cn(
-                      "p-2 md:p-1.5 rounded-md transition-colors active:scale-95",
-                      recording
-                        ? "text-destructive bg-destructive/10 hover:bg-destructive/20 animate-pulse"
-                        : transcribing
-                          ? "text-muted-foreground opacity-50 cursor-not-allowed"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                      "w-8 h-8 md:w-7 md:h-7 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95",
+                      uploading && "opacity-50 cursor-not-allowed",
+                      plusMenuOpen && "bg-accent text-foreground"
                     )}
-                    title={recording ? "Stop recording" : transcribing ? "Transcribing..." : "Voice input"}
-                    aria-label={recording ? "Stop recording" : transcribing ? "Transcribing" : "Voice input"}
+                    title="More options"
+                    aria-label="Open action menu"
+                    aria-expanded={plusMenuOpen}
                   >
-                    {transcribing ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : recording ? (
-                      <MicOff className="w-4 h-4" />
-                    ) : (
-                      <Mic className="w-4 h-4" />
-                    )}
+                    {uploading ? <Upload className="w-3.5 h-3.5 animate-pulse" /> : <Plus className={cn("w-3.5 h-3.5 transition-transform duration-200", plusMenuOpen && "rotate-45")} />}
                   </button>
+                  <PlusMenu
+                    open={plusMenuOpen}
+                    onClose={() => setPlusMenuOpen(false)}
+                    onAddFiles={openPicker}
+                    anchorRef={plusButtonRef}
+                  />
                 </div>
+                {/* GitHub integration badge */}
+                <GitHubBadge onClick={() => window.open('/github', '_self')} />
+                {/* Attachment count badge */}
+                {files.length > 0 && (
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted/50 border border-border text-xs text-muted-foreground">
+                    <Paperclip className="w-3 h-3" />
+                    <span className="text-[10px] font-medium">+{files.length}</span>
+                  </div>
+                )}
+                {/* Voice input mic button */}
+                <button
+                  onClick={startRecording}
+                  className="p-2 md:p-1.5 rounded-md transition-colors active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent"
+                  title="Voice input"
+                  aria-label="Voice input"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
               </div>
               <div className="flex items-center gap-1">
-                {streaming && (
+                {streaming ? (
                   <button
                     onClick={handleStopGeneration}
-                    className="w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95 bg-destructive/80 text-destructive-foreground hover:bg-destructive"
+                    className="w-8 h-8 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all active:scale-95 bg-foreground text-background hover:opacity-90"
                     title="Stop generation"
                     aria-label="Stop generation"
                   >
-                    <Square className="w-3.5 h-3.5" />
+                    <Square className="w-3 h-3 fill-current" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim()}
+                    className={cn(
+                      "w-8 h-8 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all active:scale-95",
+                      input.trim()
+                        ? "bg-foreground text-background hover:opacity-90"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                    title="Send message"
+                    aria-label="Send message"
+                  >
+                    <ArrowUp className="w-4 h-4" />
                   </button>
                 )}
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className={cn(
-                    "w-8 h-8 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-all active:scale-95",
-                    input.trim()
-                      ? "bg-primary text-primary-foreground hover:opacity-90"
-                      : "bg-muted text-muted-foreground"
-                  )}
-                  title="Send message"
-                  aria-label="Send message"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
+            )}
           </div>
           {voiceError && (
             <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-xs">
@@ -2369,6 +2498,83 @@ export default function TaskView() {
         taskExternalId={taskExternalId || ""}
         taskTitle={task.title}
       />
+
+      {/* Sandbox Viewer Overlay — NS19 */}
+      <SandboxViewer
+        open={sandboxOpen}
+        onClose={() => setSandboxOpen(false)}
+        actions={agentActions}
+        streaming={streaming}
+        stepProgress={stepProgress}
+      />
+
+      {/* Rename Task Dialog */}
+      <AnimatePresence>
+        {renameDialogOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/60"
+              onClick={() => setRenameDialogOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="w-full max-w-md bg-card border border-border rounded-xl shadow-2xl p-6" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Rename Task</h3>
+                <input
+                  type="text"
+                  value={renameDraft}
+                  onChange={(e) => setRenameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && renameDraft.trim()) {
+                      renameTaskFn(task.id, renameDraft.trim());
+                      setRenameDialogOpen(false);
+                      toast.success("Task renamed");
+                    }
+                    if (e.key === "Escape") setRenameDialogOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mb-4"
+                  autoFocus
+                  placeholder="Task name"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setRenameDialogOpen(false)}
+                    className="px-4 py-2 text-sm rounded-lg text-muted-foreground hover:bg-accent transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (renameDraft.trim()) {
+                        renameTaskFn(task.id, renameDraft.trim());
+                        setRenameDialogOpen(false);
+                        toast.success("Task renamed");
+                      }
+                    }}
+                    disabled={!renameDraft.trim()}
+                    className={cn(
+                      "px-4 py-2 text-sm rounded-lg transition-colors",
+                      renameDraft.trim()
+                        ? "bg-primary text-primary-foreground hover:opacity-90"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                    )}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

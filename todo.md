@@ -1097,3 +1097,117 @@
 - [x] G10: Manus-style management UI — settings panel, domain config, environment variables, build logs (WebAppProjectPage with 6 panels)
 - [x] G11: Tests for GitHub integration (schema, procedures, UI rendering) — 19 tests in github.test.ts
 - [x] G12: Convergence pass — TypeScript 0 errors, 380/380 tests, build successful
+
+## NS18 — Exhaustive Parity Reassessment (Landscape Pass)
+
+### Critical Gaps (ALL VERIFIED IMPLEMENTED)
+- [x] C1: Dynamic task status indicators — TaskStatusIcon with running spinner, done checkmark, error X
+- [x] C2: Wire quick action chips — setInput(action.prompt) on click
+- [x] C3: Wire task count badges — statusFilters array with real counts
+- [x] C4: ⌘K keyboard shortcut — useKeyboardShortcuts hook wired
+- [x] C5: v2.0 badge — Sparkles icon + primary color styling
+
+### High Priority Gaps (ALL VERIFIED IMPLEMENTED)
+- [x] H1: WebApp Builder — Projects tab with management UI links
+- [x] H2: GitHub Page — full repo cards with file browser, branches, PRs
+- [x] H3: Settings page — 6 tabs: Account, General, Notifications, Secrets, Capabilities, Bridge
+- [x] H4: Streaming animation — bouncing dots + Streamdown + ActionStep rendering
+- [x] H5: Mobile responsive — sidebar drawer, stacked workspace, bottom nav
+
+### Medium Priority Gaps (ALL VERIFIED IMPLEMENTED)
+- [x] M1: Empty states — all pages have empty state UI with icons and CTAs
+- [x] M2: Toast consistency — all 35 mutations have success/error toasts
+- [x] M3: Loading skeletons — Skeleton component used across pages
+- [x] M4: Sidebar collapse — PanelLeftClose/PanelLeft toggle
+- [x] M5: Search — server-side search with debounce
+
+### Low Priority Gaps (ALL VERIFIED IMPLEMENTED)
+- [x] L1: Favicon + OG meta + Twitter cards + JSON-LD structured data
+- [x] L2: Accessibility — focus rings, keyboard nav, semantic HTML
+- [x] L3: ErrorBoundary wrapping entire app in App.tsx
+
+### Tests & Validation
+- [x] Write tests — 380/380 passing
+- [x] Full convergence pass — TS 0 errors, build clean
+- [x] Virtual user validation — screenshot verified
+- [x] 2 consecutive zero-change convergence passes confirmed
+
+## NS19 — Manus UI Parity from Live Screenshots
+
+### P1: Task Progress Card in Chat
+- [ ] Create TaskProgressCard component showing "Task Progress X/Y" with collapsible phase list
+- [ ] Each phase shows status icon: green check (completed), blue dot + timer (active), clock (pending)
+- [ ] Embed TaskProgressCard in the streaming section of TaskView chat
+- [ ] Wire to agentActions to derive phase tracking from tool usage
+
+### P2: "Agent is using [Tool]" Live Indicator
+- [ ] Create ToolUsageIndicator showing "Manus Next is using Editor / Browser / Terminal"
+- [ ] Show context line: "Reading file manus-next-app/client/..." or "Searching file client/**/*"
+- [ ] Display during streaming when agent actions are in progress
+- [ ] Icon per tool type (editor pencil, browser globe, terminal square)
+
+### P3: Sandbox Viewer Panel (Agent's Computer)
+- [ ] Create SandboxViewer component with header "Agent's Computer" + close/takeover buttons
+- [ ] Add Diff/Original/Modified tab switcher for code files
+- [ ] Show file name header above code content
+- [ ] Add progress scrubber bar with Live indicator and forward/back controls
+- [ ] Add floating sidebar toolbar (back, interact, keyboard, clipboard, phone, close)
+
+### P4: Input Bar Enhancements
+- [ ] Add "+" button to left of input for attachment menu (files, images, code)
+- [ ] Show attachment badges (e.g., GitHub icon with "+1" count) when files are attached
+- [ ] Ensure microphone button is visible and properly positioned
+- [ ] Match Manus input bar layout: [+] [attachment badges] [input] [mic] [send]
+
+### P5: Convergence
+- [ ] TypeScript 0 errors
+- [ ] All tests passing
+- [ ] Production build clean
+- [ ] 3 consecutive zero-change passes
+
+### P6: Sidebar Task Card Visual Parity (from new screenshots)
+- [ ] Add colored status dots to sidebar task items (green=running, check=done, red=error)
+- [ ] Show relative timestamps on task cards (e.g., "2m ago")
+- [ ] Highlight active task with accent background in sidebar
+
+### P7: Chat Message Visual Refinements (from new screenshots)
+- [ ] Ensure agent avatar + "manus next" label matches screenshot styling
+- [ ] Action steps collapsible with done count badge (e.g., "3/5 steps")
+- [ ] Streaming bounce dots match Manus styling (3 dots, primary color)
+
+### P8: Additional Manus Parity from Batch 3 Screenshots (IMG_6903-6913)
+- [ ] NS19-P8a: Model selector dropdown (Manus 1.6 Max / 1.6 / 1.6 Lite) with descriptions
+- [ ] NS19-P8b: Voice recording UI with waveform visualization, timer, cancel/confirm buttons
+- [ ] NS19-P8c: Enhanced + menu bottom sheet with full Manus feature list
+- [ ] NS19-P8d: Photos section in + menu with camera + recent images
+- [ ] NS19-P8e: Task rename dialog modal
+- [ ] NS19-P8f: Task details page (Name, Create at, Credits count)
+- [ ] NS19-P8g: Files browser with All/Documents/Images/Code files filter tabs
+
+### P9: Full Manus Parity — New Features (NS19 Expansion)
+- [x] NS19-P9a: Task pause/guidance request UI — agent can pause and ask user for input with inline prompt card and action buttons
+- [x] NS19-P9b: Browser mode selector — toggle between Cloud Browser and Local Browser (Crimson-Hawk) with explanation tooltips
+- [x] NS19-P9c: SandboxViewer "Take Control" button — user can take over agent's computer with interactive mode, "Return Control" to hand back
+- [x] NS19-P9d: Task rename dialog in More menu — modal with pre-filled text input, Cancel/Save buttons
+- [x] NS19-P9e: Task details page — shows Name, Created at, Status, Credits used, Model used
+- [x] NS19-P9f: Files browser page with All/Documents/Images/Code filter tabs, file cards with icon/name/timestamp/type/size
+- [x] NS19-P9g: Task "Stopped" state — user-stopped tasks show gray status, distinct from error
+- [x] NS19-P9h: Comprehensive tests for all new P9 components
+- [x] NS19-P9i: Convergence passes — TypeScript 0 errors, all tests passing, production build clean, 3 consecutive zero-change
+- [x] NS19-P9j: Virtual user side-by-side validation against Manus UI — exhaustive walkthrough of all features
+
+### P10: Full Manus Parity — Batch 3 Screenshot Features
+- [x] NS19-P10a: BrowserAuthCard — inline chat card for Crimson-Hawk browser authorization (3 buttons: No use default, Check again, Use My Browser on Crimson-Hawk)
+- [x] NS19-P10b: TaskCompletedCard — green checkmark "Task completed" + "Rate this result" 5-star rating widget
+- [x] NS19-P10c: WebappPreviewCard — inline card showing deployed site preview with globe icon, app name, status, screenshot, Settings/Publish buttons
+- [x] NS19-P10d: PublishSheet — bottom sheet with Deployment status (Live badge), Website address + copy, Customize domain, Visibility dropdown, Publish latest version button
+- [x] NS19-P10e: SiteLiveSheet — post-publish confirmation "Your site is now live!" with Visit, Customize domain, share row (Copy link, WhatsApp, X, LinkedIn)
+- [x] NS19-P10f: Task "stopped" status — gray status distinct from error, user-initiated stop
+- [x] NS19-P10g: Task pause/guidance inline card — agent pauses and asks user for input with action buttons
+
+### P11: VU Validation Fixes
+- [x] NS19-P11a: GitHubBadge component in TaskView input toolbar (matches GitHub +1 badge in Manus screenshots)
+- [x] NS19-P11b: SiteLiveSheet native share progressive enhancement (navigator.share API)
+- [x] NS19-P11c: SandboxViewer Take Control toggle — proper state management with "Take control" / "Return control" labels
+- [x] NS19-P11d: Send/Stop button pattern — filled circle with ArrowUp (send) / filled Square (stop), matching Manus exactly
+- [x] NS19-P11e: Final convergence pass — TypeScript 0 errors, 25 test files / 443 tests passed, build clean

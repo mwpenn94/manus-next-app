@@ -144,10 +144,18 @@ export async function verifyTaskOwnershipById(taskId: number, userId: number) {
   return task;
 }
 
-export async function updateTaskStatus(externalId: string, status: "idle" | "running" | "completed" | "error") {
+export async function updateTaskStatus(externalId: string, status: "idle" | "running" | "completed" | "error" | "paused" | "stopped") {
   const db = await getDb();
   if (!db) return;
   await db.update(tasks).set({ status }).where(eq(tasks.externalId, externalId));
+}
+
+export async function renameTask(externalId: string, userId: number, title: string) {
+  const db = await getDb();
+  if (!db) return;
+  const task = await getTaskByExternalId(externalId);
+  if (!task || task.userId !== userId) throw new Error("Task not found or unauthorized");
+  await db.update(tasks).set({ title }).where(eq(tasks.externalId, externalId));
 }
 
 export async function archiveTask(externalId: string, userId: number) {

@@ -430,26 +430,42 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     setMobileDrawerOpen(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-3 md:py-2.5 rounded-md transition-colors active:scale-[0.98]",
+                    "w-full text-left px-3 py-3 md:py-2.5 rounded-lg transition-all active:scale-[0.98]",
                     activeTaskId === task.id
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
                       : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                   )}
                 >
-                  <div className="flex items-start gap-2">
-                    <TaskStatusIcon status={task.status} />
+                  <div className="flex items-start gap-2.5">
+                    {/* Manus-style status dot */}
+                    <div className="mt-1.5 shrink-0">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        task.status === "running" && "bg-primary animate-pulse",
+                        task.status === "completed" && "bg-emerald-500",
+                        task.status === "error" && "bg-red-400",
+                        task.status !== "running" && task.status !== "completed" && task.status !== "error" && "bg-muted-foreground/40"
+                      )} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
-                        <p className="text-sm font-medium truncate leading-tight flex-1">
+                        <p className="text-[13px] font-medium truncate leading-tight flex-1">
                           {task.title}
                         </p>
                         {task.favorite === 1 && (
                           <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {formatTimeAgo(task.updatedAt)}
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatTimeAgo(task.updatedAt)}
+                        </span>
+                        {task.status === "running" && (
+                          <span className="text-[9px] px-1.5 py-px rounded-full bg-primary/10 text-primary font-medium">
+                            In progress
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </button>

@@ -19,6 +19,7 @@ import {
   upsertUserPreferences,
   getUserTaskStats,
   archiveTask,
+  renameTask,
   toggleTaskFavorite,
   updateTaskSystemPrompt,
   searchTasks,
@@ -192,7 +193,7 @@ export const appRouter = router({
     updateStatus: protectedProcedure
       .input(z.object({
         externalId: z.string().max(50),
-        status: z.enum(["idle", "running", "completed", "error"]),
+        status: z.enum(["idle", "running", "completed", "error", "paused", "stopped"]),
       }))
       .mutation(async ({ ctx, input }) => {
         await verifyTaskOwnership(input.externalId, ctx.user.id);
@@ -220,6 +221,16 @@ export const appRouter = router({
           }
         }
 
+        return { success: true };
+      }),
+
+    rename: protectedProcedure
+      .input(z.object({
+        externalId: z.string().max(50),
+        title: z.string().min(1).max(500),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await renameTask(input.externalId, ctx.user.id, input.title);
         return { success: true };
       }),
 

@@ -37,7 +37,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 
-type SettingsTab = "account" | "general" | "capabilities" | "bridge";
+type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge";
 
 interface Capability {
   name: string;
@@ -232,6 +232,8 @@ export default function SettingsPage() {
   const tabs: { id: SettingsTab; label: string; icon: typeof User }[] = [
     { id: "account", label: "Account", icon: User },
     { id: "general", label: "General", icon: Settings },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "secrets", label: "Secrets", icon: Settings },
     { id: "capabilities", label: "Capabilities", icon: Puzzle },
     { id: "bridge", label: "Bridge", icon: Unplug },
   ];
@@ -394,6 +396,106 @@ export default function SettingsPage() {
                     Save prompt
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Notifications ── */}
+          {activeTab === "notifications" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Notifications
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Configure how and when you receive notifications.
+              </p>
+
+              <div className="space-y-2.5">
+                {([
+                  { key: "taskComplete" as const, label: "Task completion", description: "Notify when a task finishes running", icon: Bell, defaultOn: true },
+                  { key: "taskError" as const, label: "Task errors", description: "Notify when a task encounters an error", icon: Bell, defaultOn: true },
+                  { key: "shareActivity" as const, label: "Share activity", description: "Notify when someone views your shared task", icon: Share2, defaultOn: false },
+                  { key: "systemUpdates" as const, label: "System updates", description: "Notify about platform updates and new features", icon: Settings, defaultOn: true },
+                ]).map((setting) => (
+                  <div key={setting.key} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <setting.icon className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{setting.label}</p>
+                        <p className="text-xs text-muted-foreground">{setting.description}</p>
+                      </div>
+                    </div>
+                    <Toggle
+                      checked={setting.defaultOn}
+                      onChange={() => toast.info("Notification preferences will be saved when backend support is added")}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 bg-card border border-border rounded-xl p-5">
+                <h3 className="text-sm font-medium text-foreground mb-2">Delivery Method</h3>
+                <p className="text-xs text-muted-foreground mb-3">All notifications are delivered in-app only.</p>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/10">
+                  <Bell className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-foreground">In-app notifications</span>
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">active</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Secrets ── */}
+          {activeTab === "secrets" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Secrets & Environment Variables
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Manage API keys, tokens, and environment variables for your projects and integrations.
+              </p>
+
+              <div className="space-y-3">
+                {([
+                  { key: "GITHUB_TOKEN", label: "GitHub Token", description: "Personal access token for GitHub API", masked: true, hasValue: false },
+                  { key: "OPENAI_API_KEY", label: "OpenAI API Key", description: "API key for OpenAI models", masked: true, hasValue: false },
+                  { key: "STRIPE_SECRET_KEY", label: "Stripe Secret Key", description: "Secret key for Stripe payments", masked: true, hasValue: true },
+                  { key: "DATABASE_URL", label: "Database URL", description: "Connection string for the database", masked: true, hasValue: true },
+                ]).map((secret) => (
+                  <div key={secret.key} className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-foreground font-mono">{secret.key}</p>
+                        <p className="text-xs text-muted-foreground">{secret.description}</p>
+                      </div>
+                      {secret.hasValue ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">set</span>
+                      ) : (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium">not set</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="password"
+                        placeholder={secret.hasValue ? "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" : "Enter value..."}
+                        className="flex-1 h-8 px-3 text-sm bg-muted rounded-md border border-border text-foreground font-mono focus:outline-none focus:ring-1 focus:ring-ring"
+                        readOnly={secret.hasValue}
+                      />
+                      <button
+                        onClick={() => toast.info("Secret management is handled through the platform Settings panel")}
+                        className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        {secret.hasValue ? "Update" : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                <p className="text-xs text-amber-400">
+                  Secrets are encrypted at rest and only accessible to your server-side code. Never expose secrets in client-side code.
+                </p>
               </div>
             </motion.div>
           )}

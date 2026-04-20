@@ -36,7 +36,7 @@ export const tasks = mysqlTable("tasks", {
   externalId: varchar("externalId", { length: 64 }).notNull().unique(),
   userId: int("userId").notNull(),
   title: varchar("title", { length: 500 }).notNull(),
-  status: mysqlEnum("status", ["idle", "running", "completed", "error"]).default("idle").notNull(),
+  status: mysqlEnum("status", ["idle", "running", "completed", "error", "paused", "stopped"]).default("idle").notNull(),
   workspaceUrl: text("workspaceUrl"),
   currentStep: varchar("currentStep", { length: 500 }),
   totalSteps: int("totalSteps"),
