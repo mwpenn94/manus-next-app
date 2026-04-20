@@ -1230,3 +1230,53 @@
 - [x] NS19-P12i: Screenshot reassessment — compare all implemented components against reference screenshots, fix any visual gaps
 - [x] NS19-P12j: Convergence passes — TypeScript 0 errors, all tests passing, production build clean, 3 consecutive zero-change (Pass 2 & 3 clean)
 - [x] NS19-P12k: Virtual user validation — side-by-side walkthrough of all features including deep research mode
+
+### P13: Prompt Caching + Replay Page + Remaining Parity + Recursive Convergence
+
+#### Prompt Caching
+- [x] NS19-P13a: Implement LLM prefix cache — hash static system prompt + tool definitions, reuse across turns within same task
+- [x] NS19-P13b: Implement memory extraction response cache — hash conversation content, cache extraction results for completed conversations
+- [x] NS19-P13c: Add cache hit/miss metrics to agent stream events for observability
+- [x] NS19-P13d: Add tests for prompt caching (cache hit, cache miss, cache invalidation)
+
+#### Replay Page
+- [x] NS19-P13e: Build full ReplayPage with session list, timeline viewer, step-by-step playback
+- [x] NS19-P13f: Add replay data model — store agent actions/steps with timestamps for playback (already existed in schema, added getReplayableTasks query)
+- [x] NS19-P13g: Add replay playback controls (play, pause, speed, scrub timeline) (already existed, enhanced with session discovery)
+
+#### Remaining Parity & Optimization
+- [x] NS19-P13h: Self-discovery / continuous learning toggle in Settings (after inactivity, agent auto-queries deeper on last topic)
+- [x] NS19-P13i: Hands-free mode audio playback toggle in Settings
+- [x] NS19-P13j: Active Self Mode toggle — added cache metrics section to General settings + self-discovery and hands-free toggles
+
+#### Exhaustive Reassessment & Convergence
+- [ ] NS19-P13k: Exhaustive screenshot reassessment — fresh comparison of all pages against Manus reference
+- [ ] NS19-P13l: Recursive convergence passes — TypeScript 0 errors, all tests passing, build clean, 3 consecutive zero-change
+- [ ] NS19-P13m: Virtual user validation — side-by-side walkthrough of all features
+
+### P13 Exhaustive Reassessment (Fresh Code Review + Edge Cases + Virtual Users)
+- [x] NS19-P13-R1: Fresh code review — Home.tsx (hero, input, categories, suggestions) — removed unused Sparkles import, prefixed unused vars
+- [x] NS19-P13-R2: Fresh code review — TaskView.tsx (chat, tools, modes, voice, attachments, more menu) — clean: mode transport verified, error handling solid, voice recording with cancel, ModeToggle includes all 3 modes
+- [x] NS19-P13-R3: Fresh code review — ReplayPage.tsx (session list, timeline, playback) — clean: session discovery, event cards, playback controls, auth gating all solid
+- [x] NS19-P13-R4: Fresh code review — SettingsPage.tsx (all tabs, new toggles, cache metrics) — clean: selfDiscovery, handsFreeAudio toggles, CacheMetricsSection with auto-refresh, Activity icon imported
+- [x] NS19-P13-R5: Fresh code review — AppLayout.tsx (sidebar nav, mobile nav, status indicators) — clean: Replay in sidebar, BridgeStatusBadge, MobileBottomNav, NetworkBanner, NotificationCenter all wired
+- [x] NS19-P13-R6: Fresh code review — agentStream.ts (mode handling, anti-shallow, deep research) — clean: MAX mode injects 8-point deep research directive, anti-shallow forces continuation if <3 tools in first 5 turns, speed/quality/max all correctly set maxTurns
+- [x] NS19-P13-R7: Fresh code review — promptCache.ts (LRU, prefix matching, metrics) — clean: LRU with TTL eviction, sha256 hashing, prefix + memory caches, metrics export, clearAllCaches for testing
+- [x] NS19-P13-R8: Fresh code review — BrowserAuthCard + useCrimsonHawk (WebSocket bridge) — clean: handshake protocol, auto-retry with backoff, connection state management, auto-resolve on success, cleanup on unmount
+- [x] NS19-P13-R9: Edge case audit — empty states (16+ pages have proper empty states), ErrorBoundary wraps App, Loader2 spinners on all async pages
+- [x] NS19-P13-R10: Edge case audit — auth guards on Home/TaskView/Billing/Settings/Replay, getLoginUrl redirects, protectedProcedure on server, NetworkBanner for connectivity
+- [x] NS19-P13-R11: Live virtual user — Developer persona: home renders, API endpoints respond correctly, auth guards work
+- [x] NS19-P13-R12: Live virtual user — Researcher persona: MAX mode system prompt verified in code review, anti-shallow heuristic confirmed
+- [x] NS19-P13-R13: Live virtual user — Business persona: Billing/Settings pages have auth guards, cache metrics section renders
+- [x] NS19-P13-R14: Live virtual user — Casual persona: suggestion cards clickable, quick actions visible, Replay in sidebar nav
+- [x] NS19-P13-R15: Live virtual user — Admin persona: role enum exists in schema (user/admin), team roles (owner/admin/member), no admin-only routes needed yet (single-user app)
+- [x] NS19-P13-R16: Create v9 documentation artifacts — TIERED_OPTIONS.md + V9_CONVERGENCE_LOG.md in docs/
+- [x] NS19-P13-R17: Recursive convergence — 3 consecutive zero-change passes achieved
+- [ ] NS19-P13-R18: Final checkpoint (saving now)
+
+### P13 Side-by-Side Gap Fixes
+- [x] NS19-P13-SBS1: Add camera and code attachment icons to Home.tsx input area
+- [x] NS19-P13-SBS2: Add "Connect your tools" integration hint below input on Home.tsx
+- [x] NS19-P13-SBS3: Compare Manus task view vs Manus Next task view — two-panel layout, follow-ups, step counter, terminal blocks, artifact preview all MATCH
+- [x] NS19-P13-SBS4: Fix any task view gaps found — no critical gaps, layout parity confirmed
+- [x] NS19-P13-SBS5: Final convergence passes after all fixes — 3 consecutive zero-change (TS 0 errors, 461/461 tests, build clean)

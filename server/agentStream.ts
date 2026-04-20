@@ -20,6 +20,7 @@
  */
 import type { Message, Tool, ToolCall, InvokeResult } from "./_core/llm";
 import { AGENT_TOOLS, executeTool, type ToolResult } from "./agentTools";
+import { registerPrefix, getCacheMetrics } from "./promptCache";
 import type { Response } from "express";
 
 const MAX_TOOL_TURNS = 100; // No artificial limit — agent continues until task is complete (matching Manus behavior)
@@ -337,6 +338,11 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
     let usedWebSearch = false;
     let usedReadWebpage = false;
     let nudgedForDeepResearch = false;
+
+    // Register prefix for caching (system prompt + tool definitions)
+    const toolsJson = JSON.stringify(AGENT_TOOLS);
+    const prefixInfo = registerPrefix(systemPrompt, toolsJson);
+    console.log(`[Agent] Prefix cache: hash=${prefixInfo.hash}, cached=${prefixInfo.cached}, ~${prefixInfo.tokenEstimate} tokens`);
 
     // Signal task is running
     sendSSE(safeWrite, { status: "running" });

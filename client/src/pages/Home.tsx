@@ -18,7 +18,6 @@ import {
   GraduationCap,
   Rocket,
   Star,
-  Sparkles,
   Mic,
   Plug,
   Code,
@@ -26,6 +25,8 @@ import {
   FileText,
   Image,
   Search as SearchIcon,
+  Camera,
+  Terminal,
 } from "lucide-react";
 
 // Quick action chips (Gap 7) — like Manus "Create slides", "Build website", etc.
@@ -92,7 +93,7 @@ const PACKAGES = [
 export default function Home() {
   // The userAuth hooks provides authentication state
   // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  let { user, loading: _loading, error: _error, isAuthenticated, logout } = useAuth();
 
   const [input, setInput] = useState("");
   const [activeCategory, setActiveCategory] = useState("featured");
@@ -236,6 +237,30 @@ export default function Home() {
                 >
                   <Mic className="w-4 h-4" aria-hidden="true" />  
                 </button>
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+                    const id = createTask("Screenshot task", "I'd like to capture or analyze a screenshot.");
+                    navigate(`/task/${id}`);
+                  }}
+                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                  title="Screenshot / Camera"
+                  aria-label="Screenshot or camera input"
+                >
+                  <Camera className="w-4 h-4" aria-hidden="true" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+                    const id = createTask("Code task", "I'd like to write or analyze code.");
+                    navigate(`/task/${id}`);
+                  }}
+                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+                  title="Code / Terminal"
+                  aria-label="Code or terminal input"
+                >
+                  <Terminal className="w-4 h-4" aria-hidden="true" />
+                </button>
               </div>
               <button
                 onClick={handleSubmit}
@@ -252,6 +277,28 @@ export default function Home() {
                 <ArrowUp className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Connect your tools — matches Manus "Connect your tools to Manus" row */}
+        <motion.div
+          className="flex items-center justify-center gap-2 mb-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+        >
+          <Plug className="w-3.5 h-3.5 text-muted-foreground/60" />
+          <span className="text-xs text-muted-foreground/60">Connect your tools to Manus Next</span>
+          <div className="flex items-center gap-1 ml-1">
+            {QUICK_CONNECTORS.map((c) => (
+              <span
+                key={c.id}
+                className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
+                title={c.name}
+              >
+                {c.icon}
+              </span>
+            ))}
           </div>
         </motion.div>
 

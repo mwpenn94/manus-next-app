@@ -538,6 +538,29 @@ export async function getTaskEvents(taskId: number) {
     .limit(500);
 }
 
+/** Get tasks that have recorded replay events, with event count and duration */
+export async function getReplayableTasks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      taskId: tasks.id,
+      externalId: tasks.externalId,
+      title: tasks.title,
+      status: tasks.status,
+      createdAt: tasks.createdAt,
+      eventCount: sql<number>`COUNT(${taskEvents.id})`,
+      durationMs: sql<number>`MAX(${taskEvents.offsetMs})`,
+    })
+    .from(tasks)
+    .innerJoin(taskEvents, eq(tasks.id, taskEvents.taskId))
+    .where(eq(tasks.userId, userId))
+    .groupBy(tasks.id)
+    .orderBy(desc(tasks.createdAt))
+    .limit(50);
+  return rows;
+}
+
 // ── Project Queries (Capability #11) ──
 export async function createProject(project: InsertProject) {
   const db = await getDb();

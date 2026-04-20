@@ -28,6 +28,9 @@ import {
   ChevronRight,
   ExternalLink,
   LogOut,
+  Headphones,
+  Sparkles,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -78,6 +81,8 @@ interface GeneralSettings {
   soundEffects: boolean;
   autoExpandActions: boolean;
   compactMode: boolean;
+  selfDiscovery: boolean;
+  handsFreeAudio: boolean;
 }
 
 const DEFAULT_GENERAL: GeneralSettings = {
@@ -85,6 +90,8 @@ const DEFAULT_GENERAL: GeneralSettings = {
   soundEffects: false,
   autoExpandActions: true,
   compactMode: false,
+  selfDiscovery: false,
+  handsFreeAudio: false,
 };
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
@@ -106,6 +113,49 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
       />
     </button>
+  );
+}
+
+function CacheMetricsSection() {
+  const metricsQuery = trpc.cache.metrics.useQuery(undefined, {
+    refetchInterval: 15000, // refresh every 15s
+  });
+  const m = metricsQuery.data;
+  if (!m) return null;
+
+  const prefixHitRate = m.prefix.hits + m.prefix.misses > 0
+    ? ((m.prefix.hits / (m.prefix.hits + m.prefix.misses)) * 100).toFixed(0)
+    : "—";
+  const memoryHitRate = m.memory.hits + m.memory.misses > 0
+    ? ((m.memory.hits / (m.memory.hits + m.memory.misses)) * 100).toFixed(0)
+    : "—";
+
+  return (
+    <div className="mt-6">
+      <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+        <Activity className="w-3.5 h-3.5" />
+        Cache Performance
+      </h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        LLM prompt prefix and memory extraction cache metrics.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Prefix Cache</p>
+          <p className="text-lg font-semibold text-foreground">{prefixHitRate}%</p>
+          <p className="text-[10px] text-muted-foreground">
+            {m.prefix.hits} hits / {m.prefix.misses} misses · {m.prefix.size} entries
+          </p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Memory Cache</p>
+          <p className="text-lg font-semibold text-foreground">{memoryHitRate}%</p>
+          <p className="text-[10px] text-muted-foreground">
+            {m.memory.hits} hits / {m.memory.misses} misses · {m.memory.size} entries
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -350,6 +400,8 @@ export default function SettingsPage() {
                   { key: "soundEffects" as const, label: "Sound effects", description: "Play sounds for agent actions", icon: Palette },
                   { key: "autoExpandActions" as const, label: "Auto-expand actions", description: "Show action steps by default in chat", icon: ChevronRight },
                   { key: "compactMode" as const, label: "Compact mode", description: "Reduce spacing for information density", icon: Monitor },
+                  { key: "selfDiscovery" as const, label: "Self-discovery mode", description: "Agent auto-queries deeper on last topic after inactivity", icon: Sparkles },
+                  { key: "handsFreeAudio" as const, label: "Hands-free audio", description: "Read agent responses aloud using text-to-speech", icon: Headphones },
                 ]).map((setting) => (
                   <div key={setting.key} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -397,6 +449,9 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* ── Cache Performance ── */}
+              <CacheMetricsSection />
             </motion.div>
           )}
 

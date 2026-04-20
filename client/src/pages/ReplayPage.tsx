@@ -1,9 +1,9 @@
 /**
- * ReplayPage — Rich step-by-step session replay with tool icons and result previews
+ * ReplayPage — Rich step-by-step session replay with session discovery
  * 
- * G6/G7: Artifact preview panel + task replay step logging
- * Shows each agent step as a visual card with tool-specific icons,
- * result previews (images, code, search results), and timestamps.
+ * Two modes:
+ * 1. Session List (no taskId) — shows all tasks with recorded events
+ * 2. Session Replay (with taskId) — timeline viewer with playback controls
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
@@ -38,6 +38,7 @@ import {
   ChevronUp,
   Copy,
   ExternalLink,
+  Hash,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 
@@ -46,8 +47,8 @@ import { Streamdown } from "streamdown";
 interface EventMeta {
   icon: typeof Globe;
   label: string;
-  color: string; // tailwind text color
-  bgColor: string; // tailwind bg color
+  color: string;
+  bgColor: string;
 }
 
 const EVENT_META: Record<string, EventMeta> = {
@@ -67,9 +68,7 @@ const EVENT_META: Record<string, EventMeta> = {
 const DEFAULT_META: EventMeta = { icon: Zap, label: "Event", color: "text-muted-foreground", bgColor: "bg-muted/50" };
 
 function getEventMeta(eventType: string): EventMeta {
-  // Check direct match first
   if (EVENT_META[eventType]) return EVENT_META[eventType];
-  // Check partial matches
   for (const [key, meta] of Object.entries(EVENT_META)) {
     if (eventType.toLowerCase().includes(key)) return meta;
   }
@@ -172,7 +171,7 @@ function EventCard({
         </div>
       </div>
 
-      {/* Preview content (always shown for active card if there's visual content) */}
+      {/* Preview content */}
       {isActive && !expanded && (parsed.imageUrl || parsed.codeContent || parsed.error) && (
         <div className="px-3 pb-2.5">
           {parsed.imageUrl && (
@@ -241,6 +240,91 @@ function EventCard({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Session List Component ──
+
+function SessionList({ onSelect }: { onSelect: (taskId: number) => void }) {
+  const sessionsQuery = trpc.replay.sessions.useQuery();
+  const sessions = sessionsQuery.data ?? [];
+
+  if (sessionsQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <Film className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+          <p className="text-muted-foreground">No recorded sessions yet</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Events are recorded automatically during task execution with the agent
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {sessions.map((session) => {
+        const durationSec = session.durationMs ? (session.durationMs / 1000).toFixed(1) : "0";
+        const statusColor =
+          session.status === "completed" ? "text-emerald-400" :
+          session.status === "running" ? "text-blue-400" :
+          session.status === "error" ? "text-red-400" :
+          "text-muted-foreground";
+
+        return (
+          <Card
+            key={session.taskId}
+            className="cursor-pointer hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all group"
+            onClick={() => onSelect(session.taskId)}
+          >
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                  <Film className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {session.title}
+                  </p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className={cn("text-[10px] font-medium uppercase", statusColor)}>
+                      {session.status}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Hash className="w-2.5 h-2.5" />
+                      {session.eventCount} events
+                    </span>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5" />
+                      {durationSec}s
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(session.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play className="w-3 h-3 mr-1" />
+                    Replay
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -342,32 +426,30 @@ export default function ReplayPage() {
     );
   }
 
+  // Session list view (no taskId selected)
   if (!taskId) {
     return (
       <div className="h-full overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2 mb-2">
-            <Film className="w-6 h-6" />
-            Session Replay
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            Replay recorded task sessions to review agent actions step by step.
-            Navigate to a specific task and click "Replay" to start.
-          </p>
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Film className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">Select a task to replay</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Session events are recorded during task execution
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Film className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Session Replay</h1>
+              <p className="text-sm text-muted-foreground">
+                Replay recorded task sessions to review agent actions step by step
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          <SessionList onSelect={(id) => navigate(`/replay/${id}`)} />
         </div>
       </div>
     );
   }
 
+  // Session replay view (with taskId)
   const currentEvent = events[currentIndex];
   const progress = events.length > 0 ? ((currentIndex + 1) / events.length) * 100 : 0;
   const currentTime = currentEvent ? `${(currentEvent.offsetMs / 1000).toFixed(1)}s` : "0s";
@@ -378,7 +460,7 @@ export default function ReplayPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/replay")}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">

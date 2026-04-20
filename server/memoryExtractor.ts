@@ -54,6 +54,29 @@ export async function extractMemories(
 
     if (transcript.length < 50) return; // Too short to extract from
 
+    // Check response cache first (completed conversations are immutable)
+    const { getCachedMemoryExtraction, cacheMemoryExtraction } = await import("./promptCache");
+    const cached = getCachedMemoryExtraction(transcript);
+    if (cached) {
+      console.log(`[MemoryExtractor] Cache hit for task ${taskExternalId}, ${cached.length} memories`);
+      const { addMemoryEntry } = await import("./db");
+      for (const mem of cached) {
+        if (!mem.key || !mem.value) continue;
+        try {
+          await addMemoryEntry({
+            userId,
+            key: mem.key.slice(0, 500),
+            value: mem.value.slice(0, 2000),
+            source: "auto",
+            taskExternalId,
+          });
+        } catch (err) {
+          console.warn("[MemoryExtractor] Failed to store cached memory:", err);
+        }
+      }
+      return;
+    }
+
     const { invokeLLM } = await import("./_core/llm");
 
     const response = await invokeLLM({
@@ -102,6 +125,9 @@ export async function extractMemories(
     }
 
     if (!Array.isArray(parsed.memories) || parsed.memories.length === 0) return;
+
+    // Cache the extraction result for future reuse
+    cacheMemoryExtraction(transcript, parsed.memories);
 
     // Store each extracted memory
     const { addMemoryEntry } = await import("./db");

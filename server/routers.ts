@@ -143,6 +143,7 @@ import {
   createWebappDeployment,
   getProjectDeployments,
   updateWebappDeployment,
+  getReplayableTasks,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"] as const;
@@ -686,6 +687,11 @@ export const appRouter = router({
 
   /** Session replay — recorded task events for playback */
   replay: router({
+    /** List tasks that have recorded replay events */
+    sessions: protectedProcedure.query(async ({ ctx }) => {
+      return getReplayableTasks(ctx.user.id);
+    }),
+
     events: protectedProcedure
       .input(z.object({ taskId: z.number() }))
       .query(async ({ ctx, input }) => {
@@ -2372,6 +2378,14 @@ export const appRouter = router({
         if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
         return getProjectDeployments(project.id);
       }),
+  }),
+
+  /** Prompt cache metrics — observability for LLM caching */
+  cache: router({
+    metrics: protectedProcedure.query(async () => {
+      const { getCacheMetrics } = await import("./promptCache");
+      return getCacheMetrics();
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;
