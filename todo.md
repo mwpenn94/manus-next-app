@@ -1374,3 +1374,14 @@
 - [x] P17b-5: Kokoro available as local TTS option; hands-free still uses Edge TTS for reliability (Kokoro available via Client Inference page)
 - [x] P17b-6: 33 P17 tests (16 Kokoro-specific), 0 TS errors, build clean
 - [x] P17b-7: 3 consecutive zero-change convergence passes achieved (passes 2-4)
+
+## Bug Fix — Settings Page Crash
+- [x] Fix TypeError: Cannot read properties of undefined (reading 'toFixed') on /settings page
+
+## P18 — Recommended Next Steps + Convergence
+- [x] P18-1: Fix TypeError: Cannot read properties of undefined (reading 'toFixed') on /settings page
+- [x] P18-2: Library bulk export — multi-select checkboxes + Download as ZIP button (jszip, select/deselect all, per-item checkboxes, ZIP with deduped filenames)
+- [x] P18-3: Kokoro voice preview — play button (Volume2 icon) next to each voice, speaks "Hi, I'm {name}. How do I sound?" locally
+- [x] P18-4: Offline mode indicator — Go Offline toggle in Settings General tab + amber NetworkBanner showing "Offline mode" when enabled
+- [x] P18-5: Manus UI/UX parity audit — Home, Settings, Library pages verified, no regressions, all new features render correctly
+- [x] P18-6: Recursive convergence passes — 3 consecutive zero-change (passes 2-4): 0 TS errors, 593 tests passing, build clean

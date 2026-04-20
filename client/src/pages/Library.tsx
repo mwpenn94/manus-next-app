@@ -1,15 +1,17 @@
 /**
- * Library — Cross-task artifact & file browser (P15/P16)
+ * Library — Cross-task artifact & file browser (P15/P16/P18)
  * 
  * Aggregates workspace artifacts (screenshots, code, documents, images)
  * and uploaded files across all tasks into a unified, searchable view.
  * P16: Added inline preview for images, code, and documents.
+ * P18: Added multi-select with bulk export (Download as ZIP).
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import {
   Search,
   Grid3X3,
@@ -31,7 +33,11 @@ import {
   Maximize2,
   Copy,
   Check,
+  CheckSquare,
+  Square,
+  Package,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const ARTIFACT_FILTERS = [
   { value: "", label: "All Types", icon: FolderOpen },
@@ -94,6 +100,36 @@ function isImageType(artifactType: string) {
 
 function isCodeType(artifactType: string) {
   return artifactType === "code" || artifactType === "terminal";
+}
+
+/** Get a filename extension guess from artifact type or mime */
+function guessExtension(item: any): string {
+  if (item.fileName) {
+    const ext = item.fileName.split(".").pop();
+    if (ext && ext.length <= 5) return `.${ext}`;
+  }
+  if (item.mimeType) {
+    if (item.mimeType.includes("png")) return ".png";
+    if (item.mimeType.includes("jpeg") || item.mimeType.includes("jpg")) return ".jpg";
+    if (item.mimeType.includes("gif")) return ".gif";
+    if (item.mimeType.includes("webp")) return ".webp";
+    if (item.mimeType.includes("pdf")) return ".pdf";
+    if (item.mimeType.includes("json")) return ".json";
+    if (item.mimeType.includes("javascript")) return ".js";
+    if (item.mimeType.includes("typescript")) return ".ts";
+    if (item.mimeType.includes("html")) return ".html";
+    if (item.mimeType.includes("css")) return ".css";
+    if (item.mimeType.includes("text/plain")) return ".txt";
+  }
+  if (item.artifactType) {
+    if (item.artifactType === "browser_screenshot" || item.artifactType === "generated_image") return ".png";
+    if (item.artifactType === "code") return ".txt";
+    if (item.artifactType === "terminal") return ".log";
+    if (item.artifactType === "document") return ".txt";
+    if (item.artifactType === "document_pdf") return ".pdf";
+    if (item.artifactType === "document_docx") return ".docx";
+  }
+  return "";
 }
 
 // ── Preview Modal ──
@@ -259,6 +295,11 @@ export default function Library() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [previewItem, setPreviewItem] = useState<any>(null);
 
+  // ── Multi-select state ──
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
+
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -281,7 +322,116 @@ export default function Library() {
   const files = filesQuery.data?.items ?? [];
   const totalCount = tab === "artifacts" ? (artifactsQuery.data?.total ?? 0) : (filesQuery.data?.total ?? 0);
 
+  const currentItems = tab === "artifacts" ? artifacts : files;
+  const allIds = new Set(currentItems.map((item: any) => item.id as number));
+  const allSelected = allIds.size > 0 && Array.from(allIds).every(id => selectedIds.has(id));
+  const someSelected = Array.from(allIds).some(id => selectedIds.has(id));
+
   const selectedFilter = ARTIFACT_FILTERS.find(f => f.value === typeFilter) ?? ARTIFACT_FILTERS[0];
+
+  // Clear selection when switching tabs or filters
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [tab, typeFilter, debouncedSearch]);
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  }, [allSelected, allIds]);
+
+  const exitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  // ── Bulk ZIP export ──
+  const handleBulkExport = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setIsExporting(true);
+    toast.info(`Preparing ${selectedIds.size} file(s) for download...`);
+
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const selectedItems = currentItems.filter((item: any) => selectedIds.has(item.id));
+
+      let downloaded = 0;
+      const usedNames = new Set<string>();
+
+      for (const item of selectedItems) {
+        try {
+          const baseName = (item as any).fileName || (item as any).label || (item as any).artifactType?.replace(/_/g, "-") || `item-${item.id}`;
+          const ext = guessExtension(item);
+          let name = baseName.includes(".") ? baseName : `${baseName}${ext}`;
+
+          // Deduplicate names
+          let counter = 1;
+          let uniqueName = name;
+          while (usedNames.has(uniqueName)) {
+            const dotIdx = name.lastIndexOf(".");
+            if (dotIdx > 0) {
+              uniqueName = `${name.slice(0, dotIdx)}-${counter}${name.slice(dotIdx)}`;
+            } else {
+              uniqueName = `${name}-${counter}`;
+            }
+            counter++;
+          }
+          usedNames.add(uniqueName);
+
+          if (item.url) {
+            // Fetch the file content
+            const resp = await fetch(item.url);
+            if (resp.ok) {
+              const blob = await resp.blob();
+              zip.file(uniqueName, blob);
+              downloaded++;
+            }
+          } else if ((item as any).content) {
+            // Text content (code, terminal output)
+            zip.file(uniqueName, (item as any).content);
+            downloaded++;
+          }
+        } catch (err) {
+          console.warn(`[Library] Failed to add item ${item.id} to ZIP:`, err);
+        }
+      }
+
+      if (downloaded === 0) {
+        toast.error("No files could be downloaded");
+        return;
+      }
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `library-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Downloaded ${downloaded} file(s) as ZIP`);
+      exitSelectMode();
+    } catch (err) {
+      console.error("[Library] Bulk export failed:", err);
+      toast.error("Export failed — please try again");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [selectedIds, currentItems, exitSelectMode]);
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -296,27 +446,81 @@ export default function Library() {
               Browse artifacts and files across all your tasks
             </p>
           </div>
-          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={cn(
-                "p-1.5 rounded-md transition-colors",
-                viewMode === "grid" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-              title="Grid view"
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "p-1.5 rounded-md transition-colors",
-                viewMode === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-              title="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2">
+            {/* Select mode toggle */}
+            {!selectMode ? (
+              <button
+                onClick={() => setSelectMode(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border rounded-lg text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                title="Select items for bulk export"
+              >
+                <CheckSquare className="w-3.5 h-3.5" />
+                Select
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={exitSelectMode}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-border rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Cancel
+                </button>
+                <button
+                  onClick={toggleSelectAll}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-lg transition-colors",
+                    allSelected
+                      ? "border-primary/30 bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {allSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                  {allSelected ? "Deselect All" : "Select All"}
+                </button>
+                <button
+                  onClick={handleBulkExport}
+                  disabled={selectedIds.size === 0 || isExporting}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all font-medium",
+                    selectedIds.size > 0
+                      ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm shadow-primary/20"
+                      : "bg-muted text-muted-foreground cursor-not-allowed"
+                  )}
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Package className="w-3.5 h-3.5" />
+                  )}
+                  {isExporting ? "Exporting..." : `Download ZIP${selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}`}
+                </button>
+              </div>
+            )}
+
+            {/* View mode toggle */}
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  viewMode === "grid" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                title="Grid view"
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  viewMode === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -427,26 +631,60 @@ export default function Library() {
           viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {artifacts.map((artifact, i) => (
-                <ArtifactCard key={artifact.id} artifact={artifact} index={i} onNavigate={navigate} onPreview={setPreviewItem} />
+                <ArtifactCard
+                  key={artifact.id}
+                  artifact={artifact}
+                  index={i}
+                  onNavigate={navigate}
+                  onPreview={setPreviewItem}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(artifact.id)}
+                  onToggleSelect={toggleSelect}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-1">
               {artifacts.map((artifact, i) => (
-                <ArtifactRow key={artifact.id} artifact={artifact} index={i} onNavigate={navigate} onPreview={setPreviewItem} />
+                <ArtifactRow
+                  key={artifact.id}
+                  artifact={artifact}
+                  index={i}
+                  onNavigate={navigate}
+                  onPreview={setPreviewItem}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(artifact.id)}
+                  onToggleSelect={toggleSelect}
+                />
               ))}
             </div>
           )
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {files.map((file, i) => (
-              <FileCard key={file.id} file={file} index={i} onPreview={setPreviewItem} />
+              <FileCard
+                key={file.id}
+                file={file}
+                index={i}
+                onPreview={setPreviewItem}
+                selectMode={selectMode}
+                selected={selectedIds.has(file.id)}
+                onToggleSelect={toggleSelect}
+              />
             ))}
           </div>
         ) : (
           <div className="space-y-1">
             {files.map((file, i) => (
-              <FileRow key={file.id} file={file} index={i} onPreview={setPreviewItem} />
+              <FileRow
+                key={file.id}
+                file={file}
+                index={i}
+                onPreview={setPreviewItem}
+                selectMode={selectMode}
+                selected={selectedIds.has(file.id)}
+                onToggleSelect={toggleSelect}
+              />
             ))}
           </div>
         )}
@@ -476,20 +714,53 @@ function EmptyState({ icon: Icon, title, description }: { icon: typeof FolderOpe
   );
 }
 
-function ArtifactCard({ artifact, index, onNavigate, onPreview }: { artifact: any; index: number; onNavigate: (path: string) => void; onPreview: (item: any) => void }) {
+interface SelectableProps {
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: (id: number) => void;
+}
+
+function ArtifactCard({ artifact, index, onNavigate, onPreview, selectMode, selected, onToggleSelect }: { artifact: any; index: number; onNavigate: (path: string) => void; onPreview: (item: any) => void } & SelectableProps) {
   const Icon = getArtifactIcon(artifact.artifactType);
   const isImage = isImageType(artifact.artifactType);
   const isCode = isCodeType(artifact.artifactType);
   const hasContent = !!(artifact.content);
+
+  const handleClick = () => {
+    if (selectMode) {
+      onToggleSelect(artifact.id);
+    } else {
+      onPreview(artifact);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.02 }}
-      className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all cursor-pointer"
-      onClick={() => onPreview(artifact)}
+      className={cn(
+        "group relative bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer",
+        selected ? "border-primary ring-1 ring-primary/20 shadow-primary/10" : "border-border hover:border-primary/30 hover:shadow-primary/5"
+      )}
+      onClick={handleClick}
     >
+      {/* Selection checkbox */}
+      {selectMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <div
+            className={cn(
+              "w-5 h-5 rounded-md flex items-center justify-center transition-all",
+              selected
+                ? "bg-primary text-primary-foreground"
+                : "bg-background/80 backdrop-blur-sm border border-border"
+            )}
+          >
+            {selected && <Check className="w-3 h-3" />}
+          </div>
+        </div>
+      )}
+
       {/* Preview area */}
       {isImage && artifact.url ? (
         <div className="aspect-video bg-muted/30 overflow-hidden">
@@ -508,24 +779,26 @@ function ArtifactCard({ artifact, index, onNavigate, onPreview }: { artifact: an
       )}
 
       {/* Hover actions */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-        <button
-          onClick={(e) => { e.stopPropagation(); onPreview(artifact); }}
-          className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
-          title="Preview"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-        {artifact.taskExternalId && (
+      {!selectMode && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
           <button
-            onClick={(e) => { e.stopPropagation(); onNavigate(`/task/${artifact.taskExternalId}`); }}
+            onClick={(e) => { e.stopPropagation(); onPreview(artifact); }}
             className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
-            title="Go to task"
+            title="Preview"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
-        )}
-      </div>
+          {artifact.taskExternalId && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onNavigate(`/task/${artifact.taskExternalId}`); }}
+              className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
+              title="Go to task"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Info */}
       <div className="p-3">
@@ -545,18 +818,43 @@ function ArtifactCard({ artifact, index, onNavigate, onPreview }: { artifact: an
   );
 }
 
-function ArtifactRow({ artifact, index, onNavigate, onPreview }: { artifact: any; index: number; onNavigate: (path: string) => void; onPreview: (item: any) => void }) {
+function ArtifactRow({ artifact, index, onNavigate, onPreview, selectMode, selected, onToggleSelect }: { artifact: any; index: number; onNavigate: (path: string) => void; onPreview: (item: any) => void } & SelectableProps) {
   const Icon = getArtifactIcon(artifact.artifactType);
   const isImage = isImageType(artifact.artifactType);
+
+  const handleClick = () => {
+    if (selectMode) {
+      onToggleSelect(artifact.id);
+    } else {
+      onPreview(artifact);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.15, delay: index * 0.01 }}
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => onPreview(artifact)}
+      className={cn(
+        "group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer",
+        selected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-accent/50"
+      )}
+      onClick={handleClick}
     >
+      {/* Selection checkbox */}
+      {selectMode && (
+        <div
+          className={cn(
+            "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all",
+            selected
+              ? "bg-primary text-primary-foreground"
+              : "border border-border bg-background"
+          )}
+        >
+          {selected && <Check className="w-3 h-3" />}
+        </div>
+      )}
+
       {/* Thumbnail */}
       {isImage && artifact.url ? (
         <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted/30">
@@ -576,43 +874,72 @@ function ArtifactRow({ artifact, index, onNavigate, onPreview }: { artifact: any
       <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
         {formatDate(artifact.createdAt)}
       </span>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={(e) => { e.stopPropagation(); onPreview(artifact); }}
-          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-          title="Preview"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-        {artifact.url && (
-          <a
-            href={artifact.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+      {!selectMode && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); onPreview(artifact); }}
             className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-            title="Open"
+            title="Preview"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        )}
-      </div>
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          {artifact.url && (
+            <a
+              href={artifact.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+              title="Open"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
 
-function FileCard({ file, index, onPreview }: { file: any; index: number; onPreview: (item: any) => void }) {
+function FileCard({ file, index, onPreview, selectMode, selected, onToggleSelect }: { file: any; index: number; onPreview: (item: any) => void } & SelectableProps) {
   const Icon = getFileIcon(file.mimeType);
   const isImage = file.mimeType?.startsWith("image/");
+
+  const handleClick = () => {
+    if (selectMode) {
+      onToggleSelect(file.id);
+    } else {
+      onPreview(file);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.02 }}
-      className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all cursor-pointer"
-      onClick={() => onPreview(file)}
+      className={cn(
+        "group relative bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer",
+        selected ? "border-primary ring-1 ring-primary/20 shadow-primary/10" : "border-border hover:border-primary/30 hover:shadow-primary/5"
+      )}
+      onClick={handleClick}
     >
+      {/* Selection checkbox */}
+      {selectMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <div
+            className={cn(
+              "w-5 h-5 rounded-md flex items-center justify-center transition-all",
+              selected
+                ? "bg-primary text-primary-foreground"
+                : "bg-background/80 backdrop-blur-sm border border-border"
+            )}
+          >
+            {selected && <Check className="w-3 h-3" />}
+          </div>
+        </div>
+      )}
+
       {isImage ? (
         <div className="aspect-video bg-muted/30 overflow-hidden">
           <img src={file.url} alt={file.fileName} className="w-full h-full object-cover" loading="lazy" />
@@ -630,40 +957,67 @@ function FileCard({ file, index, onPreview }: { file: any; index: number; onPrev
         </div>
       </div>
       {/* Hover actions */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-        <button
-          onClick={(e) => { e.stopPropagation(); onPreview(file); }}
-          className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
-          title="Preview"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-        <a
-          href={file.url}
-          download={file.fileName}
-          className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
-          title="Download"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Download className="w-3.5 h-3.5" />
-        </a>
-      </div>
+      {!selectMode && (
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onPreview(file); }}
+            className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
+            title="Preview"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          <a
+            href={file.url}
+            download={file.fileName}
+            className="p-1.5 rounded-md bg-background/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground shadow-sm"
+            title="Download"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Download className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      )}
     </motion.div>
   );
 }
 
-function FileRow({ file, index, onPreview }: { file: any; index: number; onPreview: (item: any) => void }) {
+function FileRow({ file, index, onPreview, selectMode, selected, onToggleSelect }: { file: any; index: number; onPreview: (item: any) => void } & SelectableProps) {
   const Icon = getFileIcon(file.mimeType);
   const isImage = file.mimeType?.startsWith("image/");
+
+  const handleClick = () => {
+    if (selectMode) {
+      onToggleSelect(file.id);
+    } else {
+      onPreview(file);
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -4 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.15, delay: index * 0.01 }}
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => onPreview(file)}
+      className={cn(
+        "group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer",
+        selected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-accent/50"
+      )}
+      onClick={handleClick}
     >
+      {/* Selection checkbox */}
+      {selectMode && (
+        <div
+          className={cn(
+            "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-all",
+            selected
+              ? "bg-primary text-primary-foreground"
+              : "border border-border bg-background"
+          )}
+        >
+          {selected && <Check className="w-3 h-3" />}
+        </div>
+      )}
+
       {/* Thumbnail */}
       {isImage ? (
         <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-muted/30">
@@ -680,32 +1034,34 @@ function FileRow({ file, index, onPreview }: { file: any; index: number; onPrevi
       </div>
       <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{formatBytes(file.size)}</span>
       <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{formatDate(file.createdAt)}</span>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={(e) => { e.stopPropagation(); onPreview(file); }}
-          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-          title="Preview"
-        >
-          <Maximize2 className="w-3.5 h-3.5" />
-        </button>
-        <a
-          href={file.url}
-          download={file.fileName}
-          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-          title="Download"
-        >
-          <Download className="w-3.5 h-3.5" />
-        </a>
-        <a
-          href={file.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
-          title="Open in new tab"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      </div>
+      {!selectMode && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); onPreview(file); }}
+            className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+            title="Preview"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          <a
+            href={file.url}
+            download={file.fileName}
+            className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+            title="Download"
+          >
+            <Download className="w-3.5 h-3.5" />
+          </a>
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+            title="Open in new tab"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      )}
     </motion.div>
   );
 }

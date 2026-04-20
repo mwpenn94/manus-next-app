@@ -31,6 +31,7 @@ import {
   Headphones,
   Sparkles,
   Activity,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -83,6 +84,7 @@ interface GeneralSettings {
   compactMode: boolean;
   selfDiscovery: boolean;
   handsFreeAudio: boolean;
+  offlineMode: boolean;
   ttsVoice: string;
   ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
@@ -95,6 +97,7 @@ const DEFAULT_GENERAL: GeneralSettings = {
   compactMode: false,
   selfDiscovery: false,
   handsFreeAudio: false,
+  offlineMode: false,
   ttsVoice: "en-US-AriaNeural",
   ttsLanguage: "en",
   ttsRate: 1.0,
@@ -241,8 +244,8 @@ export default function SettingsPage() {
   // Hydrate local state from server on first load
   useEffect(() => {
     if (prefsLoaded || !prefsQuery.data) return;
-    const gs = prefsQuery.data.generalSettings as GeneralSettings | null;
-    if (gs) setGeneralSettings(gs);
+    const gs = prefsQuery.data.generalSettings as Partial<GeneralSettings> | null;
+    if (gs) setGeneralSettings({ ...DEFAULT_GENERAL, ...gs });
     const caps = prefsQuery.data.capabilities as Record<string, boolean> | null;
     if (caps) setCapabilityToggles(caps);
     if (prefsQuery.data.systemPrompt) setGlobalSystemPrompt(prefsQuery.data.systemPrompt as string);
@@ -450,6 +453,7 @@ export default function SettingsPage() {
                   { key: "compactMode" as const, label: "Compact mode", description: "Reduce spacing for information density", icon: Monitor },
                   { key: "selfDiscovery" as const, label: "Self-discovery mode", description: "Agent auto-queries deeper on last topic after inactivity", icon: Sparkles },
                   { key: "handsFreeAudio" as const, label: "Hands-free audio", description: "Read agent responses aloud using text-to-speech", icon: Headphones },
+                  { key: "offlineMode" as const, label: "Offline mode", description: "Prefer local models (Kokoro TTS, cached data) over server calls when available", icon: WifiOff },
                 ]).map((setting) => (
                   <div key={setting.key} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -585,7 +589,7 @@ export default function SettingsPage() {
                   />
                   <span className="text-xs text-muted-foreground w-8">2.0x</span>
                   <span className="text-sm font-medium text-foreground w-10 text-center tabular-nums">
-                    {generalSettings.ttsRate.toFixed(1)}x
+                    {(generalSettings.ttsRate ?? 1.0).toFixed(1)}x
                   </span>
                 </div>
               </div>

@@ -2,17 +2,28 @@
  * NetworkBanner — Graceful degradation UI
  * 
  * G10: Shows a banner when the network is offline or recovering.
+ * P18: Also shows offline mode indicator when user has it enabled.
  * Includes retry button and auto-dismiss on reconnect.
  */
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { WifiOff, Wifi, RefreshCw } from "lucide-react";
+import { WifiOff, Wifi, RefreshCw, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function NetworkBanner() {
   const { isOnline, wasOffline, reconnecting } = useNetworkStatus();
+  const { isAuthenticated } = useAuth();
 
-  const showBanner = !isOnline || wasOffline;
+  // Check if user has offline mode enabled
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, {
+    enabled: isAuthenticated,
+    staleTime: 60_000,
+  });
+  const offlineMode = (prefsQuery.data?.generalSettings as any)?.offlineMode === true;
+
+  const showBanner = !isOnline || wasOffline || (offlineMode && isOnline);
 
   return (
     <AnimatePresence>
@@ -31,6 +42,8 @@ export default function NetworkBanner() {
                 ? "bg-red-500/15 text-red-400 border-b border-red-500/20"
                 : wasOffline
                 ? "bg-emerald-500/15 text-emerald-400 border-b border-emerald-500/20"
+                : offlineMode
+                ? "bg-amber-500/10 text-amber-400 border-b border-amber-500/15"
                 : ""
             )}
           >
@@ -50,6 +63,11 @@ export default function NetworkBanner() {
               <>
                 <Wifi className="w-3.5 h-3.5" />
                 <span>Back online — connection restored.</span>
+              </>
+            ) : offlineMode ? (
+              <>
+                <Zap className="w-3.5 h-3.5" />
+                <span>Offline mode — using local models when available. Disable in Settings.</span>
               </>
             ) : null}
           </div>
