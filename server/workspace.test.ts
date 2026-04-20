@@ -12,6 +12,9 @@ const COOKIE_NAME = "auth_token";
 vi.mock("./db", () => {
   const artifacts: any[] = [];
   return {
+    verifyTaskOwnership: vi.fn().mockResolvedValue({ id: 1, userId: 1, externalId: "test" }),
+    verifyTaskOwnershipById: vi.fn().mockResolvedValue({ id: 1, userId: 1, externalId: "test" }),
+    verifyKnowledgeOwnership: vi.fn().mockResolvedValue({ id: 1, projectId: 1 }),
     createTask: vi.fn().mockResolvedValue({ id: 1, externalId: "test-task-1" }),
     getUserTasks: vi.fn().mockResolvedValue([]),
     getTaskByExternalId: vi.fn().mockResolvedValue(null),

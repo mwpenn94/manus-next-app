@@ -9,6 +9,9 @@ vi.mock("./db", async (importOriginal) => {
 
   return {
     ...actual,
+    verifyTaskOwnership: vi.fn(async () => ({ id: 1, userId: 1, externalId: "test" })),
+    verifyTaskOwnershipById: vi.fn(async () => ({ id: 1, userId: 1, externalId: "test" })),
+    verifyKnowledgeOwnership: vi.fn(async () => ({ id: 1, projectId: 1 })),
     upsertTaskRating: vi.fn(async (taskExternalId: string, userId: number, rating: number, feedback?: string | null) => {
       const key = `${taskExternalId}:${userId}`;
       const existing = ratings.get(key);

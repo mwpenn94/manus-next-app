@@ -3,7 +3,7 @@
  * Capability #34: Payments (Stripe)
  */
 import Stripe from "stripe";
-import type { Express, Request, Response } from "express";
+import type { Request, Response } from "express";
 import { getProductById, PRODUCTS } from "./products";
 import { getDb } from "./db";
 import { users } from "../drizzle/schema";
@@ -68,48 +68,6 @@ export async function createCheckoutSession(opts: {
   const session = await stripe.checkout.sessions.create(sessionParams);
   if (!session.url) throw new Error("No checkout URL returned");
   return { url: session.url };
-}
-
-/**
- * Register Stripe webhook endpoint on Express app
- * MUST be registered BEFORE express.json() middleware
- */
-export function registerStripeWebhook(app: Express): void {
-  app.post(
-    "/api/stripe/webhook",
-    // Raw body for signature verification
-    async (req: Request, res: Response) => {
-      const stripe = getStripe();
-      const sig = req.headers["stripe-signature"];
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-      if (!sig || !webhookSecret) {
-        console.error("[Stripe Webhook] Missing signature or webhook secret");
-        return res.status(400).json({ error: "Missing signature or webhook secret" });
-      }
-
-      let event: Stripe.Event;
-      try {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      } catch (err: any) {
-        console.error("[Stripe Webhook] Signature verification failed:", err.message);
-        return res.status(400).json({ error: "Webhook signature verification failed" });
-      }
-
-      // Handle test events
-      if (event.id.startsWith("evt_test_")) {
-        console.log("[Stripe Webhook] Test event detected, returning verification response");
-        return res.json({ verified: true });
-      }
-
-      // Process events
-      console.log(`[Stripe Webhook] Received: ${event.type} (${event.id})`);
-
-      await fulfillStripeEvent(event);
-
-      return res.json({ received: true });
-    }
-  );
 }
 
 /**

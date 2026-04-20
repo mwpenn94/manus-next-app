@@ -119,6 +119,31 @@ export async function getTaskByExternalId(externalId: string) {
   return result[0] ?? null;
 }
 
+/**
+ * Verify that a task (by externalId) belongs to the given user.
+ * Throws if not found or not owned by userId.
+ * Returns the task row on success.
+ */
+export async function verifyTaskOwnership(externalId: string, userId: number) {
+  const task = await getTaskByExternalId(externalId);
+  if (!task || task.userId !== userId) throw new Error("Task not found or unauthorized");
+  return task;
+}
+
+/**
+ * Verify that a task (by integer id) belongs to the given user.
+ * Throws if not found or not owned by userId.
+ * Returns the task row on success.
+ */
+export async function verifyTaskOwnershipById(taskId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  const task = result[0] ?? null;
+  if (!task || task.userId !== userId) throw new Error("Task not found or unauthorized");
+  return task;
+}
+
 export async function updateTaskStatus(externalId: string, status: "idle" | "running" | "completed" | "error") {
   const db = await getDb();
   if (!db) return;
@@ -578,6 +603,22 @@ export async function deleteProjectKnowledge(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(projectKnowledge).where(eq(projectKnowledge.id, id));
+}
+
+/**
+ * Verify that a project knowledge item belongs to a project owned by the given user.
+ * Throws if not found or not owned.
+ */
+export async function verifyKnowledgeOwnership(knowledgeId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(projectKnowledge).where(eq(projectKnowledge.id, knowledgeId)).limit(1);
+  const item = rows[0];
+  if (!item) throw new Error("Knowledge item not found");
+  const projRows = await db.select().from(projects).where(eq(projects.id, item.projectId)).limit(1);
+  const project = projRows[0];
+  if (!project || project.userId !== userId) throw new Error("Knowledge item not found or unauthorized");
+  return item;
 }
 
 

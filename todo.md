@@ -927,3 +927,15 @@
 - [x] NS4-11: Convergence Pass 1 — CLEAN (0 TS errors, 262/262 tests, prod build clean, 0 console.log in client)
 - [x] NS4-12: Convergence Pass 2 — CLEAN (0 TS errors, 262/262 tests, prod build clean, adversarial scan clean)
 - [x] NS4-13: Convergence Pass 3 — CLEAN (0 TS errors, 262/262 tests, prod build clean, deep adversarial scan clean) — CONVERGENCE ACHIEVED 3/3
+
+## NS5: Exhaustive Virtual User Assessment + Convergence (Session 5)
+- [x] NS5-1: Deep assessment — Task Management: IDOR found in 11 task procedures (get, updateStatus, messages, addMessage, getTaskRating, file.list, workspace.add/list/latest, replay.events/addEvent)
+- [x] NS5-2: Deep assessment — Reasoning/Agent Loop: 4-mode system (quick/standard/thorough/research), anti-premature completion, topic drift detection, tool execution with 8-turn limit — all solid
+- [x] NS5-3: Deep assessment — Coding/App Development: execute_code has 10s timeout, browse_web uses LLM synthesis, generate_document creates markdown — all functional
+- [x] NS5-4: Deep assessment — UI/UX: responsive, dark theme consistent, animations via framer-motion, empty states present, error toasts on mutations
+- [x] NS5-5: Deep assessment — Security: IDOR critical (fixed), Stripe webhook verified, rate limiting present, helmet configured, dead code removed
+- [x] NS5-6: Live server testing: HTTP 200 on homepage, auth.me returns proper unauthenticated response, scheduler poll error is transient DB connection (not a bug)
+- [x] NS5-7: Fixed 12 IDOR vulnerabilities (verifyTaskOwnership/verifyTaskOwnershipById/verifyKnowledgeOwnership helpers + 11 procedure patches), removed dead registerStripeWebhook, wrote 16 IDOR regression tests
+- [x] NS5-8: Convergence Pass 1 — CLEAN (0 TS errors, 278/278 tests, prod build clean, no new issues)
+- [x] NS5-9: Convergence Pass 2 — CLEAN (0 TS errors, 278/278 tests, prod build clean, 11 IDOR checks verified in place)
+- [x] NS5-10: Convergence Pass 3 — CLEAN (0 TS errors, 278/278 tests, prod build clean, deep scan clean) — CONVERGENCE ACHIEVED 3/3

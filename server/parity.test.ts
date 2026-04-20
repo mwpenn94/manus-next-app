@@ -17,6 +17,9 @@ vi.mock("./db", () => {
   let taskIdCounter = 1;
 
   return {
+    verifyTaskOwnership: vi.fn(async () => ({ id: 1, userId: 1, externalId: "test" })),
+    verifyTaskOwnershipById: vi.fn(async () => ({ id: 1, userId: 1, externalId: "test" })),
+    verifyKnowledgeOwnership: vi.fn(async () => ({ id: 1, projectId: 1 })),
     // Existing mocks needed by router dependencies
     getUserTasks: vi.fn(async () => tasks),
     getTaskByExternalId: vi.fn(async (externalId: string) => {

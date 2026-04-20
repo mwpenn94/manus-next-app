@@ -118,6 +118,9 @@ import {
   getConnectorById,
   upsertTaskRating,
   getTaskRating,
+  verifyTaskOwnership,
+  verifyTaskOwnershipById,
+  verifyKnowledgeOwnership,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
@@ -148,8 +151,10 @@ export const appRouter = router({
 
     get: protectedProcedure
       .input(z.object({ externalId: z.string().max(50) }))
-      .query(async ({ input }) => {
-        return getTaskByExternalId(input.externalId);
+      .query(async ({ ctx, input }) => {
+        const task = await getTaskByExternalId(input.externalId);
+        if (!task || task.userId !== ctx.user.id) return null;
+        return task;
       }),
 
     create: protectedProcedure
@@ -169,6 +174,7 @@ export const appRouter = router({
         status: z.enum(["idle", "running", "completed", "error"]),
       }))
       .mutation(async ({ ctx, input }) => {
+        await verifyTaskOwnership(input.externalId, ctx.user.id);
         await updateTaskStatus(input.externalId, input.status);
 
         // Auto-create notification on task completion or error
@@ -227,7 +233,8 @@ export const appRouter = router({
 
     messages: protectedProcedure
       .input(z.object({ taskId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         return getTaskMessages(input.taskId);
       }),
 
@@ -238,7 +245,8 @@ export const appRouter = router({
         content: z.string().max(100000),
         actions: z.any().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         const externalId = nanoid(12);
         await addTaskMessage({
           taskId: input.taskId,
@@ -263,7 +271,8 @@ export const appRouter = router({
 
     getTaskRating: protectedProcedure
       .input(z.object({ taskExternalId: z.string().min(1).max(64) }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await verifyTaskOwnership(input.taskExternalId, ctx.user.id);
         return getTaskRating(input.taskExternalId);
       }),
   }),
@@ -295,7 +304,8 @@ export const appRouter = router({
     /** List files for a task */
     list: protectedProcedure
       .input(z.object({ taskExternalId: z.string().max(50) }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await verifyTaskOwnership(input.taskExternalId, ctx.user.id);
         return getTaskFiles(input.taskExternalId);
       }),
   }),
@@ -365,7 +375,8 @@ export const appRouter = router({
         content: z.string().optional(),
         url: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         await addWorkspaceArtifact({
           taskId: input.taskId,
           artifactType: input.artifactType,
@@ -381,7 +392,8 @@ export const appRouter = router({
         taskId: z.number(),
         type: z.string().optional(),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         return getWorkspaceArtifacts(input.taskId, input.type);
       }),
 
@@ -390,7 +402,8 @@ export const appRouter = router({
         taskId: z.number(),
         type: z.enum(ARTIFACT_TYPES),
       }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         return getLatestArtifactByType(input.taskId, input.type) ?? null;
       }),
   }),
@@ -643,7 +656,8 @@ export const appRouter = router({
   replay: router({
     events: protectedProcedure
       .input(z.object({ taskId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         return getTaskEvents(input.taskId);
       }),
 
@@ -654,7 +668,8 @@ export const appRouter = router({
         payload: z.string().max(100000),
         offsetMs: z.number(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        await verifyTaskOwnershipById(input.taskId, ctx.user.id);
         await addTaskEvent(input);
         return { success: true };
       }),
@@ -789,7 +804,8 @@ export const appRouter = router({
         }),
       delete: protectedProcedure
         .input(z.object({ id: z.number() }))
-        .mutation(async ({ input }) => {
+        .mutation(async ({ ctx, input }) => {
+          await verifyKnowledgeOwnership(input.id, ctx.user.id);
           await deleteProjectKnowledge(input.id);
           return { success: true };
         }),
@@ -862,8 +878,10 @@ export const appRouter = router({
     }),
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getSlideDeck(input.id);
+      .query(async ({ ctx, input }) => {
+        const deck = await getSlideDeck(input.id);
+        if (!deck || deck.userId !== ctx.user.id) return null;
+        return deck;
       }),
     generate: protectedProcedure
       .input(z.object({

@@ -10,6 +10,9 @@ vi.mock("./db", () => {
   let taskIdCounter = 1;
 
   return {
+    verifyTaskOwnership: vi.fn(async () => ({ id: 1, userId: 1, externalId: "test" })),
+    verifyTaskOwnershipById: vi.fn(async () => ({ id: 1, userId: 1, externalId: "test" })),
+    verifyKnowledgeOwnership: vi.fn(async () => ({ id: 1, projectId: 1 })),
     getBridgeConfig: vi.fn(async (userId: number) => {
       return bridgeConfigs.find((c) => c.userId === userId) ?? null;
     }),

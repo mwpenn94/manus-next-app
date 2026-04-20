@@ -11,6 +11,9 @@ vi.mock("./db", () => {
   let taskIdCounter = 1;
 
   return {
+    verifyTaskOwnership: vi.fn(async () => ({ id: 1, userId: 42, externalId: "test" })),
+    verifyTaskOwnershipById: vi.fn(async () => ({ id: 1, userId: 42, externalId: "test" })),
+    verifyKnowledgeOwnership: vi.fn(async () => ({ id: 1, projectId: 1 })),
     getUserTasks: vi.fn(async (userId: number) => {
       return tasks.filter((t) => t.userId === userId);
     }),
