@@ -1,0 +1,283 @@
+{
+  "sweep_id": "live-20260420T131927Z",
+  "ts": "20260420T131927Z",
+  "platforms": {
+    "manus-next-app": {
+      "total": 8,
+      "pass": 6,
+      "fail": 2,
+      "timeout": 0,
+      "skip": 0,
+      "results": [
+        {
+          "task_id": "TASK-001",
+          "cat": "plan",
+          "title": "Multi-step research plan",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:19:28.533200+00:00",
+          "resp_len": 156,
+          "preview": "I've generated a 5-step research plan for comparing AI agent frameworks and provided a download link for the full document.\n\nWhat would you like to do next?",
+          "found": [
+            "step"
+          ],
+          "missing": [
+            "method",
+            "timeline"
+          ],
+          "score": 0.33,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-003",
+          "cat": "execute",
+          "title": "Code generation",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:19:54.785287+00:00",
+          "resp_len": 789,
+          "preview": "I apologize for not directly providing the Python function as requested. I will now provide the complete Python function for binary search with type hints and a docstring.\n\nHere is the Python function:\n\npython\ndef binary_search(arr: list[int], target: int) -> int:\n    \"\"\"\n    Implements the binary search algorithm on a sorted list.\n\n    Args:\n        arr: A sorted list of integers to search within.\n        target: The integer value to search for.\n\n    Returns:\n        The index of the target if ",
+          "found": [
+            "def ",
+            "binary",
+            "return"
+          ],
+          "missing": [],
+          "score": 1.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-007",
+          "cat": "verify",
+          "title": "Fact-checking",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:20:17.513329+00:00",
+          "resp_len": 466,
+          "preview": "I have already read the most relevant URL (Wikipedia: GPT-4) and extracted the key information in my previous response. I also included other relevant URLs from the initial web search.\n\nCould you please clarify what specific \"detailed information\" you are looking for that wasn't covered, or what comparison table you would like me to create? I need more specific instructions to proceed with a comparison table. For example, what would you like to compare GPT-4 to?",
+          "found": [],
+          "missing": [
+            "march",
+            "2023",
+            "openai"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-010",
+          "cat": "memory",
+          "title": "Context continuity",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:20:40.337396+00:00",
+          "resp_len": 491,
+          "preview": "I'm building a financial planning app called Wealt...\nRunning\n~$0.15\nquality\nSpeed\nQuality\nMax\n\nI'm building a financial planning app called WealthBridge. What key features should I prioritize for the MVP?\n\n01:20 PM\n\n\ud83d\udc3e\nmanus next\nWide research Wide research: 3 parallel queries\n\nManus Next may make mistakes. Verify important information.\n\nManus's Computer\nBrowser\nCode\nTerminal\nImages\nlive\n\nNo browser activity yet\n\nScreenshots will appear here when the agent browses the web\n\nWatching live",
+          "found": [
+            "feature",
+            "plan"
+          ],
+          "missing": [
+            "budget"
+          ],
+          "score": 0.67,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-013",
+          "cat": "tool-use",
+          "title": "Web search integration",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:21:03.343857+00:00",
+          "resp_len": 340,
+          "preview": "I cannot search for developments in the year 2026 as my knowledge cutoff is not that far into the future, and I can only access current or past information via web search.\n\nHowever, I can search for the latest AI agent developments in 2024 or projected trends for the near future if you'd like. Please let me know how you'd like to proceed!",
+          "found": [
+            "trend",
+            "agent",
+            "2026"
+          ],
+          "missing": [],
+          "score": 1.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-016",
+          "cat": "reasoning",
+          "title": "Multi-step logical reasoning",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:21:25.793461+00:00",
+          "resp_len": 513,
+          "preview": "Product A: $10, 1000 units/month. Product B: $25, ...\nRunning\n~$0.15\nquality\nSpeed\nQuality\nMax\n\nProduct A: $10, 1000 units/month. Product B: $25, 400 units/month. Product C: $50, 150 units/month. Which generates most revenue? If we improve one by 20%, which should we choose?\n\n01:21 PM\n\n\ud83d\udc3e\nmanus next\n\nManus Next may make mistakes. Verify important information.\n\nManus's Computer\nBrowser\nCode\nTerminal\nImages\nlive\n\nNo browser activity yet\n\nScreenshots will appear here when the agent browses the web\n\n",
+          "found": [
+            "revenue",
+            "product"
+          ],
+          "missing": [
+            "10000"
+          ],
+          "score": 0.67,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-019",
+          "cat": "browser",
+          "title": "Navigate and extract",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:21:48.875139+00:00",
+          "status": "ERROR",
+          "error": "Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://manusnext-mlromfub.manus.space/\", waiting until \"domcontentloaded\"\n"
+        },
+        {
+          "task_id": "TASK-025",
+          "cat": "computer-use",
+          "title": "File creation",
+          "platform": "manus-next-app",
+          "ts": "2026-04-20T13:22:20.878415+00:00",
+          "status": "ERROR",
+          "error": "Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://manusnext-mlromfub.manus.space/\", waiting until \"domcontentloaded\"\n"
+        }
+      ]
+    },
+    "manus.im": {
+      "total": 8,
+      "pass": 8,
+      "fail": 0,
+      "timeout": 0,
+      "skip": 0,
+      "results": [
+        {
+          "task_id": "TASK-001",
+          "cat": "plan",
+          "title": "Multi-step research plan",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:22:52.880041+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "step",
+            "method",
+            "timeline"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-003",
+          "cat": "execute",
+          "title": "Code generation",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:23:17.964026+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "def ",
+            "binary",
+            "return"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-007",
+          "cat": "verify",
+          "title": "Fact-checking",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:23:49.508051+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "march",
+            "2023",
+            "openai"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-010",
+          "cat": "memory",
+          "title": "Context continuity",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:24:13.605715+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "feature",
+            "budget",
+            "plan"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-013",
+          "cat": "tool-use",
+          "title": "Web search integration",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:24:38.459076+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [
+            "2026"
+          ],
+          "missing": [
+            "trend",
+            "agent"
+          ],
+          "score": 0.33,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-016",
+          "cat": "reasoning",
+          "title": "Multi-step logical reasoning",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:25:02.842560+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "revenue",
+            "10000",
+            "product"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-019",
+          "cat": "browser",
+          "title": "Navigate and extract",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:25:28.637591+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "artificial intelligence",
+            "machine"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        },
+        {
+          "task_id": "TASK-025",
+          "cat": "computer-use",
+          "title": "File creation",
+          "platform": "manus.im",
+          "ts": "2026-04-20T13:25:53.190986+00:00",
+          "resp_len": 187,
+          "preview": "Sign in or sign up\nStart creating with Manus\nContinue with Facebook\nContinue with Google\nContinue with Microsoft\nContinue with Apple\nOr\nContinue\nTerms of service\nPrivacy policy\n\u00a92026 Meta",
+          "found": [],
+          "missing": [
+            "python",
+            "javascript",
+            "table"
+          ],
+          "score": 0.0,
+          "status": "PASS"
+        }
+      ]
+    }
+  }
+}

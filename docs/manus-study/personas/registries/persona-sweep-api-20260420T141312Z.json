@@ -1,0 +1,144 @@
+{
+  "sweep_id": "persona-api-20260420T141312Z",
+  "ts": "20260420T141312Z",
+  "method": "direct-api",
+  "personas_tested": 6,
+  "results": [
+    {
+      "persona_id": "P01",
+      "name": "Marcus Chen",
+      "archetype": "Power User",
+      "journey": "P01-J1: Code generation with specific technical requirements",
+      "prompt": "Write a Python function that implements a rate limiter using the token bucket algorithm. Include type hints, docstring, and unit test examples.",
+      "task_id": 120013,
+      "resp_len": 0,
+      "preview": "",
+      "full_content": "",
+      "found": [],
+      "missing": [
+        "def ",
+        "token",
+        "bucket",
+        "rate",
+        "return"
+      ],
+      "score": 0.0,
+      "status": "EMPTY",
+      "ts": "20260420T141312Z"
+    },
+    {
+      "persona_id": "P07",
+      "name": "Sarah Mitchell",
+      "archetype": "Business Professional",
+      "journey": "P07-J1: Business document generation",
+      "prompt": "I need a quarterly business review template. Include sections for revenue analysis, KPI tracking, team performance, and strategic recommendations. Make it professional and actionable.",
+      "task_id": 120014,
+      "resp_len": 0,
+      "preview": "",
+      "full_content": "",
+      "found": [],
+      "missing": [
+        "revenue",
+        "KPI",
+        "quarter",
+        "recommend",
+        "performance"
+      ],
+      "score": 0.0,
+      "status": "EMPTY",
+      "ts": "20260420T141312Z"
+    },
+    {
+      "persona_id": "P13",
+      "name": "Lena Kowalski",
+      "archetype": "Creative",
+      "journey": "P13-J1: Creative copywriting",
+      "prompt": "Write a compelling product description for a sustainable bamboo water bottle. Target audience: eco-conscious millennials. Include emotional hooks and a call to action.",
+      "task_id": 120015,
+      "resp_len": 0,
+      "preview": "",
+      "full_content": "",
+      "found": [],
+      "missing": [
+        "bamboo",
+        "sustainable",
+        "eco",
+        "bottle"
+      ],
+      "score": 0.0,
+      "status": "EMPTY",
+      "ts": "20260420T141312Z"
+    },
+    {
+      "persona_id": "P19",
+      "name": "Priya Sharma",
+      "archetype": "Student/Researcher",
+      "journey": "P19-J1: Educational explanation with structure",
+      "prompt": "Explain the difference between supervised, unsupervised, and reinforcement learning. Include real-world examples for each and a comparison table.",
+      "task_id": 120016,
+      "resp_len": 0,
+      "preview": "",
+      "full_content": "",
+      "found": [],
+      "missing": [
+        "supervised",
+        "unsupervised",
+        "reinforcement",
+        "example"
+      ],
+      "score": 0.0,
+      "status": "EMPTY",
+      "ts": "20260420T141312Z"
+    },
+    {
+      "persona_id": "P25",
+      "name": "David Park",
+      "archetype": "Accessibility-First",
+      "journey": "P25-J1: Accessibility knowledge query",
+      "prompt": "List the top 5 accessibility best practices for web applications. For each, explain why it matters and provide a code example.",
+      "task_id": 120017,
+      "resp_len": 0,
+      "preview": "",
+      "full_content": "",
+      "found": [],
+      "missing": [
+        "aria",
+        "contrast",
+        "keyboard",
+        "screen reader",
+        "alt"
+      ],
+      "score": 0.0,
+      "status": "EMPTY",
+      "ts": "20260420T141312Z"
+    },
+    {
+      "persona_id": "P28",
+      "name": "Maria Santos",
+      "archetype": "Casual/New User",
+      "journey": "P28-J1: Simple personal task (first-time user)",
+      "prompt": "Hi! I'm new here. Can you help me plan a birthday party for my 8-year-old? Budget is $200, 10 kids, at home.",
+      "task_id": 120018,
+      "resp_len": 0,
+      "preview": "",
+      "full_content": "",
+      "found": [],
+      "missing": [
+        "party",
+        "budget",
+        "game",
+        "food",
+        "decoration"
+      ],
+      "score": 0.0,
+      "status": "EMPTY",
+      "ts": "20260420T141312Z"
+    }
+  ],
+  "summary": {
+    "pass": 0,
+    "fail": 6,
+    "mean_score": 0.0,
+    "mean_resp_len": 0
+  }
+}
