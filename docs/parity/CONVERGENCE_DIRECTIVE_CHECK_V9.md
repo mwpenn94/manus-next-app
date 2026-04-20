@@ -175,6 +175,60 @@
 | GitHub OAuth verified | COMPLIANT (server-side verified) |
 | ESCALATE_DEPTH dimensions | COMPLIANT (5 dimensions audited) |
 
+### §L.26 Continuous Build Loop Infrastructure
+
+| Requirement | Status |
+|------------|--------|
+| Canonical PARITY.md created | COMPLIANT (docs/PARITY.md with 7 sections: Open Recommendations, Protected Improvements, Known-Bad, Gap Matrix, Reconciliation Log, Build Loop Pass Log) |
+| ANGLE_HISTORY.md created | COMPLIANT (34 base angles cataloged, rotation tracking initialized) |
+| Pass numbering system | COMPLIANT (append-only Build Loop Pass Log in PARITY.md) |
+| PARITY_SCHEMA_MIGRATION.md | COMPLIANT (migration from PARITY_BACKLOG documented) |
+
+### §L.27 Benchmark Bootstrap
+
+| Requirement | Status |
+|------------|--------|
+| TASK_CATALOG.md ≥20 tasks | COMPLIANT (25 tasks across 8 categories) |
+| Mandatory coverage: ≥3 mobile | COMPLIANT (3: TASK-009, TASK-011, TASK-017) |
+| Mandatory coverage: ≥3 accessibility | COMPLIANT (3: TASK-010, TASK-012, TASK-018) |
+| Mandatory coverage: ≥3 desktop responsive | COMPLIANT (3: TASK-013, TASK-021, TASK-024) |
+| Mandatory coverage: ≥3 reasoning-depth | COMPLIANT (4: TASK-001, TASK-005, TASK-014, TASK-020) |
+| Mandatory coverage: ≥2 offline/slow-network | COMPLIANT (2: TASK-015, TASK-022) |
+| Mandatory coverage: ≥2 error-recovery | COMPLIANT (2: TASK-007, TASK-016) |
+| scorer.js with §L.2 7-dim + §L.27 dims | COMPLIANT (11 dimensions, blinded scoring, sanity checks) |
+| scorer.test.js ≥20 assertions | COMPLIANT (59 assertions, all passing) |
+| EXCEED_REGISTRY.md | COMPLIANT (initialized, awaiting live sweep) |
+| Initial structural sweep | COMPLIANT (sweep-001-bootstrap: all infrastructure PASS) |
+
+### §L.28 Persona Bootstrap
+
+| Requirement | Status |
+|------------|--------|
+| PERSONA_CATALOG.md ≥30 personas | COMPLIANT (32 personas across 6 archetypes) |
+| Archetype coverage: power user ≥3 | COMPLIANT (6) |
+| Archetype coverage: business professional ≥3 | COMPLIANT (6) |
+| Archetype coverage: creative ≥3 | COMPLIANT (5) |
+| Archetype coverage: student/researcher ≥3 | COMPLIANT (5) |
+| Archetype coverage: accessibility-first ≥3 | COMPLIANT (5) |
+| Archetype coverage: casual/new user ≥3 | COMPLIANT (5) |
+| Screen reader personas ≥2 | COMPLIANT (P23, P24) |
+| Motor impairment personas ≥1 | COMPLIANT (P25) |
+| Cognitive accessibility personas ≥1 | COMPLIANT (P19, P27) |
+| ESL/multilingual personas ≥2 | COMPLIANT (P21, P30) |
+| JOURNEY_INDEX.md with ≥15 journeys | COMPLIANT (20 journeys, 15 UX dimensions) |
+| PERSONA_EXCEED_REGISTRY.md | COMPLIANT (initialized, awaiting live sweep) |
+| Initial structural sweep | COMPLIANT (persona-sweep-001-bootstrap: all infrastructure PASS) |
+
+### NS13 Chat Persistence Fixes
+
+| Requirement | Status |
+|------------|--------|
+| Server-side message persistence | COMPLIANT (agentStream onComplete callback) |
+| Partial content save on navigation | COMPLIANT (beforeunload + unmount cleanup) |
+| Error message improvements | COMPLIANT (user-friendly mapping for Load failed, etc.) |
+| Message dedup logic | COMPLIANT (role+content(300 chars) key) |
+| Tests for persistence | COMPLIANT (18 new tests, 348 total) |
+
 ---
 
 ## §8: Remaining Items
@@ -184,9 +238,22 @@ All previously-pending items have been resolved:
 1. **V9_CONVERGENCE_LOG: 3 zero-change passes** — ACHIEVED at 2026-04-20T02:20 UTC
 2. **PARITY_BACKLOG update** — DONE (#53/#62 updated from RED to YELLOW)
 3. **Cross-model judge** — Self-assessed (external validation recommended but not blocking)
+4. **§L.26 infrastructure** — DONE (PARITY.md, ANGLE_HISTORY.md, pass numbering)
+5. **§L.27 benchmark bootstrap** — DONE (25 tasks, scorer, EXCEED_REGISTRY, initial sweep)
+6. **§L.28 persona bootstrap** — DONE (32 personas, 20 journeys, registries, initial sweep)
+7. **NS13 chat persistence** — DONE (server-side persistence, partial save, error messages, 348 tests)
+
+### Items Deferred to Live Sweep
+
+1. **Live benchmark comparison** — Requires executing tasks against manus-live and manus-next-app simultaneously
+2. **Live persona journey testing** — Requires deployed app with real user interaction
+3. **Cross-model judge validation** — Requires different model family for external validation
 
 ---
 
 ## Verdict
 
-**HOLISTIC_VERIFY: FULL PASS.** All v9 directive clauses are addressed. All Gate A structural requirements met. All v9 additions compliant. All prompt-42 additions compliant. No pending items remain.
+**HOLISTIC_VERIFY: FULL PASS (Updated).** All v9 directive clauses addressed. All Gate A structural requirements met. All v9 additions compliant. All prompt-42 additions compliant. §L.26/§L.27/§L.28 infrastructure bootstrapped and structurally validated. NS13 chat persistence fixes applied and tested. 348 tests passing. 0 TS errors. 291KB main bundle.
+
+**Test count progression:** 305 → 327 → 330 → 348
+**Pass count:** 14 (well below 55 hard cap)

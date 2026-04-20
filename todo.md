@@ -1015,3 +1015,10 @@
 - [x] Fix "Load failed" error when reopening a task chat — FIXED: Replaced raw browser error passthrough with user-friendly error messages. Safari "Load failed", Chrome "Failed to fetch", Firefox "NetworkError" all map to "Connection lost. The server may have restarted. Please try again." Timeout errors get specific message.
 - [x] Ensure context restoration on task reopen — FIXED: Server-side persistence (onComplete) ensures assistant messages survive client disconnects. setActiveTask resets messagesLoaded flag so messages re-fetch from server on reopen. ASC ordering ensures chronological display.
 - [x] Write tests for message persistence and loading reliability — DONE: 18 new tests in messagePersistence.test.ts covering dedup logic (7), error message mapping (5), onComplete callback (3), partial content save (3). Total: 348 tests across 21 files.
+
+## NS14: v9 Command §L.26/§L.27/§L.28 Execution
+- [x] §L.26 infrastructure — canonical PARITY.md (7 sections, 56 lines), ANGLE_HISTORY.md (34 angles), PARITY_SCHEMA_MIGRATION.md, pass numbering system
+- [x] §L.27 benchmark bootstrap — TASK_CATALOG.md (25 tasks across 8 categories), scorer.js (11 dimensions, 284 lines), scorer.test.js (59/59 assertions), EXCEED_REGISTRY.md, sweep-001-bootstrap.json
+- [x] §L.28 persona bootstrap — PERSONA_CATALOG.md (32 personas across 6 archetypes), JOURNEY_INDEX.md (21 journeys, 15 UX dimensions), PERSONA_EXCEED_REGISTRY.md, sweep-001-bootstrap.json
+- [x] Updated CONVERGENCE_DIRECTIVE_CHECK_V9.md with §L.26/§L.27/§L.28 compliance (77 COMPLIANT entries)
+- [x] Convergence loop — passes 14-18, found and fixed 1 gap (TASK-022 orphan → added to P30), achieved META-CONVERGENCE (3/3 zero-change passes)

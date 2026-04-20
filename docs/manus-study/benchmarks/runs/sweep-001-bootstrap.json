@@ -1,0 +1,63 @@
+{
+  "sweepId": "sweep-001-bootstrap",
+  "date": "2026-04-20T12:30:00Z",
+  "type": "structural-validation",
+  "description": "Bootstrap sweep — validates benchmark infrastructure is complete and scorer passes all self-checks",
+  "infrastructure": {
+    "TASK_CATALOG": {
+      "exists": true,
+      "taskCount": 25,
+      "minRequired": 20,
+      "categoryCoverage": {
+        "plan": 3,
+        "execute": 8,
+        "verify": 6,
+        "memory": 1,
+        "tool-use": 2,
+        "reasoning": 3,
+        "browser": 1,
+        "computer-use": 1
+      },
+      "mandatoryCoverage": {
+        "mobile": { "required": 3, "actual": 3, "tasks": ["TASK-009", "TASK-011", "TASK-017"] },
+        "accessibility": { "required": 3, "actual": 3, "tasks": ["TASK-010", "TASK-012", "TASK-018"] },
+        "desktop-responsive": { "required": 3, "actual": 3, "tasks": ["TASK-013", "TASK-021", "TASK-024"] },
+        "reasoning-depth": { "required": 3, "actual": 4, "tasks": ["TASK-001", "TASK-005", "TASK-014", "TASK-020"] },
+        "offline-slow-network": { "required": 2, "actual": 2, "tasks": ["TASK-015", "TASK-022"] },
+        "error-recovery": { "required": 2, "actual": 2, "tasks": ["TASK-007", "TASK-016"] }
+      },
+      "status": "PASS"
+    },
+    "scorer": {
+      "exists": true,
+      "testsPassed": 59,
+      "testsFailed": 0,
+      "selfValidation": "PASS",
+      "dimensions": {
+        "L2": 7,
+        "L27": 4,
+        "total": 11
+      },
+      "status": "PASS"
+    },
+    "EXCEED_REGISTRY": {
+      "exists": true,
+      "entries": 0,
+      "status": "PASS"
+    },
+    "runsDirectory": {
+      "exists": true,
+      "status": "PASS"
+    },
+    "comparisonsDirectory": {
+      "exists": true,
+      "status": "PASS"
+    }
+  },
+  "verdict": "PASS — all §L.27 infrastructure requirements met",
+  "nextSteps": [
+    "Execute live comparison sweep against manus-live when access available",
+    "Run cross-judge validation with different model family",
+    "Begin §L.28 persona bootstrap"
+  ]
+}

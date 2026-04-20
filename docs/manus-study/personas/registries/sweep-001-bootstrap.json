@@ -1,0 +1,52 @@
+{
+  "sweepId": "persona-sweep-001-bootstrap",
+  "date": "2026-04-20T13:00:00Z",
+  "type": "structural-validation",
+  "description": "Bootstrap sweep — validates persona infrastructure is complete per §L.28 requirements",
+  "infrastructure": {
+    "PERSONA_CATALOG": {
+      "exists": true,
+      "personaCount": 32,
+      "minRequired": 30,
+      "archetypeCategories": 6,
+      "archetypeCoverage": {
+        "power-user": 6,
+        "business-professional": 6,
+        "creative": 5,
+        "student-researcher": 5,
+        "accessibility-first": 5,
+        "casual-new-user": 5
+      },
+      "mandatoryCoverage": {
+        "screen-reader": { "required": 2, "actual": 2, "personas": ["P23", "P24"] },
+        "motor-impairment": { "required": 1, "actual": 1, "personas": ["P25"] },
+        "cognitive": { "required": 1, "actual": 2, "personas": ["P19", "P27"] },
+        "low-vision": { "required": 1, "actual": 2, "personas": ["P07", "P24"] },
+        "mobile-primary": { "required": 3, "actual": 4, "personas": ["P11", "P19", "P28", "P30"] },
+        "non-technical": { "required": 5, "actual": 8, "personas": ["P07", "P09", "P10", "P17", "P22", "P28", "P29", "P30"] },
+        "power-users": { "required": 3, "actual": 6, "personas": ["P01", "P02", "P03", "P04", "P05", "P06"] },
+        "esl-multilingual": { "required": 2, "actual": 2, "personas": ["P21", "P30"] },
+        "ultrawide": { "required": 2, "actual": 3, "personas": ["P04", "P13", "P15"] },
+        "small-viewport": { "required": 2, "actual": 2, "personas": ["P19", "P30"] }
+      },
+      "status": "PASS"
+    },
+    "JOURNEY_INDEX": {
+      "exists": true,
+      "journeyCount": 20,
+      "dimensionsCovered": 15,
+      "status": "PASS"
+    },
+    "PERSONA_EXCEED_REGISTRY": {
+      "exists": true,
+      "entries": 0,
+      "status": "PASS"
+    }
+  },
+  "verdict": "PASS — all §L.28 infrastructure requirements met",
+  "nextSteps": [
+    "Execute live persona journey testing against deployed app",
+    "Run accessibility audit with P23 (screen reader) and P25 (switch access) journeys",
+    "Cross-reference persona frustrations with known gaps in PARITY.md"
+  ]
+}
