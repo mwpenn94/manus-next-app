@@ -126,9 +126,25 @@ import {
   getVideoProjectByExternalId,
   deleteVideoProject,
   updateVideoProjectStatus,
+  createGitHubRepo,
+  getUserGitHubRepos,
+  getGitHubRepoByExternalId,
+  getGitHubRepoById,
+  updateGitHubRepo,
+  disconnectGitHubRepo,
+  getGitHubRepoByFullName,
+  createWebappProject,
+  getUserWebappProjects,
+  getWebappProjectByExternalId,
+  getWebappProjectById,
+  updateWebappProject,
+  deleteWebappProject,
+  createWebappDeployment,
+  getProjectDeployments,
+  updateWebappDeployment,
 } from "./db";
 
-const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"] as const;
+const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"] as const;
 
 export const appRouter = router({
   system: systemRouter,
@@ -1911,6 +1927,439 @@ export const appRouter = router({
         if (!project || project.userId !== ctx.user.id) throw new Error("Not found");
         await deleteVideoProject(project.id, ctx.user.id);
         return { success: true };
+      }),
+  }),
+
+  // ── GitHub Repos (NS17 — Manus-style GitHub integration) ──
+  github: router({
+    /** List user's connected GitHub repos */
+    repos: protectedProcedure.query(async ({ ctx }) => {
+      return getUserGitHubRepos(ctx.user.id);
+    }),
+    /** Get a single repo by externalId */
+    getRepo: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        return repo;
+      }),
+    /** Import/connect a GitHub repo from the user's GitHub account */
+    connectRepo: protectedProcedure
+      .input(z.object({
+        fullName: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        htmlUrl: z.string(),
+        cloneUrl: z.string().optional(),
+        sshUrl: z.string().optional(),
+        defaultBranch: z.string().optional(),
+        isPrivate: z.boolean().optional(),
+        language: z.string().optional(),
+        starCount: z.number().optional(),
+        forkCount: z.number().optional(),
+        openIssuesCount: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if already connected
+        const existing = await getGitHubRepoByFullName(ctx.user.id, input.fullName);
+        if (existing && existing.status !== "disconnected") {
+          return { id: existing.id, externalId: existing.externalId, alreadyConnected: true };
+        }
+        if (existing) {
+          await updateGitHubRepo(existing.id, { status: "connected", lastSyncAt: new Date() });
+          return { id: existing.id, externalId: existing.externalId, alreadyConnected: false };
+        }
+        const id = await createGitHubRepo({
+          userId: ctx.user.id,
+          fullName: input.fullName,
+          name: input.name,
+          description: input.description ?? null,
+          htmlUrl: input.htmlUrl,
+          cloneUrl: input.cloneUrl ?? null,
+          sshUrl: input.sshUrl ?? null,
+          defaultBranch: input.defaultBranch ?? "main",
+          isPrivate: input.isPrivate ? 1 : 0,
+          language: input.language ?? null,
+          starCount: input.starCount ?? 0,
+          forkCount: input.forkCount ?? 0,
+          openIssuesCount: input.openIssuesCount ?? 0,
+          lastSyncAt: new Date(),
+          status: "connected",
+        });
+        const repo = await getGitHubRepoById(id);
+        return { id, externalId: repo?.externalId ?? "", alreadyConnected: false };
+      }),
+    /** Create a new GitHub repo */
+    createRepo: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().optional(),
+        isPrivate: z.boolean().optional(),
+        autoInit: z.boolean().optional(),
+        gitignoreTemplate: z.string().optional(),
+        licenseTemplate: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Get GitHub token from connector
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected. Please connect GitHub in Connectors first.");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { createRepo: ghCreateRepo } = await import("./githubApi");
+        const ghRepo = await ghCreateRepo(token, {
+          name: input.name,
+          description: input.description,
+          private: input.isPrivate,
+          auto_init: input.autoInit ?? true,
+        });
+        // Save to our DB
+        const id = await createGitHubRepo({
+          userId: ctx.user.id,
+          fullName: ghRepo.full_name,
+          name: ghRepo.name,
+          description: ghRepo.description,
+          htmlUrl: ghRepo.html_url,
+          cloneUrl: ghRepo.clone_url,
+          sshUrl: ghRepo.ssh_url,
+          defaultBranch: ghRepo.default_branch,
+          isPrivate: ghRepo.private ? 1 : 0,
+          language: ghRepo.language,
+          starCount: ghRepo.stargazers_count,
+          forkCount: ghRepo.forks_count,
+          openIssuesCount: ghRepo.open_issues_count,
+          lastSyncAt: new Date(),
+          status: "connected",
+        });
+        const repo = await getGitHubRepoById(id);
+        return { id, externalId: repo?.externalId ?? "", fullName: ghRepo.full_name };
+      }),
+    /** Disconnect a repo */
+    disconnectRepo: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        await disconnectGitHubRepo(repo.id, ctx.user.id);
+        return { success: true };
+      }),
+    /** Sync repo metadata from GitHub API */
+    syncRepo: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { getRepo } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        const ghRepo = await getRepo(token, owner, repoName);
+        await updateGitHubRepo(repo.id, {
+          description: ghRepo.description,
+          defaultBranch: ghRepo.default_branch,
+          isPrivate: ghRepo.private ? 1 : 0,
+          language: ghRepo.language,
+          starCount: ghRepo.stargazers_count,
+          forkCount: ghRepo.forks_count,
+          openIssuesCount: ghRepo.open_issues_count,
+          pushedAt: ghRepo.pushed_at ? new Date(ghRepo.pushed_at) : null,
+          lastSyncAt: new Date(),
+          status: "connected",
+        });
+        return { success: true };
+      }),
+    /** List remote repos from GitHub (for import picker) */
+    listRemoteRepos: protectedProcedure
+      .input(z.object({ page: z.number().optional(), perPage: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) return { repos: [], connected: false };
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) return { repos: [], connected: false };
+        const { listUserRepos } = await import("./githubApi");
+        const repos = await listUserRepos(token, input.page ?? 1, input.perPage ?? 30);
+        return { repos, connected: true };
+      }),
+    /** Get file tree for a repo */
+    fileTree: protectedProcedure
+      .input(z.object({ externalId: z.string(), branch: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { getRepoTree } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        const tree = await getRepoTree(token, owner, repoName, input.branch || repo.defaultBranch || "main");
+        return tree;
+      }),
+    /** Get file content */
+    fileContent: protectedProcedure
+      .input(z.object({ externalId: z.string(), path: z.string(), ref: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { getFileContent } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return getFileContent(token, owner, repoName, input.path, input.ref);
+      }),
+    /** Commit a file change */
+    commitFile: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        path: z.string(),
+        content: z.string(), // base64
+        message: z.string(),
+        sha: z.string().optional(),
+        branch: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { createOrUpdateFile } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return createOrUpdateFile(token, owner, repoName, input.path, {
+          message: input.message,
+          content: input.content,
+          sha: input.sha,
+          branch: input.branch,
+        });
+      }),
+    /** List branches */
+    branches: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { listBranches } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return listBranches(token, owner, repoName);
+      }),
+    /** Create a branch */
+    createBranch: protectedProcedure
+      .input(z.object({ externalId: z.string(), branchName: z.string(), fromSha: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { createBranch: ghCreateBranch } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return ghCreateBranch(token, owner, repoName, input.branchName, input.fromSha);
+      }),
+    /** List commits */
+    commits: protectedProcedure
+      .input(z.object({ externalId: z.string(), branch: z.string().optional(), perPage: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { listCommits } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return listCommits(token, owner, repoName, { sha: input.branch, per_page: input.perPage ?? 20 });
+      }),
+    /** List pull requests */
+    pullRequests: protectedProcedure
+      .input(z.object({ externalId: z.string(), state: z.enum(["open", "closed", "all"]).optional() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { listPullRequests } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return listPullRequests(token, owner, repoName, input.state ?? "open");
+      }),
+    /** Create a pull request */
+    createPR: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        title: z.string(),
+        body: z.string().optional(),
+        head: z.string(),
+        base: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { createPullRequest } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return createPullRequest(token, owner, repoName, { title: input.title, body: input.body, head: input.head, base: input.base });
+      }),
+    /** List issues */
+    issues: protectedProcedure
+      .input(z.object({ externalId: z.string(), state: z.enum(["open", "closed", "all"]).optional() }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { listIssues } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return listIssues(token, owner, repoName, input.state ?? "open");
+      }),
+  }),
+
+  // ── Webapp Projects (NS17 — Manus-style project management) ──
+  webappProject: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getUserWebappProjects(ctx.user.id);
+    }),
+    get: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        return project;
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(256),
+        description: z.string().optional(),
+        framework: z.string().optional(),
+        githubRepoId: z.number().optional(),
+        webappBuildId: z.number().optional(),
+        deployTarget: z.enum(["manus", "github_pages", "vercel", "netlify"]).optional(),
+        buildCommand: z.string().optional(),
+        outputDir: z.string().optional(),
+        installCommand: z.string().optional(),
+        nodeVersion: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await createWebappProject({
+          userId: ctx.user.id,
+          name: input.name,
+          description: input.description ?? null,
+          framework: input.framework ?? "react",
+          githubRepoId: input.githubRepoId ?? null,
+          webappBuildId: input.webappBuildId ?? null,
+          deployTarget: input.deployTarget ?? "manus",
+          buildCommand: input.buildCommand ?? "npm run build",
+          outputDir: input.outputDir ?? "dist",
+          installCommand: input.installCommand ?? "npm install",
+          nodeVersion: input.nodeVersion ?? "22",
+          subdomainPrefix: nanoid(8).toLowerCase(),
+        });
+        const project = await getWebappProjectById(id);
+        return { id, externalId: project?.externalId ?? "" };
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        framework: z.string().optional(),
+        githubRepoId: z.number().nullable().optional(),
+        customDomain: z.string().nullable().optional(),
+        subdomainPrefix: z.string().optional(),
+        envVars: z.record(z.string(), z.string()).optional(),
+        buildCommand: z.string().optional(),
+        outputDir: z.string().optional(),
+        installCommand: z.string().optional(),
+        nodeVersion: z.string().optional(),
+        deployTarget: z.enum(["manus", "github_pages", "vercel", "netlify"]).optional(),
+        visibility: z.enum(["public", "private"]).optional(),
+        faviconUrl: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { externalId, ...updates } = input;
+        await updateWebappProject(project.id, updates as any);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        await deleteWebappProject(project.id, ctx.user.id);
+        return { success: true };
+      }),
+    /** Deploy a project (create deployment record) */
+    deploy: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        versionLabel: z.string().optional(),
+        commitSha: z.string().optional(),
+        commitMessage: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        await updateWebappProject(project.id, { deployStatus: "building" });
+        const depId = await createWebappDeployment({
+          projectId: project.id,
+          userId: ctx.user.id,
+          versionLabel: input.versionLabel ?? null,
+          commitSha: input.commitSha ?? null,
+          commitMessage: input.commitMessage ?? null,
+          status: "building",
+        });
+        // Simulate build completion (in production, this would be async)
+        setTimeout(async () => {
+          try {
+            await updateWebappDeployment(depId, {
+              status: "live",
+              completedAt: new Date(),
+              buildDurationSec: Math.floor(Math.random() * 30) + 10,
+            });
+            await updateWebappProject(project.id, {
+              deployStatus: "live",
+              lastDeployedAt: new Date(),
+            });
+          } catch { /* ignore */ }
+        }, 3000);
+        return { deploymentId: depId, status: "building" };
+      }),
+    /** List deployments for a project */
+    deployments: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        return getProjectDeployments(project.id);
       }),
   }),
 });

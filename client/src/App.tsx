@@ -37,6 +37,8 @@ const ConnectDevicePage = lazy(() => import("./pages/ConnectDevicePage"));
 const MobileProjectsPage = lazy(() => import("./pages/MobileProjectsPage"));
 const AppPublishPage = lazy(() => import("./pages/AppPublishPage"));
 const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
+const GitHubPage = lazy(() => import("./pages/GitHubPage"));
+const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 
 function PageLoader() {
   return (
@@ -170,6 +172,21 @@ function Router() {
       <Route path="/video">
         <Suspense fallback={<PageLoader />}>
           <VideoGeneratorPage />
+        </Suspense>
+      </Route>
+      <Route path="/github">
+        <Suspense fallback={<PageLoader />}>
+          <GitHubPage />
+        </Suspense>
+      </Route>
+      <Route path="/github/:repoId">
+        <Suspense fallback={<PageLoader />}>
+          <GitHubPage />
+        </Suspense>
+      </Route>
+      <Route path="/projects/webapp/:projectId">
+        <Suspense fallback={<PageLoader />}>
+          <WebAppProjectPage />
         </Suspense>
       </Route>
       <Route path="/shared/:token">

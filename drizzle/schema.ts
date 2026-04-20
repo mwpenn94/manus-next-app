@@ -137,7 +137,7 @@ export const workspaceArtifacts = mysqlTable("workspace_artifacts", {
   id: int("id").autoincrement().primaryKey(),
   taskId: int("taskId").notNull(),
   /** Artifact type: browser_screenshot, browser_url, code, terminal */
-  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document"]).notNull(),
+  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"]).notNull(),
   /** For code: filename. For terminal: command. For browser: page title. */
   label: varchar("label", { length: 500 }),
   /** Text content (code source, terminal output). Null for screenshots. */
@@ -686,3 +686,132 @@ export const videoProjects = mysqlTable("video_projects", {
 });
 export type VideoProject = typeof videoProjects.$inferSelect;
 export type InsertVideoProject = typeof videoProjects.$inferInsert;
+
+
+// ── GitHub Repos (NS17 — GitHub Integration with Manus-style management) ──
+export const githubRepos = mysqlTable("github_repos", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** GitHub connector ID (links to connectors table for auth) */
+  connectorId: int("connectorId"),
+  /** GitHub repo full name (owner/repo) */
+  fullName: varchar("fullName", { length: 256 }).notNull(),
+  /** Short repo name */
+  name: varchar("name", { length: 128 }).notNull(),
+  /** Repo description */
+  description: text("description"),
+  /** GitHub HTML URL */
+  htmlUrl: text("htmlUrl").notNull(),
+  /** Clone URL (https) */
+  cloneUrl: text("cloneUrl"),
+  /** SSH URL */
+  sshUrl: text("sshUrl"),
+  /** Default branch name */
+  defaultBranch: varchar("defaultBranch", { length: 128 }).default("main"),
+  /** Private repo flag */
+  isPrivate: int("isPrivate").default(0).notNull(),
+  /** Primary language */
+  language: varchar("language", { length: 64 }),
+  /** Star count */
+  starCount: int("starCount").default(0),
+  /** Fork count */
+  forkCount: int("forkCount").default(0),
+  /** Open issues count */
+  openIssuesCount: int("openIssuesCount").default(0),
+  /** Last push timestamp from GitHub */
+  pushedAt: timestamp("pushedAt"),
+  /** Last sync timestamp (when we fetched from GitHub API) */
+  lastSyncAt: timestamp("lastSyncAt"),
+  /** Connection status */
+  status: mysqlEnum("status", ["connected", "syncing", "error", "disconnected"]).default("connected").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type GitHubRepo = typeof githubRepos.$inferSelect;
+export type InsertGitHubRepo = typeof githubRepos.$inferInsert;
+
+// ── Webapp Projects (NS17 — Manus-style management with GitHub, domains, env vars, deploy) ──
+export const webappProjects = mysqlTable("webapp_projects", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** Project name */
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Project description */
+  description: text("description"),
+  /** Framework: react, nextjs, vue, static, custom */
+  framework: varchar("framework", { length: 64 }).default("react"),
+  /** Linked GitHub repo ID (null = not connected) */
+  githubRepoId: int("githubRepoId"),
+  /** Linked webapp build ID (null = standalone project) */
+  webappBuildId: int("webappBuildId"),
+  /** Custom domain (e.g. myapp.manus.space or custom domain) */
+  customDomain: varchar("customDomain", { length: 256 }),
+  /** Auto-generated subdomain prefix */
+  subdomainPrefix: varchar("subdomainPrefix", { length: 64 }),
+  /** Environment variables as encrypted JSON */
+  envVars: json("envVars").$type<Record<string, string>>(),
+  /** Build command (e.g. "npm run build") */
+  buildCommand: varchar("buildCommand", { length: 512 }).default("npm run build"),
+  /** Output directory (e.g. "dist", "build", ".next") */
+  outputDir: varchar("outputDir", { length: 256 }).default("dist"),
+  /** Install command (e.g. "npm install") */
+  installCommand: varchar("installCommand", { length: 512 }).default("npm install"),
+  /** Node.js version */
+  nodeVersion: varchar("nodeVersion", { length: 16 }).default("22"),
+  /** Deploy target: manus (built-in), github_pages, vercel, netlify */
+  deployTarget: mysqlEnum("deployTarget", ["manus", "github_pages", "vercel", "netlify"]).default("manus"),
+  /** Published URL (live site) */
+  publishedUrl: text("publishedUrl"),
+  /** Last deploy status */
+  deployStatus: mysqlEnum("deployStatus", ["idle", "building", "deploying", "live", "failed"]).default("idle").notNull(),
+  /** Last deploy error */
+  deployError: text("deployError"),
+  /** Favicon URL (S3) */
+  faviconUrl: text("faviconUrl"),
+  /** Analytics: total page views */
+  totalPageViews: bigint("totalPageViews", { mode: "number" }).default(0),
+  /** Analytics: total unique visitors */
+  totalUniqueVisitors: bigint("totalUniqueVisitors", { mode: "number" }).default(0),
+  /** Visibility: public or private */
+  visibility: mysqlEnum("visibility", ["public", "private"]).default("public"),
+  /** Last deployed at */
+  lastDeployedAt: timestamp("lastDeployedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WebappProject = typeof webappProjects.$inferSelect;
+export type InsertWebappProject = typeof webappProjects.$inferInsert;
+
+// ── Webapp Deployments (version history / checkpoints) ──
+export const webappDeployments = mysqlTable("webapp_deployments", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  projectId: int("projectId").notNull(),
+  userId: int("userId").notNull(),
+  /** Deployment version label (e.g. "v1.0.3" or checkpoint description) */
+  versionLabel: varchar("versionLabel", { length: 256 }),
+  /** Commit SHA from GitHub (if connected) */
+  commitSha: varchar("commitSha", { length: 64 }),
+  /** Commit message */
+  commitMessage: text("commitMessage"),
+  /** S3 URL of deployed bundle */
+  bundleUrl: text("bundleUrl"),
+  /** S3 key for the deployed bundle */
+  bundleKey: text("bundleKey"),
+  /** Deploy status */
+  status: mysqlEnum("status", ["building", "deploying", "live", "rolled_back", "failed"]).default("building").notNull(),
+  /** Build log output */
+  buildLog: text("buildLog"),
+  /** Error message if failed */
+  errorMessage: text("errorMessage"),
+  /** Screenshot URL for preview */
+  screenshotUrl: text("screenshotUrl"),
+  /** Build duration in seconds */
+  buildDurationSec: int("buildDurationSec"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+export type WebappDeployment = typeof webappDeployments.$inferSelect;
+export type InsertWebappDeployment = typeof webappDeployments.$inferInsert;

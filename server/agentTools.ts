@@ -114,7 +114,7 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "generate_document",
       description:
-        "Generate a structured document (report, analysis, summary, article, plan) as a downloadable markdown file. Use this when the user asks you to create, write, draft, or produce a document, report, or any long-form structured content. Returns the document content and a download URL.",
+        "Generate a structured document (report, analysis, summary, article, plan) as a downloadable file. Supports markdown, PDF, and DOCX output formats. Use this when the user asks you to create, write, draft, or produce a document, report, or any long-form structured content. When the user specifically asks for PDF or Word/DOCX format, set output_format accordingly. Returns the document content and a download URL.",
       parameters: {
         type: "object",
         properties: {
@@ -130,7 +130,12 @@ export const AGENT_TOOLS: Tool[] = [
           format: {
             type: "string",
             enum: ["markdown", "report", "analysis", "plan"],
-            description: "The type/format of document to generate",
+            description: "The type/style of document to generate (affects content structure)",
+          },
+          output_format: {
+            type: "string",
+            enum: ["markdown", "pdf", "docx"],
+            description: "The file format to output. Use 'pdf' when user asks for PDF, 'docx' when user asks for Word document, 'markdown' for default. Defaults to 'markdown' if not specified.",
           },
         },
         required: ["title", "content"],
@@ -374,7 +379,7 @@ export interface ToolResult {
   /** Optional URL for images or browser artifacts */
   url?: string;
   /** Optional artifact type for workspace persistence */
-  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document";
+  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx";
   /** Optional label for the artifact */
   artifactLabel?: string;
 }
@@ -1313,26 +1318,58 @@ async function executeGenerateDocument(args: {
   title: string;
   content: string;
   format?: string;
+  output_format?: string;
 }): Promise<ToolResult> {
   try {
     const { storagePut } = await import("./storage");
     const { nanoid } = await import("nanoid");
 
-    const fileName = `${args.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase()}-${nanoid(6)}.md`;
-    const fileKey = `documents/${fileName}`;
-
-    // Build document with front matter
+    const outputFormat = args.output_format || "markdown";
+    const safeTitle = args.title.replace(/[^a-zA-Z0-9-_ ]/g, "").replace(/\s+/g, "-").toLowerCase();
     const docContent = `# ${args.title}\n\n${args.content}`;
-    const buffer = Buffer.from(docContent, "utf-8");
 
-    const { url } = await storagePut(fileKey, buffer, "text/markdown");
+    let buffer: Buffer;
+    let fileName: string;
+    let contentType: string;
+    let artifactType: ToolResult["artifactType"];
+
+    switch (outputFormat) {
+      case "pdf": {
+        const { generatePDF } = await import("./documentGeneration");
+        buffer = await generatePDF(args.title, args.content);
+        fileName = `${safeTitle}-${nanoid(6)}.pdf`;
+        contentType = "application/pdf";
+        artifactType = "document_pdf";
+        break;
+      }
+      case "docx": {
+        const { generateDOCX } = await import("./documentGeneration");
+        buffer = await generateDOCX(args.title, args.content);
+        fileName = `${safeTitle}-${nanoid(6)}.docx`;
+        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        artifactType = "document_docx";
+        break;
+      }
+      default: {
+        buffer = Buffer.from(docContent, "utf-8");
+        fileName = `${safeTitle}-${nanoid(6)}.md`;
+        contentType = "text/markdown";
+        artifactType = "document";
+        break;
+      }
+    }
+
+    const fileKey = `documents/${fileName}`;
+    const { url } = await storagePut(fileKey, buffer, contentType);
+
+    const formatLabel = outputFormat === "pdf" ? "PDF" : outputFormat === "docx" ? "Word Document" : "Markdown";
 
     return {
       success: true,
-      result: `Document generated: **${args.title}**\n\n[Download Document](${url})\n\n---\n\n${docContent.slice(0, 2000)}${docContent.length > 2000 ? "\n\n*[Document truncated for display — full version available at download link]*" : ""}`,
+      result: `${formatLabel} generated: **${args.title}**\n\n[Download ${formatLabel}](${url})\n\n---\n\n${docContent.slice(0, 2000)}${docContent.length > 2000 ? "\n\n*[Document truncated for display — full version available at download link]*" : ""}`,
       url,
-      artifactType: "document",
-      artifactLabel: args.title,
+      artifactType,
+      artifactLabel: `${args.title} (${formatLabel})`,
     };
   } catch (err: any) {
     return {

@@ -20,6 +20,7 @@ import { useBridge } from "@/contexts/BridgeContext";
 import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import NotificationCenter from "@/components/NotificationCenter";
+import NetworkBanner from "@/components/NetworkBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import {
@@ -58,6 +59,7 @@ import {
   MessageSquare,
   Sparkles,
   Coins,
+  GitBranch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -591,6 +593,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           Connectors
         </Link>
         <Link
+          href="/github"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location.startsWith("/github")
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <GitBranch className="w-4 h-4" />
+          GitHub
+        </Link>
+        <Link
           href="/webapp-builder"
           className={cn(
             "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
@@ -791,6 +805,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <NotificationCenter />
           </div>
         </div>
+
+        {/* Network status banner */}
+        <NetworkBanner />
 
         {/* Page content */}
         <main className="flex-1 overflow-hidden pb-14 md:pb-0">{children}</main>

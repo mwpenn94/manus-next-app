@@ -418,7 +418,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
 
 // ── Workspace Panel with real artifacts ──
 
-type WorkspaceTab = "browser" | "code" | "terminal" | "images";
+type WorkspaceTab = "browser" | "code" | "terminal" | "images" | "documents";
 
 function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -449,6 +449,18 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { taskId: serverId, type: "generated_image" },
     { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
+  const documentArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "document" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
+  const documentPdfArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "document_pdf" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
+  const documentDocxArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "document_docx" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
 
   // When serverId transitions from undefined to a value (new task synced to server),
   // force an immediate refetch of all artifact queries
@@ -461,6 +473,9 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
       codeArtifacts.refetch();
       terminalArtifacts.refetch();
       imageArtifacts.refetch();
+      documentArtifacts.refetch();
+      documentPdfArtifacts.refetch();
+      documentDocxArtifacts.refetch();
     }
   }, [hasServerId, serverId]);
 
@@ -471,11 +486,21 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
   const latestCode = codeArtifacts.data?.[0];
   const latestTerminal = terminalArtifacts.data?.[0];
 
+  // Combine all document types into a single list
+  const allDocuments = useMemo(() => {
+    const docs: Array<{ id: number; label: string | null; content: string | null; url: string | null; createdAt: Date; docType: string }> = [];
+    for (const d of documentArtifacts.data ?? []) docs.push({ ...d, docType: "markdown" });
+    for (const d of documentPdfArtifacts.data ?? []) docs.push({ ...d, docType: "pdf" });
+    for (const d of documentDocxArtifacts.data ?? []) docs.push({ ...d, docType: "docx" });
+    return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [documentArtifacts.data, documentPdfArtifacts.data, documentDocxArtifacts.data]);
+
   const tabs: { id: WorkspaceTab; label: string; icon: typeof Globe; count?: number }[] = [
     { id: "browser", label: "Browser", icon: Globe },
     { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
     { id: "terminal", label: "Terminal", icon: Terminal, count: terminalArtifacts.data?.length },
     { id: "images", label: "Images", icon: ImageIcon, count: imageArtifacts.data?.length },
+    { id: "documents", label: "Docs", icon: FileText, count: allDocuments.length || undefined },
   ];
 
   return (
@@ -682,6 +707,68 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                   <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No generated images yet</p>
                   <p className="text-[10px] mt-1 opacity-60">Images will appear here when the agent generates them</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "documents" && (
+          <div className="p-4 h-full overflow-y-auto">
+            {allDocuments.length > 0 ? (
+              <div className="space-y-2">
+                {allDocuments.map((doc, i) => {
+                  const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : "📋";
+                  const ext = doc.docType === "pdf" ? ".pdf" : doc.docType === "docx" ? ".docx" : ".md";
+                  const label = doc.label || `Document ${i + 1}`;
+                  return (
+                    <div
+                      key={doc.id || i}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors group"
+                    >
+                      <span className="text-lg shrink-0">{icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{label}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {ext.toUpperCase().slice(1)} &middot; {new Date(doc.createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      {doc.url && (
+                        <button
+                          onClick={() => window.open(doc.url!, "_blank")}
+                          className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                          title={`Download ${ext}`}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {doc.content && !doc.url && (
+                        <button
+                          onClick={() => {
+                            const blob = new Blob([doc.content!], { type: "text/markdown" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `${label}${ext}`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                          title="Download"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div>
+                  <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-xs">No documents yet</p>
+                  <p className="text-[10px] mt-1 opacity-60">PDF, DOCX, and Markdown files will appear here</p>
                 </div>
               </div>
             )}

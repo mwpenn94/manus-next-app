@@ -19,7 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Code, Eye, Rocket, ArrowLeft, Loader2, RefreshCw,
   ExternalLink, Copy, CheckCircle2, Globe, Paintbrush, History,
-  Smartphone, Package,
+  Smartphone, Package, FolderKanban, Settings, GitBranch, Plus,
+  BarChart3, Activity,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -45,7 +46,18 @@ export default function WebAppBuilderPage() {
 
   // Real tRPC queries
   const buildsQuery = trpc.webapp.list.useQuery(undefined, { enabled: !!user });
+  const projectsQuery = trpc.webappProject.list.useQuery(undefined, { enabled: !!user });
   const utils = trpc.useUtils();
+
+  // Create project mutation
+  const createProjectMut = trpc.webappProject.create.useMutation({
+    onSuccess: (data) => {
+      toast.success("Project created");
+      projectsQuery.refetch();
+      navigate(`/projects/webapp/${data.externalId}`);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   // Real tRPC mutations
   const createBuild = trpc.webapp.create.useMutation();
@@ -261,6 +273,10 @@ Generate the complete HTML code now.`,
               <History className="w-4 h-4 mr-2" />
               History ({builds.length})
             </TabsTrigger>
+            <TabsTrigger value="projects">
+              <FolderKanban className="w-4 h-4 mr-2" />
+              Projects ({projectsQuery.data?.length ?? 0})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="builder" className="mt-6">
@@ -449,6 +465,60 @@ Generate the complete HTML code now.`,
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="projects" className="mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Managed Projects</h3>
+              <Button size="sm" onClick={() => {
+                createProjectMut.mutate({ name: appName || "New Project", framework: "react" });
+              }} disabled={createProjectMut.isPending}>
+                {createProjectMut.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+                New Project
+              </Button>
+            </div>
+            {projectsQuery.isLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+            ) : !projectsQuery.data?.length ? (
+              <Card className="border-border border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <FolderKanban className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                  <h3 className="text-lg font-medium mb-1">No projects yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Create a project to manage deployments, domains, and settings</p>
+                  <Button onClick={() => createProjectMut.mutate({ name: "My App", framework: "react" })} disabled={createProjectMut.isPending}>
+                    <Plus className="w-4 h-4 mr-1" /> Create First Project
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {projectsQuery.data.map((project: any) => (
+                  <Card
+                    key={project.id}
+                    className="border-border hover:border-primary/30 transition-colors cursor-pointer group"
+                    onClick={() => navigate(`/projects/webapp/${project.externalId}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Globe className="w-4 h-4 text-primary shrink-0" />
+                          <span className="text-sm font-semibold group-hover:text-primary truncate">{project.name}</span>
+                        </div>
+                        <Badge variant={project.deployStatus === "live" ? "default" : "secondary"} className="text-[10px] shrink-0">
+                          {project.deployStatus}
+                        </Badge>
+                      </div>
+                      {project.description && <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{project.description}</p>}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Code className="w-3 h-3" />{project.framework}</span>
+                        <span className="flex items-center gap-1"><Rocket className="w-3 h-3" />{project.deployTarget}</span>
+                        {project.githubRepoId && <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" />Connected</span>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="history" className="mt-6">

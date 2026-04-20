@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1178,4 +1178,119 @@ export async function deleteVideoProject(id: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.delete(videoProjects).where(and(eq(videoProjects.id, id), eq(videoProjects.userId, userId)));
+}
+
+
+// ── GitHub Repos ──
+export async function createGitHubRepo(data: InsertGitHubRepo) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(githubRepos).values(data).$returningId();
+  return result.id;
+}
+
+export async function getUserGitHubRepos(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(githubRepos).where(and(eq(githubRepos.userId, userId), ne(githubRepos.status, "disconnected"))).orderBy(desc(githubRepos.updatedAt));
+}
+
+export async function getGitHubRepoByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [repo] = await db.select().from(githubRepos).where(eq(githubRepos.externalId, externalId));
+  return repo ?? null;
+}
+
+export async function getGitHubRepoById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [repo] = await db.select().from(githubRepos).where(eq(githubRepos.id, id));
+  return repo ?? null;
+}
+
+export async function updateGitHubRepo(id: number, data: Partial<InsertGitHubRepo>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(githubRepos).set(data).where(eq(githubRepos.id, id));
+}
+
+export async function disconnectGitHubRepo(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(githubRepos).set({ status: "disconnected" }).where(and(eq(githubRepos.id, id), eq(githubRepos.userId, userId)));
+}
+
+export async function getGitHubRepoByFullName(userId: number, fullName: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [repo] = await db.select().from(githubRepos).where(and(eq(githubRepos.userId, userId), eq(githubRepos.fullName, fullName)));
+  return repo ?? null;
+}
+
+// ── Webapp Projects ──
+export async function createWebappProject(data: InsertWebappProject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(webappProjects).values(data).$returningId();
+  return result.id;
+}
+
+export async function getUserWebappProjects(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(webappProjects).where(eq(webappProjects.userId, userId)).orderBy(desc(webappProjects.updatedAt));
+}
+
+export async function getWebappProjectByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [project] = await db.select().from(webappProjects).where(eq(webappProjects.externalId, externalId));
+  return project ?? null;
+}
+
+export async function getWebappProjectById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [project] = await db.select().from(webappProjects).where(eq(webappProjects.id, id));
+  return project ?? null;
+}
+
+export async function updateWebappProject(id: number, data: Partial<InsertWebappProject>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(webappProjects).set(data).where(eq(webappProjects.id, id));
+}
+
+export async function deleteWebappProject(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(webappProjects).where(and(eq(webappProjects.id, id), eq(webappProjects.userId, userId)));
+}
+
+// ── Webapp Deployments ──
+export async function createWebappDeployment(data: InsertWebappDeployment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(webappDeployments).values(data).$returningId();
+  return result.id;
+}
+
+export async function getProjectDeployments(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(webappDeployments).where(eq(webappDeployments.projectId, projectId)).orderBy(desc(webappDeployments.createdAt));
+}
+
+export async function getDeploymentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [dep] = await db.select().from(webappDeployments).where(eq(webappDeployments.id, id));
+  return dep ?? null;
+}
+
+export async function updateWebappDeployment(id: number, data: Partial<InsertWebappDeployment>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(webappDeployments).set(data).where(eq(webappDeployments.id, id));
 }

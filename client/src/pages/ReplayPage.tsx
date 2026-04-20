@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+/**
+ * ReplayPage — Rich step-by-step session replay with tool icons and result previews
+ * 
+ * G6/G7: Artifact preview panel + task replay step logging
+ * Shows each agent step as a visual card with tool-specific icons,
+ * result previews (images, code, search results), and timestamps.
+ */
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 import {
   Play,
   Pause,
@@ -15,8 +23,229 @@ import {
   Clock,
   ChevronLeft,
   AlertCircle,
+  Globe,
+  Code,
+  Terminal,
+  ImageIcon,
+  Search,
+  FileText,
+  Brain,
+  MessageSquare,
+  Zap,
+  CheckCircle2,
+  XCircle,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import { Streamdown } from "streamdown";
+
+// ── Event Type Metadata ──
+
+interface EventMeta {
+  icon: typeof Globe;
+  label: string;
+  color: string; // tailwind text color
+  bgColor: string; // tailwind bg color
+}
+
+const EVENT_META: Record<string, EventMeta> = {
+  tool_start: { icon: Zap, label: "Tool Call", color: "text-amber-400", bgColor: "bg-amber-500/10" },
+  tool_result: { icon: CheckCircle2, label: "Tool Result", color: "text-emerald-400", bgColor: "bg-emerald-500/10" },
+  tool_error: { icon: XCircle, label: "Tool Error", color: "text-red-400", bgColor: "bg-red-500/10" },
+  text_delta: { icon: MessageSquare, label: "Response", color: "text-blue-400", bgColor: "bg-blue-500/10" },
+  thinking: { icon: Brain, label: "Thinking", color: "text-purple-400", bgColor: "bg-purple-500/10" },
+  image: { icon: ImageIcon, label: "Image", color: "text-pink-400", bgColor: "bg-pink-500/10" },
+  code: { icon: Code, label: "Code", color: "text-cyan-400", bgColor: "bg-cyan-500/10" },
+  browser: { icon: Globe, label: "Browser", color: "text-sky-400", bgColor: "bg-sky-500/10" },
+  search: { icon: Search, label: "Search", color: "text-orange-400", bgColor: "bg-orange-500/10" },
+  document: { icon: FileText, label: "Document", color: "text-teal-400", bgColor: "bg-teal-500/10" },
+  terminal: { icon: Terminal, label: "Terminal", color: "text-green-400", bgColor: "bg-green-500/10" },
+};
+
+const DEFAULT_META: EventMeta = { icon: Zap, label: "Event", color: "text-muted-foreground", bgColor: "bg-muted/50" };
+
+function getEventMeta(eventType: string): EventMeta {
+  // Check direct match first
+  if (EVENT_META[eventType]) return EVENT_META[eventType];
+  // Check partial matches
+  for (const [key, meta] of Object.entries(EVENT_META)) {
+    if (eventType.toLowerCase().includes(key)) return meta;
+  }
+  return DEFAULT_META;
+}
+
+// ── Parse event payload for rich rendering ──
+
+interface ParsedPayload {
+  toolName?: string;
+  description?: string;
+  content?: string;
+  imageUrl?: string;
+  codeContent?: string;
+  codeLanguage?: string;
+  url?: string;
+  error?: string;
+  raw: string;
+}
+
+function parsePayload(payload: string): ParsedPayload {
+  try {
+    const obj = JSON.parse(payload);
+    return {
+      toolName: obj.tool || obj.toolName || obj.name || undefined,
+      description: obj.description || obj.message || obj.text || undefined,
+      content: typeof obj.content === "string" ? obj.content : typeof obj.result === "string" ? obj.result : undefined,
+      imageUrl: obj.imageUrl || obj.url?.match(/\.(png|jpg|jpeg|gif|webp|svg)/i) ? obj.url : undefined,
+      codeContent: obj.code || obj.codeContent || undefined,
+      codeLanguage: obj.language || obj.lang || undefined,
+      url: obj.url || undefined,
+      error: obj.error || undefined,
+      raw: JSON.stringify(obj, null, 2),
+    };
+  } catch {
+    return { raw: payload, content: payload };
+  }
+}
+
+// ── Event Card Component ──
+
+function EventCard({
+  event,
+  index,
+  isActive,
+  onClick,
+}: {
+  event: { id: number; eventType: string; payload: string; offsetMs: number };
+  index: number;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const meta = getEventMeta(event.eventType);
+  const parsed = useMemo(() => parsePayload(event.payload), [event.payload]);
+  const Icon = meta.icon;
+
+  return (
+    <div
+      className={cn(
+        "border rounded-lg transition-all cursor-pointer",
+        isActive
+          ? "border-primary/40 bg-primary/5 shadow-sm shadow-primary/10"
+          : "border-border hover:border-border/80 hover:bg-muted/30"
+      )}
+      onClick={onClick}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <div className={cn("w-7 h-7 rounded-md flex items-center justify-center shrink-0", meta.bgColor)}>
+          <Icon className={cn("w-3.5 h-3.5", meta.color)} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-foreground">{meta.label}</span>
+            {parsed.toolName && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                {parsed.toolName}
+              </span>
+            )}
+          </div>
+          {parsed.description && (
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">{parsed.description}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] text-muted-foreground font-mono tabular-nums flex items-center gap-1">
+            <Clock className="w-2.5 h-2.5" />
+            {(event.offsetMs / 1000).toFixed(1)}s
+          </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+            className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Preview content (always shown for active card if there's visual content) */}
+      {isActive && !expanded && (parsed.imageUrl || parsed.codeContent || parsed.error) && (
+        <div className="px-3 pb-2.5">
+          {parsed.imageUrl && (
+            <img
+              src={parsed.imageUrl}
+              alt="Generated"
+              className="w-full max-h-40 object-contain rounded border border-border"
+            />
+          )}
+          {parsed.codeContent && !parsed.imageUrl && (
+            <pre className="text-[10px] font-mono bg-muted/50 rounded p-2 overflow-x-auto max-h-24 text-foreground/80">
+              {parsed.codeContent.slice(0, 500)}
+            </pre>
+          )}
+          {parsed.error && (
+            <div className="text-[11px] text-red-400 bg-red-500/10 rounded px-2 py-1.5">
+              {parsed.error}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Expanded raw payload */}
+      {expanded && (
+        <div className="px-3 pb-3 border-t border-border/50 mt-1 pt-2">
+          {parsed.imageUrl && (
+            <div className="mb-2">
+              <img
+                src={parsed.imageUrl}
+                alt="Generated"
+                className="w-full max-h-48 object-contain rounded border border-border"
+              />
+            </div>
+          )}
+          {parsed.content && !parsed.imageUrl && (
+            <div className="mb-2 text-xs text-foreground/80 max-h-32 overflow-y-auto">
+              <Streamdown>{parsed.content.slice(0, 1000)}</Streamdown>
+            </div>
+          )}
+          {parsed.url && (
+            <a
+              href={parsed.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[10px] text-primary hover:underline mb-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-2.5 h-2.5" />
+              {parsed.url.length > 60 ? parsed.url.slice(0, 60) + "..." : parsed.url}
+            </a>
+          )}
+          <div className="relative">
+            <pre className="text-[10px] font-mono bg-muted/50 rounded p-2 overflow-x-auto max-h-48 text-foreground/70 whitespace-pre-wrap">
+              {parsed.raw}
+            </pre>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(parsed.raw);
+              }}
+              className="absolute top-1 right-1 p-1 rounded bg-muted hover:bg-accent transition-colors"
+              title="Copy raw payload"
+            >
+              <Copy className="w-2.5 h-2.5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main ReplayPage ──
 
 export default function ReplayPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -28,6 +257,7 @@ export default function ReplayPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeCardRef = useRef<HTMLDivElement>(null);
 
   const eventsQuery = trpc.replay.events.useQuery(
     { taskId: taskId! },
@@ -35,6 +265,13 @@ export default function ReplayPage() {
   );
 
   const events = eventsQuery.data ?? [];
+
+  // Auto-scroll to active card during playback
+  useEffect(() => {
+    if (isPlaying && activeCardRef.current) {
+      activeCardRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [currentIndex, isPlaying]);
 
   // Playback logic
   const playNext = useCallback(() => {
@@ -74,6 +311,18 @@ export default function ReplayPage() {
   const handleSkipForward = () => {
     setCurrentIndex((prev) => Math.min(prev + 10, events.length - 1));
   };
+
+  // Group events into logical steps for summary
+  const stepSummary = useMemo(() => {
+    const toolStarts = events.filter((e) => e.eventType === "tool_start" || e.eventType.includes("tool"));
+    const textEvents = events.filter((e) => e.eventType === "text_delta" || e.eventType.includes("text"));
+    return {
+      totalEvents: events.length,
+      toolCalls: toolStarts.length,
+      textChunks: textEvents.length,
+      duration: events.length > 0 ? (events[events.length - 1].offsetMs / 1000).toFixed(1) : "0",
+    };
+  }, [events]);
 
   if (authLoading) {
     return (
@@ -132,7 +381,7 @@ export default function ReplayPage() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
               <Film className="w-5 h-5" />
               Session Replay
@@ -175,115 +424,104 @@ export default function ReplayPage() {
           </Card>
         ) : (
           <>
-            {/* Current Event Display */}
+            {/* Summary Stats */}
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              {[
+                { label: "Events", value: stepSummary.totalEvents, icon: Zap },
+                { label: "Tool Calls", value: stepSummary.toolCalls, icon: Terminal },
+                { label: "Text Chunks", value: stepSummary.textChunks, icon: MessageSquare },
+                { label: "Duration", value: `${stepSummary.duration}s`, icon: Clock },
+              ].map((stat) => (
+                <Card key={stat.label}>
+                  <CardContent className="py-3 px-3 flex items-center gap-2">
+                    <stat.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{stat.value}</p>
+                      <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Playback Controls */}
             <Card className="mb-4">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono">
-                    {currentEvent?.eventType ?? "—"}
-                  </span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {currentTime}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Event {currentIndex + 1} of {events.length}
-                  </span>
+              <CardContent className="py-3">
+                {/* Progress bar */}
+                <div className="mb-3">
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(events.length - 1, 0)}
+                    value={currentIndex}
+                    onChange={(e) => {
+                      const idx = Number(e.target.value);
+                      setCurrentIndex(idx);
+                      setIsPlaying(false);
+                    }}
+                    className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:active:cursor-grabbing"
+                    aria-label="Timeline scrubber"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>{currentTime}</span>
+                    <span>Step {currentIndex + 1} / {events.length}</span>
+                    <span>{totalTime}</span>
+                  </div>
                 </div>
-                <pre className="text-sm text-foreground bg-muted/50 rounded p-3 overflow-x-auto max-h-64 whitespace-pre-wrap font-mono">
-                  {currentEvent
-                    ? (() => {
-                        try {
-                          return JSON.stringify(JSON.parse(currentEvent.payload), null, 2);
-                        } catch {
-                          return currentEvent.payload;
-                        }
-                      })()
-                    : "No event selected"}
-                </pre>
+
+                {/* Buttons */}
+                <div className="flex items-center justify-center gap-2">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRestart} title="Restart">
+                    <SkipBack className="w-3.5 h-3.5" />
+                  </Button>
+                  {isPlaying ? (
+                    <Button size="icon" className="h-9 w-9" onClick={handlePause} title="Pause">
+                      <Pause className="w-4 h-4" />
+                    </Button>
+                  ) : (
+                    <Button size="icon" className="h-9 w-9" onClick={handlePlay} title="Play">
+                      <Play className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleSkipForward} title="Skip +10">
+                    <SkipForward className="w-3.5 h-3.5" />
+                  </Button>
+                  <div className="flex items-center gap-1 ml-4">
+                    {[0.5, 1, 2, 4].map((speed) => (
+                      <Button
+                        key={speed}
+                        variant={playbackSpeed === speed ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setPlaybackSpeed(speed)}
+                      >
+                        {speed}x
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Interactive Timeline Scrubber */}
-            <div className="mb-4">
-              <input
-                type="range"
-                min={0}
-                max={Math.max(events.length - 1, 0)}
-                value={currentIndex}
-                onChange={(e) => {
-                  const idx = Number(e.target.value);
-                  setCurrentIndex(idx);
-                  setIsPlaying(false);
-                }}
-                className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:active:cursor-grabbing"
-                aria-label="Timeline scrubber"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>{currentTime}</span>
-                <span>Event {currentIndex + 1} / {events.length}</span>
-                <span>{totalTime}</span>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center justify-center gap-2">
-              <Button variant="outline" size="icon" onClick={handleRestart} title="Restart">
-                <SkipBack className="w-4 h-4" />
-              </Button>
-              {isPlaying ? (
-                <Button size="icon" onClick={handlePause} title="Pause">
-                  <Pause className="w-4 h-4" />
-                </Button>
-              ) : (
-                <Button size="icon" onClick={handlePlay} title="Play">
-                  <Play className="w-4 h-4" />
-                </Button>
-              )}
-              <Button variant="outline" size="icon" onClick={handleSkipForward} title="Skip +10">
-                <SkipForward className="w-4 h-4" />
-              </Button>
-              <div className="flex items-center gap-1 ml-4">
-                {[0.5, 1, 2, 4].map((speed) => (
-                  <Button
-                    key={speed}
-                    variant={playbackSpeed === speed ? "default" : "outline"}
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => setPlaybackSpeed(speed)}
-                  >
-                    {speed}x
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Event Timeline */}
-            <div className="mt-6">
-              <h3 className="text-sm font-medium text-foreground mb-3">Event Timeline</h3>
-              <div className="space-y-1 max-h-64 overflow-y-auto">
-                {events.map((event, i) => (
-                  <button
-                    key={event.id}
+            {/* Event Timeline — Rich Cards */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" />
+                Step-by-Step Timeline
+              </h3>
+              {events.map((event, i) => (
+                <div key={event.id} ref={i === currentIndex ? activeCardRef : undefined}>
+                  <EventCard
+                    event={event}
+                    index={i}
+                    isActive={i === currentIndex}
                     onClick={() => {
                       setCurrentIndex(i);
                       setIsPlaying(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 rounded text-xs transition-colors ${
-                      i === currentIndex
-                        ? "bg-primary/10 text-primary"
-                        : i < currentIndex
-                        ? "text-muted-foreground hover:bg-muted/50"
-                        : "text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    <span className="font-mono mr-2">
-                      {(event.offsetMs / 1000).toFixed(1)}s
-                    </span>
-                    <span className="font-medium">{event.eventType}</span>
-                  </button>
-                ))}
-              </div>
+                  />
+                </div>
+              ))}
             </div>
           </>
         )}

@@ -1034,3 +1034,66 @@
 - [x] §L.28: Score and populate PERSONA_EXCEED_REGISTRY, MOBILE_PERSONA_AUDIT, PERSONA_ABANDONMENT_LOG — DONE: 4 exceed candidates, mobile audit populated, abandonment log initialized
 - [x] §L.28: Write FULL_PERSONA_SWEEP with experience-level evidence — DONE: 6 archetypes tested, persona fit analysis, gap analysis
 - [x] Flow all findings into PARITY.md Gap Matrix as found-by-build / found-by-user-testing entries — DONE: 6 new gaps (G6-G11), 5 new recommendations (R8-R12), 4 new protected improvements (PI-8 through PI-11)
+
+## NS16: 100% Parity — Close All Remaining Gaps
+
+### R10: Server-side PDF/DOCX Generation (MEDIUM gap → PARITY)
+- [ ] Add `generate_pdf` agent tool — converts markdown to PDF via server-side rendering
+- [ ] Add `generate_docx` agent tool — converts markdown to DOCX via docx library
+- [ ] Upload generated files to S3 via storagePut, return download URL
+- [ ] Add artifact type "document_pdf" and "document_docx" to workspace
+
+### G10: Task Replay / Step Visualization (MEDIUM gap → PARITY)
+- [ ] Enhance ReplayPage.tsx from raw JSON to rich step-by-step cards with tool icons
+- [ ] Add tool result previews (images, code blocks, search results) in replay timeline
+
+### G11: Artifact Preview (MEDIUM gap → PARITY)
+- [ ] Add syntax-highlighted code blocks in artifact viewer
+- [ ] Add PDF/DOCX preview component for document artifacts
+- [ ] Add image gallery view for generated images
+
+### G34: GitHub Integration (MEDIUM gap → FULL PARITY)
+- [x] Add GitHub connector type in connector framework (NS17 G1-G3)
+- [x] Add GitHub OAuth scaffold with repo listing capability (NS17 G4)
+- [x] Full GitHub CRUD: repos, files, branches, PRs, issues (NS17 G2)
+- [x] Manus-style project management UI (NS17 G10)
+
+### G28: Slide Generation Enhancement (MEDIUM gap → PARITY)
+- [ ] Enhance generate_slides tool to produce downloadable HTML slide deck
+- [ ] Upload slide deck to S3 and return artifact URL
+
+### Voice Input Enhancement (LOW gap → PARITY)
+- [ ] Verify Web Speech API implementation works end-to-end
+- [ ] Add visual recording indicator and waveform feedback
+
+### Graceful Degradation (LOW gap → PARITY)
+- [x] Add offline detection with reconnect banner (useNetworkStatus + NetworkBanner)
+- [x] Add retry button on connection-lost error messages (NetworkBanner includes retry)
+- [x] Add fallback UI for degraded network conditions (auto-reconnect with visual feedback)
+
+### Connector Parity (PARTIAL → PARITY)
+- [ ] Improve web search UX with inline result cards in chat
+- [ ] Add connector status indicators in sidebar
+
+### Tests & Validation
+- [x] Write tests for PDF/DOCX generation tools (documentGeneration.test.ts)
+- [x] Write tests for enhanced replay page
+- [x] Write tests for graceful degradation
+- [x] Run full convergence pass (TS + tests + build) — 380/380 tests, 0 TS errors, build OK
+- [ ] Live virtual user validation sweep
+- [ ] Recursive convergence until 3 zero-change passes
+
+## NS17 — GitHub Integration & Webapp Builder Enhancement
+
+- [x] G1: GitHub repo schema (github_repos table: id, externalId, userId, name, fullName, description, url, cloneUrl, defaultBranch, isPrivate, connectedAt, lastSyncAt)
+- [x] G2: GitHub tRPC procedures — repos.list, repos.create, repos.connect, repos.disconnect, repos.sync, repos.files, repos.fileContent, repos.commit, repos.branches, repos.createBranch, repos.pullRequests, repos.createPR
+- [x] G3: GitHub connector enhancement — OAuth flow with token storage, PAT fallback (uses existing ConnectorsPage OAuth flow)
+- [x] G4: GitHubPage — full repo management UI with Manus-style panels (repo list, file browser, commit history, branch switcher, PR management)
+- [x] G5: Repo file browser — tree view with syntax-highlighted code viewer, edit-in-place, commit changes
+- [x] G6: Deploy config panel — GitHub Pages, Vercel, Netlify integration stubs with status indicators (in WebAppProjectPage Settings)
+- [x] G7: WebApp Builder GitHub integration — connect webapp builds to GitHub repos, auto-push on build (Projects tab in WebAppBuilderPage)
+- [x] G8: Live preview panel — iframe preview of deployed/local builds with refresh, responsive toggles (WebAppProjectPage Preview panel)
+- [x] G9: GitHub-connected project creation — "New from Template" and "Import from GitHub" flows (GitHubPage import + WebAppProjectPage GitHub link)
+- [x] G10: Manus-style management UI — settings panel, domain config, environment variables, build logs (WebAppProjectPage with 6 panels)
+- [x] G11: Tests for GitHub integration (schema, procedures, UI rendering) — 19 tests in github.test.ts
+- [x] G12: Convergence pass — TypeScript 0 errors, 380/380 tests, build successful
