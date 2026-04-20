@@ -939,3 +939,16 @@
 - [x] NS5-8: Convergence Pass 1 — CLEAN (0 TS errors, 278/278 tests, prod build clean, no new issues)
 - [x] NS5-9: Convergence Pass 2 — CLEAN (0 TS errors, 278/278 tests, prod build clean, 11 IDOR checks verified in place)
 - [x] NS5-10: Convergence Pass 3 — CLEAN (0 TS errors, 278/278 tests, prod build clean, deep scan clean) — CONVERGENCE ACHIEVED 3/3
+
+## NS6: Live Virtual User Walkthrough + Convergence (Session 6)
+- [ ] NS6-1: VU Home page — greeting, input UX, suggestion cards, category tabs, quick actions, keyboard shortcut
+- [ ] NS6-2: VU Task creation — submit prompt, verify redirect, verify task appears in sidebar
+- [ ] NS6-3: VU Agent response — streaming, tool use, workspace artifacts, completion badge, rating
+- [ ] NS6-4: VU Task management — search, filter tabs, archive, favorite, delete, status indicators
+- [ ] NS6-5: VU Sidebar features — Projects, Memory, Skills, Schedules, Replay, Usage & Billing
+- [ ] NS6-6: VU Settings, connectors, slides, mobile responsiveness, NotFound page
+- [ ] NS6-7: Fix all issues discovered during walkthrough
+- [ ] NS6-8: Convergence Pass 1 (3 consecutive clean, reset to 0 on any fix)
+- [ ] NS6-9: Convergence Pass 2
+- [ ] NS6-10: Convergence Pass 3
+- [x] NS6-CRITICAL: Published site shows blank black screen — diagnose and fix

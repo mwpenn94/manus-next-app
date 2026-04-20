@@ -170,34 +170,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Vendor: React ecosystem
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
-            return 'vendor-react';
-          }
-          // Vendor: tRPC + TanStack Query
-          if (id.includes('node_modules/@trpc') || id.includes('node_modules/@tanstack')) {
-            return 'vendor-trpc';
-          }
-          // Vendor: Framer Motion
-          if (id.includes('node_modules/framer-motion') || id.includes('node_modules/motion')) {
-            return 'vendor-motion';
-          }
-          // Vendor: Radix UI (shadcn primitives)
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'vendor-radix';
-          }
-          // Vendor: Recharts (billing charts)
-          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
-            return 'vendor-charts';
-          }
-          // Vendor: Streamdown + markdown rendering
-          if (id.includes('node_modules/streamdown') || id.includes('node_modules/react-markdown') || id.includes('node_modules/rehype') || id.includes('node_modules/remark') || id.includes('node_modules/unified') || id.includes('node_modules/hast') || id.includes('node_modules/mdast') || id.includes('node_modules/micromark')) {
-            return 'vendor-markdown';
-          }
-          // Vendor: KaTeX (math rendering)
+          // KaTeX is large and self-contained — safe to isolate
           if (id.includes('node_modules/katex')) {
             return 'vendor-katex';
           }
+          // Let Vite handle all other chunking automatically to avoid
+          // circular dependency issues between React and markdown libs
         },
       },
     },
