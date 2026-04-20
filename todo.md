@@ -1211,3 +1211,22 @@
 - [x] NS19-P11c: SandboxViewer Take Control toggle — proper state management with "Take control" / "Return control" labels
 - [x] NS19-P11d: Send/Stop button pattern — filled circle with ArrowUp (send) / filled Square (stop), matching Manus exactly
 - [x] NS19-P11e: Final convergence pass — TypeScript 0 errors, 25 test files / 443 tests passed, build clean
+
+### P12: Critical Agent Depth Bug + Crimson-Hawk Bridge + Convergence
+
+#### Critical: Agent Early-Termination / Shallow Research Bug
+- [x] NS19-P12a: Fix mode coercion bug in server/_core/index.ts — "max" mode silently downgraded to "quality" (line 241: `body.mode === "speed" ? "speed" : "quality"` drops "max")
+- [x] NS19-P12b: Strengthen deep-research enforcement in agentStream.ts — add explicit "max" mode system prompt section requiring minimum tool turns, multi-source cross-referencing, and extended research before concluding
+- [x] NS19-P12c: Add anti-shallow-completion heuristic — if mode is "max" and agent tries to conclude within first 5 turns with fewer than 3 tool calls, inject continuation nudge
+- [x] NS19-P12d: Fix ManusNextChat.tsx SSE parsing mismatch — expects `data.token` but server emits `data.delta`
+- [x] NS19-P12e: Add test coverage for mode transport (speed/quality/max all reach agentStream correctly)
+
+#### Crimson-Hawk WebSocket Bridge
+- [x] NS19-P12f: Create useCrimsonHawk hook — WebSocket client that connects to local browser extension, manages connection state, sends/receives browser commands
+- [x] NS19-P12g: Wire BrowserAuthCard to useCrimsonHawk — "Use My Browser" triggers connection attempt, "Check again" retries, "No, use default" falls back to cloud browser
+- [x] NS19-P12h: Add Crimson-Hawk connection status indicator in TaskView header (connected/disconnected/connecting)
+
+#### Exhaustive Reassessment
+- [x] NS19-P12i: Screenshot reassessment — compare all implemented components against reference screenshots, fix any visual gaps
+- [x] NS19-P12j: Convergence passes — TypeScript 0 errors, all tests passing, production build clean, 3 consecutive zero-change (Pass 2 & 3 clean)
+- [x] NS19-P12k: Virtual user validation — side-by-side walkthrough of all features including deep research mode

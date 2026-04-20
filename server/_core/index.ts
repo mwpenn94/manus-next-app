@@ -238,7 +238,7 @@ async function startServer() {
         return;
       }
       const taskExternalId = body.taskExternalId as string | undefined;
-      const mode = (body.mode === "speed" ? "speed" : "quality") as "speed" | "quality";
+      const mode = (body.mode === "speed" ? "speed" : body.mode === "max" ? "max" : "quality") as "speed" | "quality" | "max";
       console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId, "mode:", mode);
 
       // Resolve system prompt: per-task > global preferences > default

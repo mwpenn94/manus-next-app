@@ -310,7 +310,18 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     if (mode === "speed") {
       systemPrompt += `\n\n## MODE: SPEED\nPrioritize fast, concise responses. Use fewer tool calls. Give direct answers when confident. Skip deep research unless explicitly asked.`;
     } else if (mode === "max") {
-      systemPrompt += `\n\n## MODE: MAX (Flagship Tier)\nYou are operating at maximum capability. Use ALL available tools extensively. Conduct thorough multi-source research with wide_research when appropriate. Provide the most detailed, comprehensive, and well-sourced responses possible. Use multiple tool turns. Cross-reference information. Generate visualizations and documents when they add value. Leave no stone unturned.`;
+      systemPrompt += `\n\n## MODE: MAX (Flagship Tier) — DEEP RESEARCH REQUIRED
+
+You are operating at MAXIMUM capability. This mode exists specifically because the user wants the DEEPEST, most THOROUGH work possible. You MUST:
+
+1. **Minimum research depth**: Use at least 5 tool calls before even considering a final response. If the task involves research, use wide_research PLUS at least 3 read_webpage calls on different sources.
+2. **Cross-reference everything**: Never rely on a single source. Search from multiple angles, read multiple pages, and synthesize across all of them.
+3. **Do NOT conclude prematurely**: If you have used fewer than 5 tools, you are NOT done. Keep researching, analyzing, and building your response.
+4. **Produce comprehensive deliverables**: When asked to create content (guides, plans, reports, analyses), produce the MOST detailed, thorough version possible. Include tables, comparisons, step-by-step breakdowns, citations, and actionable specifics.
+5. **Time investment**: The user expects this to take significant time. A 30-second response in MAX mode is a failure. Spend the equivalent of 10-30 minutes of research effort.
+6. **Generate artifacts**: When appropriate, use generate_document for long-form deliverables, analyze_data for structured insights, and generate_image for visualizations.
+7. **Never say "I've provided enough"**: In MAX mode, there is always more depth to add. Keep going until you've exhausted all relevant angles.
+8. **Leave no stone unturned**: Search for counterarguments, edge cases, alternative perspectives, recent developments, and expert opinions.`;
     }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
@@ -441,6 +452,25 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
           }
         }
         
+        // MAX MODE ANTI-SHALLOW-COMPLETION: In max mode, if agent tries to conclude within first 5 turns with fewer than 3 tool calls, force continuation
+        if (mode === "max" && turn <= 5 && completedToolCalls < 3 && turn < maxTurns - 2) {
+          console.log(`[Agent] MAX mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
+          finalContent = "";
+          sendSSE(safeWrite, { delta: "\n\n*Conducting deeper research...*\n\n" });
+          conversation.push({ role: "assistant", content: textContent || "" });
+          conversation.push({
+            role: "user",
+            content: `You are in MAX (flagship) mode. The user expects DEEP, THOROUGH research — not a quick answer. You have only used ${completedToolCalls} tools so far, which is far too few for MAX mode. You MUST:
+1. Use web_search or wide_research to gather information from multiple sources
+2. Use read_webpage on at least 2-3 of the most relevant URLs from your search results
+3. Cross-reference and synthesize information across sources
+4. Only THEN produce your comprehensive response
+
+Do NOT produce a final answer yet. Research more deeply first.`,
+          });
+          continue;
+        }
+
         // ANTI-PREMATURE-COMPLETION: If user asked for creative output but LLM claims it's done, deflects, or drifted to wrong topic
         if ((claimsFulfilled || isDeflecting || isTopicDrift) && wantsCreativeOutput && turn <= 6 && turn < maxTurns - 2) {
           console.log(`[Agent] Anti-premature-completion: ${isTopicDrift ? 'topic drift' : claimsFulfilled ? 'false completion claim' : 'deflection'} on creative task, nudging to produce deliverable`);

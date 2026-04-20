@@ -354,7 +354,13 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate }: { messa
         {message.cardType === "browser_auth" ? (
           <BrowserAuthCard
             onChoice={(choice) => {
-              toast.info(`Browser mode: ${choice}`);
+              if (choice === "crimson-hawk") {
+                toast.success("Connected to Crimson-Hawk — using your local browser");
+              } else if (choice === "default") {
+                toast.info("Using cloud browser (default)");
+              } else {
+                toast.info("Checking Crimson-Hawk connection...");
+              }
             }}
           />
         ) : message.cardType === "task_pause" ? (

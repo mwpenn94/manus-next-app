@@ -189,8 +189,8 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
                 if (raw === "[DONE]") continue;
                 try {
                   const data = JSON.parse(raw);
-                  if (data.token) {
-                    accumulated += data.token;
+                  if (data.delta || data.token) {
+                    accumulated += data.delta || data.token;
                     setMessages((prev) =>
                       prev.map((m) =>
                         m.id === assistantId ? { ...m, content: accumulated } : m

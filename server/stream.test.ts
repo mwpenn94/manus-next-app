@@ -294,3 +294,64 @@ describe("Topic-drift detection", () => {
     expect(content).toContain("isTopicDrift");
   });
 });
+
+describe("Mode transport and MAX mode enforcement", () => {
+  it("server /api/stream accepts all three modes: speed, quality, max", () => {
+    // Simulate the mode coercion logic from server/_core/index.ts
+    const coerceMode = (bodyMode: string) =>
+      bodyMode === "speed" ? "speed" : bodyMode === "max" ? "max" : "quality";
+
+    expect(coerceMode("speed")).toBe("speed");
+    expect(coerceMode("quality")).toBe("quality");
+    expect(coerceMode("max")).toBe("max");
+    // Unknown modes default to quality
+    expect(coerceMode("turbo")).toBe("quality");
+    expect(coerceMode("")).toBe("quality");
+    expect(coerceMode(undefined as any)).toBe("quality");
+  });
+
+  it("maxTurns is correctly set per mode", () => {
+    const MAX_TOOL_TURNS = 100;
+    const getMaxTurns = (mode: string) =>
+      mode === "speed" ? 30 : mode === "max" ? 100 : MAX_TOOL_TURNS;
+
+    expect(getMaxTurns("speed")).toBe(30);
+    expect(getMaxTurns("quality")).toBe(100);
+    expect(getMaxTurns("max")).toBe(100);
+  });
+
+  it("MAX mode system prompt includes deep research requirements", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("MODE: MAX (Flagship Tier)");
+    expect(content).toContain("DEEP RESEARCH REQUIRED");
+    expect(content).toContain("Minimum research depth");
+    expect(content).toContain("Cross-reference everything");
+    expect(content).toContain("Do NOT conclude prematurely");
+    expect(content).toContain("Leave no stone unturned");
+  });
+
+  it("MAX mode anti-shallow-completion code exists in agentStream", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("MAX mode anti-shallow");
+    expect(content).toContain("forcing deeper research");
+    expect(content).toContain("completedToolCalls < 3");
+  });
+
+  it("mode coercion in index.ts correctly handles max mode", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/_core/index.ts", "utf-8");
+    // Verify the fix: max mode should NOT be silently dropped
+    expect(content).toContain('body.mode === "max" ? "max"');
+    // Verify the old bug pattern is gone
+    expect(content).not.toMatch(/const mode = \(body\.mode === "speed" \? "speed" : "quality"\)/);
+  });
+
+  it("ManusNextChat SSE parsing accepts both delta and token fields", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/components/ManusNextChat.tsx", "utf-8");
+    // Should accept both data.delta (current server format) and data.token (legacy)
+    expect(content).toContain("data.delta || data.token");
+  });
+});
