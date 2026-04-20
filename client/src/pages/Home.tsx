@@ -7,7 +7,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useTask } from "@/contexts/TaskContext";
 import {
   Paperclip,
@@ -20,7 +20,30 @@ import {
   Star,
   Sparkles,
   Mic,
+  Plug,
+  Code,
+  Presentation,
+  FileText,
+  Image,
+  Search as SearchIcon,
 } from "lucide-react";
+
+// Quick action chips (Gap 7) — like Manus "Create slides", "Build website", etc.
+const QUICK_ACTIONS = [
+  { label: "Build a website", icon: Code, prompt: "Build a modern, responsive website" },
+  { label: "Create slides", icon: Presentation, prompt: "Create a professional slide deck" },
+  { label: "Write a document", icon: FileText, prompt: "Write a well-structured document" },
+  { label: "Generate images", icon: Image, prompt: "Generate high-quality images" },
+  { label: "Research a topic", icon: SearchIcon, prompt: "Research and summarize" },
+];
+
+// Connector quick-access (Gap 6)
+const QUICK_CONNECTORS = [
+  { id: "github", name: "GitHub", icon: "🐙" },
+  { id: "google-drive", name: "Google Drive", icon: "📁" },
+  { id: "slack", name: "Slack", icon: "💬" },
+  { id: "notion", name: "Notion", icon: "📝" },
+];
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -292,9 +315,60 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
+        {/* Quick Action Chips — Gap 7 */}
+        <motion.div
+          className="w-full max-w-[640px] mt-6 mb-6"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.45 }}
+        >
+          <div className="flex flex-wrap justify-center gap-2">
+            {QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.label}
+                onClick={() => setInput(action.prompt)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 border border-border/60 text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
+              >
+                <action.icon className="w-3 h-3" />
+                {action.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Connector Quick-Access — Gap 6 */}
+        <motion.div
+          className="w-full max-w-[640px] mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.5 }}
+        >
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Connect</span>
+            {QUICK_CONNECTORS.map((connector) => (
+              <Link
+                key={connector.id}
+                href="/connectors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30 border border-border/40 text-[11px] text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all"
+                title={`Connect ${connector.name}`}
+              >
+                <span className="text-xs">{connector.icon}</span>
+                {connector.name}
+              </Link>
+            ))}
+            <Link
+              href="/connectors"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-primary hover:bg-primary/5 transition-colors"
+            >
+              <Plug className="w-3 h-3" />
+              All
+            </Link>
+          </div>
+        </motion.div>
+
         {/* Package badges — hidden on mobile for cleaner experience */}
         <motion.div
-          className="mt-10 md:mt-14 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
+          className="mt-4 md:mt-8 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}

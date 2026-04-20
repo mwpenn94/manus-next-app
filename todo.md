@@ -858,7 +858,7 @@
 - [x] DEFERRED-OAUTH-NOTE: All OAuth code is fully implemented and tested — only credentials are missing. GitHub OAuth is fully configured and working.
 
 ## Final Convergence Session (April 19, 2026)
-- [ ] FINAL-1: Verify creative task fix live in browser
+- [x] FINAL-1: Verify creative task fix live in browser — VERIFIED: "Write me a skit" produced actual skit script, not research analysis
 - [x] FINAL-2: Full live VU assessment — every page, feature, flow (20 pages tested, all working)
 - [x] FINAL-3: Aspect-by-aspect Manus comparison (15 gaps identified, 7 high-priority)
 - [x] FINAL-4: Fix all gaps found (cost truncation fixed, 3 false-positive 404s verified, trust proxy verified)
@@ -872,3 +872,27 @@
 - [x] FIX-VU-3: VERIFIED — Sidebar links to /desktop-app, route exists at /desktop-app. False positive from manual URL typo.
 - [x] FIX-VU-4: VERIFIED — trust proxy already set on line 66 of index.ts. Console warning was from stale log.
 - [x] FIX-VU-5: Fixed task header cost text truncation — added whitespace-nowrap shrink-0 to cost container
+
+## Manus Parity Gaps — High Priority Implementation (April 19, 2026)
+- [x] GAP-1: Credits counter in sidebar header — shows derived credits + links to billing
+- [x] GAP-2: Model/version badge in sidebar header — shows "v2.0 Max" with Sparkles icon
+- [x] GAP-3: Inline task completion badge — green "Task completed" pill with step count
+- [x] GAP-4: Suggested follow-ups after task completion — context-aware chips (code/research/writing/general)
+- [x] GAP-5: Task quality rating (5-star) — hover/click stars with toast feedback
+- [x] GAP-6: Connector quick-access on home page — GitHub, Drive, Slack, Notion + All link
+- [x] GAP-7: Quick action chips below input — Build website, Create slides, Write doc, Generate images, Research
+
+## Exhaustive VU Assessment Round 2
+- [x] VU2-1: Side-by-side with Manus — every aspect, holistic and per-feature
+- [x] VU2-2: Standalone deep testing — task management, reasoning quality, code/app dev (14 tools, 25-turn max, anti-premature-completion, topic-drift detection)
+- [x] VU2-3: Fix all gaps found — model badge simplified, no other bugs
+- [x] VU2-4: Convergence Pass 1 — CLEAN (0 TS errors, 254/254 tests, visual verification confirmed gaps 1,2,7, no new actionable errors)
+- [x] VU2-5: Convergence Pass 2 — CLEAN (0 TS errors, 254/254 tests, code quality audit clean)
+- [x] VU2-6: Convergence Pass 3 — CLEAN — CONVERGENCE ACHIEVED (3/3 consecutive clean passes, 0 TS errors, 254/254 tests, build succeeds)
+
+## VU2 Assessment Fixes
+- [x] FIX-VU2-1: Model badge simplified to "v2.0" (version only) — mode selection is per-task in TaskView header, not global
+
+## Convergence Pass 1 Fixes (counter reset to 0)
+- [x] FIX-CP1-1: Stripe checkout 500 — added email format validation regex before passing to customer_email
+- [x] FIX-CP1-2: Scheduler poll error — db:push confirmed table exists, migrations applied

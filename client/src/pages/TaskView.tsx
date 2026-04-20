@@ -65,6 +65,99 @@ import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
 import ShareDialog from "@/components/ShareDialog";
 import { useTTS } from "@/hooks/useTTS";
 
+// ── Suggested Follow-ups (Gap 4) ──
+
+const FOLLOW_UP_SUGGESTIONS: Record<string, string[]> = {
+  research: [
+    "Go deeper on the top 3 findings",
+    "Create a presentation from this research",
+    "Find counter-arguments to the main thesis",
+    "Summarize this for a non-technical audience",
+  ],
+  code: [
+    "Add unit tests for this code",
+    "Optimize for performance",
+    "Add error handling and edge cases",
+    "Create documentation for this",
+  ],
+  writing: [
+    "Make it more concise",
+    "Expand on the key points",
+    "Adjust the tone to be more formal",
+    "Translate to another language",
+  ],
+  general: [
+    "Tell me more about this",
+    "Create a visual summary",
+    "What are the next steps?",
+    "Export this as a document",
+  ],
+};
+
+function getFollowUpSuggestions(messages: Message[]): string[] {
+  const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+  if (!lastAssistant) return FOLLOW_UP_SUGGESTIONS.general;
+  const content = lastAssistant.content.toLowerCase();
+  if (content.includes("```") || content.includes("function") || content.includes("import")) return FOLLOW_UP_SUGGESTIONS.code;
+  if (content.includes("research") || content.includes("study") || content.includes("analysis")) return FOLLOW_UP_SUGGESTIONS.research;
+  if (content.length > 500) return FOLLOW_UP_SUGGESTIONS.writing;
+  return FOLLOW_UP_SUGGESTIONS.general;
+}
+
+// ── Task Quality Rating (Gap 5) ──
+
+function TaskRating({ taskId, onRate }: { taskId: string; onRate: (rating: number) => void }) {
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleRate = (rating: number) => {
+    setSelectedRating(rating);
+    setSubmitted(true);
+    onRate(rating);
+    toast.success(`Rated ${rating}/5 — thank you for your feedback!`);
+  };
+
+  if (submitted) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] text-muted-foreground">Rated</span>
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map(star => (
+            <span key={star} className={cn("text-sm", star <= selectedRating ? "text-amber-400" : "text-muted-foreground/30")}>
+              ★
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] text-muted-foreground">Rate this response</span>
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map(star => (
+          <button
+            key={star}
+            onMouseEnter={() => setHoveredStar(star)}
+            onMouseLeave={() => setHoveredStar(0)}
+            onClick={() => handleRate(star)}
+            className="text-sm transition-colors cursor-pointer hover:scale-110"
+            title={`Rate ${star}/5`}
+          >
+            <span className={cn(
+              star <= (hoveredStar || selectedRating) ? "text-amber-400" : "text-muted-foreground/30"
+            )}>
+              ★
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Action rendering ──
 
 function ActionIcon({ type }: { type: AgentAction["type"] }) {
@@ -1629,6 +1722,39 @@ export default function TaskView() {
             </motion.div>
           )}
         </div>
+
+        {/* Task Completion Badge + Rating + Follow-ups — Gaps 3, 4, 5 */}
+        {task?.status === "completed" && !streaming && (
+          <div className="px-4 md:px-6 py-3 border-t border-border/50 shrink-0 space-y-3">
+            {/* Completion badge + rating row */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/20">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className="text-xs font-medium text-emerald-400">Task completed</span>
+                </div>
+                {task.completedSteps && task.totalSteps && (
+                  <span className="text-[11px] text-muted-foreground">
+                    {task.completedSteps}/{task.totalSteps} steps
+                  </span>
+                )}
+              </div>
+              <TaskRating taskId={task.id} onRate={(r) => console.log(`Task ${task.id} rated ${r}/5`)} />
+            </div>
+            {/* Suggested follow-ups */}
+            <div className="flex flex-wrap gap-2">
+              {getFollowUpSuggestions(task?.messages ?? []).map((suggestion, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(suggestion)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Input */}
         <div

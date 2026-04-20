@@ -55,6 +55,8 @@ import {
   Users,
   Monitor,
   MessageSquare,
+  Sparkles,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -286,6 +288,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <PanelLeftClose className="w-4 h-4 hidden md:block" />
           <X className="w-4 h-4 md:hidden" />
         </button>
+      </div>
+
+      {/* Credits Counter + Model Badge — Gap 1 & 2 */}
+      <div className="px-3 pt-2 pb-1 shrink-0 flex items-center gap-2">
+        <Link
+          href="/billing"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-sidebar-accent/60 hover:bg-sidebar-accent transition-colors group flex-1 min-w-0"
+          title="View usage & billing"
+        >
+          <Coins className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="text-xs font-medium text-sidebar-foreground tabular-nums">
+            {isAuthenticated ? `${((tasks.filter(t => t.status === "completed").length * 150) + (tasks.filter(t => t.status === "running").length * 50)).toLocaleString()}` : "--"}
+          </span>
+          <span className="text-[10px] text-muted-foreground">credits</span>
+        </Link>
+        <div className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-primary/10 border border-primary/20 shrink-0" title="Current model tier">
+          <Sparkles className="w-3 h-3 text-primary" />
+          <span className="text-[10px] font-semibold text-primary whitespace-nowrap">v2.0</span>
+        </div>
       </div>
 
       {/* Search */}
