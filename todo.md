@@ -1038,19 +1038,19 @@
 ## NS16: 100% Parity — Close All Remaining Gaps
 
 ### R10: Server-side PDF/DOCX Generation (MEDIUM gap → PARITY)
-- [ ] Add `generate_pdf` agent tool — converts markdown to PDF via server-side rendering
-- [ ] Add `generate_docx` agent tool — converts markdown to DOCX via docx library
-- [ ] Upload generated files to S3 via storagePut, return download URL
-- [ ] Add artifact type "document_pdf" and "document_docx" to workspace
+- [x] Add `generate_pdf` agent tool — converts markdown to PDF via server-side rendering (documentGeneration.ts + agentTools.ts)
+- [x] Add `generate_docx` agent tool — converts markdown to DOCX via docx library (documentGeneration.ts + agentTools.ts)
+- [x] Upload generated files to S3 via storagePut, return download URL
+- [x] Add artifact type "document_pdf" and "document_docx" to workspace (ARTIFACT_TYPES updated in routers.ts)
 
 ### G10: Task Replay / Step Visualization (MEDIUM gap → PARITY)
-- [ ] Enhance ReplayPage.tsx from raw JSON to rich step-by-step cards with tool icons
-- [ ] Add tool result previews (images, code blocks, search results) in replay timeline
+- [x] Enhance ReplayPage.tsx from raw JSON to rich step-by-step cards with tool icons (STEP_META map with 7 tool types)
+- [x] Add tool result previews (images, code blocks, search results) in replay timeline
 
 ### G11: Artifact Preview (MEDIUM gap → PARITY)
-- [ ] Add syntax-highlighted code blocks in artifact viewer
-- [ ] Add PDF/DOCX preview component for document artifacts
-- [ ] Add image gallery view for generated images
+- [x] Add syntax-highlighted code blocks in artifact viewer (selectedCodeIdx + line numbers)
+- [x] Add PDF/DOCX preview component for document artifacts (selectedDocIdx + inline iframe/download)
+- [x] Add image gallery view for generated images (selectedImageIdx + lightbox preview)
 
 ### G34: GitHub Integration (MEDIUM gap → FULL PARITY)
 - [x] Add GitHub connector type in connector framework (NS17 G1-G3)
@@ -1059,12 +1059,12 @@
 - [x] Manus-style project management UI (NS17 G10)
 
 ### G28: Slide Generation Enhancement (MEDIUM gap → PARITY)
-- [ ] Enhance generate_slides tool to produce downloadable HTML slide deck
-- [ ] Upload slide deck to S3 and return artifact URL
+- [x] Enhance generate_slides tool to produce downloadable HTML slide deck (full HTML with navigation)
+- [x] Upload slide deck to S3 and return artifact URL (storagePut slides/*.html)
 
 ### Voice Input Enhancement (LOW gap → PARITY)
-- [ ] Verify Web Speech API implementation works end-to-end
-- [ ] Add visual recording indicator and waveform feedback
+- [x] Verify Web Speech API implementation works end-to-end (MediaRecorder → S3 → transcribe → input)
+- [x] Add visual recording indicator and waveform feedback (animated bars during recording)
 
 ### Graceful Degradation (LOW gap → PARITY)
 - [x] Add offline detection with reconnect banner (useNetworkStatus + NetworkBanner)
@@ -1072,8 +1072,8 @@
 - [x] Add fallback UI for degraded network conditions (auto-reconnect with visual feedback)
 
 ### Connector Parity (PARTIAL → PARITY)
-- [ ] Improve web search UX with inline result cards in chat
-- [ ] Add connector status indicators in sidebar
+- [x] Improve web search UX with inline result cards in chat (search preview with URL cards + ExternalLink)
+- [x] Add connector status indicators in sidebar (ConnectorStatusBadge + GitHubStatusBadge)
 
 ### Tests & Validation
 - [x] Write tests for PDF/DOCX generation tools (documentGeneration.test.ts)
