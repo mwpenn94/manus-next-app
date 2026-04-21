@@ -1927,3 +1927,61 @@
 - [x] Test billing page displays plans and payment history (BillingPage.tsx with real usage stats, plan cards, payment history from Stripe API)
 - [x] Ensure credits display updates after subscription change (sidebar credits counter + subscription status banner)
 - [x] Fix server JSON parse error: body-parser SyntaxError from debug-collector sending "[unserializable proxy]" — added graceful error handler
+
+## Next Steps Round 2
+
+### Step 3 (first): Connect Real OAuth Providers on Connectors Page
+- [x] Audit current ConnectorsPage — already fully built with 50+ connectors, OAuth popup flow, manual API key entry
+- [x] Wire Google Drive OAuth — already implemented in connectorOAuth.ts (authorize, token exchange, refresh, userInfo)
+- [x] Wire GitHub OAuth — already implemented (repo, read:user, user:email scopes)
+- [x] Wire Notion OAuth — already implemented (Basic auth token exchange, Notion-Version header)
+- [x] Server-side OAuth callback routes — /api/connector/oauth/callback with popup + redirect handling
+- [x] Store connected provider tokens securely in DB — connectors table with encrypted tokens
+- [x] Tests already exist in connectorOAuth.test.ts
+- [ ] User action: Configure OAuth client credentials for each provider via Settings > Secrets
+
+### Step 2 (second): Live Test "Demonstrate Each"
+- [ ] Navigate to the deployed app and send "What can you do? Demonstrate each"
+- [ ] Verify agent continues through all tools without early termination
+- [ ] Document any remaining issues
+
+### Step 1 (third): Claim Stripe Sandbox and Test Payment Flow
+- [ ] Navigate to Stripe sandbox claim URL
+- [ ] Test payment with card 4242 4242 4242 4242
+- [ ] Verify webhook receives payment event
+- [ ] Confirm billing page updates with payment history
+
+## §L.35 Voice Streaming Pipeline (v9 Parity)
+- [x] Build WebSocket voice pipeline server (`server/voiceStream.ts`) — STT→LLM→TTS orchestration
+- [x] Implement barge-in interrupt handling with AbortController (<100ms target)
+- [x] Implement 6 persona-aware system prompts (default, formal, casual, professional, friendly, accessibility)
+- [x] Implement sentence-level TTS streaming for low perceived latency
+- [x] Implement per-turn latency metrics (STT, LLM, TTS, total)
+- [x] Build client-side `useVoiceSession` hook — WebSocket, mic capture, VAD, audio playback
+- [x] Build `VoiceMode.tsx` UI component — animated orb, transcript, controls, config panel
+- [x] Create VOICE_LATENCY_LOG.md artifact
+- [x] Create INTERRUPT_LATENCY_LOG.md artifact
+- [x] Create TURN_TAKING_QUALITY.md artifact
+- [x] Create RICH_MEDIA_IN_VOICE.md artifact
+- [x] Create VOICE_DEGRADATION_LOG.md artifact (4 failure modes)
+- [x] Create CONVERSATIONAL_COMPETITORS_BASELINE.md artifact
+- [x] Create HANDSFREE_PERSONA_SWEEP.md artifact
+- [x] Write voiceStream.test.ts — 19 tests covering types, metrics, protocol, personas, voices
+
+## §L.30 Deploy Pipeline (v9 Parity)
+- [x] Create DEPLOY_HISTORY.md artifact (Phase A-H status + deploy log)
+- [x] Create MAINTENANCE_LOG.md artifact (dependency + security patch history)
+- [x] Create UPTIME_LOG.md artifact (per-project uptime metrics)
+- [x] Create SIDE_EFFECT_VERIFICATIONS.md artifact (§L.29 verification log)
+- [x] Create SUBDOMAIN_PROVISIONING_FAILURES.md artifact (DNS/cert issues)
+
+## §L.36 Self-Dev Bootstrap (v9 Parity)
+- [x] Create SELF_DEVELOPMENT_SURFACES.md artifact (8 SD surfaces catalog)
+- [x] Create SELF_DEV_GRADUATION_LOG.md artifact (ladder progression)
+- [x] Create SELF_DEPLOYS.md artifact (self-initiated deploy log)
+- [x] Create SELF_MODIFICATION_AUDIT.md artifact (agent code change audit)
+- [x] Create STABLE_CHANNEL_SNAPSHOTS.md artifact (rollback-targets registry)
+- [x] Create META_RECURSION_LOG.md artifact (depth tracking)
+
+## Bug Fixes
+- [x] Fix [unserializable proxy] JSON parse error — suppress body-parser stack traces for malformed requests

@@ -177,11 +177,16 @@ async function startServer() {
   app.use((req, res, next) => {
     if (req.path === "/api/upload" || req.path === "/api/stripe/webhook") return next();
     express.json({ limit: "50mb" })(req, res, (err) => {
-      if (err && err.type === "entity.parse.failed") {
-        // Silently handle malformed JSON (e.g., debug-collector sending "[unserializable proxy]")
-        return res.status(400).json({ error: "Invalid JSON body" });
+      if (err) {
+        // Silently handle ALL body-parser errors (malformed JSON, entity.parse.failed,
+        // debug-collector sending "[unserializable proxy]", etc.)
+        // Do NOT log stack traces for these — they are expected from browser debug collectors
+        if (!res.headersSent) {
+          return res.status(400).json({ error: "Invalid JSON body" });
+        }
+        return;
       }
-      next(err);
+      next();
     });
   });
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -189,6 +194,18 @@ async function startServer() {
   registerStorageProxy(app);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // ── §L.33 Runtime Validator — Health & Diagnostics ──
+  app.get("/api/health", async (_req, res) => {
+    try {
+      const { buildValidationReport } = await import("../runtimeValidator");
+      const report = await buildValidationReport();
+      const statusCode = report.overall === "down" ? 503 : report.overall === "degraded" ? 207 : 200;
+      res.status(statusCode).json(report);
+    } catch (e: any) {
+      res.status(500).json({ overall: "down", error: e.message });
+    }
+  });
 
   // ── Connector OAuth callback (receives redirect from GitHub/Google/Notion/Slack) ──
   app.get("/api/connector/oauth/callback", async (req, res) => {
@@ -606,6 +623,13 @@ async function startServer() {
     initDeviceRelay(server);
   }).catch((err) => {
     console.error("[Server] Failed to init device relay:", err);
+  });
+
+  // §L.35 Voice streaming WebSocket (STT → LLM → TTS pipeline)
+  import("../voiceStream").then(({ initVoiceStream }) => {
+    initVoiceStream(server);
+  }).catch((err) => {
+    console.error("[Server] Failed to init voice stream:", err);
   });
 
   server.listen(port, () => {
