@@ -369,6 +369,195 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "create_webapp",
+      description:
+        "Create a new web application project. Scaffolds a React + Vite + Tailwind project with the specified name, creates initial files, installs dependencies, and starts a dev server. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description: "Project name (lowercase, no spaces, e.g. 'my-portfolio')",
+          },
+          description: {
+            type: "string",
+            description: "Brief description of the app to build",
+          },
+          template: {
+            type: "string",
+            description: "Template type: 'react' (React+Vite+Tailwind), 'html' (plain HTML/CSS/JS), or 'landing' (landing page template)",
+          },
+        },
+        required: ["name", "description"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_file",
+      description:
+        "Create or overwrite a file in the current webapp project. Use this to write HTML, CSS, JavaScript, React components, or any other project file. The file path is relative to the project root.",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "Relative file path within the project (e.g. 'src/App.tsx', 'index.html', 'src/styles.css')",
+          },
+          content: {
+            type: "string",
+            description: "Full file content to write",
+          },
+        },
+        required: ["path", "content"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "edit_file",
+      description:
+        "Edit an existing file in the current webapp project by finding and replacing text. Use this for targeted modifications to existing files.",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "Relative file path within the project (e.g. 'src/App.tsx')",
+          },
+          find: {
+            type: "string",
+            description: "Exact text to find in the file",
+          },
+          replace: {
+            type: "string",
+            description: "Text to replace the found text with",
+          },
+        },
+        required: ["path", "find", "replace"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "read_file",
+      description:
+        "Read the contents of a file in the current webapp project. Use this to inspect existing code before editing.",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "Relative file path within the project (e.g. 'src/App.tsx')",
+          },
+        },
+        required: ["path"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_files",
+      description:
+        "List files and directories in the current webapp project. Returns a tree view of the project structure.",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "Relative directory path to list (default: root). E.g. 'src' or 'src/components'",
+          },
+        },
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "install_deps",
+      description:
+        "Install npm packages in the current webapp project. Use this to add libraries like axios, framer-motion, lucide-react, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          packages: {
+            type: "string",
+            description: "Space-separated package names to install (e.g. 'framer-motion lucide-react')",
+          },
+          dev: {
+            type: "boolean",
+            description: "Whether to install as dev dependency (default: false)",
+          },
+        },
+        required: ["packages"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "run_command",
+      description:
+        "Run a shell command in the current webapp project directory. Use for build commands, linting, testing, or any project-specific CLI operations. Output is captured and returned.",
+      parameters: {
+        type: "object",
+        properties: {
+          command: {
+            type: "string",
+            description: "Shell command to execute in the project directory",
+          },
+        },
+        required: ["command"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "git_operation",
+      description:
+        "Perform Git operations on the current webapp project. Supports init, add, commit, push, status, log, and clone. Use this to version control the project and push to GitHub.",
+      parameters: {
+        type: "object",
+        properties: {
+          operation: {
+            type: "string",
+            enum: ["init", "add", "commit", "push", "status", "log", "clone", "remote_add"],
+            description: "Git operation to perform",
+          },
+          message: {
+            type: "string",
+            description: "Commit message (required for 'commit' operation)",
+          },
+          remote_url: {
+            type: "string",
+            description: "Remote repository URL (for 'push', 'clone', or 'remote_add' operations)",
+          },
+          files: {
+            type: "string",
+            description: "Files to add (for 'add' operation, default: '.' for all files)",
+          },
+        },
+        required: ["operation"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -1888,7 +2077,434 @@ export async function executeTool(
       return executeCloudBrowser(args);
     case "screenshot_verify":
       return executeScreenshotVerify(args);
+    case "create_webapp":
+      return executeCreateWebapp(args);
+    case "create_file":
+      return executeCreateFile(args);
+    case "edit_file":
+      return executeEditFile(args);
+    case "read_file":
+      return executeReadFile(args);
+    case "list_files":
+      return executeListFiles(args);
+    case "install_deps":
+      return executeInstallDeps(args);
+    case "run_command":
+      return executeRunCommand(args);
+    case "git_operation":
+      return executeGitOperation(args);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
+  }
+}
+
+// ── Webapp Project State ──
+let activeProjectDir: string | null = null;
+let activeProjectPort: number | null = null;
+
+export function getActiveProject() {
+  return { dir: activeProjectDir, port: activeProjectPort };
+}
+
+// ── create_webapp ──
+async function executeCreateWebapp(args: {
+  name: string;
+  description: string;
+  template?: string;
+}): Promise<ToolResult> {
+  const fs = await import("fs");
+  const path = await import("path");
+  const { execSync } = await import("child_process");
+
+  const projectName = args.name.replace(/[^a-z0-9-]/g, "-").toLowerCase();
+  const projectDir = path.join("/tmp", "webapp-projects", projectName);
+  const template = args.template || "react";
+
+  try {
+    // Clean up any existing project with same name
+    if (fs.existsSync(projectDir)) {
+      fs.rmSync(projectDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(projectDir, { recursive: true });
+
+    if (template === "html") {
+      // Plain HTML/CSS/JS scaffold
+      fs.writeFileSync(path.join(projectDir, "index.html"), `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${projectName}</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <h1>${args.description}</h1>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>`);
+      fs.writeFileSync(path.join(projectDir, "styles.css"), `* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2rem; font-weight: 600; }`);
+      fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
+
+      // Serve with a simple HTTP server
+      const port = 4100 + Math.floor(Math.random() * 900);
+      try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
+      execSync(`cd ${projectDir} && nohup npx -y serve -l ${port} -s . > /dev/null 2>&1 &`, { timeout: 15000 });
+
+      activeProjectDir = projectDir;
+      activeProjectPort = port;
+
+      return {
+        success: true,
+        result: `Created HTML project "${projectName}" at ${projectDir}. Dev server running on port ${port}.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
+        url: `http://localhost:${port}`,
+        artifactType: "browser_url",
+        artifactLabel: projectName,
+      };
+    } else {
+      // React + Vite + Tailwind scaffold
+      const packageJson = {
+        name: projectName,
+        private: true,
+        version: "0.0.1",
+        type: "module",
+        scripts: { dev: "vite --host --port 4200", build: "vite build", preview: "vite preview" },
+        dependencies: { react: "^19.0.0", "react-dom": "^19.0.0" },
+        devDependencies: {
+          "@vitejs/plugin-react": "^4.3.0",
+          vite: "^6.0.0",
+          tailwindcss: "^4.0.0",
+          "@tailwindcss/vite": "^4.0.0",
+        },
+      };
+      fs.writeFileSync(path.join(projectDir, "package.json"), JSON.stringify(packageJson, null, 2));
+
+      fs.writeFileSync(path.join(projectDir, "vite.config.js"), `import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nimport tailwindcss from '@tailwindcss/vite';\nexport default defineConfig({ plugins: [react(), tailwindcss()] });`);
+
+      fs.writeFileSync(path.join(projectDir, "index.html"), `<!DOCTYPE html>\n<html lang="en">\n<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${projectName}</title></head>\n<body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body>\n</html>`);
+
+      fs.mkdirSync(path.join(projectDir, "src"), { recursive: true });
+      fs.writeFileSync(path.join(projectDir, "src", "index.css"), `@import "tailwindcss";`);
+      fs.writeFileSync(path.join(projectDir, "src", "main.jsx"), `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\nReactDOM.createRoot(document.getElementById('root')).render(<App />);`);
+      fs.writeFileSync(path.join(projectDir, "src", "App.jsx"), `export default function App() {\n  return (\n    <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">\n      <div className="text-center space-y-4">\n        <h1 className="text-4xl font-bold">${projectName}</h1>\n        <p className="text-neutral-400">${args.description}</p>\n      </div>\n    </div>\n  );\n}`);
+
+      // Install deps and start dev server
+      execSync(`cd ${projectDir} && npm install --prefer-offline 2>&1 | tail -3`, { timeout: 60000 });
+
+      const port = 4200;
+      try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
+      execSync(`cd ${projectDir} && nohup npm run dev > /tmp/${projectName}-dev.log 2>&1 &`, { timeout: 10000 });
+
+      // Wait briefly for server to start
+      await new Promise(r => setTimeout(r, 3000));
+
+      activeProjectDir = projectDir;
+      activeProjectPort = port;
+
+      return {
+        success: true,
+        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Dev server running on port ${port}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
+        url: `http://localhost:${port}`,
+        artifactType: "browser_url",
+        artifactLabel: projectName,
+      };
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      result: `Failed to create webapp: ${err.message}`,
+    };
+  }
+}
+
+// ── create_file ──
+async function executeCreateFile(args: {
+  path: string;
+  content: string;
+}): Promise<ToolResult> {
+  const fs = await import("fs");
+  const pathMod = await import("path");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  try {
+    const fullPath = pathMod.join(activeProjectDir, args.path);
+    // Security: prevent path traversal
+    if (!fullPath.startsWith(activeProjectDir)) {
+      return { success: false, result: "Invalid path: cannot write outside project directory." };
+    }
+    fs.mkdirSync(pathMod.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, args.content);
+    return {
+      success: true,
+      result: `File created: ${args.path} (${args.content.length} bytes)`,
+      artifactType: "code",
+      artifactLabel: args.path,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Failed to create file: ${err.message}` };
+  }
+}
+
+// ── edit_file ──
+async function executeEditFile(args: {
+  path: string;
+  find: string;
+  replace: string;
+}): Promise<ToolResult> {
+  const fs = await import("fs");
+  const pathMod = await import("path");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  try {
+    const fullPath = pathMod.join(activeProjectDir, args.path);
+    if (!fullPath.startsWith(activeProjectDir)) {
+      return { success: false, result: "Invalid path: cannot edit outside project directory." };
+    }
+    if (!fs.existsSync(fullPath)) {
+      return { success: false, result: `File not found: ${args.path}` };
+    }
+    const content = fs.readFileSync(fullPath, "utf-8");
+    if (!content.includes(args.find)) {
+      return { success: false, result: `Text not found in ${args.path}. Make sure the 'find' text matches exactly.` };
+    }
+    const updated = content.replace(args.find, args.replace);
+    fs.writeFileSync(fullPath, updated);
+    return {
+      success: true,
+      result: `File edited: ${args.path} — replaced ${args.find.length} chars with ${args.replace.length} chars`,
+      artifactType: "code",
+      artifactLabel: args.path,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Failed to edit file: ${err.message}` };
+  }
+}
+
+
+// ── read_file ──
+async function executeReadFile(args: {
+  path: string;
+}): Promise<ToolResult> {
+  const fs = await import("fs");
+  const pathMod = await import("path");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  try {
+    const fullPath = pathMod.join(activeProjectDir, args.path);
+    if (!fullPath.startsWith(activeProjectDir)) {
+      return { success: false, result: "Invalid path: cannot read outside project directory." };
+    }
+    if (!fs.existsSync(fullPath)) {
+      return { success: false, result: `File not found: ${args.path}` };
+    }
+    const content = fs.readFileSync(fullPath, "utf-8");
+    const truncated = content.length > 10000 ? content.slice(0, 10000) + "\n\n... (truncated, file is " + content.length + " bytes)" : content;
+    return {
+      success: true,
+      result: `Contents of ${args.path}:\n\n${truncated}`,
+      artifactType: "code",
+      artifactLabel: args.path,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Failed to read file: ${err.message}` };
+  }
+}
+
+// ── list_files ──
+async function executeListFiles(args: {
+  path?: string;
+}): Promise<ToolResult> {
+  const fs = await import("fs");
+  const pathMod = await import("path");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  try {
+    const targetDir = args.path
+      ? pathMod.join(activeProjectDir, args.path)
+      : activeProjectDir;
+
+    if (!targetDir.startsWith(activeProjectDir)) {
+      return { success: false, result: "Invalid path: cannot list outside project directory." };
+    }
+
+    const listDir = (dir: string, prefix: string = "", depth: number = 0): string[] => {
+      if (depth > 4) return [prefix + "... (max depth reached)"];
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      const lines: string[] = [];
+      // Skip node_modules, .git, dist
+      const filtered = entries.filter(e => !["node_modules", ".git", "dist", ".next"].includes(e.name));
+      filtered.forEach((entry, i) => {
+        const isLast = i === filtered.length - 1;
+        const connector = isLast ? "└── " : "├── ";
+        const childPrefix = isLast ? "    " : "│   ";
+        if (entry.isDirectory()) {
+          lines.push(prefix + connector + entry.name + "/");
+          lines.push(...listDir(pathMod.join(dir, entry.name), prefix + childPrefix, depth + 1));
+        } else {
+          const size = fs.statSync(pathMod.join(dir, entry.name)).size;
+          const sizeStr = size < 1024 ? `${size}B` : size < 1048576 ? `${(size / 1024).toFixed(1)}KB` : `${(size / 1048576).toFixed(1)}MB`;
+          lines.push(prefix + connector + entry.name + ` (${sizeStr})`);
+        }
+      });
+      return lines;
+    }
+
+    const tree = listDir(targetDir);
+    const relPath = args.path || ".";
+    return {
+      success: true,
+      result: `Project files (${relPath}):\n\n${tree.join("\n")}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Failed to list files: ${err.message}` };
+  }
+}
+
+// ── install_deps ──
+async function executeInstallDeps(args: {
+  packages: string;
+  dev?: boolean;
+}): Promise<ToolResult> {
+  const { execSync } = await import("child_process");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  try {
+    const devFlag = args.dev ? " --save-dev" : "";
+    const sanitized = args.packages.replace(/[;&|`$]/g, ""); // Basic sanitization
+    const output = execSync(
+      `cd ${activeProjectDir} && npm install ${sanitized}${devFlag} 2>&1 | tail -10`,
+      { timeout: 60000 }
+    ).toString();
+    return {
+      success: true,
+      result: `Installed packages: ${args.packages}\n\n${output}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Failed to install packages: ${err.message}` };
+  }
+}
+
+// ── run_command ──
+async function executeRunCommand(args: {
+  command: string;
+}): Promise<ToolResult> {
+  const { execSync } = await import("child_process");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  // Security: block dangerous commands
+  const blocked = ["rm -rf /", "rm -rf /*", "mkfs", "dd if=", ":(){ :|:& };:"];
+  if (blocked.some(b => args.command.includes(b))) {
+    return { success: false, result: "Command blocked for safety reasons." };
+  }
+
+  try {
+    const output = execSync(
+      `cd ${activeProjectDir} && ${args.command} 2>&1`,
+      { timeout: 30000, maxBuffer: 1024 * 1024 }
+    ).toString();
+    const truncated = output.length > 5000 ? output.slice(-5000) + "\n... (output truncated)" : output;
+    return {
+      success: true,
+      result: `Command: ${args.command}\n\nOutput:\n${truncated}`,
+      artifactType: "terminal",
+      artifactLabel: args.command.slice(0, 40),
+    };
+  } catch (err: any) {
+    const output = err.stdout?.toString() || err.stderr?.toString() || err.message;
+    return {
+      success: false,
+      result: `Command failed: ${args.command}\n\nOutput:\n${output?.slice(-3000) || "No output"}`,
+      artifactType: "terminal",
+      artifactLabel: args.command.slice(0, 40),
+    };
+  }
+}
+
+// ── git_operation ──
+async function executeGitOperation(args: {
+  operation: string;
+  message?: string;
+  remote_url?: string;
+  files?: string;
+}): Promise<ToolResult> {
+  const { execSync } = await import("child_process");
+
+  if (!activeProjectDir && args.operation !== "clone") {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  const dir = activeProjectDir || "/tmp/webapp-projects";
+
+  try {
+    let output = "";
+    switch (args.operation) {
+      case "init":
+        output = execSync(`cd ${dir} && git init && git add . && echo "Git initialized"`, { timeout: 10000 }).toString();
+        break;
+      case "add":
+        const files = args.files || ".";
+        output = execSync(`cd ${dir} && git add ${files}`, { timeout: 10000 }).toString();
+        output = output || `Added ${files} to staging`;
+        break;
+      case "commit":
+        if (!args.message) return { success: false, result: "Commit message is required." };
+        output = execSync(`cd ${dir} && git add -A && git commit -m "${args.message.replace(/"/g, '\\"')}"`, { timeout: 10000 }).toString();
+        break;
+      case "push":
+        const remote = args.remote_url ? `origin ${args.remote_url}` : "origin main";
+        output = execSync(`cd ${dir} && git push ${remote} 2>&1`, { timeout: 30000 }).toString();
+        break;
+      case "status":
+        output = execSync(`cd ${dir} && git status --short`, { timeout: 5000 }).toString();
+        output = output || "Working tree clean";
+        break;
+      case "log":
+        output = execSync(`cd ${dir} && git log --oneline -10`, { timeout: 5000 }).toString();
+        break;
+      case "clone":
+        if (!args.remote_url) return { success: false, result: "Remote URL is required for clone." };
+        const cloneName = args.remote_url.split("/").pop()?.replace(".git", "") || "cloned-repo";
+        const cloneDir = `/tmp/webapp-projects/${cloneName}`;
+        output = execSync(`git clone ${args.remote_url} ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+        activeProjectDir = cloneDir;
+        break;
+      case "remote_add":
+        if (!args.remote_url) return { success: false, result: "Remote URL is required." };
+        try {
+          execSync(`cd ${dir} && git remote remove origin 2>/dev/null || true`, { timeout: 5000 });
+        } catch {}
+        output = execSync(`cd ${dir} && git remote add origin ${args.remote_url}`, { timeout: 5000 }).toString();
+        output = output || `Remote origin set to ${args.remote_url}`;
+        break;
+      default:
+        return { success: false, result: `Unknown git operation: ${args.operation}` };
+    }
+    return {
+      success: true,
+      result: `Git ${args.operation}:\n${output}`,
+      artifactType: "terminal",
+      artifactLabel: `git ${args.operation}`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Git ${args.operation} failed: ${err.message}` };
   }
 }

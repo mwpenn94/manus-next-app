@@ -477,7 +477,7 @@ export default function ConnectorsPage() {
                 </Button>
               </TabsContent>
               <TabsContent value="manual" className="space-y-4 pt-2">
-                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+                <div className="rounded-lg border border-border bg-muted-foreground/5 p-3 text-xs text-muted-foreground">
                   <p>Manual setup requires you to create and manage your own API credentials.</p>
                 </div>
                 {connectDialog?.configFields.map((field) => (

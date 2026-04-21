@@ -46,7 +46,7 @@ describe("Agent Tools", () => {
 
   it("AGENT_TOOLS defines the expected tool set", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(14);
+    expect(AGENT_TOOLS).toHaveLength(22);
     const toolNames = AGENT_TOOLS.map((t) => t.function.name);
     expect(toolNames).toContain("web_search");
     expect(toolNames).toContain("read_webpage");
@@ -62,6 +62,14 @@ describe("Agent Tools", () => {
     expect(toolNames).toContain("design_canvas");
     expect(toolNames).toContain("cloud_browser");
     expect(toolNames).toContain("screenshot_verify");
+    expect(toolNames).toContain("create_webapp");
+    expect(toolNames).toContain("create_file");
+    expect(toolNames).toContain("edit_file");
+    expect(toolNames).toContain("read_file");
+    expect(toolNames).toContain("list_files");
+    expect(toolNames).toContain("install_deps");
+    expect(toolNames).toContain("run_command");
+    expect(toolNames).toContain("git_operation");
   });
 
   it("each tool has proper function calling schema", async () => {
@@ -295,7 +303,7 @@ describe("System Prompt Identity & Research Rules", () => {
     expect(source).toContain("NOT Google Gemini");
     expect(source).toContain("NOT ChatGPT");
     expect(source).toContain("NOT Claude");
-    expect(source).toContain("Manus Next is an independent open-source project");
+    expect(source).toContain("Manus Next is an independent project");
   });
 
   it("system prompt contains research nudge logic for deeper research", async () => {
@@ -320,7 +328,7 @@ describe("System Prompt Identity & Research Rules", () => {
     const fs = await import("fs");
     const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
     expect(source).toContain("ABOUT YOURSELF");
-    expect(source).toContain("open-source autonomous AI agent platform");
+    expect(source).toContain("autonomous AI agent platform");
     expect(source).toContain("self-hosted");
   });
 

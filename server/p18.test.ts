@@ -117,8 +117,9 @@ describe("P18-4: Offline mode indicator", () => {
     expect(networkBanner).toMatch(/offlineMode/);
   });
 
-  it("NetworkBanner shows amber banner when offline mode is enabled", () => {
-    expect(networkBanner).toMatch(/bg-amber-500/);
+  it("NetworkBanner shows muted banner when offline mode is enabled", () => {
+    // After P34 monochrome pass, amber replaced with muted
+    expect(networkBanner).toMatch(/bg-muted/);
   });
 
   it("NetworkBanner displays 'Offline mode' text", () => {
@@ -136,11 +137,11 @@ describe("P18-4: Offline mode indicator", () => {
 
 /* ─── Cross-cutting: no regressions ─── */
 describe("P18: No regressions", () => {
-  it("Home page still has Warm Void design", () => {
+  it("Home page still has Manus-aligned design", () => {
     const home = read("client/src/pages/Home.tsx");
-    expect(home).toMatch(/Hello\./);
-    expect(home).toMatch(/CATEGORIES/);
+    expect(home).toMatch(/Hello/);
     expect(home).toMatch(/SUGGESTIONS/);
+    expect(home).toMatch(/QUICK_ACTIONS/);
   });
 
   it("NotFound page still renders", () => {

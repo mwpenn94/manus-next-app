@@ -151,9 +151,9 @@ export default function BillingPage() {
                   <h3 className="text-sm font-semibold text-foreground">Active Subscription</h3>
                   <span className={cn(
                     "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize",
-                    subscription.status === "active" ? "bg-emerald-500/10 text-emerald-400" :
+                    subscription.status === "active" ? "bg-muted/50 text-foreground/70" :
                     subscription.status === "trialing" ? "bg-blue-500/10 text-blue-400" :
-                    "bg-amber-500/10 text-amber-400"
+                    "bg-muted/50 text-foreground"
                   )}>
                     {subscription.status}
                   </span>
@@ -173,8 +173,8 @@ export default function BillingPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
           {[
             { label: "Total Tasks", value: stats?.totalTasks ?? 0, icon: Sparkles, color: "text-primary" },
-            { label: "Completed", value: stats?.completedTasks ?? 0, icon: CheckCircle2, color: "text-emerald-400" },
-            { label: "Running", value: stats?.runningTasks ?? 0, icon: Zap, color: "text-amber-400" },
+            { label: "Completed", value: stats?.completedTasks ?? 0, icon: CheckCircle2, color: "text-foreground/70" },
+            { label: "Running", value: stats?.runningTasks ?? 0, icon: Zap, color: "text-foreground" },
             { label: "Errors", value: stats?.errorTasks ?? 0, icon: AlertCircle, color: "text-red-400" },
           ].map((stat, i) => (
             <motion.div
@@ -213,7 +213,7 @@ export default function BillingPage() {
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-emerald-500"
+                className="h-full rounded-full bg-foreground/70"
                 initial={{ width: 0 }}
                 animate={{ width: `${(stats.completedTasks / stats.totalTasks) * 100}%` }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
@@ -297,8 +297,8 @@ export default function BillingPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize shrink-0",
-                      payment.status === "succeeded" ? "bg-emerald-500/10 text-emerald-400" :
-                      payment.status === "pending" ? "bg-amber-500/10 text-amber-400" :
+                      payment.status === "succeeded" ? "bg-muted/50 text-foreground/70" :
+                      payment.status === "pending" ? "bg-muted/50 text-foreground" :
                       "bg-red-500/10 text-red-400"
                     )}>
                       {payment.status}
@@ -359,8 +359,8 @@ export default function BillingPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize shrink-0",
-                      task.status === "completed" ? "bg-emerald-500/10 text-emerald-400" :
-                      task.status === "running" ? "bg-amber-500/10 text-amber-400" :
+                      task.status === "completed" ? "bg-muted/50 text-foreground/70" :
+                      task.status === "running" ? "bg-muted/50 text-foreground" :
                       task.status === "error" ? "bg-red-500/10 text-red-400" :
                       "bg-muted text-muted-foreground"
                     )}>

@@ -181,7 +181,7 @@ export default function FigmaImportPage() {
                 <Input value={figmaUrl} onChange={(e) => handleUrlChange(e.target.value)} placeholder="https://www.figma.com/file/..." className="mb-2" />
                 {parsedUrl && (
                   <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-foreground/70" />
                     <span className="text-muted-foreground">File: <code className="text-foreground">{parsedUrl.fileKey}</code></span>
                   </div>
                 )}

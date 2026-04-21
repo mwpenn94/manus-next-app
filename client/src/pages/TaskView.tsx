@@ -169,7 +169,7 @@ function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: numb
         <span className="text-[11px] text-muted-foreground">Rated</span>
         <div className="flex gap-0.5">
           {[1, 2, 3, 4, 5].map(star => (
-            <span key={star} className={cn("text-sm", star <= selectedRating ? "text-amber-400" : "text-muted-foreground")}>
+            <span key={star} className={cn("text-sm", star <= selectedRating ? "text-foreground" : "text-muted-foreground")}>
               ★
             </span>
           ))}
@@ -192,7 +192,7 @@ function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: numb
             title={`Rate ${star}/5`}
           >
             <span className={cn(
-              star <= (hoveredStar || selectedRating) ? "text-amber-400" : "text-muted-foreground"
+              star <= (hoveredStar || selectedRating) ? "text-foreground" : "text-muted-foreground"
             )}>
               ★
             </span>
@@ -210,7 +210,7 @@ function ActionIcon({ type }: { type: AgentAction["type"] }) {
   switch (type) {
     case "browsing": return <Globe className={cn(iconClass, "text-blue-400")} />;
     case "scrolling": return <ScrollText className={cn(iconClass, "text-muted-foreground")} />;
-    case "clicking": return <MousePointer2 className={cn(iconClass, "text-amber-400")} />;
+    case "clicking": return <MousePointer2 className={cn(iconClass, "text-foreground")} />;
     case "executing": return <Terminal className={cn(iconClass, "text-green-400")} />;
     case "creating": return <FileText className={cn(iconClass, "text-purple-400")} />;
     case "searching": return <Search className={cn(iconClass, "text-cyan-400")} />;
@@ -465,7 +465,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
               {actionsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               <span>
                 {doneCount === totalCount ? (
-                  <span className="text-emerald-400">{totalCount} steps completed</span>
+                  <span className="text-foreground/70">{totalCount} steps completed</span>
                 ) : (
                   <span>{doneCount} of {totalCount} steps</span>
                 )}
@@ -650,7 +650,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
             </h3>
           </div>
           {bridgeStatus === "connected" && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">
               Bridge Live
             </span>
           )}
@@ -1493,6 +1493,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+          addMessage,
         });
 
         await streamWithRetry({
@@ -1656,6 +1657,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        addMessage,
       });
 
       await streamWithRetry({
@@ -1725,6 +1727,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        addMessage,
       });
 
       await streamWithRetry({
@@ -1805,6 +1808,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        addMessage,
       });
 
       await streamWithRetry({
@@ -1947,7 +1951,7 @@ export default function TaskView() {
               </span>
             )}
             {task.status === "completed" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium shrink-0 whitespace-nowrap">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium shrink-0 whitespace-nowrap">
                 Completed
               </span>
             )}
@@ -1997,14 +2001,14 @@ export default function TaskView() {
               title={shareCopied ? "Copied!" : "Share task"}
               aria-label="Share task"
             >
-              {shareCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+              {shareCopied ? <Check className="w-3.5 h-3.5 text-foreground/70" /> : <Share2 className="w-3.5 h-3.5" />}
             </button>
             {/* Bookmark */}
             <button
               onClick={handleToggleFavorite}
               className={cn(
                 "p-1.5 rounded-md transition-colors hidden md:flex",
-                isFavorited ? "text-amber-400 hover:text-amber-300" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                isFavorited ? "text-foreground hover:text-foreground/60" : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
               title={isFavorited ? "Remove bookmark" : "Bookmark"}
               aria-label={isFavorited ? "Remove bookmark" : "Bookmark"}
@@ -2261,9 +2265,9 @@ export default function TaskView() {
             {/* Completion badge + rating row */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/20">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-xs font-medium text-emerald-400">Task completed</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-foreground/70" />
+                  <span className="text-xs font-medium text-foreground/70">Task completed</span>
                 </div>
                 {task.completedSteps && task.totalSteps && (
                   <span className="text-[11px] text-muted-foreground">

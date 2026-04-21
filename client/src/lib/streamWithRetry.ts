@@ -21,6 +21,7 @@ export interface StreamCallbacks {
   onDone: (content: string) => void;
   onStatus: (status: string) => void;
   onStepProgress: (progress: any) => void;
+  onWebappPreview: (preview: { name: string; url: string; description?: string }) => void;
   onError: (error: string) => void;
   onReconnecting?: (attempt: number, maxRetries: number) => void;
   onReconnected?: () => void;
@@ -73,6 +74,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.done) callbacks.onDone(data.content || "");
     if (data.status) callbacks.onStatus(data.status);
     if (data.step_progress) callbacks.onStepProgress(data.step_progress);
+    if (data.webapp_preview) callbacks.onWebappPreview(data.webapp_preview);
     if (data.error) callbacks.onError(data.error);
 
     return true;

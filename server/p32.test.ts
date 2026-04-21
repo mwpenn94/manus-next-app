@@ -249,7 +249,7 @@ describe("P32: Routes & Navigation", () => {
     expect(content).toContain('href="/deployments"');
     expect(content).toContain("Data Controls");
     expect(content).toContain("Mail Manus");
-    expect(content).toContain("Deployments");
+    expect(content).toContain("Deployed Websites");
   });
 });
 

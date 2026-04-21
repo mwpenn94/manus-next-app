@@ -177,6 +177,55 @@ export default function ProfilePage() {
           </Card>
         </motion.div>
 
+        {/* Preferences */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.18 }}>
+          <Card className="border-border mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Preferences</CardTitle>
+              <CardDescription className="text-xs">Language, timezone, and notification settings.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Language</p>
+                    <p className="text-xs text-muted-foreground">Display language for the interface</p>
+                  </div>
+                </div>
+                <select className="text-xs bg-muted/30 border border-border rounded-md px-2 py-1 text-foreground">
+                  <option>English</option>
+                  <option>Spanish</option>
+                  <option>French</option>
+                  <option>German</option>
+                  <option>Japanese</option>
+                  <option>Chinese (Simplified)</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Timezone</p>
+                    <p className="text-xs text-muted-foreground">Used for scheduling and timestamps</p>
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground">{Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <Smartphone className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Notifications</p>
+                    <p className="text-xs text-muted-foreground">In-app notification preferences</p>
+                  </div>
+                </div>
+                <Switch defaultChecked />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Connected Sessions */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
           <Card className="border-border mb-6">

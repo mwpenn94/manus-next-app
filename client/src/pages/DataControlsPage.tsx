@@ -290,7 +290,7 @@ export default function DataControlsPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" /> Clear Browser Data
+              <AlertTriangle className="w-5 h-5 text-muted-foreground" /> Clear Browser Data
             </DialogTitle>
             <DialogDescription>This will clear all stored cookies and session data from the cloud browser. You'll need to log in again to any sites.</DialogDescription>
           </DialogHeader>

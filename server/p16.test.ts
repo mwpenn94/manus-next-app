@@ -3,6 +3,30 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
+// Mock edge-tts-universal to prevent network calls
+vi.mock("edge-tts-universal", () => {
+  const mockVoices = [
+    { ShortName: "en-US-AriaNeural", Locale: "en-US", Gender: "Female", FriendlyName: "Aria" },
+    { ShortName: "en-US-GuyNeural", Locale: "en-US", Gender: "Male", FriendlyName: "Guy" },
+    { ShortName: "en-GB-SoniaNeural", Locale: "en-GB", Gender: "Female", FriendlyName: "Sonia" },
+    { ShortName: "es-ES-ElviraNeural", Locale: "es-ES", Gender: "Female", FriendlyName: "Elvira" },
+    { ShortName: "zh-CN-XiaoxiaoNeural", Locale: "zh-CN", Gender: "Female", FriendlyName: "Xiaoxiao" },
+    { ShortName: "fr-FR-DeniseNeural", Locale: "fr-FR", Gender: "Female", FriendlyName: "Denise" },
+    { ShortName: "de-DE-KatjaNeural", Locale: "de-DE", Gender: "Female", FriendlyName: "Katja" },
+    { ShortName: "ja-JP-NanamiNeural", Locale: "ja-JP", Gender: "Female", FriendlyName: "Nanami" },
+    { ShortName: "ko-KR-SunHiNeural", Locale: "ko-KR", Gender: "Female", FriendlyName: "SunHi" },
+    { ShortName: "pt-BR-FranciscaNeural", Locale: "pt-BR", Gender: "Female", FriendlyName: "Francisca" },
+    { ShortName: "ru-RU-SvetlanaNeural", Locale: "ru-RU", Gender: "Female", FriendlyName: "Svetlana" },
+    { ShortName: "it-IT-ElsaNeural", Locale: "it-IT", Gender: "Female", FriendlyName: "Elsa" },
+    { ShortName: "hi-IN-SwaraNeural", Locale: "hi-IN", Gender: "Female", FriendlyName: "Swara" },
+    { ShortName: "ar-SA-ZariyahNeural", Locale: "ar-SA", Gender: "Female", FriendlyName: "Zariyah" },
+  ];
+  return {
+    listVoices: vi.fn(async () => mockVoices),
+    Communicate: vi.fn(),
+  };
+});
+
 // ── Multi-Language TTS Tests ──
 
 describe("TTS multi-language support", { timeout: 15000 }, () => {

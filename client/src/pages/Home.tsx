@@ -1,87 +1,52 @@
 /**
- * Home — "Warm Void" Manus-Authentic Home Screen
- * 
- * Convergence Pass 2: Refined greeting animation, auto-resize textarea,
- * keyboard shortcut hint, smoother category transitions, package badge strip.
+ * Home — Manus-Aligned Home Screen
+ *
+ * P35: ModelSelector top-left, credits top-right, PlusMenu on input,
+ * pill input with "Assign a task or ask anything", horizontal scroll cards.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { useTask } from "@/contexts/TaskContext";
 import {
-  Paperclip,
+  Plus,
   ArrowUp,
   Globe,
-  Heart,
   BarChart3,
   GraduationCap,
   Rocket,
   Star,
   Mic,
-  Plug,
   Code,
   Presentation,
   FileText,
   Image,
   Search as SearchIcon,
-  Camera,
-  Terminal,
+  Sparkles,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import ModelSelector from "@/components/ModelSelector";
+import PlusMenu from "@/components/PlusMenu";
 
-// Quick action chips (Gap 7) — like Manus "Create slides", "Build website", etc.
+// Quick action chips — Manus-style horizontal row
 const QUICK_ACTIONS = [
   { label: "Build a website", icon: Code, prompt: "Build a modern, responsive website" },
   { label: "Create slides", icon: Presentation, prompt: "Create a professional slide deck" },
   { label: "Write a document", icon: FileText, prompt: "Write a well-structured document" },
   { label: "Generate images", icon: Image, prompt: "Generate high-quality images" },
-  { label: "Research a topic", icon: SearchIcon, prompt: "Research and summarize" },
+  { label: "Wide Research", icon: SearchIcon, prompt: "Research and summarize" },
 ];
 
-// Connector quick-access (Gap 6)
-const QUICK_CONNECTORS = [
-  { id: "github", name: "GitHub", icon: "🐙" },
-  { id: "google-drive", name: "Google Drive", icon: "📁" },
-  { id: "slack", name: "Slack", icon: "💬" },
-  { id: "notion", name: "Notion", icon: "📝" },
-];
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
-
-const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663357378777/mLRoMfUBgPHZe3zeGnUGcR/hero-home-bg-mjLUBLDwZfsU6RgsHAiXRQ.webp";
-const AGENT_ILLUSTRATION = "https://d2xsxph8kpxj0f.cloudfront.net/310519663357378777/mLRoMfUBgPHZe3zeGnUGcR/hero-agent-illustration-5xgBeUwbPzjG2QnkwaT4cS.webp";
-
-const CATEGORIES = [
-  { id: "featured", label: "Featured", icon: Star },
-  { id: "research", label: "Research", icon: Globe },
-  { id: "life", label: "Life", icon: Heart },
-  { id: "data", label: "Data Analysis", icon: BarChart3 },
-  { id: "education", label: "Education", icon: GraduationCap },
-  { id: "productivity", label: "Productivity", icon: Rocket },
-];
-
-interface SuggestionCard {
-  icon: typeof Globe;
-  title: string;
-  description: string;
-  category: string;
-}
-
-const SUGGESTIONS: SuggestionCard[] = [
-  { icon: Globe, title: "Research AI Agent Architectures", description: "Analyze and compare leading AI agent frameworks with detailed technical breakdowns.", category: "featured" },
-  { icon: BarChart3, title: "Analyze Market Trends", description: "Deep-dive into market data with visualizations and actionable insights.", category: "featured" },
-  { icon: Rocket, title: "Build a Product Landing Page", description: "Create a modern, responsive landing page with compelling copy and design.", category: "featured" },
-  { icon: GraduationCap, title: "Create Interactive Course Material", description: "Develop engaging educational content with quizzes and visual aids.", category: "featured" },
-  { icon: Globe, title: "Competitive Intelligence Report", description: "Research competitors and synthesize findings into a strategic report.", category: "research" },
-  { icon: Globe, title: "Academic Literature Review", description: "Survey recent papers on a topic and produce an annotated bibliography.", category: "research" },
-  { icon: Heart, title: "Plan a Trip to Japan", description: "Create a comprehensive travel itinerary with bookings and local tips.", category: "life" },
-  { icon: Heart, title: "Weekly Meal Prep Plan", description: "Design a balanced meal plan with shopping list and prep instructions.", category: "life" },
-  { icon: BarChart3, title: "Visualize Sales Performance", description: "Transform raw sales data into interactive charts and dashboards.", category: "data" },
-  { icon: BarChart3, title: "Customer Cohort Analysis", description: "Segment users by behavior and visualize retention over time.", category: "data" },
-  { icon: GraduationCap, title: "Explain Quantum Computing", description: "Break down complex quantum concepts into digestible learning modules.", category: "education" },
-  { icon: GraduationCap, title: "Create Flashcard Deck", description: "Generate spaced-repetition flashcards from any study material.", category: "education" },
-  { icon: Rocket, title: "Automate Weekly Reports", description: "Set up automated data collection and report generation workflows.", category: "productivity" },
-  { icon: Rocket, title: "Draft a Project Proposal", description: "Structure a persuasive project proposal with timeline and budget.", category: "productivity" },
+// Suggestion cards — horizontally scrollable like Manus
+const SUGGESTIONS = [
+  { icon: Globe, title: "Research AI Agent Architectures", description: "Analyze and compare leading AI agent frameworks." },
+  { icon: BarChart3, title: "Analyze Market Trends", description: "Deep-dive into market data with visualizations." },
+  { icon: Rocket, title: "Build a Product Landing Page", description: "Create a modern, responsive landing page." },
+  { icon: GraduationCap, title: "Create Course Material", description: "Develop engaging educational content." },
+  { icon: Globe, title: "Competitive Intelligence", description: "Research competitors and synthesize findings." },
+  { icon: Star, title: "Automate Weekly Reports", description: "Set up automated report generation." },
 ];
 
 const PACKAGES = [
@@ -91,15 +56,15 @@ const PACKAGES = [
 ];
 
 export default function Home() {
-  // The userAuth hooks provides authentication state
-  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
-  let { user, loading: _loading, error: _error, isAuthenticated, logout } = useAuth();
+  let { user, loading: _loading, error: _error, isAuthenticated } = useAuth();
 
   const [input, setInput] = useState("");
-  const [activeCategory, setActiveCategory] = useState("featured");
+  const [selectedModel, setSelectedModel] = useState("sovereign-max");
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [, navigate] = useLocation();
   const { createTask } = useTask();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const plusButtonRef = useRef<HTMLButtonElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -110,7 +75,7 @@ export default function Home() {
     }
   }, [input]);
 
-  // Global ⌘K shortcut to focus input
+  // Global ⌘K shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -122,14 +87,9 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const filteredSuggestions = SUGGESTIONS.filter(
-    (s) => activeCategory === "featured" ? s.category === "featured" : s.category === activeCategory
-  ).slice(0, 4);
-
   const handleSubmit = useCallback(() => {
     if (!input.trim()) return;
     if (!isAuthenticated) {
-      // Redirect to login — task creation requires authentication
       window.location.href = getLoginUrl();
       return;
     }
@@ -140,60 +100,52 @@ export default function Home() {
   }, [input, createTask, navigate, isAuthenticated]);
 
   return (
-    <div className="h-full overflow-y-auto relative" role="region" aria-label="Home">
-      {/* Subtle background image */}
-      <div
-        className="absolute inset-0 opacity-[0.12] pointer-events-none"
-        style={{
-          backgroundImage: `url(${HERO_BG})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background pointer-events-none" />
+    <div className="h-full overflow-y-auto relative bg-background" role="region" aria-label="Home">
+      {/* Top header bar — ModelSelector left, Credits right (Manus-style) */}
+      <div className="sticky top-0 z-20 flex items-center justify-between px-4 md:px-6 py-3 bg-background/80 backdrop-blur-sm">
+        <ModelSelector
+          selectedModelId={selectedModel}
+          onModelChange={setSelectedModel}
+          compact
+        />
+        <button
+          onClick={() => navigate("/billing")}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+          aria-label="View credits"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span className="font-medium">Credits</span>
+        </button>
+      </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-full px-4 md:px-6 py-8 md:py-12">
-        {/* Agent illustration */}
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <img
-            src={AGENT_ILLUSTRATION}
-            alt=""
-            className="w-14 h-14 rounded-xl opacity-50"
-          />
-        </motion.div>
-
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100%-60px)] px-4 md:px-6 py-8 md:py-12">
         {/* Greeting */}
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-10"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <h1
-            className="text-3xl md:text-[2.5rem] font-semibold text-foreground mb-2 tracking-tight"
+            className="text-3xl md:text-4xl font-medium text-foreground mb-2 tracking-tight"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            Hello.
+            {user ? `Hello, ${user.name?.split(" ")[0] || "there"}.` : "Hello."}
           </h1>
-          <p className="text-base text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             What can I do for you?
           </p>
         </motion.div>
 
-        {/* Input */}
+        {/* Pill-shaped Input — Manus style */}
         <motion.div
-          className="w-full max-w-[640px] mb-10"
+          className="w-full max-w-[640px] mb-8"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
         >
-          <div className="relative bg-card border border-border rounded-xl shadow-lg shadow-black/20 focus-within:border-primary/30 transition-colors">
+          <div className="relative bg-card border border-border rounded-full shadow-lg shadow-black/30 focus-within:border-foreground/20 transition-colors">
             <textarea
               ref={textareaRef}
               value={input}
@@ -204,152 +156,127 @@ export default function Home() {
                   handleSubmit();
                 }
               }}
-              placeholder="Give Manus Next a task to work on..."
+              placeholder="Assign a task or ask anything"
               aria-label="Task input"
               rows={1}
-              className="w-full resize-none bg-transparent px-4 pt-4 pb-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-[15px] leading-relaxed min-h-[56px]"
+              className="w-full resize-none bg-transparent pl-14 pr-24 py-3.5 text-foreground placeholder:text-muted-foreground focus:outline-none text-[15px] leading-relaxed min-h-[48px] max-h-[120px] rounded-full"
             />
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-              <div className="flex items-center gap-0.5">
+            {/* Left side: + button (PlusMenu trigger) */}
+            <div className="absolute left-2 top-1/2 -translate-y-1/2">
+              <div className="relative">
                 <button
-                  onClick={() => {
+                  ref={plusButtonRef}
+                  onClick={() => setPlusMenuOpen(!plusMenuOpen)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  title="More options"
+                  aria-label="More options"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+                <PlusMenu
+                  open={plusMenuOpen}
+                  onClose={() => setPlusMenuOpen(false)}
+                  onAddFiles={() => {
                     if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
-                    const title = "File upload task";
-                    const id = createTask(title, "I'd like to upload and work with some files.");
+                    const id = createTask("File upload task", "I'd like to upload and work with some files.");
                     navigate(`/task/${id}`);
                   }}
-                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
-                  title="Attach file — creates a new task"
-                  aria-label="Attach file"
-                >
-                  <Paperclip className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                  onClick={() => {
+                  onShareScreen={() => {
                     if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
-                    const title = "Voice task";
-                    const id = createTask(title, "Voice task — use the microphone button to record.");
+                    const id = createTask("Screen share task", "Screen share session.");
                     navigate(`/task/${id}`);
                   }}
-                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
-                  title="Voice input — creates a new task with voice recording"
-                  aria-label="Voice input"
-                >
-                  <Mic className="w-4 h-4" aria-hidden="true" />  
-                </button>
-                <button
-                  onClick={() => {
+                  onRecordVideo={() => {
                     if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
-                    const id = createTask("Screenshot task", "I'd like to capture or analyze a screenshot.");
+                    const id = createTask("Video recording", "Record a video.");
                     navigate(`/task/${id}`);
                   }}
-                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
-                  title="Screenshot / Camera"
-                  aria-label="Screenshot or camera input"
-                >
-                  <Camera className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                  onClick={() => {
+                  onUploadVideo={() => {
                     if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
-                    const id = createTask("Code task", "I'd like to write or analyze code.");
+                    const id = createTask("Video upload", "Upload a video.");
                     navigate(`/task/${id}`);
                   }}
-                  className="p-2 md:p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
-                  title="Code / Terminal"
-                  aria-label="Code or terminal input"
-                >
-                  <Terminal className="w-4 h-4" aria-hidden="true" />
-                </button>
+                  onInjectPrompt={(prompt) => setInput(prompt)}
+                  anchorRef={plusButtonRef}
+                />
               </div>
+            </div>
+            {/* Right side: mic + send */}
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+                  const id = createTask("Voice task", "Voice task — use the microphone button to record.");
+                  navigate(`/task/${id}`);
+                }}
+                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                title="Voice input"
+                aria-label="Voice input"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
               <button
                 onClick={handleSubmit}
                 disabled={!input.trim()}
                 className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
                   input.trim()
-                    ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm shadow-primary/20"
+                    ? "bg-foreground text-background hover:opacity-80"
                     : "bg-muted text-muted-foreground"
                 )}
                 title="Submit task"
                 aria-label="Submit task"
               >
-                <ArrowUp className="w-4 h-4" aria-hidden="true" />
+                <ArrowUp className="w-4 h-4" />
               </button>
             </div>
           </div>
         </motion.div>
 
-        {/* Connect your tools — matches Manus "Connect your tools to Manus" row */}
+        {/* Quick Action Chips — horizontal scroll */}
         <motion.div
-          className="flex items-center justify-center gap-2 mb-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
+          className="w-full max-w-[640px] mb-10"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <Plug className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Connect your tools to Manus Next</span>
-          <div className="flex items-center gap-1 ml-1">
-            {QUICK_CONNECTORS.map((c) => (
-              <span
-                key={c.id}
-                className="text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                title={c.name}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.label}
+                onClick={() => setInput(action.prompt)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-border bg-transparent text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all whitespace-nowrap shrink-0"
               >
-                {c.icon}
-              </span>
+                <action.icon className="w-3.5 h-3.5" />
+                {action.label}
+              </button>
             ))}
           </div>
         </motion.div>
 
-        {/* Category Tabs */}
+        {/* Suggestion Cards — horizontal scroll like Manus */}
         <motion.div
-          className="flex items-center gap-2 mb-6 flex-wrap justify-center"
-          role="tablist"
-          aria-label="Task categories"
+          className="w-full max-w-4xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              role="tab"
-              aria-selected={activeCategory === cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 md:py-1.5 rounded-full text-sm transition-all duration-200 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none",
-                activeCategory === cat.id
-                  ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
-              )}
-            >
-              <cat.icon className="w-3.5 h-3.5" aria-hidden="true" />
-              {cat.label}
-            </button>
-          ))}
-        </motion.div>
-
-        {/* Suggestion Cards */}
-        <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <AnimatePresence mode="sync">
-            {filteredSuggestions.map((suggestion, i) => (
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1">
+            {SUGGESTIONS.map((suggestion, i) => (
               <motion.button
-                key={`${activeCategory}-${suggestion.title}`}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, delay: i * 0.04 }}
+                key={suggestion.title}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
                 onClick={() => setInput(suggestion.title)}
-                className="text-left p-4 bg-card border border-border rounded-xl hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all group active:scale-[0.98]"
+                className="text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
-                    <suggestion.icon className="w-4 h-4 text-primary" />
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-accent transition-colors">
+                    <suggestion.icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors leading-tight">
+                    <p className="text-sm font-medium text-foreground leading-tight">
                       {suggestion.title}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
@@ -359,72 +286,21 @@ export default function Home() {
                 </div>
               </motion.button>
             ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Quick Action Chips — Gap 7 */}
-        <motion.div
-          className="w-full max-w-[640px] mt-6 mb-6"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.45 }}
-        >
-          <div className="flex flex-wrap justify-center gap-2">
-            {QUICK_ACTIONS.map((action) => (
-              <button
-                key={action.label}
-                onClick={() => setInput(action.prompt)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 border border-border/60 text-xs text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
-              >
-                <action.icon className="w-3 h-3" />
-                {action.label}
-              </button>
-            ))}
           </div>
         </motion.div>
 
-        {/* Connector Quick-Access — Gap 6 */}
+        {/* Package badges — subtle footer */}
         <motion.div
-          className="w-full max-w-[640px] mb-8"
+          className="mt-12 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.5 }}
-        >
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Connect</span>
-            {QUICK_CONNECTORS.map((connector) => (
-              <Link
-                key={connector.id}
-                href="/connectors"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30 border border-border/40 text-[11px] text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-primary/5 transition-all"
-                title={`Connect ${connector.name}`}
-              >
-                <span className="text-xs">{connector.icon}</span>
-                {connector.name}
-              </Link>
-            ))}
-            <Link
-              href="/connectors"
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-primary hover:bg-primary/5 transition-colors"
-            >
-              <Plug className="w-3 h-3" />
-              All
-            </Link>
-          </div>
-        </motion.div>
-
-        {/* Package badges — hidden on mobile for cleaner experience */}
-        <motion.div
-          className="mt-4 md:mt-8 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
         >
           <span className="text-[10px] text-muted-foreground mr-1.5 uppercase tracking-wider">Powered by</span>
           {PACKAGES.map((pkg) => (
             <span
               key={pkg}
-              className="text-[9px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/50"
+              className="text-[9px] px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground border border-border/30"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               {pkg}

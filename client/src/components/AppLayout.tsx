@@ -75,9 +75,9 @@ import { cn } from "@/lib/utils";
 function TaskStatusIcon({ status }: { status: string }) {
   switch (status) {
     case "running":
-      return <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />;
+      return <Loader2 className="w-3.5 h-3.5 text-foreground animate-spin" />;
     case "completed":
-      return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />;
+      return <CheckCircle2 className="w-3.5 h-3.5 text-foreground/70" />;
     case "error":
       return <AlertCircle className="w-3.5 h-3.5 text-red-400" />;
     default:
@@ -107,7 +107,7 @@ function UserInitials({ name }: { name: string | null | undefined }) {
         .slice(0, 2)
     : "?";
   return (
-    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
+    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-foreground">
       {initials}
     </div>
   );
@@ -120,9 +120,9 @@ function BridgeStatusBadge() {
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 mx-2 mb-1 rounded-md bg-sidebar-accent/50">
       {status === "connected" ? (
-        <Wifi className="w-3 h-3 text-emerald-400" />
+        <Wifi className="w-3 h-3 text-foreground/70" />
       ) : status === "connecting" ? (
-        <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
+        <Loader2 className="w-3 h-3 text-muted-foreground animate-spin" />
       ) : (
         <WifiOff className="w-3 h-3 text-red-400" />
       )}
@@ -130,10 +130,10 @@ function BridgeStatusBadge() {
         className={cn(
           "text-[10px]",
           status === "connected"
-            ? "text-emerald-400"
+            ? "text-foreground/70"
             : status === "connecting"
-            ? "text-amber-400"
-            : "text-red-400"
+            ? "text-muted-foreground"
+            : "text-foreground/40"
         )}
       >
         Bridge{" "}
@@ -156,7 +156,7 @@ function ConnectorStatusBadge() {
   const connected = connectors.data?.filter((c: any) => c.status === "connected").length ?? 0;
   if (!connected) return null;
   return (
-    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">
       {connected}
     </span>
   );
@@ -167,7 +167,7 @@ function GitHubStatusBadge() {
   const count = repos.data?.length ?? 0;
   if (!count) return null;
   return (
-    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">
+    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">
       {count}
     </span>
   );
@@ -334,7 +334,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             setSidebarOpen(false);
             setMobileDrawerOpen(false);
           }}
-          className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
           aria-label="Close sidebar"
         >
           <PanelLeftClose className="w-4 h-4 hidden md:block" />
@@ -349,15 +349,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-sidebar-accent/60 hover:bg-sidebar-accent transition-colors group flex-1 min-w-0"
           title="View usage & billing"
         >
-          <Coins className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <Coins className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <span className="text-xs font-medium text-sidebar-foreground tabular-nums">
             {isAuthenticated ? `${((tasks.filter(t => t.status === "completed").length * 150) + (tasks.filter(t => t.status === "running").length * 50)).toLocaleString()}` : "--"}
           </span>
           <span className="text-[10px] text-muted-foreground">credits</span>
         </Link>
-        <div className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-primary/10 border border-primary/20 shrink-0" title="Current model tier">
-          <Sparkles className="w-3 h-3 text-primary" />
-          <span className="text-[10px] font-semibold text-primary whitespace-nowrap">v2.0</span>
+        <div className="flex items-center gap-1 px-2 py-1.5 rounded-md bg-muted border border-border shrink-0" title="Current model tier">
+          <Sparkles className="w-3 h-3 text-foreground" />
+          <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">v2.0</span>
         </div>
       </div>
 
@@ -386,7 +386,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               className={cn(
                 "p-0.5 rounded transition-colors",
                 showDateFilter || dateFrom || dateTo
-                  ? "text-primary"
+                  ? "text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
               title="Date range filter"
@@ -434,7 +434,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               key={f.id}
               onClick={() => setStatusFilter(f.id)}
               className={cn(
-                "flex-1 text-[10px] py-1.5 rounded transition-colors font-medium",
+                "flex-1 text-[10px] py-2 md:py-1.5 rounded transition-colors font-medium min-h-[36px] flex items-center justify-center",
                 statusFilter === f.id
                   ? "bg-sidebar-accent text-sidebar-foreground shadow-sm"
                   : "text-muted-foreground hover:text-sidebar-foreground"
@@ -510,8 +510,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     <div className="mt-1.5 shrink-0">
                       <div className={cn(
                         "w-2 h-2 rounded-full",
-                        task.status === "running" && "bg-primary animate-pulse",
-                        task.status === "completed" && "bg-emerald-500",
+                        task.status === "running" && "bg-foreground animate-pulse",
+                        task.status === "completed" && "bg-foreground/70",
                         task.status === "error" && "bg-red-400",
                         task.status !== "running" && task.status !== "completed" && task.status !== "error" && "bg-muted-foreground/40"
                       )} />
@@ -522,7 +522,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                           {task.title}
                         </p>
                         {task.favorite === 1 && (
-                          <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                          <Star className="w-3 h-3 text-foreground fill-foreground shrink-0" />
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
@@ -530,7 +530,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                           {formatTimeAgo(task.updatedAt)}
                         </span>
                         {task.status === "running" && (
-                          <span className="text-[9px] px-1.5 py-px rounded-full bg-primary/10 text-primary font-medium">
+                          <span className="text-[9px] px-1.5 py-px rounded-full bg-muted text-foreground font-medium">
                             In progress
                           </span>
                         )}
@@ -581,18 +581,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar Footer — Nav links (scrollable) */}
       <div className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
-        <Link
-          href="/billing"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/billing"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <CreditCard className="w-4 h-4" />
-          Usage & Billing
-        </Link>
+        {/* Section: Manus Next */}
+        <div className="px-3 pt-2 pb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus Next">Manus Next</span>
+        </div>
         <Link
           href="/analytics"
           className={cn(
@@ -799,6 +791,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Wrench className="w-4 h-4" />
           Desktop App
         </Link>
+        {/* Section: Other */}
+        <div className="px-3 pt-3 pb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Other">Other</span>
+        </div>
         <Link
           href="/messaging"
           className={cn(
@@ -833,7 +829,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           )}
         >
           <Globe className="w-4 h-4" />
-          Deployments
+          Deployed Websites
         </Link>
         <Link
           href="/data-controls"
@@ -859,6 +855,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Video className="w-4 h-4" />
           Video
         </Link>
+        {/* Section: General */}
+        <div className="px-3 pt-3 pb-1">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: General">General</span>
+        </div>
         <Link
           href="/discover"
           className={cn(
@@ -884,6 +884,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           Integrations
         </Link>
         <Link
+          href="/billing"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/billing"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <CreditCard className="w-4 h-4" />
+          Usage & Billing
+        </Link>
+        <Link
           href="/settings"
           className={cn(
             "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
@@ -903,7 +915,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           onClick={() => { navigator.clipboard.writeText(window.location.origin); toast.success("Invite link copied!"); }}
         >
           <div className="flex items-center gap-2">
-            <Users className="w-3.5 h-3.5 text-primary" />
+            <Users className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-medium text-sidebar-foreground">Share with a friend</span>
           </div>
           <p className="text-[10px] text-muted-foreground mt-0.5 ml-5.5">Get 500 credits each</p>
@@ -929,7 +941,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </button>
             <button
               onClick={cycleTheme}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
               title={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}`}
               aria-label={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}. Click to cycle.`}
             >
@@ -937,7 +949,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </button>
             <button
               onClick={() => navigate("/settings")}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Settings"
               aria-label="Settings"
             >
@@ -945,7 +957,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </button>
             <button
               onClick={() => toast.info("Tips & help coming soon!")}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
               title="Help & tips"
               aria-label="Help & tips"
             >
@@ -963,7 +975,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         ) : (
           <button
             onClick={handleLogin}
-            className="flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm text-primary hover:bg-sidebar-accent/50 transition-colors w-full active:scale-[0.98]"
+            className="flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm text-foreground hover:bg-sidebar-accent/50 transition-colors w-full active:scale-[0.98]"
           >
             <LogIn className="w-4 h-4" />
             Sign in with Manus

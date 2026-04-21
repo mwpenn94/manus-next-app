@@ -52,7 +52,7 @@ function ElapsedTimer() {
 
 function PhaseStatusIcon({ status }: { status: Phase["status"] }) {
   if (status === "completed") {
-    return <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />;
+    return <CheckCircle2 className="w-4 h-4 text-foreground/70 shrink-0" />;
   }
   if (status === "active") {
     return (

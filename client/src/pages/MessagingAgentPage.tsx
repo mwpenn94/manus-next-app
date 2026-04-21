@@ -256,10 +256,10 @@ export default function MessagingAgentPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            status === "connected" ? "bg-emerald-500/10" : status === "error" ? "bg-red-500/10" : "bg-muted"
+                            status === "connected" ? "bg-muted/50" : status === "error" ? "bg-red-500/10" : "bg-muted"
                           }`}>
                             <MessageSquare className={`w-4 h-4 ${
-                              status === "connected" ? "text-emerald-400" : status === "error" ? "text-red-400" : "text-muted-foreground"
+                              status === "connected" ? "text-foreground/70" : status === "error" ? "text-red-400" : "text-muted-foreground"
                             }`} />
                           </div>
                           <div>

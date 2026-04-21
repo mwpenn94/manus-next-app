@@ -36,10 +36,10 @@ export default function TaskCompletedCard({ taskId, onRate, className }: TaskCom
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-2"
       >
-        <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <Check className="w-3.5 h-3.5 text-emerald-500" />
+        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+          <Check className="w-3.5 h-3.5 text-foreground/70" />
         </div>
-        <span className="text-sm font-medium text-emerald-500">Task completed</span>
+        <span className="text-sm font-medium text-foreground/70">Task completed</span>
       </motion.div>
 
       {/* Rating widget */}
@@ -70,7 +70,7 @@ export default function TaskCompletedCard({ taskId, onRate, className }: TaskCom
                 className={cn(
                   "w-5 h-5 transition-colors",
                   value <= displayRating
-                    ? "text-amber-400 fill-amber-400"
+                    ? "text-foreground fill-foreground"
                     : "text-muted-foreground"
                 )}
               />

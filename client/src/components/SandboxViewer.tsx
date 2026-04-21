@@ -63,7 +63,7 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
     <div
       className={cn(
         "flex font-mono text-xs leading-6 whitespace-pre-wrap break-all",
-        type === "added" && "bg-emerald-500/10",
+        type === "added" && "bg-muted/50",
         type === "removed" && "bg-red-500/10"
       )}
     >
@@ -73,7 +73,7 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
       <span
         className={cn(
           "w-5 shrink-0 text-center select-none",
-          type === "added" && "text-emerald-400",
+          type === "added" && "text-foreground/60",
           type === "removed" && "text-red-400",
           type === "unchanged" && "text-muted-foreground"
         )}
@@ -83,7 +83,7 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
       <span
         className={cn(
           "flex-1 px-3",
-          type === "added" && "text-emerald-300",
+          type === "added" && "text-foreground/50",
           type === "removed" && "text-red-300 line-through opacity-70",
           type === "unchanged" && "text-foreground/70"
         )}
@@ -452,7 +452,7 @@ export default function SandboxViewer({
               <div
                 className={cn(
                   "w-2 h-2 rounded-full",
-                  streaming ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
+                  streaming ? "bg-foreground animate-pulse" : "bg-muted-foreground/40"
                 )}
               />
               <span className="text-sm font-medium text-foreground">

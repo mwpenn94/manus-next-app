@@ -27,10 +27,10 @@ interface TaskPauseCardProps {
 }
 
 const REASON_CONFIG: Record<PauseReason, { label: string; color: string }> = {
-  needs_guidance: { label: "Needs your guidance", color: "text-amber-500" },
-  needs_credentials: { label: "Needs credentials", color: "text-amber-500" },
+  needs_guidance: { label: "Needs your guidance", color: "text-muted-foreground" },
+  needs_credentials: { label: "Needs credentials", color: "text-muted-foreground" },
   needs_confirmation: { label: "Needs confirmation", color: "text-blue-500" },
-  needs_file: { label: "Needs a file", color: "text-amber-500" },
+  needs_file: { label: "Needs a file", color: "text-muted-foreground" },
   rate_limited: { label: "Rate limited", color: "text-orange-500" },
   error_recovery: { label: "Error — needs help", color: "text-destructive" },
 };
@@ -50,14 +50,14 @@ export default function TaskPauseCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "bg-card border border-amber-500/30 rounded-xl p-4 max-w-md",
+        "bg-card border border-border rounded-xl p-4 max-w-md",
         className
       )}
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-          <Pause className="w-4 h-4 text-amber-500" />
+        <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
+          <Pause className="w-4 h-4 text-muted-foreground" />
         </div>
         <span className={cn("text-sm font-semibold", config.color)}>
           {config.label}

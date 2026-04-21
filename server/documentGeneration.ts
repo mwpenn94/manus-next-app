@@ -203,7 +203,7 @@ export async function generatePDF(title: string, markdownContent: string): Promi
         margins: { top: 72, bottom: 72, left: 72, right: 72 },
         info: {
           Title: title,
-          Author: "Sovereign AI",
+          Author: "Manus Next",
           Creator: "Manus Next",
         },
       });

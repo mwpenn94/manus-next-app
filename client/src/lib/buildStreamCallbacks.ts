@@ -23,6 +23,7 @@ export interface StreamStateSetters {
   actionsRef: React.MutableRefObject<any[]>;
   mapToolToAction: (type: string, label: string, args: any, status: "active" | "done") => any;
   taskId: string;
+  addMessage?: (taskId: string, msg: any) => void;
 }
 
 export function buildStreamCallbacks(
@@ -104,6 +105,27 @@ export function buildStreamCallbacks(
       setters.setStreamContent(
         state.accumulated + `\n\n*Reconnecting... (attempt ${attempt}/${maxRetries})*`
       );
+    },
+    onWebappPreview: (preview: { name: string; url: string; description?: string }) => {
+      // Create a webapp preview card message in the chat
+      if (setters.addMessage) {
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: `🌐 **${preview.name}** is ready! [Open Preview](${preview.url})${preview.description ? `\n\n${preview.description}` : ""}`,
+          cardType: "webapp_preview" as const,
+          cardData: {
+            appName: preview.name,
+            previewUrl: preview.url,
+            status: "running",
+            hasUnpublishedChanges: true,
+          },
+        });
+      } else {
+        // Fallback: append as markdown link
+        state.accumulated += `\n\n🌐 **${preview.name}** — [Open Preview](${preview.url})\n\n`;
+        setters.accumulatedRef.current = state.accumulated;
+        setters.setStreamContent(state.accumulated);
+      }
     },
     onReconnected: () => {
       // Restore the clean accumulated content (remove reconnecting message)

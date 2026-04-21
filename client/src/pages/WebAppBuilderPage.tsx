@@ -330,7 +330,7 @@ Generate the complete HTML code now.`,
                             {step.status === "running" ? (
                               <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
                             ) : step.status === "done" ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 text-foreground/70 shrink-0" />
                             ) : step.status === "error" ? (
                               <div className="w-4 h-4 rounded-full bg-red-500/20 shrink-0" />
                             ) : (
@@ -412,7 +412,7 @@ Generate the complete HTML code now.`,
                   <Globe className="w-16 h-16 text-primary/30 mx-auto mb-4" />
                   {publishedUrl ? (
                     <>
-                      <h3 className="text-lg font-semibold mb-2 text-emerald-500">Published!</h3>
+                      <h3 className="text-lg font-semibold mb-2 text-foreground/70">Published!</h3>
                       <p className="text-muted-foreground mb-4">Your app is live at:</p>
                       <a
                         href={publishedUrl}
@@ -440,11 +440,11 @@ Generate the complete HTML code now.`,
                       </p>
                       <div className="space-y-3 mb-6">
                         <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground/70" />
                           Code generated and previewed
                         </div>
                         <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <CheckCircle2 className="w-4 h-4 text-foreground/70" />
                           Saved to database
                         </div>
                       </div>

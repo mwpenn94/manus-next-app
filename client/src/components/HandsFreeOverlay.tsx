@@ -165,7 +165,7 @@ function HandsFreeOverlay({ state, isActive, onInterrupt, onDeactivate }: HandsF
               "bg-card/95 border-border/60",
               state === "listening" && "border-primary/40 shadow-primary/10",
               state === "speaking" && "border-primary/30 shadow-primary/5",
-              state === "processing" && "border-amber-500/30 shadow-amber-500/5",
+              state === "processing" && "border-border shadow-black/10",
             )}
           >
             {/* Waveform */}

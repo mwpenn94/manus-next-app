@@ -52,8 +52,8 @@ interface EventMeta {
 }
 
 const EVENT_META: Record<string, EventMeta> = {
-  tool_start: { icon: Zap, label: "Tool Call", color: "text-amber-400", bgColor: "bg-amber-500/10" },
-  tool_result: { icon: CheckCircle2, label: "Tool Result", color: "text-emerald-400", bgColor: "bg-emerald-500/10" },
+  tool_start: { icon: Zap, label: "Tool Call", color: "text-foreground", bgColor: "bg-muted/50" },
+  tool_result: { icon: CheckCircle2, label: "Tool Result", color: "text-foreground/70", bgColor: "bg-muted/50" },
   tool_error: { icon: XCircle, label: "Tool Error", color: "text-red-400", bgColor: "bg-red-500/10" },
   text_delta: { icon: MessageSquare, label: "Response", color: "text-blue-400", bgColor: "bg-blue-500/10" },
   thinking: { icon: Brain, label: "Thinking", color: "text-purple-400", bgColor: "bg-purple-500/10" },
@@ -277,7 +277,7 @@ function SessionList({ onSelect }: { onSelect: (taskId: number) => void }) {
       {sessions.map((session) => {
         const durationSec = session.durationMs ? (session.durationMs / 1000).toFixed(1) : "0";
         const statusColor =
-          session.status === "completed" ? "text-emerald-400" :
+          session.status === "completed" ? "text-foreground/70" :
           session.status === "running" ? "text-blue-400" :
           session.status === "error" ? "text-red-400" :
           "text-muted-foreground";

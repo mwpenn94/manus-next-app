@@ -29,8 +29,8 @@ interface PublishSheetProps {
 }
 
 const STATUS_CONFIG: Record<DeploymentStatus, { label: string; color: string; dot: string }> = {
-  live: { label: "Live", color: "text-emerald-500", dot: "bg-emerald-500" },
-  deploying: { label: "Deploying", color: "text-amber-500", dot: "bg-amber-500" },
+  live: { label: "Live", color: "text-foreground/70", dot: "bg-foreground/70" },
+  deploying: { label: "Deploying", color: "text-muted-foreground", dot: "bg-muted-foreground" },
   offline: { label: "Offline", color: "text-muted-foreground", dot: "bg-muted-foreground" },
   error: { label: "Error", color: "text-destructive", dot: "bg-destructive" },
 };
@@ -120,7 +120,7 @@ export default function PublishSheet({
                     className="p-1.5 rounded-md hover:bg-accent transition-colors shrink-0"
                   >
                     {copied ? (
-                      <Check className="w-4 h-4 text-emerald-500" />
+                      <Check className="w-4 h-4 text-foreground/70" />
                     ) : (
                       <Copy className="w-4 h-4 text-muted-foreground" />
                     )}
@@ -195,9 +195,9 @@ export default function PublishSheet({
                 className={cn(
                   "w-full py-3.5 rounded-xl text-base font-semibold transition-all",
                   publishing
-                    ? "bg-amber-600/80 text-white cursor-wait"
+                    ? "bg-muted text-foreground cursor-wait"
                     : hasUnpublishedChanges
-                    ? "bg-amber-600 text-white hover:bg-amber-700 shadow-lg shadow-amber-600/20"
+                    ? "bg-foreground text-background hover:opacity-80 shadow-lg"
                     : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
               >

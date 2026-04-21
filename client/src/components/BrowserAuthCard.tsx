@@ -36,7 +36,7 @@ function StatusBadge({ status }: { status: CrimsonHawkStatus }) {
       );
     case "connected":
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 text-xs text-foreground/70">
           <CheckCircle2 className="w-3 h-3" />
           Connected to Crimson-Hawk
         </span>
@@ -145,7 +145,7 @@ export default function BrowserAuthCard({ onChoice, disabled, className }: Brows
           className={cn(
             "w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors disabled:opacity-50",
             crimsonHawk.isConnected
-              ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+              ? "bg-muted/50 border border-border text-foreground/70"
               : "bg-card border border-border text-foreground hover:bg-accent"
           )}
         >

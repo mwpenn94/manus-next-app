@@ -718,7 +718,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/10">
                   <Bell className="w-4 h-4 text-primary" />
                   <span className="text-sm text-foreground">In-app notifications</span>
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">active</span>
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">active</span>
                 </div>
               </div>
             </motion.div>
@@ -748,9 +748,9 @@ export default function SettingsPage() {
                         <p className="text-xs text-muted-foreground">{secret.description}</p>
                       </div>
                       {secret.hasValue ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">set</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">set</span>
                       ) : (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium">not set</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground font-medium">not set</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -771,8 +771,8 @@ export default function SettingsPage() {
                 ))}
               </div>
 
-              <div className="mt-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
-                <p className="text-xs text-amber-400">
+              <div className="mt-4 p-3 rounded-lg bg-muted-foreground/5 border border-border">
+                <p className="text-xs text-foreground">
                   Secrets are encrypted at rest and only accessible to your server-side code. Never expose secrets in client-side code.
                 </p>
               </div>
@@ -851,8 +851,8 @@ export default function SettingsPage() {
                           <p className="text-sm font-medium text-foreground">{cap.name}</p>
                           <span className={cn(
                             "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                            cap.status === "live" ? "bg-emerald-500/15 text-emerald-400" :
-                            cap.status === "partial" ? "bg-amber-500/15 text-amber-400" :
+                            cap.status === "live" ? "bg-muted text-foreground/70" :
+                            cap.status === "partial" ? "bg-muted text-foreground" :
                             "bg-muted text-muted-foreground"
                           )}>
                             {cap.status === "live" ? (cap.enabled ? "live" : "disabled") :
@@ -861,7 +861,7 @@ export default function SettingsPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{cap.description}</p>
                         {cap.statusNote && (
-                          <p className="text-[10px] text-amber-400/70 mt-0.5 italic">{cap.statusNote}</p>
+                          <p className="text-[10px] text-foreground/70 mt-0.5 italic">{cap.statusNote}</p>
                         )}
                         <p className="text-[10px] text-muted-foreground mt-1 font-mono">{cap.package}</p>
                       </div>
@@ -906,15 +906,15 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-1.5">
                     <div className={cn(
                       "w-2 h-2 rounded-full",
-                      bridgeStatus === "connected" ? "bg-emerald-500 animate-pulse" :
-                      bridgeStatus === "connecting" ? "bg-amber-500 animate-pulse" :
+                      bridgeStatus === "connected" ? "bg-foreground/70 animate-pulse" :
+                      bridgeStatus === "connecting" ? "bg-muted-foreground animate-pulse" :
                       bridgeStatus === "error" ? "bg-red-500" :
                       "bg-muted-foreground"
                     )} />
                     <span className={cn(
                       "text-xs",
-                      bridgeStatus === "connected" ? "text-emerald-400" :
-                      bridgeStatus === "connecting" ? "text-amber-400" :
+                      bridgeStatus === "connected" ? "text-foreground/70" :
+                      bridgeStatus === "connecting" ? "text-foreground" :
                       bridgeStatus === "error" ? "text-red-400" :
                       "text-muted-foreground"
                     )}>
@@ -966,7 +966,7 @@ export default function SettingsPage() {
                       className={cn(
                         "px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
                         bridgeStatus === "connecting"
-                          ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                          ? "bg-muted text-foreground border border-border"
                           : "bg-primary text-primary-foreground hover:opacity-90"
                       )}
                     >
@@ -1011,7 +1011,7 @@ export default function SettingsPage() {
                           </span>
                           <span className={cn(
                             evt.type.includes("error") ? "text-red-400" :
-                            evt.type.includes("open") ? "text-emerald-400" :
+                            evt.type.includes("open") ? "text-foreground/70" :
                             "text-foreground/70"
                           )}>
                             {evt.type}

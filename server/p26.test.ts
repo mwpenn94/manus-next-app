@@ -146,16 +146,17 @@ describe("P26 — Mobile Responsive Polish", () => {
   describe("Home Page Mobile Layout", () => {
     const home = readFile("client/src/pages/Home.tsx");
 
-    it("suggestion cards use responsive grid (sm:grid-cols-2)", () => {
-      expect(home).toContain("sm:grid-cols-2");
+    it("suggestion cards use horizontal scroll layout", () => {
+      // P34: Cards now use horizontal scroll like Manus instead of grid
+      expect(home).toContain("overflow-x-auto");
     });
 
     it("input has max-width constraint", () => {
       expect(home).toContain("max-w-[640px]");
     });
 
-    it("category tabs wrap on mobile (flex-wrap)", () => {
-      expect(home).toContain("flex-wrap");
+    it("quick action chips are horizontally scrollable", () => {
+      expect(home).toContain("overflow-x-auto");
     });
   });
 });

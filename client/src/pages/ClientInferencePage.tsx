@@ -101,9 +101,9 @@ async function detectWebGPU(): Promise<WebGPUStatus> {
 function ModelStatusBadge({ status }: { status: KokoroModelStatus | "available" }) {
   switch (status) {
     case "ready":
-      return <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Ready</Badge>;
+      return <Badge className="text-[10px] bg-muted text-foreground/70 border-border">Ready</Badge>;
     case "loading":
-      return <Badge className="text-[10px] bg-amber-500/20 text-amber-400 border-amber-500/30 gap-1"><Loader2 className="w-2.5 h-2.5 animate-spin" />Loading</Badge>;
+      return <Badge className="text-[10px] bg-muted text-foreground border-border gap-1"><Loader2 className="w-2.5 h-2.5 animate-spin" />Loading</Badge>;
     case "error":
       return <Badge variant="destructive" className="text-[10px]">Error</Badge>;
     default:
@@ -345,11 +345,11 @@ export default function ClientInferencePage() {
                 <Loader2 className="w-3 h-3 animate-spin" /> Checking GPU...
               </Badge>
             ) : webgpu.supported ? (
-              <Badge className="gap-1 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+              <Badge className="gap-1 bg-muted text-foreground/70 border-border">
                 <Zap className="w-3 h-3" /> WebGPU: {webgpu.adapter}
               </Badge>
             ) : (
-              <Badge variant="outline" className="gap-1 border-amber-500/30 text-amber-400">
+              <Badge variant="outline" className="gap-1 border-border text-foreground">
                 <AlertCircle className="w-3 h-3" /> WASM Only (no WebGPU)
               </Badge>
             )}
@@ -371,8 +371,8 @@ export default function ClientInferencePage() {
           </Card>
           <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-foreground/70" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Models Ready</p>
@@ -382,8 +382,8 @@ export default function ClientInferencePage() {
           </Card>
           <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                {typeof navigator !== "undefined" && navigator.onLine ? <Wifi className="w-5 h-5 text-amber-400" /> : <WifiOff className="w-5 h-5 text-amber-400" />}
+              <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                {typeof navigator !== "undefined" && navigator.onLine ? <Wifi className="w-5 h-5 text-foreground" /> : <WifiOff className="w-5 h-5 text-foreground" />}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Network</p>
@@ -399,7 +399,7 @@ export default function ClientInferencePage() {
             <TabsTrigger value="models">Models</TabsTrigger>
             <TabsTrigger value="tts">
               TTS Demo
-              {kokoro.isReady && <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />}
+              {kokoro.isReady && <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-foreground/60 inline-block" />}
             </TabsTrigger>
             <TabsTrigger value="voice-clone">Voice Clone</TabsTrigger>
           </TabsList>
@@ -471,12 +471,12 @@ export default function ClientInferencePage() {
             </div>
 
             {!webgpu.supported && (
-              <Card className="mt-4 bg-amber-500/5 border-amber-500/20">
+              <Card className="mt-4 bg-muted-foreground/5 border-border">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 text-foreground shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-amber-400">WebGPU Not Detected</p>
+                      <p className="text-sm font-medium text-foreground">WebGPU Not Detected</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         WebGPU models require Chrome 113+ or Edge 113+ with hardware acceleration enabled.
                         Kokoro TTS will automatically fall back to WASM (slower but works everywhere).
@@ -495,7 +495,7 @@ export default function ClientInferencePage() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <Volume2 className="w-4 h-4 text-primary" /> Local Text-to-Speech
                   {kokoro.isReady && (
-                    <Badge className="text-[10px] bg-emerald-500/20 text-emerald-400 border-emerald-500/30 ml-2">
+                    <Badge className="text-[10px] bg-muted text-foreground/70 border-border ml-2">
                       Running Locally
                     </Badge>
                   )}
@@ -574,14 +574,14 @@ export default function ClientInferencePage() {
                 </div>
 
                 {kokoro.isReady && (
-                  <div className="flex items-center gap-2 text-xs text-emerald-400">
+                  <div className="flex items-center gap-2 text-xs text-foreground/70">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Using Kokoro TTS v1.0 ({kokoro.device === "webgpu" ? "WebGPU" : "WASM"} • {kokoro.dtype}) — 100% local, zero server dependency</span>
                   </div>
                 )}
 
                 {!kokoro.isReady && kokoro.status !== "loading" && (
-                  <p className="text-xs text-amber-400 flex items-center gap-1">
+                  <p className="text-xs text-foreground flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     Download the Kokoro TTS model from the Models tab for real local inference.
                   </p>
@@ -687,7 +687,7 @@ export default function ClientInferencePage() {
                 </div>
 
                 {getModelStatus("chatterbox-voice-clone").status !== "ready" && (
-                  <p className="text-xs text-amber-400 flex items-center gap-1">
+                  <p className="text-xs text-foreground flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     Download the Chatterbox Voice Personalization model from the Models tab first.
                   </p>

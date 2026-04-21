@@ -54,7 +54,7 @@ export default function CheckpointCard({
             {description}
           </p>
           {isLatest && (
-            <span className="text-[10px] text-emerald-500 font-medium">Latest</span>
+            <span className="text-[10px] text-foreground/70 font-medium">Latest</span>
           )}
         </div>
 

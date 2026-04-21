@@ -75,7 +75,7 @@ const SHARE_TARGETS = [
     id: "whatsapp",
     label: "WhatsApp",
     icon: WhatsAppIcon,
-    color: "bg-emerald-500 text-white",
+    color: "bg-foreground text-background",
     action: (domain: string) => {
       window.open(`https://wa.me/?text=${encodeURIComponent(`https://${domain}`)}`, "_blank");
     },
