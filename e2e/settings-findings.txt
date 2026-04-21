@@ -1,0 +1,13 @@
+Settings page loads correctly even without auth!
+Shows: SETTINGS header, tabs: Account, General, Notifications, Secrets, Capabilities, Cloud Browser, Data Controls, Bridge
+General tab is active showing: Notifications, Sound effects, Auto-expand actions, Compact mode, Self-discovery mode, Hands-free audio, Offline mode, TTS Language
+The "General" text IS visible as both a tab label and a page heading.
+
+The test failure must be because the test is checking for "General" text but the page
+has multiple instances. The getByText("General") should work since it's visible.
+
+Wait - the test checks: hasGeneral || hasSignIn || hasSettings || hasHome
+All of these should match since "General" IS visible. Let me check the error more carefully.
+
+Actually the issue might be that the page takes longer to load. The 3000ms waitForTimeout
+may not be enough. The settings page needs to render the full layout.

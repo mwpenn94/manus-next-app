@@ -125,9 +125,11 @@ describe("P33: ProfilePage structure", () => {
     expect(content).toContain("Sign Out");
   });
 
-  it("has avatar with camera overlay", () => {
+  it("has avatar with camera overlay and real upload", () => {
     expect(content).toContain("Camera");
-    expect(content).toContain("Avatar upload coming soon");
+    // Should have real upload functionality, not "coming soon"
+    expect(content).toContain("/api/upload");
+    expect(content).not.toContain("Avatar upload coming soon");
   });
 });
 

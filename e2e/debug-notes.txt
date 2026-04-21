@@ -1,0 +1,24 @@
+Debug notes for E2E failures:
+
+1. Model selector: "Manus Next Max" is visible but test used "text=Manus Next" which matches too broadly
+   - Fix: Use more specific selector
+
+2. Task creation: Submit button may not be found by title="Submit" 
+   - The arrow up button may not have title attribute
+   - Fix: Use different selector
+
+3. Sidebar: Search, New task, nav links, filter tabs all visible in screenshot
+   - But tests fail - likely the selectors are wrong or timing issue
+   - "Search tasks & messages..." is visible
+   - "New task" is visible
+   - "All | Running | Done | Error" tabs visible
+   - "Analytics | Memory | Projects | Library | Schedules" visible
+   - Fix: Check exact selectors
+
+4. Keyboard shortcuts: ? key (Shift+/) didn't open overlay
+   - Screenshot shows normal home page, no overlay
+   - The ? key handler may not fire when clicking h1 (which might not exist or be focusable)
+   - Fix: Click on a non-interactive area first, then send the key
+
+5. Settings: Page may redirect to login when unauthenticated
+   - Fix: Accept that settings may require auth

@@ -86,7 +86,33 @@ export default function ProfilePage() {
                   </div>
                   <button
                     className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => toast.info("Avatar upload coming soon")}
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = "image/*";
+                      input.onchange = async (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error("Image must be under 5MB");
+                          return;
+                        }
+                        toast.info("Uploading avatar...");
+                        try {
+                          const formData = new FormData();
+                          formData.append("file", file);
+                          const res = await fetch("/api/upload", { method: "POST", body: file, headers: { "Content-Type": file.type, "X-Filename": file.name } });
+                          if (res.ok) {
+                            toast.success("Avatar uploaded");
+                          } else {
+                            toast.error("Upload failed");
+                          }
+                        } catch {
+                          toast.error("Upload failed");
+                        }
+                      };
+                      input.click();
+                    }}
                   >
                     <Camera className="w-5 h-5 text-white" />
                   </button>

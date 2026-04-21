@@ -1,0 +1,19 @@
+Layout findings from E2E screenshots:
+
+The sidebar is clearly visible in the screenshot but uses div-based layout, not an aside element.
+The sidebar contains: search input, filter tabs, new task button, task list, nav links.
+The sidebar is on the left side, approximately 280px wide.
+
+Key selectors that should work:
+- Search: input with placeholder "Search tasks & messages..."
+- New task: text "New task" 
+- Filter tabs: buttons with text "All", "Running", "Done", "Error"
+- Nav: text "Analytics", "Memory", "Projects", "Library", "Schedules"
+
+The sidebar is a div, not aside. Need to use different selectors.
+Task creation: the submit button may not navigate to /task/ because the task creation
+requires the agent to start, which needs server-side processing. In E2E without auth,
+the task may be created locally but the URL change depends on the TaskContext.
+
+Settings page: may require authentication to load.
+File upload: the plus icon may use a different SVG class.

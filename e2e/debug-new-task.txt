@@ -1,0 +1,16 @@
+The "New task" button IS visible in the screenshot at the top of the sidebar.
+It shows "+ New task" with a keyboard shortcut badge.
+The issue is that getByText("New task") within the nav may not match because
+the text includes the + icon and the ⌘K badge.
+
+The "New task" text is inside a button that also contains an SVG plus icon
+and a keyboard shortcut badge. The getByText may be looking for exact text
+or the text node may be split across elements.
+
+Fix: Use a more flexible selector like getByRole("button") with name containing "New task",
+or use a locator that matches partial text.
+
+Settings page: Shows "Sign in with Manus" at the bottom of sidebar.
+When navigating to /settings, it may redirect to login or show a blank page.
+The test expects "General", "Sign in", "Settings", or h1 to be visible.
+Need to check what the settings page actually shows when unauthenticated.

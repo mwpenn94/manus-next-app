@@ -1,0 +1,13 @@
+Settings page loads correctly showing:
+- SETTINGS header
+- Tab: Account, General (active), Notifications, Secrets, Capabilities, Cloud Browser, Data Controls, Bridge
+- Content: "General" heading, "Application preferences. Sign in to persist your settings."
+- Toggle settings: Notifications, Sound effects, Auto-expand actions, Compact mode, Self-discovery mode, Hands-free audio, Offline mode
+- TTS Language section
+
+The issue: getByText("General") likely finds MULTIPLE matches (tab label + heading) and throws strict mode error.
+getByText("Settings") finds "SETTINGS" header which is uppercase.
+getByText("Sign in") - there's "Sign in with Manus" in sidebar and "Sign in to persist" in content.
+
+Fix: Use page.locator("text=General").first().isVisible() instead of getByText which is strict.
+Or use page.getByRole("heading", { name: "General" }).isVisible()

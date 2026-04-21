@@ -1,0 +1,21 @@
+E2E Screenshot Analysis (2026-04-21):
+- Sidebar: "manus next" logo top-left, search "Search tasks & messages...", filter tabs "All | Running 5 | Done 32 | Error"
+- "+ New task" button with ⌘K shortcut badge
+- Task list: 3 tasks visible with timestamps
+- Nav items: "MANUS NEXT" section header, Analytics, Memory, Projects, Library, Share with a friend
+- Bottom icons: user avatar "MP", "Mi...", power icon, settings gear, keyboard icon, logout arrow
+- Main: "Manus Next Max" model selector top-center, "Credits" button top-right
+- Greeting: "Hello, Michael." with "What can I do for you?"
+- Input: "Give Manus Next a task to work on..." with +, mic, submit buttons
+- Quick actions: "Build a website", "Create slides", "Write a document", "Generate images", "Wide Research"
+- Suggestion cards: Research AI Agent Architectures, Analyze Market Trends, Build a Product Landing Page
+- POWERED BY badges: browser, computer, document, deck, billing, share, replay, scheduled, webapp-builder, client-inference, desktop, sync, bridge
+
+Key text selectors for E2E:
+- Model selector: "Manus Next Max" (not "Manus Next")
+- Greeting: "Hello, Michael."
+- Search: "Search tasks & messages..."
+- New task: "New task" (not "New task" with +)
+- Filter tabs: "All", "Running", "Done", "Error" (not just "Done")
+- Nav: "Analytics", "Memory", "Projects", "Library"
+- Powered by: "POWERED BY" (uppercase)

@@ -1,0 +1,10 @@
+The Enter key test navigates successfully to a task page, but the task page
+makes an API call (likely to the agent stream endpoint) which hits a CloudFront 403 error.
+This is because the E2E test is running against the dev server which proxies to the
+production API, and without authentication the API returns a 403.
+
+The test timeout happens because after navigation, the page shows a 403 CloudFront error
+instead of the task view, so the textarea locator is no longer available.
+
+Fix: The test should just verify that navigation happened (URL changed to /task/),
+not try to interact with the page after navigation. The 403 is expected without auth.

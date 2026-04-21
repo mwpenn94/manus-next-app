@@ -1,0 +1,19 @@
+E2E Screenshot Analysis - Unauthenticated State:
+- When not logged in, greeting shows "Hello." (no name)
+- Model selector shows "Manus Next Max" with dropdown arrow
+- Credits shows "-- credits" (not "5,050 credits")
+- Search shows "Search tasks & messages..."
+- Filter tabs: "All | Running | Done | Error" (no counts)
+- "+ New task" with keyboard shortcut badge
+- Empty state: clipboard icon with "Create a new task to get started"
+- Nav items: Analytics, Memory, Projects, Library, Schedules, "Sign in with Manus"
+- No task list (unauthenticated)
+- Quick actions same as authenticated
+- Suggestion cards same as authenticated
+
+Key differences from authenticated state:
+1. "Hello." instead of "Hello, Michael."
+2. "-- credits" instead of "5,050 credits"
+3. No tasks in list
+4. "Sign in with Manus" instead of user avatar
+5. Filter tabs have no counts
