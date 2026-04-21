@@ -176,7 +176,13 @@ async function startServer() {
   // Skip JSON parsing for /api/upload (binary) and /api/stripe/webhook (raw) to allow raw body reading
   app.use((req, res, next) => {
     if (req.path === "/api/upload" || req.path === "/api/stripe/webhook") return next();
-    express.json({ limit: "50mb" })(req, res, next);
+    express.json({ limit: "50mb" })(req, res, (err) => {
+      if (err && err.type === "entity.parse.failed") {
+        // Silently handle malformed JSON (e.g., debug-collector sending "[unserializable proxy]")
+        return res.status(400).json({ error: "Invalid JSON body" });
+      }
+      next(err);
+    });
   });
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // Storage proxy for /manus-storage/* paths

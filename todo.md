@@ -1906,3 +1906,24 @@
 - [x] Fix insufficient color contrast on home page: #28282b foreground on #0b0b0e background (1.33:1, needs 4.5:1) — root cause: browser default placeholder opacity (~42%) on oklch(0.63) muted-foreground. Fixed by boosting to oklch(0.72) + adding ::placeholder { opacity: 1 } override. New contrast: 7.93:1
 - [x] Fix insufficient color contrast on home page: #3f3e42 foreground on #09090c background (1.87:1, needs 4.5:1) — root cause: browser default placeholder opacity (~50%) on sidebar search input. Fixed by boosting sidebar-foreground to oklch(0.72) + placeholder opacity override. New contrast: 8.03:1
 - [x] Audit all muted-foreground / secondary text CSS variables in dark theme for WCAG AA compliance — muted-foreground 0.63→0.72, sidebar-foreground 0.67→0.72, both now 7.9-8.0:1 contrast ratio
+
+## Next Steps — All Three
+
+### 1. Live Test "Demonstrate Each" Fix
+- [ ] Navigate to the app in browser and send "What can you do? Demonstrate each"
+- [ ] Verify agent continues past 3 tools without stopping
+- [ ] Confirm mid-enumeration continuation works
+
+### 2. Dark/Light Theme Toggle
+- [x] Add theme toggle button to the app header (sun/moon icon) — added to collapsed-sidebar header bar
+- [x] Wire toggle to ThemeProvider context — cycleTheme already wired in sidebar footer + header + keyboard shortcut (Cmd+Shift+T)
+- [x] Persist theme preference to localStorage and user_preferences DB — localStorage via ThemeContext, DB via Settings page savePrefsMutation
+- [x] Ensure smooth transition between themes — ThemeProvider already handles system/light/dark with CSS variables
+
+### 3. Stripe Billing Flow
+- [x] Verify products.ts has correct subscription tiers (Pro Monthly $39, Pro Yearly $374, Team Monthly $99, 100 Credits $10)
+- [x] Verify checkout session creation works (createCheckoutSession with metadata, promotion codes, dynamic URLs)
+- [x] Verify webhook handler processes test events (express.raw before json parser, signature verification, test event detection, fulfillment)
+- [x] Test billing page displays plans and payment history (BillingPage.tsx with real usage stats, plan cards, payment history from Stripe API)
+- [x] Ensure credits display updates after subscription change (sidebar credits counter + subscription status banner)
+- [x] Fix server JSON parse error: body-parser SyntaxError from debug-collector sending "[unserializable proxy]" — added graceful error handler

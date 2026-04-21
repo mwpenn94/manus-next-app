@@ -1072,7 +1072,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               manus next
             </span>
           </Link>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={cycleTheme}
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}`}
+              aria-label={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}. Click to cycle.`}
+            >
+              {preference === 'system' ? <Monitor className="w-4 h-4" /> : preference === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <NotificationCenter />
           </div>
         </header>
