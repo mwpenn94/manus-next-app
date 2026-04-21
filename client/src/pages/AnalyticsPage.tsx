@@ -146,9 +146,9 @@ export default function AnalyticsPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 md:mb-8">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <BarChart3 className="w-5 h-5 text-primary" />
@@ -160,7 +160,7 @@ export default function AnalyticsPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {[7, 14, 30, 60, 90].map((d) => (
               <button
                 key={d}
@@ -209,9 +209,9 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           {/* Task Activity Trend — spans 2 cols */}
-          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-5">
+          <div className="lg:col-span-2 bg-card border border-border rounded-xl p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium text-foreground flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />

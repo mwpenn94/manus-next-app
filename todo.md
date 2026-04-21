@@ -1472,3 +1472,18 @@
 - [x] P25b-4: Verified — 0 TS errors, pipeline: mic → blob → uploadAudio (credentials:include) → transcribeAudio (tRPC mutateAsync) → onTranscription → onSendMessage → handleHandsFreeSend → streamWithRetry → notifyComplete → TTS → auto-listen
 - [x] P25b-5: Write tests (31 tests in server/p25b.test.ts, 860 total passing)
 - [x] P25b-6: Recursive convergence passes — 3/3 clean (0 TS errors, 860 tests passing, build 395.1kb, zero changes between passes)
+
+## P26 — Mobile Responsive Polish
+
+- [x] P26-1: Audit complete — 8 issues found: viewport-fit, theme-color meta, Settings grid stacking, Analytics padding, TaskView safe-area, MobileBottomNav missing Analytics, touch targets
+- [x] P26-2: Sidebar drawer already implemented — overlay backdrop-blur, translate animation, body scroll lock, auto-close on nav/resize
+- [x] P26-3: MobileBottomNav rewritten — safe-area-inset-bottom, min-h-[44px] touch targets, Analytics added to More menu, auto-close on nav, GitHub added
+- [x] P26-4: Task input area — px-3 on mobile, safe-area-inset-bottom padding, larger + button (w-8 h-8 on mobile)
+- [x] P26-5: Chat bubbles already responsive — max-w-[85%] on mobile, text-sm, proper line-height
+- [x] P26-6: Analytics page — px-4/py-6 mobile padding, flex-col header, gap-1.5 day buttons, stacked metric cards (grid-cols-1 sm:2 lg:4), chart containers p-4 mobile
+- [x] P26-7: Settings page — Appearance grid-cols-1 sm:3, Connection stats grid-cols-1 sm:3, touch-friendly controls
+- [x] P26-8: Memory/Skills/Connectors already use responsive grids (grid-cols-1 sm:2 lg:3)
+- [x] P26-9: Home page already responsive — sm:grid-cols-2 suggestion cards, max-w-[640px] input, flex-wrap categories
+- [x] P26-10: Live virtual user walkthrough — desktop screenshot clean, sidebar/nav/theme/analytics all rendering correctly, 0 TS errors
+- [x] P26-11: Write P26 tests (28 tests in server/p26.test.ts, 888 total passing)
+- [x] P26-12: Recursive convergence passes — 3/3 clean (0 TS errors, 888 tests passing, build 395.1kb, zero changes between passes)

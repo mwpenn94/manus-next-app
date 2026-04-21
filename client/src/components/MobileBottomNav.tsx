@@ -1,15 +1,19 @@
 /**
  * MobileBottomNav — Fixed bottom navigation bar for mobile devices.
- * Shows on screens < md breakpoint. Provides quick access to Home, Tasks, and a "More" menu
- * that exposes all sidebar destinations.
+ * Shows on screens < md breakpoint. Provides quick access to Home, Tasks, Billing,
+ * and a "More" menu that exposes all sidebar destinations including Analytics.
+ *
+ * Uses env(safe-area-inset-bottom) for iOS notch/home-indicator devices.
+ * Touch targets are minimum 44px for accessibility.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
-  Home, ListTodo, CreditCard, Settings, MoreHorizontal, X,
+  Home, ListTodo, CreditCard, MoreHorizontal, X,
   Brain, FolderOpen, Clock, Film, Puzzle, Presentation,
   Paintbrush, FileText, Plug, Wrench, Users, Monitor,
-  MessageSquare, Video, BookOpen,
+  MessageSquare, Video, BookOpen, Settings, BarChart3,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -28,6 +32,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 ];
 
 const MORE_ITEMS: NavItem[] = [
+  { path: "/analytics", label: "Analytics", icon: BarChart3 },
   { path: "/memory", label: "Memory", icon: Brain },
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/library", label: "Library", icon: BookOpen },
@@ -38,6 +43,7 @@ const MORE_ITEMS: NavItem[] = [
   { path: "/design", label: "Design", icon: Paintbrush },
   { path: "/meetings", label: "Meetings", icon: FileText },
   { path: "/connectors", label: "Connectors", icon: Plug },
+  { path: "/github", label: "GitHub", icon: GitBranch },
   { path: "/webapp-builder", label: "App Builder", icon: Wrench },
   { path: "/team", label: "Team", icon: Users },
   { path: "/computer", label: "Computer", icon: Monitor },
@@ -50,6 +56,11 @@ export default function MobileBottomNav() {
   const [location, navigate] = useLocation();
   const { tasks } = useTask();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Close more menu on navigation
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location]);
 
   const isActive = (item: NavItem) => {
     if (item.matchPrefix) {
@@ -80,12 +91,15 @@ export default function MobileBottomNav() {
 
       {/* More menu panel */}
       {moreOpen && (
-        <div className="md:hidden fixed bottom-14 left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl max-h-[60vh] overflow-y-auto safe-area-bottom">
+        <div
+          className="md:hidden fixed left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl max-h-[60vh] overflow-y-auto"
+          style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))" }}
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-card/95 backdrop-blur-md">
             <span className="text-sm font-medium text-foreground">More</span>
             <button
               onClick={() => setMoreOpen(false)}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground"
+              className="p-2 -mr-1 rounded-md text-muted-foreground hover:text-foreground active:scale-95"
               aria-label="Close menu"
             >
               <X className="w-4 h-4" />
@@ -102,7 +116,7 @@ export default function MobileBottomNav() {
                     setMoreOpen(false);
                   }}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 py-3 rounded-lg transition-colors active:scale-95",
+                    "flex flex-col items-center justify-center gap-1.5 py-3 min-h-[56px] rounded-lg transition-colors active:scale-95",
                     active
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -117,8 +131,12 @@ export default function MobileBottomNav() {
         </div>
       )}
 
-      {/* Bottom nav bar */}
-      <nav aria-label="Mobile bottom navigation" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-bottom">
+      {/* Bottom nav bar — with safe-area-inset-bottom for iOS */}
+      <nav
+        aria-label="Mobile bottom navigation"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         <div className="flex items-center justify-around h-14 px-2">
           {PRIMARY_ITEMS.map((item) => {
             const active = isActive(item);
@@ -134,7 +152,7 @@ export default function MobileBottomNav() {
                   setMoreOpen(false);
                 }}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 w-16 h-full rounded-lg transition-colors active:scale-95",
+                  "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] h-full rounded-lg transition-colors active:scale-95",
                   active
                     ? "text-primary"
                     : "text-muted-foreground"
@@ -150,7 +168,7 @@ export default function MobileBottomNav() {
           <button
             onClick={() => setMoreOpen(!moreOpen)}
             className={cn(
-              "flex flex-col items-center justify-center gap-0.5 w-16 h-full rounded-lg transition-colors active:scale-95",
+              "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] h-full rounded-lg transition-colors active:scale-95",
               moreOpen || isMoreActive
                 ? "text-primary"
                 : "text-muted-foreground"

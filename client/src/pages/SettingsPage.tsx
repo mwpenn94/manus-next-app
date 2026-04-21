@@ -640,7 +640,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-3">
                   Choose your preferred color theme. Your preference is saved automatically.
                 </p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {([
                     { value: "system" as const, label: "System", icon: Monitor, description: "Follow OS preference" },
                     { value: "light" as const, label: "Light", icon: Sun, description: "Warm Light theme" },
@@ -985,7 +985,7 @@ export default function SettingsPage() {
 
                 {/* Connection quality stats */}
                 {bridgeStatus === "connected" && (
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { label: "Latency", value: quality.latencyMs ? `${quality.latencyMs}ms` : "—" },
                       { label: "Reconnects", value: String(quality.reconnectCount ?? 0) },

@@ -2290,7 +2290,8 @@ export default function TaskView() {
 
         {/* Input */}
         <div
-          className="px-4 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0 relative"
+          className="px-3 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0 relative"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
