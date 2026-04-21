@@ -433,7 +433,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             >
               {f.label}
               {f.count !== undefined && f.count > 0 && statusFilter !== f.id && (
-                <span className="ml-0.5 opacity-60">{f.count}</span>
+                <span className="ml-0.5 text-muted-foreground">{f.count}</span>
               )}
             </button>
           ))}
@@ -468,7 +468,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         ) : displayedTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <div className="text-3xl mb-3 opacity-40">
+            <div className="text-3xl mb-3 opacity-40" aria-hidden="true">
               {searchQuery ? "🔍" : statusFilter !== "all" ? "📋" : "📋"}
             </div>
             <p className="text-xs">

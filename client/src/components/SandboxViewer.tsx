@@ -374,7 +374,7 @@ export default function SandboxViewer({
                       <div className="text-center">
                         <MonitorSmartphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
                         <p className="text-sm">Waiting for agent activity...</p>
-                        <p className="text-xs mt-1 opacity-60">
+                        <p className="text-xs mt-1 text-muted-foreground">
                           Code and file edits will appear here
                         </p>
                       </div>

@@ -14,7 +14,7 @@ interface Props {
 function ShortcutRow({ shortcut }: { shortcut: ShortcutAction }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-xs text-foreground/80">{shortcut.description}</span>
+      <span className="text-xs text-foreground">{shortcut.description}</span>
       <kbd className="text-[10px] font-mono bg-muted border border-border px-2 py-0.5 rounded text-muted-foreground min-w-[40px] text-center">
         {shortcut.key}
       </kbd>
@@ -79,7 +79,7 @@ export default function KeyboardShortcutsDialog({ open, onClose }: Props) {
             </div>
             <div className="px-4 py-2.5 border-t border-border">
               <p className="text-[10px] text-muted-foreground text-center">
-                Press <kbd className="font-mono bg-muted px-1 rounded">⌘/</kbd> to toggle this dialog
+                Press <kbd className="font-mono bg-muted px-1 rounded">?</kbd> or <kbd className="font-mono bg-muted px-1 rounded">⌘/</kbd> to toggle this dialog
               </p>
             </div>
           </motion.div>

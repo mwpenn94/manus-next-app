@@ -1,8 +1,8 @@
 /**
- * BillingPage — Real Usage Dashboard
+ * BillingPage — Usage Dashboard + Payment History
  *
- * Shows actual task statistics from the database.
- * No hardcoded demo data. No fake transactions.
+ * Shows actual task statistics, subscription status, plan selection,
+ * and payment history fetched from Stripe API.
  */
 import { useMemo, useState } from "react";
 import {
@@ -15,6 +15,9 @@ import {
   LogIn,
   CreditCard,
   ExternalLink,
+  Receipt,
+  Crown,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -42,6 +45,19 @@ export default function BillingPage() {
   const productsQuery = trpc.payment.products.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+
+  // Payment history
+  const historyQuery = trpc.payment.history.useQuery(undefined, {
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
+  // Subscription details
+  const subQuery = trpc.payment.subscription.useQuery(undefined, {
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
   const checkoutMutation = trpc.payment.createCheckout.useMutation({
     onSuccess: (data) => {
       toast.success("Redirecting to checkout...");
@@ -64,6 +80,9 @@ export default function BillingPage() {
     if (!tasksQuery.data) return [];
     return tasksQuery.data.slice(0, 10);
   }, [tasksQuery.data]);
+
+  const payments = historyQuery.data?.payments ?? [];
+  const subscription = subQuery.data;
 
   // Unauthenticated state
   if (!isAuthenticated && !authLoading) {
@@ -110,10 +129,45 @@ export default function BillingPage() {
           transition={{ duration: 0.3 }}
         >
           <h1 className="text-2xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-            Usage
+            Usage & Billing
           </h1>
-          <p className="text-sm text-muted-foreground">Your task activity and usage statistics.</p>
+          <p className="text-sm text-muted-foreground">Your task activity, subscription, and payment history.</p>
         </motion.div>
+
+        {/* Active Subscription Banner */}
+        {subscription && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+            className="mt-5 bg-primary/5 border border-primary/20 rounded-xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Crown className="w-5 h-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">Active Subscription</h3>
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize",
+                    subscription.status === "active" ? "bg-emerald-500/10 text-emerald-400" :
+                    subscription.status === "trialing" ? "bg-blue-500/10 text-blue-400" :
+                    "bg-amber-500/10 text-amber-400"
+                  )}>
+                    {subscription.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ${(subscription.plan.amount / 100).toFixed(2)}/{subscription.plan.interval}
+                  {subscription.cancelAtPeriodEnd && " · Cancels at period end"}
+                  {" · Renews "}
+                  {new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
@@ -171,7 +225,7 @@ export default function BillingPage() {
           </motion.div>
         )}
 
-        {/* Plans & Payments */}
+        {/* Plans & Credits */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -212,12 +266,81 @@ export default function BillingPage() {
           </p>
         </motion.div>
 
-        {/* Recent Activity */}
+        {/* Payment History */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.3 }}
           className="mt-6"
+        >
+          <h3 className="text-sm font-medium text-foreground mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+            <Receipt className="w-4 h-4 inline mr-2" />
+            Payment History
+          </h3>
+          {historyQuery.isLoading ? (
+            <div className="bg-card border border-border rounded-xl p-8 text-center">
+              <Loader2 className="w-5 h-5 text-muted-foreground animate-spin mx-auto" />
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl p-8 text-center">
+              <Receipt className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No payments yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">Purchases and subscriptions will appear here.</p>
+            </div>
+          ) : (
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              {payments.map((payment: any, i: number) => (
+                <div key={payment.id} className={cn(
+                  "flex items-center justify-between px-4 py-3",
+                  i < payments.length - 1 && "border-b border-border/50"
+                )}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize shrink-0",
+                      payment.status === "succeeded" ? "bg-emerald-500/10 text-emerald-400" :
+                      payment.status === "pending" ? "bg-amber-500/10 text-amber-400" :
+                      "bg-red-500/10 text-red-400"
+                    )}>
+                      {payment.status}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-sm text-foreground block truncate">
+                        {payment.description || "Payment"}
+                      </span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(payment.created * 1000).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    <span className="text-sm font-semibold text-foreground tabular-nums">
+                      ${(payment.amount / 100).toFixed(2)} {payment.currency.toUpperCase()}
+                    </span>
+                    {payment.receiptUrl && (
+                      <a
+                        href={payment.receiptUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title="View receipt"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.35 }}
+          className="mt-6 mb-8"
         >
           <h3 className="text-sm font-medium text-foreground mb-3" style={{ fontFamily: "var(--font-heading)" }}>
             Recent Activity

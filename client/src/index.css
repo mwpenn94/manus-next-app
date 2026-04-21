@@ -59,13 +59,13 @@
   --secondary: oklch(0.2 0.005 60);
   --secondary-foreground: oklch(0.78 0.01 70);
   --muted: oklch(0.22 0.005 60);
-  --muted-foreground: oklch(0.72 0.01 70);
+  --muted-foreground: oklch(0.78 0.01 70);
   --accent: oklch(0.22 0.005 60);
   --accent-foreground: oklch(0.9 0.01 70);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.25 0.005 60);
-  --input: oklch(0.2 0.005 60);
+  --border: oklch(0.32 0.005 60);
+  --input: oklch(0.25 0.005 60);
   --ring: oklch(0.72 0.1 75);
   --chart-1: oklch(0.72 0.1 75);
   --chart-2: oklch(0.6 0.12 45);
@@ -78,7 +78,7 @@
   --sidebar-primary-foreground: oklch(0.13 0.005 60);
   --sidebar-accent: oklch(0.18 0.005 60);
   --sidebar-accent-foreground: oklch(0.9 0.01 70);
-  --sidebar-border: oklch(0.22 0.005 60);
+  --sidebar-border: oklch(0.30 0.005 60);
   --sidebar-ring: oklch(0.72 0.1 75);
 }
 
@@ -89,6 +89,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    color-scheme: dark;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);

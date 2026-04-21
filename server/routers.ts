@@ -1935,6 +1935,16 @@ export const appRouter = router({
           origin: input.origin,
         });
       }),
+    history: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.stripeCustomerId) return { payments: [] };
+      const { getPaymentHistory } = await import("./stripe");
+      return getPaymentHistory(ctx.user.stripeCustomerId);
+    }),
+    subscription: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.stripeSubscriptionId) return null;
+      const { getSubscriptionDetails } = await import("./stripe");
+      return getSubscriptionDetails(ctx.user.stripeSubscriptionId);
+    }),
   }),
   // ── Video Generation (#62) ────────────────────────────────────────────────────────
   video: router({

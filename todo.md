@@ -1401,3 +1401,14 @@
 ## Bug Fix — Accessibility Round 2 (axe-core persistent)
 - [x] Replace all text-muted-foreground opacity modifiers (/60, /50, /40, /30, /20, /80) with solid text-muted-foreground across 22 files
 - [x] Fix remaining landmark issue — top bar wrapped in <header>, sidebar uses <nav>, <main> wraps page content
+
+## P20 — Stripe Checkout + Keyboard Shortcuts Panel
+- [x] P20-1: products.ts already exists with 4 products (Pro Monthly, Pro Yearly, Team Monthly, 100 Credits)
+- [x] P20-2: payment.createCheckout already implemented with metadata, customer_email, promotion codes
+- [x] P20-3: /api/stripe/webhook already implemented with constructEvent, test event detection, fulfillment
+- [x] P20-4: BillingPage enhanced with subscription status banner (Crown icon), plan cards with checkout buttons
+- [x] P20-5: Payment history section added — fetches charges from Stripe API, shows status/amount/date/receipt link
+- [x] P20-6: Keyboard shortcuts panel — ? key trigger added (no modifier, not in input), 8 shortcuts listed, dialog footer updated
+- [x] P20-7: Write P20 tests covering Stripe integration and shortcuts panel (39 tests in p20.test.ts, 656 total passing)
+- [x] P20-8: Manus UI/UX parity audit + accessibility round 3 (muted-fg 0.78, border 0.32, sidebar-border 0.30, color-scheme: dark) + 3 consecutive zero-change convergence passes, 656 tests passing
+- [x] P20-9: Recursive convergence passes — 3 consecutive zero-change achieved, 656 tests passing

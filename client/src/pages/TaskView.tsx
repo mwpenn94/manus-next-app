@@ -751,7 +751,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div className="text-center text-muted-foreground p-8">
                   <Globe className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No browser activity yet</p>
-                  <p className="text-[10px] mt-1 opacity-60">Screenshots will appear here when the agent browses the web</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">Screenshots will appear here when the agent browses the web</p>
                 </div>
               )}
             </div>
@@ -840,7 +840,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div>
                   <Code className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No code artifacts yet</p>
-                  <p className="text-[10px] mt-1 opacity-60">Code files will appear here as the agent creates them</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">Code files will appear here as the agent creates them</p>
                 </div>
               </div>
             )}
@@ -858,7 +858,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div>
                   <Terminal className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No terminal output yet</p>
-                  <p className="text-[10px] mt-1 opacity-60">Terminal commands will appear here as the agent executes them</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">Terminal commands will appear here as the agent executes them</p>
                 </div>
               </div>
             )}
@@ -942,7 +942,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div>
                   <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No generated images yet</p>
-                  <p className="text-[10px] mt-1 opacity-60">Images will appear here when the agent generates them</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">Images will appear here when the agent generates them</p>
                 </div>
               </div>
             )}
@@ -1038,7 +1038,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                           <div>
                             <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
                             <p className="text-xs">Preview not available</p>
-                            <p className="text-[10px] mt-1 opacity-60">Click download to view this file</p>
+                            <p className="text-[10px] mt-1 text-muted-foreground">Click download to view this file</p>
                           </div>
                         </div>
                       )}
@@ -1051,7 +1051,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div>
                   <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No documents yet</p>
-                  <p className="text-[10px] mt-1 opacity-60">PDF, DOCX, and Markdown files will appear here</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">PDF, DOCX, and Markdown files will appear here</p>
                 </div>
               </div>
             )}

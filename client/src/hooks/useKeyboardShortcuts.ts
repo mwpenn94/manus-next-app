@@ -24,6 +24,7 @@ export const SHORTCUTS: ShortcutAction[] = [
   { key: "⌘N", label: "New Task", description: "Create a new task", category: "task" },
   { key: "⌘/", label: "Shortcuts", description: "Toggle shortcut help", category: "general" },
   { key: "⌘⇧S", label: "Sidebar", description: "Toggle sidebar", category: "navigation" },
+  { key: "?", label: "Help", description: "Show keyboard shortcuts", category: "general" },
   { key: "Esc", label: "Escape", description: "Close dialog / cancel", category: "general" },
   { key: "Enter", label: "Send", description: "Send message (in chat)", category: "editing" },
   { key: "⇧Enter", label: "New Line", description: "New line in message", category: "editing" },
@@ -73,6 +74,13 @@ export function useKeyboardShortcuts(options?: {
       if (isMod && e.shiftKey && e.key === "S") {
         e.preventDefault();
         options?.onToggleSidebar?.();
+        return;
+      }
+
+      // ? key (no modifier, not in input): Toggle shortcuts help
+      if (e.key === "?" && !isMod && !isInput) {
+        e.preventDefault();
+        setShowHelp((prev) => !prev);
         return;
       }
 

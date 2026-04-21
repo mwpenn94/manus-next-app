@@ -179,3 +179,67 @@ export function listProducts() {
     interval: p.interval,
   }));
 }
+
+/**
+ * Get payment history for a user by their Stripe customer ID
+ * Fetches directly from Stripe API — no local duplication
+ */
+export async function getPaymentHistory(stripeCustomerId: string): Promise<{
+  payments: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    description: string | null;
+    created: number;
+    receiptUrl: string | null;
+  }>;
+}> {
+  const stripe = getStripe();
+  const charges = await stripe.charges.list({
+    customer: stripeCustomerId,
+    limit: 20,
+  });
+
+  return {
+    payments: charges.data.map((c) => ({
+      id: c.id,
+      amount: c.amount,
+      currency: c.currency,
+      status: c.status,
+      description: c.description,
+      created: c.created,
+      receiptUrl: c.receipt_url,
+    })),
+  };
+}
+
+/**
+ * Get subscription details for a user
+ */
+export async function getSubscriptionDetails(subscriptionId: string): Promise<{
+  id: string;
+  status: string;
+  currentPeriodEnd: number;
+  cancelAtPeriodEnd: boolean;
+  plan: { amount: number; currency: string; interval: string };
+} | null> {
+  try {
+    const stripe = getStripe();
+    const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
+    const item = sub.items?.data?.[0];
+    return {
+      id: sub.id,
+      status: sub.status,
+      currentPeriodEnd: sub.current_period_end ?? Math.floor(Date.now() / 1000),
+      cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
+      plan: {
+        amount: item?.price?.unit_amount ?? 0,
+        currency: item?.price?.currency ?? "usd",
+        interval: (item?.price?.recurring?.interval as string) ?? "month",
+      },
+    };
+  } catch {
+    return null;
+  }
+}
