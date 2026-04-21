@@ -187,7 +187,7 @@ export default function WebAppProjectPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
               </div>
               <div className="flex-1 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground border border-border">
-                {project.publishedUrl || `${project.subdomainPrefix || project.name}.manus.space`}
+                {project.publishedUrl || `${project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.sovereign.app`}
               </div>
               <Button variant="ghost" size="sm" onClick={() => projectQuery.refetch()}>
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -519,13 +519,27 @@ export default function WebAppProjectPage() {
               {settingsTab === "domains" && (
                 <div className="max-w-lg space-y-6">
                   <h3 className="text-lg font-semibold mb-4">Domains</h3>
+                  {project.publishedUrl && (
+                    <Card className="border-border bg-green-500/5">
+                      <CardContent className="py-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-medium">Published at</span>
+                        </div>
+                        <a href={project.publishedUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm mt-1 block">
+                          {project.publishedUrl}
+                        </a>
+                      </CardContent>
+                    </Card>
+                  )}
                   <Card className="border-border">
                     <CardContent className="py-4 space-y-4">
                       <div>
-                        <Label>Auto-generated Domain</Label>
+                        <Label>Subdomain Prefix</Label>
                         <div className="flex items-center gap-2 mt-1">
                           <Input
                             defaultValue={project.subdomainPrefix || ""}
+                            placeholder={project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}
                             className="flex-1"
                             onBlur={(e) => {
                               if (e.target.value !== project.subdomainPrefix) {
@@ -533,8 +547,9 @@ export default function WebAppProjectPage() {
                               }
                             }}
                           />
-                          <span className="text-sm text-muted-foreground">.manus.space</span>
+                          <span className="text-sm text-muted-foreground">.sovereign.app</span>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1">Your app will be available at <code>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.sovereign.app</code></p>
                       </div>
                       <div>
                         <Label>Custom Domain</Label>
@@ -549,7 +564,7 @@ export default function WebAppProjectPage() {
                             }
                           }}
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Point a CNAME record to your .manus.space domain</p>
+                        <p className="text-xs text-muted-foreground mt-1">Point a CNAME record to your .sovereign.app subdomain</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -733,6 +748,10 @@ export default function WebAppProjectPage() {
             <DialogDescription>This will create a new deployment for {project.name}</DialogDescription>
           </DialogHeader>
           <div className="py-2 space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <span>URL: <strong>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.sovereign.app</strong></span>
+            </div>
             <div className="flex items-center gap-2 text-sm">
               <Server className="w-4 h-4 text-muted-foreground" />
               <span>Target: <strong>{project.deployTarget}</strong></span>

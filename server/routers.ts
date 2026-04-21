@@ -2215,6 +2215,70 @@ export const appRouter = router({
           branch: input.branch,
         });
       }),
+    /** Delete a file */
+    deleteFile: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        path: z.string(),
+        message: z.string(),
+        sha: z.string(),
+        branch: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { deleteFile: ghDeleteFile } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return ghDeleteFile(token, owner, repoName, input.path, {
+          message: input.message,
+          sha: input.sha,
+          branch: input.branch,
+        });
+      }),
+    /** Create an issue */
+    createIssue: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        title: z.string(),
+        body: z.string().optional(),
+        labels: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { createIssue: ghCreateIssue } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return ghCreateIssue(token, owner, repoName, { title: input.title, body: input.body, labels: input.labels });
+      }),
+    /** Merge a pull request */
+    mergePR: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        pullNumber: z.number(),
+        mergeMethod: z.enum(["merge", "squash", "rebase"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new Error("GitHub not connected");
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new Error("GitHub token not available");
+        const { mergePullRequest } = await import("./githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return mergePullRequest(token, owner, repoName, input.pullNumber, { merge_method: input.mergeMethod ?? "merge" });
+      }),
     /** List branches */
     branches: protectedProcedure
       .input(z.object({ externalId: z.string() }))
@@ -2409,7 +2473,10 @@ export const appRouter = router({
           commitMessage: input.commitMessage ?? null,
           status: "building",
         });
-        // Simulate build completion (in production, this would be async)
+        // Generate published URL from subdomain prefix
+        const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+        const publishedUrl = `https://${subdomain}.sovereign.app`;
+        // Simulate build completion (in production, this would be async with real CI)
         setTimeout(async () => {
           try {
             await updateWebappDeployment(depId, {
@@ -2420,10 +2487,11 @@ export const appRouter = router({
             await updateWebappProject(project.id, {
               deployStatus: "live",
               lastDeployedAt: new Date(),
+              publishedUrl,
             });
           } catch { /* ignore */ }
         }, 3000);
-        return { deploymentId: depId, status: "building" };
+        return { deploymentId: depId, status: "building", publishedUrl };
       }),
     /** List deployments for a project */
     deployments: protectedProcedure

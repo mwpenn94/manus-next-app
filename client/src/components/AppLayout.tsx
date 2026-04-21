@@ -835,6 +835,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </Link>
       </div>
 
+      {/* Referral/Invite Banner — Manus parity */}
+      {isAuthenticated && (
+        <div className="mx-2 mb-1 p-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border cursor-pointer hover:bg-sidebar-accent transition-colors"
+          onClick={() => { navigator.clipboard.writeText(window.location.origin); toast.success("Invite link copied!"); }}
+        >
+          <div className="flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-sidebar-foreground">Share with a friend</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5 ml-5.5">Get 500 credits each</p>
+        </div>
+      )}
+
       {/* Auth Section — pinned at bottom, never scrolls away */}
       <div className="border-t border-sidebar-border p-2 shrink-0">
         {authLoading ? (
@@ -857,6 +870,22 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               aria-label={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}. Click to cycle.`}
             >
               {preference === 'system' ? <Monitor className="w-3.5 h-3.5" /> : preference === 'light' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={() => navigate("/settings")}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Settings"
+              aria-label="Settings"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => toast.info("Tips & help coming soon!")}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Help & tips"
+              aria-label="Help & tips"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleLogout}

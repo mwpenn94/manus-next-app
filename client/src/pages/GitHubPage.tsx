@@ -29,10 +29,12 @@ import {
   ChevronRight, File, Folder, Lock, Globe, ArrowLeft, Download,
   Loader2, Trash2, Unplug, Eye, Code, Clock, MessageSquare
 } from "lucide-react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const CodeEditor = lazy(() => import("@/components/CodeEditor"));
 
 type RepoTab = "files" | "branches" | "commits" | "prs" | "issues";
 
@@ -54,6 +56,19 @@ export default function GitHubPage() {
   const [newRepoName, setNewRepoName] = useState("");
   const [newRepoDesc, setNewRepoDesc] = useState("");
   const [newRepoPrivate, setNewRepoPrivate] = useState(false);
+
+  // Editor state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [commitMsg, setCommitMsg] = useState("");
+
+  // New file / create issue dialogs
+  const [newFileOpen, setNewFileOpen] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
+  const [newFileContent, setNewFileContent] = useState("");
+  const [createIssueOpen, setCreateIssueOpen] = useState(false);
+  const [issueTitle, setIssueTitle] = useState("");
+  const [issueBody, setIssueBody] = useState("");
 
   // Queries
   const reposQuery = trpc.github.repos.useQuery(undefined, { enabled: !!user });
@@ -134,6 +149,45 @@ export default function GitHubPage() {
       toast.success("Repo disconnected");
       reposQuery.refetch();
       if (selectedRepoId) navigate("/github");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const commitFileMut = trpc.github.commitFile.useMutation({
+    onSuccess: () => {
+      toast.success("File committed successfully");
+      setIsEditing(false);
+      setCommitMsg("");
+      fileContentQuery.refetch();
+      fileTreeQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteFileMut = trpc.github.deleteFile.useMutation({
+    onSuccess: () => {
+      toast.success("File deleted");
+      setFilePath(filePath.slice(0, -1));
+      fileTreeQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const createIssueMut = trpc.github.createIssue.useMutation({
+    onSuccess: () => {
+      toast.success("Issue created");
+      setCreateIssueOpen(false);
+      setIssueTitle("");
+      setIssueBody("");
+      issuesQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const mergePRMut = trpc.github.mergePR.useMutation({
+    onSuccess: () => {
+      toast.success("Pull request merged");
+      prsQuery.refetch();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -249,7 +303,7 @@ export default function GitHubPage() {
 
           {/* Files Tab */}
           <TabsContent value="files" className="flex-1 overflow-auto m-0 p-6">
-            {/* Breadcrumb */}
+            {/* Breadcrumb + New File */}
             <div className="flex items-center gap-1 mb-4 text-sm">
               <button onClick={() => setFilePath([])} className="text-primary hover:underline font-medium">
                 {selectedRepo.name}
@@ -265,6 +319,11 @@ export default function GitHubPage() {
                   </button>
                 </span>
               ))}
+              <div className="ml-auto">
+                <Button variant="outline" size="sm" onClick={() => { setNewFileOpen(true); setNewFileName(""); setNewFileContent(""); }}>
+                  <Plus className="w-3 h-3 mr-1" /> New File
+                </Button>
+              </div>
             </div>
 
             {fileTreeQuery.isLoading ? (
@@ -272,7 +331,7 @@ export default function GitHubPage() {
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : fileContentQuery.data && filePath.length > 0 ? (
-              /* File content view */
+              /* File content view with CodeEditor */
               <Card className="border-border">
                 <CardHeader className="py-3 px-4 border-b border-border">
                   <div className="flex items-center justify-between">
@@ -282,27 +341,96 @@ export default function GitHubPage() {
                       <Badge variant="secondary" className="text-[10px]">{fileContentQuery.data.size} bytes</Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={fileContentQuery.data.html_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-3 h-3 mr-1" /> View on GitHub
-                        </a>
-                      </Button>
-                      {fileContentQuery.data.download_url && (
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={fileContentQuery.data.download_url} target="_blank" rel="noopener noreferrer">
-                            <Download className="w-3 h-3 mr-1" /> Raw
-                          </a>
+                      {!isEditing ? (
+                        <Button variant="outline" size="sm" onClick={() => {
+                          const decoded = fileContentQuery.data!.encoding === "base64"
+                            ? atob(fileContentQuery.data!.content.replace(/\n/g, ""))
+                            : fileContentQuery.data!.content;
+                          setEditContent(decoded);
+                          setIsEditing(true);
+                          setCommitMsg("");
+                        }}>
+                          <Code className="w-3 h-3 mr-1" /> Edit
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+                          Cancel
                         </Button>
                       )}
+                      <Button variant="ghost" size="sm"
+                        className="text-destructive"
+                        onClick={() => {
+                          if (confirm(`Delete ${filePath[filePath.length - 1]}?`)) {
+                            deleteFileMut.mutate({
+                              externalId: selectedRepoId!,
+                              path: currentPath,
+                              message: `Delete ${filePath[filePath.length - 1]}`,
+                              sha: fileContentQuery.data!.sha,
+                              branch: selectedBranch || undefined,
+                            });
+                          }
+                        }}
+                        disabled={deleteFileMut.isPending}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" /> Delete
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={fileContentQuery.data.html_url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-3 h-3 mr-1" /> GitHub
+                        </a>
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <pre className="text-xs leading-relaxed p-4 overflow-auto max-h-[600px] bg-muted/30 font-mono">
-                    {fileContentQuery.data.encoding === "base64"
-                      ? atob(fileContentQuery.data.content.replace(/\n/g, ""))
-                      : fileContentQuery.data.content}
-                  </pre>
+                  {isEditing ? (
+                    <div>
+                      <Suspense fallback={<div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>}>
+                        <CodeEditor
+                          value={editContent}
+                          onChange={setEditContent}
+                          filename={filePath[filePath.length - 1]}
+                          height="500px"
+                        />
+                      </Suspense>
+                      <div className="border-t border-border p-3 flex items-center gap-2">
+                        <Input
+                          placeholder="Commit message..."
+                          value={commitMsg}
+                          onChange={(e) => setCommitMsg(e.target.value)}
+                          className="flex-1 text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          disabled={!commitMsg.trim() || commitFileMut.isPending}
+                          onClick={() => {
+                            commitFileMut.mutate({
+                              externalId: selectedRepoId!,
+                              path: currentPath,
+                              content: btoa(unescape(encodeURIComponent(editContent))),
+                              message: commitMsg,
+                              sha: fileContentQuery.data!.sha,
+                              branch: selectedBranch || undefined,
+                            });
+                          }}
+                        >
+                          {commitFileMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <GitCommit className="w-3.5 h-3.5 mr-1" />}
+                          Commit
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Suspense fallback={<div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>}>
+                      <CodeEditor
+                        value={fileContentQuery.data.encoding === "base64"
+                          ? atob(fileContentQuery.data.content.replace(/\n/g, ""))
+                          : fileContentQuery.data.content}
+                        filename={filePath[filePath.length - 1]}
+                        readOnly
+                        height="500px"
+                      />
+                    </Suspense>
+                  )}
                 </CardContent>
               </Card>
             ) : (
@@ -429,6 +557,18 @@ export default function GitHubPage() {
                       </p>
                     </div>
                     <Badge variant={pr.state === "open" ? "default" : "secondary"}>{pr.state}</Badge>
+                    {pr.state === "open" && (
+                      <Button variant="outline" size="sm"
+                        disabled={mergePRMut.isPending}
+                        onClick={() => {
+                          if (confirm(`Merge PR #${pr.number}: ${pr.title}?`)) {
+                            mergePRMut.mutate({ externalId: selectedRepoId!, pullNumber: pr.number });
+                          }
+                        }}
+                      >
+                        {mergePRMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Merge"}
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" asChild>
                       <a href={pr.html_url} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="w-3 h-3" />
@@ -445,6 +585,12 @@ export default function GitHubPage() {
 
           {/* Issues Tab */}
           <TabsContent value="issues" className="flex-1 overflow-auto m-0 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Issues</h3>
+              <Button variant="outline" size="sm" onClick={() => { setCreateIssueOpen(true); setIssueTitle(""); setIssueBody(""); }}>
+                <Plus className="w-3 h-3 mr-1" /> New Issue
+              </Button>
+            </div>
             <div className="space-y-2">
               {issuesQuery.isLoading && (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" /></div>
@@ -483,6 +629,103 @@ export default function GitHubPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* New File Dialog */}
+        <Dialog open={newFileOpen} onOpenChange={setNewFileOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New File</DialogTitle>
+              <DialogDescription>Create a new file in {filePath.length > 0 ? filePath.join("/") + "/" : "root"}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>File name</Label>
+                <Input
+                  placeholder="e.g. README.md"
+                  value={newFileName}
+                  onChange={(e) => setNewFileName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Content</Label>
+                <Suspense fallback={<div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>}>
+                  <CodeEditor
+                    value={newFileContent}
+                    onChange={setNewFileContent}
+                    filename={newFileName}
+                    height="300px"
+                  />
+                </Suspense>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setNewFileOpen(false)}>Cancel</Button>
+              <Button
+                disabled={!newFileName.trim() || commitFileMut.isPending}
+                onClick={() => {
+                  const dir = filePath.join("/");
+                  const fullPath = dir ? `${dir}/${newFileName}` : newFileName;
+                  commitFileMut.mutate({
+                    externalId: selectedRepoId!,
+                    path: fullPath,
+                    content: btoa(unescape(encodeURIComponent(newFileContent))),
+                    message: `Create ${newFileName}`,
+                    branch: selectedBranch || undefined,
+                  });
+                  setNewFileOpen(false);
+                }}
+              >
+                {commitFileMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
+                Create File
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Issue Dialog */}
+        <Dialog open={createIssueOpen} onOpenChange={setCreateIssueOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Issue</DialogTitle>
+              <DialogDescription>Open a new issue on {selectedRepo.fullName}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Title</Label>
+                <Input
+                  placeholder="Issue title"
+                  value={issueTitle}
+                  onChange={(e) => setIssueTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Textarea
+                  placeholder="Describe the issue..."
+                  value={issueBody}
+                  onChange={(e) => setIssueBody(e.target.value)}
+                  rows={5}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCreateIssueOpen(false)}>Cancel</Button>
+              <Button
+                disabled={!issueTitle.trim() || createIssueMut.isPending}
+                onClick={() => {
+                  createIssueMut.mutate({
+                    externalId: selectedRepoId!,
+                    title: issueTitle,
+                    body: issueBody || undefined,
+                  });
+                }}
+              >
+                {createIssueMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
+                Create Issue
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
