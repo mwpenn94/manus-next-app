@@ -189,7 +189,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const { tasks, activeTaskId, setActiveTask } = useTask();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { preference, theme, cycleTheme } = useTheme();
 
   // Server-side search when query is long enough
   const searchEnabled = isAuthenticated && searchQuery.trim().length >= 2;
@@ -849,12 +849,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </p>
             </div>
             <button
-              onClick={toggleTheme}
+              onClick={cycleTheme}
               className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              title={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}`}
+              aria-label={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}. Click to cycle.`}
             >
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              {preference === 'system' ? <Monitor className="w-3.5 h-3.5" /> : preference === 'light' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={handleLogout}

@@ -1,8 +1,8 @@
 /**
  * P24 Tests — Dark/Light Theme Toggle + Persistence
  *
- * Covers: ThemeContext, CSS variables, Settings Appearance section,
- * sidebar toggle button, DB persistence via generalSettings
+ * Updated for P25 3-mode system: ThemeContext now uses preference/cycleTheme
+ * instead of toggleTheme, and Settings has 3 cards.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
@@ -30,8 +30,8 @@ describe("P24 — Theme Toggle", () => {
       expect(src).toContain("setTheme");
     });
 
-    it("exposes toggleTheme function", () => {
-      expect(src).toContain("toggleTheme");
+    it("exposes cycleTheme function (replaced toggleTheme in P25)", () => {
+      expect(src).toContain("cycleTheme");
     });
 
     it("persists theme to localStorage when switchable", () => {
@@ -44,12 +44,12 @@ describe("P24 — Theme Toggle", () => {
       expect(src).toContain("root.classList.remove(\"dark\")");
     });
 
-    it("uses useCallback for setTheme and toggleTheme", () => {
+    it("uses useCallback for setTheme", () => {
       expect(src).toContain("useCallback");
     });
 
-    it("defines Theme type as light | dark", () => {
-      expect(src).toMatch(/type Theme\s*=\s*"light"\s*\|\s*"dark"/);
+    it("defines ThemePreference type with system|light|dark", () => {
+      expect(src).toContain("ThemePreference");
     });
   });
 
@@ -152,7 +152,8 @@ describe("P24 — Theme Toggle", () => {
     });
 
     it("shows toast on theme change", () => {
-      expect(settings).toContain("Switched to ${opt.label} theme");
+      expect(settings).toContain("toast.success");
+      expect(settings).toContain("Theme:");
     });
   });
 
@@ -168,18 +169,17 @@ describe("P24 — Theme Toggle", () => {
       expect(layout).toContain("useTheme");
     });
 
-    it("calls toggleTheme on button click", () => {
-      expect(layout).toContain("onClick={toggleTheme}");
+    it("calls cycleTheme on button click", () => {
+      expect(layout).toContain("onClick={cycleTheme}");
     });
 
-    it("shows Sun icon in dark mode and Moon in light mode", () => {
-      expect(layout).toContain("theme === 'dark' ? <Sun");
-      expect(layout).toContain(": <Moon");
+    it("shows appropriate icon based on preference", () => {
+      expect(layout).toContain("preference === 'system'");
+      expect(layout).toContain("preference === 'light'");
     });
 
     it("has accessible aria-label for theme toggle", () => {
-      expect(layout).toContain("Switch to");
-      expect(layout).toContain("theme");
+      expect(layout).toContain("Click to cycle");
     });
   });
 

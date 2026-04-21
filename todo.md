@@ -1452,3 +1452,23 @@
 - [x] P24-8: Full virtual user walkthrough — Settings page renders Appearance section with Light/Dark cards, sidebar footer has Sun/Moon toggle
 - [x] P24-9: Write P24 tests (30 tests in server/p24.test.ts, 797 total passing) + fixed preferences.test.ts default to include theme
 - [x] P24-10: Recursive convergence passes — 3/3 clean (0 TS errors, 797 tests passing, build 395.1kb, zero changes between passes)
+
+## P25 — System/Auto Theme Option + Exhaustive Reassessment
+
+- [x] P25-1: Audit complete — ThemeContext has Theme='light'|'dark', Settings has 2-card grid, sidebar footer has 2-mode toggle
+- [x] P25-2: ThemeContext rewritten — ThemePreference='system'|'light'|'dark', ResolvedTheme='light'|'dark', prefers-color-scheme listener, cycleTheme
+- [x] P25-3: Settings Appearance UI updated to 3-column grid with System (Monitor), Light (Sun), Dark (Moon) cards
+- [x] P25-4: Sidebar footer toggle cycles system → light → dark with appropriate icons and aria-labels
+- [x] P25-5: 'system' preference persists to DB via generalSettings + localStorage
+- [x] P25-6: Virtual user walkthrough — dark mode renders correctly, Appearance section visible in Settings, sidebar footer shows cycle icon, 0 TS errors
+- [x] P25-7: Write P25 tests (34 tests in p25.test.ts) + rewrote P24 tests for 3-mode API — 829 total passing
+- [x] P25-8: Recursive convergence passes — 3/3 clean (0 TS errors, 860 tests passing, build 395.1kb, zero changes between passes)
+
+## P25b — Hands-Free Mode Transcription Fix
+
+- [x] P25b-1: Root cause — useHandsFreeMode used raw fetch to /api/trpc/voice.transcribe with wrong body format (non-batch JSON), missing credentials:include
+- [x] P25b-2: Fix — added uploadAudio and transcribeAudio callback props to useHandsFreeMode, TaskView now injects tRPC mutation (handsFreeTranscribeMutation.mutateAsync) with proper auth
+- [x] P25b-3: Audible cues already present (playListeningChime, startProcessingPulse, playSendClick, playCompleteChime, playErrorTone) — verified working
+- [x] P25b-4: Verified — 0 TS errors, pipeline: mic → blob → uploadAudio (credentials:include) → transcribeAudio (tRPC mutateAsync) → onTranscription → onSendMessage → handleHandsFreeSend → streamWithRetry → notifyComplete → TTS → auto-listen
+- [x] P25b-5: Write tests (31 tests in server/p25b.test.ts, 860 total passing)
+- [x] P25b-6: Recursive convergence passes — 3/3 clean (0 TS errors, 860 tests passing, build 395.1kb, zero changes between passes)

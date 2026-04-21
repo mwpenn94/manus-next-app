@@ -1292,6 +1292,9 @@ export default function TaskView() {
 
   // ── Hands-Free Voice Mode (P15) ──
   const handsFreeInputRef = useRef<string>("");
+  // Hands-free transcription uses the same tRPC mutation as the regular voice recorder
+  const handsFreeTranscribeMutation = trpc.voice.transcribe.useMutation();
+
   const handsFree = useHandsFreeMode({
     voice: userTTSVoice,
     language: userTTSLanguage,
@@ -1306,6 +1309,28 @@ export default function TaskView() {
       addMessage(task.id, { role: "user", content: text });
       // Trigger streaming
       handleHandsFreeSend(text);
+    },
+    uploadAudio: async (blob: Blob, fileName: string, mimeType: string) => {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": mimeType,
+          "X-File-Name": fileName,
+          "X-Task-Id": "handsfree",
+        },
+        credentials: "include",
+        body: blob,
+      });
+      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+      const data = await response.json();
+      return data.url;
+    },
+    transcribeAudio: async (audioUrl: string, language?: string) => {
+      const result = await handsFreeTranscribeMutation.mutateAsync({
+        audioUrl,
+        language: language || "en",
+      });
+      return result.text || "";
     },
   });
 

@@ -194,7 +194,7 @@ export default function SettingsPage() {
   const { user, isAuthenticated, logout } = useAuth();
 
   // Theme
-  const { theme, setTheme, toggleTheme } = useTheme();
+  const { preference, theme, setTheme } = useTheme();
 
   // Bridge integration
   const { status: bridgeStatus, connect, disconnect, quality, events } = useBridge();
@@ -640,11 +640,12 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-3">
                   Choose your preferred color theme. Your preference is saved automatically.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {([
+                    { value: "system" as const, label: "System", icon: Monitor, description: "Follow OS preference" },
                     { value: "light" as const, label: "Light", icon: Sun, description: "Warm Light theme" },
                     { value: "dark" as const, label: "Dark", icon: Moon, description: "Warm Void theme" },
-                  ] as const).map((opt) => (
+                  ]).map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => {
@@ -654,16 +655,16 @@ export default function SettingsPage() {
                           setGeneralSettings(updated as any);
                           savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
                         }
-                        toast.success(`Switched to ${opt.label} theme`);
+                        toast.success(`Theme: ${opt.label}${opt.value === 'system' ? ` (${theme})` : ''}`);
                       }}
                       className={cn(
-                        "flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
-                        theme === opt.value
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border transition-all text-center",
+                        preference === opt.value
                           ? "border-primary/50 bg-primary/5"
                           : "border-border bg-card hover:border-primary/20"
                       )}
                     >
-                      <opt.icon className={cn("w-5 h-5", theme === opt.value ? "text-primary" : "text-muted-foreground")} />
+                      <opt.icon className={cn("w-5 h-5", preference === opt.value ? "text-primary" : "text-muted-foreground")} />
                       <div>
                         <p className="text-sm font-medium text-foreground">{opt.label}</p>
                         <p className="text-xs text-muted-foreground">{opt.description}</p>

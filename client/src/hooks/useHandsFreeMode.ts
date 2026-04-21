@@ -2,7 +2,10 @@
  * useHandsFreeMode — Full Conversational Pipeline Orchestrator
  * 
  * P15: Grok-level hands-free voice conversation.
- * Pipeline: Mic → Whisper transcription → Agent stream → Edge TTS playback → Auto-listen
+ * P25b: Fixed transcription — now uses injected transcribe/upload functions
+ *       from the parent component (tRPC mutation) instead of raw fetch.
+ * 
+ * Pipeline: Mic → Upload → Whisper transcription → Agent stream → Edge TTS playback → Auto-listen
  * 
  * States:
  * - idle: Not active
@@ -37,6 +40,10 @@ export interface HandsFreeConfig {
   soundEffects?: boolean;     // Play audible cues
   onTranscription?: (text: string) => void;  // Called when speech is transcribed
   onSendMessage?: (text: string) => void;    // Called to send message to agent
+  /** Upload audio blob to S3 and return the URL. Injected from parent to use proper auth. */
+  uploadAudio?: (blob: Blob, fileName: string, mimeType: string) => Promise<string>;
+  /** Transcribe audio URL via Whisper. Injected from parent to use tRPC mutation with proper auth. */
+  transcribeAudio?: (audioUrl: string, language?: string) => Promise<string>;
 }
 
 export interface HandsFreeControls {
@@ -139,36 +146,56 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
             return;
           }
 
-          // Upload to S3 then transcribe
+          // Skip if blob is too small (likely no speech)
+          if (blob.size < 1000) {
+            if (isActiveRef.current) startListening();
+            return;
+          }
+
           const ext = mimeType.includes("webm") ? "webm" : "mp4";
           const fileName = `handsfree-${Date.now()}.${ext}`;
-          
-          const arrayBuffer = await blob.arrayBuffer();
-          const uploadRes = await fetch("/api/upload", {
-            method: "POST",
-            headers: {
-              "Content-Type": mimeType,
-              "X-File-Name": fileName,
-              "X-Task-Id": "handsfree",
-            },
-            body: new Uint8Array(arrayBuffer),
-          });
 
-          if (!uploadRes.ok) throw new Error("Upload failed");
-          const { url } = await uploadRes.json();
+          // Use injected upload function (proper auth via fetch with credentials)
+          let audioUrl: string;
+          if (configRef.current.uploadAudio) {
+            audioUrl = await configRef.current.uploadAudio(blob, fileName, mimeType);
+          } else {
+            // Fallback: direct fetch (may fail without auth)
+            const arrayBuffer = await blob.arrayBuffer();
+            const uploadRes = await fetch("/api/upload", {
+              method: "POST",
+              headers: {
+                "Content-Type": mimeType,
+                "X-File-Name": fileName,
+                "X-Task-Id": "handsfree",
+              },
+              credentials: "include",
+              body: new Uint8Array(arrayBuffer),
+            });
+            if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+            const data = await uploadRes.json();
+            audioUrl = data.url;
+          }
 
-          // Transcribe via tRPC-like endpoint
-          const transcribeRes = await fetch("/api/trpc/voice.transcribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              json: { audioUrl: url, language: configRef.current.language || "en" },
-            }),
-          });
-
-          if (!transcribeRes.ok) throw new Error("Transcription failed");
-          const transcribeData = await transcribeRes.json();
-          const text = transcribeData?.result?.data?.json?.text || "";
+          // Use injected transcribe function (tRPC mutation with proper auth)
+          let text: string;
+          if (configRef.current.transcribeAudio) {
+            text = await configRef.current.transcribeAudio(audioUrl, configRef.current.language || "en");
+          } else {
+            // Fallback: raw fetch (may fail without proper tRPC batch format)
+            const transcribeRes = await fetch("/api/trpc/voice.transcribe?batch=1", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                "0": { json: { audioUrl, language: configRef.current.language || "en" } },
+              }),
+            });
+            if (!transcribeRes.ok) throw new Error(`Transcription failed: ${transcribeRes.status}`);
+            const transcribeData = await transcribeRes.json();
+            // tRPC batch response format: [{ result: { data: { json: { text, language } } } }]
+            text = transcribeData?.[0]?.result?.data?.json?.text || "";
+          }
 
           if (text.trim()) {
             if (configRef.current.soundEffects) playSendClick();
