@@ -24,6 +24,7 @@ import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useSWUpdate } from "@/hooks/useSWUpdate";
 import {
   Search,
   Plus,
@@ -171,6 +172,7 @@ function GitHubStatusBadge() {
 }
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+  useSWUpdate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { showHelp, setShowHelp } = useKeyboardShortcuts({
     onNewTask: () => {

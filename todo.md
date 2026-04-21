@@ -1487,3 +1487,31 @@
 - [x] P26-10: Live virtual user walkthrough — desktop screenshot clean, sidebar/nav/theme/analytics all rendering correctly, 0 TS errors
 - [x] P26-11: Write P26 tests (28 tests in server/p26.test.ts, 888 total passing)
 - [x] P26-12: Recursive convergence passes — 3/3 clean (0 TS errors, 888 tests passing, build 395.1kb, zero changes between passes)
+
+## P27 — PWA Manifest + Service Worker
+
+- [x] P27-1: Audit current PWA readiness (existing meta tags, manifest, icons)
+- [x] P27-2: Create manifest.json with app name, icons, theme color, display mode
+- [x] P27-3: Generate PWA icons (192px, 512px) from existing app logo
+- [x] P27-4: Add manifest link and Apple-specific meta tags to index.html
+- [x] P27-5: Implement service worker with app shell caching (HTML, CSS, JS, fonts)
+- [x] P27-6: Register service worker in main.tsx with update notification
+- [x] P27-7: Playwright-based validation of PWA installability and manifest
+- [x] P27-8: Live browser validation side-by-side with Manus
+- [x] P27-9: Write vitest tests for PWA components
+- [x] P27-10: Recursive convergence passes (TS, tests, build) until 3 consecutive zero-change
+
+## P28 — GitHub Integration + In-App Code/Repo Management + Subdomain Publishing
+
+- [ ] P28-1: Design database schema for GitHub connections, projects, and deployments
+- [ ] P28-2: Implement GitHub OAuth connector flow (connect/disconnect GitHub account)
+- [ ] P28-3: Build GitHub API integration layer (list repos, CRUD files, branches, commits)
+- [ ] P28-4: Create in-app file browser/tree component with syntax-highlighted code viewer
+- [ ] P28-5: Implement in-app code editor with save-to-GitHub commit flow
+- [ ] P28-6: Build project management UI (create/import/manage repos)
+- [ ] P28-7: Implement subdomain publishing system (project.manusnext.app pattern)
+- [ ] P28-8: Build deployment pipeline (build + publish from repo to subdomain)
+- [ ] P28-9: Create publish/deploy settings page with domain management
+- [ ] P28-10: Write vitest tests for GitHub + publishing features
+- [ ] P28-11: Playwright validation of full GitHub + publish flow
+- [ ] P28-12: Recursive convergence passes

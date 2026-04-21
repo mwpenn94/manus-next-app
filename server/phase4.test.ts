@@ -125,7 +125,7 @@ describe("PWA Manifest", () => {
     const manifest = JSON.parse(content);
 
     expect(manifest.name).toBe("Manus Next");
-    expect(manifest.short_name).toBe("Manus Next");
+    expect(manifest.short_name).toBe("Manus");
     expect(manifest.display).toBe("standalone");
     expect(manifest.start_url).toBe("/");
     expect(manifest.icons).toBeDefined();

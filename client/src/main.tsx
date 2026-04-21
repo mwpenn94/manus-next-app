@@ -10,6 +10,7 @@ import { I18nProvider } from "./i18n/I18nProvider";
 import "./index.css";
 import React from "react";
 import ReactDOM from "react-dom";
+import { registerServiceWorker, skipWaitingAndReload } from "@/lib/registerSW";
 
 // axe-core accessibility auditing in development
 if (import.meta.env.DEV) {
@@ -89,6 +90,20 @@ const trpcClient = trpc.createClient({
       },
     }),
   ],
+});
+
+// ── Service Worker Registration ──
+registerServiceWorker({
+  onUpdate: () => {
+    // Show a non-blocking notification that an update is available
+    // We use a simple custom event that AppLayout/Toaster can pick up
+    window.dispatchEvent(
+      new CustomEvent("sw-update-available", { detail: { skipWaitingAndReload } })
+    );
+  },
+  onSuccess: () => {
+    console.log("[SW] Content cached for offline use.");
+  },
 });
 
 createRoot(document.getElementById("root")!).render(
