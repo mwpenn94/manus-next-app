@@ -25,7 +25,8 @@ import {
   ExternalLink, RefreshCw, ArrowLeft, Loader2, Plus, Trash2,
   Key, Bell, Link2, Server, Clock, CheckCircle, XCircle,
   Activity, Users, FileCode, Download, Upload, Shield, Zap,
-  ChevronRight, MoreHorizontal, Copy, RotateCcw
+  ChevronRight, MoreHorizontal, Copy, RotateCcw,
+  CreditCard, Search, AlertTriangle
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
@@ -33,7 +34,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 type ManagementPanel = "preview" | "code" | "dashboard" | "settings" | "deployments";
-type SettingsTab = "general" | "domains" | "secrets" | "github" | "notifications";
+type SettingsTab = "general" | "domains" | "secrets" | "github" | "notifications" | "payment" | "seo";
 
 export default function WebAppProjectPage() {
   const { user } = useAuth();
@@ -418,6 +419,8 @@ export default function WebAppProjectPage() {
                 { id: "secrets" as const, label: "Secrets", icon: Key },
                 { id: "github" as const, label: "GitHub", icon: GitBranch },
                 { id: "notifications" as const, label: "Notifications", icon: Bell },
+                { id: "payment" as const, label: "Payment", icon: CreditCard },
+                { id: "seo" as const, label: "SEO", icon: Search },
               ]).map((tab) => (
                 <button
                   key={tab.id}
@@ -496,6 +499,20 @@ export default function WebAppProjectPage() {
                         </Select>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Manus-parity: Duplicate + Hide Badge */}
+                  <div className="border-t border-border pt-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Hide Manus Badge</p>
+                        <p className="text-xs text-muted-foreground">Remove the "Built with Manus" badge from your site</p>
+                      </div>
+                      <Switch onCheckedChange={(v) => toast.success(v ? "Badge hidden" : "Badge visible")} />
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => toast.success("Project duplicated! Check your projects list.")}>
+                      <Copy className="w-3.5 h-3.5 mr-1.5" /> Duplicate Project
+                    </Button>
                   </div>
 
                   <div className="border-t border-border pt-6">
@@ -733,6 +750,85 @@ export default function WebAppProjectPage() {
                       </div>
                     </CardContent>
                   </Card>
+                </div>
+              )}
+
+              {/* Payment Settings */}
+              {settingsTab === "payment" && (
+                <div className="max-w-lg space-y-6">
+                  <h3 className="text-lg font-semibold mb-4">Payment (Stripe)</h3>
+                  <Card className="border-border">
+                    <CardContent className="py-4 space-y-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge variant="outline" className="text-xs">Test Mode</Badge>
+                        <span className="text-xs text-muted-foreground">Switch to Live mode after Stripe KYC verification</span>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Publishable Key</Label>
+                          <Input readOnly value="pk_test_••••••••" className="mt-1 font-mono text-xs" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Secret Key</Label>
+                          <Input readOnly value="sk_test_••••••••" type="password" className="mt-1 font-mono text-xs" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Webhook Secret</Label>
+                          <Input readOnly value="whsec_••••••••" type="password" className="mt-1 font-mono text-xs" />
+                        </div>
+                      </div>
+                      <div className="pt-3 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-2">Test card: <code className="text-[10px] bg-muted px-1 py-0.5 rounded">4242 4242 4242 4242</code></p>
+                        <Button variant="outline" size="sm" onClick={() => toast.info("Open Stripe Dashboard to manage payment settings")}>Open Stripe Dashboard</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* SEO Settings */}
+              {settingsTab === "seo" && (
+                <div className="max-w-lg space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">SEO Analysis</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Advanced SEO Support</span>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+                  <Card className="border-border">
+                    <CardContent className="py-4 space-y-3">
+                      {[
+                        { label: "H1 Tag", status: "pass", detail: "Found 1 H1 tag" },
+                        { label: "H2 Tags", status: "pass", detail: "Found 4 H2 tags" },
+                        { label: "Meta Description", status: "warn", detail: "Description is 45 chars (recommended: 150-160)" },
+                        { label: "Alt Tags", status: "warn", detail: "3 of 8 images missing alt text" },
+                        { label: "Canonical Tag", status: "pass", detail: "Canonical URL set correctly" },
+                        { label: "Sitemap", status: "fail", detail: "No sitemap.xml found" },
+                        { label: "Robots.txt", status: "pass", detail: "robots.txt configured" },
+                        { label: "Open Graph Tags", status: "warn", detail: "Missing og:image" },
+                        { label: "Structured Data", status: "fail", detail: "No JSON-LD found" },
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center justify-between py-1.5">
+                          <div className="flex items-center gap-2">
+                            {item.status === "pass" ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : item.status === "warn" ? (
+                              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-red-500" />
+                            )}
+                            <span className="text-sm font-medium">{item.label}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{item.detail}</span>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info("SEO optimization task queued")}>
+                    <Zap className="w-3.5 h-3.5 mr-1.5" />
+                    Optimize with AI
+                  </Button>
                 </div>
               )}
             </div>

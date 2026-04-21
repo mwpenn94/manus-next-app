@@ -45,6 +45,9 @@ const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
 const MailManusPage = lazy(() => import("./pages/MailManusPage"));
 const DeployedWebsitesPage = lazy(() => import("./pages/DeployedWebsitesPage"));
+const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const WebhooksPage = lazy(() => import("./pages/WebhooksPage"));
 
 function PageLoader() {
   return (
@@ -228,6 +231,26 @@ function Router() {
       <Route path="/deployments">
         <Suspense fallback={<PageLoader />}>
           <DeployedWebsitesPage />
+        </Suspense>
+      </Route>
+      <Route path="/deployed-websites">
+        <Suspense fallback={<PageLoader />}>
+          <DeployedWebsitesPage />
+        </Suspense>
+      </Route>
+      <Route path="/discover">
+        <Suspense fallback={<PageLoader />}>
+          <DiscoverPage />
+        </Suspense>
+      </Route>
+      <Route path="/profile">
+        <Suspense fallback={<PageLoader />}>
+          <ProfilePage />
+        </Suspense>
+      </Route>
+      <Route path="/webhooks">
+        <Suspense fallback={<PageLoader />}>
+          <WebhooksPage />
         </Suspense>
       </Route>
       <Route path="/404" component={NotFound} />

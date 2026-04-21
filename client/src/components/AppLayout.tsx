@@ -860,6 +860,30 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           Video
         </Link>
         <Link
+          href="/discover"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/discover"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Sparkles className="w-4 h-4" />
+          Discover
+        </Link>
+        <Link
+          href="/webhooks"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/webhooks"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Plug className="w-4 h-4" />
+          Integrations
+        </Link>
+        <Link
           href="/settings"
           className={cn(
             "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
@@ -895,12 +919,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         ) : isAuthenticated && user ? (
           <div className="flex items-center gap-2.5 px-3 py-2.5 md:py-2">
-            <UserInitials name={user.name} />
-            <div className="flex-1 min-w-0">
+            <button onClick={() => navigate("/profile")} className="shrink-0 hover:opacity-80 transition-opacity" title="View profile">
+              <UserInitials name={user.name} />
+            </button>
+            <button onClick={() => navigate("/profile")} className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity" title="View profile">
               <p className="text-sm text-sidebar-foreground truncate">
                 {user.name || user.email || "User"}
               </p>
-            </div>
+            </button>
             <button
               onClick={cycleTheme}
               className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"

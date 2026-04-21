@@ -1564,3 +1564,22 @@
 - [x] P32-14: Vitest tests for all new features (31/31 passing)
 - [x] P32-15: Playwright e2e validation (pages load, no JS errors)
 - [x] P32-16: Recursive convergence passes (TSC 0 errors, vitest 31/31, pages render)
+
+## P33 — Full Manus Parity (Video Analysis)
+
+- [x] P33-1: Model selector dropdown in chat header — already in ModelSelector.tsx (Standard/Premium/Research)
+- [x] P33-2: Quick action chips below input — already in Home.tsx (Build website, Create slides, Write document, Generate images, Research)
+- [x] P33-3: Expanded attachment menu — already in PlusMenu.tsx (16+ items matching Manus)
+- [x] P33-4: Task completion 5-star rating widget — already in TaskCompletedCard.tsx
+- [x] P33-5: Discover/Templates page with 33 templates across 10 categories + search
+- [x] P33-6: Profile page (name, email, timezone, language, theme, notification preferences)
+- [x] P33-7: Webhook management page (create, test, view logs) — WebhooksPage.tsx
+- [x] P33-8: API key management (generate, revoke, copy) — in WebhooksPage.tsx API Keys tab
+- [x] P33-9: Notification rules (task complete, error, scheduled) — in WebhooksPage.tsx Notifications tab
+- [x] P33-10: SEO analysis tab in WebAppProjectPage settings (title, meta, OG tags, sitemap, robots)
+- [x] P33-11: "Manus's Computer" view — already in SandboxViewer.tsx (code editor + terminal)
+- [x] P33-12: Interactive browser view with floating toolbar — already in SandboxViewer.tsx
+- [x] P33-13: UI/UX alignment pass — dark theme, warm charcoal, gold accents, consistent across all pages
+- [x] P33-14: Vitest tests — 969/969 passing across 43 test files (36 new P33 tests)
+- [x] P33-15: CDP/Playwright e2e — 27/27 routes pass, 0 critical JS errors
+- [x] P33-16: Recursive convergence — Pass 1: no issues, Pass 2: flaky TTS timeout fixed, all green

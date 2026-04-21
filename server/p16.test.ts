@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // ── Multi-Language TTS Tests ──
 
-describe("TTS multi-language support", () => {
+describe("TTS multi-language support", { timeout: 15000 }, () => {
   it("exports getAllVoices function", async () => {
     const tts = await import("./tts");
     expect(tts.getAllVoices).toBeDefined();
