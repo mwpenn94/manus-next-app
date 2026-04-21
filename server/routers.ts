@@ -144,6 +144,8 @@ import {
   getProjectDeployments,
   updateWebappDeployment,
   getReplayableTasks,
+  getTaskTrends,
+  getTaskPerformance,
 } from "./db";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"] as const;
@@ -404,6 +406,16 @@ export const appRouter = router({
   usage: router({
     stats: protectedProcedure.query(async ({ ctx }) => {
       return getUserTaskStats(ctx.user.id);
+    }),
+    /** Task activity over the last N days — returns array of { date, count, completed, errors } */
+    taskTrends: protectedProcedure
+      .input(z.object({ days: z.number().min(7).max(90).optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return getTaskTrends(ctx.user.id, input?.days ?? 30);
+      }),
+    /** Average task duration (completed tasks only) and average messages per task */
+    performance: protectedProcedure.query(async ({ ctx }) => {
+      return getTaskPerformance(ctx.user.id);
     }),
   }),
 

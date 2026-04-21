@@ -1407,3 +1407,59 @@ export async function updateWebappDeployment(id: number, data: Partial<InsertWeb
   if (!db) return;
   await db.update(webappDeployments).set(data).where(eq(webappDeployments.id, id));
 }
+
+
+// ── Analytics Queries ──
+
+export async function getTaskTrends(userId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const allTasks = await db.select().from(tasks).where(
+    and(eq(tasks.userId, userId), eq(tasks.archived, 0), gte(tasks.createdAt, cutoff))
+  );
+  // Group by date
+  const byDate = new Map<string, { count: number; completed: number; errors: number }>();
+  // Pre-fill all dates
+  for (let i = 0; i < days; i++) {
+    const d = new Date(Date.now() - (days - 1 - i) * 24 * 60 * 60 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    byDate.set(key, { count: 0, completed: 0, errors: 0 });
+  }
+  for (const t of allTasks) {
+    const key = t.createdAt.toISOString().slice(0, 10);
+    const entry = byDate.get(key);
+    if (entry) {
+      entry.count++;
+      if (t.status === "completed") entry.completed++;
+      if (t.status === "error") entry.errors++;
+    }
+  }
+  return Array.from(byDate.entries()).map(([date, data]) => ({ date, ...data }));
+}
+
+export async function getTaskPerformance(userId: number) {
+  const db = await getDb();
+  if (!db) return { avgDurationMs: 0, avgMessagesPerTask: 0, completionRate: 0, totalMessages: 0 };
+  const allTasks = await db.select().from(tasks).where(
+    and(eq(tasks.userId, userId), eq(tasks.archived, 0))
+  );
+  const completedTasks = allTasks.filter(t => t.status === "completed");
+  const totalTasks = allTasks.length;
+  const completionRate = totalTasks > 0 ? completedTasks.length / totalTasks : 0;
+  // Average duration for completed tasks
+  let totalDurationMs = 0;
+  for (const t of completedTasks) {
+    totalDurationMs += t.updatedAt.getTime() - t.createdAt.getTime();
+  }
+  const avgDurationMs = completedTasks.length > 0 ? totalDurationMs / completedTasks.length : 0;
+  // Average messages per task
+  const taskIds = allTasks.map(t => t.id);
+  let totalMessages = 0;
+  if (taskIds.length > 0) {
+    const msgs = await db.select().from(taskMessages).where(inArray(taskMessages.taskId, taskIds));
+    totalMessages = msgs.length;
+  }
+  const avgMessagesPerTask = totalTasks > 0 ? totalMessages / totalTasks : 0;
+  return { avgDurationMs, avgMessagesPerTask, completionRate, totalMessages };
+}

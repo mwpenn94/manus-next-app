@@ -61,6 +61,7 @@ import {
   Coins,
   GitBranch,
   BookOpen,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -583,6 +584,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <CreditCard className="w-4 h-4" />
           Usage & Billing
+        </Link>
+        <Link
+          href="/analytics"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/analytics"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <BarChart3 className="w-4 h-4" />
+          Analytics
         </Link>
         <Link
           href="/memory"

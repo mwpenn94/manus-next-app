@@ -41,6 +41,7 @@ const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
 const ClientInferencePage = lazy(() => import("./pages/ClientInferencePage"));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 
 function PageLoader() {
   return (
@@ -64,6 +65,11 @@ function Router() {
       <Route path="/billing">
         <Suspense fallback={<PageLoader />}>
           <BillingPage />
+        </Suspense>
+      </Route>
+      <Route path="/analytics">
+        <Suspense fallback={<PageLoader />}>
+          <AnalyticsPage />
         </Suspense>
       </Route>
       <Route path="/settings">

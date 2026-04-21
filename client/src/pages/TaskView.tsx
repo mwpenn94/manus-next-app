@@ -2311,7 +2311,34 @@ export default function TaskView() {
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      Export Transcript
+                      Export as Markdown
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!task) return;
+                        const lines = [`<html><head><meta charset="utf-8"><title>${task.title}</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#e0e0e0;background:#111;}h1{color:#d4a574;border-bottom:2px solid #333;padding-bottom:12px;}hr{border:none;border-top:1px solid #333;margin:24px 0;}.msg{margin:16px 0;padding:16px;border-radius:8px;}.user{background:#1a1a2e;border-left:3px solid #d4a574;}.assistant{background:#1a2e1a;border-left:3px solid #74d4a5;}.meta{font-size:12px;color:#888;margin-bottom:8px;}pre{background:#0a0a0a;padding:12px;border-radius:6px;overflow-x:auto;}code{font-family:monospace;}</style></head><body>`];
+                        lines.push(`<h1>${task.title}</h1>`);
+                        lines.push(`<p style="color:#888">Created: ${task.createdAt.toLocaleString()} | Status: ${task.status}</p><hr>`);
+                        for (const msg of task.messages) {
+                          const label = msg.role === "user" ? "You" : msg.role === "assistant" ? "Assistant" : "System";
+                          const cls = msg.role === "user" ? "user" : "assistant";
+                          const content = msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+                          lines.push(`<div class="msg ${cls}"><div class="meta">${label} — ${msg.timestamp.toLocaleString()}</div>${content}</div>`);
+                        }
+                        lines.push(`</body></html>`);
+                        const blob = new Blob([lines.join("")], { type: "text/html" });
+                        const url = URL.createObjectURL(blob);
+                        const printWin = window.open(url, "_blank");
+                        if (printWin) {
+                          printWin.onload = () => { printWin.print(); };
+                        }
+                        setTimeout(() => URL.revokeObjectURL(url), 10000);
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Export as PDF (Print)
                     </button>
                     <button
                       onClick={handleShareDialog}

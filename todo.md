@@ -1412,3 +1412,11 @@
 - [x] P20-7: Write P20 tests covering Stripe integration and shortcuts panel (39 tests in p20.test.ts, 656 total passing)
 - [x] P20-8: Manus UI/UX parity audit + accessibility round 3 (muted-fg 0.78, border 0.32, sidebar-border 0.30, color-scheme: dark) + 3 consecutive zero-change convergence passes, 656 tests passing
 - [x] P20-9: Recursive convergence passes — 3 consecutive zero-change achieved, 656 tests passing
+
+## P21 — Task Export + Notification Center + Dashboard Analytics + Convergence
+- [x] P21-1: Task export to PDF/Markdown — dual export: "Export as Markdown" (.md download) + "Export as PDF (Print)" (styled HTML print dialog)
+- [x] P21-2: Notification center — already fully implemented: bell icon, unread badge, dropdown, mark-read, mark-all-read, 30s polling, click-to-navigate
+- [x] P21-3: Dashboard analytics page — task completion trends, credit usage over time, agent performance charts (recharts: AreaChart, PieChart, BarChart, 4 metric cards, day range selector)
+- [x] P21-4: Write P21 tests covering all new features (37 tests in server/p21.test.ts)
+- [x] P21-5: Exhaustive virtual user validation — side-by-side with Manus, all pages and flows
+- [x] P21-6: Recursive convergence passes (TS, tests, build) until 3 consecutive zero-change — 3/3 passes clean (693 tests, 0 TS errors, build OK)
