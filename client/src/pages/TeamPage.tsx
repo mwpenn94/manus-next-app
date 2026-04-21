@@ -42,7 +42,7 @@ export default function TeamPage() {
       setNewTeamName("");
       toast.success("Team created!");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const joinTeamMut = trpc.team.join.useMutation({
     onSuccess: () => {
@@ -50,21 +50,21 @@ export default function TeamPage() {
       setInviteCode("");
       toast.success("Joined team!");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const removeMember = trpc.team.removeMember.useMutation({
     onSuccess: () => {
       utils.team.members.invalidate();
       toast.success("Member removed");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const shareSession = trpc.team.shareSession.useMutation({
     onSuccess: () => {
       utils.team.sessions.invalidate();
       toast.success("Session shared with team");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   if (authLoading) {

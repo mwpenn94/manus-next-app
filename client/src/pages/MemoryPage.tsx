@@ -171,7 +171,7 @@ export default function MemoryPage() {
       setAdding(false);
       refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const bulkAdd = trpc.memory.bulkAdd.useMutation();

@@ -216,7 +216,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       utils.task.list.invalidate();
       utils.task.search.invalidate();
     },
-    onError: () => toast.error("Failed to delete task"),
+    onError: () => { toast.error("Failed to delete task"); },
   });
 
   // Close mobile drawer on navigation

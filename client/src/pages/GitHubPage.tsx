@@ -121,7 +121,7 @@ export default function GitHubPage() {
       reposQuery.refetch();
       setImportOpen(false);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const createRepoMut = trpc.github.createRepo.useMutation({
@@ -133,7 +133,7 @@ export default function GitHubPage() {
       setNewRepoDesc("");
       navigate(`/github/${data.externalId}`);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const syncRepoMut = trpc.github.syncRepo.useMutation({
@@ -141,7 +141,7 @@ export default function GitHubPage() {
       toast.success("Repo synced");
       reposQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const disconnectRepoMut = trpc.github.disconnectRepo.useMutation({
@@ -150,7 +150,7 @@ export default function GitHubPage() {
       reposQuery.refetch();
       if (selectedRepoId) navigate("/github");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const commitFileMut = trpc.github.commitFile.useMutation({
@@ -161,7 +161,7 @@ export default function GitHubPage() {
       fileContentQuery.refetch();
       fileTreeQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const deleteFileMut = trpc.github.deleteFile.useMutation({
@@ -170,7 +170,7 @@ export default function GitHubPage() {
       setFilePath(filePath.slice(0, -1));
       fileTreeQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const createIssueMut = trpc.github.createIssue.useMutation({
@@ -181,7 +181,7 @@ export default function GitHubPage() {
       setIssueBody("");
       issuesQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const mergePRMut = trpc.github.mergePR.useMutation({
@@ -189,7 +189,7 @@ export default function GitHubPage() {
       toast.success("Pull request merged");
       prsQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   // Build file tree structure

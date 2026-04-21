@@ -88,7 +88,7 @@ export default function ConnectDevicePage() {
       devices.refetch();
       setView("instructions");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const completePairing = trpc.device.completePairing.useMutation({
     onSuccess: () => {
@@ -97,14 +97,14 @@ export default function ConnectDevicePage() {
       setView("list");
       setTunnelUrl("");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const deleteDevice = trpc.device.delete.useMutation({
     onSuccess: () => {
       toast.success("Device removed");
       devices.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const setupInstructions = trpc.device.getSetupInstructions.useQuery(
     { connectionMethod: selectedMethod! },

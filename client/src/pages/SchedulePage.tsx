@@ -44,11 +44,11 @@ export default function SchedulePage() {
       setPrompt("");
       schedulesQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const toggleMutation = trpc.schedule.toggle.useMutation({
-    onSuccess: () => schedulesQuery.refetch(),
+    onSuccess: () => { schedulesQuery.refetch(); },
   });
 
   const deleteMutation = trpc.schedule.delete.useMutation({

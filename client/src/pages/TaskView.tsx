@@ -1262,14 +1262,14 @@ export default function TaskView() {
       utils.task.list.invalidate();
       utils.task.search.invalidate();
     },
-    onError: () => toast.error("Failed to delete task"),
+    onError: () => { toast.error("Failed to delete task"); },
   });
   const favoriteMutation = trpc.task.toggleFavorite.useMutation({
-    onError: () => toast.error("Failed to update bookmark"),
+    onError: () => { toast.error("Failed to update bookmark"); },
   });
   const systemPromptMutation = trpc.task.updateSystemPrompt.useMutation({
-    onSuccess: () => toast.success("System prompt saved"),
-    onError: () => toast.error("Failed to save system prompt"),
+    onSuccess: () => { toast.success("System prompt saved"); },
+    onError: () => { toast.error("Failed to save system prompt"); },
   });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },

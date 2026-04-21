@@ -26,10 +26,10 @@ export default function NotificationCenter() {
   );
 
   const markRead = trpc.notification.markRead.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { refetch(); },
   });
   const markAllRead = trpc.notification.markAllRead.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => { refetch(); },
   });
 
   // Close on outside click

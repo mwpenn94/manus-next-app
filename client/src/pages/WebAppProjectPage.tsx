@@ -63,7 +63,7 @@ export default function WebAppProjectPage() {
       toast.success("Project updated");
       projectQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const deployMut = trpc.webappProject.deploy.useMutation({
@@ -73,7 +73,7 @@ export default function WebAppProjectPage() {
       deploymentsQuery.refetch();
       setDeployConfirmOpen(false);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const deleteProjectMut = trpc.webappProject.delete.useMutation({
@@ -81,7 +81,7 @@ export default function WebAppProjectPage() {
       toast.success("Project deleted");
       navigate("/webapp-builder");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const project = projectQuery.data;

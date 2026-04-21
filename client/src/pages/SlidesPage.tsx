@@ -25,7 +25,7 @@ export default function SlidesPage() {
       setPrompt("");
       utils.slides.list.invalidate();
     },
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   const handleGenerate = () => {

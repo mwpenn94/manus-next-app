@@ -70,7 +70,7 @@ export default function MobileProjectsPage() {
         setView("detail");
       }
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const deleteProject = trpc.mobileProject.delete.useMutation({
     onSuccess: () => {
@@ -78,14 +78,14 @@ export default function MobileProjectsPage() {
       projects.refetch();
       setView("list");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const generatePwa = trpc.mobileProject.generatePwaManifest.useMutation({
     onSuccess: () => {
       toast.success("PWA manifest generated!");
       activeProject.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const generateSw = trpc.mobileProject.generateServiceWorker.useQuery(
     { cacheName: `manus-pwa-v1` },
@@ -96,14 +96,14 @@ export default function MobileProjectsPage() {
       toast.success("Capacitor config generated!");
       activeProject.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const generateExpo = trpc.mobileProject.generateExpoConfig.useMutation({
     onSuccess: () => {
       toast.success("Expo config generated!");
       activeProject.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const togglePlatform = (p: Platform) => {

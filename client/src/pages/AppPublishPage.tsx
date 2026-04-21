@@ -58,7 +58,7 @@ export default function AppPublishPage() {
       builds.refetch();
       allBuilds.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
   const checklist = trpc.appPublish.getPublishChecklist.useQuery(
     { platform: selectedPlatform },

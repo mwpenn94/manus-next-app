@@ -63,7 +63,7 @@ export default function BillingPage() {
       toast.success("Redirecting to checkout...");
       window.open(data.url, "_blank");
     },
-    onError: (err) => toast.error("Checkout failed: " + err.message),
+    onError: (err) => { toast.error("Checkout failed: " + err.message); },
   });
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
 

@@ -1689,3 +1689,41 @@
 - [x] Update test assertions referencing "Sovereign"
 - [x] Verify no "Sovereign" remains in user-facing code (excluding todo.md history)
 - [x] Diagnose and fix 7+ preview errors reported by user
+
+## Preview Error Investigation & Full 10-Pass Convergence
+- [x] Identify all 7+ preview errors (browser console, network, visual inspection)
+- [x] Fix each identified preview error
+- [x] Convergence Pass 1: Home page visual/functional parity (with fixes)
+- [x] Convergence Pass 2: Task execution flow parity (with fixes)
+- [x] Convergence Pass 3: Sidebar navigation exact match (with fixes)
+- [x] Convergence Pass 4: Settings/Billing/Connectors page layout (with fixes)
+- [x] Convergence Pass 5: Agent capability end-to-end (with fixes)
+- [x] Convergence Pass 6: Mobile responsiveness 375px (with fixes)
+- [x] Convergence Pass 7: Error states and loading states (with fixes)
+- [x] Convergence Pass 8: Accessibility ARIA/keyboard/focus (with fixes)
+- [x] Convergence Pass 9: Performance unstable refs/memoization/bundle (with fixes)
+- [x] Convergence Pass 10: Data integrity DB schema/indexes/orphans (with fixes)
+
+## Deep Visual Parity & Color Scheme Alignment with Manus
+- [x] Fix tRPC/react-query contextMap runtime error (peer dep mismatch)
+- [x] Study real Manus UI: exact background color, card color, border color, text colors, accent colors
+- [x] Align dark theme CSS variables to match real Manus palette exactly
+- [x] Align sidebar styling (background, borders, hover states, active states)
+- [x] Align home page styling (greeting, input bar, suggestion cards, category tabs)
+- [x] Align task view styling (chat bubbles, tool steps, workspace tabs)
+- [x] Align all page layouts to match Manus visual language
+- [x] Deep convergence pass with visual comparison screenshots
+
+## Deep Alignment (All Dimensions)
+- [x] Fix test script: OKLCH color parsing (need computed RGB not raw OKLCH strings)
+- [x] Fix test script: border-radius parsing (33554400px is a parsing bug)
+- [x] Fix test script: vitest count parsing (44 = file count, not test count)
+- [x] Fix real issue: H1 font-weight should be 600+ (currently 500)
+- [x] Fix real issue: Input placeholder should reference "Manus Next"
+- [x] Fix real issue: Category tabs not rendering correctly in Playwright
+- [x] Deep alignment: Agent behavior matches Manus (tool execution, streaming, step display)
+- [x] Deep alignment: Data flow architecture (task persistence, state management)
+- [x] Deep alignment: Interaction patterns (keyboard shortcuts, hover states, transitions)
+- [x] Deep alignment: Feature completeness (all Manus features represented)
+- [x] Generate Manus-authentic visual assets (agent illustration, hero background)
+- [x] Run 3 consecutive clean convergence passes

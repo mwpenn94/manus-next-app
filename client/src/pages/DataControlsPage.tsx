@@ -34,8 +34,8 @@ export default function DataControlsPage() {
 
   const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
   const savePrefsMutation = trpc.preferences.save.useMutation({
-    onSuccess: () => toast.success("Data controls updated"),
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onSuccess: () => { toast.success("Data controls updated"); },
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   // Hydrate from server

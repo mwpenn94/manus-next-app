@@ -269,7 +269,7 @@ export default function SettingsPage() {
 
   // Save mutation
   const savePrefsMutation = trpc.preferences.save.useMutation({
-    onError: () => toast.error("Failed to save preferences"),
+    onError: () => { toast.error("Failed to save preferences"); },
   });
 
   // Persist general settings
@@ -299,8 +299,8 @@ export default function SettingsPage() {
 
   // Bridge config persistence
   const saveBridgeConfig = trpc.bridge.saveConfig.useMutation({
-    onSuccess: () => toast.success("Bridge configuration saved"),
-    onError: () => toast.error("Failed to save bridge config"),
+    onSuccess: () => { toast.success("Bridge configuration saved"); },
+    onError: () => { toast.error("Failed to save bridge config"); },
   });
 
   const handleBridgeConnect = useCallback(() => {

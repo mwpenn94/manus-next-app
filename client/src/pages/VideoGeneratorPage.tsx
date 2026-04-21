@@ -51,7 +51,7 @@ export default function VideoGeneratorPage() {
       setPrompt("");
       setTitle("");
     },
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   const deleteMutation = trpc.video.delete.useMutation({
@@ -59,7 +59,7 @@ export default function VideoGeneratorPage() {
       utils.video.list.invalidate();
       toast.success("Video project deleted");
     },
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   const handleCreate = () => {

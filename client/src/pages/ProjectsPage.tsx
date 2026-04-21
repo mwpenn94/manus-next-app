@@ -60,7 +60,7 @@ export default function ProjectsPage() {
       setNewIcon("");
       toast.success("Project created");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const updateMutation = trpc.project.update.useMutation({
@@ -69,7 +69,7 @@ export default function ProjectsPage() {
       setEditOpen(false);
       toast.success("Project updated");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   const deleteMutation = trpc.project.delete.useMutation({
@@ -77,7 +77,7 @@ export default function ProjectsPage() {
       projectsQuery.refetch();
       toast.success("Project archived");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   // State

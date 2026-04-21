@@ -56,13 +56,13 @@ export default function WebAppBuilderPage() {
       projectsQuery.refetch();
       navigate(`/projects/webapp/${data.externalId}`);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => { toast.error(err.message); },
   });
 
   // Real tRPC mutations
   const createBuild = trpc.webapp.create.useMutation();
   const updateBuild = trpc.webapp.update.useMutation({
-    onSuccess: () => utils.webapp.list.invalidate(),
+    onSuccess: () => { utils.webapp.list.invalidate(); },
   });
   const publishBuild = trpc.webapp.publish.useMutation({
     onSuccess: (data) => {
@@ -70,7 +70,7 @@ export default function WebAppBuilderPage() {
       toast.success("Published! Your app is live.");
       setPublishedUrl(data.url);
     },
-    onError: (err) => toast.error("Publish failed: " + err.message),
+    onError: (err) => { toast.error("Publish failed: " + err.message); },
   });
 
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);

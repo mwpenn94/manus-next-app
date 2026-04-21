@@ -95,7 +95,7 @@ export default function ConnectorsPage() {
       setCustomApiDialog(false);
       setCustomMcpDialog(false);
     },
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   const disconnectMutation = trpc.connector.disconnect.useMutation({
@@ -103,7 +103,7 @@ export default function ConnectorsPage() {
       utils.connector.list.invalidate();
       toast.success("Connector disconnected");
     },
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   const oauthPopupRef = useRef<Window | null>(null);
@@ -124,7 +124,7 @@ export default function ConnectorsPage() {
         setConnectTab("manual");
       }
     },
-    onError: (err) => toast.error(`OAuth error: ${err.message}`),
+    onError: (err) => { toast.error(`OAuth error: ${err.message}`); },
   });
 
   const completeOAuthMutation = trpc.connector.completeOAuth.useMutation({
@@ -133,7 +133,7 @@ export default function ConnectorsPage() {
       toast.success(`Connected as ${data.name}`);
       setConnectDialog(null);
     },
-    onError: (err) => toast.error(`OAuth completion failed: ${err.message}`),
+    onError: (err) => { toast.error(`OAuth completion failed: ${err.message}`); },
   });
 
   const refreshOAuthMutation = trpc.connector.refreshOAuth.useMutation({
@@ -141,7 +141,7 @@ export default function ConnectorsPage() {
       utils.connector.list.invalidate();
       toast.success("Token refreshed successfully");
     },
-    onError: (err) => toast.error(`Refresh failed: ${err.message}`),
+    onError: (err) => { toast.error(`Refresh failed: ${err.message}`); },
   });
 
   // Listen for OAuth callback messages from popup window

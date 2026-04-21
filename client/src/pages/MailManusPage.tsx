@@ -36,8 +36,8 @@ export default function MailManusPage() {
 
   const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
   const savePrefsMutation = trpc.preferences.save.useMutation({
-    onSuccess: () => toast.success("Mail settings updated"),
-    onError: (err) => toast.error(`Failed: ${err.message}`),
+    onSuccess: () => { toast.success("Mail settings updated"); },
+    onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
   // Generate workflow email from user info

@@ -73,7 +73,7 @@ export default function DesignView() {
       setCurrentDesignId(data.id);
       toast.success("Design saved!");
     },
-    onError: (err: any) => toast.error("Save failed: " + err.message),
+    onError: (err: any) => { toast.error("Save failed: " + err.message); },
   });
 
   const updateDesignMut = trpc.design.update.useMutation({
@@ -81,7 +81,7 @@ export default function DesignView() {
       utils.design.list.invalidate();
       toast.success("Design updated!");
     },
-    onError: (err: any) => toast.error("Update failed: " + err.message),
+    onError: (err: any) => { toast.error("Update failed: " + err.message); },
   });
 
   const exportDesign = trpc.design.export.useMutation({
@@ -89,7 +89,7 @@ export default function DesignView() {
       toast.success("Exported! Opening in new tab...");
       window.open(data.url, "_blank");
     },
-    onError: (err: any) => toast.error("Export failed: " + err.message),
+    onError: (err: any) => { toast.error("Export failed: " + err.message); },
   });
 
   const generateImage = useCallback(async () => {

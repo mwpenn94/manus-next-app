@@ -128,7 +128,7 @@ export default function Home() {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <h1
-            className="text-3xl md:text-4xl font-medium text-foreground mb-2 tracking-tight"
+            className="text-3xl md:text-4xl font-semibold text-foreground mb-2 tracking-tight"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {user ? `Hello, ${user.name?.split(" ")[0] || "there"}.` : "Hello."}
@@ -156,7 +156,7 @@ export default function Home() {
                   handleSubmit();
                 }
               }}
-              placeholder="Assign a task or ask anything"
+              placeholder="Give Manus Next a task to work on..."
               aria-label="Task input"
               rows={1}
               className="w-full resize-none bg-transparent pl-14 pr-24 py-3.5 text-foreground placeholder:text-muted-foreground focus:outline-none text-[15px] leading-relaxed min-h-[48px] max-h-[120px] rounded-full"

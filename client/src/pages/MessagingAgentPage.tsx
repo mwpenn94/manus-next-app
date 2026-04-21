@@ -58,7 +58,7 @@ export default function MessagingAgentPage() {
       setNewApiToken("");
       toast.success("Connection added");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any) => { toast.error(err.message); },
   });
 
   const removeMutation = trpc.connector.disconnect.useMutation({
@@ -67,7 +67,7 @@ export default function MessagingAgentPage() {
       if (selectedId) setSelectedId(null);
       toast.success("Connection removed");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any) => { toast.error(err.message); },
   });
 
   const addConfig = useCallback(() => {

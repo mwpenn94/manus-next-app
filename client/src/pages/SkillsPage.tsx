@@ -37,7 +37,7 @@ export default function SkillsPage() {
       utils.skill.list.invalidate();
       toast.success("Skill installed successfully");
     },
-    onError: (err) => toast.error(`Failed to install: ${err.message}`),
+    onError: (err) => { toast.error(`Failed to install: ${err.message}`); },
   });
 
   const uninstallMutation = trpc.skill.uninstall.useMutation({
@@ -45,12 +45,12 @@ export default function SkillsPage() {
       utils.skill.list.invalidate();
       toast.success("Skill uninstalled");
     },
-    onError: (err) => toast.error(`Failed to uninstall: ${err.message}`),
+    onError: (err) => { toast.error(`Failed to uninstall: ${err.message}`); },
   });
 
   const toggleMutation = trpc.skill.toggle.useMutation({
-    onSuccess: () => utils.skill.list.invalidate(),
-    onError: (err) => toast.error(`Failed to toggle: ${err.message}`),
+    onSuccess: () => { utils.skill.list.invalidate(); },
+    onError: (err) => { toast.error(`Failed to toggle: ${err.message}`); },
   });
 
   const installedIds = useMemo(() => new Set(installedSkills.map((s) => s.skillId)), [installedSkills]);
