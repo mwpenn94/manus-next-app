@@ -1828,12 +1828,12 @@
 
 ### Manus UI/UX Alignment (from video analysis)
 - [ ] Enhanced attachment menu — bottom sheet with Camera, Add files, Connect My Computer, Add Skills, Build website, Create slides, Create image, Generate audio
-- [ ] Confirmation gates — "Manus will continue after your confirmation" blocks for destructive/complex operations
-- [ ] Interactive output cards — Dashboard/Preview buttons inline in chat responses
+- [x] Confirmation gates — "Manus will continue after your confirmation" blocks for destructive/complex operations
+- [x] Interactive output cards — Dashboard/Preview buttons inline in chat responses
 - [ ] Workspace panel transparency — live terminal, code editor, browser preview with real-time updates
-- [ ] Skill creator conversational flow — chat-based tool/skill definition
-- [ ] Convergence loop indicators — "Pass N Convergence" visual indicators for self-debugging loops
-- [ ] Settings deep alignment — Account & Billing, Data Controls, Cloud Browser, Skills library, Connectors, General settings
+- [x] Skill creator conversational flow — chat-based tool/skill definition
+- [x] Convergence loop indicators — "Pass N Convergence" visual indicators for self-debugging loops
+- [x] Settings deep alignment — Account & Billing, Data Controls, Cloud Browser, Skills library, Connectors, General settings
 
 ### §L.29 False-Positive Elimination
 - [ ] Category A: Stub audit — grep for return { success: true } / mock data in GREEN procedures

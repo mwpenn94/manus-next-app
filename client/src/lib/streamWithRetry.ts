@@ -22,6 +22,9 @@ export interface StreamCallbacks {
   onStatus: (status: string) => void;
   onStepProgress: (progress: any) => void;
   onWebappPreview: (preview: { name: string; url: string; description?: string }) => void;
+  onConfirmationGate?: (gate: { action: string; description?: string; category?: string }) => void;
+  onConvergence?: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => void;
+  onInteractiveOutput?: (output: { type: string; title: string; description?: string; previewUrl?: string; openUrl?: string; downloadUrl?: string; isLive?: boolean; statusLabel?: string }) => void;
   onError: (error: string) => void;
   onReconnecting?: (attempt: number, maxRetries: number) => void;
   onReconnected?: () => void;
@@ -75,6 +78,9 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.status) callbacks.onStatus(data.status);
     if (data.step_progress) callbacks.onStepProgress(data.step_progress);
     if (data.webapp_preview) callbacks.onWebappPreview(data.webapp_preview);
+    if (data.confirmation_gate && callbacks.onConfirmationGate) callbacks.onConfirmationGate(data.confirmation_gate);
+    if (data.convergence && callbacks.onConvergence) callbacks.onConvergence(data.convergence);
+    if (data.interactive_output && callbacks.onInteractiveOutput) callbacks.onInteractiveOutput(data.interactive_output);
     if (data.error) callbacks.onError(data.error);
 
     return true;

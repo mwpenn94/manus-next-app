@@ -613,6 +613,25 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           }
         }
 
+        // Emit confirmation gate for destructive/sensitive operations
+        const CONFIRMATION_TOOLS: Record<string, { category: string; description: string }> = {
+          delete_file: { category: "destructive", description: "This will permanently delete the file." },
+          execute_code: { category: "sensitive", description: "The agent wants to execute code on your system." },
+          send_email: { category: "external", description: "This will send an email on your behalf." },
+          make_payment: { category: "payment", description: "This will initiate a payment transaction." },
+          publish_website: { category: "publish", description: "This will publish the website to production." },
+        };
+        if (CONFIRMATION_TOOLS[toolName]) {
+          const gate = CONFIRMATION_TOOLS[toolName];
+          sendSSE(safeWrite, {
+            confirmation_gate: {
+              action: `${toolName}: ${parsedArgs.path || parsedArgs.url || parsedArgs.name || ""}`.trim(),
+              description: gate.description,
+              category: gate.category,
+            },
+          });
+        }
+
         // Send tool_start event
         sendSSE(safeWrite, {
           tool_start: {

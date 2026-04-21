@@ -91,6 +91,9 @@ import TakeControlCard from "@/components/TakeControlCard";
 import WebappPreviewCard from "@/components/WebappPreviewCard";
 import CheckpointCard from "@/components/CheckpointCard";
 import TaskCompletedCard from "@/components/TaskCompletedCard";
+import ConfirmationGate from "@/components/ConfirmationGate";
+import ConvergenceIndicator from "@/components/ConvergenceIndicator";
+import InteractiveOutputCard from "@/components/InteractiveOutputCard";
 import PublishSheet from "@/components/PublishSheet";
 import SiteLiveSheet from "@/components/SiteLiveSheet";
 import { MediaCapturePanel } from "@/components/MediaCapturePanel";
@@ -478,6 +481,53 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           <TaskCompletedCard
             taskId={(message.cardData?.taskId as string) ?? ""}
             onRate={(id, rating) => toast.success(`Rated ${rating} stars`)}
+          />
+        ) : message.cardType === "confirmation_gate" ? (
+          <ConfirmationGate
+            action={(message.cardData?.action as string) ?? message.content}
+            description={message.cardData?.description as string}
+            category={(message.cardData?.category as any) ?? "general"}
+            status={(message.cardData?.status as any) ?? "pending"}
+            onApprove={() => {
+              toast.success("Action approved");
+              // Update card status in message
+            }}
+            onReject={() => {
+              toast.info("Action rejected — agent will find an alternative");
+            }}
+          />
+        ) : message.cardType === "convergence" ? (
+          <ConvergenceIndicator
+            passNumber={(message.cardData?.passNumber as number) ?? 1}
+            totalPasses={message.cardData?.totalPasses as number}
+            passType={(message.cardData?.passType as any) ?? "landscape"}
+            status={(message.cardData?.status as any) ?? "running"}
+            description={message.cardData?.description as string}
+            rating={message.cardData?.rating as number}
+            convergenceCount={(message.cardData?.convergenceCount as number) ?? 0}
+          />
+        ) : message.cardType === "interactive_output" ? (
+          <InteractiveOutputCard
+            type={(message.cardData?.outputType as any) ?? "website"}
+            title={(message.cardData?.title as string) ?? "Output"}
+            description={message.cardData?.description as string}
+            previewUrl={message.cardData?.previewUrl as string}
+            openUrl={message.cardData?.openUrl as string}
+            downloadUrl={message.cardData?.downloadUrl as string}
+            isLive={!!message.cardData?.isLive}
+            statusLabel={message.cardData?.statusLabel as string}
+            onPreview={() => {
+              const url = message.cardData?.previewUrl as string;
+              if (url) window.open(url, "_blank");
+            }}
+            onOpen={() => {
+              const url = message.cardData?.openUrl as string;
+              if (url) window.open(url, "_blank");
+            }}
+            onDownload={() => {
+              const url = message.cardData?.downloadUrl as string;
+              if (url) window.open(url, "_blank");
+            }}
           />
         ) : (
           /* Standard text message rendering */

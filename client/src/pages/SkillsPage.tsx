@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Puzzle, Search, Star, Download, Trash2, Loader2 } from "lucide-react";
+import { Puzzle, Search, Star, Download, Trash2, Loader2, Plus, Wand2, Code, FileText } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -86,6 +86,33 @@ export default function SkillsPage() {
           <h1 className="text-2xl font-semibold text-foreground">Skills Library</h1>
           <Badge variant="secondary" className="ml-auto">{installedSkills.length} installed</Badge>
         </div>
+
+        {/* Skill Creator — Manus-style conversational tool creation */}
+        <Card className="mb-6 border-dashed border-primary/30 bg-primary/5 hover:border-primary/50 transition-colors">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Wand2 className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-foreground mb-0.5">Create Custom Skill</h3>
+                <p className="text-xs text-muted-foreground">
+                  Describe what you want the skill to do and the agent will build it for you
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  toast.info("Describe your skill in the chat — the agent will create it conversationally");
+                  window.location.href = "/";
+                }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Create
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

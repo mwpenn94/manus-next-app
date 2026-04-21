@@ -138,6 +138,44 @@ export function buildStreamCallbacks(
         setters.setStreamContent(state.accumulated);
       }
     },
+    onConfirmationGate: (gate: { action: string; description?: string; category?: string }) => {
+      if (setters.addMessage) {
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: gate.action,
+          cardType: "confirmation_gate" as const,
+          cardData: {
+            action: gate.action,
+            description: gate.description,
+            category: gate.category || "general",
+            status: "pending",
+          },
+        });
+      }
+    },
+    onConvergence: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => {
+      if (setters.addMessage) {
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: `Pass ${data.passNumber} — ${data.passType}`,
+          cardType: "convergence" as const,
+          cardData: data,
+        });
+      }
+    },
+    onInteractiveOutput: (output: { type: string; title: string; description?: string; previewUrl?: string; openUrl?: string; downloadUrl?: string; isLive?: boolean; statusLabel?: string }) => {
+      if (setters.addMessage) {
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: `${output.title}`,
+          cardType: "interactive_output" as const,
+          cardData: {
+            outputType: output.type,
+            ...output,
+          },
+        });
+      }
+    },
     onReconnected: () => {
       // Clear reconnecting state
       setters.setIsReconnecting?.(false);

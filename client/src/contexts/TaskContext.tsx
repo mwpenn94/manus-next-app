@@ -43,7 +43,10 @@ export type CardType =
   | "take_control"
   | "webapp_preview"
   | "checkpoint"
-  | "task_completed";
+  | "task_completed"
+  | "confirmation_gate"
+  | "convergence"
+  | "interactive_output";
 
 export interface Message {
   id: string;

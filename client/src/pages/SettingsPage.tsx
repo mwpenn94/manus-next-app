@@ -44,7 +44,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 
-type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge";
+type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge" | "cloud_browser" | "data_controls";
 
 interface Capability {
   name: string;
@@ -342,6 +342,8 @@ export default function SettingsPage() {
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "secrets", label: "Secrets", icon: Settings },
     { id: "capabilities", label: "Capabilities", icon: Puzzle },
+    { id: "cloud_browser", label: "Cloud Browser", icon: Globe },
+    { id: "data_controls", label: "Data Controls", icon: Monitor },
     { id: "bridge", label: "Bridge", icon: Unplug },
   ];
 
@@ -879,6 +881,152 @@ export default function SettingsPage() {
                     </motion.div>
                   ))
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Cloud Browser ── */}
+          {activeTab === "cloud_browser" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Cloud Browser
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Manage the cloud browser used by the agent for web tasks
+              </p>
+
+              <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+                {/* Persist login state */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Persist login state</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Keep browser cookies and sessions between tasks
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => toast.info("Login persistence toggled")}
+                    className="w-10 h-5 rounded-full bg-primary/30 relative transition-colors"
+                  >
+                    <div className="absolute top-0.5 left-5 w-4 h-4 rounded-full bg-primary transition-all" />
+                  </button>
+                </div>
+
+                <div className="border-t border-border/50" />
+
+                {/* Cookie management */}
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Saved cookies</p>
+                  <div className="bg-muted/30 rounded-lg p-4 text-center">
+                    <Globe className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No saved cookies yet</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                      Cookies will appear here after the agent logs into websites
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/50" />
+
+                {/* Clear data */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Clear browser data</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Remove all cookies, cache, and stored sessions
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => toast.info("Browser data cleared")}
+                    className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Data Controls ── */}
+          {activeTab === "data_controls" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Data Controls
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Manage your shared data, files, and deployed resources
+              </p>
+
+              <div className="space-y-4">
+                {/* Shared tasks */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Share2 className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Shared Tasks</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">0 shared</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Tasks you've shared with others via public links
+                  </p>
+                </div>
+
+                {/* Files */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Files</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">0 files</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Files uploaded to or generated by the agent
+                  </p>
+                </div>
+
+                {/* Websites & Apps */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Websites & Apps</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">0 deployed</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Web applications and sites deployed through the agent
+                  </p>
+                </div>
+
+                {/* Purchased domains */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Purchased Domains</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">0 domains</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Custom domains purchased and managed through the platform
+                  </p>
+                </div>
+
+                {/* Delete all data */}
+                <div className="bg-card border border-red-500/20 rounded-xl p-5">
+                  <p className="text-sm font-medium text-red-400 mb-1">Danger Zone</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Permanently delete all your data, tasks, and generated content
+                  </p>
+                  <button
+                    onClick={() => toast.info("Contact support to delete all data")}
+                    className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
+                  >
+                    Delete All Data
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
