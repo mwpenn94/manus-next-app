@@ -321,6 +321,24 @@ async function startServer() {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
+    // SSE heartbeat: send a ping comment every 15s to keep the connection alive
+    // on mobile networks and through proxies that close idle connections.
+    const heartbeatInterval = setInterval(() => {
+      try {
+        if (!res.destroyed) {
+          res.write(`data: ${JSON.stringify({ heartbeat: true, ts: Date.now() })}\n\n`);
+        } else {
+          clearInterval(heartbeatInterval);
+        }
+      } catch {
+        clearInterval(heartbeatInterval);
+      }
+    }, 15_000);
+
+    // Clean up heartbeat when client disconnects
+    req.on("close", () => clearInterval(heartbeatInterval));
+    res.on("close", () => clearInterval(heartbeatInterval));
+
     const safeWrite = (data: string): boolean => {
       try {
         if (res.destroyed) return false;
@@ -332,6 +350,7 @@ async function startServer() {
 
     const safeEnd = () => {
       try {
+        clearInterval(heartbeatInterval);
         if (!res.destroyed) res.end();
       } catch { /* ignore */ }
     };

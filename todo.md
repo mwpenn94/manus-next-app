@@ -1429,3 +1429,14 @@
 - [x] P22-5: Write P22 tests (27 tests in server/p22.test.ts, 720 total passing)
 - [x] P22-6: Live browser validation — PlusMenu popover opens, all items visible, Build website navigates to /webapp-builder correctly
 - [x] P22-7: Recursive convergence passes — 3 consecutive zero-change (0 TS errors, 720 tests passing, build clean)
+
+## P23 — Connection Lost Fix + Exhaustive Reassessment + Convergence
+- [x] P23-1: Diagnose root cause — no SSE heartbeat during tool execution, mobile proxies drop idle connections after 30-60s
+- [x] P23-2: Server-side 15s heartbeat ping in /api/stream endpoint (setInterval + clearInterval on stream end)
+- [x] P23-3: Client-side streamWithRetry utility — auto-retry with exponential backoff (3 attempts, 1s/2s/4s), heartbeat filtering, reconnecting/reconnected callbacks
+- [x] P23-4: buildStreamCallbacks utility — eliminates 4x duplicated SSE parsing logic in TaskView (reduced from ~2800 to 2604 lines)
+- [x] P23-5: Refactored all 4 streaming blocks in TaskView to use streamWithRetry (auto-stream, handleSend, hands-free, regenerate)
+- [x] P23-6: Removed all hardcoded "Connection lost" strings — now uses getStreamErrorMessage with user-friendly messages
+- [x] P23-7: Full virtual user walkthrough — all pages render, no console errors, no server errors
+- [x] P23-8: Write P23 tests (43 tests in server/p23.test.ts, 763 total passing)
+- [x] P23-9: Recursive convergence passes — 3/3 clean (0 TS errors, 763 tests passing, build 395.1kb, zero changes between passes)

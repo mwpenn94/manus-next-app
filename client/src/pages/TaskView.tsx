@@ -91,6 +91,8 @@ import HandsFreeOverlay from "@/components/HandsFreeOverlay";
 import { useHandsFreeMode } from "@/hooks/useHandsFreeMode";
 import { useEdgeTTS, splitSentences } from "@/hooks/useEdgeTTS";
 import { Headphones } from "lucide-react";
+import { streamWithRetry, getStreamErrorMessage } from "@/lib/streamWithRetry";
+import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -1462,97 +1464,22 @@ export default function TaskView() {
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
-        const response = await fetch("/api/stream", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ messages, taskExternalId: task.id, mode: agentMode }),
-          signal: controller.signal,
+        const streamState: StreamState = { accumulated: "", actions, images };
+        const callbacks = buildStreamCallbacks(streamState, {
+          setStreamContent, setAgentActions, setStreamImages, setStepProgress,
+          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         });
 
-        if (!response.ok || !response.body) {
-          throw new Error("Stream failed");
-        }
+        await streamWithRetry({
+          messages, taskExternalId: task.id, mode: agentMode,
+          signal: controller.signal, callbacks,
+        });
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const text = decoder.decode(value, { stream: true });
-          const lines = text.split("\n");
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.delta) {
-                accumulated += data.delta;
-                accumulatedRef.current = accumulated;
-                setStreamContent(accumulated);
-              }
-              if (data.tool_start) {
-                const display = data.tool_start.display || {};
-                const actionType = display.type || "thinking";
-                const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
-                actions.push(newAction);
-                actionsRef.current = [...actions];
-                setAgentActions([...actions]);
-              }
-              if (data.tool_result) {
-                // Mark the matching action as done and attach preview
-                const idx = actions.findIndex(a => a.status === "active");
-                if (idx >= 0) {
-                  const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
-                  actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
-                  actionsRef.current = [...actions];
-                  setAgentActions([...actions]);
-                }
-              }
-              if (data.image) {
-                images.push(data.image);
-                setStreamImages([...images]);
-                accumulated += `\n\n![Generated Image](${data.image})\n\n`;
-                accumulatedRef.current = accumulated;
-                setStreamContent(accumulated);
-              }
-              if (data.document) {
-                const docTitle = data.document.title || "Document";
-                const docUrl = data.document.url;
-                accumulated += `\n\n📄 **${docTitle}** — [Download Document](${docUrl})\n\n`;
-                accumulatedRef.current = accumulated;
-                setStreamContent(accumulated);
-              }
-              if (data.done) {
-                accumulated = data.content || accumulated;
-                accumulatedRef.current = accumulated;
-                // Append images to content if they were generated
-                if (images.length > 0 && !accumulated.includes(images[0])) {
-                  for (const img of images) {
-                    accumulated += `\n\n![Generated Image](${img})`;
-                  }
-                  accumulatedRef.current = accumulated;
-                }
-              }
-              if (data.status) {
-                if (data.status === "running") updateTaskStatus(task.id, "running");
-                if (data.status === "completed") updateTaskStatus(task.id, "completed");
-              }
-              if (data.step_progress) {
-                setStepProgress(data.step_progress);
-              }
-              if (data.error) {
-                accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
-                accumulatedRef.current = accumulated;
-                setStreamContent(accumulated);
-              }
-            } catch { /* skip malformed lines */ }
-          }
-        }
+        accumulated = streamState.accumulated;
 
         // Mark all remaining active actions as done
         setStepProgress(null);
-        const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+        const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
         addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
       } catch (err: any) {
         if (err.name === "AbortError") {
@@ -1560,18 +1487,9 @@ export default function TaskView() {
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
           }
         } else {
-          // Provide user-friendly error messages instead of raw browser errors
-          let errorMsg = "Something went wrong. Please try again.";
-          if (err.message === "Load failed" || err.message === "Failed to fetch" || err.message === "NetworkError when attempting to fetch resource.") {
-            errorMsg = "Connection lost. The server may have restarted. Please try again.";
-          } else if (err.message?.includes("timeout")) {
-            errorMsg = "The request timed out. Please try again with a shorter message.";
-          } else if (err.message) {
-            errorMsg = `I encountered an error: ${err.message}. Please try again.`;
-          }
           addMessage(task.id, {
             role: "assistant",
-            content: errorMsg,
+            content: getStreamErrorMessage(err),
           });
         }
       } finally {
@@ -1709,96 +1627,21 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      // Pass taskExternalId so server can resolve per-task system prompt
-      const response = await fetch("/api/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ messages, taskExternalId: task.id, mode: agentMode }),
-        signal: controller.signal,
+      const streamState: StreamState = { accumulated: "", actions, images };
+      const callbacks = buildStreamCallbacks(streamState, {
+        setStreamContent, setAgentActions, setStreamImages, setStepProgress,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error("Stream failed");
-      }
+      await streamWithRetry({
+        messages, taskExternalId: task.id, mode: agentMode,
+        signal: controller.signal, callbacks,
+      });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.delta) {
-              accumulated += data.delta;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-            if (data.tool_start) {
-              const display = data.tool_start.display || {};
-              const actionType = display.type || "thinking";
-              const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
-              actions.push(newAction);
-              actionsRef.current = [...actions];
-              setAgentActions([...actions]);
-            }
-            if (data.tool_result) {
-              const idx = actions.findIndex(a => a.status === "active");
-              if (idx >= 0) {
-                const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
-                actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
-                actionsRef.current = [...actions];
-                setAgentActions([...actions]);
-              }
-            }
-            if (data.image) {
-              images.push(data.image);
-              setStreamImages([...images]);
-              accumulated += `\n\n![Generated Image](${data.image})\n\n`;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-            if (data.document) {
-              // Inject download link into accumulated content so it appears in the chat
-              const docTitle = data.document.title || "Document";
-              const docUrl = data.document.url;
-              accumulated += `\n\n📄 **${docTitle}** — [Download Document](${docUrl})\n\n`;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-            if (data.done) {
-              accumulated = data.content || accumulated;
-              accumulatedRef.current = accumulated;
-              if (images.length > 0 && !accumulated.includes(images[0])) {
-                for (const img of images) {
-                  accumulated += `\n\n![Generated Image](${img})`;
-                }
-                accumulatedRef.current = accumulated;
-              }
-            }
-            if (data.status) {
-              if (data.status === "running") updateTaskStatus(task.id, "running");
-              if (data.status === "completed") updateTaskStatus(task.id, "completed");
-            }
-            if (data.step_progress) {
-              setStepProgress(data.step_progress);
-            }
-            if (data.error) {
-              accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-          } catch { /* skip malformed lines */ }
-        }
-      }
+      accumulated = streamState.accumulated;
 
       setStepProgress(null);
-      const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -1806,18 +1649,9 @@ export default function TaskView() {
           addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
-        // Provide user-friendly error messages instead of raw browser errors
-        let errorMsg = "Something went wrong. Please try again.";
-        if (err.message === "Load failed" || err.message === "Failed to fetch" || err.message === "NetworkError when attempting to fetch resource.") {
-          errorMsg = "Connection lost. The server may have restarted. Please try again.";
-        } else if (err.message?.includes("timeout")) {
-          errorMsg = "The request timed out. Please try again with a shorter message.";
-        } else if (err.message) {
-          errorMsg = `I encountered an error: ${err.message}. Please try again.`;
-        }
         addMessage(task.id, {
           role: "assistant",
-          content: errorMsg,
+          content: getStreamErrorMessage(err),
         });
       }
     } finally {
@@ -1862,72 +1696,21 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await fetch("/api/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ messages, taskExternalId: task.id, mode: agentMode }),
-        signal: controller.signal,
+      const streamState: StreamState = { accumulated: "", actions, images };
+      const callbacks = buildStreamCallbacks(streamState, {
+        setStreamContent, setAgentActions, setStreamImages, setStepProgress,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
       });
 
-      if (!response.ok || !response.body) throw new Error("Stream failed");
+      await streamWithRetry({
+        messages, taskExternalId: task.id, mode: agentMode,
+        signal: controller.signal, callbacks,
+      });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.delta) {
-              accumulated += data.delta;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-            if (data.tool_start) {
-              const display = data.tool_start.display || {};
-              const actionType = display.type || "thinking";
-              const newAction = mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active");
-              actions.push(newAction);
-              actionsRef.current = [...actions];
-              setAgentActions([...actions]);
-            }
-            if (data.tool_result) {
-              const idx = actions.findIndex(a => a.status === "active");
-              if (idx >= 0) {
-                const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
-                actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
-                actionsRef.current = [...actions];
-                setAgentActions([...actions]);
-              }
-            }
-            if (data.image) {
-              images.push(data.image);
-              setStreamImages([...images]);
-              accumulated += `\n\n![Generated Image](${data.image})\n\n`;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-            if (data.done) {
-              accumulated = data.content || accumulated;
-              accumulatedRef.current = accumulated;
-            }
-            if (data.error) {
-              accumulated += `\n\n\u26a0\ufe0f ${data.error}`;
-              accumulatedRef.current = accumulated;
-              setStreamContent(accumulated);
-            }
-          } catch { /* skip malformed lines */ }
-        }
-      }
+      accumulated = streamState.accumulated;
 
       setStepProgress(null);
-      const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
 
       // ── Auto-speak the response via Edge TTS ──
@@ -1938,7 +1721,7 @@ export default function TaskView() {
           addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
-        const errorMsg = "Something went wrong. Please try again.";
+        const errorMsg = getStreamErrorMessage(err);
         addMessage(task.id, { role: "assistant", content: errorMsg });
         handsFree.notifyError(errorMsg);
       }
@@ -1993,74 +1776,27 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await fetch("/api/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ messages: conversationMessages, taskExternalId: task.id, mode: agentMode }),
-        signal: controller.signal,
+      const streamState: StreamState = { accumulated: "", actions, images };
+      const callbacks = buildStreamCallbacks(streamState, {
+        setStreamContent, setAgentActions, setStreamImages, setStepProgress,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
       });
 
-      if (!response.ok || !response.body) throw new Error("Stream failed");
+      await streamWithRetry({
+        messages: conversationMessages, taskExternalId: task.id, mode: agentMode,
+        signal: controller.signal, callbacks,
+      });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split("\n");
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const data = JSON.parse(line.slice(6));
-            if (data.delta) { accumulated += data.delta; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
-            if (data.tool_start) {
-              const display = data.tool_start.display || {};
-              const actionType = display.type || "thinking";
-              actions.push(mapToolToAction(actionType, display.label || data.tool_start.name, data.tool_start.args, "active"));
-              actionsRef.current = [...actions];
-              setAgentActions([...actions]);
-            }
-            if (data.tool_result) {
-              const idx = actions.findIndex(a => a.status === "active");
-              if (idx >= 0) {
-                const preview = data.tool_result.preview ? String(data.tool_result.preview).slice(0, 500) : undefined;
-                actions[idx] = { ...actions[idx], status: "done", preview } as AgentAction;
-                actionsRef.current = [...actions];
-                setAgentActions([...actions]);
-              }
-            }
-            if (data.image) { images.push(data.image); setStreamImages([...images]); accumulated += `\n\n![Generated Image](${data.image})\n\n`; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
-            if (data.document) { accumulated += `\n\n📄 **${data.document.title || "Document"}** — [Download Document](${data.document.url})\n\n`; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
-            if (data.done) { accumulated = data.content || accumulated; accumulatedRef.current = accumulated; }
-            if (data.status) {
-              if (data.status === "running") updateTaskStatus(task.id, "running");
-              if (data.status === "completed") updateTaskStatus(task.id, "completed");
-            }
-            if (data.step_progress) setStepProgress(data.step_progress);
-            if (data.error) { accumulated += `\n\n\u26a0\ufe0f ${data.error}`; accumulatedRef.current = accumulated; setStreamContent(accumulated); }
-          } catch { /* skip */ }
-        }
-      }
+      accumulated = streamState.accumulated;
 
       setStepProgress(null);
-      const finalActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
         if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
       } else {
-        let errorMsg = "Something went wrong. Please try again.";
-        if (err.message === "Load failed" || err.message === "Failed to fetch" || err.message === "NetworkError when attempting to fetch resource.") {
-          errorMsg = "Connection lost. The server may have restarted. Please try again.";
-        } else if (err.message?.includes("timeout")) {
-          errorMsg = "The request timed out. Please try again with a shorter message.";
-        } else if (err.message) {
-          errorMsg = `I encountered an error: ${err.message}. Please try again.`;
-        }
-        addMessage(task.id, { role: "assistant", content: errorMsg });
+        addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
       }
     } finally {
       abortControllerRef.current = null;
