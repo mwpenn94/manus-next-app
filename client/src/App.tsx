@@ -42,6 +42,9 @@ const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
 const ClientInferencePage = lazy(() => import("./pages/ClientInferencePage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
+const MailManusPage = lazy(() => import("./pages/MailManusPage"));
+const DeployedWebsitesPage = lazy(() => import("./pages/DeployedWebsitesPage"));
 
 function PageLoader() {
   return (
@@ -210,6 +213,21 @@ function Router() {
       <Route path="/shared/:token">
         <Suspense fallback={<PageLoader />}>
           <SharedTaskView />
+        </Suspense>
+      </Route>
+      <Route path="/data-controls">
+        <Suspense fallback={<PageLoader />}>
+          <DataControlsPage />
+        </Suspense>
+      </Route>
+      <Route path="/mail">
+        <Suspense fallback={<PageLoader />}>
+          <MailManusPage />
+        </Suspense>
+      </Route>
+      <Route path="/deployments">
+        <Suspense fallback={<PageLoader />}>
+          <DeployedWebsitesPage />
         </Suspense>
       </Route>
       <Route path="/404" component={NotFound} />

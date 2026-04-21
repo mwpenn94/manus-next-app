@@ -78,6 +78,40 @@ function buildOAuthCallbackHtml(
 </body></html>`;
 }
 
+function buildOAuthSuccessHtml(
+  origin: string,
+  connectorId: string,
+  userName: string
+): string {
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}
+.card{text-align:center;padding:2rem;border-radius:1rem;background:#1a1a1a;border:1px solid #333;max-width:320px}
+.check{width:48px;height:48px;border-radius:50%;background:#22c55e20;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.check svg{width:24px;height:24px;color:#22c55e}
+h2{margin:0 0 0.5rem;font-size:1.25rem}p{color:#999;margin:0 0 1.5rem;font-size:0.875rem}
+a{display:inline-block;padding:0.625rem 1.5rem;background:#c9a227;color:#000;text-decoration:none;border-radius:0.5rem;font-weight:500;font-size:0.875rem}
+</style></head><body>
+<div class="card">
+  <div class="check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+  <h2>Connected!</h2>
+  <p>Successfully linked <strong>${userName}</strong> via ${connectorId}.</p>
+  <a href="${origin}/connectors?oauth_success=${encodeURIComponent(connectorId)}">Continue</a>
+</div>
+<script>
+  // If opened as popup, notify parent and close
+  if (window.opener && !window.opener.closed) {
+    try {
+      window.opener.postMessage({ type: "connector-oauth-success", connectorId: ${JSON.stringify(connectorId)} }, "*");
+      setTimeout(function() { window.close(); }, 1200);
+    } catch(e) { /* ignore, user can click Continue */ }
+  } else {
+    // Auto-redirect after 2 seconds for same-window flow
+    setTimeout(function() { window.location.href = "${origin}/connectors?oauth_success=${encodeURIComponent(connectorId)}"; }, 2000);
+  }
+</script>
+</body></html>`;
+}
+
 async function startServer() {
   const app = express();
   app.set("trust proxy", 1); // Trust first proxy for rate limiting behind reverse proxy
@@ -164,7 +198,7 @@ async function startServer() {
         return res.status(400).send(buildOAuthCallbackHtml(null, null, "Missing code or state parameter"));
       }
 
-      // Decode state to extract connectorId and origin
+      // Decode state to extract connectorId, userId, and origin
       let state: { connectorId: string; userId: number; origin: string };
       try {
         state = JSON.parse(Buffer.from(stateRaw, "base64url").toString());
@@ -172,9 +206,50 @@ async function startServer() {
         return res.status(400).send(buildOAuthCallbackHtml(null, null, "Invalid state parameter"));
       }
 
-      // Send HTML that posts the code back to the opener window (popup flow)
-      // or redirects to /connectors with query params (same-window flow)
-      res.send(buildOAuthCallbackHtml(state.connectorId, code, null, stateRaw));
+      // ── Server-side token exchange (eliminates popup/postMessage dependency) ──
+      // This is the Manus-style approach: exchange code on the server, then redirect.
+      try {
+        const { getOAuthProvider } = await import("../connectorOAuth");
+        const { upsertConnector, updateConnectorOAuthTokens } = await import("../db");
+        const provider = getOAuthProvider(state.connectorId);
+        if (!provider) throw new Error("Unknown connector");
+
+        const redirectUri = `${state.origin}/api/connector/oauth/callback`;
+        const tokens = await provider.exchangeCode(code, redirectUri);
+
+        let userName = provider.name;
+        if (provider.getUserInfo) {
+          try {
+            const info = await provider.getUserInfo(tokens.accessToken);
+            userName = info.name || provider.name;
+          } catch { /* ignore user info errors */ }
+        }
+
+        const connId = await upsertConnector({
+          userId: state.userId,
+          connectorId: state.connectorId,
+          name: userName,
+          config: { authMethod: "oauth" },
+          status: "connected",
+        });
+        await updateConnectorOAuthTokens(connId, {
+          authMethod: "oauth",
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken || null,
+          tokenExpiresAt: tokens.expiresIn ? new Date(Date.now() + tokens.expiresIn * 1000) : null,
+          oauthScopes: tokens.scope || null,
+        });
+
+        console.log(`[Connector OAuth] Successfully connected ${state.connectorId} for user ${state.userId} as ${userName}`);
+
+        // Redirect back to connectors page with success indicator
+        const base = state.origin || "";
+        return res.send(buildOAuthSuccessHtml(base, state.connectorId, userName));
+      } catch (exchangeErr: any) {
+        console.error("[Connector OAuth] Token exchange failed:", exchangeErr);
+        // Fall back to client-side exchange via postMessage/redirect
+        return res.send(buildOAuthCallbackHtml(state.connectorId, code, null, stateRaw));
+      }
     } catch (err: any) {
       console.error("[Connector OAuth Callback] Error:", err);
       res.status(500).send(buildOAuthCallbackHtml(null, null, err.message || "OAuth callback failed"));

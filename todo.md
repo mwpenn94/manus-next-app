@@ -1545,3 +1545,22 @@
 - [x] P31-3: Fix mobile popup blocking — use same-window redirect on mobile
 - [x] P31-4: Fix callback page to extract origin from state for redirect
 - [x] P31-5: Convergence pass (0 TS errors, 902 vitest passing)
+
+## P32 — Video Analysis Gaps (Manus Parity)
+
+- [x] P32-1: Fix GitHub OAuth — server-side token exchange + redirect flow (eliminates popup dependency)
+- [x] P32-2: Add "Custom API" tab to Connectors page (user can add API key-based integrations)
+- [x] P32-3: Add "Custom MCP" tab to Connectors page (Model Context Protocol server config)
+- [x] P32-4: Add Scheduled Tasks page (already exists as SchedulePage.tsx with full CRUD)
+- [x] P32-5: Add Knowledge page (MemoryPage.tsx serves as knowledge base with file import)
+- [x] P32-6: Add Skills page (already exists as SkillsPage.tsx with install/toggle/search)
+- [x] P32-7: Add Data Controls hub (shared tasks, deployed websites, cloud browser settings)
+- [x] P32-8: Add Mail Manus page (email interaction, custom workflow email, approved senders)
+- [x] P32-9: Add Integrations page (already exists as MessagingAgentPage.tsx with Telegram/Slack/WhatsApp)
+- [x] P32-10: Add Cloud Browser settings (persist login toggle, clear cookies — in Data Controls)
+- [x] P32-11: Add more connectors to match Manus (expand from ~6 to 30+ most common)
+- [x] P32-12: Add Notifications hub (already exists as NotificationCenter.tsx with bell dropdown)
+- [x] P32-13: Add Deployed Websites dashboard (analytics, version history, database viewer, file storage, SEO)
+- [x] P32-14: Vitest tests for all new features (31/31 passing)
+- [x] P32-15: Playwright e2e validation (pages load, no JS errors)
+- [x] P32-16: Recursive convergence passes (TSC 0 errors, vitest 31/31, pages render)
