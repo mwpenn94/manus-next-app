@@ -63,6 +63,13 @@ import {
   Monitor,
   Camera,
   Video,
+  Hammer,
+  Package,
+  GitBranch,
+  BarChart3,
+  Palette,
+  Mail,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -218,21 +225,39 @@ function ActionIcon({ type }: { type: AgentAction["type"] }) {
     case "thinking": return <Brain className={cn(iconClass, "text-primary")} />;
     case "writing": return <FileText className={cn(iconClass, "text-indigo-400")} />;
     case "researching": return <Search className={cn(iconClass, "text-teal-400")} />;
+    case "building": return <Hammer className={cn(iconClass, "text-orange-400")} />;
+    case "editing": return <Pencil className={cn(iconClass, "text-amber-400")} />;
+    case "reading": return <BookOpen className={cn(iconClass, "text-sky-400")} />;
+    case "installing": return <Package className={cn(iconClass, "text-emerald-400")} />;
+    case "versioning": return <GitBranch className={cn(iconClass, "text-violet-400")} />;
+    case "analyzing": return <BarChart3 className={cn(iconClass, "text-yellow-400")} />;
+    case "designing": return <Palette className={cn(iconClass, "text-rose-400")} />;
+    case "sending": return <Mail className={cn(iconClass, "text-blue-300")} />;
   }
 }
 
 function ActionLabel({ action }: { action: AgentAction }) {
+  const labelClass = "text-muted-foreground";
+  const codeClass = "text-[11px] bg-muted/50 px-1 py-0.5 rounded";
   switch (action.type) {
-    case "browsing": return <span>Browsing <span className="text-muted-foreground font-mono text-[11px] break-all">{action.url}</span></span>;
+    case "browsing": return <span>Browsing <span className={cn(labelClass, "font-mono text-[11px] break-all")}>{action.url}</span></span>;
     case "scrolling": return <span>Scrolling page</span>;
-    case "clicking": return <span>Clicking <span className="text-muted-foreground">{action.element}</span></span>;
-    case "executing": return <span>Running <code className="text-[11px] bg-muted/50 px-1 py-0.5 rounded">{action.command}</code></span>;
-    case "creating": return <span>Creating <code className="text-[11px] bg-muted/50 px-1 py-0.5 rounded">{action.file}</code></span>;
-    case "searching": return <span>Searching <span className="text-muted-foreground italic">"{action.query}"</span></span>;
-    case "generating": return <span>Generating <span className="text-muted-foreground">{action.description}</span></span>;
+    case "clicking": return <span>Clicking <span className={labelClass}>{action.element}</span></span>;
+    case "executing": return <span>Running <code className={codeClass}>{action.command}</code></span>;
+    case "creating": return <span>Creating <code className={codeClass}>{action.file}</code></span>;
+    case "searching": return <span>Searching <span className={cn(labelClass, "italic")}>"{action.query}"</span></span>;
+    case "generating": return <span>Generating <span className={labelClass}>{action.description}</span></span>;
     case "thinking": return <span>Reasoning about next steps...</span>;
-    case "writing": return <span>Writing document</span>;
-    case "researching": return <span>Wide research <span className="text-muted-foreground">{(action as any).label}</span></span>;
+    case "writing": return <span>{action.label || "Writing document"}</span>;
+    case "researching": return <span>{action.label || "Wide research"}</span>;
+    case "building": return <span>{action.label || "Building project"}</span>;
+    case "editing": return <span>{action.label || (action.file ? <>Editing <code className={codeClass}>{action.file}</code></> : "Editing file")}</span>;
+    case "reading": return <span>{action.label || (action.file ? <>Reading <code className={codeClass}>{action.file}</code></> : "Reading file")}</span>;
+    case "installing": return <span>{action.label || (action.packages ? <>Installing <code className={codeClass}>{action.packages}</code></> : "Installing dependencies")}</span>;
+    case "versioning": return <span>{action.label || "Git operation"}</span>;
+    case "analyzing": return <span>{action.label || "Analyzing data"}</span>;
+    case "designing": return <span>{action.label || "Creating design"}</span>;
+    case "sending": return <span>{action.label || "Sending message"}</span>;
   }
 }
 
@@ -295,6 +320,45 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                         </button>
                       )}
                     </div>
+                  );
+                })}
+              </div>
+            ) : (action.type === "executing" || action.type === "reading" || action.type === "editing") ? (
+              <div className="p-2">
+                <pre className="font-mono whitespace-pre-wrap text-[10px] leading-relaxed">{action.preview}</pre>
+              </div>
+            ) : action.type === "installing" ? (
+              <div className="p-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Package className="w-3 h-3 text-emerald-400" />
+                  <span className="text-[10px] font-medium text-foreground">Install output</span>
+                </div>
+                <pre className="font-mono whitespace-pre-wrap text-[10px] leading-relaxed">{action.preview}</pre>
+              </div>
+            ) : action.type === "building" ? (
+              <div className="p-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Hammer className="w-3 h-3 text-orange-400" />
+                  <span className="text-[10px] font-medium text-foreground">Build output</span>
+                </div>
+                <pre className="font-mono whitespace-pre-wrap text-[10px] leading-relaxed">{action.preview}</pre>
+              </div>
+            ) : action.type === "researching" ? (
+              <div className="p-2 space-y-1">
+                {action.preview.split("\n").filter(Boolean).map((line, i) => {
+                  const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
+                  return urlMatch ? (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <Globe className="w-2.5 h-2.5 shrink-0" />
+                      <button
+                        onClick={() => window.open(urlMatch[1], "_blank")}
+                        className="text-[10px] text-blue-400 hover:underline truncate"
+                      >
+                        {line.replace(urlMatch[0], "").trim() || urlMatch[1]}
+                      </button>
+                    </div>
+                  ) : (
+                    <p key={i} className="text-[10px]">{line}</p>
                   );
                 })}
               </div>
@@ -1197,15 +1261,31 @@ function mapToolToAction(
     case "generating":
       return { type: "generating", description: args?.prompt || label, status };
     case "executing":
-      return { type: "executing", command: args?.description || label, status };
+      return { type: "executing", command: args?.description || args?.command || label, status };
     case "browsing":
       return { type: "browsing", url: args?.url || label, status };
     case "creating":
-      return { type: "creating", file: args?.file || label, status };
+      return { type: "creating", file: args?.file || args?.name || label, status };
     case "writing":
-      return { type: "writing", label: label, status };
+      return { type: "writing", label, status };
     case "researching":
-      return { type: "researching", label: label, status };
+      return { type: "researching", label, status };
+    case "building":
+      return { type: "building", label, status };
+    case "editing":
+      return { type: "editing", label, file: args?.path || args?.file, status };
+    case "reading":
+      return { type: "reading", label, file: args?.path || args?.file, status };
+    case "installing":
+      return { type: "installing", label, packages: args?.packages, status };
+    case "versioning":
+      return { type: "versioning", label, status };
+    case "analyzing":
+      return { type: "analyzing", label, status };
+    case "designing":
+      return { type: "designing", label, status };
+    case "sending":
+      return { type: "sending", label, status };
     case "thinking":
     default:
       return { type: "thinking", status };
@@ -1460,15 +1540,21 @@ export default function TaskView() {
   // Auto-stream for initial message in a newly created task
   // When navigating from Home, createTask adds the first user message but never calls /api/stream.
   // This effect detects that pattern and triggers the LLM stream automatically.
+  // IMPORTANT: We use a ref to track which task IDs have already been auto-streamed in this
+  // component instance, in addition to the context-level flag. This prevents re-triggering
+  // when the dependency array changes due to message dedup or state updates.
+  const autoStreamedIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!task) return;
     if (streaming) return; // Already streaming
     if (task.autoStreamed) return; // Already auto-streamed for this task (persisted in context)
+    if (autoStreamedIdsRef.current.has(task.id)) return; // Already attempted in this mount
     // Only trigger if: exactly 1 message, it's a user message, and no assistant response yet
     if (task.messages.length !== 1) return;
     const firstMsg = task.messages[0];
     if (firstMsg.role !== "user") return;
-    // Mark as auto-streamed immediately in context to prevent re-triggering on remount
+    // Mark as auto-streamed immediately — both in ref (instant) and context (persisted)
+    autoStreamedIdsRef.current.add(task.id);
     markAutoStreamed(task.id);
 
     // Trigger the SSE stream for the initial message

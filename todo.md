@@ -1761,7 +1761,15 @@
   - Transient upstream errors; no code fix needed, but cleaner context reduces cascading failures
 - [x] Fix message deduplication — prevent same content from being added to chat multiple times
   - Three-layer dedup: server merge, local addMessage guard, LLM conversation history
-- [ ] Fix auto-stream re-triggering — agent re-streams old responses when new messages arrive
+- [x] Fix auto-stream re-triggering — agent re-streams old responses when new messages arrive
+  - Added ref-based guard (autoStreamedIdsRef) in addition to context-level autoStreamed flag
+  - Prevents re-triggering when dependency array changes from message dedup or state updates
 - [x] Fix webapp_preview card duplication — deduplicated via seen-set in buildStreamCallbacks
-- [ ] Add proper tool result rendering (show actual tool outputs, not just "Searching..." labels)
-- [ ] Ensure agent actions (create_webapp, create_file, etc.) are properly wired to real backends
+- [x] Add proper tool result rendering (show actual tool outputs, not just "Searching..." labels)
+  - Extended AgentAction type with 8 new action types (building, editing, reading, installing, versioning, analyzing, designing, sending)
+  - Added icons, labels, and type-specific preview rendering for all action types
+  - Enhanced preview display: code output for executing/reading/editing, install output for installing, build output for building, link rendering for researching
+- [x] Ensure agent actions (create_webapp, create_file, etc.) are properly wired to real backends
+  - All 16 tool executors verified: create_webapp, create_file, edit_file, read_file, list_files, install_deps, run_command, git_operation, web_search, read_webpage, generate_image, analyze_data, execute_code, generate_document, browse_web, wide_research
+  - Added withRetry wrapper to all 6 LLM invocations for transient 502/503/504 error recovery
+  - Root cause of hallucinated tool use was context pollution from duplicate messages (already fixed)

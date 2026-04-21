@@ -27,7 +27,15 @@ export type AgentAction =
   | { type: "generating"; description: string; status: "active" | "done"; preview?: string }
   | { type: "thinking"; status: "active" | "done"; preview?: string }
   | { type: "writing"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "researching"; label?: string; status: "active" | "done"; preview?: string };
+  | { type: "researching"; label?: string; status: "active" | "done"; preview?: string }
+  | { type: "building"; label?: string; status: "active" | "done"; preview?: string }
+  | { type: "editing"; label?: string; file?: string; status: "active" | "done"; preview?: string }
+  | { type: "reading"; label?: string; file?: string; status: "active" | "done"; preview?: string }
+  | { type: "installing"; label?: string; packages?: string; status: "active" | "done"; preview?: string }
+  | { type: "versioning"; label?: string; status: "active" | "done"; preview?: string }
+  | { type: "analyzing"; label?: string; status: "active" | "done"; preview?: string }
+  | { type: "designing"; label?: string; status: "active" | "done"; preview?: string }
+  | { type: "sending"; label?: string; status: "active" | "done"; preview?: string };
 
 export type CardType =
   | "browser_auth"

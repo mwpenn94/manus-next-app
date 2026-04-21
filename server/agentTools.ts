@@ -18,7 +18,25 @@
  */
 import type { Tool } from "./_core/llm";
 
-// ── Tool Definitions (OpenAI function-calling format) ──
+// ── Retry utility for transient failures (502, network errors) ──
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 2, delayMs = 1500): Promise<T> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const msg = err?.message || "";
+      const isTransient = msg.includes("502") || msg.includes("503") || msg.includes("504") || msg.includes("ECONNRESET") || msg.includes("fetch failed") || msg.includes("ETIMEDOUT");
+      if (!isTransient || attempt === maxRetries) throw err;
+      console.log(`[retry] Attempt ${attempt + 1} failed (${msg.slice(0, 80)}), retrying in ${delayMs}ms...`);
+      await new Promise(r => setTimeout(r, delayMs * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+// ── Tool Definitions (OpenAI function-calling format) ───
 
 export const AGENT_TOOLS: Tool[] = [
   {
@@ -1051,7 +1069,7 @@ async function executeWebSearchFallback(args: { query: string }): Promise<ToolRe
   try {
     const { invokeLLM } = await import("./_core/llm");
 
-    const response = await invokeLLM({
+    const response = await withRetry(() => invokeLLM({
       messages: [
         {
           role: "system",
@@ -1063,7 +1081,7 @@ async function executeWebSearchFallback(args: { query: string }): Promise<ToolRe
           content: `Provide comprehensive, factual information about: "${args.query}". Include key facts, dates, numbers, and notable sources.`,
         },
       ],
-    });
+    }));
 
     const content =
       typeof response.choices?.[0]?.message?.content === "string"
@@ -1278,12 +1296,12 @@ Provide clear, structured analysis with:
 3. Specific numbers and statistics where relevant
 4. Actionable insights`;
 
-    const response = await invokeLLM({
+    const response = await withRetry(() => invokeLLM({
       messages: [
         { role: "system", content: "You are a precise data analyst. Output structured analysis with numbers." },
         { role: "user", content: analysisPrompt },
       ],
-    });
+    }));
 
     const content =
       typeof response.choices?.[0]?.message?.content === "string"
@@ -1627,7 +1645,7 @@ async function executeWideResearch(args: {
     console.log(`[wide_research] Synthesizing ${successCount}/${queries.length} successful results...`);
     const { invokeLLM } = await import("./_core/llm");
 
-    const synthesisResponse = await invokeLLM({
+    const synthesisResponse = await withRetry(() => invokeLLM({
       messages: [
         {
           role: "system",
@@ -1639,7 +1657,7 @@ async function executeWideResearch(args: {
           content: `Synthesis instructions: ${args.synthesis_prompt}\n\n${combinedResearch}`,
         },
       ],
-    });
+    }));
 
     const synthesis =
       typeof synthesisResponse.choices?.[0]?.message?.content === "string"
@@ -1677,7 +1695,7 @@ async function executeGenerateSlides(args: {
     const count = Math.min(Math.max(args.slideCount || 8, 3), 30);
     const style = args.style || "professional";
 
-    const response = await invokeLLM({
+    const response = await withRetry(() => invokeLLM({
       messages: [
         {
           role: "system",
@@ -1685,7 +1703,7 @@ async function executeGenerateSlides(args: {
         },
         { role: "user", content: `Create a presentation about: ${args.topic}` },
       ],
-    });
+    }));
 
     const rawContent = response.choices?.[0]?.message?.content ?? "[]";
     const text = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
@@ -1815,7 +1833,7 @@ async function executeTakeMeetingNotes(args: {
       }
     }
 
-    const response = await invokeLLM({
+    const response = await withRetry(() => invokeLLM({
       messages: [
         {
           role: "system",
@@ -1829,7 +1847,7 @@ Return ONLY valid JSON, no markdown fences.`,
         },
         { role: "user", content: transcript.slice(0, 30000) },
       ],
-    });
+    }));
 
     const rawContent = response.choices?.[0]?.message?.content ?? "{}";
     const text = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
@@ -1983,7 +2001,7 @@ async function executeScreenshotVerify(args: {
   try {
     const { invokeLLM } = await import("./_core/llm");
 
-    const response = await invokeLLM({
+    const response = await withRetry(() => invokeLLM({
       messages: [
         {
           role: "system",
@@ -1997,7 +2015,7 @@ async function executeScreenshotVerify(args: {
           ],
         },
       ],
-    });
+    }));
 
     const content =
       typeof response.choices?.[0]?.message?.content === "string"
