@@ -1420,3 +1420,12 @@
 - [x] P21-4: Write P21 tests covering all new features (37 tests in server/p21.test.ts)
 - [x] P21-5: Exhaustive virtual user validation — side-by-side with Manus, all pages and flows
 - [x] P21-6: Recursive convergence passes (TS, tests, build) until 3 consecutive zero-change — 3/3 passes clean (693 tests, 0 TS errors, build OK)
+
+## P22 — PlusMenu Wiring + Scrollbar Polish + Convergence
+- [x] P22-1: Wire all 16 PlusMenu items to real navigation/actions (7 route-based, 5 prompt-based, 4 callback-based) — zero "Feature coming soon" toasts remaining
+- [x] P22-2: Add onInjectPrompt callback to PlusMenu → TaskView wires it to setInput + textarea focus
+- [x] P22-3: Firefox scrollbar styling — scrollbar-width: thin + scrollbar-color for cross-browser dark scrollbar
+- [x] P22-4: Photos section buttons now trigger onAddFiles instead of placeholder toast
+- [x] P22-5: Write P22 tests (27 tests in server/p22.test.ts, 720 total passing)
+- [x] P22-6: Live browser validation — PlusMenu popover opens, all items visible, Build website navigates to /webapp-builder correctly
+- [x] P22-7: Recursive convergence passes — 3 consecutive zero-change (0 TS errors, 720 tests passing, build clean)

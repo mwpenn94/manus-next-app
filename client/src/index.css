@@ -141,6 +141,10 @@
 }
 
 /* Custom scrollbar for the warm void theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.3 0.005 60) transparent;
+}
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

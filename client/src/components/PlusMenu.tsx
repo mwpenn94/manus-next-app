@@ -5,14 +5,10 @@
  * from the chat input bar. On mobile, renders as a bottom drawer;
  * on desktop, renders as an anchored popover above the + button.
  *
- * Items that are not yet implemented show a "Feature coming soon" toast.
- * "Add files" triggers the parent's file picker.
- *
- * Matches the Manus UI pattern from screenshots IMG_6903-6913:
- * - Photos section at top (camera icon + recent images grid)
- * - Feature list with icons, labels, and optional badges
+ * All items are wired to real navigation or actions.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import {
   Camera,
   FileUp,
@@ -43,8 +39,9 @@ interface PlusMenuItem {
   label: string;
   icon: React.ElementType;
   badge?: string;
-  /** If true, this item has real functionality wired up */
   implemented?: boolean;
+  route?: string;
+  prompt?: string;
 }
 
 const MENU_ITEMS: PlusMenuItem[] = [
@@ -52,18 +49,18 @@ const MENU_ITEMS: PlusMenuItem[] = [
   { id: "share-screen", label: "Share screen", icon: Monitor, implemented: true },
   { id: "record-video", label: "Record video", icon: Camera, implemented: true },
   { id: "upload-video", label: "Upload video", icon: Video, implemented: true },
-  { id: "connect-computer", label: "Connect My Computer", icon: Monitor },
-  { id: "add-skills", label: "Add Skills", icon: Puzzle },
-  { id: "build-website", label: "Build website", icon: Globe },
-  { id: "create-slides", label: "Create slides", icon: Presentation, badge: "Pro" },
-  { id: "create-image", label: "Create image", icon: ImageIcon },
-  { id: "edit-image", label: "Edit image", icon: Paintbrush },
-  { id: "wide-research", label: "Wide Research", icon: Search },
-  { id: "scheduled-tasks", label: "Scheduled tasks", icon: CalendarClock },
-  { id: "create-spreadsheet", label: "Create spreadsheet", icon: Table2 },
-  { id: "create-video", label: "Create video", icon: Video },
-  { id: "generate-audio", label: "Generate audio", icon: AudioLines },
-  { id: "playbook", label: "Playbook", icon: BookOpen },
+  { id: "connect-computer", label: "Connect My Computer", icon: Monitor, implemented: true, route: "/connect-device" },
+  { id: "add-skills", label: "Add Skills", icon: Puzzle, implemented: true, route: "/skills" },
+  { id: "build-website", label: "Build website", icon: Globe, implemented: true, route: "/webapp-builder" },
+  { id: "create-slides", label: "Create slides", icon: Presentation, badge: "Pro", implemented: true, prompt: "Create a slide deck about " },
+  { id: "create-image", label: "Create image", icon: ImageIcon, implemented: true, prompt: "Generate an image of " },
+  { id: "edit-image", label: "Edit image", icon: Paintbrush, implemented: true, prompt: "Edit this image: " },
+  { id: "wide-research", label: "Wide Research", icon: Search, implemented: true, prompt: "Do wide research on " },
+  { id: "scheduled-tasks", label: "Scheduled tasks", icon: CalendarClock, implemented: true, route: "/schedule" },
+  { id: "create-spreadsheet", label: "Create spreadsheet", icon: Table2, implemented: true, prompt: "Create a spreadsheet for " },
+  { id: "create-video", label: "Create video", icon: Video, implemented: true, route: "/video" },
+  { id: "generate-audio", label: "Generate audio", icon: AudioLines, implemented: true, route: "/client-inference" },
+  { id: "playbook", label: "Playbook", icon: BookOpen, implemented: true, route: "/library" },
 ];
 
 // ── Component ──
@@ -71,15 +68,11 @@ const MENU_ITEMS: PlusMenuItem[] = [
 interface PlusMenuProps {
   open: boolean;
   onClose: () => void;
-  /** Called when "Add files" is selected — parent should open file picker */
   onAddFiles: () => void;
-  /** Called when "Share screen" is selected */
   onShareScreen?: () => void;
-  /** Called when "Record video" is selected */
   onRecordVideo?: () => void;
-  /** Called when "Upload video" is selected */
   onUploadVideo?: () => void;
-  /** Anchor element ref for desktop popover positioning */
+  onInjectPrompt?: (prompt: string) => void;
   anchorRef?: React.RefObject<HTMLElement | null>;
   className?: string;
 }
@@ -91,13 +84,14 @@ export default function PlusMenu({
   onShareScreen,
   onRecordVideo,
   onUploadVideo,
+  onInjectPrompt,
   anchorRef,
   className,
 }: PlusMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [, navigate] = useLocation();
 
-  // Detect mobile
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -105,7 +99,6 @@ export default function PlusMenu({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Close on outside click (desktop popover)
   useEffect(() => {
     if (!open || isMobile) return;
     const handler = (e: MouseEvent) => {
@@ -122,7 +115,6 @@ export default function PlusMenu({
     return () => document.removeEventListener("mousedown", handler);
   }, [open, isMobile, onClose, anchorRef]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -154,22 +146,32 @@ export default function PlusMenu({
         onClose();
         return;
       }
-      // Not implemented — show toast
-      toast.info(`${item.label} — Feature coming soon`);
+      if (item.route) {
+        navigate(item.route);
+        onClose();
+        return;
+      }
+      if (item.prompt) {
+        if (onInjectPrompt) {
+          onInjectPrompt(item.prompt);
+        } else {
+          toast.info(`Type your request: "${item.prompt}..."`);
+        }
+        onClose();
+        return;
+      }
       onClose();
     },
-    [onAddFiles, onShareScreen, onRecordVideo, onUploadVideo, onClose]
+    [onAddFiles, onShareScreen, onRecordVideo, onUploadVideo, onInjectPrompt, onClose, navigate]
   );
 
   if (!open) return null;
 
-  // ── Mobile: bottom drawer ──
   if (isMobile) {
     return (
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -178,7 +180,6 @@ export default function PlusMenu({
               className="fixed inset-0 z-50 bg-black/60"
               onClick={onClose}
             />
-            {/* Drawer */}
             <motion.div
               ref={menuRef}
               initial={{ y: "100%" }}
@@ -190,15 +191,10 @@ export default function PlusMenu({
                 className
               )}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
               </div>
-
-              {/* Photos section */}
-              <PhotosSection />
-
-              {/* Scrollable feature list */}
+              <PhotosSection onAddFiles={onAddFiles} onClose={onClose} />
               <div className="overflow-y-auto max-h-[60vh] pb-safe">
                 <FeatureList items={MENU_ITEMS} onItemClick={handleItemClick} />
               </div>
@@ -209,7 +205,6 @@ export default function PlusMenu({
     );
   }
 
-  // ── Desktop: popover above the + button ──
   return (
     <AnimatePresence>
       {open && (
@@ -224,10 +219,7 @@ export default function PlusMenu({
             className
           )}
         >
-          {/* Photos section */}
-          <PhotosSection compact />
-
-          {/* Feature list */}
+          <PhotosSection compact onAddFiles={onAddFiles} onClose={onClose} />
           <div className="max-h-[50vh] overflow-y-auto">
             <FeatureList items={MENU_ITEMS} onItemClick={handleItemClick} />
           </div>
@@ -239,7 +231,15 @@ export default function PlusMenu({
 
 // ── Photos Section ──
 
-function PhotosSection({ compact = false }: { compact?: boolean }) {
+function PhotosSection({
+  compact = false,
+  onAddFiles,
+  onClose,
+}: {
+  compact?: boolean;
+  onAddFiles: () => void;
+  onClose: () => void;
+}) {
   return (
     <div className={cn("px-4", compact ? "py-2" : "py-3")}>
       <div className="flex items-center gap-2 mb-2">
@@ -248,22 +248,28 @@ function PhotosSection({ compact = false }: { compact?: boolean }) {
           Photos
         </span>
       </div>
-      {/* Placeholder grid for recent images */}
       <div className="flex gap-2">
-        {[0, 1, 2, 3].map((i) => (
+        <button
+          onClick={() => { onAddFiles(); onClose(); }}
+          className={cn(
+            "rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center transition-colors hover:bg-muted hover:border-border",
+            compact ? "w-12 h-12" : "w-14 h-14"
+          )}
+          aria-label="Take photo or upload image"
+        >
+          <Camera className="w-4 h-4 text-muted-foreground" />
+        </button>
+        {[1, 2, 3].map((i) => (
           <button
             key={i}
-            onClick={() => toast.info("Photo library — Feature coming soon")}
+            onClick={() => { onAddFiles(); onClose(); }}
             className={cn(
               "rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center transition-colors hover:bg-muted hover:border-border",
               compact ? "w-12 h-12" : "w-14 h-14"
             )}
+            aria-label="Add image from library"
           >
-            {i === 0 ? (
-              <Camera className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ImageLucide className="w-4 h-4 text-muted-foreground" />
-            )}
+            <ImageLucide className="w-4 h-4 text-muted-foreground" />
           </button>
         ))}
       </div>
@@ -282,9 +288,7 @@ function FeatureList({
 }) {
   return (
     <div className="py-1">
-      {/* Separator */}
       <div className="mx-4 border-t border-border/50 mb-1" />
-
       {items.map((item) => {
         const Icon = item.icon;
         return (

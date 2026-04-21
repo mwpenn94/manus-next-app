@@ -2665,6 +2665,7 @@ export default function TaskView() {
                     onShareScreen={() => { setMediaPanelMode("screen"); setMediaPanelOpen(true); }}
                     onRecordVideo={() => { setMediaPanelMode("camera"); setMediaPanelOpen(true); }}
                     onUploadVideo={() => { setMediaPanelMode("upload"); setMediaPanelOpen(true); }}
+                    onInjectPrompt={(prompt) => { setInput(prompt); setTimeout(() => { const ta = document.querySelector('textarea'); if (ta) ta.focus(); }, 100); }}
                     anchorRef={plusButtonRef}
                   />
                 </div>
