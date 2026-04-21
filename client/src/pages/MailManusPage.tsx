@@ -42,8 +42,8 @@ export default function MailManusPage() {
 
   // Generate workflow email from user info
   const generatedEmail = user
-    ? `${(user.name || "user").toLowerCase().replace(/\s+/g, ".")}+agent@sovereign.app`
-    : "you+agent@sovereign.app";
+    ? `${(user.name || "user").toLowerCase().replace(/\s+/g, ".")}+agent@manus.space`
+    : "you+agent@manus.space";
 
   // Hydrate from server
   useEffect(() => {

@@ -6,7 +6,7 @@ This document provides a comprehensive handoff guide for anyone taking over deve
 
 ## Platform Overview
 
-Manus Next is a sovereign AI agent platform that provides Manus-equivalent (or better) functionality as a self-hosted web application. It features a conversational AI interface with multi-tool agentic execution, persistent memory, task scheduling, session replay, and a full ecosystem of connectors, skills, and creative tools.
+Manus Next is a Manus Next agent platform that provides Manus-equivalent (or better) functionality as a self-hosted web application. It features a conversational AI interface with multi-tool agentic execution, persistent memory, task scheduling, session replay, and a full ecosystem of connectors, skills, and creative tools.
 
 ---
 

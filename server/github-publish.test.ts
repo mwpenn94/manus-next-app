@@ -193,14 +193,14 @@ describe("Subdomain Publishing", () => {
     const projectName = "My Cool App";
     const subdomain = projectName.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     expect(subdomain).toBe("my-cool-app");
-    expect(`https://${subdomain}.sovereign.app`).toBe("https://my-cool-app.sovereign.app");
+    expect(`https://${subdomain}.manus.space`).toBe("https://my-cool-app.manus.space");
   });
 
   it("should use subdomainPrefix when available", () => {
     const project = { name: "My App", subdomainPrefix: "custom-prefix" };
     const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     expect(subdomain).toBe("custom-prefix");
-    expect(`https://${subdomain}.sovereign.app`).toBe("https://custom-prefix.sovereign.app");
+    expect(`https://${subdomain}.manus.space`).toBe("https://custom-prefix.manus.space");
   });
 
   it("should handle special characters in project names", () => {

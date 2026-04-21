@@ -4,7 +4,7 @@
  * Matches the Manus UI pattern: dropdown with model name, description,
  * and checkmark on selected. Shown in task header or home page.
  *
- * Models: Sovereign Max (default), Sovereign Standard, Sovereign Lite
+ * Models: Manus Next Max (default), Manus Next 1.0, Manus Next Lite
  */
 import { useState, useRef, useEffect } from "react";
 import { Check, ChevronDown, Zap, Sparkles, Leaf } from "lucide-react";
@@ -21,22 +21,22 @@ export interface ModelOption {
 
 const MODELS: ModelOption[] = [
   {
-    id: "sovereign-max",
-    name: "Sovereign Max",
+    id: "manus-next-max",
+    name: "Manus Next Max",
     description: "High-performance agent designed for complex tasks.",
     icon: Zap,
     tier: "max",
   },
   {
-    id: "sovereign-standard",
-    name: "Sovereign 1.0",
+    id: "manus-next-standard",
+    name: "Manus Next 1.0",
     description: "Versatile agent capable of handling most tasks.",
     icon: Sparkles,
     tier: "standard",
   },
   {
-    id: "sovereign-lite",
-    name: "Sovereign Lite",
+    id: "manus-next-lite",
+    name: "Manus Next Lite",
     description: "A lightweight agent for everyday tasks.",
     icon: Leaf,
     tier: "lite",
@@ -51,7 +51,7 @@ interface ModelSelectorProps {
 }
 
 export default function ModelSelector({
-  selectedModelId = "sovereign-max",
+  selectedModelId = "manus-next-max",
   onModelChange,
   className,
   compact = false,

@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-The Sovereign AI platform has achieved **Deeper Meta-Convergence** through two successive convergence loops:
+The Manus Next platform has achieved **Deeper Meta-Convergence** through two successive convergence loops:
 
 1. **v9 Base Loop** — 5 sweeps (2 fixes, 3 clean) → META-CONVERGENCE at 02:20 UTC
 2. **Prompt-42 Deeper Loop** — 5 sweeps (2 fixes, 3 clean) → DEEPER META-CONVERGENCE at 02:57 UTC

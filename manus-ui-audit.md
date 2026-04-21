@@ -10,7 +10,7 @@
 - **Style**: Minimalist, warm cream tones, very clean typography
 
 ## Key Differences from Our App
-1. Manus landing is LIGHT theme, our app is dark — this is intentional differentiation (Sovereign brand)
+1. Manus landing is LIGHT theme, our app is dark — this is intentional differentiation (Manus Next brand)
 2. Manus has no sidebar on landing — just centered content
 3. Our sidebar with task list is more like the logged-in Manus experience
 4. Need to check Manus logged-in dashboard for true comparison

@@ -31,7 +31,7 @@ describe("P32: Data Controls via Preferences", () => {
       generalSettings: {
         mailSettings: {
           emailEnabled: true,
-          workflowEmail: "test+agent@sovereign.app",
+          workflowEmail: "test+agent@manus.space",
           approvedSenders: ["friend@example.com"],
           autoReply: true,
           autoReplyMessage: "Got it!",

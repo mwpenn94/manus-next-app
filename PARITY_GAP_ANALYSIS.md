@@ -65,7 +65,7 @@ Server-side scheduler polling loop, parallel wide research (up to 5 concurrent q
 | 24 | OAuth Authentication | Manus OAuth with session cookies | 1 |
 | 25 | SEO | OG tags, meta description, robots.txt, JSON-LD | 1 |
 | 26 | Mobile Responsive | Sidebar drawer, bottom nav, touch-friendly | 1 |
-| 27 | Bridge Integration | WebSocket to Sovereign Hybrid backend | 2 |
+| 27 | Bridge Integration | WebSocket to Manus Next Hybrid backend | 2 |
 | 28 | User Preferences | General settings, capability toggles, global system prompt | 2 |
 | 29 | Identity Rule | Prevents vendor self-identification | 2 |
 | 30 | Research Nudge | Auto-nudges LLM to use read_webpage after web_search | 2 |
@@ -85,7 +85,7 @@ Server-side scheduler polling loop, parallel wide research (up to 5 concurrent q
 
 | Capability | Notes |
 |-----------|-------|
-| Computer Use (screen/mouse/keyboard) | Requires Sovereign Bridge connection |
+| Computer Use (screen/mouse/keyboard) | Requires Manus Next Bridge connection |
 | Email Send/Receive | Requires email service integration |
 | Meeting Minutes | Requires audio → transcript pipeline |
 | Website Builder | Manus-specific infrastructure |

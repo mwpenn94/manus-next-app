@@ -2475,7 +2475,7 @@ export const appRouter = router({
         });
         // Generate published URL from subdomain prefix
         const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-        const publishedUrl = `https://${subdomain}.sovereign.app`;
+        const publishedUrl = `https://${subdomain}.manus.space`;
         // Simulate build completion (in production, this would be async with real CI)
         setTimeout(async () => {
           try {

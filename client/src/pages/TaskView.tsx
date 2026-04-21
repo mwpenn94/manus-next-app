@@ -1459,7 +1459,7 @@ export default function TaskView() {
 
     // Trigger the SSE stream for the initial message
     (async () => {
-      // If bridge is connected, dispatch to the Sovereign agent instead
+      // If bridge is connected, dispatch to the Manus Next agent instead
       if (bridgeStatus === "connected") {
         bridgeSend("task.message", {
           taskId: task.id,
@@ -1563,7 +1563,7 @@ export default function TaskView() {
       : input;
     addMessage(task.id, { role: "user", content: userContent });
 
-    // If bridge is connected, dispatch to the Sovereign agent
+    // If bridge is connected, dispatch to the Manus Next agent
     if (bridgeStatus === "connected") {
       bridgeSend("task.message", {
         taskId: task.id,

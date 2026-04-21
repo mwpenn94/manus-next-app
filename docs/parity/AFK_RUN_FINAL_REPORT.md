@@ -1,6 +1,6 @@
 # AFK Run Final Report — Gate A (DEV_CONVERGENCE)
 
-**Project:** manus-next-app (Sovereign AI / Manus Next)
+**Project:** manus-next-app (Manus Next / Manus Next)
 **Spec Version:** v8.3 Manus Parity
 **Run Date:** April 18, 2026
 **Author:** Manus AI (autonomous AFK execution)

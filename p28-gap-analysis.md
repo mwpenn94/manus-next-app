@@ -25,7 +25,7 @@
 
 ### 3. Subdomain Publishing — Real URL Generation
 - Current: `deploy` mutation just creates a record and simulates build with setTimeout
-- Need: Generate real `publishedUrl` = `${subdomainPrefix}.sovereign.ai` or similar
+- Need: Generate real `publishedUrl` = `${subdomainPrefix}.manus.space` or similar
 - The deploy flow should set publishedUrl on the project after "build" completes
 
 ### 4. Code Panel in WebAppProjectPage

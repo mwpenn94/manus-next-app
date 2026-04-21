@@ -188,7 +188,7 @@ export default function WebAppProjectPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
               </div>
               <div className="flex-1 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground border border-border">
-                {project.publishedUrl || `${project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.sovereign.app`}
+                {project.publishedUrl || `${project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.manus.space`}
               </div>
               <Button variant="ghost" size="sm" onClick={() => projectQuery.refetch()}>
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -564,9 +564,9 @@ export default function WebAppProjectPage() {
                               }
                             }}
                           />
-                          <span className="text-sm text-muted-foreground">.sovereign.app</span>
+                          <span className="text-sm text-muted-foreground">.manus.space</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Your app will be available at <code>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.sovereign.app</code></p>
+                        <p className="text-xs text-muted-foreground mt-1">Your app will be available at <code>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.manus.space</code></p>
                       </div>
                       <div>
                         <Label>Custom Domain</Label>
@@ -581,7 +581,7 @@ export default function WebAppProjectPage() {
                             }
                           }}
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Point a CNAME record to your .sovereign.app subdomain</p>
+                        <p className="text-xs text-muted-foreground mt-1">Point a CNAME record to your .manus.space subdomain</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -846,7 +846,7 @@ export default function WebAppProjectPage() {
           <div className="py-2 space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <Globe className="w-4 h-4 text-muted-foreground" />
-              <span>URL: <strong>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.sovereign.app</strong></span>
+              <span>URL: <strong>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.manus.space</strong></span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Server className="w-4 h-4 text-muted-foreground" />

@@ -177,7 +177,7 @@ describe("bridge config — protocol validation", () => {
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.bridge.saveConfig({
-      bridgeUrl: "wss://bridge.sovereign.ai/ws",
+      bridgeUrl: "wss://bridge.manus-next.app/ws",
       apiKey: "secure-key",
       enabled: true,
     });

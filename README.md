@@ -28,7 +28,7 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 | **Cost Visibility** | Per-task estimated cost indicator in task header |
 | **Keyboard Shortcuts** | Global shortcuts (Cmd+K, Cmd+N, Cmd+/, Cmd+Shift+S, Escape) |
 | **PWA Installable** | Web App Manifest for mobile/desktop installation |
-| **Bridge Integration** | WebSocket connection to Sovereign Hybrid backend |
+| **Bridge Integration** | WebSocket connection to Manus Next Hybrid backend |
 | **Stripe Payments** | Subscription billing with checkout, webhooks, and product management |
 | **Connector Ecosystem** | 8 connectors (Slack, GitHub, Google, Notion, Zapier, MCP, Webhooks, Email) |
 | **Skills Library** | Installable skill packs for specialized capabilities |

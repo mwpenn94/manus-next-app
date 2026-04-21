@@ -78,7 +78,7 @@ export default function DataControlsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `sovereign-ai-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `manus-next-data-export-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Data exported successfully");
@@ -177,7 +177,7 @@ export default function DataControlsPage() {
                   <div key={site.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border">
                     <div>
                       <p className="text-sm font-medium text-foreground">{site.name}</p>
-                      <p className="text-xs text-muted-foreground">{site.publishedUrl || `${site.subdomainPrefix}.sovereign.app`}</p>
+                      <p className="text-xs text-muted-foreground">{site.publishedUrl || `${site.subdomainPrefix}.manus.space`}</p>
                     </div>
                     <Badge variant="outline" className="text-green-600 border-green-600/30 text-xs">Live</Badge>
                   </div>

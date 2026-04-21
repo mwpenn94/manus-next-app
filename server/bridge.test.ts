@@ -70,14 +70,14 @@ describe("bridge config lifecycle", () => {
     const caller = appRouter.createCaller(ctx);
 
     await caller.bridge.saveConfig({
-      bridgeUrl: "wss://sovereign-bridge.example.com",
+      bridgeUrl: "wss://manus-next-bridge.example.com",
       apiKey: "sk-test-key-abc123",
       enabled: true,
     });
 
     const config = await caller.bridge.getConfig();
     expect(config).toBeDefined();
-    expect(config!.bridgeUrl).toBe("wss://sovereign-bridge.example.com");
+    expect(config!.bridgeUrl).toBe("wss://manus-next-bridge.example.com");
     expect(config!.apiKey).toBe("sk-test-key-abc123");
     expect(config!.enabled).toBe(1);
   });
@@ -88,20 +88,20 @@ describe("bridge config lifecycle", () => {
 
     // First set a full config
     await caller.bridge.saveConfig({
-      bridgeUrl: "wss://sovereign-bridge.example.com",
+      bridgeUrl: "wss://manus-next-bridge.example.com",
       apiKey: "sk-key",
       enabled: true,
     });
 
     // Then disable with explicit URL preservation
     await caller.bridge.saveConfig({
-      bridgeUrl: "wss://sovereign-bridge.example.com",
+      bridgeUrl: "wss://manus-next-bridge.example.com",
       enabled: false,
     });
 
     const config = await caller.bridge.getConfig();
     expect(config!.enabled).toBe(0);
-    expect(config!.bridgeUrl).toBe("wss://sovereign-bridge.example.com");
+    expect(config!.bridgeUrl).toBe("wss://manus-next-bridge.example.com");
   });
 
   it("allows nullable fields", async () => {
@@ -140,7 +140,7 @@ describe("bridge config lifecycle", () => {
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.bridge.saveConfig({
-      bridgeUrl: "wss://bridge.sovereign.local:8080/ws",
+      bridgeUrl: "wss://bridge.manus-next.local:8080/ws",
       enabled: true,
     });
 
@@ -152,7 +152,7 @@ describe("bridge config lifecycle", () => {
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.bridge.saveConfig({
-      bridgeUrl: "https://bridge.sovereign.local/api",
+      bridgeUrl: "https://bridge.manus-next.local/api",
       enabled: true,
     });
 

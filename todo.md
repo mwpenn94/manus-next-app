@@ -1592,32 +1592,32 @@
 - [x] P34-3: Add create_file and edit_file sub-tools for agent to modify project files
 
 ### UI/UX Alignment — Color System
-- [ ] P34-4: Shift background from warm charcoal to pure black/near-black (#000000 / #0A0A0A)
-- [ ] P34-5: Remove gold/amber accent colors — replace with pure grayscale monochrome
-- [ ] P34-6: Update all surface colors to deep gray (#1C1C1E to #2C2C2E)
+- [x] P34-4: Shift background from warm charcoal to pure black/near-black (#000000 / #0A0A0A)
+- [x] P34-5: Remove gold/amber accent colors — replace with pure grayscale monochrome
+- [x] P34-6: Update all surface colors to deep gray (#1C1C1E to #2C2C2E)
 
 ### UI/UX Alignment — Home Page
-- [ ] P34-7: Make input box full pill shape (rounded-full) matching Manus
-- [ ] P34-8: Change placeholder to "Assign a task or ask anything"
-- [ ] P34-9: Add model selector to Home page top-left (not just TaskView)
-- [ ] P34-10: Add credits counter to Home page top-right
-- [ ] P34-11: Make suggestion cards horizontally scrollable (not grid)
-- [ ] P34-12: Simplify greeting to "Get started" or "What can I do for you?"
+- [x] P34-7: Make input box full pill shape (rounded-full) matching Manus
+- [x] P34-8: Change placeholder to "Assign a task or ask anything"
+- [x] P34-9: Add model selector to Home page top-left (not just TaskView)
+- [x] P34-10: Add credits counter to Home page top-right
+- [x] P34-11: Make suggestion cards horizontally scrollable (not grid)
+- [x] P34-12: Simplify greeting to "Get started" or "What can I do for you?"
 
 ### UI/UX Alignment — Sidebar
-- [ ] P34-13: Use thin-line white icons only (no colored icons)
-- [ ] P34-14: Increase vertical padding between items (16-20px)
-- [ ] P34-15: Remove visible divider lines, use section headers instead
-- [ ] P34-16: Match Manus menu sections: "Manus", "General", "Other"
+- [x] P34-13: Use thin-line white icons only (no colored icons)
+- [x] P34-14: Increase vertical padding between items (16-20px)
+- [x] P34-15: Remove visible divider lines, use section headers instead
+- [x] P34-16: Match Manus menu sections: "Manus", "General", "Other"
 
 ### UI/UX Alignment — Task View
-- [ ] P34-17: Ensure task completion shows green checkmark + star rating inline
-- [ ] P34-18: Ensure webapp preview cards show Dashboard + Preview buttons
+- [x] P34-17: Ensure task completion shows green checkmark + star rating inline
+- [x] P34-18: Ensure webapp preview cards show Dashboard + Preview buttons
 
 ### Testing & Validation
-- [ ] P34-19: Vitest tests for create_webapp tool
-- [ ] P34-20: CDP/Playwright e2e validation of all visual changes
-- [ ] P34-21: Recursive convergence passes
+- [x] P34-19: Vitest tests for create_webapp tool
+- [x] P34-20: CDP/Playwright e2e validation of all visual changes
+- [x] P34-21: Recursive convergence passes
 
 ## P34b — Manus Parity Convergence Fixes
 - [x] P34b-1: Add ModelSelector to Home page header (top-left, like Manus "1.6 Max")
@@ -1626,37 +1626,37 @@
 - [x] P34b-4: Replace Paperclip with PlusMenu trigger on Home input bar
 - [x] P34b-5: Add live iframe preview mode to WebappPreviewCard (iframe + device selector + URL bar + expand)
 - [x] P34b-6: Strengthen agent system prompt to prevent early termination (5 NEVER rules + 9-step workflow)
-- [ ] P34b-7: Verify create_webapp tool works end-to-end via CDP test
-- [ ] P34b-8: Vitest + Playwright validation of all parity fixes
+- [x] P34b-7: Verify create_webapp tool works end-to-end via CDP test
+- [x] P34b-8: Vitest + Playwright validation of all parity fixes
 
 ## P35 — Production-Grade App Building + GitHub + UI Alignment
 
 ### Phase 1: create_webapp Agent Tool (Deep Manus Parity)
-- [ ] P35-1: Rewrite create_webapp tool to scaffold real projects (React/Vite, HTML, Node) in isolated sandbox dirs
-- [ ] P35-2: create_file tool creates files in project dir with proper path resolution
-- [ ] P35-3: edit_file tool edits existing files with find/replace or full rewrite
-- [ ] P35-4: install_deps tool runs npm/pnpm install in project dir
-- [ ] P35-5: run_dev_server tool starts dev server and returns preview URL
-- [ ] P35-6: build_project tool runs production build
-- [ ] P35-7: deploy_project tool simulates deployment to .sovereign.space domain
-- [ ] P35-8: Agent emits webapp_preview SSE event with live preview URL after server starts
+- [x] P35-1: Rewrite create_webapp tool to scaffold real projects (React/Vite, HTML, Node) in isolated sandbox dirs
+- [x] P35-2: create_file tool creates files in project dir with proper path resolution
+- [x] P35-3: edit_file tool edits existing files with find/replace or full rewrite
+- [x] P35-4: install_deps tool runs npm/pnpm install in project dir
+- [x] P35-5: run_dev_server tool starts dev server and returns preview URL
+- [x] P35-6: build_project tool runs production build
+- [x] P35-7: deploy_project tool simulates deployment to .sovereign.space domain
+- [x] P35-8: Agent emits webapp_preview SSE event with live preview URL after server starts
 
 ### Phase 2: GitHub Integration for Agent
-- [ ] P35-9: git_init tool initializes git repo in project dir
-- [ ] P35-10: git_commit tool stages and commits changes
-- [ ] P35-11: git_push tool pushes to remote (GitHub) with auth
-- [ ] P35-12: git_clone tool clones existing repo for editing
-- [ ] P35-13: Wire GitHub page to show agent-created repos
+- [x] P35-9: git_init tool initializes git repo in project dir
+- [x] P35-10: git_commit tool stages and commits changes
+- [x] P35-11: git_push tool pushes to remote (GitHub) with auth
+- [x] P35-12: git_clone tool clones existing repo for editing
+- [x] P35-13: Wire GitHub page to show agent-created repos
 
 ### Phase 3: Live Preview & Management
-- [ ] P35-14: WebappPreviewCard supports live iframe mode (not just screenshot)
-- [ ] P35-15: Management panel in TaskView for deployed apps (settings, analytics, versions)
-- [ ] P35-16: Preview panel opens in right sidebar or modal with iframe
+- [x] P35-14: WebappPreviewCard supports live iframe mode (not just screenshot)
+- [x] P35-15: Management panel in TaskView for deployed apps (settings, analytics, versions)
+- [x] P35-16: Preview panel opens in right sidebar or modal with iframe
 
 ### Phase 4: Agent System Prompt
-- [ ] P35-17: Strengthen system prompt for app-building workflow (scaffold → create files → install → serve → preview)
-- [ ] P35-18: Add early-termination prevention ("never paste code without executing it")
-- [ ] P35-19: Add tool chaining guidance (create_webapp → create_file → install_deps → run_dev_server)
+- [x] P35-17: Strengthen system prompt for app-building workflow (scaffold → create files → install → serve → preview)
+- [x] P35-18: Add early-termination prevention ("never paste code without executing it")
+- [x] P35-19: Add tool chaining guidance (create_webapp → create_file → install_deps → run_dev_server)
 
 ### Phase 5: Deep UI/UX Alignment
 - [x] P35-20: Add ModelSelector to Home page header (top-left)
@@ -1666,9 +1666,9 @@
 - [x] P35-24: Sidebar section headers ("Sovereign AI", "Other", "General") with proper grouping
 
 ### Phase 6: Testing & Validation
-- [ ] P35-25: Vitest tests for all new agent tools
-- [ ] P35-26: CDP/Playwright e2e validation
-- [ ] P35-27: Recursive convergence passes
+- [x] P35-25: Vitest tests for all new agent tools
+- [x] P35-26: CDP/Playwright e2e validation
+- [x] P35-27: Recursive convergence passes
 
 ## 10-Pass Convergence Cycle (Recursive Optimization)
 - [x] Convergence Pass 1: Home page visual/functional parity (WCAG contrast fix on package badges)
@@ -1681,3 +1681,11 @@
 - [x] Convergence Pass 8: Accessibility ARIA/keyboard/focus (all 12 checks clean)
 - [x] Convergence Pass 9: Performance unstable refs/memoization/bundle (all 11 checks clean)
 - [x] Convergence Pass 10: Data integrity DB schema/indexes/orphans (all 13 checks clean)
+
+## Sovereign → Manus Next Branding Reconciliation
+- [x] Sweep all source files for "Sovereign" references and replace with "Manus Next"
+- [x] Update system prompt, agent identity, and self-knowledge sections
+- [x] Update UI labels, page titles, and user-facing strings
+- [x] Update test assertions referencing "Sovereign"
+- [x] Verify no "Sovereign" remains in user-facing code (excluding todo.md history)
+- [x] Diagnose and fix 7+ preview errors reported by user

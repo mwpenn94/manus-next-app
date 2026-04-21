@@ -222,7 +222,7 @@ describe("bridge router", () => {
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.bridge.saveConfig({
-      bridgeUrl: "wss://bridge.sovereign.local",
+      bridgeUrl: "wss://bridge.manus-next.local",
       apiKey: "test-key-123",
       enabled: true,
     });
@@ -237,7 +237,7 @@ describe("bridge router", () => {
     const config = await caller.bridge.getConfig();
 
     expect(config).toBeDefined();
-    expect(config!.bridgeUrl).toBe("wss://bridge.sovereign.local");
+    expect(config!.bridgeUrl).toBe("wss://bridge.manus-next.local");
     expect(config!.apiKey).toBe("test-key-123");
     expect(config!.enabled).toBe(1);
   });
@@ -247,12 +247,12 @@ describe("bridge router", () => {
     const caller = appRouter.createCaller(ctx);
 
     await caller.bridge.saveConfig({
-      bridgeUrl: "wss://bridge2.sovereign.local",
+      bridgeUrl: "wss://bridge2.manus-next.local",
       enabled: false,
     });
 
     const config = await caller.bridge.getConfig();
-    expect(config!.bridgeUrl).toBe("wss://bridge2.sovereign.local");
+    expect(config!.bridgeUrl).toBe("wss://bridge2.manus-next.local");
     expect(config!.enabled).toBe(0);
   });
 

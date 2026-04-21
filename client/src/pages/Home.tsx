@@ -59,7 +59,7 @@ export default function Home() {
   let { user, loading: _loading, error: _error, isAuthenticated } = useAuth();
 
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("sovereign-max");
+  const [selectedModel, setSelectedModel] = useState("manus-next-max");
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [, navigate] = useLocation();
   const { createTask } = useTask();

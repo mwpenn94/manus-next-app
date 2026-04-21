@@ -65,7 +65,7 @@ Performance benchmarks show Manus outperforming GPT-4 and Microsoft AI systems o
 
 ---
 
-## 5. Sovereign AI Parity Implications
+## 5. Manus Next Parity Implications
 
 The Manus Next project targets feature parity with the Manus flagship platform. Key observations for parity planning:
 
@@ -100,7 +100,7 @@ The Manus Next project targets feature parity with the Manus flagship platform. 
 | Enterprise | Custom pricing | Self-hosted, no per-seat cost |
 | API access | REST API (paid) | tRPC API (included) |
 
-The fundamental advantage of the Sovereign AI approach is that users own their infrastructure and data, eliminating per-credit costs for self-hosted deployments while maintaining feature parity with the flagship platform.
+The fundamental advantage of the Manus Next approach is that users own their infrastructure and data, eliminating per-credit costs for self-hosted deployments while maintaining feature parity with the flagship platform.
 
 ---
 
