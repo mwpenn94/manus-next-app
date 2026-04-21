@@ -53,7 +53,7 @@ interface EventMeta {
 
 const EVENT_META: Record<string, EventMeta> = {
   tool_start: { icon: Zap, label: "Tool Call", color: "text-foreground", bgColor: "bg-muted/50" },
-  tool_result: { icon: CheckCircle2, label: "Tool Result", color: "text-foreground/70", bgColor: "bg-muted/50" },
+  tool_result: { icon: CheckCircle2, label: "Tool Result", color: "text-muted-foreground", bgColor: "bg-muted/50" },
   tool_error: { icon: XCircle, label: "Tool Error", color: "text-red-400", bgColor: "bg-red-500/10" },
   text_delta: { icon: MessageSquare, label: "Response", color: "text-blue-400", bgColor: "bg-blue-500/10" },
   thinking: { icon: Brain, label: "Thinking", color: "text-purple-400", bgColor: "bg-purple-500/10" },
@@ -182,7 +182,7 @@ function EventCard({
             />
           )}
           {parsed.codeContent && !parsed.imageUrl && (
-            <pre className="text-[10px] font-mono bg-muted/50 rounded p-2 overflow-x-auto max-h-24 text-foreground/80">
+            <pre className="text-[10px] font-mono bg-muted/50 rounded p-2 overflow-x-auto max-h-24 text-foreground">
               {parsed.codeContent.slice(0, 500)}
             </pre>
           )}
@@ -207,7 +207,7 @@ function EventCard({
             </div>
           )}
           {parsed.content && !parsed.imageUrl && (
-            <div className="mb-2 text-xs text-foreground/80 max-h-32 overflow-y-auto">
+            <div className="mb-2 text-xs text-foreground max-h-32 overflow-y-auto">
               <Streamdown>{parsed.content.slice(0, 1000)}</Streamdown>
             </div>
           )}
@@ -224,7 +224,7 @@ function EventCard({
             </a>
           )}
           <div className="relative">
-            <pre className="text-[10px] font-mono bg-muted/50 rounded p-2 overflow-x-auto max-h-48 text-foreground/70 whitespace-pre-wrap">
+            <pre className="text-[10px] font-mono bg-muted/50 rounded p-2 overflow-x-auto max-h-48 text-muted-foreground whitespace-pre-wrap">
               {parsed.raw}
             </pre>
             <button
@@ -277,7 +277,7 @@ function SessionList({ onSelect }: { onSelect: (taskId: number) => void }) {
       {sessions.map((session) => {
         const durationSec = session.durationMs ? (session.durationMs / 1000).toFixed(1) : "0";
         const statusColor =
-          session.status === "completed" ? "text-foreground/70" :
+          session.status === "completed" ? "text-muted-foreground" :
           session.status === "running" ? "text-blue-400" :
           session.status === "error" ? "text-red-400" :
           "text-muted-foreground";

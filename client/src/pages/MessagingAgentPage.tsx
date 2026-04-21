@@ -259,7 +259,7 @@ export default function MessagingAgentPage() {
                             status === "connected" ? "bg-muted/50" : status === "error" ? "bg-red-500/10" : "bg-muted"
                           }`}>
                             <MessageSquare className={`w-4 h-4 ${
-                              status === "connected" ? "text-foreground/70" : status === "error" ? "text-red-400" : "text-muted-foreground"
+                              status === "connected" ? "text-muted-foreground" : status === "error" ? "text-red-400" : "text-muted-foreground"
                             }`} />
                           </div>
                           <div>

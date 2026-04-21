@@ -330,8 +330,26 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
   try {
     const { invokeLLM } = await import("./_core/llm");
 
-    // Build conversation with system prompt
-    let conversation: Message[] = [...messages];
+    // Build conversation with system prompt.
+    // First, deduplicate the incoming message history to prevent the LLM from seeing
+    // the same assistant response multiple times (which causes it to re-generate that content).
+    // This is a server-side safety net for duplicate messages that may exist in the DB.
+    const interruptMarker = "*[Response interrupted \u2014 partial content saved]*";
+    const stoppedMarker = "*[Generation stopped by user]*";
+    const deduped: Message[] = [];
+    const seenKeys = new Set<string>();
+    for (const msg of messages) {
+      // Skip interrupted partial messages — the full version should follow
+      if (msg.role === "assistant" && typeof msg.content === "string" &&
+          (msg.content.endsWith(interruptMarker) || msg.content.endsWith(stoppedMarker))) {
+        continue;
+      }
+      const key = `${msg.role}:${(typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)).slice(0, 300).trim()}`;
+      if (seenKeys.has(key)) continue; // Skip exact duplicates
+      seenKeys.add(key);
+      deduped.push(msg);
+    }
+    let conversation: Message[] = [...deduped];
 
     // Inject or replace system prompt
     let systemPrompt = resolvedSystemPrompt || DEFAULT_SYSTEM_PROMPT;

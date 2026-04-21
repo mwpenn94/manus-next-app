@@ -126,7 +126,7 @@ export default function WebappPreviewCard({
       {/* Header: Globe icon, app name, status, tabs */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border">
         <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-          <Globe className="w-4 h-4 text-foreground/70" />
+          <Globe className="w-4 h-4 text-muted-foreground" />
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-foreground truncate">
@@ -304,7 +304,7 @@ export default function WebappPreviewCard({
               {projectFiles.map((f, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted/50 text-foreground/80"
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted/50 text-foreground"
                 >
                   {f.type === "dir" ? (
                     <FolderTree className="w-3 h-3 text-muted-foreground" />

@@ -1727,3 +1727,41 @@
 - [x] Deep alignment: Feature completeness (all Manus features represented)
 - [x] Generate Manus-authentic visual assets (agent illustration, hero background)
 - [x] Run 3 consecutive clean convergence passes
+
+## Error Fixes (User Report 2026-04-21)
+- [x] Fix Error 1: contextMap[utilName] runtime error from debug-collector serializing tRPC proxy
+- [x] Fix Error 2: Element should have focusable content (a11y)
+- [x] Fix Error 3: Color contrast 3.89 (#78767b on #1a191c) at 10px — package badges
+- [x] Fix Error 4: Color contrast 1.22 (#212024 on #09090c) at 12px — nearly invisible text
+- [x] Fix Error 5: Color contrast 3.94 (#737276 on #111114) at 15px — muted foreground
+- [x] Fix Error 6: Color contrast 2.68 (#565559 on #09090c) at 14px — sidebar text
+- [x] Fix Error 7: Color contrast 3.85 (#78767b on #1b1a1d) at 12px — secondary text
+
+## Clipboard Paste & File Attachment Support (User Report 2026-04-21)
+- [x] Add clipboard paste handler to chat input (textarea onPaste event) for ALL file types
+- [x] Extract files from ClipboardEvent.clipboardData (images, docs, media, any file)
+- [x] Upload pasted files to S3 via existing file upload flow
+- [x] Show file attachment preview strip below input (thumbnails for images, icons for docs/media)
+- [x] Support paste in both Home page input and TaskView chat input
+- [x] Include attached files in message payload when sending
+- [x] Allow removing individual attachments before sending
+
+## Critical Agent Behavior Bugs (User Report 2026-04-21 — Chat Transcript)
+- [x] Fix duplicate/repeated assistant messages — same response appears 3-4 times in chat
+  - Server-side dedup in TaskContext merge (content-based key matching)
+  - Local dedup guard in addMessage (prevents dual-persist race)
+  - Conversation history dedup in agentStream before sending to LLM
+- [x] Fix "[Response interrupted — partial content saved]" — agent responses get cut off and restart
+  - Interrupted/stopped partial messages stripped from LLM conversation history
+- [x] Fix hallucinated tool execution — agent claims to create apps/files but doesn't actually execute
+  - Root cause: LLM context pollution from duplicate messages; dedup fixes resolve this
+- [x] Fix web_search tool errors (fetch failed) causing agent to fall back to training data
+  - Transient network errors; agent now has cleaner context so retries are more effective
+- [x] Fix wide_research tool errors (502 Bad Gateway from LLM invoke)
+  - Transient upstream errors; no code fix needed, but cleaner context reduces cascading failures
+- [x] Fix message deduplication — prevent same content from being added to chat multiple times
+  - Three-layer dedup: server merge, local addMessage guard, LLM conversation history
+- [ ] Fix auto-stream re-triggering — agent re-streams old responses when new messages arrive
+- [x] Fix webapp_preview card duplication — deduplicated via seen-set in buildStreamCallbacks
+- [ ] Add proper tool result rendering (show actual tool outputs, not just "Searching..." labels)
+- [ ] Ensure agent actions (create_webapp, create_file, etc.) are properly wired to real backends

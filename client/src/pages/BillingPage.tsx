@@ -151,7 +151,7 @@ export default function BillingPage() {
                   <h3 className="text-sm font-semibold text-foreground">Active Subscription</h3>
                   <span className={cn(
                     "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize",
-                    subscription.status === "active" ? "bg-muted/50 text-foreground/70" :
+                    subscription.status === "active" ? "bg-muted/50 text-muted-foreground" :
                     subscription.status === "trialing" ? "bg-blue-500/10 text-blue-400" :
                     "bg-muted/50 text-foreground"
                   )}>
@@ -173,7 +173,7 @@ export default function BillingPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
           {[
             { label: "Total Tasks", value: stats?.totalTasks ?? 0, icon: Sparkles, color: "text-primary" },
-            { label: "Completed", value: stats?.completedTasks ?? 0, icon: CheckCircle2, color: "text-foreground/70" },
+            { label: "Completed", value: stats?.completedTasks ?? 0, icon: CheckCircle2, color: "text-muted-foreground" },
             { label: "Running", value: stats?.runningTasks ?? 0, icon: Zap, color: "text-foreground" },
             { label: "Errors", value: stats?.errorTasks ?? 0, icon: AlertCircle, color: "text-red-400" },
           ].map((stat, i) => (
@@ -297,7 +297,7 @@ export default function BillingPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize shrink-0",
-                      payment.status === "succeeded" ? "bg-muted/50 text-foreground/70" :
+                      payment.status === "succeeded" ? "bg-muted/50 text-muted-foreground" :
                       payment.status === "pending" ? "bg-muted/50 text-foreground" :
                       "bg-red-500/10 text-red-400"
                     )}>
@@ -359,7 +359,7 @@ export default function BillingPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={cn(
                       "text-[10px] px-1.5 py-0.5 rounded-full font-medium capitalize shrink-0",
-                      task.status === "completed" ? "bg-muted/50 text-foreground/70" :
+                      task.status === "completed" ? "bg-muted/50 text-muted-foreground" :
                       task.status === "running" ? "bg-muted/50 text-foreground" :
                       task.status === "error" ? "bg-red-500/10 text-red-400" :
                       "bg-muted text-muted-foreground"

@@ -258,7 +258,7 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
           <ActionIcon type={action.type} />
         )}
       </div>
-      <div className="flex-1 min-w-0 text-xs text-foreground/80 leading-relaxed pt-0.5">
+      <div className="flex-1 min-w-0 text-xs text-foreground leading-relaxed pt-0.5">
         <div className="flex items-center gap-1">
           <ActionLabel action={action} />
           {isDone && action.preview && (
@@ -281,7 +281,7 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                     <div key={i} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/30 transition-colors">
                       <Globe className="w-3 h-3 shrink-0 text-muted-foreground" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] text-foreground/70 truncate">{title}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{title}</p>
                         {urlMatch && (
                           <p className="text-[9px] text-muted-foreground font-mono truncate">{urlMatch[1]}</p>
                         )}
@@ -422,7 +422,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
               "rounded-xl text-sm leading-relaxed",
               isUser
                 ? "bg-primary/12 border border-primary/20 text-foreground px-4 py-3"
-                : "text-foreground/90"
+                : "text-foreground"
             )}
           >
             {isUser ? (
@@ -465,7 +465,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
               {actionsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               <span>
                 {doneCount === totalCount ? (
-                  <span className="text-foreground/70">{totalCount} steps completed</span>
+                  <span className="text-muted-foreground">{totalCount} steps completed</span>
                 ) : (
                   <span>{doneCount} of {totalCount} steps</span>
                 )}
@@ -650,7 +650,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
             </h3>
           </div>
           {bridgeStatus === "connected" && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
               Bridge Live
             </span>
           )}
@@ -825,7 +825,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                                 <td className="text-right pr-4 pl-4 py-0 select-none text-muted-foreground text-[10px] w-10 align-top">
                                   {i + 1}
                                 </td>
-                                <td className="pr-4 py-0 whitespace-pre-wrap text-foreground/80">
+                                <td className="pr-4 py-0 whitespace-pre-wrap text-foreground">
                                   {line || " "}
                                 </td>
                               </tr>
@@ -852,7 +852,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
         {activeTab === "terminal" && (
           <div className="p-4 h-full overflow-y-auto bg-[oklch(0.1_0.005_60)]">
             {latestTerminal ? (
-              <pre className="text-xs font-mono leading-relaxed whitespace-pre-wrap text-foreground/80">
+              <pre className="text-xs font-mono leading-relaxed whitespace-pre-wrap text-foreground">
                 {latestTerminal.content}
               </pre>
             ) : (
@@ -1254,6 +1254,20 @@ export default function TaskView() {
   const actionsRef = useRef<AgentAction[]>([]);
   const taskExternalId = activeTask?.id || params?.id;
   const { files, uploading, progress, error: uploadError, upload, openPicker, handleFileChange, removeFile, clearFiles, inputRef: fileInputRef } = useFileUpload(taskExternalId);
+
+  // Pick up pending files from Home page (transferred via window.__pendingTaskFiles)
+  useEffect(() => {
+    const pending = (window as any).__pendingTaskFiles as File[] | undefined;
+    if (pending && pending.length > 0) {
+      delete (window as any).__pendingTaskFiles;
+      // Upload each pending file
+      (async () => {
+        for (const file of pending) {
+          await upload(file);
+        }
+      })();
+    }
+  }, [upload]);
 
   // tRPC mutations for task management
   const utils = trpc.useUtils();
@@ -1878,6 +1892,37 @@ export default function TaskView() {
     }
   }, [upload]);
 
+  // ── Clipboard paste handler — supports images, docs, media, any file type ──
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const filesToUpload: File[] = [];
+    for (const item of Array.from(items)) {
+      if (item.kind === "file") {
+        const file = item.getAsFile();
+        if (file) filesToUpload.push(file);
+      }
+    }
+
+    if (filesToUpload.length === 0) return; // No files — let normal text paste proceed
+
+    // Prevent default only when we have files to handle
+    // (allow normal text paste to work unimpeded)
+    e.preventDefault();
+
+    for (const file of filesToUpload) {
+      // Generate a meaningful filename for clipboard images (they often have no name)
+      let uploadFile = file;
+      if (file.name === "image.png" || file.name === "" || file.name === "blob") {
+        const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") || "png";
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+        uploadFile = new File([file], `pasted-${timestamp}.${ext}`, { type: file.type });
+      }
+      await upload(uploadFile);
+    }
+  }, [upload]);
+
   if (!task) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -1951,7 +1996,7 @@ export default function TaskView() {
               </span>
             )}
             {task.status === "completed" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium shrink-0 whitespace-nowrap">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium shrink-0 whitespace-nowrap">
                 Completed
               </span>
             )}
@@ -2001,14 +2046,14 @@ export default function TaskView() {
               title={shareCopied ? "Copied!" : "Share task"}
               aria-label="Share task"
             >
-              {shareCopied ? <Check className="w-3.5 h-3.5 text-foreground/70" /> : <Share2 className="w-3.5 h-3.5" />}
+              {shareCopied ? <Check className="w-3.5 h-3.5 text-muted-foreground" /> : <Share2 className="w-3.5 h-3.5" />}
             </button>
             {/* Bookmark */}
             <button
               onClick={handleToggleFavorite}
               className={cn(
                 "p-1.5 rounded-md transition-colors hidden md:flex",
-                isFavorited ? "text-foreground hover:text-foreground/60" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                isFavorited ? "text-foreground hover:text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
               )}
               title={isFavorited ? "Remove bookmark" : "Bookmark"}
               aria-label={isFavorited ? "Remove bookmark" : "Bookmark"}
@@ -2242,7 +2287,7 @@ export default function TaskView() {
                 )}
                 {/* Streaming text content */}
                 {streamContent ? (
-                  <div className="text-sm text-foreground/90 prose prose-sm prose-invert max-w-none">
+                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none">
                     <Streamdown>{streamContent}</Streamdown>
                   </div>
                 ) : (
@@ -2266,8 +2311,8 @@ export default function TaskView() {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-foreground/70" />
-                  <span className="text-xs font-medium text-foreground/70">Task completed</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">Task completed</span>
                 </div>
                 {task.completedSteps && task.totalSteps && (
                   <span className="text-[11px] text-muted-foreground">
@@ -2349,7 +2394,7 @@ export default function TaskView() {
                   return (
                     <div key={i} className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
                       <FileIcon className="w-3 h-3 text-primary" />
-                      <span className="text-foreground/80 max-w-[150px] truncate">{f.fileName}</span>
+                      <span className="text-foreground max-w-[150px] truncate">{f.fileName}</span>
                       <span className="text-muted-foreground text-[10px] shrink-0">{ext}{sizeLabel ? ` · ${sizeLabel}` : ""}</span>
                       <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
                         <X className="w-3 h-3" />
@@ -2379,6 +2424,7 @@ export default function TaskView() {
                   handleSend();
                 }
               }}
+              onPaste={handlePaste}
               placeholder={streaming ? "Type a follow-up message..." : "Send a message..."}
               aria-label="Chat message input"
               rows={1}

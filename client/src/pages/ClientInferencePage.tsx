@@ -101,7 +101,7 @@ async function detectWebGPU(): Promise<WebGPUStatus> {
 function ModelStatusBadge({ status }: { status: KokoroModelStatus | "available" }) {
   switch (status) {
     case "ready":
-      return <Badge className="text-[10px] bg-muted text-foreground/70 border-border">Ready</Badge>;
+      return <Badge className="text-[10px] bg-muted text-muted-foreground border-border">Ready</Badge>;
     case "loading":
       return <Badge className="text-[10px] bg-muted text-foreground border-border gap-1"><Loader2 className="w-2.5 h-2.5 animate-spin" />Loading</Badge>;
     case "error":
@@ -345,7 +345,7 @@ export default function ClientInferencePage() {
                 <Loader2 className="w-3 h-3 animate-spin" /> Checking GPU...
               </Badge>
             ) : webgpu.supported ? (
-              <Badge className="gap-1 bg-muted text-foreground/70 border-border">
+              <Badge className="gap-1 bg-muted text-muted-foreground border-border">
                 <Zap className="w-3 h-3" /> WebGPU: {webgpu.adapter}
               </Badge>
             ) : (
@@ -372,7 +372,7 @@ export default function ClientInferencePage() {
           <Card className="bg-card border-border">
             <CardContent className="p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-foreground/70" />
+                <CheckCircle2 className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Models Ready</p>
@@ -495,7 +495,7 @@ export default function ClientInferencePage() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <Volume2 className="w-4 h-4 text-primary" /> Local Text-to-Speech
                   {kokoro.isReady && (
-                    <Badge className="text-[10px] bg-muted text-foreground/70 border-border ml-2">
+                    <Badge className="text-[10px] bg-muted text-muted-foreground border-border ml-2">
                       Running Locally
                     </Badge>
                   )}
@@ -574,7 +574,7 @@ export default function ClientInferencePage() {
                 </div>
 
                 {kokoro.isReady && (
-                  <div className="flex items-center gap-2 text-xs text-foreground/70">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Using Kokoro TTS v1.0 ({kokoro.device === "webgpu" ? "WebGPU" : "WASM"} • {kokoro.dtype}) — 100% local, zero server dependency</span>
                   </div>

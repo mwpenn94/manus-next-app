@@ -37,9 +37,9 @@ export default function TaskCompletedCard({ taskId, onRate, className }: TaskCom
         className="flex items-center gap-2"
       >
         <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-          <Check className="w-3.5 h-3.5 text-foreground/70" />
+          <Check className="w-3.5 h-3.5 text-muted-foreground" />
         </div>
-        <span className="text-sm font-medium text-foreground/70">Task completed</span>
+        <span className="text-sm font-medium text-muted-foreground">Task completed</span>
       </motion.div>
 
       {/* Rating widget */}

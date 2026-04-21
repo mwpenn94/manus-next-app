@@ -29,7 +29,7 @@ interface PublishSheetProps {
 }
 
 const STATUS_CONFIG: Record<DeploymentStatus, { label: string; color: string; dot: string }> = {
-  live: { label: "Live", color: "text-foreground/70", dot: "bg-foreground/70" },
+  live: { label: "Live", color: "text-muted-foreground", dot: "bg-foreground/70" },
   deploying: { label: "Deploying", color: "text-muted-foreground", dot: "bg-muted-foreground" },
   offline: { label: "Offline", color: "text-muted-foreground", dot: "bg-muted-foreground" },
   error: { label: "Error", color: "text-destructive", dot: "bg-destructive" },
@@ -120,7 +120,7 @@ export default function PublishSheet({
                     className="p-1.5 rounded-md hover:bg-accent transition-colors shrink-0"
                   >
                     {copied ? (
-                      <Check className="w-4 h-4 text-foreground/70" />
+                      <Check className="w-4 h-4 text-muted-foreground" />
                     ) : (
                       <Copy className="w-4 h-4 text-muted-foreground" />
                     )}

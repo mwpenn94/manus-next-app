@@ -159,7 +159,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         if (t.serverId !== activeServerId) return t;
         if (t.messagesLoaded) return t; // Already loaded
         
-        const serverMsgs: Message[] = serverMessagesQuery.data.map((sm: any) => ({
+        const rawServerMsgs: Message[] = serverMessagesQuery.data.map((sm: any) => ({
           id: sm.externalId || `srv-${sm.id}`,
           role: sm.role as Message["role"],
           content: sm.content,
@@ -167,17 +167,47 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           actions: sm.actions ? (typeof sm.actions === "string" ? JSON.parse(sm.actions) : sm.actions) : undefined,
         }));
 
-        // Merge: server messages first, then any local messages not already in server set.
-        // Dedup by role + normalized content (first 300 chars) to handle dual persistence
-        // (both client and server may save the same assistant message).
+        // SERVER-SIDE DEDUP: Remove duplicate rows that exist in the server DB.
+        // This handles the case where the same assistant message was persisted multiple times
+        // (e.g., from dual-persist in addMessage, interrupted+resumed streams, or bridge events).
+        // Also remove "[Response interrupted — partial content saved]" messages when the full
+        // version exists, since the full response supersedes the partial.
+        const serverMsgs: Message[] = [];
+        const seenServerKeys = new Set<string>();
+        for (const msg of rawServerMsgs) {
+          const key = `${msg.role}:${msg.content.slice(0, 300).trim()}`;
+          if (seenServerKeys.has(key)) continue; // Skip duplicate server rows
+          seenServerKeys.add(key);
+          serverMsgs.push(msg);
+        }
+        // Remove partial interrupted messages if a full version exists
+        const interruptMarker = "*[Response interrupted \u2014 partial content saved]*";
+        const partialIndices = new Set<number>();
+        for (let i = 0; i < serverMsgs.length; i++) {
+          const msg = serverMsgs[i];
+          if (msg.role === "assistant" && msg.content.endsWith(interruptMarker)) {
+            // Check if a later message contains the same content prefix (without the marker)
+            const baseContent = msg.content.slice(0, -interruptMarker.length).trim();
+            if (baseContent.length < 20) { partialIndices.add(i); continue; } // Very short partial = remove
+            for (let j = i + 1; j < serverMsgs.length; j++) {
+              if (serverMsgs[j].role === "assistant" && serverMsgs[j].content.startsWith(baseContent.slice(0, 100))) {
+                partialIndices.add(i); // Mark partial for removal
+                break;
+              }
+            }
+          }
+        }
+        const dedupedServerMsgs = serverMsgs.filter((_, i) => !partialIndices.has(i));
+
+        // Merge: deduped server messages first, then any local messages not already in server set.
         const serverMsgKeys = new Set(
-          serverMsgs.map(m => `${m.role}:${m.content.slice(0, 300).trim()}`)
+          dedupedServerMsgs.map(m => `${m.role}:${m.content.slice(0, 300).trim()}`)
         );
         const uniqueLocalMsgs = t.messages.filter(
           m => !serverMsgKeys.has(`${m.role}:${m.content.slice(0, 300).trim()}`)
         );
         
-        return { ...t, messages: [...serverMsgs, ...uniqueLocalMsgs], messagesLoaded: true };
+        return { ...t, messages: [...dedupedServerMsgs, ...uniqueLocalMsgs], messagesLoaded: true };
       })
     );
   }, [activeServerId, serverMessagesQuery.data, needsMessageLoad]);
@@ -251,8 +281,20 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     (taskId: string, message: Omit<Message, "id" | "timestamp">) => {
       setTasks((prev) => {
         const task = prev.find((t) => t.id === taskId);
+        if (!task) return prev;
+
+        // LOCAL DEDUP GUARD: Prevent adding the same message content twice.
+        // This catches the case where addMessage is called multiple times for the
+        // same assistant response (e.g., from stream completion + bridge event).
+        const contentKey = `${message.role}:${message.content.slice(0, 300).trim()}`;
+        const lastFew = task.messages.slice(-5);
+        const isDuplicate = lastFew.some(
+          (m) => `${m.role}:${m.content.slice(0, 300).trim()}` === contentKey
+        );
+        if (isDuplicate) return prev; // Skip — already in the local message list
+
         // Persist to server if task has a serverId
-        if (task?.serverId && isAuthenticated) {
+        if (task.serverId && isAuthenticated) {
           addMessageMutation.mutate({
             taskId: task.serverId,
             role: message.role,

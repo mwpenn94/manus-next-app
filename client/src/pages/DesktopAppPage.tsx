@@ -317,7 +317,7 @@ echo "Installers are in src-tauri/target/release/bundle/"
                 <Card className="bg-card border-border">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="w-4 h-4 text-foreground/70" />
+                      <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">Ready to Build</span>
                     </div>
                     <p className="text-xs text-muted-foreground">

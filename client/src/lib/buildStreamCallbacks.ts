@@ -11,6 +11,7 @@ export interface StreamState {
   accumulated: string;
   actions: any[];
   images: string[];
+  _webappPreviewsSeen?: Set<string>;
 }
 
 export interface StreamStateSetters {
@@ -107,8 +108,15 @@ export function buildStreamCallbacks(
       );
     },
     onWebappPreview: (preview: { name: string; url: string; description?: string }) => {
-      // Create a webapp preview card message in the chat
+      // Create a webapp preview card message in the chat — but only once per app name.
+      // The server may fire multiple webapp_preview events for the same project; dedup here.
       if (setters.addMessage) {
+        // Track which webapp names have already been shown in this stream session
+        if (!state._webappPreviewsSeen) state._webappPreviewsSeen = new Set<string>();
+        const seen = state._webappPreviewsSeen;
+        if (seen.has(preview.name)) return; // Already shown this app preview
+        seen.add(preview.name);
+
         setters.addMessage(setters.taskId, {
           role: "assistant",
           content: `🌐 **${preview.name}** is ready! [Open Preview](${preview.url})${preview.description ? `\n\n${preview.description}` : ""}`,

@@ -240,7 +240,7 @@ function PreviewModal({ item, onClose }: { item: any; onClose: () => void }) {
             </div>
           ) : isCode || (hasContent && !isImage) ? (
             <div className="relative">
-              <pre className="p-4 text-sm text-foreground/90 font-mono leading-relaxed overflow-auto max-h-[70vh] whitespace-pre-wrap break-words bg-muted/20">
+              <pre className="p-4 text-sm text-foreground font-mono leading-relaxed overflow-auto max-h-[70vh] whitespace-pre-wrap break-words bg-muted/20">
                 {item.content || "No content available"}
               </pre>
             </div>

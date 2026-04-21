@@ -718,7 +718,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/10">
                   <Bell className="w-4 h-4 text-primary" />
                   <span className="text-sm text-foreground">In-app notifications</span>
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">active</span>
+                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">active</span>
                 </div>
               </div>
             </motion.div>
@@ -748,7 +748,7 @@ export default function SettingsPage() {
                         <p className="text-xs text-muted-foreground">{secret.description}</p>
                       </div>
                       {secret.hasValue ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground/70 font-medium">set</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">set</span>
                       ) : (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-foreground font-medium">not set</span>
                       )}
@@ -851,7 +851,7 @@ export default function SettingsPage() {
                           <p className="text-sm font-medium text-foreground">{cap.name}</p>
                           <span className={cn(
                             "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
-                            cap.status === "live" ? "bg-muted text-foreground/70" :
+                            cap.status === "live" ? "bg-muted text-muted-foreground" :
                             cap.status === "partial" ? "bg-muted text-foreground" :
                             "bg-muted text-muted-foreground"
                           )}>
@@ -861,7 +861,7 @@ export default function SettingsPage() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{cap.description}</p>
                         {cap.statusNote && (
-                          <p className="text-[10px] text-foreground/70 mt-0.5 italic">{cap.statusNote}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 italic">{cap.statusNote}</p>
                         )}
                         <p className="text-[10px] text-muted-foreground mt-1 font-mono">{cap.package}</p>
                       </div>
@@ -913,7 +913,7 @@ export default function SettingsPage() {
                     )} />
                     <span className={cn(
                       "text-xs",
-                      bridgeStatus === "connected" ? "text-foreground/70" :
+                      bridgeStatus === "connected" ? "text-muted-foreground" :
                       bridgeStatus === "connecting" ? "text-foreground" :
                       bridgeStatus === "error" ? "text-red-400" :
                       "text-muted-foreground"
@@ -1011,8 +1011,8 @@ export default function SettingsPage() {
                           </span>
                           <span className={cn(
                             evt.type.includes("error") ? "text-red-400" :
-                            evt.type.includes("open") ? "text-foreground/70" :
-                            "text-foreground/70"
+                            evt.type.includes("open") ? "text-muted-foreground" :
+                            "text-muted-foreground"
                           )}>
                             {evt.type}
                           </span>

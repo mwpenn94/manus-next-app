@@ -73,7 +73,7 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
       <span
         className={cn(
           "w-5 shrink-0 text-center select-none",
-          type === "added" && "text-foreground/60",
+          type === "added" && "text-muted-foreground",
           type === "removed" && "text-red-400",
           type === "unchanged" && "text-muted-foreground"
         )}
@@ -83,9 +83,9 @@ function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "remo
       <span
         className={cn(
           "flex-1 px-3",
-          type === "added" && "text-foreground/50",
+          type === "added" && "text-muted-foreground",
           type === "removed" && "text-red-300 line-through opacity-70",
-          type === "unchanged" && "text-foreground/70"
+          type === "unchanged" && "text-muted-foreground"
         )}
       >
         {line || " "}
@@ -139,7 +139,7 @@ function CodeLine({ line, lineNum }: { line: string; lineNum: number }) {
       <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground border-r border-border/30">
         {lineNum}
       </span>
-      <span className="flex-1 px-3 text-foreground/90">{line || " "}</span>
+      <span className="flex-1 px-3 text-foreground">{line || " "}</span>
     </div>
   );
 }

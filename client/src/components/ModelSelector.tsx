@@ -90,7 +90,7 @@ export default function ModelSelector({
         onClick={() => setOpen(!open)}
         className={cn(
           "flex items-center gap-1.5 rounded-lg transition-colors",
-          "text-foreground hover:text-foreground/80",
+          "text-foreground hover:text-foreground",
           compact
             ? "px-2 py-1 text-sm"
             : "px-3 py-1.5 text-sm font-medium"

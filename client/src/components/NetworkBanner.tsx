@@ -41,7 +41,7 @@ export default function NetworkBanner() {
               !isOnline
                 ? "bg-red-500/15 text-red-400 border-b border-red-500/20"
                 : wasOffline
-                ? "bg-muted text-foreground/70 border-b border-border"
+                ? "bg-muted text-muted-foreground border-b border-border"
                 : offlineMode
                 ? "bg-muted text-muted-foreground border-b border-border"
                 : ""

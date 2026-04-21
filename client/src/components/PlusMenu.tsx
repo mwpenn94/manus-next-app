@@ -298,7 +298,7 @@ function FeatureList({
             className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
           >
             <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
-              <Icon className="w-4 h-4 text-foreground/70" />
+              <Icon className="w-4 h-4 text-muted-foreground" />
             </div>
             <span className="text-sm text-foreground flex-1">{item.label}</span>
             {item.badge && (
