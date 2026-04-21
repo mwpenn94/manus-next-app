@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plug, Search, CheckCircle, XCircle, Loader2, Shield, Key, ExternalLink, RefreshCw } from "lucide-react";
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
 /** OAuth-capable connectors get a "Sign in with X" button as the primary flow */
@@ -100,11 +100,23 @@ export default function ConnectorsPage() {
     onError: (err) => toast.error(`Failed: ${err.message}`),
   });
 
+  const oauthPopupRef = useRef<Window | null>(null);
+
   const oauthUrlMutation = trpc.connector.getOAuthUrl.useMutation({
     onSuccess: (data) => {
       if (data.supported && data.url) {
         toast.info("Redirecting to authorization page...");
-        window.open(data.url, "_blank", "noopener,noreferrer,width=600,height=700");
+        // Detect mobile: use same-window redirect instead of popup
+        // Mobile browsers block popups from async callbacks and have poor popup support
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          // Same-window redirect — callback page will redirect back to /connectors with query params
+          window.location.href = data.url;
+        } else {
+          // Desktop: open popup WITHOUT noopener (needed for window.opener.postMessage)
+          const popup = window.open(data.url, "oauth_popup", "width=600,height=700,scrollbars=yes");
+          oauthPopupRef.current = popup;
+        }
       } else {
         toast.info("OAuth not configured for this connector. Use manual setup instead.");
         setConnectTab("manual");

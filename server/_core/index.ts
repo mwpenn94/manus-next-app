@@ -44,19 +44,35 @@ function buildOAuthCallbackHtml(
   if (error) {
     return `<!DOCTYPE html><html><body><h2>OAuth Error</h2><p>${error}</p><script>setTimeout(()=>window.close(),3000)</script></body></html>`;
   }
-  return `<!DOCTYPE html><html><body>
-<p>Connecting...</p>
+  // Parse origin from state for same-window redirect
+  let origin = "";
+  try {
+    const parsed = JSON.parse(Buffer.from(state || "", "base64url").toString());
+    origin = parsed.origin || "";
+  } catch { /* ignore */ }
+
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<p style="font-family:system-ui;text-align:center;margin-top:40vh">Connecting...</p>
 <script>
   (function() {
     var connectorId = ${JSON.stringify(connectorId)};
     var code = ${JSON.stringify(code)};
     var state = ${JSON.stringify(state || "")};
-    if (window.opener) {
-      window.opener.postMessage({ type: "connector-oauth-callback", connectorId: connectorId, code: code }, "*");
-      setTimeout(function() { window.close(); }, 500);
-    } else {
-      window.location.href = "/connectors?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state);
+    var origin = ${JSON.stringify(origin)};
+
+    // Try popup flow first (window.opener exists when opened without noopener)
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.postMessage({ type: "connector-oauth-callback", connectorId: connectorId, code: code }, "*");
+        setTimeout(function() { window.close(); }, 800);
+        return;
+      } catch(e) { /* fall through to redirect */ }
     }
+
+    // Same-window redirect (mobile flow or popup blocked)
+    // Use origin from state to build the redirect URL
+    var base = origin || window.location.origin;
+    window.location.href = base + "/connectors?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state);
   })();
 </script>
 </body></html>`;

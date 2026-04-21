@@ -1537,3 +1537,11 @@
 - [x] P30-6: Fix all issues found in e2e testing (color contrast, selector mismatches, auth-gated elements)
 - [x] P30-7: Mobile responsiveness audit via Playwright viewport (375px, 768px viewports tested)
 - [x] P30-8: Recursive convergence passes (3 consecutive zero-change: 902 vitest, 0 TS errors, 26 Playwright e2e)
+
+## P31 — Fix GitHub OAuth Flow (User-Reported Bug)
+
+- [x] P31-1: Diagnose GitHub OAuth popup failure (shows "Connecting..." then white screen)
+- [x] P31-2: Fix noopener/noreferrer breaking window.opener postMessage
+- [x] P31-3: Fix mobile popup blocking — use same-window redirect on mobile
+- [x] P31-4: Fix callback page to extract origin from state for redirect
+- [x] P31-5: Convergence pass (0 TS errors, 902 vitest passing)
