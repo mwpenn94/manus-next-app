@@ -1872,3 +1872,37 @@
 - [x] E2E: Mobile responsive — viewport loads, input accessible (2 tests)
 - [x] E2E: Navigation routes — analytics, memory, projects, skills, 404 (5 tests)
 - [x] Total: 22 E2E tests, all passing
+
+## V9 Parity — Phase 2: Next Steps + Bug Fix
+
+### Bug Fix: Early Termination / Task Continuation
+- [x] Diagnose why "demonstrate each" task stops mid-way through capabilities — root cause: wantsContinuous auto-continue only fired when turn <= 3, too restrictive for 22 tools
+- [x] Fix agent stream continuation logic — removed turn <= 3 restriction, now continues as long as unused tools remain
+- [x] Add mid-enumeration detection — catches when LLM stops at "2. Read Webpage" and nudges to continue from "3. Generate Image"
+- [x] Improved continuation prompts — shows remaining tool count and names, caps at 8 shown
+- [x] Write regression tests (25 tests: wantsContinuous detection, auto-continue logic, mid-enumeration, system prompt alignment, regression guards)
+- [x] Ensure SSE stream stays open until all steps are complete — MAX_TOOL_TURNS=100, no artificial limit
+
+### Real-Time Presence Indicators
+- [x] ActiveToolIndicator component already implemented (Agent is browsing/coding/thinking/searching with animated states)
+- [x] Presence state already in SSE stream events (tool_start, tool_result events)
+- [x] Already wired into TaskView (line 2426)
+- [x] Tool-specific activity labels already implemented (TOOL_META registry with 18+ tool types)
+
+### Connectors Page
+- [x] ConnectorsPage already implemented with OAuth integration cards (50+ connectors across 10 categories)
+- [x] Google Drive, GitHub, Notion, Slack, Calendar, Microsoft 365 OAuth connectors already working
+- [x] Connector enable/disable toggles with backend state (tRPC connector.connect/disconnect)
+- [x] Route already in App.tsx (/connectors) and sidebar navigation (AppLayout.tsx with ConnectorStatusBadge)
+
+### Stripe Billing Flow
+- [x] products.ts already exists with subscription tiers
+- [x] Checkout session creation procedure already implemented (stripe.ts createCheckoutSession)
+- [x] Webhook handler already at /api/stripe/webhook (server/_core/index.ts)
+- [x] BillingPage already built with usage stats, plan cards, payment history
+- [x] Credits display already in sidebar header (AppLayout.tsx)
+
+## Accessibility Color Contrast Fixes (User-Reported)
+- [x] Fix insufficient color contrast on home page: #28282b foreground on #0b0b0e background (1.33:1, needs 4.5:1) — root cause: browser default placeholder opacity (~42%) on oklch(0.63) muted-foreground. Fixed by boosting to oklch(0.72) + adding ::placeholder { opacity: 1 } override. New contrast: 7.93:1
+- [x] Fix insufficient color contrast on home page: #3f3e42 foreground on #09090c background (1.87:1, needs 4.5:1) — root cause: browser default placeholder opacity (~50%) on sidebar search input. Fixed by boosting sidebar-foreground to oklch(0.72) + placeholder opacity override. New contrast: 8.03:1
+- [x] Audit all muted-foreground / secondary text CSS variables in dark theme for WCAG AA compliance — muted-foreground 0.63→0.72, sidebar-foreground 0.67→0.72, both now 7.9-8.0:1 contrast ratio

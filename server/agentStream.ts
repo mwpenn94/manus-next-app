@@ -546,9 +546,8 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           continue;
         }
         
-        // Auto-continue if: user wants continuous work AND (LLM is asking what to do next OR we're early in the loop)
-        if (wantsContinuous && (asksUser || turn <= 3) && turn < maxTurns - 2) {
-          console.log(`[Agent] Auto-continuing: user wants continuous work, turn ${turn}/${maxTurns}`);
+        // Auto-continue if: user wants continuous work AND (LLM is asking what to do next OR there are unused tools remaining)
+        if (wantsContinuous && turn < maxTurns - 2) {
           // Track which tools have been used so far
           const usedTools = new Set<string>();
           for (const msg of conversation) {
@@ -558,12 +557,37 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           const allToolNames = AGENT_TOOLS.map(t => t.function.name);
           const unusedTools = allToolNames.filter(t => !usedTools.has(t));
           
-          if (unusedTools.length > 0) {
+          // Continue if: (a) LLM is asking what to do next, OR (b) there are still unused tools to demonstrate
+          const shouldContinue = asksUser || unusedTools.length > 0;
+          
+          if (shouldContinue && unusedTools.length > 0) {
+            console.log(`[Agent] Auto-continuing: ${unusedTools.length} unused tools remain, turn ${turn}/${maxTurns}`);
             // Inject continuation prompt
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({
               role: "user",
-              content: `Continue. You have ${unusedTools.length} tools you haven't demonstrated yet: ${unusedTools.join(", ")}. Demonstrate the next one now. Do NOT ask me what to do — just proceed with the next tool.`,
+              content: `Continue demonstrating. You have ${unusedTools.length} tools remaining: ${unusedTools.slice(0, 8).join(", ")}${unusedTools.length > 8 ? ` and ${unusedTools.length - 8} more` : ""}. Demonstrate the next one now. Do NOT ask what to do next — just proceed immediately.`,
+            });
+            sendSSE(safeWrite, { delta: "\n\n" });
+            continue;
+          }
+        }
+        
+        // Also auto-continue if LLM stops mid-enumeration (e.g., "1. Web Search... 2. Read Webpage..." then stops)
+        // Detect numbered list continuation pattern
+        if (turn < maxTurns - 2) {
+          const numberedListMatch = textContent.match(/(\d+)\.\s+\w/g);
+          const lastNumber = numberedListMatch ? parseInt(numberedListMatch[numberedListMatch.length - 1]) : 0;
+          const mentionedCapabilities = textContent.match(/\b(web.?search|read.?webpage|generate.?image|analyze.?data|generate.?document|browse.?web|wide.?research|generate.?slides|send.?email|meeting.?notes|design.?canvas|cloud.?browser|screenshot.?verify|execute.?code|create.?webapp|create.?file|edit.?file|read.?file|list.?files|install.?deps|run.?command|git.?operation)\b/gi);
+          const uniqueMentioned = new Set((mentionedCapabilities || []).map(c => c.toLowerCase()));
+          
+          // If the response lists capabilities but hasn't demonstrated them all, and the user asked to demonstrate each
+          if (wantsContinuous && lastNumber > 0 && lastNumber < 22 && uniqueMentioned.size < 15) {
+            console.log(`[Agent] Mid-enumeration continuation: listed up to #${lastNumber}, only ${uniqueMentioned.size} unique capabilities mentioned`);
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `You stopped at item #${lastNumber}. Continue from #${lastNumber + 1}. Demonstrate the remaining capabilities. Do NOT repeat what you already showed — pick up where you left off and keep going until ALL capabilities are demonstrated.`,
             });
             sendSSE(safeWrite, { delta: "\n\n" });
             continue;
