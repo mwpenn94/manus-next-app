@@ -98,11 +98,14 @@ describe("Keyboard Shortcuts", () => {
     expect(SHORTCUTS.length).toBeGreaterThanOrEqual(5);
 
     const keys = SHORTCUTS.map((s) => s.key);
-    expect(keys).toContain("⌘K");
-    expect(keys).toContain("⌘N");
-    expect(keys).toContain("⌘/");
-    expect(keys).toContain("Esc");
-    expect(keys).toContain("⌘⇧S");
+    // Keys are platform-dependent; in Node test env navigator may not be Mac
+    // Check that expected labels exist instead of platform-specific key combos
+    const labels = SHORTCUTS.map((s) => s.label);
+    expect(labels).toContain("Quick Focus");
+    expect(labels).toContain("New Task");
+    expect(labels).toContain("Shortcuts");
+    expect(labels).toContain("Close");
+    expect(labels).toContain("Sidebar");
   });
 
   it("each shortcut has required fields", async () => {
@@ -111,7 +114,7 @@ describe("Keyboard Shortcuts", () => {
       expect(shortcut.key).toBeTruthy();
       expect(shortcut.label).toBeTruthy();
       expect(shortcut.description).toBeTruthy();
-      expect(["navigation", "editing", "task", "general"]).toContain(shortcut.category);
+      expect(["navigation", "editing", "task", "general", "accessibility"]).toContain(shortcut.category);
     }
   });
 });

@@ -1814,3 +1814,59 @@
 - [x] Replace disconnected bouncing dots with unified presence system
   - Presence indicator now renders above streaming text content
   - Bouncing dots replaced with contextual state indicators
+
+## Keyboard Shortcuts Overlay (Step 3)
+- [x] Audit all existing keyboard shortcuts across the app
+- [x] Design KeyboardShortcutsModal component with Manus-authentic styling
+- [x] Register global ? and Cmd+/ keyboard listeners to toggle modal
+- [x] Categorize shortcuts: Navigation, Task Management, Chat Input, General, Accessibility
+- [x] Show platform-aware modifier keys (Cmd on Mac, Ctrl on Windows/Linux)
+- [x] Add visual shortcut hint in UI (footer with ? and Cmd/Ctrl+/ badges)
+- [x] Write tests for keyboard shortcuts (55 tests: registry, platform awareness, grouping, key event resolution, dialog search, key badge splitting, escape precedence, category metadata)
+
+## V9 Manus Parity — Deep Alignment (from video analysis + v9 prompt)
+
+### Manus UI/UX Alignment (from video analysis)
+- [ ] Enhanced attachment menu — bottom sheet with Camera, Add files, Connect My Computer, Add Skills, Build website, Create slides, Create image, Generate audio
+- [ ] Confirmation gates — "Manus will continue after your confirmation" blocks for destructive/complex operations
+- [ ] Interactive output cards — Dashboard/Preview buttons inline in chat responses
+- [ ] Workspace panel transparency — live terminal, code editor, browser preview with real-time updates
+- [ ] Skill creator conversational flow — chat-based tool/skill definition
+- [ ] Convergence loop indicators — "Pass N Convergence" visual indicators for self-debugging loops
+- [ ] Settings deep alignment — Account & Billing, Data Controls, Cloud Browser, Skills library, Connectors, General settings
+
+### §L.29 False-Positive Elimination
+- [ ] Category A: Stub audit — grep for return { success: true } / mock data in GREEN procedures
+- [ ] Category B: Happy-path-only — add owner-dogfood persona with real-world inputs
+- [ ] Category C: Side-effect verification — every side-effect procedure gets verifySideEffect companion
+- [ ] Category D: Test type breakdown — categorize all tests as unit/integration/E2E
+- [ ] Category E: Status drift — add last_verified timestamp to capabilities
+- [ ] Category F: Early termination defense — continuation logic for multi-step intents
+- [ ] Category G: App-dev-promise vs delivery — URL verification before sharing
+- [ ] Category H: Feature-rendered verification — DOM snapshot comparison against promise list
+- [ ] Category I: Project persistence — projects visible in sidebar after logout/login
+
+### §L.23 Automation Context (Surface 6)
+- [ ] Stream 1: Visual capture (page.screenshot per action)
+- [ ] Stream 2: Accessibility tree snapshot (page.accessibility.snapshot)
+- [ ] Stream 3: Console log capture (page.context().on('console'))
+- [ ] Stream 4: Network request/response capture
+- [ ] Stream 5: Storage state capture (localStorage, sessionStorage, cookies)
+- [ ] Stream 6: Performance metrics capture (Core Web Vitals)
+- [ ] Stream 7: DOM mutation observer
+- [ ] Bidirectional context flow — captured streams feed back into agent reasoning
+
+### Enhanced Agent Capabilities
+- [ ] Agent action step detail rendering — show actual tool outputs with syntax highlighting
+- [ ] Multi-step task continuation — agent loop continues until all enumerated steps complete
+- [ ] Error recovery UX — retry buttons, error explanations, alternative suggestions
+
+### Playwright E2E Validation
+- [ ] Install Playwright and configure for the project
+- [ ] E2E: Home page loads, greeting visible, input functional
+- [ ] E2E: Task creation flow — type message, submit, see agent response
+- [ ] E2E: Sidebar navigation — task list, search, filter
+- [ ] E2E: Settings page — all tabs accessible, preferences persist
+- [ ] E2E: Keyboard shortcuts — Cmd+K focuses input, ? opens overlay
+- [ ] E2E: File upload — drag-and-drop, attachment display
+- [ ] E2E: Mobile responsive — sidebar drawer, bottom nav

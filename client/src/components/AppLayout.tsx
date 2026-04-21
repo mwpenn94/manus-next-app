@@ -68,6 +68,7 @@ import {
   Moon,
   Globe,
   Shield,
+  Keyboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -176,13 +177,6 @@ function GitHubStatusBadge() {
 export default function AppLayout({ children }: { children: ReactNode }) {
   useSWUpdate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { showHelp, setShowHelp } = useKeyboardShortcuts({
-    onNewTask: () => {
-      setActiveTask(null);
-      navigate("/");
-    },
-    onToggleSidebar: () => setSidebarOpen((prev) => !prev),
-  });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -289,6 +283,35 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       source: "local" as const,
     }));
   })();
+
+  const { showHelp, setShowHelp } = useKeyboardShortcuts({
+    onNewTask: () => {
+      setActiveTask(null);
+      navigate("/");
+    },
+    onToggleSidebar: () => setSidebarOpen((prev) => !prev),
+    onCycleTheme: cycleTheme,
+    onNavigatePrevTask: () => {
+      if (!displayedTasks.length) return;
+      const currentIdx = displayedTasks.findIndex((t) => t.id === activeTaskId);
+      const prevIdx = currentIdx <= 0 ? displayedTasks.length - 1 : currentIdx - 1;
+      const prevTask = displayedTasks[prevIdx];
+      if (prevTask) {
+        setActiveTask(prevTask.id);
+        navigate(`/task/${prevTask.id}`);
+      }
+    },
+    onNavigateNextTask: () => {
+      if (!displayedTasks.length) return;
+      const currentIdx = displayedTasks.findIndex((t) => t.id === activeTaskId);
+      const nextIdx = currentIdx >= displayedTasks.length - 1 ? 0 : currentIdx + 1;
+      const nextTask = displayedTasks[nextIdx];
+      if (nextTask) {
+        setActiveTask(nextTask.id);
+        navigate(`/task/${nextTask.id}`);
+      }
+    },
+  });
 
   const handleLogin = () => {
     window.location.href = getLoginUrl();
@@ -956,12 +979,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Settings className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => toast.info("Tips & help coming soon!")}
+              onClick={() => setShowHelp(true)}
               className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-              title="Help & tips"
-              aria-label="Help & tips"
+              title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Keyboard className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleLogout}
