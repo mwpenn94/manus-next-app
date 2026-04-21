@@ -121,7 +121,8 @@ describe("P35 — Webapp Preview SSE Pipeline", () => {
   it("TaskView passes addMessage to buildStreamCallbacks", () => {
     const taskView = read("client/src/pages/TaskView.tsx");
     // All 4 buildStreamCallbacks calls should pass addMessage
-    const matches = taskView.match(/addMessage,\n/g);
+    // addMessage is now followed by setIsReconnecting on the same line
+    const matches = taskView.match(/addMessage,/g);
     expect(matches).not.toBeNull();
     expect(matches!.length).toBeGreaterThanOrEqual(4);
   });

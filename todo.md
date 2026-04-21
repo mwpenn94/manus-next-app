@@ -1789,3 +1789,28 @@
   - 13 tests covering 3-layer dedup: server merge, local guard, LLM history
   - Stress tests: 50 duplicate messages, 100-message conversation with 3x duplication
   - Integration test: full pipeline server merge → local guard → LLM history
+
+## Real-Time Typing Presence (Manus-Aligned)
+- [x] Design presence indicator system with distinct states: thinking, generating, tool_active, reconnecting, idle
+  - Unified state machine: idle → thinking → tool_active → generating → reconnecting
+  - Priority: reconnecting > tool_active > generating > thinking > idle
+- [x] Create AgentPresenceIndicator component with Manus-authentic animations
+  - Rewritten ActiveToolIndicator with 5 distinct visual states
+  - Tool-specific icons, colors, labels, and descriptions
+  - Elapsed time counter for active tool execution
+  - Smooth framer-motion AnimatePresence transitions
+- [x] Wire presence state into TaskView streaming flow (SSE events → presence transitions)
+  - isReconnecting state wired through all 4 buildStreamCallbacks calls
+  - onReconnecting/onReconnected callbacks update presence state
+- [x] Show contextual labels: "Thinking...", "Searching the web...", "Generating image...", "Writing code...", etc.
+  - 18 action types with tool-specific descriptions (URL for browsing, command for executing, query for searching, file for creating/editing/reading, packages for installing)
+- [x] Add smooth transitions between states with micro-animations
+  - AnimatePresence with opacity/y transitions between states
+  - Pulse animation for thinking, spin for generating, bounce for reconnecting
+- [x] Ensure presence indicator disappears cleanly when stream completes or is interrupted
+  - Returns null when streaming=false (idle state)
+- [x] Write tests for presence state machine and component rendering
+  - 26 tests: state derivation (10), tool descriptions (12), state transition sequences (4)
+- [x] Replace disconnected bouncing dots with unified presence system
+  - Presence indicator now renders above streaming text content
+  - Bouncing dots replaced with contextual state indicators

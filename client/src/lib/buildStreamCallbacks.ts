@@ -25,6 +25,7 @@ export interface StreamStateSetters {
   mapToolToAction: (type: string, label: string, args: any, status: "active" | "done") => any;
   taskId: string;
   addMessage?: (taskId: string, msg: any) => void;
+  setIsReconnecting?: (reconnecting: boolean) => void;
 }
 
 export function buildStreamCallbacks(
@@ -102,6 +103,8 @@ export function buildStreamCallbacks(
       setters.setStreamContent(state.accumulated);
     },
     onReconnecting: (attempt: number, maxRetries: number) => {
+      // Signal reconnecting state to the presence indicator
+      setters.setIsReconnecting?.(true);
       // Show a subtle reconnecting indicator in the stream content
       setters.setStreamContent(
         state.accumulated + `\n\n*Reconnecting... (attempt ${attempt}/${maxRetries})*`
@@ -136,6 +139,8 @@ export function buildStreamCallbacks(
       }
     },
     onReconnected: () => {
+      // Clear reconnecting state
+      setters.setIsReconnecting?.(false);
       // Restore the clean accumulated content (remove reconnecting message)
       setters.setStreamContent(state.accumulated);
     },

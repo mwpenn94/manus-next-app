@@ -1305,6 +1305,7 @@ export default function TaskView() {
   const [streamContent, setStreamContent] = useState("");
   const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
   const [streamImages, setStreamImages] = useState<string[]>([]);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [stepProgress, setStepProgress] = useState<{ completed: number; total: number; turn: number } | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -1593,7 +1594,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage,
+          addMessage, setIsReconnecting,
         });
 
         await streamWithRetry({
@@ -1757,7 +1758,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage,
+        addMessage, setIsReconnecting,
       });
 
       await streamWithRetry({
@@ -1827,7 +1828,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage,
+        addMessage, setIsReconnecting,
       });
 
       await streamWithRetry({
@@ -1908,7 +1909,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage,
+        addMessage, setIsReconnecting,
       });
 
       await streamWithRetry({
@@ -2371,20 +2372,19 @@ export default function TaskView() {
                     ))}
                   </div>
                 )}
+                {/* Agent Presence Indicator — Unified state system */}
+                <ActiveToolIndicator
+                  actions={agentActions}
+                  streaming={streaming}
+                  hasStreamContent={!!streamContent}
+                  isReconnecting={isReconnecting}
+                />
                 {/* Streaming text content */}
-                {streamContent ? (
+                {streamContent && (
                   <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none">
                     <Streamdown>{streamContent}</Streamdown>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/30">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
                 )}
-                {/* Active Tool Indicator — NS19 */}
-                <ActiveToolIndicator actions={agentActions} streaming={streaming} />
               </div>
             </motion.div>
           )}
