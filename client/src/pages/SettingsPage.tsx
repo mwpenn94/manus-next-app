@@ -32,11 +32,14 @@ import {
   Sparkles,
   Activity,
   WifiOff,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useBridge } from "@/contexts/BridgeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
@@ -189,6 +192,9 @@ export default function SettingsPage() {
 
   // Auth
   const { user, isAuthenticated, logout } = useAuth();
+
+  // Theme
+  const { theme, setTheme, toggleTheme } = useTheme();
 
   // Bridge integration
   const { status: bridgeStatus, connect, disconnect, quality, events } = useBridge();
@@ -622,6 +628,48 @@ export default function SettingsPage() {
                   >
                     Save prompt
                   </button>
+                </div>
+              </div>
+
+              {/* ── Appearance ── */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-muted-foreground" />
+                  Appearance
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Choose your preferred color theme. Your preference is saved automatically.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { value: "light" as const, label: "Light", icon: Sun, description: "Warm Light theme" },
+                    { value: "dark" as const, label: "Dark", icon: Moon, description: "Warm Void theme" },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setTheme(opt.value);
+                        if (isAuthenticated) {
+                          const updated = { ...generalSettings, theme: opt.value };
+                          setGeneralSettings(updated as any);
+                          savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                        }
+                        toast.success(`Switched to ${opt.label} theme`);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-xl border transition-all text-left",
+                        theme === opt.value
+                          ? "border-primary/50 bg-primary/5"
+                          : "border-border bg-card hover:border-primary/20"
+                      )}
+                    >
+                      <opt.icon className={cn("w-5 h-5", theme === opt.value ? "text-primary" : "text-muted-foreground")} />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                        <p className="text-xs text-muted-foreground">{opt.description}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 

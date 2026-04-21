@@ -45,9 +45,49 @@
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-/* "Warm Void" — Manus-Authentic Dark Theme */
+/* Base radius (shared between themes) */
 :root {
   --radius: 0.5rem;
+}
+
+/* "Warm Light" — Light Theme */
+:root {
+  --background: oklch(0.97 0.003 70);
+  --foreground: oklch(0.18 0.01 60);
+  --card: oklch(0.99 0.002 70);
+  --card-foreground: oklch(0.18 0.01 60);
+  --popover: oklch(0.99 0.002 70);
+  --popover-foreground: oklch(0.18 0.01 60);
+  --primary: oklch(0.55 0.12 65);
+  --primary-foreground: oklch(0.98 0.003 70);
+  --secondary: oklch(0.93 0.005 70);
+  --secondary-foreground: oklch(0.35 0.01 60);
+  --muted: oklch(0.93 0.005 70);
+  --muted-foreground: oklch(0.45 0.01 60);
+  --accent: oklch(0.93 0.005 70);
+  --accent-foreground: oklch(0.18 0.01 60);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.88 0.005 70);
+  --input: oklch(0.88 0.005 70);
+  --ring: oklch(0.55 0.12 65);
+  --chart-1: oklch(0.55 0.12 65);
+  --chart-2: oklch(0.5 0.14 45);
+  --chart-3: oklch(0.45 0.1 160);
+  --chart-4: oklch(0.5 0.12 250);
+  --chart-5: oklch(0.55 0.14 330);
+  --sidebar: oklch(0.95 0.003 70);
+  --sidebar-foreground: oklch(0.25 0.01 60);
+  --sidebar-primary: oklch(0.55 0.12 65);
+  --sidebar-primary-foreground: oklch(0.98 0.003 70);
+  --sidebar-accent: oklch(0.91 0.005 70);
+  --sidebar-accent-foreground: oklch(0.18 0.01 60);
+  --sidebar-border: oklch(0.88 0.005 70);
+  --sidebar-ring: oklch(0.55 0.12 65);
+}
+
+/* "Warm Void" — Manus-Authentic Dark Theme */
+.dark {
   --background: oklch(0.13 0.005 60);
   --foreground: oklch(0.9 0.01 70);
   --card: oklch(0.16 0.005 60);
@@ -89,6 +129,10 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    color-scheme: light;
+  }
+  .dark body,
+  .dark {
     color-scheme: dark;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -140,9 +184,12 @@
   }
 }
 
-/* Custom scrollbar for the warm void theme */
+/* Custom scrollbar — adapts to theme */
 * {
   scrollbar-width: thin;
+  scrollbar-color: oklch(0.75 0.005 70) transparent;
+}
+.dark * {
   scrollbar-color: oklch(0.3 0.005 60) transparent;
 }
 ::-webkit-scrollbar {
@@ -153,10 +200,16 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.3 0.005 60);
+  background: oklch(0.75 0.005 70);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.65 0.005 70);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0.005 60);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.4 0.005 60);
 }
 
@@ -169,11 +222,29 @@
 .typing-cursor::after {
   content: '▊';
   animation: typewriter-cursor 1s infinite;
-  color: oklch(0.72 0.1 75);
+  color: oklch(0.55 0.12 65);
   margin-left: 2px;
+}
+.dark .typing-cursor::after {
+  color: oklch(0.72 0.1 75);
+}
+
+/* Prose styling for light theme */
+.prose-themed {
+  --tw-prose-body: oklch(0.3 0.01 60);
+  --tw-prose-headings: oklch(0.18 0.01 60);
+  --tw-prose-bold: oklch(0.18 0.01 60);
+  --tw-prose-links: oklch(0.55 0.12 65);
+  --tw-prose-code: oklch(0.4 0.05 65);
+  --tw-prose-counters: oklch(0.45 0.01 60);
+  --tw-prose-bullets: oklch(0.5 0.01 60);
+  --tw-prose-hr: oklch(0.85 0.005 70);
+  --tw-prose-quotes: oklch(0.35 0.01 60);
+  --tw-prose-quote-borders: oklch(0.55 0.12 65);
 }
 
 /* Prose styling for dark theme */
+.dark .prose-themed,
 .prose-invert {
   --tw-prose-body: oklch(0.82 0.01 70);
   --tw-prose-headings: oklch(0.9 0.01 70);
@@ -189,12 +260,20 @@
 
 /* Selection highlight */
 ::selection {
+  background: oklch(0.55 0.12 65 / 0.25);
+  color: oklch(0.15 0.01 60);
+}
+.dark ::selection {
   background: oklch(0.72 0.1 75 / 0.3);
   color: oklch(0.95 0.01 70);
 }
 
 /* Focus visible ring */
 :focus-visible {
+  outline: 2px solid oklch(0.55 0.12 65 / 0.5);
+  outline-offset: 2px;
+}
+.dark :focus-visible {
   outline: 2px solid oklch(0.72 0.1 75 / 0.5);
   outline-offset: 2px;
 }

@@ -380,7 +380,7 @@ export const appRouter = router({
     get: protectedProcedure.query(async ({ ctx }) => {
       const prefs = await getUserPreferences(ctx.user.id);
       return prefs ?? {
-        generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false },
+        generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false, theme: 'dark' },
         capabilities: {},
         systemPrompt: null,
       };

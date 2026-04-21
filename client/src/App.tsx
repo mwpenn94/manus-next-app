@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { TaskProvider } from "./contexts/TaskContext";
 import { BridgeProvider } from "./contexts/BridgeContext";
 import { lazy, Suspense } from "react";
@@ -218,23 +218,34 @@ function Router() {
   );
 }
 
+function ThemedToaster() {
+  const { theme } = useTheme();
+  return (
+    <Toaster
+      theme={theme}
+      toastOptions={{
+        style: theme === 'dark' ? {
+          background: 'oklch(0.16 0.005 60)',
+          border: '1px solid oklch(0.25 0.005 60)',
+          color: 'oklch(0.9 0.01 70)',
+        } : {
+          background: 'oklch(0.99 0.002 70)',
+          border: '1px solid oklch(0.88 0.005 70)',
+          color: 'oklch(0.18 0.01 60)',
+        },
+      }}
+    />
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="dark" switchable>
         <BridgeProvider>
           <TaskProvider>
           <TooltipProvider>
-            <Toaster
-              theme="dark"
-              toastOptions={{
-                style: {
-                  background: 'oklch(0.16 0.005 60)',
-                  border: '1px solid oklch(0.25 0.005 60)',
-                  color: 'oklch(0.9 0.01 70)',
-                },
-              }}
-            />
+            <ThemedToaster />
             <AppLayout>
               <Router />
             </AppLayout>

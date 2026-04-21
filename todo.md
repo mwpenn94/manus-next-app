@@ -1440,3 +1440,15 @@
 - [x] P23-7: Full virtual user walkthrough — all pages render, no console errors, no server errors
 - [x] P23-8: Write P23 tests (43 tests in server/p23.test.ts, 763 total passing)
 - [x] P23-9: Recursive convergence passes — 3/3 clean (0 TS errors, 763 tests passing, build 395.1kb, zero changes between passes)
+
+## P24 — Dark/Light Theme Toggle + Exhaustive Reassessment + Convergence
+- [x] P24-1: Audit current ThemeProvider setup and CSS variable structure — ThemeProvider exists with switchable=false, only dark :root vars defined, need light .dark override + switchable=true
+- [x] P24-2: Theme stored in generalSettings JSON (no schema change needed) — default 'dark'
+- [x] P24-3: Theme persisted via existing preferences.save tRPC procedure + localStorage sync
+- [x] P24-4: Add theme toggle UI in Settings page (Appearance section) — Light/Dark cards with Sun/Moon icons, auto-saves to DB
+- [x] P24-5: Add quick theme toggle button in sidebar footer (Sun/Moon icon next to logout) for easy access
+- [x] P24-6: Light theme CSS vars added as :root default, dark theme moved to .dark class — all semantic colors have both modes
+- [x] P24-7: Chat image issue (Connection lost) already fixed in P23 with streamWithRetry + 15s heartbeat
+- [x] P24-8: Full virtual user walkthrough — Settings page renders Appearance section with Light/Dark cards, sidebar footer has Sun/Moon toggle
+- [x] P24-9: Write P24 tests (30 tests in server/p24.test.ts, 797 total passing) + fixed preferences.test.ts default to include theme
+- [x] P24-10: Recursive convergence passes — 3/3 clean (0 TS errors, 797 tests passing, build 395.1kb, zero changes between passes)

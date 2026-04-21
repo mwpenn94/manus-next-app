@@ -65,7 +65,7 @@ describe("preferences router", () => {
     const result = await caller.preferences.get();
     // getUserPreferences returns undefined for unknown user, ?? provides defaults
     expect(result).toEqual({
-      generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false },
+      generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false, theme: 'dark' },
       capabilities: {},
       systemPrompt: null,
     });
