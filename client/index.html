@@ -56,6 +56,17 @@
       ]
     }
     </script>
+    <script>
+      // Apply dark class before first paint to prevent FOUC and contrast checker false positives
+      (function() {
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Default to dark when no preference is stored (matches ThemeProvider defaultTheme="dark")
+        if (stored === 'dark' || stored === 'system' && prefersDark || (!stored && true)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
 
   <body>

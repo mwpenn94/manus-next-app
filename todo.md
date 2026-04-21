@@ -1773,3 +1773,19 @@
   - All 16 tool executors verified: create_webapp, create_file, edit_file, read_file, list_files, install_deps, run_command, git_operation, web_search, read_webpage, generate_image, analyze_data, execute_code, generate_document, browse_web, wide_research
   - Added withRetry wrapper to all 6 LLM invocations for transient 502/503/504 error recovery
   - Root cause of hallucinated tool use was context pollution from duplicate messages (already fixed)
+
+## Contrast & Accessibility Errors Round 2 (User Report 2026-04-21 19:27)
+- [x] Fix Error 1: contextMap[utilName] runtime error (tRPC debug-collector serialization)
+  - Enhanced JSON.stringify patch to catch all proxy serialization errors globally
+- [x] Fix Error 2-6: All contrast failures from light theme FOUC
+  - Root cause: ThemeProvider applied dark class via useEffect AFTER first paint — axe-core saw light theme colors
+  - Added blocking <script> in <head> to apply dark class before first paint
+  - Fixed sidebar.tsx hsl() wrapper on oklch values (wrong color space)
+
+## Testing Tasks
+- [x] Test paste workflow end-to-end (paste image/doc into chat, verify upload and attachment)
+  - 10 tests covering file extraction, naming, pending transfer, size formatting, image detection
+- [x] Stress-test agent conversation dedup with multi-turn task
+  - 13 tests covering 3-layer dedup: server merge, local guard, LLM history
+  - Stress tests: 50 duplicate messages, 100-message conversation with 3x duplication
+  - Integration test: full pipeline server merge → local guard → LLM history
