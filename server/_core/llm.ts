@@ -66,6 +66,8 @@ export type InvokeParams = {
   output_schema?: OutputSchema;
   responseFormat?: ResponseFormat;
   response_format?: ResponseFormat;
+  /** Enable extended thinking budget (tokens). When set, enables deeper reasoning. */
+  thinkingBudget?: number;
 };
 
 export type ToolCall = {
@@ -296,11 +298,27 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768;
-  // Only use thinking when no tools are provided (thinking can conflict with tool calling)
-  if (!tools || tools.length === 0) {
+  // Token limit handling:
+  // - If caller provides maxTokens: use that value
+  // - If caller omits maxTokens: default to 65536 (model's standard max)
+  // - For Max tier: caller omits maxTokens entirely, so we use the default.
+  //   The model will use its full output window. Combined with unlimited
+  //   auto-continuation, total output is unbounded.
+  const requestedMaxTokens = params.maxTokens ?? params.max_tokens;
+  if (requestedMaxTokens !== undefined) {
+    payload.max_tokens = requestedMaxTokens;
+  } else {
+    payload.max_tokens = 65536; // Model's standard maximum output per call
+  }
+
+  // Enable thinking for deeper reasoning. Budget scales with context:
+  // - With tools: moderate budget (1024) to avoid conflicts but still reason
+  // - Without tools: higher budget (2048) for pure reasoning tasks
+  // - Callers can override via thinkingBudget parameter
+  const thinkingBudget = params.thinkingBudget ?? ((!tools || tools.length === 0) ? 2048 : 1024);
+  if (thinkingBudget > 0) {
     payload.thinking = {
-      budget_tokens: 128,
+      budget_tokens: thinkingBudget,
     };
   }
 

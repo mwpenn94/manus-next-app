@@ -23,7 +23,81 @@ import { AGENT_TOOLS, executeTool, type ToolResult } from "./agentTools";
 import { registerPrefix, getCacheMetrics } from "./promptCache";
 import type { Response } from "express";
 
-const MAX_TOOL_TURNS = 100; // No artificial limit — agent continues until task is complete (matching Manus behavior)
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIER CONFIGURATION — Deeply aligned with Manus tiers
+//
+// ┌──────────┬─────────────────┬──────────┬───────────┬──────────┬──────────────────────────────┐
+// │ Our Tier │ Manus Equiv.    │ Max      │ Tokens/   │ Cont.    │ Behavior                     │
+// │          │                 │ Turns    │ Call      │ Rounds   │                              │
+// ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
+// │ Speed    │ Manus 1.6 Lite  │ 30       │ 16,384    │ 5        │ Fast, concise, bounded       │
+// ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
+// │ Quality  │ Manus 1.6       │ 100      │ 65,536    │ 50       │ Thorough, one-shot accuracy  │
+// ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
+// │ Max      │ Manus 1.6 Max   │ 200      │ 65,536    │ 100      │ Autonomous, strategic,       │
+// │          │                 │          │           │          │ deep chains, less guidance   │
+// ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
+// │ Limitless│ Beyond Manus    │ ∞        │ ∞ (model) │ ∞        │ No limits. Agent decides     │
+// │          │                 │          │           │          │ when to stop. Recursive      │
+// │          │                 │          │           │          │ optimization until           │
+// │          │                 │          │           │          │ convergence.                 │
+// └──────────┴─────────────────┴──────────┴───────────┴──────────┴──────────────────────────────┘
+//
+// Speed and Quality have fixed limits. Max has high but bounded limits — deeply
+// aligned with Manus 1.6 Max: "can work on a single task for a longer time
+// without stopping" and "needs less guidance mid-process." Limitless has NO
+// limits — the agent runs until convergence, task completion, or explicit user stop.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface TierConfig {
+  /** Maximum tool execution turns. Infinity = no limit. */
+  maxTurns: number;
+  /** Maximum output tokens per LLM call. Infinity = use model's full output window. */
+  maxTokensPerCall: number;
+  /** Maximum auto-continuation rounds on finish_reason=length. Infinity = no limit. */
+  maxContinuationRounds: number;
+  /** Thinking budget for reasoning depth (tokens). */
+  thinkingBudget: number;
+}
+
+const TIER_CONFIGS: Record<string, TierConfig> = {
+  speed: {
+    maxTurns: 30,
+    maxTokensPerCall: 16384,
+    maxContinuationRounds: 5,
+    thinkingBudget: 512,
+  },
+  quality: {
+    maxTurns: 100,
+    maxTokensPerCall: 65536,
+    maxContinuationRounds: 50,
+    thinkingBudget: 1024,
+  },
+  max: {
+    maxTurns: 200,                   // High but bounded — Manus 1.6 Max: "longer workflows"
+    maxTokensPerCall: 65536,         // Full standard output window
+    maxContinuationRounds: 100,      // Generous continuation — rarely hit in practice
+    thinkingBudget: 2048,
+  },
+  limitless: {
+    maxTurns: Infinity,              // No turn cap — as many turns as needed
+    maxTokensPerCall: Infinity,      // No token ceiling — model's full output window
+    maxContinuationRounds: Infinity, // No continuation cap — runs until convergence
+    thinkingBudget: 4096,            // Maximum reasoning depth
+  },
+};
+
+/** Look up the tier config for a mode. Falls back to quality if unknown. */
+export function getTierConfig(mode: string): TierConfig {
+  return TIER_CONFIGS[mode] ?? TIER_CONFIGS.quality;
+}
+
+
+/**
+ * Token threshold for context compression. When conversation exceeds this,
+ * older tool results are summarized to prevent context overflow.
+ */
+const CONTEXT_COMPRESSION_THRESHOLD = 200000;
 
 const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You don't just answer questions — you actively research, reason, and take action using your tools.
 
@@ -282,11 +356,15 @@ You are an AGENT, not a chatbot. Act like one.`;
 
 /**
  * Agent execution mode.
- * - `speed`: Lower temperature (0.3), shorter max_tokens (1024), fewer tool turns, concise responses.
- * - `quality`: Higher temperature (0.7), longer max_tokens (4096), thorough research, detailed responses.
- * - `max`: Highest temperature (0.8), longest max_tokens (8192), maximum tool turns (12), deepest research, most thorough responses.
+ * - `speed`: Lower temperature (0.3), max_tokens (16384), fewer tool turns, concise responses.
+ * - `quality`: Higher temperature (0.7), max_tokens (65536), thorough research, detailed responses.
+ * - `max`: Highest temperature (0.8), max_tokens (65536), 200 tool turns, deepest research — Manus 1.6 Max aligned.
+ * - `limitless`: Temperature (0.8), unlimited tokens/turns/continuation — recursive optimization until convergence.
+ *
+ * All modes benefit from auto-continuation: if the LLM hits its output token limit,
+ * the system seamlessly continues without user intervention.
  */
-export type AgentMode = "speed" | "quality" | "max";
+export type AgentMode = "speed" | "quality" | "max" | "limitless";
 
 /**
  * Configuration options for the agentic streaming loop.
@@ -315,7 +393,7 @@ export interface AgentStreamOptions {
     content?: string;
     url?: string;
   }) => void;
-  /** Speed/Quality mode — affects MAX_TOOL_TURNS and response depth */
+  /** Speed/Quality/Max mode — affects turn limits and response depth via TierConfig */
   mode?: AgentMode;
   /** Cross-session memory entries to inject into context */
   memoryContext?: string;
@@ -332,7 +410,7 @@ function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknow
  *
  * Executes a multi-turn LLM conversation with tool calling over SSE.
  * Each turn: LLM generates a response or tool call → tool is executed →
- * result fed back → repeat until final text response or MAX_TOOL_TURNS reached.
+ * result fed back → repeat until final text response or tierConfig.maxTurns reached.
  *
  * SSE events emitted:
  * - `{ delta: string }` — Incremental text content
@@ -341,6 +419,7 @@ function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknow
  * - `{ image: string }` — Generated image URL for inline display
  * - `{ document: { title, content, format } }` — Generated document artifact
  * - `{ step_progress: { current, total } }` — Turn progress indicator
+ * - `{ continuation: { round, maxRounds, reason } }` — Auto-continuation in progress (Manus parity)
  * - `{ status: string }` — Task status change
  * - `{ done: true, content }` — Stream complete with final content
  * - `{ error: string }` — Error occurred during processing
@@ -383,22 +462,74 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
       systemPrompt += `\n\n## USER MEMORY (from previous sessions)\n\n${memoryContext}\n\nUse this information to personalize your responses. Do not mention that you have "memory" unless the user asks.`;
     }
 
-    // Mode-specific instructions
+    // Mode-specific instructions — deeply aligned with Manus tiers
     if (mode === "speed") {
-      systemPrompt += `\n\n## MODE: SPEED\nPrioritize fast, concise responses. Use fewer tool calls. Give direct answers when confident. Skip deep research unless explicitly asked.`;
+      // Aligned with Manus 1.6 Lite: fast, concise, bounded
+      systemPrompt += `\n\n## MODE: SPEED (Aligned with Manus 1.6 Lite)
+Prioritize fast, concise responses. Use fewer tool calls. Give direct answers when confident.
+Skip deep research unless explicitly asked. Focus on the essential answer.
+If the user's question is straightforward, answer directly without tool calls.
+For research questions, use web_search once and summarize the top results.
+Keep responses focused and avoid unnecessary elaboration.`;
+    } else if (mode === "quality") {
+      // Aligned with Manus 1.6: thorough, cross-referenced, one-shot accuracy
+      systemPrompt += `\n\n## MODE: QUALITY (Aligned with Manus 1.6)
+You are operating in Quality mode — the standard tier for thorough, accurate work.
+This mode is designed for one-shot accuracy: get it right the first time so the user
+doesn't need follow-up queries.
+
+1. **Multi-step reasoning**: Break complex questions into sub-questions and address each.
+2. **Cross-reference sources**: Use web_search AND read_webpage on at least 2 different sources.
+3. **Comprehensive but focused**: Produce detailed responses (~27+ page equivalent for reports) but stay on-topic.
+4. **Structured output**: Use tables, comparisons, and organized sections for clarity.
+5. **Verify claims**: Don't state facts without checking them via search first.
+6. **One-shot delivery**: Aim to deliver a complete, polished answer that needs no follow-up.`;
     } else if (mode === "max") {
-      systemPrompt += `\n\n## MODE: MAX (Flagship Tier) — DEEP RESEARCH REQUIRED
+      // Aligned with Manus 1.6 Max: autonomous, strategic decomposition, high but bounded
+      systemPrompt += `\n\n## MODE: MAX (Aligned with Manus 1.6 Max — Flagship Tier)
 
-You are operating at MAXIMUM capability. This mode exists specifically because the user wants the DEEPEST, most THOROUGH work possible. You MUST:
+You are operating in Max mode — the flagship autonomous tier deeply aligned with Manus 1.6 Max.
+This mode is designed for longer multi-step workflows without losing context, deeper chains
+of subtasks with fewer mistakes, and less guidance needed from the user mid-process.
 
-1. **Minimum research depth**: Use at least 5 tool calls before even considering a final response. If the task involves research, use wide_research PLUS at least 3 read_webpage calls on different sources.
-2. **Cross-reference everything**: Never rely on a single source. Search from multiple angles, read multiple pages, and synthesize across all of them.
-3. **Do NOT conclude prematurely**: If you have used fewer than 5 tools, you are NOT done. Keep researching, analyzing, and building your response.
-4. **Produce comprehensive deliverables**: When asked to create content (guides, plans, reports, analyses), produce the MOST detailed, thorough version possible. Include tables, comparisons, step-by-step breakdowns, citations, and actionable specifics.
-5. **Time investment**: The user expects this to take significant time. A 30-second response in MAX mode is a failure. Spend the equivalent of 10-30 minutes of research effort.
-6. **Generate artifacts**: When appropriate, use generate_document for long-form deliverables, analyze_data for structured insights, and generate_image for visualizations.
-7. **Never say "I've provided enough"**: In MAX mode, there is always more depth to add. Keep going until you've exhausted all relevant angles.
-8. **Leave no stone unturned**: Search for counterarguments, edge cases, alternative perspectives, recent developments, and expert opinions.`;
+You have generous but bounded limits (200 tool turns, 100 continuation rounds). Use them wisely.
+The system will seamlessly continue you if your response hits the token limit.
+
+1. **Strategic decomposition**: Break complex tasks into subtasks and execute them methodically.
+2. **Deep research depth**: Use at least 5 tool calls before considering a final response. Use wide_research PLUS multiple read_webpage calls on different sources.
+3. **Cross-reference sources**: Never rely on a single source. Search from multiple angles, read multiple pages, and synthesize across all of them.
+4. **Tighter internal planning**: Plan your approach before executing. Minimize wasted turns.
+5. **Higher one-shot accuracy**: Get it right the first time. Verify before concluding.
+6. **Produce comprehensive deliverables**: Include tables, comparisons, step-by-step breakdowns, citations, and actionable specifics.
+7. **Generate artifacts**: Use generate_document for long-form deliverables, analyze_data for structured insights, generate_image for visualizations.
+8. **Autonomous execution**: The user may not be watching. Deliver complete, self-contained results.
+9. **Leave no stone unturned**: Search for counterarguments, edge cases, alternative perspectives, and expert opinions.
+10. **Asynchronous mindset**: Work independently, report comprehensively.`;
+    } else if (mode === "limitless") {
+      // Beyond Manus: truly unlimited, recursive optimization until convergence
+      systemPrompt += `\n\n## MODE: LIMITLESS (Recursive Optimization Until Convergence)
+
+You are operating in Limitless mode — there are NO constraints on your execution.
+No turn limits. No token limits. No continuation limits. You run until the task converges.
+
+This mode is designed for recursive optimization: you continue refining, researching, and
+improving until the output reaches a state of convergence where additional passes yield
+no meaningful improvement. The user's termination conditions take precedence — if they
+specified criteria for "done," honor those. Otherwise, apply your own convergence judgment.
+
+Your output will NEVER be truncated. If your response hits the token limit, the system
+will seamlessly continue you with full context. Write as extensively as the task demands.
+
+1. **Recursive convergence**: After producing an initial result, review it critically. If any aspect can be improved, improve it. Continue until three consecutive review passes confirm no further improvements.
+2. **Exhaustive research**: Use as many tool calls as needed. There is no minimum or maximum. Search from every relevant angle.
+3. **Cross-reference everything**: Never rely on a single source. Verify facts across multiple sources.
+4. **Strategic decomposition**: Break complex tasks into subtasks and execute them methodically.
+5. **Never conclude prematurely**: If you sense there is more depth to add, add it. The user chose Limitless mode because they want maximum thoroughness.
+6. **Produce the most comprehensive deliverables possible**: Include tables, comparisons, step-by-step breakdowns, citations, actionable specifics, counterarguments, edge cases, and alternative perspectives.
+7. **Generate all relevant artifacts**: Use generate_document, analyze_data, generate_image, generate_slides, and any other tools that add value.
+8. **Honor user termination conditions**: If the user specified when to stop (e.g., "until convergence," "3 passes," "cover all 10 items"), follow those conditions exactly.
+9. **Self-monitoring**: Track your own progress. Note what you've covered and what remains.
+10. **Asynchronous deep work**: The user may not be watching. Deliver complete, self-contained, publication-quality results.`;
     }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
@@ -406,7 +537,11 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
       conversation = [{ role: "system", content: systemPrompt }, ...conversation];
     }
 
-    const maxTurns = mode === "speed" ? 30 : mode === "max" ? 100 : MAX_TOOL_TURNS;
+    // Resolve tier config — Speed, Quality, and Max have fixed (bounded) limits. Limitless has none.
+    const tierConfig = getTierConfig(mode);
+    const { maxTurns, maxContinuationRounds } = tierConfig;
+    console.log(`[Agent] Tier: ${mode} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
+    
     let turn = 0;
     let finalContent = "";
     let totalToolCalls = 0;
@@ -414,6 +549,7 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
     let usedWebSearch = false;
     let usedReadWebpage = false;
     let nudgedForDeepResearch = false;
+    let continuationRounds = 0; // Track consecutive auto-continuation rounds (Manus parity)
 
     // Register prefix for caching (system prompt + tool definitions)
     const toolsJson = JSON.stringify(AGENT_TOOLS);
@@ -425,14 +561,22 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
 
     while (turn < maxTurns) {
       turn++;
-      console.log(`[Agent] Turn ${turn}/${maxTurns}, messages: ${conversation.length}`);
+      console.log(`[Agent] Turn ${turn}/${maxTurns === Infinity ? '\u221e' : maxTurns}, messages: ${conversation.length}`);
 
-      // Call LLM with tools
-      const response: InvokeResult = await invokeLLM({
+      // Call LLM with tools — all params from tierConfig.
+      // For Max tier: maxTokensPerCall=Infinity means we omit the param entirely,
+      // letting the model use its full output window with no artificial ceiling.
+      const llmParams: any = {
         messages: conversation,
         tools: AGENT_TOOLS,
         tool_choice: "auto",
-      });
+        thinkingBudget: tierConfig.thinkingBudget,
+      };
+      if (isFinite(tierConfig.maxTokensPerCall)) {
+        llmParams.maxTokens = tierConfig.maxTokensPerCall;
+      }
+      // else: omit maxTokens entirely — model uses its full output window (Max tier)
+      const response: InvokeResult = await invokeLLM(llmParams);
 
       const choice = response.choices?.[0];
       if (!choice) {
@@ -444,25 +588,63 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
       const toolCalls = assistantMessage.tool_calls;
       const textContent = typeof assistantMessage.content === "string" ? assistantMessage.content : "";
 
-      // AUTO-CONTINUE ON TOKEN LIMIT: If finish_reason is "length", the LLM hit its
-      // output token limit mid-response. Stream what we have and auto-continue.
+      // ═══════════════════════════════════════════════════════════════════════
+      // MANUS-PARITY AUTO-CONTINUATION SYSTEM
+      // ═══════════════════════════════════════════════════════════════════════
+      // When the LLM hits its output token limit (finish_reason="length"), we
+      // seamlessly continue the generation without any user intervention.
+      // This matches Manus's behavior where the agent never stops mid-thought.
+      //
+      // Key behaviors:
+      // 1. Stream partial content immediately (no buffering)
+      // 2. Send continuation SSE event so frontend shows "Continuing..."
+      // 3. Execute any pending tool calls before continuing
+      // 4. Compress context if it's growing too large
+      // 5. Track continuation rounds to prevent infinite loops
+      // 6. Reset continuation counter when agent makes progress (tool calls)
+      // ═══════════════════════════════════════════════════════════════════════
       if (choice.finish_reason === "length" && turn < maxTurns - 1) {
-        console.log(`[Agent] finish_reason=length on turn ${turn}/${maxTurns} — auto-continuing`);
-        // Stream any partial text
+        continuationRounds++;
+        
+        // Mode-aware continuation limits:
+        // Speed: bounded (5 rounds), Quality: high (50 rounds), Max: unlimited (Infinity)
+        // For Max mode, maxContinuationRounds is Infinity — the agent runs until its own
+        // termination conditions are met (convergence, task completion, or explicit stop).
+        const isWithinLimit = continuationRounds <= maxContinuationRounds;
+        
+        if (!isWithinLimit) {
+          const limitLabel = isFinite(maxContinuationRounds) ? String(maxContinuationRounds) : "unlimited";
+          console.log(`[Agent] Hit continuation limit for ${mode} mode (${limitLabel}), finalizing response`);
+          // Stream whatever we have and break
+          if (textContent) {
+            streamTextAsChunks(safeWrite, textContent);
+            finalContent += textContent;
+          }
+          break;
+        }
+        
+        const limitLabel = isFinite(maxContinuationRounds) ? `/${maxContinuationRounds}` : " (unlimited)";
+        console.log(`[Agent] finish_reason=length on turn ${turn}/${maxTurns}, continuation round ${continuationRounds}${limitLabel} — auto-continuing`);
+        
+        // Notify frontend that auto-continuation is in progress
+        // For unlimited mode, maxRounds is -1 to signal "no ceiling" to the frontend
+        sendSSE(safeWrite, {
+          continuation: {
+            round: continuationRounds,
+            maxRounds: isFinite(maxContinuationRounds) ? maxContinuationRounds : -1,
+            reason: "output_token_limit",
+          },
+        });
+        
+        // Stream any partial text immediately (no user delay)
         if (textContent) {
-          const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
-          const chunks = textContent.match(sentencePattern) || [textContent];
-          const captured = chunks.join("");
-          if (captured.length < textContent.length) {
-            chunks.push(textContent.slice(captured.length));
-          }
-          for (const chunk of chunks) {
-            if (!sendSSE(safeWrite, { delta: chunk })) return;
-          }
+          streamTextAsChunks(safeWrite, textContent);
           finalContent += textContent;
         }
-        // If there were tool calls, execute them first
+        
+        // If there were tool calls, execute them (and reset continuation counter since progress was made)
         if (toolCalls && toolCalls.length > 0) {
+          continuationRounds = 0; // Reset — tool execution = real progress
           conversation.push({
             role: "assistant",
             content: textContent || "",
@@ -483,14 +665,30 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
             conversation.push({ role: "tool", content: result.result, tool_call_id: toolCall.id, name: tn } as any);
           }
         } else {
-          // No tool calls — just add the partial text and prompt to continue
+          // No tool calls — just add the partial text
           conversation.push({ role: "assistant", content: textContent || "" });
         }
+        
+        // Context compression: if conversation is getting very long, summarize older tool results
+        // to prevent context overflow while preserving recent context quality
+        const estimatedTokens = estimateConversationTokens(conversation);
+        if (estimatedTokens > CONTEXT_COMPRESSION_THRESHOLD) {
+          console.log(`[Agent] Context compression triggered: ~${estimatedTokens} tokens, compressing older tool results`);
+          compressConversationContext(conversation);
+        }
+        
+        // Craft a precise continuation prompt that prevents repetition
+        const lastWords = (textContent || "").trim().split(/\s+/).slice(-20).join(" ");
         conversation.push({
           role: "user",
-          content: "Your response was cut off due to length. Continue EXACTLY where you left off — do not repeat what you already said. Pick up mid-sentence if needed and complete the remaining work.",
+          content: `Your response was cut off due to length. Continue EXACTLY where you left off. Your last words were: "...${lastWords}". Pick up mid-sentence if needed. Do NOT repeat any content you already produced. Do NOT add a new greeting or introduction. Just seamlessly continue the remaining work.`,
         });
         continue;
+      }
+      
+      // Reset continuation counter on successful non-length completion
+      if (choice.finish_reason === "stop") {
+        continuationRounds = 0;
       }
 
       // Check if we should nudge for deeper research BEFORE streaming text
@@ -583,15 +781,16 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
           }
         }
         
-        // MAX MODE ANTI-SHALLOW-COMPLETION: In max mode, if agent tries to conclude within first 5 turns with fewer than 3 tool calls, force continuation
-        if (mode === "max" && turn <= 5 && completedToolCalls < 3 && turn < maxTurns - 2) {
-          console.log(`[Agent] MAX mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
+        // MAX/LIMITLESS MODE ANTI-SHALLOW-COMPLETION: In max or limitless mode, if agent tries to conclude within first 5 turns with fewer than 3 tool calls, force continuation
+        if ((mode === "max" || mode === "limitless") && turn <= 5 && completedToolCalls < 3 && (maxTurns === Infinity || turn < maxTurns - 2)) {
+          const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
+          console.log(`[Agent] ${modeName} mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
           finalContent = "";
           sendSSE(safeWrite, { delta: "\n\n*Conducting deeper research...*\n\n" });
           conversation.push({ role: "assistant", content: textContent || "" });
           conversation.push({
             role: "user",
-            content: `You are in MAX (flagship) mode. The user expects DEEP, THOROUGH research — not a quick answer. You have only used ${completedToolCalls} tools so far, which is far too few for MAX mode. You MUST:
+            content: `You are in ${modeName} mode. The user expects DEEP, THOROUGH research — not a quick answer. You have only used ${completedToolCalls} tools so far, which is far too few for ${modeName} mode. You MUST:
 1. Use web_search or wide_research to gather information from multiple sources
 2. Use read_webpage on at least 2-3 of the most relevant URLs from your search results
 3. Cross-reference and synthesize information across sources
@@ -833,15 +1032,22 @@ Do NOT produce a final answer yet. Research more deeply first.`,
         break;
       }
       // Safety: if finish_reason is "length" at this point (shouldn't reach here due to
-      // the earlier handler, but just in case), don't break — let the loop continue
+      // the earlier handler, but just in case), apply continuation tracking and continue
       if (choice.finish_reason === "length") {
-        console.log(`[Agent] Late finish_reason=length catch on turn ${turn}/${maxTurns}`);
+        continuationRounds++;
+        if (continuationRounds > maxContinuationRounds) {
+          console.log(`[Agent] Late length catch: exceeded continuation limit for ${mode} mode, breaking`);
+          break;
+        }
+        const turnLabel = maxTurns === Infinity ? '\u221e' : maxTurns;
+        console.log(`[Agent] Late finish_reason=length catch on turn ${turn}/${turnLabel}, continuation round ${continuationRounds}`);
+        sendSSE(safeWrite, { continuation: { round: continuationRounds, maxRounds: isFinite(maxContinuationRounds) ? maxContinuationRounds : -1, reason: "output_token_limit" } });
         continue;
       }
     }
 
     if (turn >= maxTurns) {
-      console.log(`[Agent] Completed after ${turn} turns (limit: ${maxTurns})`);
+      console.log(`[Agent] Completed after ${turn} turns (limit: ${maxTurns === Infinity ? '\u221e' : maxTurns})`);
       // No user-visible limit message — the agent naturally concludes its work
     }
 
@@ -875,6 +1081,73 @@ Do NOT produce a final answer yet. Research more deeply first.`,
     sendSSE(safeWrite, { error: userMessage });
     safeEnd();
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MANUS-PARITY HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Stream text content as sentence-level chunks via SSE.
+ * Breaks text at sentence boundaries for smooth streaming UX.
+ */
+function streamTextAsChunks(safeWrite: (d: string) => boolean, text: string): void {
+  const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
+  const chunks = text.match(sentencePattern) || [text];
+  const captured = chunks.join("");
+  if (captured.length < text.length) {
+    chunks.push(text.slice(captured.length));
+  }
+  for (const chunk of chunks) {
+    if (!sendSSE(safeWrite, { delta: chunk })) return;
+  }
+}
+
+/**
+ * Estimate the total token count of a conversation.
+ * Uses a rough heuristic of ~4 characters per token (English text average).
+ * This is intentionally conservative to trigger compression before actual limits.
+ */
+function estimateConversationTokens(conversation: Message[]): number {
+  let totalChars = 0;
+  for (const msg of conversation) {
+    const content = typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content);
+    totalChars += content.length;
+  }
+  return Math.ceil(totalChars / 4);
+}
+
+/**
+ * Compress conversation context by summarizing older tool results.
+ * Preserves the system prompt, recent messages (last 20), and all user messages,
+ * but truncates older tool results to their first 200 characters.
+ * This prevents context overflow during long auto-continuation sequences
+ * while maintaining enough context for coherent continuation.
+ */
+function compressConversationContext(conversation: Message[]): void {
+  const KEEP_RECENT = 20; // Keep last N messages uncompressed
+  const TOOL_RESULT_MAX = 200; // Max chars for compressed tool results
+  
+  if (conversation.length <= KEEP_RECENT + 1) return; // +1 for system prompt
+  
+  // Find the boundary: everything before (length - KEEP_RECENT) gets compressed
+  const compressBoundary = conversation.length - KEEP_RECENT;
+  
+  for (let i = 1; i < compressBoundary; i++) { // Skip index 0 (system prompt)
+    const msg = conversation[i];
+    if (msg.role === "tool" && typeof msg.content === "string" && msg.content.length > TOOL_RESULT_MAX) {
+      // Truncate old tool results but keep enough for context
+      const truncated = msg.content.slice(0, TOOL_RESULT_MAX) + "\n... [truncated for context efficiency]";
+      conversation[i] = { ...msg, content: truncated };
+    }
+    // Also compress very long assistant messages that aren't the most recent
+    if (msg.role === "assistant" && typeof msg.content === "string" && msg.content.length > 1000) {
+      const truncated = msg.content.slice(0, 500) + "\n... [earlier content truncated]\n" + msg.content.slice(-200);
+      conversation[i] = { ...msg, content: truncated };
+    }
+  }
+  
+  console.log(`[Agent] Compressed ${compressBoundary - 1} older messages, keeping ${KEEP_RECENT} recent`);
 }
 
 /**

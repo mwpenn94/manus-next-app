@@ -1,14 +1,15 @@
 /**
- * ModeToggle — Speed / Quality / Max mode switch
+ * ModeToggle — Speed / Quality / Max / Limitless mode switch
  *
- * Speed mode: fewer tool turns, faster responses, concise output
- * Quality mode: full tool depth, thorough research, detailed output
- * Max mode: flagship tier — maximum tools, deepest research, most thorough output
+ * Speed mode: fewer tool turns, faster responses, concise output (Manus 1.6 Lite aligned)
+ * Quality mode: full tool depth, thorough research, detailed output (Manus 1.6 aligned)
+ * Max mode: flagship tier — strategic, autonomous, deep chains (Manus 1.6 Max aligned)
+ * Limitless mode: no constraints — recursive optimization until convergence
  */
-import { Zap, Sparkles, Crown } from "lucide-react";
+import { Zap, Sparkles, Crown, Infinity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AgentMode = "speed" | "quality" | "max";
+export type AgentMode = "speed" | "quality" | "max" | "limitless";
 
 interface ModeToggleProps {
   mode: AgentMode;
@@ -16,51 +17,59 @@ interface ModeToggleProps {
   className?: string;
 }
 
+const MODES: { id: AgentMode; label: string; icon: typeof Zap; title: string; activeClass: string }[] = [
+  {
+    id: "speed",
+    label: "Speed",
+    icon: Zap,
+    title: "Speed mode: faster, more concise responses (Manus 1.6 Lite aligned)",
+    activeClass: "bg-muted text-foreground shadow-sm",
+  },
+  {
+    id: "quality",
+    label: "Quality",
+    icon: Sparkles,
+    title: "Quality mode: thorough research, detailed responses (Manus 1.6 aligned)",
+    activeClass: "bg-primary/20 text-primary shadow-sm",
+  },
+  {
+    id: "max",
+    label: "Max",
+    icon: Crown,
+    title: "Max mode: flagship tier — strategic, autonomous, deep chains (Manus 1.6 Max aligned)",
+    activeClass: "bg-violet-500/20 text-violet-400 shadow-sm",
+  },
+  {
+    id: "limitless",
+    label: "Limitless",
+    icon: Infinity,
+    title: "Limitless mode: no constraints — recursive optimization until convergence",
+    activeClass: "bg-amber-500/20 text-amber-400 shadow-sm",
+  },
+];
+
 export default function ModeToggle({ mode, onChange, className }: ModeToggleProps) {
   return (
     <div className={cn("flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50 border border-border/50", className)}>
-      <button
-        onClick={() => onChange("speed")}
-        className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200",
-          mode === "speed"
-            ? "bg-muted text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-        title="Speed mode: faster, more concise responses"
-        aria-pressed={mode === "speed"}
-      >
-        <Zap className="w-3 h-3" />
-        Speed
-      </button>
-      <button
-        onClick={() => onChange("quality")}
-        className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200",
-          mode === "quality"
-            ? "bg-primary/20 text-primary shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-        title="Quality mode: thorough research, detailed responses"
-        aria-pressed={mode === "quality"}
-      >
-        <Sparkles className="w-3 h-3" />
-        Quality
-      </button>
-      <button
-        onClick={() => onChange("max")}
-        className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200",
-          mode === "max"
-            ? "bg-violet-500/20 text-violet-400 shadow-sm"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-        title="Max mode: flagship tier — deepest research, most thorough responses"
-        aria-pressed={mode === "max"}
-      >
-        <Crown className="w-3 h-3" />
-        Max
-      </button>
+      {MODES.map((m) => {
+        const Icon = m.icon;
+        const isActive = mode === m.id;
+        return (
+          <button
+            key={m.id}
+            onClick={() => onChange(m.id)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-200",
+              isActive ? m.activeClass : "text-muted-foreground hover:text-foreground"
+            )}
+            title={m.title}
+            aria-pressed={isActive}
+          >
+            <Icon className="w-3 h-3" />
+            {m.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import ModeToggle from "@/components/ModeToggle";
+import type { AgentMode } from "@/components/ModeToggle";
 import { useState } from "react";
-
-type AgentMode = "speed" | "quality" | "max";
 
 const ModeToggleWrapper = () => {
   const [mode, setMode] = useState<AgentMode>("quality");
@@ -34,6 +33,13 @@ export const SpeedMode: Story = {
 export const MaxMode: Story = {
   render: () => {
     const [mode, setMode] = useState<AgentMode>("max");
+    return <ModeToggle mode={mode} onChange={setMode} />;
+  },
+};
+
+export const LimitlessMode: Story = {
+  render: () => {
+    const [mode, setMode] = useState<AgentMode>("limitless");
     return <ModeToggle mode={mode} onChange={setMode} />;
   },
 };

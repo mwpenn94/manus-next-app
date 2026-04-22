@@ -62,7 +62,7 @@ export type ThemePresetId = "manus-dark" | "manus-light" | "stewardly-dark";
 
 // ── Agent Mode ──
 
-export type AgentMode = "speed" | "quality" | "max";
+export type AgentMode = "speed" | "quality" | "max" | "limitless";
 
 // ── Message Types ──
 

@@ -135,43 +135,62 @@ describe("Continuous prompt submission during execution", () => {
   });
 });
 
-describe("Execution step limit removal", () => {
-  it("MAX_TOOL_TURNS should be 100 (no artificial limit)", async () => {
+describe("TierConfig-based turn limits", () => {
+  it("uses TierConfig to define tier-specific limits", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
     
-    // Verify the constant is set to 100
-    expect(content).toContain("const MAX_TOOL_TURNS = 100;");
+    // TierConfig architecture replaces scattered mode ternaries
+    expect(content).toContain("const TIER_CONFIGS: Record<string, TierConfig>");
+    expect(content).toContain("getTierConfig(mode)");
   });
 
-  it("speed mode should allow 30 turns", async () => {
+  it("speed tier has 30 turns", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    
-    // Verify mode-specific limits
-    expect(content).toContain('mode === "speed" ? 30');
+    expect(content).toContain("maxTurns: 30");
   });
 
-  it("max mode should allow 100 turns", async () => {
+  it("quality tier has 100 turns", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    
-    expect(content).toContain('mode === "max" ? 100');
+    expect(content).toContain("maxTurns: 100");
+  });
+
+  it("max tier has bounded but generous limits (Manus 1.6 Max aligned)", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("maxTurns: 200");
+    expect(content).toContain("maxContinuationRounds: 100");
+  });
+
+  it("limitless tier has unlimited turns (Infinity)", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("maxTurns: Infinity");
+  });
+
+  it("limitless tier has unlimited tokens per call (Infinity)", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("maxTokensPerCall: Infinity");
+  });
+
+  it("limitless tier has unlimited continuation rounds (Infinity)", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("maxContinuationRounds: Infinity");
   });
 
   it("should NOT show user-visible step limit message", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    
-    // The old message should be gone
     expect(content).not.toContain("Reached maximum number of tool execution steps");
   });
 
   it("should log completion without user-facing message", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    
-    // Should have a console.log for debugging but no SSE delta with limit message
     expect(content).toContain("Completed after");
     expect(content).toContain("No user-visible limit message");
   });

@@ -25,6 +25,12 @@ export interface StreamCallbacks {
   onConfirmationGate?: (gate: { action: string; description?: string; category?: string }) => void;
   onConvergence?: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => void;
   onInteractiveOutput?: (output: { type: string; title: string; description?: string; previewUrl?: string; openUrl?: string; downloadUrl?: string; isLive?: boolean; statusLabel?: string }) => void;
+  /**
+   * Manus-parity: Called when the agent auto-continues due to output token limits.
+   * maxRounds is -1 for unlimited (Max tier / Manus 1.6 Max), or a positive number
+   * for bounded tiers (Speed: 5, Quality: 50).
+   */
+  onContinuation?: (data: { round: number; maxRounds: number; reason: string }) => void;
   onError: (error: string) => void;
   onReconnecting?: (attempt: number, maxRetries: number) => void;
   onReconnected?: () => void;
@@ -81,6 +87,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.confirmation_gate && callbacks.onConfirmationGate) callbacks.onConfirmationGate(data.confirmation_gate);
     if (data.convergence && callbacks.onConvergence) callbacks.onConvergence(data.convergence);
     if (data.interactive_output && callbacks.onInteractiveOutput) callbacks.onInteractiveOutput(data.interactive_output);
+    if (data.continuation && callbacks.onContinuation) callbacks.onContinuation(data.continuation);
     if (data.error) callbacks.onError(data.error);
 
     return true;

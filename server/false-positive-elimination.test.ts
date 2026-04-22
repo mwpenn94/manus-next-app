@@ -191,15 +191,21 @@ describe("§L.29 Category D: Status Drift", () => {
 // ── Category E: Early Termination Defense ──
 
 describe("§L.29 Category E: Early Termination Defense", () => {
-  it("agentStream should have MAX_TOOL_TURNS > 1 for multi-step intents", () => {
+  it("agentStream should define TIER_CONFIGS with meaningful turn limits", () => {
     const agentStreamContent = fs.readFileSync(
       path.join(process.cwd(), "server/agentStream.ts"),
       "utf-8"
     );
-    const match = agentStreamContent.match(/MAX_TOOL_TURNS\s*=\s*(\d+)/);
-    expect(match).toBeTruthy();
-    const maxTurns = parseInt(match![1]);
-    expect(maxTurns).toBeGreaterThanOrEqual(5);
+    // TierConfig architecture defines per-tier limits
+    expect(agentStreamContent).toContain("const TIER_CONFIGS: Record<string, TierConfig>");
+    // Speed tier should have at least 5 turns
+    const speedMatch = agentStreamContent.match(/speed:\s*\{[^}]*maxTurns:\s*(\d+)/);
+    expect(speedMatch).toBeTruthy();
+    expect(parseInt(speedMatch![1])).toBeGreaterThanOrEqual(5);
+    // Max tier should have bounded but generous limits
+    expect(agentStreamContent).toContain("maxTurns: 200");
+    // Limitless tier should be truly unlimited
+    expect(agentStreamContent).toContain("maxTurns: Infinity");
   });
 
   it("agentStream should have proper error recovery with user-friendly messages", () => {

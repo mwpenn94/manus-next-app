@@ -176,6 +176,18 @@ export function buildStreamCallbacks(
         });
       }
     },
+    onContinuation: (data: { round: number; maxRounds: number; reason: string }) => {
+      // Manus-parity: The agent is auto-continuing due to output token limits.
+      // Show a subtle continuation indicator in the stream content, then remove it
+      // when the next delta arrives (the delta handler overwrites streamContent).
+      // This prevents the "Regenerate" button from appearing during continuation.
+      // For Max tier (unlimited), maxRounds is -1 — show just the round number.
+      const limitDisplay = data.maxRounds < 0 ? '\u221e' : data.maxRounds;
+      console.log(`[Stream] Auto-continuation round ${data.round}/${limitDisplay} (${data.reason})`);
+      setters.setStreamContent(
+        state.accumulated + `\n\n*Continuing... (round ${data.round})*`
+      );
+    },
     onReconnected: () => {
       // Clear reconnecting state
       setters.setIsReconnecting?.(false);

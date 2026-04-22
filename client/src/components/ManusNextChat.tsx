@@ -32,7 +32,7 @@ import type {
 } from "@shared/ManusNextChat.types";
 import { THEME_PRESETS } from "@shared/ManusNextChat.themes";
 import { cn } from "@/lib/utils";
-import { ArrowUp, Paperclip, Mic, Square, Volume2, Zap, Sparkles, Crown } from "lucide-react";
+import { ArrowUp, Paperclip, Mic, Square, Volume2, Zap, Sparkles, Crown, Infinity } from "lucide-react";
 
 /**
  * Resolve theme from preset ID or custom theme object
@@ -260,7 +260,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
       }
     };
 
-    const modeIcon = mode === "speed" ? Zap : mode === "max" ? Crown : Sparkles;
+    const modeIcon = mode === "speed" ? Zap : mode === "max" ? Crown : mode === "limitless" ? Infinity : Sparkles;
     const ModeIcon = modeIcon;
 
     return (
@@ -299,7 +299,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
               </div>
             )}
             <div className="flex items-center gap-1">
-              {(["speed", "quality", "max"] as AgentMode[]).map((m) => (
+              {(["speed", "quality", "max", "limitless"] as AgentMode[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => {
@@ -370,7 +370,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
                 <div className="flex items-center gap-2">
                   <ModeIcon className="w-3.5 h-3.5 animate-pulse" />
                   <span>
-                    {mode === "speed" ? "Processing..." : mode === "max" ? "Deep researching..." : "Thinking..."}
+                    {mode === "speed" ? "Processing..." : mode === "limitless" ? "Optimizing recursively..." : mode === "max" ? "Deep researching..." : "Thinking..."}
                   </span>
                 </div>
               </div>

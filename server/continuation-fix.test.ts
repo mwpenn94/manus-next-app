@@ -121,27 +121,53 @@ describe("Continuation Fix — Early Termination Bug", () => {
     });
   });
 
-  describe("regression guards", () => {
-    it("MAX_TOOL_TURNS is 100 (no artificial limit)", () => {
-      expect(agentStreamSrc).toContain("const MAX_TOOL_TURNS = 100");
+  describe("regression guards — TierConfig architecture", () => {
+    it("defines TIER_CONFIGS with speed, quality, max, and limitless tiers", () => {
+      expect(agentStreamSrc).toContain("const TIER_CONFIGS: Record<string, TierConfig>");
+      expect(agentStreamSrc).toMatch(/speed:\s*\{/);
+      expect(agentStreamSrc).toMatch(/quality:\s*\{/);
+      expect(agentStreamSrc).toMatch(/max:\s*\{/);
+      expect(agentStreamSrc).toMatch(/limitless:\s*\{/);
     });
 
-    it("max mode gets 100 turns", () => {
-      expect(agentStreamSrc).toMatch(/mode === "max" \? 100/);
+    it("speed tier has bounded limits (30 turns, 16384 tokens, 5 continuation)", () => {
+      expect(agentStreamSrc).toContain("maxTurns: 30");
+      expect(agentStreamSrc).toContain("maxTokensPerCall: 16384");
+      expect(agentStreamSrc).toContain("maxContinuationRounds: 5");
     });
 
-    it("speed mode gets 30 turns", () => {
-      expect(agentStreamSrc).toMatch(/mode === "speed" \? 30/);
+    it("quality tier has moderate limits (100 turns, 65536 tokens, 50 continuation)", () => {
+      expect(agentStreamSrc).toContain("maxTurns: 100");
+      expect(agentStreamSrc).toContain("maxTokensPerCall: 65536");
+      expect(agentStreamSrc).toContain("maxContinuationRounds: 50");
+    });
+
+    it("max tier has high but bounded limits (Manus 1.6 Max aligned)", () => {
+      expect(agentStreamSrc).toContain("maxTurns: 200");
+      expect(agentStreamSrc).toContain("maxContinuationRounds: 100");
+    });
+
+    it("limitless tier has NO limits (Infinity for all)", () => {
+      expect(agentStreamSrc).toContain("maxTurns: Infinity");
+      expect(agentStreamSrc).toContain("maxTokensPerCall: Infinity");
+      expect(agentStreamSrc).toContain("maxContinuationRounds: Infinity");
+    });
+
+    it("resolves tier config via getTierConfig()", () => {
+      expect(agentStreamSrc).toContain("const tierConfig = getTierConfig(mode)");
+      expect(agentStreamSrc).toContain("const { maxTurns, maxContinuationRounds } = tierConfig");
+    });
+
+    it("omits maxTokens for Limitless tier (lets model use full output window)", () => {
+      expect(agentStreamSrc).toContain("if (isFinite(tierConfig.maxTokensPerCall))");
     });
 
     it("does not emit user-visible step limit message", () => {
-      // The agent should naturally conclude, not show "reached maximum steps"
       expect(agentStreamSrc).not.toContain("reached maximum");
       expect(agentStreamSrc).not.toContain("step limit");
     });
 
     it("break only happens when no continuation conditions are met", () => {
-      // The break statement should be after all continuation checks
       const breakIndex = agentStreamSrc.indexOf("break;\n      }\n\n      // Add assistant message with tool_calls");
       const midEnumIndex = agentStreamSrc.indexOf("mid-enumeration continuation");
       expect(midEnumIndex).toBeLessThan(breakIndex);

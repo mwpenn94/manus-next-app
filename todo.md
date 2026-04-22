@@ -2015,3 +2015,60 @@
 - [x] Ensure finish_reason=length auto-continuation prevents n-1/n
 - [x] Run Demonstrate Each test and verify n/n completion with parity quality
 - [x] Document results in LIVE_DEMONSTRATE_EACH_TEST.md
+
+## Step 1: MAX_TOKENS Increase + Server-Side Auto-Continuation
+- [ ] Increase MAX_TOKENS from default to maximum supported (128k/200k output tokens)
+- [ ] Implement server-side auto-continuation on finish_reason=length in agentStream.ts
+- [ ] Auto-continuation should seamlessly append to the current SSE stream without user intervention
+- [ ] Add configurable max continuation rounds (prevent infinite loops)
+- [ ] Add continuation indicator in SSE events so frontend can show "continuing..." state
+- [ ] Preserve full conversation context across continuation rounds
+- [ ] Write vitest tests for auto-continuation logic
+- [ ] Verify no regression in normal (non-truncated) responses
+
+## Step 2: Automated Playwright "Demonstrate All" Regression Test
+- [ ] Create Playwright test that sends "Demonstrate each" prompt
+- [ ] Auto-handle approval gates (Approve buttons for send_email, execute_code)
+- [ ] Verify all 10/10 capability group headings appear in response
+- [ ] Assert artifacts are generated (images, docs, code)
+- [ ] Add timeout handling for long-running demonstrations
+- [ ] Make test runnable via pnpm test:e2e or similar command
+
+## Step 3: Complete Remaining Tool Demos 18-22/22
+- [ ] Add generate_slides tool to agent tool definitions
+- [ ] Add take_meeting_notes tool to agent tool definitions
+- [ ] Add create_webapp tool to agent tool definitions
+- [ ] Add voice_transcription tool to agent tool definitions
+- [ ] Add schedule_task tool to agent tool definitions
+- [ ] Ensure all 22 tools are registered and functional in agentTools.ts
+- [ ] Write vitest tests for new tool definitions
+
+## Unlimited Auto-Continuation (No Ceilings) — Superseded by 4-Tier Architecture
+- [x] Remove MAX_CONTINUATION_ROUNDS cap — Limitless tier has Infinity
+- [x] Remove max_tokens ceiling — Limitless tier omits maxTokens entirely
+- [x] Continuation should be truly seamless — implemented in all tiers, unlimited in Limitless
+- [x] Update continuation SSE events — sends maxRounds=-1 for unlimited
+- [x] Update frontend continuation indicator — shows "round N" without ceiling for unlimited
+- [x] Update all vitest tests — 1,268 tests passing
+- [x] Ensure context compression scales — compressConversationContext works at any round count
+
+## Remove All Limits — Superseded by 4-Tier Architecture (Limitless tier)
+- [x] Limitless tier: token-per-call = Infinity (omitted from API call, model uses full window)
+- [x] Limitless tier: tool turns = Infinity (while loop runs indefinitely)
+- [x] Limitless tier: continuation rounds = Infinity (never hits cap)
+- [N/A] Per-request overrides — user chose not to make lower tiers adjustable
+- [x] Created unified TierConfig type with maxTurns, maxTokensPerCall, maxContinuationRounds, thinkingBudget
+- [N/A] Custom tier overrides — user chose fixed tiers only
+- [x] Frontend mode selector updated with 4 tiers (Speed, Quality, Max, Limitless)
+- [x] All vitest tests updated for 4-tier architecture (1,268 tests)
+
+## 4-Tier Architecture: Speed, Quality, Max (Manus-aligned), Limitless
+- [x] Research Manus 1.6 Max actual limits for deep alignment
+- [x] Realign Max tier to match Manus 1.6 Max (high but bounded — strategic/autonomous)
+- [x] Add Limitless tier with truly zero constraints (Infinity for all params)
+- [x] Update TierConfig and TIER_CONFIGS for 4 tiers
+- [x] Update mode-specific system prompts for Max and Limitless
+- [x] Update frontend mode selector to include Limitless option
+- [x] Update all test assertions for 4-tier architecture
+- [x] Run full test suite and verify 0 failures (1,268 tests)
+- [x] Apply recursive convergence pass — CONVERGED (1 doc fix applied)

@@ -2141,10 +2141,10 @@ export default function TaskView() {
             {(task.status === "running" || task.status === "completed") && (
               <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0" title="Estimated task cost">
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  {agentMode === "speed" ? "~$0.02" : agentMode === "max" ? "~$0.50" : "~$0.15"}
+                  {agentMode === "speed" ? "~$0.02" : agentMode === "limitless" ? "~$2.00+" : agentMode === "max" ? "~$0.50" : "~$0.15"}
                 </span>
                 <span className="text-[9px] text-muted-foreground">
-                  {agentMode === "speed" ? "speed" : agentMode === "max" ? "max" : "quality"}
+                  {agentMode === "speed" ? "speed" : agentMode === "limitless" ? "limitless" : agentMode === "max" ? "max" : "quality"}
                 </span>
               </span>
             )}

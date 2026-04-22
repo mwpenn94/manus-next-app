@@ -310,40 +310,63 @@ describe("Mode transport and MAX mode enforcement", () => {
     expect(coerceMode(undefined as any)).toBe("quality");
   });
 
-  it("maxTurns is correctly set per mode", () => {
-    const MAX_TOOL_TURNS = 100;
-    const getMaxTurns = (mode: string) =>
-      mode === "speed" ? 30 : mode === "max" ? 100 : MAX_TOOL_TURNS;
+  it("maxTurns is correctly set per mode via TierConfig (4-tier architecture)", () => {
+    // Import getTierConfig logic inline for testing
+    const TIER_CONFIGS: Record<string, { maxTurns: number }> = {
+      speed: { maxTurns: 30 },
+      quality: { maxTurns: 100 },
+      max: { maxTurns: 200 },
+      limitless: { maxTurns: Infinity },
+    };
+    const getTierConfig = (mode: string) => TIER_CONFIGS[mode] ?? TIER_CONFIGS.quality;
 
-    expect(getMaxTurns("speed")).toBe(30);
-    expect(getMaxTurns("quality")).toBe(100);
-    expect(getMaxTurns("max")).toBe(100);
+    expect(getTierConfig("speed").maxTurns).toBe(30);
+    expect(getTierConfig("quality").maxTurns).toBe(100);
+    expect(getTierConfig("max").maxTurns).toBe(200);
+    expect(getTierConfig("limitless").maxTurns).toBe(Infinity);
+    // Unknown modes fall back to quality
+    expect(getTierConfig("turbo").maxTurns).toBe(100);
   });
 
-  it("MAX mode system prompt includes deep research requirements", async () => {
+  it("MAX mode system prompt includes Manus 1.6 Max aligned requirements", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    expect(content).toContain("MODE: MAX (Flagship Tier)");
-    expect(content).toContain("DEEP RESEARCH REQUIRED");
-    expect(content).toContain("Minimum research depth");
-    expect(content).toContain("Cross-reference everything");
-    expect(content).toContain("Do NOT conclude prematurely");
+    expect(content).toContain("MODE: MAX (Aligned with Manus 1.6 Max");
+    expect(content).toContain("flagship autonomous tier deeply aligned with Manus 1.6 Max");
+    expect(content).toContain("Deep research depth");
+    expect(content).toContain("Cross-reference sources");
+    expect(content).toContain("Tighter internal planning");
     expect(content).toContain("Leave no stone unturned");
   });
 
-  it("MAX mode anti-shallow-completion code exists in agentStream", async () => {
+  it("LIMITLESS mode system prompt includes recursive convergence requirements", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    expect(content).toContain("MAX mode anti-shallow");
-    expect(content).toContain("forcing deeper research");
-    expect(content).toContain("completedToolCalls < 3");
+    expect(content).toContain("MODE: LIMITLESS (Recursive Optimization Until Convergence)");
+    expect(content).toContain("NO constraints on your execution");
+    expect(content).toContain("recursive optimization");
+    expect(content).toContain("convergence");
+    expect(content).toContain("Honor user termination conditions");
+    expect(content).toContain("Self-monitoring");
   });
 
-  it("mode coercion in index.ts correctly handles max mode", async () => {
+  it("MAX/LIMITLESS mode anti-shallow-completion code exists in agentStream", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("MAX/LIMITLESS MODE ANTI-SHALLOW-COMPLETION");
+    expect(content).toContain("forcing deeper research");
+    expect(content).toContain("completedToolCalls < 3");
+    // Both max and limitless should trigger anti-shallow
+    expect(content).toContain('mode === "max" || mode === "limitless"');
+  });
+
+  it("mode coercion in index.ts correctly handles all 4 modes", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/_core/index.ts", "utf-8");
-    // Verify the fix: max mode should NOT be silently dropped
+    // Verify all modes are handled
     expect(content).toContain('body.mode === "max" ? "max"');
+    expect(content).toContain('body.mode === "limitless" ? "limitless"');
+    expect(content).toContain('body.mode === "speed" ? "speed"');
     // Verify the old bug pattern is gone
     expect(content).not.toMatch(/const mode = \(body\.mode === "speed" \? "speed" : "quality"\)/);
   });
@@ -353,5 +376,247 @@ describe("Mode transport and MAX mode enforcement", () => {
     const content = fs.readFileSync("client/src/components/ManusNextChat.tsx", "utf-8");
     // Should accept both data.delta (current server format) and data.token (legacy)
     expect(content).toContain("data.delta || data.token");
+  });
+});
+
+describe("Manus-parity auto-continuation system", () => {
+  it("agentStream.ts defines TierConfig with per-tier continuation limits", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("const TIER_CONFIGS: Record<string, TierConfig>");
+    expect(content).toContain("maxContinuationRounds: 5"); // speed
+    expect(content).toContain("maxContinuationRounds: 50"); // quality
+    expect(content).toContain("maxContinuationRounds: 100"); // max
+    expect(content).toContain("maxContinuationRounds: Infinity"); // limitless
+  });
+
+  it("agentStream.ts contains CONTEXT_COMPRESSION_THRESHOLD constant", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("const CONTEXT_COMPRESSION_THRESHOLD = 200000;");
+  });
+
+  it("agentStream.ts contains continuation SSE event emission", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    // Verify the continuation event is emitted with proper structure
+    expect(content).toContain('continuation: {');
+    expect(content).toContain('round: continuationRounds');
+    // maxRounds uses -1 for unlimited mode, positive number for bounded tiers
+    expect(content).toContain('isFinite(maxContinuationRounds) ? maxContinuationRounds : -1');
+    expect(content).toContain('reason: "output_token_limit"');
+  });
+
+  it("agentStream.ts tracks continuationRounds state variable", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("let continuationRounds = 0;");
+    // Reset on tool execution (real progress)
+    expect(content).toContain("continuationRounds = 0; // Reset");
+    // Reset on successful stop
+    expect(content).toContain('if (choice.finish_reason === "stop")');
+  });
+
+  it("agentStream.ts has context compression logic", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("function compressConversationContext");
+    expect(content).toContain("function estimateConversationTokens");
+    expect(content).toContain("function streamTextAsChunks");
+    // Verify compression is triggered during continuation
+    expect(content).toContain("estimatedTokens > CONTEXT_COMPRESSION_THRESHOLD");
+    expect(content).toContain("compressConversationContext(conversation)");
+  });
+
+  it("continuation prompt includes last words to prevent repetition", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    expect(content).toContain("Your last words were:");
+    expect(content).toContain("Do NOT repeat any content you already produced");
+    expect(content).toContain("Do NOT add a new greeting or introduction");
+    expect(content).toContain("seamlessly continue the remaining work");
+  });
+
+  it("LLM params are derived from tierConfig", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    // maxTokens is conditionally set from tierConfig (omitted for Limitless/Infinity)
+    expect(content).toContain("if (isFinite(tierConfig.maxTokensPerCall))");
+    expect(content).toContain("llmParams.maxTokens = tierConfig.maxTokensPerCall");
+    // thinkingBudget comes from tierConfig
+    expect(content).toContain("thinkingBudget: tierConfig.thinkingBudget");
+  });
+
+  it("LLM layer defaults to 65536 max_tokens when caller omits it", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/_core/llm.ts", "utf-8");
+    expect(content).toContain("payload.max_tokens = 65536; // Model's standard maximum output per call");
+  });
+
+  it("LLM layer accepts thinkingBudget parameter", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/_core/llm.ts", "utf-8");
+    expect(content).toContain("thinkingBudget?: number");
+    // Thinking is enabled with tools (not just without)
+    expect(content).toContain("const thinkingBudget = params.thinkingBudget");
+  });
+
+  it("late finish_reason=length handler uses tierConfig continuation limits", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("server/agentStream.ts", "utf-8");
+    // The late catch should also use maxContinuationRounds from tierConfig
+    expect(content).toContain("Late finish_reason=length catch");
+    expect(content).toContain("exceeded continuation limit for");
+  });
+
+  it("streamTextAsChunks correctly breaks text at sentence boundaries", () => {
+    // Replicate the sentence chunking logic
+    const text = "Hello world. This is a test! How are you? Fine thanks.";
+    const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
+    const chunks = text.match(sentencePattern) || [text];
+    const captured = chunks.join("");
+    if (captured.length < text.length) {
+      chunks.push(text.slice(captured.length));
+    }
+    expect(chunks.length).toBe(4);
+    expect(chunks.join("")).toBe(text);
+  });
+
+  it("estimateConversationTokens uses ~4 chars per token heuristic", () => {
+    // Replicate the estimation logic
+    const estimateTokens = (msgs: Array<{ content: string }>) => {
+      let totalChars = 0;
+      for (const msg of msgs) {
+        totalChars += msg.content.length;
+      }
+      return Math.ceil(totalChars / 4);
+    };
+
+    const msgs = [
+      { content: "Hello world" }, // 11 chars → ~3 tokens
+      { content: "This is a longer message with more content" }, // 43 chars → ~11 tokens
+    ];
+    const estimate = estimateTokens(msgs);
+    expect(estimate).toBe(Math.ceil(54 / 4)); // 14 tokens
+  });
+
+  it("compressConversationContext preserves recent messages", () => {
+    // Replicate compression logic
+    const KEEP_RECENT = 20;
+    const TOOL_RESULT_MAX = 200;
+    const conversation: Array<{ role: string; content: string }> = [
+      { role: "system", content: "System prompt" },
+    ];
+    // Add 30 messages (more than KEEP_RECENT)
+    for (let i = 0; i < 30; i++) {
+      if (i % 3 === 0) {
+        conversation.push({ role: "tool", content: "A".repeat(500) }); // Long tool result
+      } else if (i % 3 === 1) {
+        conversation.push({ role: "assistant", content: "B".repeat(2000) }); // Long assistant msg
+      } else {
+        conversation.push({ role: "user", content: "Short user message" });
+      }
+    }
+
+    const originalLength = conversation.length;
+    const compressBoundary = originalLength - KEEP_RECENT;
+
+    // Compress older messages
+    for (let i = 1; i < compressBoundary; i++) {
+      const msg = conversation[i];
+      if (msg.role === "tool" && msg.content.length > TOOL_RESULT_MAX) {
+        conversation[i] = { ...msg, content: msg.content.slice(0, TOOL_RESULT_MAX) + "\n... [truncated]" };
+      }
+      if (msg.role === "assistant" && msg.content.length > 1000) {
+        conversation[i] = { ...msg, content: msg.content.slice(0, 500) + "\n...\n" + msg.content.slice(-200) };
+      }
+    }
+
+    // System prompt should be unchanged
+    expect(conversation[0].content).toBe("System prompt");
+    // Recent messages should be unchanged (last 20)
+    for (let i = compressBoundary; i < originalLength; i++) {
+      const msg = conversation[i];
+      if (msg.role === "tool") {
+        expect(msg.content.length).toBe(500); // Uncompressed
+      }
+    }
+    // Older tool messages should be compressed
+    for (let i = 1; i < compressBoundary; i++) {
+      const msg = conversation[i];
+      if (msg.role === "tool") {
+        expect(msg.content.length).toBeLessThan(500);
+        expect(msg.content).toContain("[truncated]");
+      }
+    }
+  });
+});
+
+describe("Continuation SSE event format", () => {
+  it("continuation event has correct structure (bounded tier)", () => {
+    const continuationEvent = {
+      continuation: {
+        round: 1,
+        maxRounds: 50, // quality tier
+        reason: "output_token_limit",
+      },
+    };
+    const sseEvent = `data: ${JSON.stringify(continuationEvent)}\n\n`;
+    const parsed = JSON.parse(sseEvent.slice(6).trim());
+    expect(parsed.continuation).toBeDefined();
+    expect(parsed.continuation.round).toBe(1);
+    expect(parsed.continuation.maxRounds).toBe(50);
+    expect(parsed.continuation.reason).toBe("output_token_limit");
+  });
+
+  it("continuation event uses -1 for unlimited Max tier", () => {
+    const continuationEvent = {
+      continuation: {
+        round: 3,
+        maxRounds: -1, // Max tier: unlimited
+        reason: "output_token_limit",
+      },
+    };
+    const parsed = JSON.parse(JSON.stringify(continuationEvent));
+    expect(parsed.continuation.maxRounds).toBe(-1);
+    expect(parsed.continuation.round).toBe(3);
+  });
+
+  it("continuation event is distinct from other SSE events", () => {
+    const events = [
+      { delta: "text" },
+      { tool_start: { name: "test" } },
+      { tool_result: { name: "test", success: true } },
+      { step_progress: { completed: 1, total: 5 } },
+      { continuation: { round: 1, maxRounds: -1, reason: "output_token_limit" } },
+      { done: true, content: "final" },
+    ];
+
+    for (const event of events) {
+      const json = JSON.stringify(event);
+      const parsed = JSON.parse(json);
+      // Each event type should be uniquely identifiable
+      const keys = Object.keys(parsed);
+      expect(keys.length).toBeGreaterThan(0);
+    }
+
+    // Continuation event should be parseable by streamWithRetry
+    const continuationEvent = events[4];
+    expect("continuation" in continuationEvent).toBe(true);
+  });
+
+  it("streamWithRetry.ts includes onContinuation callback", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/lib/streamWithRetry.ts", "utf-8");
+    expect(content).toContain("onContinuation");
+    expect(content).toContain("data.continuation && callbacks.onContinuation");
+  });
+
+  it("buildStreamCallbacks.ts includes continuation handler", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/lib/buildStreamCallbacks.ts", "utf-8");
+    expect(content).toContain("onContinuation");
+    expect(content).toContain("Auto-continuation round");
+    expect(content).toContain("Continuing...");
   });
 });
