@@ -2117,3 +2117,10 @@
 - [x] Rich cards (confirmation_gate, convergence, interactive_output, webapp_preview) now survive page reload
 - [x] 49 new vitest tests for confirmation-gate-persistence (all passing)
 - [x] Full test suite: 1,387 tests across 57 files, 0 failures
+
+## Bug Fix: Color Contrast Errors (Round 2)
+- [x] Fix foreground #17171a on background #09090c — caused by framer-motion opacity:0 entrance animation on "What can I do for you?" text
+- [x] Fix foreground #1b1b1e on background #09090c — caused by framer-motion opacity:0 entrance animation on "Hello, Michael." heading
+- [x] Root cause: @axe-core/react runs during opacity 0->1 animation, computing intermediate contrast
+- [x] Fix: increased axe-core debounce from 1000ms to 3000ms so it runs after all animations complete
+- [x] Verified: axe-core programmatic scan (Playwright) finds 0 violations on fully-loaded page
