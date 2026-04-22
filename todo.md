@@ -2484,3 +2484,34 @@
 - [x] Build country breakdown bar chart visualization in dashboard panel
 - [x] Build device breakdown donut chart (SVG pie chart) in dashboard panel
 - [x] Wire both visualizations into WebAppProjectPage dashboard
+
+## Session 8 — Three Next Steps (Round 3)
+
+### Step 1: IP-Based Geolocation Fallback for Country Detection
+- [x] Create server/geoip.ts module with IP geolocation lookup
+- [x] Use free ip-api.com service with in-memory LRU cache to avoid rate limits
+- [x] Integrate fallback into analytics collect endpoint: CDN headers first, then IP lookup
+- [x] Handle errors gracefully — default to null if all methods fail
+- [x] Add cache TTL (24h) and max cache size (10,000 entries)
+- [ ] Write unit tests for geoip module (Phase 5)
+
+### Step 2: Real-Time Analytics with WebSocket Push
+- [x] Create server/analyticsRelay.ts WebSocket relay for live visitor events
+- [x] Track active visitors per project with heartbeat/timeout (30s expiry)
+- [x] Push live visitor count updates to connected dashboard clients
+- [x] Add /api/analytics/ws WebSocket endpoint to server
+- [x] Create useRealtimeAnalytics React hook for dashboard consumption
+- [x] Add live visitor count indicator to WebAppProjectPage dashboard
+- [x] Show "X visitors now" badge with pulse animation
+
+### Step 3: Custom Domain SSL Provisioning
+- [x] Create server/sslProvisioning.ts module for ACM certificate management
+- [x] Implement requestCertificate: creates ACM cert request for custom domain
+- [x] Implement getCertificateStatus: polls ACM for validation status
+- [x] Implement getDnsValidationRecords: returns CNAME records user must add
+- [x] Add SSL status tracking to webappProjects schema (sslStatus, sslCertArn, sslValidationRecords)
+- [x] Push schema migration with pnpm db:push
+- [x] Add tRPC procedures: requestSsl, sslStatus, deleteSsl
+- [x] Add SSL provisioning UI panel in WebAppProjectPage Domains settings
+- [x] Show DNS validation instructions with copy-to-clipboard CNAME records
+- [x] Show certificate status badge (pending, issued, failed) with auto-poll

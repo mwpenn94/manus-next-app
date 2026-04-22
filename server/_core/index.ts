@@ -298,13 +298,29 @@ async function startServer() {
       const project = await getWebappProjectByExternalId(String(projectId));
       if (!project) return res.status(404).json({ error: "Project not found" });
 
-      // Country detection: CloudFront CF-IPCountry, Cloudflare CF-IPCountry, or X-Country header
+      // Country detection: CDN headers first, then IP-based geolocation fallback
       const countryHeader = req.headers["cf-ipcountry"] || req.headers["x-country"] || req.headers["x-vercel-ip-country"];
-      const country = countryHeader ? String(Array.isArray(countryHeader) ? countryHeader[0] : countryHeader).slice(0, 8).toUpperCase() : null;
+      let country: string | null = countryHeader ? String(Array.isArray(countryHeader) ? countryHeader[0] : countryHeader).slice(0, 8).toUpperCase() : null;
+
+      // Fallback: IP-based geolocation via ip-api.com with LRU cache
+      if (!country && ipStr !== "unknown") {
+        try {
+          const { lookupCountry } = await import("../geoip");
+          const geo = await lookupCountry(ipStr);
+          if (geo.countryCode) {
+            country = geo.countryCode.toUpperCase();
+          }
+        } catch (geoErr: any) {
+          // Non-fatal: proceed without country data
+          console.warn("[Analytics] GeoIP fallback error:", geoErr.message);
+        }
+      }
+
+      const pagePath = String(path || "/").slice(0, 512);
 
       await recordPageView({
         projectId: project.id,
-        path: String(path || "/").slice(0, 512),
+        path: pagePath,
         referrer: referrer ? String(referrer).slice(0, 2048) : null,
         userAgent,
         visitorHash,
@@ -316,6 +332,19 @@ async function startServer() {
       await updateWebappProject(project.id, {
         totalPageViews: (project.totalPageViews ?? 0) + 1,
       });
+
+      // Notify real-time analytics relay
+      try {
+        const { notifyPageView } = await import("../analyticsRelay");
+        notifyPageView({
+          projectExternalId: String(projectId),
+          visitorHash,
+          path: pagePath,
+          country,
+        });
+      } catch {
+        // Non-fatal: relay may not be initialized yet
+      }
 
       // Set CORS headers for cross-origin tracking
       res.setHeader("Access-Control-Allow-Origin", "*");
@@ -818,6 +847,13 @@ async function startServer() {
     initVoiceStream(server);
   }).catch((err) => {
     console.error("[Server] Failed to init voice stream:", err);
+  });
+
+  // Real-time analytics WebSocket relay
+  import("../analyticsRelay").then(({ initAnalyticsRelay }) => {
+    initAnalyticsRelay(server);
+  }).catch((err) => {
+    console.error("[Server] Failed to init analytics relay:", err);
   });
 
   server.listen(port, () => {

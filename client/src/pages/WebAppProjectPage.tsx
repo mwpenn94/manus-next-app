@@ -29,6 +29,7 @@ import {
   CreditCard, Search, AlertTriangle, Smartphone, Tablet, Monitor, MapPin
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
 import { useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -322,7 +323,11 @@ export default function WebAppProjectPage() {
         {/* Dashboard Panel */}
         {activePanel === "dashboard" && (
           <div className="p-6 max-w-4xl mx-auto">
-            <h2 className="text-lg font-semibold mb-6">Dashboard</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">Dashboard</h2>
+              {/* Live visitor count badge */}
+              <LiveVisitorBadge projectExternalId={project.externalId} />
+            </div>
 
             {/* Status Cards — real analytics from tracking pixel */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -821,25 +826,8 @@ export default function WebAppProjectPage() {
                             }
                           }}
                         />
-                        {project.customDomain && project.publishedUrl && (
-                          <Card className="border-border mt-3 bg-muted/30">
-                            <CardContent className="py-3">
-                              <p className="text-xs font-medium mb-2">DNS Configuration Required</p>
-                              <div className="space-y-2 text-xs">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-[10px] font-mono">CNAME</Badge>
-                                  <span className="text-muted-foreground">{project.customDomain}</span>
-                                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                                  <span className="font-mono text-primary">{project.publishedUrl ? new URL(project.publishedUrl).hostname : "your-published-url"}</span>
-                                </div>
-                                <p className="text-muted-foreground">Add this CNAME record at your DNS provider. SSL will be provisioned automatically via Let's Encrypt once DNS propagates (typically 5–30 minutes).</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                                  <span className="text-muted-foreground">Awaiting DNS verification</span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                        {project.customDomain && (
+                          <SslProvisioningPanel projectExternalId={project.externalId} customDomain={project.customDomain} publishedUrl={project.publishedUrl || null} />
                         )}
                         {!project.customDomain && (
                           <p className="text-xs text-muted-foreground mt-1">{project.publishedUrl ? "Enter a custom domain above and point a CNAME record to your published URL" : "Deploy your app first to set up a custom domain"}</p>
@@ -859,7 +847,7 @@ export default function WebAppProjectPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-3 h-3 text-green-500" />
-                          <span>Automatic SSL/TLS via Let's Encrypt for custom domains</span>
+                          <span>Automatic SSL/TLS via ACM for custom domains</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-3 h-3 text-green-500" />
@@ -1211,5 +1199,232 @@ function SeoAnalysisPanel({ projectId }: { projectId: string }) {
         </Card>
       )}
     </div>
+  );
+}
+
+
+// ── Live Visitor Badge Component ──
+
+function LiveVisitorBadge({ projectExternalId }: { projectExternalId: string }) {
+  const { activeVisitors, connected } = useRealtimeAnalytics(projectExternalId);
+
+  if (!connected && activeVisitors === 0) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+        <span>Connecting...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
+      role="status"
+      aria-live="polite"
+      aria-label={`${activeVisitors} visitor${activeVisitors !== 1 ? "s" : ""} online now`}
+    >
+      {/* Pulse dot */}
+      <span className="relative flex h-2 w-2">
+        {activeVisitors > 0 && (
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+        )}
+        <span className={cn(
+          "relative inline-flex rounded-full h-2 w-2",
+          activeVisitors > 0 ? "bg-green-500" : "bg-muted-foreground/40"
+        )} />
+      </span>
+
+      <span className="text-xs font-medium text-primary">
+        {activeVisitors} {activeVisitors === 1 ? "visitor" : "visitors"} now
+      </span>
+
+      {/* Connection indicator */}
+      {connected && (
+        <div className="w-1 h-1 rounded-full bg-green-500" title="Connected" />
+      )}
+    </div>
+  );
+}
+
+// ── SSL Provisioning Panel Component ──
+
+function SslProvisioningPanel({ projectExternalId, customDomain, publishedUrl }: {
+  projectExternalId: string;
+  customDomain: string;
+  publishedUrl: string | null;
+}) {
+  const utils = trpc.useUtils();
+
+  const sslQuery = trpc.webappProject.sslStatus.useQuery(
+    { externalId: projectExternalId },
+    { refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      // Poll every 10s while pending validation
+      return status === "pending_validation" ? 10_000 : false;
+    }}
+  );
+
+  const requestSslMut = trpc.webappProject.requestSsl.useMutation({
+    onSuccess: () => {
+      toast.success("SSL certificate requested. Add the DNS records below.");
+      utils.webappProject.sslStatus.invalidate({ externalId: projectExternalId });
+    },
+    onError: (err) => {
+      toast.error(`SSL request failed: ${err.message}`);
+    },
+  });
+
+  const deleteSslMut = trpc.webappProject.deleteSsl.useMutation({
+    onSuccess: () => {
+      toast.success("SSL certificate removed.");
+      utils.webappProject.sslStatus.invalidate({ externalId: projectExternalId });
+    },
+  });
+
+  const ssl = sslQuery.data;
+  const hasNoCert = !ssl || ssl.status === "none";
+
+  return (
+    <Card className="border-border mt-3 bg-muted/30">
+      <CardContent className="py-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium flex items-center gap-1.5">
+            <Shield className="w-3.5 h-3.5" />
+            SSL Certificate
+          </p>
+          {ssl && ssl.status !== "none" && (
+            <Badge variant={ssl.status === "issued" ? "default" : ssl.status === "pending_validation" ? "secondary" : "destructive"} className="text-[10px]">
+              {ssl.status === "issued" ? "Active" : ssl.status === "pending_validation" ? "Pending Validation" : ssl.status}
+            </Badge>
+          )}
+        </div>
+
+        {hasNoCert && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Provision an SSL certificate for <span className="font-mono text-primary">{customDomain}</span> to enable HTTPS.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => requestSslMut.mutate({ externalId: projectExternalId, domain: customDomain })}
+              disabled={requestSslMut.isPending}
+              className="text-xs"
+            >
+              {requestSslMut.isPending ? (
+                <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Requesting...</>
+              ) : (
+                <><Shield className="w-3 h-3 mr-1" /> Request SSL Certificate</>
+              )}
+            </Button>
+            {ssl?.provider === "simulated" && (
+              <p className="text-[10px] text-muted-foreground/60">
+                Running in simulation mode (no AWS credentials configured)
+              </p>
+            )}
+          </div>
+        )}
+
+        {ssl?.status === "pending_validation" && ssl.validationRecords.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Add the following DNS record{ssl.validationRecords.length > 1 ? "s" : ""} at your DNS provider to validate domain ownership:
+            </p>
+            {ssl.validationRecords.map((record, i) => (
+              <div key={i} className="bg-background/50 rounded-md p-2 space-y-1">
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge variant="outline" className="text-[10px] font-mono">CNAME</Badge>
+                  <span className="text-muted-foreground">Name:</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <code className="text-[10px] font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded break-all">{record.name}</code>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(record.name); toast.success("Copied!"); }}
+                    className="p-0.5 hover:bg-accent rounded"
+                    title="Copy"
+                  >
+                    <Copy className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-xs mt-1">
+                  <span className="text-muted-foreground">Value:</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <code className="text-[10px] font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded break-all">{record.value}</code>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(record.value); toast.success("Copied!"); }}
+                    className="p-0.5 hover:bg-accent rounded"
+                    title="Copy"
+                  >
+                    <Copy className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+              <span className="text-xs text-muted-foreground">Awaiting DNS validation (checking every 10s)</span>
+            </div>
+            {publishedUrl && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Also add a CNAME record: <code className="font-mono text-primary">{customDomain}</code> → <code className="font-mono text-primary">{new URL(publishedUrl).hostname}</code>
+              </div>
+            )}
+          </div>
+        )}
+
+        {ssl?.status === "issued" && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+              <span className="text-green-600 font-medium">SSL certificate active for {ssl.domain}</span>
+            </div>
+            {ssl.issuedAt && (
+              <p className="text-[10px] text-muted-foreground">
+                Issued {new Date(ssl.issuedAt).toLocaleDateString()}
+              </p>
+            )}
+            {publishedUrl && (
+              <p className="text-xs text-muted-foreground">
+                Your site is accessible at <a href={`https://${customDomain}`} target="_blank" rel="noopener" className="text-primary underline">https://{customDomain}</a>
+              </p>
+            )}
+          </div>
+        )}
+
+        {ssl?.status === "failed" && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs">
+              <XCircle className="w-3.5 h-3.5 text-destructive" />
+              <span className="text-destructive font-medium">Certificate provisioning failed</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => requestSslMut.mutate({ externalId: projectExternalId, domain: customDomain })}
+              disabled={requestSslMut.isPending}
+              className="text-xs"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {ssl && ssl.status !== "none" && (
+          <div className="mt-3 pt-2 border-t border-border/50">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-[10px] text-muted-foreground hover:text-destructive"
+              onClick={() => deleteSslMut.mutate({ externalId: projectExternalId })}
+              disabled={deleteSslMut.isPending}
+            >
+              {deleteSslMut.isPending ? "Removing..." : "Remove Certificate"}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

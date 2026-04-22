@@ -104,20 +104,20 @@ describe("Custom Domain Hosting", () => {
       "utf-8"
     );
 
-    it("has DNS Configuration Required section", () => {
-      expect(page).toContain("DNS Configuration Required");
+    it("has SSL provisioning panel", () => {
+      expect(page).toContain("SslProvisioningPanel");
     });
 
     it("shows CNAME record instructions", () => {
       expect(page).toContain("CNAME");
     });
 
-    it("mentions SSL provisioning via Let's Encrypt", () => {
-      expect(page).toContain("Let's Encrypt");
+    it("mentions SSL certificate provisioning", () => {
+      expect(page).toContain("SSL Certificate");
     });
 
-    it("shows DNS verification status indicator", () => {
-      expect(page).toContain("Awaiting DNS verification");
+    it("shows DNS validation status indicator", () => {
+      expect(page).toContain("Awaiting DNS validation");
     });
 
     it("has Hosting Architecture info card", () => {
@@ -128,8 +128,8 @@ describe("Custom Domain Hosting", () => {
       expect(page).toContain("S3 static hosting with global CDN edge caching");
     });
 
-    it("describes automatic SSL/TLS", () => {
-      expect(page).toContain("Automatic SSL/TLS via Let");
+    it("describes automatic SSL/TLS via ACM", () => {
+      expect(page).toContain("Automatic SSL/TLS via ACM");
     });
 
     it("mentions analytics tracking pixel auto-injection", () => {

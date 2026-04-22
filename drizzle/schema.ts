@@ -778,6 +778,12 @@ export const webappProjects = mysqlTable("webapp_projects", {
   totalUniqueVisitors: bigint("totalUniqueVisitors", { mode: "number" }).default(0),
   /** Visibility: public or private */
   visibility: mysqlEnum("visibility", ["public", "private"]).default("public"),
+  /** SSL certificate ARN (ACM or simulated) */
+  sslCertArn: varchar("sslCertArn", { length: 512 }),
+  /** SSL certificate status */
+  sslStatus: mysqlEnum("sslStatus", ["none", "pending_validation", "issued", "failed", "expired", "revoked"]).default("none"),
+  /** DNS validation records as JSON */
+  sslValidationRecords: json("sslValidationRecords").$type<Array<{ name: string; value: string; type: string }>>(),
   /** Last deployed at */
   lastDeployedAt: timestamp("lastDeployedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

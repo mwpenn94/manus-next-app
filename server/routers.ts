@@ -2649,6 +2649,90 @@ Provide a JSON response with this exact structure:
         const { getDeviceAnalytics } = await import("./db");
         return getDeviceAnalytics(project.id, input.days ?? 30);
       }),
+
+    /** Request SSL certificate for custom domain */
+    requestSsl: protectedProcedure
+      .input(z.object({ externalId: z.string(), domain: z.string().min(1).max(256) }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+
+        const { requestCertificate, getSslProvider } = await import("./sslProvisioning");
+        const result = await requestCertificate(input.domain);
+
+        if (result.success && result.certArn) {
+          await updateWebappProject(project.id, {
+            customDomain: input.domain,
+            sslCertArn: result.certArn,
+            sslStatus: result.status,
+            sslValidationRecords: result.validationRecords as any,
+          });
+        }
+
+        return {
+          ...result,
+          provider: getSslProvider(),
+        };
+      }),
+
+    /** Get SSL certificate status */
+    sslStatus: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+
+        if (!project.sslCertArn) {
+          return {
+            status: "none" as const,
+            domain: project.customDomain || null,
+            certArn: null,
+            issuedAt: null,
+            validationRecords: project.sslValidationRecords || [],
+            provider: "none" as const,
+          };
+        }
+
+        const { getCertificateStatus, getSslProvider } = await import("./sslProvisioning");
+        const certStatus = await getCertificateStatus(project.sslCertArn);
+
+        // Update DB if status changed
+        if (certStatus.status !== project.sslStatus) {
+          await updateWebappProject(project.id, {
+            sslStatus: certStatus.status,
+          });
+        }
+
+        return {
+          status: certStatus.status,
+          domain: certStatus.domain || project.customDomain,
+          certArn: project.sslCertArn,
+          issuedAt: certStatus.issuedAt,
+          validationRecords: certStatus.validationRecords,
+          provider: getSslProvider(),
+        };
+      }),
+
+    /** Delete SSL certificate */
+    deleteSsl: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+
+        if (project.sslCertArn) {
+          const { deleteCertificate } = await import("./sslProvisioning");
+          await deleteCertificate(project.sslCertArn);
+        }
+
+        await updateWebappProject(project.id, {
+          sslCertArn: null,
+          sslStatus: "none",
+          sslValidationRecords: null,
+        });
+
+        return { success: true };
+      }),
   }),
 
   /** Prompt cache metrics — observability for LLM caching */
