@@ -36,7 +36,7 @@
           "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "This capability is marked as N/A, indicating it is out of scope and not implemented. All quality dimensions are scored 0.00 accordingly."
+        "assessment": "This capability is marked as N/A (out of scope), thus all quality dimensions are scored 0.00. No implementation details are available for evaluation."
       }
     },
     "B": {
@@ -71,7 +71,7 @@
           "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "This capability is marked as N/A, meaning it is out of scope for the current evaluation. All dimensions are scored 0.00 accordingly."
+        "assessment": "This capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions receive a score of 0.00."
       }
     },
     "C": {
@@ -79,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for user_experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
+          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no score can be assigned for innovation."
         },
         "composite": 0,
-        "assessment": "This capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all scores are 0.00 as per the scoring guidelines."
+        "assessment": "This capability is marked as N/A, indicating it is out of scope for evaluation. Consequently, all scores are 0.00 as per the scoring guidelines."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-22T08:30:58.072Z"
+  "evaluated_at": "2026-04-22T09:32:50.781Z"
 }

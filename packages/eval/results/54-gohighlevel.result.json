@@ -36,7 +36,7 @@
           "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "The capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. Consequently, all scores are 0.00 as per the scoring guidelines for N/A status."
+        "assessment": "The GoHighLevel capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions receive a score of 0.00 as there is no implementation to assess."
       }
     },
     "B": {
@@ -71,7 +71,7 @@
           "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "The capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. Consequently, all quality dimensions receive a score of 0.00."
+        "assessment": "The GoHighLevel capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions are scored 0.00 as there is no implementation to assess."
       }
     },
     "C": {
@@ -106,7 +106,7 @@
           "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "The capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. Consequently, all quality dimensions are scored at 0.00."
+        "assessment": "The capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. All quality dimensions are scored 0.00 accordingly."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-22T08:29:45.651Z"
+  "evaluated_at": "2026-04-22T09:31:37.762Z"
 }

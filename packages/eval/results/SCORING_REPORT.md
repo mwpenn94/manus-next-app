@@ -1,6 +1,6 @@
 # LLM-Judge Scoring Report
 
-**Generated:** 2026-04-22T08:32:07.159Z
+**Generated:** 2026-04-22T09:33:53.366Z
 **Scoring method:** llm-judge
 
 ## Summary
@@ -8,19 +8,19 @@
 | Metric | Value |
 |--------|-------|
 | Total evaluated | 72 |
-| Passing (≥0.8) | 18 |
-| Failing (<0.8) | 54 |
-| Pass rate | 25% |
-| Average composite | 0.3 |
+| Passing (≥0.8) | 21 |
+| Failing (<0.8) | 51 |
+| Pass rate | 29.2% |
+| Average composite | 0.307 |
 | High variance flags | 2 |
 
 ## By Implementation Status
 
 | Status | Count | Avg Score | Passing |
 |--------|-------|-----------|--------|
-| GREEN | 18 | 0.824 | 18/18 |
-| YELLOW | 12 | 0.487 | 0/12 |
-| RED | 32 | 0.012 | 0/32 |
+| GREEN | 21 | 0.824 | 21/21 |
+| YELLOW | 9 | 0.479 | 0/9 |
+| RED | 32 | 0.005 | 0/32 |
 | N/A | 5 | 0 | 0/5 |
 
 ## Failing Capabilities
@@ -45,15 +45,12 @@
 | 27 | Full-Stack Web-App Creation | RED | undefined |
 | 28 | Live Preview with Direct Editing | RED | undefined |
 | 29 | Publishing Pipeline | RED | undefined |
-| 30 | Built-in AI Capabilities | YELLOW | undefined |
 | 31 | Cloud Infrastructure | YELLOW | undefined |
 | 34 | Payments (Stripe) | RED | undefined |
-| 35 | Project Analytics | YELLOW | undefined |
 | 36 | Custom Domains | RED | undefined |
 | 38 | Code Control | YELLOW | undefined |
 | 39 | Import from Figma | RED | undefined |
 | 40 | Third-Party Integrations | YELLOW | undefined |
-| 41 | GitHub Integration | YELLOW | undefined |
 | 42 | App Publishing (Mobile) | RED | undefined |
 | 43 | Mobile Development | RED | undefined |
 | 44 | Mobile App (Manus Client) | N/A | undefined |
@@ -86,5 +83,5 @@
 
 | # | Capability | Spread |
 |---|-----------|--------|
-| orch-2 | Error Recovery | 0.2 |
+| orch-1 | Multi-Tool Chain | 0.2 |
 | orch-3 | Mode Switching Mid-Task | 0.2 |

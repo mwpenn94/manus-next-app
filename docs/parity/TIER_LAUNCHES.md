@@ -17,14 +17,14 @@
 
 | Tier | Count | Percentage |
 |---|---|---|
-| GREEN | 18 | 27% |
-| YELLOW | 12 | 18% |
+| GREEN | 21 | 31% |
+| YELLOW | 9 | 13% |
 | RED | 32 | 48% |
 | N/A | 5 | 7% |
 
-## GREEN Capabilities (18)
+## GREEN Capabilities (21)
 
-All 18 GREEN capabilities pass LLM judge scoring ≥0.80:
+All 21 GREEN capabilities pass LLM judge scoring ≥0.80:
 
 | # | Capability | Launch Date | Trigger |
 |---|---|---|---|
@@ -39,15 +39,18 @@ All 18 GREEN capabilities pass LLM judge scoring ≥0.80:
 | 9 | event-notifications | 2026-04-18 | Creator notification system |
 | 11 | projects | 2026-04-18 | Project/task management |
 | 17 | scheduled-tasks | 2026-04-19 | Scheduled task execution |
+| 30 | built-in-ai | 2026-04-22 | YELLOW→GREEN: LLM + image gen fully integrated (score 0.843) |
 | 32 | access-control | 2026-04-17 | Manus OAuth + role-based access |
 | 33 | creator-notifications | 2026-04-18 | notifyOwner helper |
+| 35 | project-analytics | 2026-04-22 | YELLOW→GREEN: Full recharts analytics dashboard (score 0.843) |
 | 37 | built-in-seo | 2026-04-18 | Meta tags, OG, robots.txt |
+| 41 | github-integration | 2026-04-22 | YELLOW→GREEN: GitHub sync + management page (score 0.828) |
 | 45 | mobile-responsive | 2026-04-18 | Responsive Tailwind layout |
 | 59 | voice-tts | 2026-04-19 | Text-to-speech pipeline |
 | 60 | voice-stt | 2026-04-19 | Speech-to-text pipeline |
 | 61 | document-generation | 2026-04-18 | Document creation tools |
 
-## YELLOW Capabilities (12 — Promotion Candidates)
+## YELLOW Capabilities (9 — Promotion Candidates)
 
 | # | Capability | Blocker | Promotion Path |
 |---|---|---|---|
@@ -56,12 +59,9 @@ All 18 GREEN capabilities pass LLM judge scoring ≥0.80:
 | 18 | data-analysis | Partial — needs chart generation | Add chart rendering pipeline |
 | 19 | multimedia-processing | Video/audio pipeline incomplete | Forge API integration |
 | 26 | sandbox-runtime | Partial sandbox emulation | Expand runtime capabilities |
-| 30 | built-in-ai | Partial LLM integration | Expand model selection |
 | 31 | cloud-infrastructure | Partial S3/DB | Expand cloud services |
-| 35 | project-analytics | Basic metrics only | Add detailed analytics |
 | 38 | code-control | Partial git integration | Expand version control |
 | 40 | third-party-integrations | Limited to Stripe | Add more integrations |
-| 41 | github-integration | Basic sync only | Add PR/issue management |
 | 48 | version-rollback | Checkpoint-based only | Add granular rollback |
 
 ## RED Capabilities (32)

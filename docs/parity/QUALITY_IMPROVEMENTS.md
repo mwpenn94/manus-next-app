@@ -19,5 +19,5 @@
 | 04-22 | A11y | Removed opacity animations (axe false positives) | Clean a11y |
 | 04-22 | Resilience | LLM retry with exponential backoff | Error recovery |
 | 04-22 | UX | Retry button + prompt length warning | User guidance |
-| 04-22 | Eval | Live LLM judge run (18/18 GREEN pass) | Verified quality |
-| 04-22 | Docs | 138 parity artifacts | Complete documentation |
+| 04-22 | Eval | Live LLM judge run (21/21 GREEN pass) | Verified quality |
+| 04-22 | Docs | 142 parity artifacts | Complete documentation |

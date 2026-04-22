@@ -4,6 +4,76 @@
   "scoring_method": "llm-judge",
   "judges": {
     "A": {
+      "composite": 0,
+      "scores": {
+        "correctness": {
+          "score": 0,
+          "justification": "The implementation status is 'undefined', indicating no evidence of correct output or functionality."
+        },
+        "completeness": {
+          "score": 0,
+          "justification": "The implementation status is 'undefined', meaning there is no implemented feature to evaluate for completeness."
+        },
+        "efficiency": {
+          "score": 0,
+          "justification": "Without an implementation, efficiency cannot be assessed. The status is 'undefined'."
+        },
+        "robustness": {
+          "score": 0,
+          "justification": "There is no implementation to evaluate for robustness against edge cases or errors. Status is 'undefined'."
+        },
+        "user_experience": {
+          "score": 0,
+          "justification": "No implementation means no user experience to evaluate. The status is 'undefined'."
+        },
+        "maintainability": {
+          "score": 0,
+          "justification": "No code exists for this capability, thus maintainability cannot be scored. Status is 'undefined'."
+        },
+        "innovation": {
+          "score": 0,
+          "justification": "Since the implementation is 'undefined', there is no innovation to assess beyond baseline expectations."
+        },
+        "composite": 0,
+        "assessment": "The capability implementation status is 'undefined', indicating no implementation exists, and therefore all scores are 0.00. There is no evidence to evaluate any quality dimension."
+      }
+    },
+    "B": {
+      "composite": 0.15,
+      "scores": {
+        "correctness": {
+          "score": 0.2,
+          "justification": "The capability is currently 'undefined', implying no active implementation to evaluate for correctness. A score of 0.20 is given as a baseline for an undefined status, acknowledging that it's not 'incorrect' but rather not yet implemented."
+        },
+        "completeness": {
+          "score": 0.15,
+          "justification": "As the implementation status is 'undefined', no features are present. A minimal score is assigned to reflect the absence of any implemented components."
+        },
+        "efficiency": {
+          "score": 0.1,
+          "justification": "With an 'undefined' status, there is no implementation to assess for performance or resource usage. A nominal score is given as it's not actively inefficient, but also not efficient."
+        },
+        "robustness": {
+          "score": 0.15,
+          "justification": "No implementation means no handling of edge cases or errors. The score reflects the complete absence of robustness features."
+        },
+        "user_experience": {
+          "score": 0.15,
+          "justification": "An undefined implementation offers no user experience. The score reflects this lack."
+        },
+        "maintainability": {
+          "score": 0.1,
+          "justification": "There is no code to evaluate for cleanliness or structure. A minimal score is given as it's not unmaintainable, but also not maintainable in any sense."
+        },
+        "innovation": {
+          "score": 0.15,
+          "justification": "Without an implementation, there's no opportunity to go beyond baseline expectations. The score reflects the absence of innovation."
+        },
+        "composite": 0.15,
+        "assessment": "The capability 'Mode Switching Mid-Task' is currently undefined, indicating no implementation exists to evaluate. All quality dimensions receive minimal scores reflecting the complete absence of the feature."
+      }
+    },
+    "C": {
       "composite": 0.2,
       "scores": {
         "correctness": {
@@ -12,106 +82,36 @@
         },
         "completeness": {
           "score": 0.2,
-          "justification": "Given the 'undefined' status, there's no indication that the expected features (mode switching, behavior change, no context loss) are present. A minimal score is assigned."
+          "justification": "Given the 'undefined' status, it's highly unlikely that any features are present. A low score reflects this lack of implementation."
         },
         "efficiency": {
           "score": 0.2,
-          "justification": "Without an implementation, efficiency cannot be assessed. A minimal score is assigned."
+          "justification": "Without an implementation, efficiency cannot be evaluated. A baseline low score is given."
         },
         "robustness": {
           "score": 0.2,
-          "justification": "The 'undefined' status means there's no evidence of error handling or graceful degradation. A minimal score is assigned."
+          "justification": "An 'undefined' status implies no implementation to test for robustness. A minimal score is assigned."
         },
         "user_experience": {
           "score": 0.2,
-          "justification": "With an 'undefined' implementation, there's no user experience to evaluate. A minimal score is assigned."
+          "justification": "No implementation means no user experience to assess. A low score is appropriate."
         },
         "maintainability": {
           "score": 0.2,
-          "justification": "No code exists to assess maintainability. A minimal score is assigned."
+          "justification": "No code exists to evaluate for maintainability. A minimal score is given."
         },
         "innovation": {
           "score": 0.2,
-          "justification": "While the capability itself is innovative, without an implementation, no specific innovative aspects can be evaluated. A minimal score is assigned."
+          "justification": "As the capability is undefined, there's no evidence of innovation beyond baseline expectations. A low score reflects this."
         },
         "composite": 0.2,
-        "assessment": "The implementation status is 'undefined', indicating no concrete work has been done on this capability. All dimensions are scored minimally as there is no evidence to evaluate."
-      }
-    },
-    "B": {
-      "composite": 0.2,
-      "scores": {
-        "correctness": {
-          "score": 0.2,
-          "justification": "The implementation status is 'undefined', suggesting no concrete evidence of correctness. A minimal score is assigned as a placeholder."
-        },
-        "completeness": {
-          "score": 0.2,
-          "justification": "The implementation status is 'undefined', indicating that the feature is likely not present or fully developed. A minimal score is assigned."
-        },
-        "efficiency": {
-          "score": 0.2,
-          "justification": "With an 'undefined' status, there's no information to assess efficiency. A minimal score is given."
-        },
-        "robustness": {
-          "score": 0.2,
-          "justification": "An 'undefined' status means there's no evidence of how edge cases or errors are handled. A minimal score is appropriate."
-        },
-        "user_experience": {
-          "score": 0.2,
-          "justification": "Without an implemented feature, there's no user experience to evaluate. A minimal score is assigned."
-        },
-        "maintainability": {
-          "score": 0.2,
-          "justification": "The 'undefined' status implies no code exists for evaluation, hence no assessment of maintainability can be made. A minimal score is given."
-        },
-        "innovation": {
-          "score": 0.2,
-          "justification": "As the implementation is 'undefined', there's no basis to evaluate innovation. A minimal score is assigned."
-        },
-        "composite": 0.2,
-        "assessment": "The capability implementation status is 'undefined', indicating no evidence for evaluation. All dimensions are scored minimally as a placeholder."
-      }
-    },
-    "C": {
-      "composite": 0,
-      "scores": {
-        "correctness": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', indicating no evidence of correctness."
-        },
-        "completeness": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', indicating no evidence of feature presence."
-        },
-        "efficiency": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', so there's no basis to evaluate efficiency."
-        },
-        "robustness": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', so robustness cannot be assessed."
-        },
-        "user_experience": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', so there is no user experience to evaluate."
-        },
-        "maintainability": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', so maintainability cannot be judged."
-        },
-        "innovation": {
-          "score": 0,
-          "justification": "The implementation status is 'undefined', so no innovation can be observed."
-        },
-        "composite": 0,
-        "assessment": "The capability implementation is currently undefined, meaning there is no evidence to score any quality dimensions. All scores are set to 0.00."
+        "assessment": "The capability implementation status is 'undefined', indicating no demonstrable functionality. All quality dimensions are scored at a minimal level, reflecting the absence of any implemented features or evidence."
       }
     }
   },
-  "median_composite": 0.2,
+  "median_composite": 0.15,
   "spread": 0.2,
   "high_variance": true,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-19T05:06:40.411Z"
+  "evaluated_at": "2026-04-22T09:33:41.130Z"
 }

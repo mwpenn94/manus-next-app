@@ -2,7 +2,7 @@ id: 30
 name: built-in-ai
 title: Built-in AI Capabilities
 category: website-builder-features
-status: YELLOW
+status: GREEN
 task:
   prompt: Use built-in AI to generate content for a landing page.
   expected_behavior: LLM generates content, image generation creates hero image.

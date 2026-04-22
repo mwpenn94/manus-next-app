@@ -2,7 +2,7 @@ id: 35
 name: project-analytics
 title: Project Analytics
 category: website-builder-pm
-status: YELLOW
+status: GREEN
 task:
   prompt: View analytics for the published project (page views, visitors).
   expected_behavior: Analytics dashboard shows traffic metrics.

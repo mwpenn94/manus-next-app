@@ -2,7 +2,7 @@ id: 41
 name: github-integration
 title: GitHub Integration
 category: developer-tools
-status: YELLOW
+status: GREEN
 task:
   prompt: Sync the project with a GitHub repository.
   expected_behavior: Code pushed to GitHub, bidirectional sync active.

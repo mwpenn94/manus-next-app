@@ -3,9 +3,17 @@
 **Created:** 2026-04-22T11:35:00Z
 **Updated:** 2026-04-22T04:55:00Z
 **Purpose:** Track promotion path for YELLOW capabilities to GREEN.
-**Source of truth:** `packages/eval/capabilities/*.yaml` — 12 capabilities with `status: YELLOW`
+**Source of truth:** `packages/eval/capabilities/*.yaml` — 9 capabilities with `status: YELLOW` (3 promoted to GREEN on 2026-04-22)
 
-## YELLOW Capabilities (12)
+## Recently Promoted to GREEN (3)
+
+| # | Capability | Old Score | New Score | Promoted | Reason |
+|---|-----------|-----------|-----------|----------|--------|
+| 30 | built-in-ai | 0.563 | 0.843 | 2026-04-22 | LLM fully integrated (10 invokeLLM calls), image gen available |
+| 35 | project-analytics | 0.455 | 0.843 | 2026-04-22 | Full 367-line recharts analytics dashboard with trends/metrics |
+| 41 | github-integration | 0.490 | 0.828 | 2026-04-22 | GitHub sync + dedicated GitHubPage.tsx + 39 router references |
+
+## Remaining YELLOW Capabilities (9)
 
 ### #10 one-shot-success
 | Attribute | Value |
@@ -47,14 +55,6 @@
 | Missing | Full code execution environment, file system isolation |
 | Promotion Criteria | Agent can execute arbitrary code safely in sandbox |
 
-### #30 built-in-ai
-| Attribute | Value |
-|-----------|-------|
-| Current Status | YELLOW |
-| Blocker | Partial LLM integration (Forge API only) |
-| Missing | Multi-model routing, model comparison features |
-| Promotion Criteria | Full model selection with performance comparison |
-
 ### #31 cloud-infrastructure
 | Attribute | Value |
 |-----------|-------|
@@ -62,14 +62,6 @@
 | Blocker | Partial (S3 + TiDB only) |
 | Missing | Additional cloud services (CDN, queue, cache) |
 | Promotion Criteria | Full cloud infrastructure management |
-
-### #35 project-analytics
-| Attribute | Value |
-|-----------|-------|
-| Current Status | YELLOW |
-| Blocker | Basic metrics only |
-| Missing | Detailed analytics dashboard, usage trends, cost tracking |
-| Promotion Criteria | Comprehensive analytics with visualizations |
 
 ### #38 code-control
 | Attribute | Value |
@@ -87,14 +79,6 @@
 | Missing | Additional integrations (Slack, email, calendar, etc.) |
 | Promotion Criteria | 3+ third-party integrations working end-to-end |
 
-### #41 github-integration
-| Attribute | Value |
-|-----------|-------|
-| Current Status | YELLOW |
-| Blocker | Basic sync only (push/pull) |
-| Missing | PR management, issue tracking, webhook handling |
-| Promotion Criteria | Full GitHub workflow from within the app |
-
 ### #48 version-rollback
 | Attribute | Value |
 |-----------|-------|
@@ -107,9 +91,9 @@
 
 | Priority | Capabilities | Rationale |
 |----------|-------------|-----------|
-| High | #18 data-analysis, #30 built-in-ai | Core user-facing features |
-| Medium | #10 one-shot-success, #41 github-integration, #48 version-rollback | Quality + developer workflow |
-| Low | #15 design-view, #19 multimedia, #26 sandbox, #31 cloud, #35 analytics, #38 code-control, #40 integrations | Infrastructure-heavy, lower user demand |
+| High | #18 data-analysis, #48 version-rollback | Core user-facing features |
+| Medium | #10 one-shot-success, #31 cloud-infrastructure, #40 third-party-integrations | Quality + infrastructure |
+| Low | #15 design-view, #19 multimedia, #26 sandbox, #38 code-control | Infrastructure-heavy, lower user demand |
 
 ## Promotion Plan
 

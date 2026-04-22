@@ -9,6 +9,41 @@
       "scores": {
         "correctness": {
           "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to evaluate for correctness."
+        },
+        "completeness": {
+          "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there are no features to evaluate for completeness."
+        },
+        "efficiency": {
+          "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to evaluate for efficiency."
+        },
+        "robustness": {
+          "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to evaluate for robustness."
+        },
+        "user_experience": {
+          "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there is no user experience to evaluate."
+        },
+        "maintainability": {
+          "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there is no code to evaluate for maintainability."
+        },
+        "innovation": {
+          "score": 0,
+          "justification": "The capability is N/A (Out of scope), so there is no implementation to evaluate for innovation."
+        },
+        "composite": 0,
+        "assessment": "This capability is marked as N/A (Out of scope), indicating no implementation exists or is expected. Therefore, all quality dimensions are scored at 0.00."
+      }
+    },
+    "B": {
+      "composite": 0,
+      "scores": {
+        "correctness": {
+          "score": 0,
           "justification": "The capability is marked as N/A, indicating it is out of scope and not implemented. Therefore, correctness cannot be assessed."
         },
         "completeness": {
@@ -36,42 +71,7 @@
           "justification": "The capability is marked as N/A, indicating it is out of scope and not implemented. Therefore, innovation cannot be assessed."
         },
         "composite": 0,
-        "assessment": "The Meta Ads Manager capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions receive a score of 0.00 as there is no implementation to assess."
-      }
-    },
-    "B": {
-      "composite": 0,
-      "scores": {
-        "correctness": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of correctness can be made."
-        },
-        "completeness": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of completeness can be made."
-        },
-        "efficiency": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of efficiency can be made."
-        },
-        "robustness": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of robustness can be made."
-        },
-        "user_experience": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of user experience can be made."
-        },
-        "maintainability": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of maintainability can be made."
-        },
-        "innovation": {
-          "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no assessment of innovation can be made."
-        },
-        "composite": 0,
-        "assessment": "The Meta Ads Manager capability is currently out of scope, so no implementation has been assessed. All scores are 0.00 as per the N/A guideline."
+        "assessment": "This capability is marked as N/A, meaning it is out of scope and no implementation exists. All quality dimensions are scored 0.00 accordingly."
       }
     },
     "C": {
@@ -87,15 +87,15 @@
         },
         "efficiency": {
           "score": 0,
-          "justification": "The capability is marked as N/A (Out of scope), meaning there is no implementation to assess for performance or resource usage."
+          "justification": "The capability is marked as N/A (Out of scope), so there is no implementation to evaluate for performance or resource usage."
         },
         "robustness": {
           "score": 0,
-          "justification": "The capability is marked as N/A (Out of scope), so there are no edge cases or error handling mechanisms to evaluate."
+          "justification": "The capability is marked as N/A (Out of scope), so there is no implementation to evaluate for error handling or edge cases."
         },
         "user_experience": {
           "score": 0,
-          "justification": "The capability is marked as N/A (Out of scope), implying no user-facing components exist to evaluate for user experience."
+          "justification": "The capability is marked as N/A (Out of scope), so there is no user-facing component to evaluate for UX."
         },
         "maintainability": {
           "score": 0,
@@ -103,10 +103,10 @@
         },
         "innovation": {
           "score": 0,
-          "justification": "The capability is marked as N/A (Out of scope), meaning there is no implementation to go beyond baseline expectations."
+          "justification": "The capability is marked as N/A (Out of scope), so there is no implementation to evaluate for innovation beyond baseline expectations."
         },
         "composite": 0,
-        "assessment": "The Meta Ads Manager capability is marked as N/A (Out of scope), indicating no implementation exists for evaluation. All quality dimensions are scored 0.00 accordingly."
+        "assessment": "This capability is marked as N/A (Out of scope), meaning there is no implementation to evaluate. All scores are consequently 0.00."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-22T08:29:52.831Z"
+  "evaluated_at": "2026-04-22T09:31:44.226Z"
 }

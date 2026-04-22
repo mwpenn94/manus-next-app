@@ -9,34 +9,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for correctness."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no features are present to assess for completeness."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for efficiency."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for robustness."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no user experience exists to assess."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for user experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no code exists to assess for maintainability."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for innovation."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to evaluate for innovation."
         },
         "composite": 0,
-        "assessment": "The capability 'Rule 17a-4 WORM' is marked as N/A, indicating it is out of scope. Consequently, all quality dimensions are scored 0.00 as there is no implementation to evaluate."
+        "assessment": "This capability is marked as N/A, indicating it is out of scope for evaluation. Consequently, all scores are 0.00 as there is no implementation to assess."
       }
     },
     "B": {
@@ -71,7 +71,7 @@
           "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
         },
         "composite": 0,
-        "assessment": "This capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions are scored 0.00 as per the scoring guidelines."
+        "assessment": "This capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions receive a score of 0.00."
       }
     },
     "C": {
@@ -79,34 +79,34 @@
       "scores": {
         "correctness": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no correctness can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for correctness."
         },
         "completeness": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no completeness can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for completeness."
         },
         "efficiency": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no efficiency can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for efficiency."
         },
         "robustness": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no robustness can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for robustness."
         },
         "user_experience": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no user experience can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for user experience."
         },
         "maintainability": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no maintainability can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for maintainability."
         },
         "innovation": {
           "score": 0,
-          "justification": "The implementation status is N/A, indicating it is out of scope. Therefore, no innovation can be assessed."
+          "justification": "The capability is marked as N/A, indicating it is out of scope. Therefore, no implementation exists to assess for innovation."
         },
         "composite": 0,
-        "assessment": "This capability is marked as N/A, meaning it is out of scope for evaluation. Consequently, all quality dimensions are scored at 0.00 as per the scoring guidelines."
+        "assessment": "This capability is marked as N/A, indicating it is out of scope for evaluation. Consequently, all quality dimensions receive a score of 0.00 as there is no implementation to assess."
       }
     }
   },
@@ -114,5 +114,5 @@
   "spread": 0,
   "high_variance": false,
   "passes_threshold": false,
-  "evaluated_at": "2026-04-22T08:31:05.537Z"
+  "evaluated_at": "2026-04-22T09:32:57.030Z"
 }

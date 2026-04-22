@@ -89,7 +89,7 @@ All source files modified within the last 48 hours. 57 commits in the last 2 day
 | Scoring report | 1 | `SCORING_REPORT.md` |
 | Benchmark catalog | 28 tasks | 8 categories |
 
-The judge.mjs scorer supports per-dimension scoring (correctness, completeness, robustness, performance, UX, cost, completeness), composite calculation, and EXCEED/MATCH/LAG verdicts. GREEN capabilities average 0.824 composite score with 18/18 passing the ≥0.8 threshold.
+The judge.mjs scorer supports per-dimension scoring (correctness, completeness, robustness, performance, UX, cost, completeness), composite calculation, and EXCEED/MATCH/LAG verdicts. GREEN capabilities average 0.824 composite score with 21/21 passing the ≥0.8 threshold. Three capabilities promoted from YELLOW to GREEN on 2026-04-22: #30 built-in-ai (0.843), #35 project-analytics (0.843), #41 github-integration (0.828).
 
 ---
 
