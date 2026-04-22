@@ -1364,7 +1364,15 @@ export default function TaskView() {
   const [systemPromptDraft, setSystemPromptDraft] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
-  const [agentMode, setAgentMode] = useState<AgentMode>("quality");
+  const [agentMode, setAgentMode] = useState<AgentMode>(() => {
+    try {
+      const stored = localStorage.getItem("manus-agent-mode");
+      if (stored && ["speed", "quality", "max", "limitless"].includes(stored)) {
+        return stored as AgentMode;
+      }
+    } catch {}
+    return "quality";
+  });
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sandboxOpen, setSandboxOpen] = useState(false);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
@@ -2164,9 +2172,27 @@ export default function TaskView() {
               )}
             </button>
             {/* Model Selector — NS19 */}
-            <ModelSelector compact className="hidden md:flex" />
+            <ModelSelector
+              compact
+              className="hidden md:flex"
+              onModelChange={(modelId) => {
+                // Sync model tier selection → agent execution mode
+                const modeMap: Record<string, AgentMode> = {
+                  "manus-next-limitless": "limitless",
+                  "manus-next-max": "max",
+                  "manus-next-standard": "quality",
+                  "manus-next-lite": "speed",
+                };
+                const newMode = modeMap[modelId];
+                if (newMode) setAgentMode(newMode);
+                try { localStorage.setItem("manus-selected-model", modelId); localStorage.setItem("manus-agent-mode", newMode || "quality"); } catch {}
+              }}
+            />
             {/* Mode Toggle */}
-            <ModeToggle mode={agentMode} onChange={setAgentMode} className="hidden md:flex mr-1" />
+            <ModeToggle mode={agentMode} onChange={(mode) => {
+              setAgentMode(mode);
+              try { localStorage.setItem("manus-agent-mode", mode); } catch {}
+            }} className="hidden md:flex mr-1" />
             {/* Sandbox Viewer toggle — NS19 */}
             <button
               onClick={() => setSandboxOpen(true)}

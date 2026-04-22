@@ -2078,3 +2078,16 @@
 - [x] All 16 integration tests passing, 1,284 total tests across 55 files
 - [x] Results documented in limitless-continuation.test.ts with comprehensive assertions
 - Note: Browser-based test requires OAuth login; server-side test validates the core logic directly
+
+## Bug Fixes: Limitless Tier + Color Contrast + E2E Test Harness
+- [x] Add Limitless tier to header model selector dropdown (4th option with ∞ badge, amber styling)
+- [x] Fix color contrast error 1: muted-foreground boosted from oklch(0.63) → oklch(0.78) in dark theme
+- [x] Fix color contrast error 2: secondary-foreground boosted to oklch(0.80), sidebar-foreground to oklch(0.78)
+- [ ] Set up authenticated E2E test harness with stored session cookies for Playwright
+- [x] Wire ModelSelector ↔ agentMode bidirectional sync in TaskView (onModelChange → setAgentMode + localStorage)
+- [x] Wire ModeToggle onChange to persist mode to localStorage
+- [x] Home.tsx reads/writes selectedModel to localStorage for cross-page persistence
+- [x] TaskView agentMode initializes from localStorage (with validation and quality fallback)
+- [x] MODEL_TO_MODE export mapping all 4 model IDs to agent execution modes
+- [x] 54 new vitest tests for model-selector-wiring (all passing)
+- [x] Full test suite: 1,338 tests across 56 files, 0 failures

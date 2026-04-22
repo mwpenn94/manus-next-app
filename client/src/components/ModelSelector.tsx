@@ -7,7 +7,7 @@
  * Models: Manus Next Max (default), Manus Next 1.0, Manus Next Lite
  */
 import { useState, useRef, useEffect } from "react";
-import { Check, ChevronDown, Zap, Sparkles, Leaf } from "lucide-react";
+import { Check, ChevronDown, Zap, Sparkles, Leaf, Infinity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,10 +16,17 @@ export interface ModelOption {
   name: string;
   description: string;
   icon: typeof Zap;
-  tier: "max" | "standard" | "lite";
+  tier: "limitless" | "max" | "standard" | "lite";
 }
 
 const MODELS: ModelOption[] = [
+  {
+    id: "manus-next-limitless",
+    name: "Manus Next Limitless",
+    description: "Unlimited reasoning and execution. No token, turn, or continuation limits.",
+    icon: Infinity,
+    tier: "limitless",
+  },
   {
     id: "manus-next-max",
     name: "Manus Next Max",
@@ -124,6 +131,8 @@ export default function ModelSelector({
                     key={model.id}
                     onClick={() => {
                       onModelChange?.(model.id);
+                      // Persist model selection → agent mode mapping to localStorage
+                      try { localStorage.setItem("manus-agent-mode", MODEL_TO_MODE[model.id] || "quality"); } catch {}
                       setOpen(false);
                     }}
                     className={cn(
@@ -147,6 +156,11 @@ export default function ModelSelector({
                         <span className="text-sm font-semibold text-foreground">
                           {model.name}
                         </span>
+                        {model.tier === "limitless" && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium border border-amber-500/20">
+                            ∞
+                          </span>
+                        )}
                         {model.tier === "max" && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">
                             Pro
@@ -167,5 +181,13 @@ export default function ModelSelector({
     </div>
   );
 }
+
+/** Map ModelSelector model IDs to agent execution modes */
+export const MODEL_TO_MODE: Record<string, string> = {
+  "manus-next-limitless": "limitless",
+  "manus-next-max": "max",
+  "manus-next-standard": "quality",
+  "manus-next-lite": "speed",
+};
 
 export { MODELS };

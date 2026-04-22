@@ -63,7 +63,13 @@ export default function Home() {
   let { user, loading: _loading, error: _error, isAuthenticated } = useAuth();
 
   const [input, setInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("manus-next-max");
+  const [selectedModel, setSelectedModel] = useState(() => {
+    try {
+      const stored = localStorage.getItem("manus-selected-model");
+      if (stored) return stored;
+    } catch {}
+    return "manus-next-max";
+  });
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [, navigate] = useLocation();
   const { createTask } = useTask();
@@ -192,7 +198,10 @@ export default function Home() {
       <div className="sticky top-0 z-20 flex items-center justify-between px-4 md:px-6 py-3 bg-background/80 backdrop-blur-sm">
         <ModelSelector
           selectedModelId={selectedModel}
-          onModelChange={setSelectedModel}
+          onModelChange={(modelId) => {
+            setSelectedModel(modelId);
+            try { localStorage.setItem("manus-selected-model", modelId); } catch {}
+          }}
           compact
         />
         <button
