@@ -46,10 +46,10 @@ describe("Continuation Fix — Early Termination Bug", () => {
       expect(agentStreamSrc).not.toMatch(/wantsContinuous && \(asksUser \|\| turn <= 3\)/);
     });
 
-    it("continues based on unused tools remaining, not turn count", () => {
-      // New logic: if (wantsContinuous && turn < maxTurns - 2) + unusedTools.length > 0
+    it("continues based on undemonstrated capability groups remaining", () => {
+      // New logic: tracks 10 Manus-parity capability groups
       expect(agentStreamSrc).toContain("wantsContinuous && turn < maxTurns - 2");
-      expect(agentStreamSrc).toContain("unusedTools.length > 0");
+      expect(agentStreamSrc).toContain("undemonstrated.length > 0");
     });
 
     it("tracks used tools across the full conversation", () => {
@@ -63,14 +63,14 @@ describe("Continuation Fix — Early Termination Bug", () => {
       expect(agentStreamSrc).toContain("const unusedTools = allToolNames.filter(t => !usedTools.has(t))");
     });
 
-    it("injects continuation prompt with remaining tool count", () => {
-      expect(agentStreamSrc).toMatch(/Continue demonstrating.*tools remaining/);
+    it("injects continuation prompt with capability group progress", () => {
+      expect(agentStreamSrc).toMatch(/Continue demonstrating.*capability groups/);
       expect(agentStreamSrc).toContain("Do NOT ask what to do next");
     });
 
-    it("truncates long tool lists in continuation prompt (max 8 shown)", () => {
-      expect(agentStreamSrc).toContain("unusedTools.slice(0, 8)");
-      expect(agentStreamSrc).toMatch(/and \$\{unusedTools\.length - 8\} more/);
+    it("tracks 10 Manus-parity capability groups", () => {
+      expect(agentStreamSrc).toContain("CAPABILITY_GROUPS");
+      expect(agentStreamSrc).toContain("completing 9/10 is a FAILURE");
     });
   });
 
@@ -79,12 +79,12 @@ describe("Continuation Fix — Early Termination Bug", () => {
       expect(agentStreamSrc).toContain("numberedListMatch = textContent.match(/(\\d+)\\.\\s+\\w/g)");
     });
 
-    it("detects when LLM stops mid-enumeration (e.g., stops at #2 of 22)", () => {
-      expect(agentStreamSrc).toContain("lastNumber > 0 && lastNumber < 22");
+    it("detects when LLM stops mid-enumeration (e.g., stops at #5 of 10)", () => {
+      expect(agentStreamSrc).toContain("lastNumber > 0 && lastNumber < 10");
     });
 
     it("counts unique capability mentions to avoid false positives", () => {
-      expect(agentStreamSrc).toContain("uniqueMentioned.size < 15");
+      expect(agentStreamSrc).toContain("uniqueMentioned.size < 8");
     });
 
     it("injects continuation from the correct number", () => {

@@ -918,9 +918,9 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">Saved cookies</p>
                   <div className="bg-muted/30 rounded-lg p-4 text-center">
-                    <Globe className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <Globe className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
                     <p className="text-xs text-muted-foreground">No saved cookies yet</p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                    <p className="text-[10px] text-muted-foreground/70 mt-1">
                       Cookies will appear here after the agent logs into websites
                     </p>
                   </div>

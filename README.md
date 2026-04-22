@@ -28,6 +28,7 @@ An open-source autonomous AI agent platform. Research, code, analyze, and create
 | **Cost Visibility** | Per-task estimated cost indicator in task header |
 | **Keyboard Shortcuts** | Global shortcuts (Cmd+K, Cmd+N, Cmd+/, Cmd+Shift+S, Escape) |
 | **PWA Installable** | Web App Manifest for mobile/desktop installation |
+| **Voice Streaming** | Real-time mic → STT → LLM → TTS conversational pipeline via WebSocket |
 | **Bridge Integration** | WebSocket connection to Manus Next Hybrid backend |
 | **Stripe Payments** | Subscription billing with checkout, webhooks, and product management |
 | **Connector Ecosystem** | 8 connectors (Slack, GitHub, Google, Notion, Zapier, MCP, Webhooks, Email) |
@@ -89,6 +90,7 @@ client/src/
 
 server/
   agentStream.ts  -> SSE agentic loop with tool calling + anti-premature-completion
+  voiceStream.ts  -> §L.35 real-time voice streaming WebSocket pipeline
   agentTools.ts   -> Tool definitions and executors (14 tools)
   scheduler.ts    -> Server-side task scheduler (60s polling loop)
   memoryExtractor.ts -> LLM-powered memory auto-extraction
@@ -156,11 +158,11 @@ drizzle/
 ## Testing
 
 ```bash
-pnpm test                    # Run all 246 tests
+pnpm test                    # Run all 1231 tests
 npx tsc --noEmit             # TypeScript type check
 ```
 
-**Test coverage:** 246 tests across 14 test files covering routers, agent tools, streaming, features, bridge, preferences, parity, Stripe integration, connector OAuth, and agent behavior.
+**Test coverage:** 1231 tests across 53 test files covering routers, agent tools, streaming, features, bridge, preferences, parity, Stripe integration, connector OAuth, agent behavior, voice streaming, scheduling, design studio, app builder, and more.
 
 ---
 

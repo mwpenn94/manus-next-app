@@ -133,6 +133,7 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let receivedDone = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -140,8 +141,16 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
         const text = decoder.decode(value, { stream: true });
         const lines = text.split("\n");
         for (const line of lines) {
+          if (line.includes('"done"')) receivedDone = true;
           parseSSELine(line, callbacks);
         }
+      }
+
+      // If the stream ended without a done event, the server may have closed prematurely.
+      // Log it but don't retry — the server-side finish_reason=length handler should
+      // have auto-continued. The stream just ended normally after all turns.
+      if (!receivedDone) {
+        console.warn("[streamWithRetry] Stream closed without receiving done event");
       }
 
       // Stream completed successfully — no retry needed

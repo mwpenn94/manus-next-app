@@ -1089,7 +1089,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <NetworkBanner />
 
         {/* Page content */}
-        <main className="flex-1 overflow-hidden pb-14 md:pb-0">{children}</main>
+        <main className="flex-1 overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">{children}</main>
       </div>
 
       {/* Mobile Bottom Navigation */}

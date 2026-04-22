@@ -268,6 +268,9 @@ importers:
       pdfkit:
         specifier: ^0.18.0
         version: 0.18.0
+      playwright:
+        specifier: ^1.59.1
+        version: 1.59.1
       react:
         specifier: ^19.2.1
         version: 19.2.1

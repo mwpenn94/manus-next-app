@@ -193,6 +193,30 @@ When the user asks you to demonstrate, show, or perform multiple tasks:
 - Only stop when ALL requested items are complete
 - If the user says "demonstrate each", "show all", "go until done", or similar, this means: execute every tool/capability one after another without waiting for further input
 
+## DEMONSTRATE EACH — MANUS PARITY PROTOCOL
+
+When asked "What can you do? Demonstrate each" or similar, you MUST demonstrate ALL of the following capability groups. Each demonstration must produce **presentation-quality output** — not just a trivial example. Group related tools together as a single capability:
+
+1. **Web Search & Research** — Search for a real, current topic and present structured findings with sources. Use web_search + read_webpage together.
+2. **Code Execution** — Write and execute a non-trivial code snippet (algorithm, data processing, or calculation). Show the actual code AND its output.
+3. **Image Generation** — Generate a creative, detailed image. Describe what you're creating and display the result inline.
+4. **Data Analysis** — Analyze a real or generated dataset. Produce insights with specific numbers, patterns, or trends.
+5. **Document Generation** — Create a professional document (report, guide, or plan) with proper structure, sections, and depth.
+6. **Web Browsing** — Navigate to a real URL and extract structured content. Present the findings in a formatted summary.
+7. **Wide Research** — Run parallel multi-query research on a complex topic. Synthesize findings from multiple angles into a unified analysis.
+8. **Slide Generation** — Create a presentation on a topic with multiple slides, proper structure, and visual design.
+9. **Email** — Compose and send a professional email demonstrating formatting and clear communication.
+10. **App Building** — Scaffold a web application, create files, and show the live preview. Use create_webapp + create_file together.
+
+CRITICAL RULES FOR DEMONSTRATE EACH:
+- You MUST complete ALL 10 capability groups — completing 9/10 is a FAILURE
+- Each demonstration must produce REAL output (actual search results, actual generated image, actual code output)
+- Do NOT just describe what you could do — ACTUALLY DO IT
+- Do NOT ask for permission between demonstrations — proceed automatically
+- Number each demonstration clearly: "## 1. Web Search & Research", "## 2. Code Execution", etc.
+- After completing all 10, provide a summary table showing what was demonstrated
+- If any tool fails, note the failure and move to the next — do NOT stop the entire sequence
+
 ## ANTI-AUTO-DEMONSTRATION (CRITICAL)
 
 Do NOT autonomously run through tools to "demonstrate" or "showcase" capabilities unless the user EXPLICITLY asks you to demonstrate tools. Specifically:
@@ -420,6 +444,55 @@ You are operating at MAXIMUM capability. This mode exists specifically because t
       const toolCalls = assistantMessage.tool_calls;
       const textContent = typeof assistantMessage.content === "string" ? assistantMessage.content : "";
 
+      // AUTO-CONTINUE ON TOKEN LIMIT: If finish_reason is "length", the LLM hit its
+      // output token limit mid-response. Stream what we have and auto-continue.
+      if (choice.finish_reason === "length" && turn < maxTurns - 1) {
+        console.log(`[Agent] finish_reason=length on turn ${turn}/${maxTurns} — auto-continuing`);
+        // Stream any partial text
+        if (textContent) {
+          const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
+          const chunks = textContent.match(sentencePattern) || [textContent];
+          const captured = chunks.join("");
+          if (captured.length < textContent.length) {
+            chunks.push(textContent.slice(captured.length));
+          }
+          for (const chunk of chunks) {
+            if (!sendSSE(safeWrite, { delta: chunk })) return;
+          }
+          finalContent += textContent;
+        }
+        // If there were tool calls, execute them first
+        if (toolCalls && toolCalls.length > 0) {
+          conversation.push({
+            role: "assistant",
+            content: textContent || "",
+            tool_calls: toolCalls,
+          } as any);
+          totalToolCalls += toolCalls.length;
+          sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
+          for (const toolCall of toolCalls) {
+            const tn = toolCall.function.name;
+            const ta = toolCall.function.arguments || "{}";
+            let pa: any = {};
+            try { pa = JSON.parse(ta); } catch { pa = {}; }
+            sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
+            const result: ToolResult = await executeTool(tn, ta);
+            sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: result.result.slice(0, 500), url: result.url } });
+            completedToolCalls++;
+            sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
+            conversation.push({ role: "tool", content: result.result, tool_call_id: toolCall.id, name: tn } as any);
+          }
+        } else {
+          // No tool calls — just add the partial text and prompt to continue
+          conversation.push({ role: "assistant", content: textContent || "" });
+        }
+        conversation.push({
+          role: "user",
+          content: "Your response was cut off due to length. Continue EXACTLY where you left off — do not repeat what you already said. Pick up mid-sentence if needed and complete the remaining work.",
+        });
+        continue;
+      }
+
       // Check if we should nudge for deeper research BEFORE streaming text
       const shouldNudge = (!toolCalls || toolCalls.length === 0) 
         && usedWebSearch && !usedReadWebpage && !nudgedForDeepResearch && turn <= 3;
@@ -546,7 +619,7 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           continue;
         }
         
-        // Auto-continue if: user wants continuous work AND (LLM is asking what to do next OR there are unused tools remaining)
+        // Auto-continue if: user wants continuous work AND capability groups remain undemonstrated
         if (wantsContinuous && turn < maxTurns - 2) {
           // Track which tools have been used so far
           const usedTools = new Set<string>();
@@ -557,16 +630,36 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           const allToolNames = AGENT_TOOLS.map(t => t.function.name);
           const unusedTools = allToolNames.filter(t => !usedTools.has(t));
           
-          // Continue if: (a) LLM is asking what to do next, OR (b) there are still unused tools to demonstrate
-          const shouldContinue = asksUser || unusedTools.length > 0;
+          // Map tools to 10 Manus-parity capability groups
+          const CAPABILITY_GROUPS: Record<string, string[]> = {
+            "Web Search & Research": ["web_search", "read_webpage"],
+            "Code Execution": ["execute_code"],
+            "Image Generation": ["generate_image"],
+            "Data Analysis": ["analyze_data"],
+            "Document Generation": ["generate_document"],
+            "Web Browsing": ["browse_web"],
+            "Wide Research": ["wide_research"],
+            "Slide Generation": ["generate_slides"],
+            "Email": ["send_email"],
+            "App Building": ["create_webapp", "create_file", "edit_file"],
+          };
           
-          if (shouldContinue && unusedTools.length > 0) {
-            console.log(`[Agent] Auto-continuing: ${unusedTools.length} unused tools remain, turn ${turn}/${maxTurns}`);
-            // Inject continuation prompt
+          // A group is "demonstrated" if at least one of its tools has been used
+          const demonstratedGroups = Object.entries(CAPABILITY_GROUPS)
+            .filter(([_, tools]) => tools.some(t => usedTools.has(t)))
+            .map(([name]) => name);
+          const undemonstrated = Object.entries(CAPABILITY_GROUPS)
+            .filter(([_, tools]) => !tools.some(t => usedTools.has(t)))
+            .map(([name]) => name);
+          
+          const shouldContinue = asksUser || undemonstrated.length > 0;
+          
+          if (shouldContinue && undemonstrated.length > 0) {
+            console.log(`[Agent] Auto-continuing: ${demonstratedGroups.length}/10 groups done, ${undemonstrated.length} remaining, turn ${turn}/${maxTurns}`);
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({
               role: "user",
-              content: `Continue demonstrating. You have ${unusedTools.length} tools remaining: ${unusedTools.slice(0, 8).join(", ")}${unusedTools.length > 8 ? ` and ${unusedTools.length - 8} more` : ""}. Demonstrate the next one now. Do NOT ask what to do next — just proceed immediately.`,
+              content: `Continue demonstrating. You have completed ${demonstratedGroups.length}/10 capability groups. Remaining groups: ${undemonstrated.join(", ")}. Demonstrate the next group now — completing 9/10 is a FAILURE, you MUST reach 10/10. Do NOT ask what to do next — just proceed immediately.`,
             });
             sendSSE(safeWrite, { delta: "\n\n" });
             continue;
@@ -581,8 +674,8 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           const mentionedCapabilities = textContent.match(/\b(web.?search|read.?webpage|generate.?image|analyze.?data|generate.?document|browse.?web|wide.?research|generate.?slides|send.?email|meeting.?notes|design.?canvas|cloud.?browser|screenshot.?verify|execute.?code|create.?webapp|create.?file|edit.?file|read.?file|list.?files|install.?deps|run.?command|git.?operation)\b/gi);
           const uniqueMentioned = new Set((mentionedCapabilities || []).map(c => c.toLowerCase()));
           
-          // If the response lists capabilities but hasn't demonstrated them all, and the user asked to demonstrate each
-          if (wantsContinuous && lastNumber > 0 && lastNumber < 22 && uniqueMentioned.size < 15) {
+          // If the response lists capabilities but hasn't demonstrated all 10 groups, and the user asked to demonstrate each
+          if (wantsContinuous && lastNumber > 0 && lastNumber < 10 && uniqueMentioned.size < 8) {
             console.log(`[Agent] Mid-enumeration continuation: listed up to #${lastNumber}, only ${uniqueMentioned.size} unique capabilities mentioned`);
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({
@@ -735,9 +828,15 @@ Do NOT produce a final answer yet. Research more deeply first.`,
         });
       }
 
-      // If finish_reason is "stop", the LLM is done even with tool calls
-      if (choice.finish_reason === "stop" && !toolCalls.length) {
+      // If finish_reason is "stop" and no pending tool calls, the LLM is done
+      if (choice.finish_reason === "stop" && (!toolCalls || !toolCalls.length)) {
         break;
+      }
+      // Safety: if finish_reason is "length" at this point (shouldn't reach here due to
+      // the earlier handler, but just in case), don't break — let the loop continue
+      if (choice.finish_reason === "length") {
+        console.log(`[Agent] Late finish_reason=length catch on turn ${turn}/${maxTurns}`);
+        continue;
       }
     }
 
