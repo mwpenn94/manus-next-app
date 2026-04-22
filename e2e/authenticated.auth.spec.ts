@@ -157,7 +157,7 @@ test.describe("Authenticated: Protected API Endpoints", () => {
   });
 
   test("user preferences endpoint works", async ({ request }) => {
-    const response = await request.get("/api/trpc/user.getPreferences");
+    const response = await request.get("/api/trpc/preferences.get");
     // Should return 200 (with data or empty preferences)
     expect(response.ok()).toBeTruthy();
   });

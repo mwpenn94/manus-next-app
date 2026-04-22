@@ -1111,17 +1111,24 @@ Do NOT produce a final answer yet. Research more deeply first.`,
   } catch (err: any) {
     console.error("[Agent] Error:", err);
     let userMessage = err.message || "Agent execution failed";
+    let retryable = false;
     // Provide user-friendly error messages for common failure modes
     if (err.code === "ETIMEDOUT" || err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
       userMessage = "The request timed out. Please try again with a simpler query or switch to Speed mode.";
+      retryable = true;
+    } else if (err.status >= 500 || err.message?.includes("500") || err.message?.includes("bad response from upstream") || err.message?.includes("Internal Server Error")) {
+      userMessage = "The AI service encountered a temporary error. This usually resolves on its own \u2014 please try again.";
+      retryable = true;
     } else if (err.status === 429 || err.message?.includes("rate limit") || err.message?.includes("Rate limit")) {
       userMessage = "Rate limit reached. Please wait a moment before sending another message.";
+      retryable = true;
     } else if (err.status === 401 || err.status === 403 || err.message?.includes("unauthorized") || err.message?.includes("Unauthorized")) {
       userMessage = "Authentication expired. Please refresh the page and log in again.";
     } else if (err.message?.includes("ECONNREFUSED")) {
       userMessage = "Unable to connect to the AI service. Please try again in a moment.";
+      retryable = true;
     }
-    sendSSE(safeWrite, { error: userMessage });
+    sendSSE(safeWrite, { error: userMessage, retryable });
     safeEnd();
   }
 }

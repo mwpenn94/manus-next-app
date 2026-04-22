@@ -2083,7 +2083,7 @@
 - [x] Add Limitless tier to header model selector dropdown (4th option with ∞ badge, amber styling)
 - [x] Fix color contrast error 1: muted-foreground boosted from oklch(0.63) → oklch(0.78) in dark theme
 - [x] Fix color contrast error 2: secondary-foreground boosted to oklch(0.80), sidebar-foreground to oklch(0.78)
-- [ ] Set up authenticated E2E test harness with stored session cookies for Playwright
+- [x] Set up authenticated E2E test harness with stored session cookies for Playwright
 - [x] Wire ModelSelector ↔ agentMode bidirectional sync in TaskView (onModelChange → setAgentMode + localStorage)
 - [x] Wire ModeToggle onChange to persist mode to localStorage
 - [x] Home.tsx reads/writes selectedModel to localStorage for cross-page persistence
@@ -2124,3 +2124,16 @@
 - [x] Root cause: @axe-core/react runs during opacity 0->1 animation, computing intermediate contrast
 - [x] Fix: increased axe-core debounce from 1000ms to 3000ms so it runs after all animations complete
 - [x] Verified: axe-core programmatic scan (Playwright) finds 0 violations on fully-loaded page
+
+## Bug Fix: LLM 500 Error on Long Prompts
+- [ ] Fix: LLM invoke fails with 500 "received bad response from upstream" on long D&D campaign prompt (~4000 tokens)
+- [ ] Add retry logic with exponential backoff for transient 500 errors from upstream LLM
+- [ ] Add user-friendly error message with "Retry" button instead of raw error dump
+- [ ] Add prompt length validation/warning for extremely long inputs
+- [ ] Test error recovery flow end-to-end
+
+## Bug Fix: E2E Test Failures
+- [x] Fix auth.setup.ts cookie sharing bug — use page.request.post() + manual addCookies() with sameSite: Lax
+- [x] Fix authenticated.auth.spec.ts endpoint — change user.getPreferences to preferences.get
+- [x] All 12 authenticated E2E tests passing (user profile, model selector, task creation, settings, billing, protected APIs)
+- [x] All 1,387 vitest tests still passing (no regressions)

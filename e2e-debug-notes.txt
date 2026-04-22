@@ -1,0 +1,9 @@
+E2E Debug Notes:
+1. First attempt: 403 CloudFront error on page.goto("/") - this is a transient network issue
+2. Retry succeeded: page loaded correctly
+3. Cookie injection via addCookies() works (log shows "Manually injected cookie")
+4. BUT: context.cookies() returns empty after addCookies() - the cookie is being rejected
+5. Possible cause: sameSite: "None" requires secure: true, but we set secure: false for localhost
+6. Fix: Use sameSite: "Lax" instead of "None" for localhost, or don't set sameSite at all
+7. The test still passed on retry because page.request.post() DID set the cookie via the HTTP layer
+8. The storageState saved empty cookies because context.cookies() filters by current page URL

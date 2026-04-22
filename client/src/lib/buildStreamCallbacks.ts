@@ -26,6 +26,7 @@ export interface StreamStateSetters {
   taskId: string;
   addMessage?: (taskId: string, msg: any) => void;
   setIsReconnecting?: (reconnecting: boolean) => void;
+  setLastErrorRetryable?: (retryable: boolean) => void;
 }
 
 export function buildStreamCallbacks(
@@ -97,10 +98,18 @@ export function buildStreamCallbacks(
     onStepProgress: (progress: any) => {
       setters.setStepProgress(progress);
     },
-    onError: (error: string) => {
-      state.accumulated += `\n\n⚠️ ${error}`;
+    onError: (error: string, retryable?: boolean) => {
+      if (retryable) {
+        state.accumulated += `\n\n\u26a0\ufe0f ${error}\n\nYou can try sending your message again.`;
+      } else {
+        state.accumulated += `\n\n\u26a0\ufe0f ${error}`;
+      }
       setters.accumulatedRef.current = state.accumulated;
       setters.setStreamContent(state.accumulated);
+      // Signal the retryable state to TaskView so it can show a Retry button
+      if (retryable && setters.setLastErrorRetryable) {
+        setters.setLastErrorRetryable(true);
+      }
     },
     onReconnecting: (attempt: number, maxRetries: number) => {
       // Signal reconnecting state to the presence indicator

@@ -267,6 +267,19 @@ const normalizeResponseFormat = ({
   };
 };
 
+// Maximum retry attempts for transient errors (5xx, network failures)
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 1000;
+
+/**
+ * Determines whether an error is transient and worth retrying.
+ * Retries on: 500, 502, 503, 504 (upstream failures), and network errors.
+ * Does NOT retry on: 400, 401, 403, 404, 429 (client errors / rate limits).
+ */
+function isTransientError(status: number): boolean {
+  return status >= 500 && status <= 599;
+}
+
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   assertApiKey();
 
@@ -333,21 +346,86 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetch(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const apiUrl = resolveApiUrl();
+  const headers = {
+    "content-type": "application/json",
+    authorization: `Bearer ${ENV.forgeApiKey}`,
+  };
+  const body = JSON.stringify(payload);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers,
+        body,
+      });
+
+      if (response.ok) {
+        return (await response.json()) as InvokeResult;
+      }
+
+      const errorText = await response.text();
+      const status = response.status;
+
+      // For transient errors, retry with exponential backoff
+      if (isTransientError(status) && attempt < MAX_RETRIES) {
+        const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        console.warn(
+          `[LLM] Transient error ${status} on attempt ${attempt + 1}/${MAX_RETRIES + 1}, ` +
+          `retrying in ${backoffMs}ms: ${errorText.slice(0, 200)}`
+        );
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        lastError = new LLMError(
+          `LLM invoke failed: ${status} ${response.statusText} \u2013 ${errorText}`,
+          status,
+          true
+        );
+        continue;
+      }
+
+      // Non-transient error or exhausted retries
+      throw new LLMError(
+        `LLM invoke failed: ${status} ${response.statusText} \u2013 ${errorText}`,
+        status,
+        isTransientError(status)
+      );
+    } catch (err: any) {
+      // Network-level errors (ECONNREFUSED, ETIMEDOUT, etc.)
+      if (err instanceof LLMError) throw err;
+
+      if (attempt < MAX_RETRIES) {
+        const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        console.warn(
+          `[LLM] Network error on attempt ${attempt + 1}/${MAX_RETRIES + 1}, ` +
+          `retrying in ${backoffMs}ms: ${err.message}`
+        );
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        lastError = err;
+        continue;
+      }
+
+      throw err;
+    }
   }
 
-  return (await response.json()) as InvokeResult;
+  // Should not reach here, but safety net
+  throw lastError || new Error("LLM invoke failed after all retries");
+}
+
+/**
+ * Extended Error class for LLM failures with status code and retry metadata.
+ */
+export class LLMError extends Error {
+  status: number;
+  retryable: boolean;
+
+  constructor(message: string, status: number, retryable: boolean) {
+    super(message);
+    this.name = "LLMError";
+    this.status = status;
+    this.retryable = retryable;
+  }
 }
