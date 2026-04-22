@@ -74,9 +74,50 @@ function autoCategory(fileName: string, content: string): string {
 
 /** Parse file content into key-value memory entries */
 async function parseFileToEntries(file: File): Promise<Array<{ key: string; value: string }>> {
-  const text = await file.text();
   const entries: Array<{ key: string; value: string }> = [];
   const baseName = file.name.replace(/\.[^.]+$/, "");
+
+  // Handle PDFs via server-side extraction (binary files can't use file.text())
+  if (file.name.endsWith(".pdf") || file.type === "application/pdf") {
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+    );
+    try {
+      const response = await fetch("/api/trpc/library.extractPdfFromUpload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ json: { base64, fileName: file.name } }),
+      });
+      if (!response.ok) throw new Error("PDF extraction failed");
+      const data = await response.json();
+      const result = data?.result?.data?.json || data?.result?.data || data;
+      const pdfText = result?.text || "";
+      if (pdfText) {
+        // Split PDF text into sections by page markers or paragraphs
+        const sections = pdfText.split(/\n-- \d+ of \d+ --\n/).filter((s: string) => s.trim());
+        if (sections.length > 1) {
+          sections.forEach((section: string, i: number) => {
+            const firstLine = section.trim().split("\n")[0]?.slice(0, 80) || `Page ${i + 1}`;
+            entries.push({
+              key: `${baseName} — ${firstLine}`.slice(0, 500),
+              value: section.trim().slice(0, 5000),
+            });
+          });
+        } else {
+          entries.push({ key: baseName, value: pdfText.slice(0, 5000) });
+        }
+      } else {
+        entries.push({ key: baseName, value: "[PDF text extraction returned empty — the PDF may contain only images or scanned content]" });
+      }
+    } catch (err) {
+      entries.push({ key: baseName, value: `[Failed to extract PDF text: ${err instanceof Error ? err.message : "Unknown error"}]` });
+    }
+    return entries.length > 0 ? entries : [{ key: baseName, value: "[Empty PDF]" }];
+  }
+
+  const text = await file.text();
 
   if (file.name.endsWith(".json")) {
     try {

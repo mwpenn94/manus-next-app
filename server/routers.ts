@@ -2634,6 +2634,28 @@ Provide a JSON response with this exact structure:
         const { getUserLibraryFiles } = await import("./db");
         return getUserLibraryFiles(ctx.user.id, input);
       }),
+
+    /** Extract text from a PDF file (by URL) */
+    extractPdfText: protectedProcedure
+      .input(z.object({
+        url: z.string().url(),
+      }))
+      .mutation(async ({ input }) => {
+        const { extractTextFromPdfUrl } = await import("./pdfExtraction");
+        return extractTextFromPdfUrl(input.url);
+      }),
+
+    /** Extract text from an uploaded PDF (base64 encoded) */
+    extractPdfFromUpload: protectedProcedure
+      .input(z.object({
+        base64: z.string(),
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { extractTextFromPdfBuffer } = await import("./pdfExtraction");
+        const buffer = Buffer.from(input.base64, "base64");
+        return extractTextFromPdfBuffer(buffer);
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

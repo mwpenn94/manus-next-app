@@ -36,6 +36,8 @@ import {
   CheckSquare,
   Square,
   Package,
+  BookOpen,
+  FileSearch,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -130,6 +132,91 @@ function guessExtension(item: any): string {
     if (item.artifactType === "document_docx") return ".docx";
   }
   return "";
+}
+
+// ── PDF Preview Panel with Text Extraction ──
+function PdfPreviewPanel({ url }: { url: string }) {
+  const [mode, setMode] = useState<"embed" | "text">("embed");
+  const [extractedText, setExtractedText] = useState<string | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [pdfMeta, setPdfMeta] = useState<{ numPages: number; title?: string; author?: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const extractMut = trpc.library.extractPdfText.useMutation();
+
+  const handleExtract = useCallback(async () => {
+    setExtracting(true);
+    setError(null);
+    try {
+      const result = await extractMut.mutateAsync({ url });
+      setExtractedText(result.text);
+      setPdfMeta({ numPages: result.numPages, title: result.metadata.title, author: result.metadata.author });
+      setMode("text");
+    } catch (err: any) {
+      setError(err.message || "Failed to extract text from PDF");
+    } finally {
+      setExtracting(false);
+    }
+  }, [url, extractMut]);
+
+  return (
+    <div className="flex flex-col h-[70vh]">
+      {/* Tab bar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border shrink-0">
+        <button
+          onClick={() => setMode("embed")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+            mode === "embed" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+          )}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          PDF View
+        </button>
+        <button
+          onClick={() => extractedText ? setMode("text") : handleExtract()}
+          disabled={extracting}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+            mode === "text" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+            extracting && "opacity-50 cursor-wait"
+          )}
+        >
+          {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookOpen className="w-3.5 h-3.5" />}
+          {extracting ? "Extracting..." : "Read as Text"}
+        </button>
+        {pdfMeta && (
+          <span className="ml-auto text-[11px] text-muted-foreground">
+            {pdfMeta.numPages} page{pdfMeta.numPages !== 1 ? "s" : ""}
+            {pdfMeta.title ? ` · ${pdfMeta.title}` : ""}
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      {error && (
+        <div className="px-4 py-3 bg-destructive/10 text-destructive text-sm">
+          {error}
+        </div>
+      )}
+      {mode === "embed" ? (
+        <iframe
+          src={url}
+          className="flex-1 w-full border-0"
+          title="PDF Preview"
+        />
+      ) : extractedText ? (
+        <div className="flex-1 overflow-auto">
+          <pre className="p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words bg-muted/20 min-h-full">
+            {extractedText}
+          </pre>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Click "Read as Text" to extract the PDF content</p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Preview Modal ──
@@ -244,12 +331,8 @@ function PreviewModal({ item, onClose }: { item: any; onClose: () => void }) {
                 {item.content || "No content available"}
               </pre>
             </div>
-          ) : hasUrl && item.mimeType?.includes("pdf") ? (
-            <iframe
-              src={item.url}
-              className="w-full h-[70vh] border-0"
-              title="PDF Preview"
-            />
+          ) : hasUrl && (item.mimeType?.includes("pdf") || item.artifactType === "document_pdf") ? (
+            <PdfPreviewPanel url={item.url} />
           ) : hasUrl ? (
             <div className="flex flex-col items-center justify-center p-8 gap-4 min-h-[200px]">
               <div className="w-16 h-16 rounded-xl bg-muted/50 flex items-center justify-center">

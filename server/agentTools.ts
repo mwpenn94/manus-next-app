@@ -1107,13 +1107,28 @@ async function executeWebSearchFallback(args: { query: string }): Promise<ToolRe
  */
 async function executeReadWebpage(args: { url: string }): Promise<ToolResult> {
   try {
-    // CHAT-004: Detect PDF links and provide helpful guidance
+    // CHAT-004: Real PDF text extraction from URLs
     const urlLower = args.url.toLowerCase();
     if (urlLower.endsWith(".pdf") || urlLower.includes("/pdf/") || urlLower.includes("type=pdf")) {
-      return {
-        success: false,
-        result: `The URL appears to be a PDF document. I cannot directly parse PDF files from URLs. To work with this PDF:\n1. If the user has the file, they can upload it via the attach button\n2. I can search for the same content in HTML format\n3. I can try browse_web to extract any available metadata from the hosting page\n\nURL: ${args.url}`,
-      };
+      try {
+        const { extractTextFromPdfUrl } = await import("./pdfExtraction");
+        const result = await extractTextFromPdfUrl(args.url);
+        const metaLines: string[] = [];
+        if (result.metadata.title) metaLines.push(`Title: ${result.metadata.title}`);
+        if (result.metadata.author) metaLines.push(`Author: ${result.metadata.author}`);
+        metaLines.push(`Pages: ${result.numPages}`);
+        if (result.truncated) metaLines.push(`[Note: Text was truncated to 100,000 characters]`);
+        const header = metaLines.length > 0 ? metaLines.join("\n") + "\n\n---\n\n" : "";
+        return {
+          success: true,
+          result: `${header}${result.text}`,
+        };
+      } catch (pdfErr: any) {
+        return {
+          success: false,
+          result: `Failed to extract text from PDF: ${pdfErr.message}\n\nURL: ${args.url}\n\nAlternatives:\n1. The user can upload the file via the attach button\n2. Search for the same content in HTML format`,
+        };
+      }
     }
 
     const content = await fetchPageContent(args.url, 12000);

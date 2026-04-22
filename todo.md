@@ -2375,3 +2375,60 @@
 - [x] WebAppProjectPage: Replace "Optimize with AI (Coming Soon)" SEO button with real LLM SEO analysis
 - [x] SettingsPage:874: Replace "not yet available" capability toast with real capability status
 - [x] VideoGeneratorPage:118: Replace "Premium providers will be available" with real provider detection
+
+## Session 6b — Deep User Story Validation: GitHub → Preview → Manage → Publish
+
+### Phase 1: Reference Material Review
+- [x] Read Manus study docs for webapp builder reference behavior
+- [x] Read v9 prompt sections on GitHub integration, preview, publish
+- [x] Document Manus baseline behavior for each step of the user story
+
+### Phase 2: Full Session Replay Execution
+- [ ] Step 1: Navigate to webapp builder as authenticated user
+- [ ] Step 2: Create a new webapp project
+- [ ] Step 3: Generate code via AI prompt
+- [ ] Step 4: Preview the generated app in-app (iframe)
+- [ ] Step 5: Navigate to project management page
+- [ ] Step 6: Connect GitHub repo (settings → GitHub tab)
+- [ ] Step 7: Update repo / push changes
+- [ ] Step 8: Configure project settings (general, domains, secrets, notifications)
+- [ ] Step 9: Deploy/publish the app
+- [ ] Step 10: Verify published app is accessible
+- [ ] Document each step with screenshots and observations
+
+### Phase 3: Parity Analysis
+- [ ] Compare each step against Manus reference behavior
+- [ ] Rate parity level for each step (FULL / PARTIAL / GAP / MISSING)
+- [ ] Identify root causes for each gap
+- [ ] Create parity matrix with Manus comparison
+
+### Phase 4: Fix Gaps
+- [ ] Fix all identified gaps from parity analysis
+- [ ] Write tests for fixes
+- [ ] Verify fixes in browser
+
+### Phase 5: Recursive Optimization Passes
+- [ ] ROP-1: Fresh comprehensive pass on the user story
+- [ ] ROP-2: Novel angle pass
+- [ ] ROP-3: Verification pass (3/3 clean target)
+
+### Phase 6: Expert Report
+- [ ] Create SESSION_REPLAY_REPORT.md with full documentation
+- [ ] Include step-by-step guide with screenshots
+- [ ] Include parity matrix
+- [ ] Include optimization recommendations by expert role
+- [ ] Include recursive pass results
+
+## Session 6c — PDF Reading Capability + Deep User Story Validation
+
+### PDF Reading Issue
+- [ ] Audit current document handling in the app (Library page, file upload, document viewer)
+- [x] Implement real PDF reading/viewing capability (upload PDF → extract text → display readable content)
+- [x] Ensure PDF text extraction works server-side (pdf-parse v2 PDFParse)
+- [x] Add PDF viewer component for in-app reading (PdfPreviewPanel with embed + text tabs)
+- [x] Write tests for PDF handling (9 tests in pdfExtraction.test.ts)
+
+### Session Replay Continuation
+- [ ] Complete Steps 2-10 of the user journey with screenshots and observations
+- [ ] Fix all gaps found during validation
+- [ ] Create comprehensive SESSION_REPLAY_REPORT.md
