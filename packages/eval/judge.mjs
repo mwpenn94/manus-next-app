@@ -16,6 +16,7 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'fs';
 import { join, basename } from 'path';
 import { config } from 'dotenv';
+import yaml from 'js-yaml';
 
 // Load env from project root
 config({ path: join(process.cwd(), '.env') });
@@ -211,8 +212,10 @@ async function getJudgeScore(shell) {
  * Score a single capability shell with 3 judge runs
  */
 async function scoreCapability(shellPath) {
-  const shell = JSON.parse(readFileSync(shellPath, 'utf-8'));
-  const shellName = basename(shellPath, '.json');
+  const raw = readFileSync(shellPath, 'utf-8');
+  const shell = shellPath.endsWith('.yaml') || shellPath.endsWith('.yml') ? yaml.load(raw) : JSON.parse(raw);
+  const ext = shellPath.endsWith('.yaml') ? '.yaml' : shellPath.endsWith('.yml') ? '.yml' : '.json';
+  const shellName = basename(shellPath, ext);
 
   // Three judge runs (cross-model voting per §L JUDGE_VARIANCE)
   const judgeA = await getJudgeScore(shell);
@@ -352,8 +355,8 @@ const args = process.argv.slice(2);
 
 if (args.includes('--all')) {
   console.log(`Scoring all shells (method: ${USE_SIMULATION ? 'simulation' : 'llm-judge'})...\n`);
-  const capFiles = readdirSync(CAP_DIR).filter(f => f.endsWith('.json'));
-  const orchFiles = readdirSync(ORCH_DIR).filter(f => f.endsWith('.json'));
+  const capFiles = readdirSync(CAP_DIR).filter(f => f.endsWith('.json') || f.endsWith('.yaml') || f.endsWith('.yml'));
+  const orchFiles = readdirSync(ORCH_DIR).filter(f => f.endsWith('.json') || f.endsWith('.yaml') || f.endsWith('.yml'));
   
   for (const f of capFiles) {
     const result = await scoreCapability(join(CAP_DIR, f));

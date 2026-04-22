@@ -2166,3 +2166,34 @@
 - [x] §L.28: Persona catalog verified — 32 personas, 6 categories, journey index, 8 sweep results, 6 live API tests
 - [x] Create all required §L.29 audit artifacts (7 artifacts: STUB_AUDIT, DEPENDENCY_AUDIT, OWNER_DOGFOOD, SIDE_EFFECT_VERIFICATIONS, TEST_TYPE_BREAKDOWN, STATUS_FRESHNESS_V9, V9_PARITY_REPORT)
 - [x] Push all changes to GitHub (commit f78c3091 confirmed on mwpenn94/manus-next-app main)
+
+## V9 Missing Artifacts — Round 2 (15 missing v9-NEW artifacts found)
+- [x] §L.34: Create OSS_PARITY_TOOLKIT.md — OSS catalog per §L subsection
+- [x] §L.34: Create PROPRIETARY_CHOICES_JUSTIFIED.md — every proprietary-over-OSS choice
+- [x] §L.37: Create MANUS_CANONICAL_CAPABILITIES.md — 16-capability table
+- [x] §L.37: Create OPERATIONAL_DISCIPLINES.md — 12 operational disciplines
+- [x] §L.37: Create MANUS_TOOL_SIGNATURES.md — per-capability tool signature matrix
+- [x] §L.37: Create EDITORIAL_COMMAND_CENTER.md — canonical design system spec
+- [x] §L.38: Create TEMPERATURE_LOG.md — per-pass temperature state
+- [x] §L.38: Create BRANCH_REGISTRY.md — named branches with status
+- [x] §L.38: Create SCORE_LEDGER.md — per-pass 1-10 scores
+- [x] §L.38: Create UNIVERSAL_OPTIMIZATION_V4.md — reference copy of v4 universal prompt
+- [x] §L.39: Create SEED_CONTEXT_READING_LOG.md — per-document summaries
+- [x] §L.39: Create SEED_CONTEXT_GAPS.md — unreachable Priority 2/3 documents
+- [x] §L.23: Create AUTOMATION_CONTEXT_AUDIT.md — Surface 6 bidirectional context flow
+- [x] §L.29: Create COMMIT_DENSITY_AUDIT.md — Step 0a-ter ≥10 commits/phase
+- [x] §7: Create GATE_A_TRUE_FINAL_REPORT.md — final gate report
+- [x] Run LLM judge live (not simulate) on benchmark tasks — 18/72 GREEN passing (all 18 implemented caps pass ≥0.80)
+- [x] Run live persona sweep on deployed app — 6.5/7 PASS (P23 accessibility PARTIAL — SPA renders proper DOM)
+- [x] Recursive convergence pass 1 — NO UPDATES (137 docs, 1387 tests, 0 TS errors, 0 hardcoded URLs, 4 legit console.logs)
+- [x] Recursive convergence pass 2 — NO UPDATES (API contracts verified, cross-artifact consistent, SSE is SPA catch-all not auth gap)
+- [x] Recursive convergence pass 3 — FOUND GAP: SCORING_REPORT.md missing from docs/parity/ (copied from eval/results). Counter reset to 0.
+- [ ] Push all changes to GitHub
+- [x] Recursive convergence pass 4 — FOUND GAP: 8 placeholder artifacts with only headers. Populated all 8. Counter reset to 0.
+- [x] Recursive convergence pass 5 — FOUND 5 GAPS: TIER_LAUNCHES distribution wrong (YELLOW=2 should be 12, RED=5 should be 32, N/A=47 should be 5), Launch History incomplete (10/18 GREEN), YELLOW_PROMOTION_TRACKER only 2/12 caps, TEST_TYPE_BREAKDOWN counts stale (60/1432 should be 57/1387), ESCALATE_DEPTH_LOG still PENDING. All fixed. Counter reset to 0.
+- [x] Recursive convergence pass 6 — FOUND 4 GAPS: V9_PARITY_REPORT stale test counts (1432→1387, 60→57, 48→13 E2E, 17/18→18/18), IN_APP_VALIDATION_IA2 stale counts. All fixed. Counter reset to 0.
+- [x] Recursive convergence pass 7 — CLEAN: 22 checks performed, 0 stale data, 0 broken links, 0 missing artifacts, 1387 tests passing, 0 TS errors. Counter: 1/3
+- [x] Recursive convergence pass 8 — FOUND 1 GAP: V9_PARITY_REPORT persona count claimed 32 but docs/parity has 30 (manus-study has 32). Fixed to show both. Counter reset to 0.
+- [x] Recursive convergence pass 9 — CLEAN: 15 novel checks (content depth, table alignment, bloat, empty sections, duplicates). 0 findings. Counter: 1/3
+- [x] Recursive convergence pass 10 — CLEAN: 15 cross-checks (all numbers match across all artifacts). 0 findings. Counter: 2/3
+- [x] Recursive convergence pass 11 — CLEAN: 10 final checks (tests, TS, YAML, results, stale numbers, headers, counter, PENDING/TBD). 0 findings. Counter: 3/3 — CONVERGENCE ACHIEVED

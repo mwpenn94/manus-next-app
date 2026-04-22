@@ -54,13 +54,13 @@ Existing verification log updated. All software-verifiable side effects confirme
 
 ### Step 0d: TEST_TYPE_BREAKDOWN
 
-**Result: COMPLETE — 1,432 tests across 60 files**
+**Result: COMPLETE — 1,387 vitest tests across 57 files + 13 Playwright E2E tests**
 
 | Type | Files | Tests | Percentage |
 |------|-------|-------|------------|
-| Unit | 42 | 927 | 64.7% |
-| Integration | 15 | 457 | 31.9% |
-| E2E (Playwright) | 3 | 48 | 3.4% |
+| Unit | 39 | 878 | 63.3% |
+| Integration | 16 | 496 | 35.8% |
+| E2E (Playwright) | 2 | 13 | 0.9% |
 
 The test pyramid is healthy with a strong unit test base, meaningful integration coverage, and targeted E2E validation of critical user journeys.
 
@@ -89,7 +89,7 @@ All source files modified within the last 48 hours. 57 commits in the last 2 day
 | Scoring report | 1 | `SCORING_REPORT.md` |
 | Benchmark catalog | 28 tasks | 8 categories |
 
-The judge.mjs scorer supports per-dimension scoring (correctness, completeness, robustness, performance, UX, cost, completeness), composite calculation, and EXCEED/MATCH/LAG verdicts. GREEN capabilities average 0.824 composite score with 17/18 passing the ≥0.8 threshold.
+The judge.mjs scorer supports per-dimension scoring (correctness, completeness, robustness, performance, UX, cost, completeness), composite calculation, and EXCEED/MATCH/LAG verdicts. GREEN capabilities average 0.824 composite score with 18/18 passing the ≥0.8 threshold.
 
 ---
 
@@ -99,7 +99,8 @@ The judge.mjs scorer supports per-dimension scoring (correctness, completeness, 
 
 | Metric | Value |
 |--------|-------|
-| Total personas | 32 |
+| Total personas (docs/parity) | 30 |
+| Total personas (manus-study) | 32 |
 | Categories | 6 |
 | Journey index | Present |
 | Sweep results | 8 JSON files |
@@ -126,7 +127,7 @@ Supporting registries: PERSONA_EXCEED_REGISTRY, PERSONA_ABANDONMENT_LOG, PERSONA
 |--------|-------|
 | Vitest tests passing | 1,387 |
 | Vitest test files | 57 |
-| Playwright E2E tests | 48 |
+| Playwright E2E tests | 13 |
 | TypeScript errors | 0 |
 | Axe-core violations | 0 |
 | Commits (last 48h) | 57 |
@@ -152,4 +153,4 @@ Supporting registries: PERSONA_EXCEED_REGISTRY, PERSONA_ABANDONMENT_LOG, PERSONA
 
 ## Conclusion
 
-The v9 state-aware parity prompt has been executed in full. All §L.29 false-positive elimination steps passed with zero findings. The §L.27 benchmark infrastructure is comprehensive with 67 capability definitions, a working judge scorer, and a 28-task benchmark catalog. The §L.28 persona catalog exceeds the ≥30 requirement with 32 personas across 6 categories, supported by journey infrastructure and live sweep results. The codebase maintains 1,387+ passing tests with zero TypeScript errors and zero accessibility violations.
+The v9 state-aware parity prompt has been executed in full. All §L.29 false-positive elimination steps passed with zero findings. The §L.27 benchmark infrastructure is comprehensive with 67 capability definitions, a working judge scorer, and a 28-task benchmark catalog. The §L.28 persona catalog meets the ≥30 requirement with 30 personas in docs/parity (32 in manus-study) across 6 categories, supported by journey infrastructure and live sweep results. The codebase maintains 1,387+ passing tests with zero TypeScript errors and zero accessibility violations.
