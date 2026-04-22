@@ -2,7 +2,7 @@ id: 26
 name: sandbox-runtime
 title: Sandbox Runtime
 category: browser-computer
-status: YELLOW
+status: GREEN
 task:
   prompt: Execute a Python script that calculates fibonacci numbers.
   expected_behavior: Code executed in sandbox, output returned.

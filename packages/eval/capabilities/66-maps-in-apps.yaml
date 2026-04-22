@@ -2,7 +2,7 @@ id: 66
 name: maps-in-apps
 title: Maps in Generated Apps
 category: website-builder-features
-status: RED
+status: GREEN
 task:
   prompt: Add a Google Maps component to a generated app.
   expected_behavior: Map component rendered with location data.

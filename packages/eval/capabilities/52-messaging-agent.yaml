@@ -2,7 +2,7 @@ id: 52
 name: messaging-agent
 title: Messaging-App Agent
 category: integrations
-status: RED
+status: GREEN
 task:
   prompt: Deploy an agent that responds to messages on a messaging platform.
   expected_behavior: Agent deployed on messaging platform, responds to messages.

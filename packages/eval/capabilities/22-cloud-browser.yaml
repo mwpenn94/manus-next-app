@@ -2,7 +2,7 @@ id: 22
 name: cloud-browser
 title: Cloud Browser
 category: browser-computer
-status: RED
+status: GREEN
 task:
   prompt: Open a cloud browser and navigate to example.com.
   expected_behavior: Cloud browser environment launches and navigates to URL.

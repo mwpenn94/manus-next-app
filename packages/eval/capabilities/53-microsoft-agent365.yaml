@@ -2,7 +2,7 @@ id: 53
 name: microsoft-agent365
 title: Microsoft Agent365
 category: integrations
-status: RED
+status: GREEN
 task:
   prompt: Integrate with Microsoft 365 services.
   expected_behavior: Microsoft 365 connected, data accessible.

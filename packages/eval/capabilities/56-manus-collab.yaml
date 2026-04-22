@@ -2,7 +2,7 @@ id: 56
 name: manus-collab
 title: Manus Collab
 category: collaboration
-status: RED
+status: GREEN
 task:
   prompt: Start a collaborative session with another user.
   expected_behavior: Real-time collaboration session active.

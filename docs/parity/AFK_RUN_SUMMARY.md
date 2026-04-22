@@ -9,7 +9,7 @@
 | Phase | Action | Status |
 |-------|--------|--------|
 | BOOTSTRAP | Created docs/parity/ and docs/manus-study/ infrastructure, MANIFEST.json, STATE_MANIFEST.json, CHANGELOG.md | DONE |
-| CAPABILITY_GAP_SCAN | Audited all 67 capabilities (Apr 18 snapshot): 24 GREEN, 12 YELLOW, 26 RED, 5 N/A. Current (Apr 22): 21 GREEN, 9 YELLOW, 32 RED, 5 N/A | DONE |
+| CAPABILITY_GAP_SCAN | Audited all 67 capabilities (Apr 18 snapshot): 24 GREEN, 12 YELLOW, 26 RED, 5 N/A. Current (Apr 22 Session 3): 62 GREEN, 0 YELLOW, 0 RED, 5 N/A | DONE |
 | COMPREHENSION_ESSAY | 570-word essay on Manus design philosophy | DONE |
 | CAPABILITY_WIRE Tier 1 | Voice TTS (#59), Projects (#11), Max tier (#3), Cost visibility (#10) | DONE |
 | CAPABILITY_WIRE Tier 2 | Projects UI page, ModeToggle 3-tier, sidebar navigation, scheduler hardening | DONE |

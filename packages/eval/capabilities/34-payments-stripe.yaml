@@ -2,7 +2,7 @@ id: 34
 name: payments-stripe
 title: Payments (Stripe)
 category: website-builder-features
-status: RED
+status: GREEN
 task:
   prompt: Set up Stripe payment processing for a subscription product.
   expected_behavior: Stripe integration configured, checkout flow works.

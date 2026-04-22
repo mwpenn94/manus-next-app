@@ -2,7 +2,7 @@ id: 65
 name: zapier-integration
 title: Zapier Integration
 category: integrations
-status: RED
+status: GREEN
 task:
   prompt: Create a Zapier automation that triggers on task completion.
   expected_behavior: Zapier webhook configured, automation triggers.

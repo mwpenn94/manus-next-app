@@ -1,0 +1,84 @@
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+Scoring all shells (method: llm-judge)...
+
+✓ Chat Mode: 0.833 (GREEN)
+✓ Agent Mode Long-Running: 0.810 (GREEN)
+✓ Max Tier Routing: 0.835 (GREEN)
+✓ Speed/Quality Mode Toggle: 0.800 (GREEN)
+✓ Wide Research: 0.807 (GREEN)
+✓ Cross-Session Memory: 0.810 (GREEN)
+✓ Task Sharing via Signed URL: 0.835 (GREEN)
+✓ Task Replay with Timeline Scrubber: 0.843 (GREEN)
+✓ Event Notifications: 0.802 (GREEN)
+✓ One-Shot Success Target: 0.843 (GREEN)
+✓ Projects: 0.802 (GREEN)
+✓ Manus Skills: 0.815 (GREEN)
+✗ Open-Standards Agent Skills: 0.770 (GREEN)
+✓ Project Skills: 0.815 (GREEN)
+✗ Design View: 0.758 (GREEN)
+✓ Manus Slides: 0.807 (GREEN)
+✓ Scheduled Tasks: 0.820 (GREEN)
+✗ Data Analysis & Visualization: 0.795 (GREEN)
+✓ Multimedia Processing: 0.802 (GREEN)
+✓ Mail Manus: 0.802 (GREEN)
+✓ Meeting Minutes: 0.810 (GREEN)
+✓ Cloud Browser: 0.815 (GREEN)
+✗ Browser Operator: 0.795 (GREEN)
+✓ Screenshot Verification: 0.813 (GREEN)
+✗ Computer Use: 0.795 (GREEN)
+✓ Sandbox Runtime: 0.813 (GREEN)
+✗ Full-Stack Web-App Creation: 0.755 (GREEN)
+✓ Live Preview with Direct Editing: 0.823 (GREEN)
+✓ Publishing Pipeline: 0.815 (GREEN)
+✓ Built-in AI Capabilities: 0.865 (GREEN)
+✓ Cloud Infrastructure: 0.835 (GREEN)
+✓ Access Control: 0.878 (GREEN)
+✓ Notifications for Creators: 0.800 (GREEN)
+✓ Payments (Stripe): 0.843 (GREEN)
+✓ Project Analytics: 0.843 (GREEN)
+✓ Custom Domains: 0.843 (GREEN)
+✓ Built-in SEO: 0.855 (GREEN)
+✓ Code Control: 0.843 (GREEN)
+✗ Import from Figma: 0.798 (GREEN)
+✓ Third-Party Integrations: 0.810 (GREEN)
+✓ GitHub Integration: 0.840 (GREEN)
+✗ App Publishing (Mobile): 0.770 (GREEN)
+✗ Mobile Development: 0.758 (GREEN)
+✗ Mobile App (Manus Client): 0.000 (N/A)
+✓ Mobile-Responsive Web UI: 0.840 (GREEN)
+✓ Desktop App: 0.805 (GREEN)
+✓ My Computer: 0.815 (GREEN)
+✓ Version Rollback: 0.847 (GREEN)
+✓ Connectors Framework: 0.840 (GREEN)
+  ⚠ Failed to parse LLM response for "MCP Protocol", falling back to simulation
+✗ MCP Protocol: 0.768 (GREEN)
+✗ Slack Integration: 0.790 (GREEN)
+✗ Messaging-App Agent: 0.750 (GREEN)
+✓ Microsoft Agent365: 0.815 (GREEN)
+✗ GoHighLevel: 0.000 (N/A)
+✗ Meta Ads Manager: 0.000 (N/A)
+✓ Manus Collab: 0.813 (GREEN)
+✗ Team Billing + Admin: 0.755 (GREEN)
+✓ Shared Session: 0.843 (GREEN)
+✓ Voice TTS: 0.805 (GREEN)
+✓ Voice STT + Hands-Free: 0.810 (GREEN)
+✓ Document Generation: 0.843 (GREEN)
+✓ Veo3 Video Generation: 0.817 (GREEN)
+✗ FINRA/SEC Compliance: 0.000 (N/A)
+✗ Rule 17a-4 WORM: 0.000 (N/A)
+✓ Zapier Integration: 0.843 (GREEN)
+✓ Maps in Generated Apps: 0.815 (GREEN)
+✓ Data API Capability: 0.813 (GREEN)
+✗ Multi-Tool Chain: 0.000
+✗ Error Recovery: 0.150
+✗ Mode Switching Mid-Task: 0.120
+✗ Memory Across Tasks: 0.000
+✗ Concurrent Tool Execution: 0.000
+
+
+Report: /home/ubuntu/manus-next-app/packages/eval/results/SCORING_REPORT.json
+Markdown: /home/ubuntu/manus-next-app/packages/eval/results/SCORING_REPORT.md
+
+Summary: 49/72 passing (68.1%)
+Average composite: 0.704
+Scoring method: llm-judge

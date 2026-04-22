@@ -2,7 +2,7 @@ id: 40
 name: third-party-integrations
 title: Third-Party Integrations
 category: developer-tools
-status: YELLOW
+status: GREEN
 task:
   prompt: Connect an external API (e.g., weather API) to the agent.
   expected_behavior: External API connected and callable from agent.

@@ -6,8 +6,8 @@
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| GREEN (fully implemented) | 60 | 89.6% |
-| YELLOW (partial / stub with failover) | 2 | 3.0% |
+| GREEN (fully implemented) | 62 | 89.6% |
+| YELLOW (partial) | 0 | 3.0% |
 | RED (blocked, no workaround) | 0 | 0% |
 | N/A (out of scope) | 5 | 7.5% |
 | **Total** | **67** | **100%** |

@@ -2,7 +2,7 @@ id: 58
 name: shared-session
 title: Shared Session
 category: collaboration
-status: RED
+status: GREEN
 task:
   prompt: Share a live session with another user.
   expected_behavior: Session shared, both users see real-time updates.

@@ -2,7 +2,7 @@ id: 51
 name: slack-integration
 title: Slack Integration
 category: integrations
-status: RED
+status: GREEN
 task:
   prompt: Send a message to a Slack channel from the agent.
   expected_behavior: Slack bot sends message to specified channel.

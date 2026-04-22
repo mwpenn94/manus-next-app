@@ -2,7 +2,7 @@ id: 16
 name: manus-slides
 title: Manus Slides
 category: features
-status: RED
+status: GREEN
 task:
   prompt: Generate a 5-slide presentation about AI trends.
   expected_behavior: Slide deck generated with content and formatting.

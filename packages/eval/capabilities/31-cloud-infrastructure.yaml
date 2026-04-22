@@ -2,7 +2,7 @@ id: 31
 name: cloud-infrastructure
 title: Cloud Infrastructure
 category: website-builder-features
-status: YELLOW
+status: GREEN
 task:
   prompt: Verify the app is hosted on managed cloud infrastructure.
   expected_behavior: App running on Manus hosting with CDN, SSL.

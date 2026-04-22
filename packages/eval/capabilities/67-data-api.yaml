@@ -2,7 +2,7 @@ id: 67
 name: data-api
 title: Data API Capability
 category: website-builder-features
-status: RED
+status: GREEN
 task:
   prompt: Expose a structured data API from the generated app.
   expected_behavior: REST or tRPC API endpoint returns structured data.

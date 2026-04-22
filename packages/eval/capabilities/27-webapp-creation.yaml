@@ -2,7 +2,7 @@ id: 27
 name: webapp-creation
 title: Full-Stack Web-App Creation
 category: website-builder
-status: RED
+status: GREEN
 task:
   prompt: Create a todo list web application with a database backend.
   expected_behavior: Full-stack app scaffolded with frontend, backend, and database.

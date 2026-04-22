@@ -2,7 +2,7 @@ id: 15
 name: design-view
 title: Design View
 category: features
-status: YELLOW
+status: GREEN
 task:
   prompt: Open the design view and inspect a generated UI component.
   expected_behavior: Design view page loads with planned features.

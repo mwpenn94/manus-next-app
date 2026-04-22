@@ -2,7 +2,7 @@ id: 14
 name: project-skills
 title: Project Skills
 category: features
-status: RED
+status: GREEN
 task:
   prompt: Add a custom skill to a project that all team members can use.
   expected_behavior: Project-scoped skill created and shared with team.

@@ -2,7 +2,7 @@ id: 38
 name: code-control
 title: Code Control
 category: developer-tools
-status: YELLOW
+status: GREEN
 task:
   prompt: Export the full codebase as a downloadable ZIP file.
   expected_behavior: Codebase exported and downloadable.

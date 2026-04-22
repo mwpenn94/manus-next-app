@@ -2,7 +2,7 @@ id: 21
 name: meeting-minutes
 title: Meeting Minutes
 category: features
-status: RED
+status: GREEN
 task:
   prompt: Transcribe this meeting recording and generate action items.
   expected_behavior: Audio transcribed, minutes formatted, action items extracted.

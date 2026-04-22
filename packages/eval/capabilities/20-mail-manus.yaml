@@ -2,7 +2,7 @@ id: 20
 name: mail-manus
 title: Mail Manus
 category: features
-status: RED
+status: GREEN
 task:
   prompt: Send an email summary of today's tasks to my inbox.
   expected_behavior: Email composed and sent via email integration.

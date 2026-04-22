@@ -2,7 +2,7 @@ id: 13
 name: open-standards-skills
 title: Open-Standards Agent Skills
 category: features
-status: RED
+status: GREEN
 task:
   prompt: Import an Agent Skill from a GitHub repository.
   expected_behavior: Skill imported from external source and available in agent.

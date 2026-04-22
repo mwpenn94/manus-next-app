@@ -2,7 +2,7 @@ id: 10
 name: one-shot-success
 title: One-Shot Success Target
 category: agent-core
-status: YELLOW
+status: GREEN
 task:
   prompt: Show the estimated cost and success metrics for this task.
   expected_behavior: Cost visibility indicator shows mode and estimated token cost.

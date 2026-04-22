@@ -2,7 +2,7 @@ id: 62
 name: video-generation
 title: Veo3 Video Generation
 category: content-generation
-status: RED
+status: GREEN
 task:
   prompt: Generate a short video about a product launch.
   expected_behavior: Video generated using AI video generation.

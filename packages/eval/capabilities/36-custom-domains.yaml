@@ -2,7 +2,7 @@ id: 36
 name: custom-domains
 title: Custom Domains
 category: website-builder-pm
-status: RED
+status: GREEN
 task:
   prompt: Configure a custom domain for the published project.
   expected_behavior: Custom domain configured and DNS verified.

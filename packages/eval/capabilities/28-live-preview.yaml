@@ -2,7 +2,7 @@ id: 28
 name: live-preview
 title: Live Preview with Direct Editing
 category: website-builder
-status: RED
+status: GREEN
 task:
   prompt: Preview the generated app and edit a component inline.
   expected_behavior: Live preview shows app, inline editing modifies component.

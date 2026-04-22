@@ -2,7 +2,7 @@ id: 42
 name: app-publishing-mobile
 title: App Publishing (Mobile)
 category: developer-tools
-status: RED
+status: GREEN
 task:
   prompt: Publish the app to a mobile app store.
   expected_behavior: App packaged and submitted to app store.

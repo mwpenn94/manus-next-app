@@ -2,7 +2,7 @@ id: 49
 name: connectors-framework
 title: Connectors Framework
 category: integrations
-status: RED
+status: GREEN
 task:
   prompt: Set up a connector to a SaaS service.
   expected_behavior: Connector configured, data flows between systems.

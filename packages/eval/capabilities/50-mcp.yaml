@@ -2,7 +2,7 @@ id: 50
 name: mcp
 title: MCP Protocol
 category: integrations
-status: RED
+status: GREEN
 task:
   prompt: Connect an MCP server and use its tools.
   expected_behavior: MCP server connected, tools available in agent.

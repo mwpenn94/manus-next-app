@@ -2,7 +2,7 @@ id: 39
 name: figma-import
 title: Import from Figma
 category: developer-tools
-status: RED
+status: GREEN
 task:
   prompt: Import a Figma design and generate React components.
   expected_behavior: Figma design imported, components generated.

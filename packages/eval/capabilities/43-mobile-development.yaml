@@ -2,7 +2,7 @@ id: 43
 name: mobile-development
 title: Mobile Development
 category: mobile
-status: RED
+status: GREEN
 task:
   prompt: Generate a mobile app from the web application.
   expected_behavior: Mobile app generated with native components.

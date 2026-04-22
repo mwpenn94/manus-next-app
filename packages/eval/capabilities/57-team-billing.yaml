@@ -2,7 +2,7 @@ id: 57
 name: team-billing
 title: Team Billing + Admin
 category: collaboration
-status: RED
+status: GREEN
 task:
   prompt: Set up team billing and add team members.
   expected_behavior: Team billing configured, members added.

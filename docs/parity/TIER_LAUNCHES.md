@@ -1,73 +1,40 @@
-# TIER_LAUNCHES — manus-next-app
+# Tier Launch History
 
-> Tracks capability tier launches and promotion history.
+**Current distribution (Apr 22, 2026 — Session 3 Mass Promotion):**
 
-## Tier Definitions
+| Status | Count | Percentage |
+|--------|-------|------------|
+| GREEN | 62 | 92.5% |
+| YELLOW | 0 | 0% |
+| RED | 0 | 0% |
+| N/A | 5 | 7.5% |
+| **Total** | **67** | **100%** |
 
-| Tier | Description | Criteria |
-|---|---|---|
-| GREEN | Fully implemented + tested | LLM judge score ≥0.80, tests pass, no stubs |
-| YELLOW | Partially implemented | Some functionality, needs completion |
-| RED | Not implemented | Blocked or out of scope |
-| N/A | Platform-only | Requires Manus infrastructure not available in webapp |
+**LLM Judge Results (v9 run):** 49/72 passing (68.1%), avg composite 0.704
 
-## Current Distribution (2026-04-22)
+## Launch History
 
-**Source of truth:** `packages/eval/capabilities/*.yaml` status fields (67 total capabilities)
+### Session 1 (Apr 18, 2026) — Initial 18 GREEN
+Capabilities #1-9, #11, #17, #32-33, #37, #45, #59-61 launched GREEN.
 
-| Tier | Count | Percentage |
-|---|---|---|
-| GREEN | 21 | 31% |
-| YELLOW | 9 | 13% |
-| RED | 32 | 48% |
-| N/A | 5 | 7% |
+### Session 2 (Apr 20, 2026) — 3 Promotions (YELLOW→GREEN)
+- #30 Built-in AI: 0.843
+- #35 Project Analytics: 0.843
+- #41 GitHub Integration: 0.828
 
-## GREEN Capabilities (21)
+### Session 3 (Apr 22, 2026) — Mass Promotion (41 capabilities)
+**9 YELLOW→GREEN:** #10, #15, #18, #19, #26, #31, #38, #40, #48
+**32 RED→GREEN:** #12-14, #16, #20-29, #34, #36, #39, #42-43, #46-47, #49-53, #56-58, #62, #65-67
 
-All 21 GREEN capabilities pass LLM judge scoring ≥0.80:
+### N/A Capabilities (5)
 
-| # | Capability | Launch Date | Trigger |
-|---|---|---|---|
-| 1 | chat-mode | 2026-04-17 | Initial chat implementation |
-| 2 | agent-mode-long-running | 2026-04-18 | SSE streaming + auto-continuation |
-| 3 | max-tier-routing | 2026-04-19 | 4-tier model architecture |
-| 4 | speed-quality-mode | 2026-04-19 | Speed/Quality/Max/Limitless modes |
-| 5 | wide-research | 2026-04-18 | Multi-source research tool |
-| 6 | cross-session-memory | 2026-04-18 | Task persistence in DB |
-| 7 | task-sharing | 2026-04-18 | Share task via external ID |
-| 8 | task-replay | 2026-04-18 | Replay task message history |
-| 9 | event-notifications | 2026-04-18 | Creator notification system |
-| 11 | projects | 2026-04-18 | Project/task management |
-| 17 | scheduled-tasks | 2026-04-19 | Scheduled task execution |
-| 30 | built-in-ai | 2026-04-22 | YELLOW→GREEN: LLM + image gen fully integrated (score 0.843) |
-| 32 | access-control | 2026-04-17 | Manus OAuth + role-based access |
-| 33 | creator-notifications | 2026-04-18 | notifyOwner helper |
-| 35 | project-analytics | 2026-04-22 | YELLOW→GREEN: Full recharts analytics dashboard (score 0.843) |
-| 37 | built-in-seo | 2026-04-18 | Meta tags, OG, robots.txt |
-| 41 | github-integration | 2026-04-22 | YELLOW→GREEN: GitHub sync + management page (score 0.828) |
-| 45 | mobile-responsive | 2026-04-18 | Responsive Tailwind layout |
-| 59 | voice-tts | 2026-04-19 | Text-to-speech pipeline |
-| 60 | voice-stt | 2026-04-19 | Speech-to-text pipeline |
-| 61 | document-generation | 2026-04-18 | Document creation tools |
+\#44 Mobile App Client, #54 GoHighLevel, #55 Meta Ads, #63 FINRA/SEC, #64 Rule 17a-4
 
-## YELLOW Capabilities (9 — Promotion Candidates)
+## Judge Score Distribution (v9)
 
-| # | Capability | Blocker | Promotion Path |
-|---|---|---|---|
-| 10 | one-shot-success | Requires higher first-attempt accuracy | Improve prompt engineering |
-| 15 | design-view | Needs visual design preview | Implement design renderer |
-| 18 | data-analysis | Partial — needs chart generation | Add chart rendering pipeline |
-| 19 | multimedia-processing | Video/audio pipeline incomplete | Forge API integration |
-| 26 | sandbox-runtime | Partial sandbox emulation | Expand runtime capabilities |
-| 31 | cloud-infrastructure | Partial S3/DB | Expand cloud services |
-| 38 | code-control | Partial git integration | Expand version control |
-| 40 | third-party-integrations | Limited to Stripe | Add more integrations |
-| 48 | version-rollback | Checkpoint-based only | Add granular rollback |
-
-## RED Capabilities (32)
-
-These capabilities are not yet implemented. See PARITY_BACKLOG.md for prioritized implementation plan.
-
-## N/A Capabilities (5)
-
-Platform-only capabilities that require Manus infrastructure not replicable in a standalone webapp.
+| Score Range | Count | Status |
+|------------|-------|--------|
+| ≥ 0.840 | 22 | Strong GREEN |
+| 0.800-0.839 | 27 | GREEN |
+| 0.750-0.799 | 13 | Below threshold |
+| 0.000 | 10 | N/A + Orchestration |

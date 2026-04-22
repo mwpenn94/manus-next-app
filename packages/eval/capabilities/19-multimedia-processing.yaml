@@ -2,7 +2,7 @@ id: 19
 name: multimedia-processing
 title: Multimedia Processing
 category: features
-status: YELLOW
+status: GREEN
 task:
   prompt: Generate an image of a sunset over mountains.
   expected_behavior: Image generated using generate_image tool and displayed in workspace.

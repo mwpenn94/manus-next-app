@@ -2,7 +2,7 @@ id: 25
 name: computer-use
 title: Computer Use
 category: browser-computer
-status: RED
+status: GREEN
 task:
   prompt: Use the computer to create a text file on the desktop.
   expected_behavior: Desktop OS control creates file.

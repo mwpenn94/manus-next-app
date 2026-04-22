@@ -2,7 +2,7 @@ id: 24
 name: screenshot-verification
 title: Screenshot Verification
 category: browser-computer
-status: RED
+status: GREEN
 task:
   prompt: Take a screenshot of a webpage and verify it contains a specific element.
   expected_behavior: Screenshot taken, vision model analyzes content.

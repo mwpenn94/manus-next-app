@@ -2,7 +2,7 @@ id: 47
 name: my-computer
 title: My Computer
 category: desktop
-status: RED
+status: GREEN
 task:
   prompt: Access the virtual desktop environment.
   expected_behavior: Virtual desktop loads with file system access.

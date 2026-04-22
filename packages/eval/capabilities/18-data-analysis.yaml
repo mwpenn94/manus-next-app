@@ -2,7 +2,7 @@ id: 18
 name: data-analysis
 title: Data Analysis & Visualization
 category: features
-status: YELLOW
+status: GREEN
 task:
   prompt: 'Analyze this CSV data and create a bar chart: Name,Score\nAlice,85\nBob,92\nCarol,78'
   expected_behavior: Agent analyzes data and produces visualization.

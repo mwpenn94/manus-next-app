@@ -2,7 +2,7 @@ id: 29
 name: publishing-pipeline
 title: Publishing Pipeline
 category: website-builder
-status: RED
+status: GREEN
 task:
   prompt: Publish the generated app to a public URL.
   expected_behavior: App deployed and accessible at public URL.

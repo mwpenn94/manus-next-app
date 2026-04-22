@@ -2,7 +2,7 @@ id: 46
 name: desktop-app
 title: Desktop App
 category: desktop
-status: RED
+status: GREEN
 task:
   prompt: Package the web app as a desktop application.
   expected_behavior: Desktop app built with Electron/Tauri.

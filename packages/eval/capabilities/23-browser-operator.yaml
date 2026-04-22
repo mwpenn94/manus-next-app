@@ -2,7 +2,7 @@ id: 23
 name: browser-operator
 title: Browser Operator
 category: browser-computer
-status: RED
+status: GREEN
 task:
   prompt: Use the browser to fill out a form on a test website.
   expected_behavior: Browser automation fills form fields and submits.

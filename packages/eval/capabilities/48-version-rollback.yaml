@@ -2,7 +2,7 @@ id: 48
 name: version-rollback
 title: Version Rollback
 category: desktop
-status: YELLOW
+status: GREEN
 task:
   prompt: Roll back to a previous version of the project.
   expected_behavior: Previous checkpoint restored, app reverts to earlier state.

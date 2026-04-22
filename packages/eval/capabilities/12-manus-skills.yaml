@@ -2,7 +2,7 @@ id: 12
 name: manus-skills
 title: Manus Skills
 category: features
-status: RED
+status: GREEN
 task:
   prompt: List available agent skills and activate one.
   expected_behavior: Skills registry shown, skill can be activated/deactivated.

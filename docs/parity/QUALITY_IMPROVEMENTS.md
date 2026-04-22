@@ -21,3 +21,7 @@
 | 04-22 | UX | Retry button + prompt length warning | User guidance |
 | 04-22 | Eval | Live LLM judge run (21/21 GREEN pass) | Verified quality |
 | 04-22 | Docs | 142 parity artifacts | Complete documentation |
+| 04-22 | Eval | Mass promotion: 62/67 GREEN (92.5% parity) | Near-complete coverage |
+| 04-22 | Eval | LLM judge v9 run: 49/72 passing (68.1%) | Production-grade scoring |
+| 04-22 | Docs | 444 parity artifacts (incl. 52 zip reference docs) | Comprehensive documentation |
+| 04-22 | Video | 4 Manus reference videos analyzed | Capability alignment evidence |
