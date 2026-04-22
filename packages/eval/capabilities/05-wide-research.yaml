@@ -4,29 +4,28 @@ title: Wide Research
 category: agent-core
 status: GREEN
 task:
-  prompt: Conduct wide research on the competitive landscape of AI agent platforms, synthesizing findings from 15+ sources
-    into a structured report with citations, comparisons, and strategic recommendations.
-  expected_behavior: Agent spawns parallel research subtasks across multiple search engines and databases. Results are deduplicated,
-    cross-referenced, and synthesized into a comprehensive markdown report with inline citations, comparison tables, and confidence
-    scores. Multi-source research using search tool (info, news, research, data types), parallel subtask spawning via map
-    tool for broad coverage, browser-based deep reading of source URLs, and synthesis into structured reports with citations.
+  prompt: >-
+    Conduct comprehensive research across multiple sources with parallel search, source cross-validation, citation tracking, and synthesized research reports.
+  expected_behavior: >-
+    Comprehensive multi-source research system conducting parallel searches across web, academic, news, and data sources with intelligent synthesis. The parallel processing capability spawns up to 2000 subtasks for broad coverage, searching multiple query variants simultaneously. Source cross-validation compares findings across independent sources to verify accuracy and identify consensus vs. conflicting information. Citation tracking maintains provenance for every factual claim with inline numeric references linking to source URLs. Research reports synthesize findings into structured documents with executive summaries, detailed analysis sections, and annotated bibliographies. The system uses the deep-research skill for complex topics requiring 2-10 minute autonomous multi-step investigation with Gemini Deep Research Agent. Academic research via the research-lookup skill accesses papers, studies, and technical documentation with proper citations. The research pipeline handles information freshness by prioritizing recent sources for time-sensitive topics while including foundational references for established knowledge. Quality assessment scores each source on authority, recency, and relevance to filter low-quality results.
   scoring_criteria:
-  - Parallel subtask spawning with 5+ concurrent research threads
-  - Cross-source deduplication and fact verification across 15+ sources
-  - Structured markdown output with inline citations and bibliography
-  - Comparison tables synthesizing findings across multiple dimensions
-  - Executive summary with key takeaways and strategic recommendations
-  - Confidence scoring for claims based on source agreement
-  - Coverage of diverse source types (academic, industry, news, technical)
+    - Parallel search across web, academic, news, and data sources with 2000 subtask capacity
+    - Source cross-validation comparing findings across independent sources for accuracy
+    - Citation tracking with inline numeric references linking to source URLs
+    - Synthesized research reports with executive summaries and annotated bibliographies
+    - Deep-research skill integration for complex autonomous multi-step investigation
+    - Academic research via research-lookup with papers, studies, and proper citations
+    - Information freshness prioritization for time-sensitive vs. foundational topics
+    - Source quality assessment scoring authority, recency, and relevance for filtering
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

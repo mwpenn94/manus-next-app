@@ -5,114 +5,114 @@
   "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.815,
+      "composite": 0.857,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The generated slides correctly reflect the requested content, including data visualizations and speaker notes. The data presented in the charts is accurate and relevant to the investor pitch context."
+          "score": 0.9,
+          "justification": "The implementation correctly generates professional slide presentations in both HTML and image modes, with accurate Chart.js integration and proper PDF/PPT exports."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All 12 requested slide types are present, including title, problem/solution, market size, product demo, traction, business model, competitive landscape, team, financials, and ask slide. Speaker notes are present on every slide. Both HTML and image render modes are available."
+          "score": 0.85,
+          "justification": "Most expected features are present, including dual rendering modes, Chart.js integration for various chart types, content-first workflow, scalable slide counts, and PDF/PPT export. Customization options for charts and themes are well-implemented. The 'artistic layouts' for image mode could be further expanded for more variety."
         },
         "efficiency": {
           "score": 0.8,
-          "justification": "The generation process is reasonably fast, producing the full deck within an acceptable timeframe. The output file sizes are optimized for web and presentation use."
+          "justification": "The generation process is reasonably performant for typical slide counts. Export to PDF/PPT is efficient. Resource usage is within acceptable limits for presentation generation."
         },
         "robustness": {
-          "score": 0.75,
-          "justification": "The system handles various input prompts well, generating appropriate content even with slightly ambiguous requests. It gracefully manages cases where specific data might be missing by using placeholders or default values."
-        },
-        "user_experience": {
           "score": 0.85,
-          "justification": "The professional design and consistent visual theme contribute to a polished user experience. The intuitive interface for generating and downloading the slides enhances usability. The speaker notes are clearly visible and well-formatted."
-        },
-        "maintainability": {
-          "score": 0.7,
-          "justification": "As an external evaluator, assessing maintainability is challenging without code access. However, the consistent output quality and structured nature of the generated content suggest a well-organized underlying system."
-        },
-        "innovation": {
-          "score": 0.8,
-          "justification": "The integration of Chart.js for data visualizations and the automatic generation of comprehensive speaker notes on every slide demonstrate a strong innovative approach to automating pitch deck creation."
-        },
-        "composite": 0.815,
-        "assessment": "The Manus Slides capability delivers a highly effective and comprehensive investor pitch deck. It successfully integrates professional design, data visualizations, and detailed speaker notes, meeting all key requirements with high quality."
-      }
-    },
-    "B": {
-      "composite": 0.83,
-      "scores": {
-        "correctness": {
-          "score": 0.85,
-          "justification": "The generated slides correctly represent the requested content, including data visualizations and speaker notes. The information presented is accurate and relevant to an investor pitch."
-        },
-        "completeness": {
-          "score": 0.9,
-          "justification": "All 12 expected slides (title, problem/solution, market size, product demo, traction, business model, competitive landscape, team, financials, ask) are present. Data visualizations using Chart.js are included, and speaker notes are on every slide. Both HTML and image render modes are available."
-        },
-        "efficiency": {
-          "score": 0.8,
-          "justification": "The generation of the 12-slide deck is reasonably fast, and the output files (HTML/images) are not excessively large, indicating good resource management."
-        },
-        "robustness": {
-          "score": 0.75,
-          "justification": "The capability handles various data inputs for charts and different content lengths for speaker notes without breaking. It gracefully manages cases where specific data might be missing by using placeholders or default values."
-        },
-        "user_experience": {
-          "score": 0.9,
-          "justification": "The design is professional and consistent across all slides, providing a polished and intuitive experience. The visual theme is cohesive, and the layout is easy to follow. The availability of both HTML and image renders enhances usability."
-        },
-        "maintainability": {
-          "score": 0.7,
-          "justification": "While the output is good, the underlying code structure for generating these complex outputs could be improved for easier maintenance and updates, especially concerning template management and data binding."
-        },
-        "innovation": {
-          "score": 0.85,
-          "justification": "The integration of Chart.js for data visualizations, combined with comprehensive speaker notes on every slide and dual output formats, goes beyond baseline expectations for an automated slide generation tool."
-        },
-        "composite": 0.83,
-        "assessment": "The Manus Slides capability provides a highly effective and comprehensive solution for generating investor pitch decks. It successfully delivers on all key requirements with professional design, data-driven content, and user-friendly output formats."
-      }
-    },
-    "C": {
-      "composite": 0.823,
-      "scores": {
-        "correctness": {
-          "score": 0.85,
-          "justification": "The generated slides correctly represent the requested content, including data visualizations and speaker notes. The information presented is accurate and relevant to an investor pitch."
-        },
-        "completeness": {
-          "score": 0.9,
-          "justification": "All 12 slide types requested are present, with professional design, consistent branding, and data-driven visualizations. Speaker notes are on every slide. Both HTML and image render modes are available."
-        },
-        "efficiency": {
-          "score": 0.8,
-          "justification": "The generation of the 12-slide deck is reasonably fast, and the output files are not excessively large, indicating good resource management."
-        },
-        "robustness": {
-          "score": 0.75,
-          "justification": "The system handles various data inputs for visualizations and different content lengths for speaker notes without crashing or producing malformed output. However, complex or highly specific formatting requests might lead to minor inconsistencies."
+          "justification": "The system handles various content inputs and chart configurations gracefully. Error handling for malformed markdown or unsupported chart data is present, preventing crashes during generation. Edge cases like very large slide counts or complex charts are managed without significant issues."
         },
         "user_experience": {
           "score": 0.88,
-          "justification": "The output is highly polished with a professional and consistent design, making it easy to consume. The availability of both HTML and image renders adds to the user's convenience. The speaker notes are clearly presented."
+          "justification": "The UX is intuitive, with a clear content preparation phase and straightforward slide generation. The distinction between HTML and image modes is well-communicated. Chart customization and theme selection are user-friendly. The overall workflow is smooth and logical."
         },
         "maintainability": {
-          "score": 0.7,
-          "justification": "Based on the 'GREEN' status, it's assumed the underlying code for generating slides, integrating Chart.js, and managing templates is well-structured and documented, allowing for future updates and modifications."
+          "score": 0.82,
+          "justification": "The code is clean, well-structured, and follows good practices, making it easy to understand and maintain. The separation of concerns between content writing and slide generation contributes to a modular design."
         },
         "innovation": {
-          "score": 0.82,
-          "justification": "The capability goes beyond basic slide generation by integrating dynamic data visualizations (Chart.js), comprehensive speaker notes, and offering multiple output formats, providing a highly valuable and integrated solution for pitch deck creation."
+          "score": 0.85,
+          "justification": "The dual rendering mode approach (HTML for data, image for visual impact) is a strong innovative feature, offering significant flexibility. The seamless integration of Chart.js with extensive customization options and the content-first markdown workflow are also notable."
         },
-        "composite": 0.823,
-        "assessment": "The Manus Slides capability delivers a highly effective and comprehensive solution for generating investor pitch decks. It successfully integrates professional design, data visualization, and detailed speaker notes across all requested slide types, demonstrating strong implementation."
+        "composite": 0.857,
+        "assessment": "The Manus Slides implementation is a robust and well-designed system, effectively delivering professional slide presentations with innovative dual rendering modes and comprehensive Chart.js integration. It provides a smooth user experience with a content-first approach and reliable export capabilities."
+      }
+    },
+    "B": {
+      "composite": 0.84,
+      "scores": {
+        "correctness": {
+          "score": 0.85,
+          "justification": "The implementation correctly generates professional slide presentations in both HTML and image rendering modes, with Chart.js integration functioning as expected for various chart types. Export to PDF and PPT via manus-export-slides is accurate."
+        },
+        "completeness": {
+          "score": 0.88,
+          "justification": "All core features are present: dual rendering modes, Chart.js integration (bar, line, pie, doughnut, radar, scatter with customization), content preparation via markdown, scalable slide count, PDF/PPT export, phase separation, and template themes with customization. Interactive data visualization with tables and code blocks is also implemented."
+        },
+        "efficiency": {
+          "score": 0.8,
+          "justification": "The generation process is reasonably performant for typical slide counts. Image rendering can be resource-intensive for very high-resolution outputs but is optimized for standard use cases. HTML generation is quick."
+        },
+        "robustness": {
+          "score": 0.82,
+          "justification": "The system handles various content complexities and markdown inputs gracefully. Error handling for malformed chart data or invalid export parameters is present, preventing crashes. Edge cases like empty sections are managed."
+        },
+        "user_experience": {
+          "score": 0.85,
+          "justification": "The content-first workflow with markdown preparation is intuitive for structured content. The distinction between HTML and image modes is clear. Template themes provide a good starting point, and customization options are accessible. The overall UX is polished."
+        },
+        "maintainability": {
+          "score": 0.8,
+          "justification": "The codebase is well-structured, with clear separation of concerns between content parsing, rendering engines, and export functionalities. Documentation is adequate, allowing for future maintenance and feature additions."
+        },
+        "innovation": {
+          "score": 0.85,
+          "justification": "The dual rendering mode approach (HTML for data, image for visual impact) is an innovative solution for presentation generation. The tight integration of Chart.js with extensive customization and the content-first markdown workflow also go beyond baseline expectations."
+        },
+        "composite": 0.84,
+        "assessment": "The Manus Slides implementation is robust and feature-rich, providing a highly effective tool for generating professional presentations with innovative dual rendering modes and comprehensive Chart.js integration. The content-first workflow and export capabilities make it a strong solution."
+      }
+    },
+    "C": {
+      "composite": 0.898,
+      "scores": {
+        "correctness": {
+          "score": 0.9,
+          "justification": "The implementation correctly generates professional slide presentations in both HTML and image modes, with accurate rendering of content and Chart.js integrations. Export functionality to PDF and PPT works as expected."
+        },
+        "completeness": {
+          "score": 0.95,
+          "justification": "All key features outlined in the expected behavior are present, including two rendering modes, Chart.js integration with specified chart types and customization, content-first workflow with markdown, scalable slide count, PDF/PPT export, phase separation, and template themes with customization. The implementation is very comprehensive."
+        },
+        "efficiency": {
+          "score": 0.85,
+          "justification": "The generation process for both HTML and image modes is reasonably performant. Resource usage appears optimized for typical presentation sizes, though very large presentations might see some performance degradation, which is expected."
+        },
+        "robustness": {
+          "score": 0.88,
+          "justification": "The system handles various content types, markdown formatting, and Chart.js configurations gracefully. Error handling for malformed input or unsupported chart data is present, preventing crashes and providing informative feedback."
+        },
+        "user_experience": {
+          "score": 0.92,
+          "justification": "The content preparation in markdown is intuitive, and the transition to slide generation is seamless. The customization options for charts, themes, and fonts are user-friendly. The dual rendering modes offer excellent flexibility for different presentation needs."
+        },
+        "maintainability": {
+          "score": 0.85,
+          "justification": "The code structure appears clean and modular, especially with the clear separation of content writing and slide generation phases. This promotes easier maintenance and future enhancements."
+        },
+        "innovation": {
+          "score": 0.9,
+          "justification": "The dual rendering mode approach (HTML for data, image for visual impact) is a highly innovative solution for presentation generation. The deep integration of Chart.js with extensive customization, combined with a content-first markdown workflow, goes beyond typical presentation tools."
+        },
+        "composite": 0.898,
+        "assessment": "The Manus Slides implementation is a highly capable and innovative solution for professional slide generation, excelling in its dual rendering modes and comprehensive Chart.js integration. It delivers on all expected behaviors with a strong focus on user experience and maintainability."
       }
     }
   },
-  "median_composite": 0.823,
-  "spread": 0.015,
+  "median_composite": 0.857,
+  "spread": 0.058,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-22T11:59:11.538Z"
+  "evaluated_at": "2026-04-22T17:09:45.112Z"
 }

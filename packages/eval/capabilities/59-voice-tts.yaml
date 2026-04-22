@@ -4,21 +4,28 @@ title: Voice TTS
 category: voice-audio
 status: GREEN
 task:
-  prompt: Read the agent's response aloud using text-to-speech.
-  expected_behavior: Browser SpeechSynthesis reads the response text.
+  prompt: >-
+    Convert text to natural-sounding speech with multiple voice options, language support, speed control, and streaming audio playback.
+  expected_behavior: >-
+    Text-to-speech system converting agent responses and content to natural-sounding audio with configurable voice parameters. Multiple voice options provide variety in tone, gender, and speaking style for different use cases (professional, casual, narrative). Language support covers major languages with accent-appropriate pronunciation. Speed control allows adjustment from 0.5x to 2.0x with pitch preservation for comfortable listening at any rate. Streaming audio playback begins output before full generation completes, reducing perceived latency for long content. The audio player provides standard controls (play, pause, seek, volume) with progress indicator and remaining time display. Generated audio is downloadable in common formats (MP3, WAV) for offline use. The system handles long-form content by splitting into natural segments at sentence boundaries for smooth streaming. SSML support enables fine-grained control over pronunciation, emphasis, and pauses for specialized content.
   scoring_criteria:
-  - TTS triggers
-  - Audio plays
-  - Correct text read
+    - Natural-sounding speech with multiple voice options (tone, gender, speaking style)
+    - Multi-language support with accent-appropriate pronunciation
+    - Speed control (0.5x-2.0x) with pitch preservation for comfortable listening
+    - Streaming audio playback beginning before full generation completes
+    - Audio player with play/pause/seek/volume controls and progress indicator
+    - Downloadable audio in MP3 and WAV formats for offline use
+    - Natural segment splitting at sentence boundaries for smooth long-form streaming
+    - SSML support for fine-grained pronunciation, emphasis, and pause control
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

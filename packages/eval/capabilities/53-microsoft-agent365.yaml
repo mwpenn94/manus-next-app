@@ -4,21 +4,28 @@ title: Microsoft Agent365
 category: integrations
 status: GREEN
 task:
-  prompt: Integrate with Microsoft 365 services.
-  expected_behavior: Microsoft 365 connected, data accessible.
+  prompt: >-
+    Integrate with Microsoft 365 services enabling the agent to manage emails, calendar events, documents, and Teams messages through Graph API.
+  expected_behavior: >-
+    Comprehensive Microsoft 365 integration via Graph API enabling programmatic management of emails, calendar, documents, and Teams communication. Email management supports reading inbox, composing and sending messages, managing folders, and handling attachments with rich HTML formatting. Calendar integration creates, updates, and deletes events with attendee management, recurrence patterns, and timezone-aware scheduling. OneDrive document management provides file upload, download, sharing, and collaborative editing with version history access. Teams integration sends messages to channels and chats, creates meetings, and manages team membership. Authentication uses OAuth 2.0 with Microsoft identity platform for secure delegated access with appropriate permission scopes. The integration handles pagination for large result sets (hundreds of emails, files) with efficient cursor-based retrieval. Batch requests optimize API usage by combining multiple operations into single HTTP calls. Error handling manages rate limits, permission errors, and service unavailability with informative user feedback.
   scoring_criteria:
-  - M365 connected
-  - Data accessible
-  - Auth works
+    - Email management (inbox, compose, send, folders, attachments) via Graph API
+    - Calendar integration with events, attendees, recurrence, and timezone scheduling
+    - OneDrive file management with upload, download, sharing, and version history
+    - Teams messaging to channels/chats with meeting creation and membership management
+    - OAuth 2.0 authentication with Microsoft identity platform and permission scopes
+    - Efficient pagination with cursor-based retrieval for large result sets
+    - Batch request optimization combining multiple operations into single HTTP calls
+    - Rate limit and permission error handling with informative user feedback
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,23 +4,28 @@ title: Speed/Quality Mode Toggle
 category: agent-core
 status: GREEN
 task:
-  prompt: Toggle between Speed and Quality modes and verify each produces different
-    behavior.
-  expected_behavior: Speed mode responds faster with fewer tool turns. Quality mode
-    is more thorough.
+  prompt: >-
+    Dynamically switch between speed-optimized and quality-optimized processing modes based on task complexity, with intelligent auto-detection, user override controls, and real-time performance feedback.
+  expected_behavior: >-
+    Intelligent dual-mode processing system that automatically selects between speed-optimized and quality-optimized execution paths based on task complexity analysis. Speed mode prioritizes rapid responses for simple queries, lookups, and straightforward tasks using lightweight processing with minimal tool invocations. Quality mode engages deep reasoning, multi-source verification, iterative refinement, and comprehensive output for complex research, analysis, and creative tasks. An auto-detection heuristic analyzes task characteristics (length, keywords, domain complexity) to select the optimal mode before execution begins. Users can override the automatic selection via explicit mode preferences. Real-time performance feedback shows estimated completion time and quality indicators during execution. The system tracks mode selection accuracy over time, learning from user corrections to improve auto-detection. Smooth transitions between modes mid-task are supported when complexity changes — for example, escalating from speed to quality mode when initial results reveal unexpected depth requirements. Resource allocation adapts dynamically, with speed mode using cached results and quality mode allocating additional compute for thorough analysis.
   scoring_criteria:
-  - Mode toggle works
-  - Speed mode is faster
-  - Quality mode is more thorough
+    - Automatic speed/quality mode selection based on task complexity heuristic analysis
+    - Speed mode with lightweight processing and minimal tool invocations for simple tasks
+    - Quality mode with deep reasoning, multi-source verification, and iterative refinement
+    - User override controls for explicit mode preference selection
+    - Real-time performance feedback with estimated completion time and quality indicators
+    - Mid-task mode escalation when complexity changes during execution
+    - Learning from user corrections to improve auto-detection accuracy over time
+    - Dynamic resource allocation adapting cached results vs thorough analysis per mode
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

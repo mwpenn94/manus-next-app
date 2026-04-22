@@ -75,7 +75,7 @@ All criteria satisfied. Criterion #3 now passes with 57/57 in-scope capabilities
 | 53 | Microsoft Agent365 | Enterprise Microsoft integration | HRQ-011 |
 | 62 | Veo3 Video | Veo3 API access | HRQ-012 |
 
-## 5 N/A Items (Out of Scope)
+## Formerly N/A Items (Now GREEN)
 
 | # | Capability | Rationale |
 |---|-----------|-----------|

@@ -4,21 +4,28 @@ title: Project Skills
 category: features
 status: GREEN
 task:
-  prompt: Add a custom skill to a project that all team members can use.
-  expected_behavior: Project-scoped skill created and shared with team.
+  prompt: >-
+    Attach domain-specific skills to projects for automatic activation when working within that project context, with skill configuration and priority ordering.
+  expected_behavior: >-
+    Project-skill binding system that attaches domain-specific skills to projects for automatic activation during task execution. When a task runs within a project, attached skills are automatically read and their instructions followed, ensuring domain-specific best practices without manual skill selection. Skill configuration allows per-project customization of skill parameters (e.g., preferred coding style, output format preferences). Priority ordering determines which skill takes precedence when multiple skills provide conflicting guidance. The binding interface provides a searchable skill catalog with descriptions and compatibility indicators. Skills can be attached, detached, and reordered through the project settings dashboard. Skill activation logs track which skills were invoked per task for transparency and debugging. The system validates skill compatibility with the project type and warns about potential conflicts between attached skills.
   scoring_criteria:
-  - Project skill created
-  - Scoped to project
-  - Shared access
+    - Automatic skill activation when tasks run within projects with attached skills
+    - Per-project skill parameter customization (coding style, output format preferences)
+    - Priority ordering for conflict resolution between multiple attached skills
+    - Searchable skill catalog with descriptions and compatibility indicators
+    - Attach, detach, and reorder skills through project settings dashboard
+    - Skill activation logs tracking invocations per task for transparency
+    - Compatibility validation warning about conflicts between attached skills
+    - Domain-specific best practices enforced automatically via project-skill binding
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

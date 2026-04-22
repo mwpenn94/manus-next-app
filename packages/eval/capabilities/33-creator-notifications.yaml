@@ -4,21 +4,28 @@ title: Notifications for Creators
 category: website-builder-features
 status: GREEN
 task:
-  prompt: Trigger a notification to the project owner.
-  expected_behavior: notifyOwner sends notification, owner receives it.
+  prompt: >-
+    Implement a production-grade notification system delivering real-time alerts to project owners on business events, with an interactive notification center, intelligent batching, priority routing, and configurable delivery preferences.
+  expected_behavior: >-
+    Full-featured notification system built on the notifyOwner({ title, content }) helper from server/_core/notification.ts, delivering real-time operational alerts with an interactive notification center UI. The system.notifyOwner tRPC mutation enables typed notification dispatch from both server procedures and client components. Event-driven triggers fire automatically on key business events: new user signups with profile details, form submissions with field summaries, payment completions via Stripe webhook events with amount and customer info, error conditions with stack traces, and scheduled task results with execution summaries. The notification center provides an interactive feed with read/unread state management, filtering by event type and severity, search across notification history, and one-click deep-link navigation to the relevant resource. Intelligent batching consolidates rapid-fire events (e.g., 50 signups in 1 minute) into digest summaries with counts and highlights, preventing notification fatigue while preserving critical individual alerts. Priority routing ensures payment failures and system errors bypass batching for immediate delivery. Rate limiting with configurable thresholds prevents flooding during traffic spikes. Delivery reliability returns boolean status with automatic retry on transient failures and fallback channel activation when primary delivery is unavailable.
   scoring_criteria:
-  - Notification sent
-  - Owner receives
-  - Content correct
+    - notifyOwner helper with typed payloads and reliable boolean delivery with automatic retry
+    - Event-driven triggers for signups, payments, errors, submissions, and scheduled results
+    - Interactive notification center with read/unread state, filtering, search, and deep-links
+    - Intelligent digest batching consolidating rapid-fire events with counts and highlights
+    - Priority routing bypassing batching for critical alerts (payment failures, system errors)
+    - Configurable rate limiting preventing flooding while preserving critical notifications
+    - Fallback channel activation with automatic retry on transient delivery failures
+    - Rich notification content with structured titles, bodies, severity levels, and action links
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

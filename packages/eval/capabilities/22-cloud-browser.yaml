@@ -1,24 +1,31 @@
 id: 22
 name: cloud-browser
 title: Cloud Browser
-category: browser-computer
+category: agent-core
 status: GREEN
 task:
-  prompt: Open a cloud browser and navigate to example.com.
-  expected_behavior: Cloud browser environment launches and navigates to URL.
+  prompt: >-
+    Launch a cloud-hosted Chromium browser, navigate to a complex JavaScript-rendered web application, authenticate through an OAuth flow, extract structured data from dynamically-loaded content, capture verification screenshots, and manage file downloads — all with persistent session state across tasks.
+  expected_behavior: >-
+    Agent launches a persistent cloud-hosted Chromium stable browser session with full JavaScript execution, cookie persistence, and login state management that survives across tasks and sandbox hibernation cycles. Navigates to target URLs using the browser tool with explicit intent classification (navigational for general browsing, informational for reading content, transactional for form submission). Handles complex OAuth authentication flows including multi-step redirects, session cookie management, and CSRF token handling. Extracts structured content from JavaScript-rendered single-page applications by waiting for dynamic content loading and DOM stabilization. Captures screenshots for visual verification of page state during debugging. Manages file downloads to /home/ubuntu/Downloads/ directory. Supports multi-step transactional workflows including form filling, button clicking, dropdown selection, and data submission with confirmation.
   scoring_criteria:
-  - Browser launches
-  - Navigation works
-  - Screenshot captured
+    - Cloud Chromium stable browser launch with persistent session state across tasks
+    - URL navigation with explicit intent classification (navigational, informational, transactional)
+    - Complex OAuth authentication flow handling with multi-step redirects and cookie management
+    - Dynamic content extraction from JavaScript-rendered SPAs with DOM stabilization waiting
+    - Screenshot capture and visual verification of page state for debugging workflows
+    - File download management to designated /home/ubuntu/Downloads/ directory
+    - Multi-step transactional workflows (form filling, button clicking, data submission)
+    - Cross-task session persistence surviving sandbox hibernation and restart cycles
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

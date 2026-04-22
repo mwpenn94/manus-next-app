@@ -1,30 +1,31 @@
 id: 50
 name: mcp
 title: MCP Protocol
-category: platform
+category: integrations
 status: GREEN
 task:
-  prompt: Implement Model Context Protocol (MCP) support for connecting to external tool servers and extending agent capabilities
-    dynamically.
-  expected_behavior: Agent implements MCP client that can discover, connect to, and invoke tools from MCP servers. Supports
-    tool discovery, parameter validation, result handling, and error recovery. MCP connections are managed through a registry
-    with health monitoring.
+  prompt: >-
+    Implement Model Context Protocol (MCP) server integration enabling the agent to discover, connect to, and invoke tools from external MCP servers with automatic capability negotiation, typed tool schemas, and real-time streaming support.
+  expected_behavior: >-
+    Full MCP (Model Context Protocol) client implementation via the manus-mcp-cli utility enabling dynamic tool discovery and invocation from external MCP servers. The agent connects to MCP servers using stdio or HTTP transport with automatic capability negotiation during the initialize handshake. Tool discovery enumerates available tools with their JSON Schema input definitions, enabling type-safe invocation with validated parameters. Tool execution supports both synchronous request-response and streaming patterns for long-running operations. The MCP client handles server lifecycle management including connection pooling, health checks, and graceful reconnection on transport failures. Multiple MCP servers can be connected simultaneously with namespaced tool routing to prevent conflicts. Error handling maps MCP error codes to user-friendly messages with retry logic for transient failures. The implementation follows the open MCP specification ensuring interoperability with any compliant server. Resource and prompt capabilities are supported alongside tools for comprehensive context provision.
   scoring_criteria:
-  - MCP client implementation with server discovery
-  - Tool invocation with parameter validation
-  - Result handling and error recovery
-  - Connection registry with health monitoring
-  - Dynamic capability extension from MCP servers
-  - Security validation for MCP server connections
+    - MCP client via manus-mcp-cli with stdio and HTTP transport support
+    - Automatic capability negotiation during initialize handshake with servers
+    - Tool discovery with JSON Schema input definitions for type-safe invocation
+    - Streaming support for long-running tool operations with progress feedback
+    - Connection lifecycle management with pooling, health checks, and graceful reconnection
+    - Multi-server simultaneous connection with namespaced tool routing
+    - MCP error code mapping to user-friendly messages with transient retry logic
+    - Resource and prompt capability support alongside tools for comprehensive context
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

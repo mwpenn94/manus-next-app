@@ -4,21 +4,28 @@ title: Mail Manus
 category: features
 status: GREEN
 task:
-  prompt: Send an email summary of today's tasks to my inbox.
-  expected_behavior: Email composed and sent via email integration.
+  prompt: >-
+    Process and respond to tasks received via email with attachment handling, structured response formatting, and automatic task routing based on email content.
+  expected_behavior: >-
+    Email-to-task processing system that receives tasks via email, processes them through the agent pipeline, and returns results as formatted email responses. Incoming emails are parsed for task intent, extracting the primary request from subject and body with attachment handling for referenced files. Automatic task routing analyzes email content to determine the appropriate processing pipeline (research, code generation, document creation, data analysis). Attachments are processed according to their type — documents are read for context, images are analyzed, and data files are imported for processing. Response formatting generates professional email replies with structured results, inline visualizations, and file attachments for generated artifacts. The system handles email threading for multi-turn task refinement with context preservation across replies. Priority detection identifies urgent requests for expedited processing. Error handling sends informative failure notifications with specific guidance on how to reformulate the request.
   scoring_criteria:
-  - Email composed
-  - Sent successfully
-  - Content accurate
+    - Email parsing extracting task intent from subject, body, and attachments
+    - Automatic task routing based on content analysis (research, code, docs, data)
+    - Attachment processing by type (documents for context, images for analysis, data files)
+    - Professional email response formatting with results, visualizations, and attachments
+    - Email threading for multi-turn task refinement with context preservation
+    - Priority detection for urgent request expedited processing
+    - Informative failure notifications with request reformulation guidance
+    - Structured result delivery with inline content and downloadable artifacts
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

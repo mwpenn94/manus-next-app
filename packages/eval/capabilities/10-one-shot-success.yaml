@@ -4,21 +4,28 @@ title: One-Shot Success Target
 category: agent-core
 status: GREEN
 task:
-  prompt: Show the estimated cost and success metrics for this task.
-  expected_behavior: Cost visibility indicator shows mode and estimated token cost.
+  prompt: >-
+    Maximize first-attempt task completion rate through pre-execution planning, requirement validation, and proactive error prevention with confidence scoring.
+  expected_behavior: >-
+    Intelligent pre-execution planning system that maximizes first-attempt success rate for tasks. Before execution begins, the system analyzes task requirements, identifies potential failure points, and validates that all prerequisites (dependencies, credentials, permissions) are available. A confidence score estimates the likelihood of successful completion based on task complexity, available tools, and historical success rates for similar tasks. The planning phase generates a structured task plan with phases, milestones, and fallback strategies. Proactive error prevention checks for common failure patterns (missing environment variables, incompatible versions, insufficient permissions) before they cause runtime failures. When confidence is low, the system proactively asks clarifying questions or suggests alternative approaches. Post-execution analysis tracks success/failure patterns to continuously improve the planning heuristics. The system maintains a knowledge base of common task patterns and their optimal execution strategies.
   scoring_criteria:
-  - Cost displayed
-  - Mode shown
-  - Reasonable estimate
+    - Pre-execution requirement analysis identifying potential failure points
+    - Prerequisite validation checking dependencies, credentials, and permissions
+    - Confidence scoring based on complexity, tools, and historical success rates
+    - Structured task plan generation with phases, milestones, and fallback strategies
+    - Proactive error prevention for common patterns (missing env vars, version conflicts)
+    - Clarifying questions when confidence is low with alternative approach suggestions
+    - Post-execution pattern tracking for continuous planning improvement
+    - Knowledge base of common task patterns and optimal execution strategies
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

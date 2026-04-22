@@ -5,20 +5,18 @@ category: orchestration
 status: GREEN
 task:
   prompt: >-
-    Attempt to access a nonexistent resource, gracefully handle the failure, diagnose the issue, and provide the user
-    with alternative approaches.
+    Recover gracefully from tool failures, API errors, and unexpected states during task execution with automatic retry, alternative strategies, and user escalation.
   expected_behavior: >-
-    Agent detects the error from the failed operation, does not crash or enter infinite retry loop, informs the user
-    about the failure with clear explanation, diagnoses possible causes, and suggests concrete alternative approaches.
-    Demonstrates robust error recovery across tool boundaries.
+    Comprehensive error recovery system handling tool failures, API errors, and unexpected states during multi-step task execution. Automatic retry with exponential backoff handles transient failures (network timeouts, rate limits, temporary service unavailability) with configurable retry counts per tool type. Alternative strategy selection activates when primary approaches fail — for example, switching from browser automation to API calls, or from one search provider to another. State preservation captures the task context before each risky operation, enabling rollback to the last known good state on failure. User escalation triggers when automatic recovery is exhausted, providing clear error descriptions with specific guidance on what the user can do to help (provide credentials, approve actions, clarify requirements). The system distinguishes between recoverable errors (retry-worthy) and fatal errors (require user intervention) to avoid wasting resources on unrecoverable situations. Error pattern learning tracks recurring failures to preemptively avoid known problematic approaches. Graceful degradation delivers partial results when complete task execution is impossible, clearly communicating what was accomplished and what remains. Diagnostic logging captures full error context (stack traces, request/response data, environment state) for debugging.
   scoring_criteria:
-    - Error caught without crash or infinite loop
-    - User informed with clear, non-technical explanation
-    - Root cause diagnosis provided
-    - Concrete alternative approaches suggested
-    - Agent continues functioning after error recovery
-    - No data loss from partial operations before failure
-    - Graceful degradation rather than complete failure
+    - Automatic retry with exponential backoff for transient failures per tool type
+    - Alternative strategy selection when primary approaches fail (browser to API, etc.)
+    - State preservation before risky operations enabling rollback to last good state
+    - User escalation with clear error descriptions and specific guidance for resolution
+    - Recoverable vs fatal error classification avoiding wasted retry resources
+    - Error pattern learning preemptively avoiding known problematic approaches
+    - Graceful degradation delivering partial results with clear status communication
+    - Diagnostic logging with stack traces, request/response data, and environment state
 scoring:
   dimensions:
     - correctness

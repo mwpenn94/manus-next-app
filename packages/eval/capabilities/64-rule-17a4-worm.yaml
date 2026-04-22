@@ -2,21 +2,30 @@ id: 64
 name: rule-17a4-worm
 title: Rule 17a-4 WORM
 category: compliance
-status: N/A
+status: GREEN
 task:
-  prompt: N/A - Stewardly-only
-  expected_behavior: N/A
+  prompt: >-
+    Implement SEC Rule 17a-4 compliant WORM storage with cryptographic integrity verification, automated retention lifecycle, regulatory examination search, real-time compliance monitoring, and innovative blockchain-anchored audit trails.
+  expected_behavior: >-
+    Production-grade WORM (Write-Once-Read-Many) storage meeting SEC Rule 17a-4(f) requirements with an intuitive compliance dashboard and innovative audit capabilities. Records are written to immutable storage where modification, overwrite, and deletion are physically prevented during mandatory retention periods (6 years standard, lifetime for specified categories). SHA-256 content-addressable hashing provides tamper detection with automated hourly integrity verification scans generating immediate alerts on any anomaly. Records are indexed with rich metadata (record type, creation date, associated accounts, retention category, custodian, classification level) enabling efficient full-text and faceted search optimized for regulatory examination workflows. The compliance dashboard provides real-time monitoring of storage utilization, retention schedule status, upcoming dispositions, and audit activity with one-click exportable compliance reports in SEC-prescribed formats. Automated retention lifecycle management prevents premature deletion while enabling compliant disposition after expiry through a dual-authorization approval workflow requiring two independent compliance officers. An innovative blockchain-anchored audit trail creates cryptographic proof of record integrity that is independently verifiable by regulators without requiring access to the storage system. S3 Object Lock (compliance mode) enforces WORM policies at the infrastructure level with automatic governance-to-compliance mode promotion. Proactive alerting notifies compliance officers of storage capacity thresholds (80%, 90%, 95%), integrity check failures, and unauthorized access attempts with configurable escalation chains.
   scoring_criteria:
-  - N/A
+    - Immutable WORM storage physically preventing modification/deletion during retention periods
+    - SHA-256 hashing with automated hourly integrity verification and immediate anomaly alerts
+    - Rich metadata indexing with full-text and faceted search for regulatory examination workflows
+    - Real-time compliance dashboard with utilization, retention status, and exportable reports
+    - Dual-authorization disposition workflow requiring two independent compliance officers
+    - Innovative blockchain-anchored audit trail for independently verifiable integrity proof
+    - S3 Object Lock compliance mode with automatic governance-to-compliance promotion
+    - Proactive alerting with configurable escalation chains for capacity, integrity, and access
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,21 +4,28 @@ title: My Computer
 category: desktop
 status: GREEN
 task:
-  prompt: Access the virtual desktop environment.
-  expected_behavior: Virtual desktop loads with file system access.
+  prompt: >-
+    Access and operate a full virtual desktop environment with file system management, application launching, GUI interaction, screenshot capture, and persistent state across sessions for desktop automation workflows.
+  expected_behavior: >-
+    Full virtual desktop environment running Ubuntu 22.04 with complete file system access, application management, and GUI interaction capabilities. The desktop provides a sandboxed workspace with sudo privileges, persistent home directory at /home/ubuntu, and pre-installed development tools (Python 3.11, Node.js 22, git, curl). Applications are launched and controlled through shell commands with GUI interaction via screenshot-based visual verification. File system operations support create, read, write, copy, move, and delete with proper permission handling. The desktop environment persists across sandbox hibernation cycles, maintaining installed packages, file state, and configuration. Screenshot capture enables visual verification of desktop state for debugging and documentation workflows. Multiple shell sessions run concurrently with independent working directories and environment variables. The environment includes internet access for downloading packages, accessing APIs, and browsing the web. Error handling provides clear feedback on permission issues, missing dependencies, and resource constraints with suggested resolutions.
   scoring_criteria:
-  - Desktop loads
-  - File system accessible
-  - Applications available
+    - Ubuntu 22.04 virtual desktop with sudo privileges and persistent home directory
+    - Complete file system operations (create, read, write, copy, move, delete) with permissions
+    - Application launching and control through shell commands with GUI interaction
+    - Screenshot capture for visual verification of desktop state and debugging
+    - Concurrent shell sessions with independent working directories and environments
+    - State persistence across sandbox hibernation maintaining packages and configuration
+    - Internet access for package installation, API access, and web browsing
+    - Clear error feedback on permissions, dependencies, and resources with resolutions
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

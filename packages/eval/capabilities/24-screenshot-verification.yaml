@@ -4,21 +4,28 @@ title: Screenshot Verification
 category: browser-computer
 status: GREEN
 task:
-  prompt: Take a screenshot of a webpage and verify it contains a specific element.
-  expected_behavior: Screenshot taken, vision model analyzes content.
+  prompt: >-
+    Capture and analyze screenshots for visual verification of UI state, layout accuracy, and content correctness with automated comparison and annotation capabilities.
+  expected_behavior: >-
+    Visual verification system using screenshot capture and analysis for UI testing and documentation. Screenshots are captured from the browser preview and desktop environment with configurable viewport sizes for responsive testing. Multi-modal analysis examines captured screenshots to verify UI element presence, layout accuracy, text content correctness, and visual consistency. Automated comparison detects visual regressions by comparing current screenshots against baseline references with configurable tolerance thresholds. The annotation system adds arrows, boxes, circles, numbered callouts, text labels, and highlights to screenshots for documentation and bug reports. Redaction capabilities blur or mask sensitive information in screenshots before sharing. Drop shadow framing polishes screenshots for professional documentation and marketing materials. The system handles dynamic content (animations, loading states) by capturing at stable states with configurable wait conditions. Batch capture supports multiple viewport sizes and pages with organized output directories.
   scoring_criteria:
-  - Screenshot captured
-  - Vision analysis performed
-  - Element identified
+    - Browser and desktop screenshot capture with configurable viewport sizes
+    - Multi-modal analysis verifying UI elements, layout, text, and visual consistency
+    - Visual regression detection comparing against baselines with tolerance thresholds
+    - Annotation with arrows, boxes, circles, callouts, labels, and highlights
+    - Redaction capabilities blurring sensitive information before sharing
+    - Drop shadow framing for professional documentation and marketing materials
+    - Dynamic content handling with stable-state capture and configurable wait conditions
+    - Batch capture across multiple viewport sizes and pages with organized output
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,27 +4,28 @@ title: Messaging-App Agent
 category: platform
 status: GREEN
 task:
-  prompt: Deploy an AI agent that operates within messaging platforms, handling conversations, executing tasks, and providing
-    responses through chat interfaces.
-  expected_behavior: Agent operates within messaging platforms (Slack, Teams, etc.) handling natural language conversations,
-    executing multi-step tasks, providing formatted responses with rich media, and maintaining conversation context across
-    messages. Includes proper rate limiting and error handling.
+  prompt: >-
+    Deploy an AI agent that operates natively within messaging platforms (Slack, Microsoft Teams, Discord), handling natural language conversations, executing multi-step tasks from chat commands, providing rich media responses, and maintaining conversation context across message threads with proper rate limiting.
+  expected_behavior: >-
+    Agent operates within messaging platforms as a conversational AI assistant, handling natural language conversations with context awareness across message threads. Executes multi-step tasks triggered by chat commands or natural language requests, including web research, data analysis, file generation, and workflow automation. Provides formatted responses using platform-native rich media capabilities — Block Kit for Slack, Adaptive Cards for Teams, embeds for Discord — including images, files, tables, and interactive components (buttons, dropdowns, modals). Maintains conversation context across messages within a thread, enabling follow-up questions and iterative refinement. Implements proper rate limiting and API throttling to comply with platform rate limits. Error handling provides user-friendly messages with retry guidance. Supports both direct messages and channel-based interactions with proper permission scoping.
   scoring_criteria:
-  - Natural language conversation handling in messaging platforms
-  - Multi-step task execution from chat commands
-  - Rich media responses (images, files, formatted text)
-  - Conversation context maintenance across messages
-  - Rate limiting and throttling for API compliance
-  - Error handling with user-friendly error messages
+    - Natural language conversation handling with context awareness across message threads
+    - Multi-step task execution from chat commands (research, analysis, file generation)
+    - Platform-native rich media responses (Block Kit, Adaptive Cards, embeds)
+    - Conversation context maintenance across messages enabling follow-up and refinement
+    - Rate limiting and API throttling for platform compliance
+    - Error handling with user-friendly messages and retry guidance
+    - Direct message and channel-based interaction support with permission scoping
+    - Interactive component support (buttons, dropdowns, modals) for structured input
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

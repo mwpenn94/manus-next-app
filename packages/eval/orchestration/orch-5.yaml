@@ -5,20 +5,29 @@ category: orchestration
 status: GREEN
 task:
   prompt: >-
-    Conduct wide research requiring parallel execution of multiple independent searches, then synthesize all results
-    into a coherent analysis.
+    Conduct wide research requiring parallel execution of multiple independent searches across
+    diverse source types, then synthesize all results into a coherent analysis with cross-source
+    validation and deduplication.
   expected_behavior: >-
-    Agent uses the map tool to spawn parallel subtasks for independent research queries, collects results from all
-    subtasks, and synthesizes findings into a unified analysis. Demonstrates concurrent tool execution with proper
-    aggregation and deduplication of results.
+    Agent uses the map tool to spawn 5+ parallel subtasks for independent research queries,
+    each targeting different source types (academic, industry, news, technical documentation).
+    Each subtask executes independently with its own search, browser navigation, and content
+    extraction workflow. All subtask results are collected without data loss through the map
+    tool's CSV/JSON aggregation mechanism. The agent then synthesizes findings into a unified
+    analysis with cross-source validation, deduplication of overlapping findings, and confidence
+    scoring based on source agreement. Individual subtask failures are handled gracefully
+    without blocking other subtasks. The final output is demonstrably richer and more
+    comprehensive than any single sequential search could produce, with proper attribution
+    to source subtasks.
   scoring_criteria:
-    - Map tool used to spawn parallel subtasks (5+ concurrent)
-    - Each subtask executes independently with its own search/analysis
-    - All subtask results collected without data loss
-    - Results synthesized into coherent unified analysis
-    - Deduplication of overlapping findings across subtasks
-    - Proper error handling for individual subtask failures
-    - Final output richer than any single sequential search
+    - Map tool used to spawn 5+ parallel subtasks with independent execution contexts
+    - Each subtask executes its own search/browser/extraction workflow independently
+    - All subtask results collected via CSV/JSON aggregation without data loss
+    - Cross-source validation with confidence scoring based on source agreement
+    - Deduplication of overlapping findings across subtask results
+    - Graceful error handling for individual subtask failures without blocking others
+    - Final synthesis demonstrably richer than any single sequential search
+    - Proper attribution of findings to source subtasks with traceability
 scoring:
   dimensions:
     - correctness

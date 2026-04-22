@@ -4,21 +4,28 @@ title: Veo3 Video Generation
 category: content-generation
 status: GREEN
 task:
-  prompt: Generate a short video about a product launch.
-  expected_behavior: Video generated using AI video generation.
+  prompt: >-
+    Generate professional videos from text descriptions using AI with scene composition, transitions, audio integration, and export in standard formats.
+  expected_behavior: >-
+    AI-powered video generation system creating professional video content from text descriptions with the video-generator skill workflow. Scene composition breaks text prompts into individual scenes with visual descriptions, camera angles, and timing specifications. Veo3 integration generates high-quality video clips from scene descriptions with consistent style across scenes. Transition effects (cuts, fades, dissolves) connect scenes smoothly with configurable timing. Audio integration layers background music, voiceover narration, and sound effects with volume balancing. The generation pipeline supports multiple video styles (cinematic, documentary, commercial, educational) with style-consistent output. Export produces standard formats (MP4, WebM) with configurable resolution and quality settings. The system handles long-form content by generating scenes in parallel and assembling them with proper sequencing. Preview thumbnails are generated for each scene before full rendering, enabling rapid iteration on composition.
   scoring_criteria:
-  - Video generated
-  - Content relevant
-  - Playable format
+    - Scene composition from text with visual descriptions, camera angles, and timing
+    - Veo3 AI video generation with consistent style across multiple scenes
+    - Smooth transition effects (cuts, fades, dissolves) with configurable timing
+    - Audio integration with background music, voiceover, and sound effect layering
+    - Multiple video styles (cinematic, documentary, commercial, educational)
+    - Standard format export (MP4, WebM) with configurable resolution and quality
+    - Parallel scene generation with proper sequencing for long-form content
+    - Preview thumbnails per scene enabling rapid composition iteration
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

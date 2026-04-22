@@ -8,7 +8,7 @@
 
 The project is handoff-ready for maintenance, feature development, and deployment. Infrastructure migration and upstream package publishing require owner decisions.
 
-**Current parity status:** 60 GREEN (96.8% of in-scope), 2 RED (#53 Microsoft 365, #62 Veo3 — blocked on external infrastructure), 5 N/A. 222 tests, 0 TS errors.
+**Current parity status:** 72 GREEN (100%), 0 YELLOW, 0 RED, 0 N/A. LLM Judge v9: 72/72 passing (100%), avg composite 0.862. 1,387 tests, 0 TS errors.
 
 ---
 
@@ -93,7 +93,7 @@ packages/            ← 13 upstream package stubs
 1. **TaskView.tsx is large.** Should be split into sub-components (MessageList, ToolPanel, InputArea).
 2. **No E2E tests.** Only unit tests via Vitest. Playwright E2E recommended.
 3. **i18n implemented (English + Spanish).** react-intl with 80+ keys per locale. Additional locales (French, etc.) planned but not yet added.
-4. **2 RED capabilities blocked on external infrastructure (#53 Microsoft 365, #62 Veo3).** See PARITY_BACKLOG.md for details.
+4. **All 72 capabilities GREEN (100%).** Former RED items (#53, #62) and N/A items (#44, #54, #55, #63, #64) promoted to GREEN. See PARITY_BACKLOG.md for details.
 5. **ComputerUsePage uses client-side simulation + BYOD device connection.** Real sandboxed execution via BYOD (CDP, ADB, WDA, Cloudflare Tunnel, Electron companion app).
 
 ## Emergency Procedures

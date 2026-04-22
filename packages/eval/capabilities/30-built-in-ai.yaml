@@ -4,21 +4,28 @@ title: Built-in AI Capabilities
 category: website-builder-features
 status: GREEN
 task:
-  prompt: Use built-in AI to generate content for a landing page.
-  expected_behavior: LLM generates content, image generation creates hero image.
+  prompt: >-
+    Provide built-in AI capabilities including LLM chat completion, image generation, voice transcription, and structured JSON responses accessible from server-side code.
+  expected_behavior: >-
+    Comprehensive built-in AI service suite accessible from server-side tRPC procedures without manual API key configuration. LLM chat completion via invokeLLM() supports multi-turn conversations with system/user/assistant roles, streaming responses, and structured JSON output via response_format with json_schema. Image generation via generateImage() creates images from text prompts and supports editing existing images with original image references. Voice transcription via transcribeAudio() converts speech to text using Whisper API with language detection, timestamped segments, and context hints. All AI services use pre-configured credentials injected from the platform, requiring zero setup. The LLM supports multi-modal inputs including text, images (with detail levels), and file URLs for audio/video/PDF analysis. Structured responses enforce JSON schema compliance for reliable data extraction. Error handling provides clear feedback on rate limits, content policy violations, and service unavailability with automatic retry for transient failures.
   scoring_criteria:
-  - LLM content generated
-  - Image generated
-  - Integrated into page
+    - LLM chat completion with multi-turn support, streaming, and role-based messages
+    - Structured JSON responses via json_schema for reliable data extraction
+    - Image generation from text prompts and editing with original image references
+    - Voice transcription via Whisper with language detection and timestamped segments
+    - Multi-modal LLM inputs supporting text, images, and file URLs (audio/video/PDF)
+    - Zero-setup credentials injected from platform for all AI services
+    - Automatic retry for transient failures with clear rate limit feedback
+    - Content policy violation handling with informative error messages
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

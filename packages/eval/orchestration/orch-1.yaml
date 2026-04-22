@@ -5,21 +5,18 @@ category: orchestration
 status: GREEN
 task:
   prompt: >-
-    Research a topic using web search, generate a relevant image with AI image generation, create a comprehensive
-    document summarizing findings with citations, and produce a shareable presentation.
+    Execute complex tasks requiring sequential invocation of multiple tools with data passing between steps, error handling at each stage, and progress tracking.
   expected_behavior: >-
-    Agent orchestrates a multi-tool chain: (1) search tool queries multiple sources with query variants, (2) generate
-    tool creates relevant images, (3) file tool writes structured markdown report with citations, (4) slides tool
-    creates presentation from content. Each tool output feeds into the next step. Final deliverables include report
-    document, generated images, and slide deck.
+    Multi-tool orchestration system executing complex tasks through sequential tool chains with intelligent data passing between steps. The orchestrator analyzes task requirements to determine the optimal tool sequence, selecting from browser, shell, file operations, search, and generation tools. Data flows between tools via structured intermediate results — for example, search results feed into browser navigation, which produces data for file writing, which triggers shell execution. Error handling at each stage detects failures, attempts automatic recovery, and falls back to alternative approaches when primary tools fail. Progress tracking provides real-time visibility into the current step, completed steps, and estimated remaining work. The system handles tool dependencies by ensuring prerequisite tools complete successfully before dependent tools begin. Parallel execution opportunities are identified and exploited when tools have no data dependencies. The orchestrator maintains a task plan that adapts dynamically as intermediate results reveal new requirements or constraints. Rollback capabilities undo partial progress when a critical step fails, preventing inconsistent state.
   scoring_criteria:
-    - Search tool used with multiple query variants across info/news/research types
-    - Image generation produces relevant visual assets
-    - Document created with structured sections and inline citations
-    - Presentation generated from research content
-    - Tool outputs correctly chained (search results → document → slides)
-    - Final deliverables attached and accessible to user
-    - Error handling between tool transitions
+    - Optimal tool sequence selection from browser, shell, file, search, and generation tools
+    - Structured data passing between tools via intermediate results
+    - Per-stage error handling with automatic recovery and alternative fallback approaches
+    - Real-time progress tracking with current step, completed steps, and time estimates
+    - Tool dependency management ensuring prerequisites complete before dependents
+    - Parallel execution when tools have no data dependencies for efficiency
+    - Dynamic task plan adaptation as intermediate results reveal new requirements
+    - Rollback of partial progress on critical step failure preventing inconsistent state
 scoring:
   dimensions:
     - correctness

@@ -4,27 +4,28 @@ title: Slack Integration
 category: platform
 status: GREEN
 task:
-  prompt: Integrate Slack messaging capabilities allowing the agent to send notifications, receive commands, and interact
-    with users through Slack channels.
-  expected_behavior: Agent integrates with Slack API for sending messages to channels, receiving slash commands, handling
-    interactive components (buttons, modals), and processing webhook events. Includes proper OAuth flow for workspace installation
-    and message formatting with Block Kit.
+  prompt: >-
+    Integrate with Slack workspaces for sending messages, creating channels, managing threads, and building interactive bot experiences with Block Kit UI.
+  expected_behavior: >-
+    Comprehensive Slack integration enabling programmatic workspace interaction through the Slack Web API and Events API. Message sending supports rich formatting with Block Kit UI components including sections, dividers, images, buttons, and interactive elements. Channel management creates, archives, and configures channels with topic and purpose setting. Thread management enables organized conversations with reply threading, thread summarization, and follow-up tracking. Interactive bot experiences respond to slash commands, button clicks, and modal submissions with real-time user interaction. File sharing uploads documents, images, and code snippets to channels with preview generation. User management queries workspace members, manages presence status, and handles direct message conversations. Webhook integration receives real-time events (messages, reactions, channel updates) for triggering automated workflows. The integration handles rate limiting with automatic retry and request queuing to prevent API throttling. GIF creation via the slack-gif-creator skill produces optimized animated content for engaging team communication.
   scoring_criteria:
-  - Slack API integration for sending and receiving messages
-  - Slash command handling with response formatting
-  - Interactive component support (buttons, modals)
-  - Webhook event processing and verification
-  - OAuth flow for workspace installation
-  - Block Kit message formatting
+    - Rich messaging with Block Kit UI (sections, dividers, images, buttons, interactives)
+    - Channel management (create, archive, configure) with topic and purpose setting
+    - Thread management with reply threading, summarization, and follow-up tracking
+    - Interactive bot with slash commands, button clicks, and modal submissions
+    - File sharing with document, image, and code snippet uploads and previews
+    - User management with member queries, presence status, and DM conversations
+    - Real-time webhook events (messages, reactions, updates) for automated workflows
+    - Rate limiting with automatic retry and request queuing to prevent throttling
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

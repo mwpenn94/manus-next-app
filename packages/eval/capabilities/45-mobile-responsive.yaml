@@ -4,22 +4,28 @@ title: Mobile-Responsive Web UI
 category: mobile
 status: GREEN
 task:
-  prompt: Verify the web UI is responsive at 375px viewport width.
-  expected_behavior: All pages render correctly on mobile viewport.
+  prompt: >-
+    Ensure all generated web applications are fully responsive across mobile, tablet, and desktop viewports with touch-optimized interactions and adaptive layouts.
+  expected_behavior: >-
+    Mobile-first responsive design system ensuring all generated web applications work flawlessly across device sizes. Tailwind CSS responsive utilities (sm, md, lg, xl breakpoints) create adaptive layouts that reorganize content appropriately for each viewport. Touch-optimized interactions ensure tap targets meet minimum 44x44px accessibility guidelines with appropriate spacing. Navigation adapts between mobile hamburger menus and desktop navigation bars with smooth transitions. Typography scales responsively using clamp() for fluid sizing that maintains readability across devices. Images and media use responsive sizing with srcset and lazy loading for performance on mobile networks. Form inputs are optimized for mobile with appropriate input types (tel, email, number) triggering correct virtual keyboards. The preview panel provides responsive viewport testing with preset device sizes and custom dimensions. CSS Grid and Flexbox layouts handle content reflow gracefully without horizontal scrolling on any device.
   scoring_criteria:
-  - Layout adapts
-  - Touch targets adequate
-  - No horizontal scroll
-  - Navigation works
+    - Mobile-first Tailwind CSS responsive design with sm/md/lg/xl breakpoints
+    - Touch-optimized 44x44px minimum tap targets with appropriate spacing
+    - Adaptive navigation (mobile hamburger to desktop nav bar) with smooth transitions
+    - Fluid typography using clamp() maintaining readability across all devices
+    - Responsive images with srcset and lazy loading for mobile network performance
+    - Mobile-optimized form inputs with correct virtual keyboard triggers
+    - Responsive viewport testing in preview panel with preset and custom sizes
+    - Graceful content reflow via Grid/Flexbox without horizontal scrolling
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

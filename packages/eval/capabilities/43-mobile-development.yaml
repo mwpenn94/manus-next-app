@@ -4,17 +4,19 @@ title: Mobile Development
 category: mobile
 status: GREEN
 task:
-  prompt: Build a mobile-responsive web application that provides native-like experience on mobile devices.
+  prompt: >-
+    Build mobile applications using React Native or progressive web app (PWA) approaches with responsive design, touch optimization, and app store preparation.
   expected_behavior: >-
-    Fully responsive application with mobile-first Tailwind CSS breakpoints, touch-optimized interactions,
-    viewport-aware layouts, and progressive web app capabilities. All 36+ pages render correctly on mobile viewports.
+    Mobile application development supporting both React Native for native app experiences and PWA for web-based mobile deployment. React Native development produces cross-platform iOS and Android applications from a single JavaScript/TypeScript codebase with native UI components. PWA development creates installable web applications with service workers for offline support, push notifications, and home screen installation. Responsive design ensures optimal layouts across phone and tablet form factors with orientation-aware adjustments. Touch optimization implements gesture handlers (swipe, pinch, long-press) with haptic feedback and 44px minimum tap targets. Navigation follows mobile patterns (tab bars, stack navigation, drawer menus) with smooth animated transitions. Performance optimization includes lazy loading, image compression, and bundle size minimization for fast load times on mobile networks. App store preparation generates required assets (icons, splash screens, screenshots) and metadata (descriptions, keywords) for Apple App Store and Google Play submission. Testing tools provide device emulation and real-device debugging for cross-platform verification.
   scoring_criteria:
-    - Mobile-first responsive design with Tailwind breakpoints (sm/md/lg/xl)
-    - Touch-optimized UI elements with appropriate tap targets
-    - Viewport-aware layouts that adapt to screen size
-    - Mobile navigation patterns (hamburger menu, bottom nav)
-    - Performance optimized for mobile networks
-    - All pages functional on 320px-768px viewports
+    - React Native cross-platform iOS/Android development from single codebase
+    - PWA with service workers for offline support, push notifications, and installation
+    - Responsive layouts across phone and tablet with orientation-aware adjustments
+    - Touch gesture handlers (swipe, pinch, long-press) with haptic feedback
+    - Mobile navigation patterns (tab bars, stack nav, drawers) with animated transitions
+    - Performance optimization with lazy loading, compression, and bundle minimization
+    - App store asset generation (icons, splash screens, metadata) for submission
+    - Device emulation and real-device debugging for cross-platform testing
 scoring:
   dimensions:
     - correctness

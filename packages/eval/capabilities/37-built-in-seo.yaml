@@ -4,22 +4,28 @@ title: Built-in SEO
 category: website-builder-pm
 status: GREEN
 task:
-  prompt: Verify SEO meta tags, OG tags, and robots.txt are configured.
-  expected_behavior: All SEO elements present and correctly configured.
+  prompt: >-
+    Provide built-in SEO optimization for web applications including meta tags, Open Graph, structured data, sitemap generation, and performance scoring.
+  expected_behavior: >-
+    Comprehensive SEO optimization suite built into the web application framework providing meta tag management, social sharing optimization, and search engine discoverability. Meta tags are configured per page with title, description, and canonical URL management through a centralized SEO component. Open Graph and Twitter Card tags enable rich social media previews with customizable images, titles, and descriptions per page. Structured data (JSON-LD) is generated for common content types (articles, products, organizations, events) improving search result rich snippets. Automatic sitemap.xml generation indexes all public routes with configurable priority and change frequency. Robots.txt configuration controls crawler access with per-path allow/disallow rules. Performance scoring analyzes Core Web Vitals (LCP, FID, CLS) with actionable improvement suggestions. The system generates semantic HTML with proper heading hierarchy, alt text reminders, and accessible link text. SEO audit reports identify missing meta tags, broken links, and optimization opportunities.
   scoring_criteria:
-  - Meta tags present
-  - OG tags correct
-  - robots.txt exists
-  - JSON-LD structured data
+    - Per-page meta tag management with title, description, and canonical URLs
+    - Open Graph and Twitter Card tags for rich social media previews
+    - JSON-LD structured data for articles, products, organizations, and events
+    - Automatic sitemap.xml generation with configurable priority and change frequency
+    - Robots.txt configuration with per-path allow/disallow crawler rules
+    - Core Web Vitals analysis (LCP, FID, CLS) with improvement suggestions
+    - Semantic HTML with heading hierarchy, alt text, and accessible link text
+    - SEO audit reports identifying missing tags, broken links, and opportunities
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,21 +4,28 @@ title: Sandbox Runtime
 category: browser-computer
 status: GREEN
 task:
-  prompt: Execute a Python script that calculates fibonacci numbers.
-  expected_behavior: Code executed in sandbox, output returned.
+  prompt: >-
+    Provide an isolated sandbox runtime environment with persistent state, internet access, pre-installed development tools, and secure execution for arbitrary code.
+  expected_behavior: >-
+    Production-grade sandboxed runtime environment running Ubuntu 22.04 with full internet access and persistent state across hibernation cycles. The sandbox provides an isolated workspace with sudo privileges, preventing interference between tasks while enforcing security boundaries. Pre-installed development tools include Python 3.11 with scientific computing packages (pandas, numpy, matplotlib, seaborn), Node.js 22 with pnpm, and common CLI utilities (git, curl, wget, jq). Package installation via pip and pnpm extends capabilities on-demand with installed packages persisting across sessions. The runtime supports concurrent shell sessions with independent working directories and environment variables. File system operations maintain POSIX compliance with proper permission handling. The sandbox automatically hibernates during inactivity and resumes with full state restoration including running processes, installed packages, and file system state. Resource limits prevent runaway processes with configurable timeouts and memory constraints.
   scoring_criteria:
-  - Code executed
-  - Output correct
-  - Sandbox isolated
+    - Ubuntu 22.04 isolated sandbox with sudo privileges and internet access
+    - Persistent state across hibernation including packages, files, and configuration
+    - Pre-installed Python 3.11, Node.js 22, and common CLI utilities
+    - On-demand package installation via pip and pnpm with session persistence
+    - Concurrent shell sessions with independent working directories and environments
+    - POSIX-compliant file system operations with proper permission handling
+    - Automatic hibernation and resume with full state restoration
+    - Resource limits with configurable timeouts and memory constraints for safety
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

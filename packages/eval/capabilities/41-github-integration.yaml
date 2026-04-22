@@ -4,21 +4,28 @@ title: GitHub Integration
 category: developer-tools
 status: GREEN
 task:
-  prompt: Sync the project with a GitHub repository.
-  expected_behavior: Code pushed to GitHub, bidirectional sync active.
+  prompt: >-
+    Integrate web projects with GitHub repositories for code synchronization, pull/push operations, conflict resolution, and collaborative development workflows.
+  expected_behavior: >-
+    Seamless GitHub integration connecting web projects to user repositories for bidirectional code synchronization. The user_github remote is pre-configured and authenticated, ready for immediate use. Automatic sync occurs on file writes and checkpoint saves, pushing changes to the main branch. Pull operations retrieve the latest remote changes before applying local modifications. Conflict detection identifies merge conflicts during sync and aborts the operation with detailed conflict descriptions. Conflict resolution merges code and structural changes logically, preserving both intentions, while asking users to choose between content conflicts (titles, labels). The GitHub Settings panel shows the synced repository with disconnect option and clone commands. The gh CLI is available via shell for additional GitHub operations (issues, PRs, releases). The system never overwrites remote changes without explicit user confirmation. Branch protection and PR-based workflows are supported for team collaboration.
   scoring_criteria:
-  - GitHub connected
-  - Code pushed
-  - Sync works
+    - Pre-configured user_github remote with automatic authentication
+    - Bidirectional sync on file writes and checkpoint saves to main branch
+    - Pull-before-push ensuring latest remote changes are incorporated
+    - Conflict detection with detailed descriptions and operation abort
+    - Logical merge for code changes with user choice for content conflicts
+    - GitHub Settings panel with repository info, disconnect, and clone commands
+    - gh CLI availability for issues, PRs, releases, and other GitHub operations
+    - Branch protection and PR-based workflow support for team collaboration
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

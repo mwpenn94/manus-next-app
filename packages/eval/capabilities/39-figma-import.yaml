@@ -4,26 +4,28 @@ title: Import from Figma
 category: webapp
 status: GREEN
 task:
-  prompt: Import a Figma design file and convert it into functional React components with proper styling, layout, and interactivity.
-  expected_behavior: Agent accepts a Figma file URL or exported design tokens, analyzes the design structure, and generates
-    React components with Tailwind CSS styling that match the original design. Components include proper responsive behavior,
-    accessibility attributes, and interactive states.
+  prompt: >-
+    Import Figma designs and convert them into production-ready React components with pixel-accurate styling, responsive layouts, interactive states, accessibility, and an innovative visual diff tool for designer-developer handoff.
+  expected_behavior: >-
+    Comprehensive Figma-to-React conversion pipeline that accepts Figma file URLs or exported design tokens and performs deep structure analysis of frames, components, auto-layout constraints, variants, and design tokens. Generates clean React components with Tailwind CSS utility classes achieving pixel-level fidelity against the original design. The Figma layer hierarchy maps to a semantic React component tree with meaningful names derived from layer labels. Auto-layout constraints translate to Flexbox and CSS Grid with responsive breakpoints for mobile (320px), tablet (768px), and desktop (1280px) viewports. Design tokens (colors, typography scales, spacing) are extracted into CSS custom properties in index.css for global theme consistency. Interactive states (hover, focus, active, disabled) are implemented from Figma component variants with smooth 200ms CSS transitions. Accessibility attributes (ARIA labels, roles, tab indices, focus rings) are inferred from component semantics and layer naming conventions. An innovative visual diff tool renders the generated output alongside the original Figma frames, computing pixel-level deviation scores and highlighting areas needing adjustment. Robust error handling provides clear feedback when Figma files contain unsupported features (complex masks, 3D transforms), offering graceful CSS fallbacks and manual override guidance.
   scoring_criteria:
-  - Figma design file parsing and structure analysis
-  - React component generation from design elements
-  - Tailwind CSS styling matching original design
-  - Responsive layout preservation across breakpoints
-  - Accessibility attributes on generated components
-  - Interactive states (hover, focus, active) implemented
+    - Deep Figma structure analysis of frames, components, auto-layout, variants, and tokens
+    - Pixel-accurate React component generation with clean Tailwind CSS utility class styling
+    - Responsive Flexbox/Grid translation with breakpoints at 320px, 768px, and 1280px
+    - Design token extraction into CSS custom properties for global theme consistency
+    - Interactive state implementation from variants with smooth 200ms CSS transitions
+    - Accessibility inference (ARIA labels, roles, tab indices, focus rings) from layer semantics
+    - Innovative visual diff tool with pixel-level deviation scoring for rapid iteration
+    - Robust error handling for unsupported features with CSS fallbacks and override guidance
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

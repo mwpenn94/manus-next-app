@@ -4,21 +4,28 @@ title: Code Control
 category: developer-tools
 status: GREEN
 task:
-  prompt: Export the full codebase as a downloadable ZIP file.
-  expected_behavior: Codebase exported and downloadable.
+  prompt: >-
+    Provide full code access and version control for web projects with file browsing, download, git integration, and checkpoint-based version management.
+  expected_behavior: >-
+    Complete code control system providing full access to project source code with version management capabilities. The Code panel in the Management UI displays the complete file tree with syntax-highlighted file viewing and download-all-as-ZIP functionality. Git integration syncs the project to a connected GitHub repository via the user_github remote with automatic pull/push on file writes and checkpoint saves. Checkpoint-based version management creates named snapshots of the entire project state (code, dependencies, configuration) that can be restored via rollback. The version history accessible from the More menu (three-dot button) shows all checkpoints with descriptions, timestamps, and one-click rollback. Conflict detection during GitHub sync identifies merge conflicts and provides resolution guidance, never overwriting remote changes without confirmation. File-level diff viewing shows changes between checkpoints with line-by-line comparison. The system handles large projects efficiently with incremental checkpoints rather than full copies. Branch management supports working on feature branches with merge-back to main.
   scoring_criteria:
-  - Export triggered
-  - ZIP generated
-  - Download works
+    - File tree display with syntax-highlighted viewing and download-all-as-ZIP
+    - GitHub integration via user_github remote with automatic pull/push sync
+    - Checkpoint-based version management with named snapshots and descriptions
+    - Version history with timestamps, descriptions, and one-click rollback
+    - Conflict detection during sync with resolution guidance and confirmation
+    - File-level diff viewing with line-by-line comparison between checkpoints
+    - Efficient incremental checkpoints for large projects
+    - Branch management supporting feature branches with merge-back to main
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

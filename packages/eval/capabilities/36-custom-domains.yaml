@@ -4,21 +4,28 @@ title: Custom Domains
 category: website-builder-pm
 status: GREEN
 task:
-  prompt: Configure a custom domain for the published project.
-  expected_behavior: Custom domain configured and DNS verified.
+  prompt: >-
+    Configure custom domains for deployed web applications with automatic DNS setup, SSL certificate provisioning, and domain management through the settings interface.
+  expected_behavior: >-
+    Complete custom domain management system supporting domain purchase, binding, and configuration through the Management UI Settings panel. Auto-generated domain prefixes (xxx.manus.space) provide immediate access with customizable prefix modification. Users can purchase new domains directly within Manus or bind existing custom domains with guided DNS configuration instructions. SSL certificates are automatically provisioned and renewed via Let's Encrypt for all configured domains. The domain settings interface displays current domain status, DNS propagation progress, and certificate expiry dates. Multiple domains can be bound to a single project with automatic redirect configuration. Domain verification uses DNS TXT records with real-time propagation checking. The system handles domain transfer and unbinding with proper cleanup of DNS records and certificates. Error handling provides clear diagnostic messages for common DNS misconfiguration issues with step-by-step resolution guidance.
   scoring_criteria:
-  - Domain configured
-  - DNS verified
-  - SSL provisioned
+    - Auto-generated manus.space domain with customizable prefix modification
+    - In-app domain purchase and existing domain binding with guided DNS setup
+    - Automatic SSL certificate provisioning and renewal via Let's Encrypt
+    - Domain status display with DNS propagation progress and certificate expiry
+    - Multiple domain binding with automatic redirect configuration
+    - DNS TXT record verification with real-time propagation checking
+    - Domain transfer and unbinding with proper DNS and certificate cleanup
+    - Diagnostic messages for DNS misconfiguration with step-by-step resolution
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

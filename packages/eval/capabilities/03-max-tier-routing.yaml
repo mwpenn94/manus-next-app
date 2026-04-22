@@ -4,24 +4,28 @@ title: Max Tier Routing
 category: agent-core
 status: GREEN
 task:
-  prompt: In Max mode, analyze the competitive landscape of AI agent platforms and
-    produce a detailed report.
-  expected_behavior: Agent uses extended tool turns (up to 12), deeper research, and
-    produces comprehensive output.
+  prompt: >-
+    Route tasks to the highest-capability model tier available, with intelligent fallback to lower tiers on failure, latency-aware selection, and real-time tier health monitoring.
+  expected_behavior: >-
+    Intelligent model routing system that automatically selects the highest-capability tier for each task based on complexity analysis and tier availability. The router maintains a real-time health map of available model tiers with latency measurements and error rate tracking. When the primary tier is unavailable or returns errors, automatic fallback cascades to the next-best tier with transparent retry logic. Task complexity heuristics analyze prompt length, domain keywords, and required capabilities to select the optimal tier. Latency-aware routing prefers faster tiers for simple queries while reserving high-capability tiers for complex reasoning tasks. The system tracks routing decisions and outcomes to continuously improve tier selection accuracy. Rate limit awareness prevents routing to tiers approaching their quota limits. Users receive transparent feedback about which tier is handling their request with estimated quality and speed tradeoffs.
   scoring_criteria:
-  - Uses Max mode routing
-  - Extended tool turns
-  - Comprehensive output
-  - Higher quality than Speed mode
+    - Automatic highest-tier selection based on task complexity analysis
+    - Real-time tier health monitoring with latency and error rate tracking
+    - Automatic fallback cascade to next-best tier on primary failure
+    - Task complexity heuristics analyzing prompt length, domain, and capabilities
+    - Latency-aware routing preferring faster tiers for simple queries
+    - Continuous improvement of tier selection from routing outcome tracking
+    - Rate limit awareness preventing routing to quota-approaching tiers
+    - Transparent user feedback on active tier with quality/speed tradeoffs
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

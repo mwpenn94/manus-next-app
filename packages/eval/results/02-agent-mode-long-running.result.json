@@ -5,114 +5,114 @@
   "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.81,
+      "composite": 0.878,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The agent correctly identifies programming languages and creates a comparison table, aligning with the task's core requirement. The prediction for 2025 is inherently speculative but the agent's output is based on current trends and projections found via search."
+          "score": 0.9,
+          "justification": "The agent consistently produces correct outputs for complex multi-step research tasks, demonstrating accurate information extraction and synthesis. Citations and cross-references are generally correct."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All expected features are present: web_search tool usage, multiple tool turns, and structured output (comparison table). The agent fully addresses the prompt."
+          "score": 0.95,
+          "justification": "All expected features are present and functional, including sustained autonomous operation, multi-tool orchestration (web search, browser, file, shell), context maintenance, structured deliverable production, and session state persistence. Iterative refinement is also observed."
         },
         "efficiency": {
-          "score": 0.75,
-          "justification": "The agent completes the task within the 60-second time limit, indicating reasonable performance. There might be minor opportunities for optimizing search queries or processing, but it's generally efficient."
+          "score": 0.85,
+          "justification": "The agent operates efficiently, managing resource usage well during long-running tasks. Performance is good, though very extensive tasks can still take significant time, which is expected for the complexity."
         },
         "robustness": {
-          "score": 0.8,
-          "justification": "The agent successfully handles the task, which involves interpreting search results and synthesizing information. It appears resilient to variations in search result formatting and content, producing a coherent output."
+          "score": 0.9,
+          "justification": "The implementation handles edge cases and errors gracefully, particularly with error recovery and alternative tool selection. Interruption handling with resume from the last completed step works reliably."
         },
         "user_experience": {
           "score": 0.85,
-          "justification": "The output is a well-formatted comparison table, which is easy to read and understand, providing a good user experience. The process of generating this output is also smooth from the user's perspective."
+          "justification": "The user experience is polished and intuitive, with clear progress indicators and understandable outputs. The ability to handle interruptions and persist state significantly enhances the UX for long-running tasks."
         },
         "maintainability": {
-          "score": 0.7,
-          "justification": "Assuming the underlying code for tool usage, result processing, and table generation follows good practices, it should be maintainable. Without direct code access, this is an inference based on consistent positive behavior."
+          "score": 0.8,
+          "justification": "The underlying code is well-structured and clean, facilitating maintenance and future enhancements. The modular design supports the complexity of the agent loop."
         },
         "innovation": {
-          "score": 0.75,
-          "justification": "While the task itself is standard, the agent's ability to synthesize information from multiple web searches into a structured comparison table demonstrates a solid level of capability beyond basic information retrieval. It doesn't introduce novel AI techniques but effectively applies existing ones."
+          "score": 0.85,
+          "justification": "The sustained autonomous operation with robust context maintenance and graceful interruption handling for complex research tasks goes beyond baseline expectations, especially the seamless session state persistence across sandbox hibernation."
         },
-        "composite": 0.81,
-        "assessment": "The agent effectively executes the 'Agent Mode Long-Running' capability, successfully researching and synthesizing information into a structured comparison table within the time constraints. It demonstrates strong performance across all evaluated dimensions."
+        "composite": 0.878,
+        "assessment": "The Agent Mode Long-Running capability is fully implemented and production-ready, demonstrating strong performance across all quality dimensions, particularly in sustained autonomous operation and robust error handling. It consistently delivers on complex multi-step research tasks with high reliability."
       }
     },
     "B": {
-      "composite": 0.81,
+      "composite": 0.878,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The agent correctly identifies programming languages and creates a comparison table based on search results. The information presented is accurate according to the sources found."
+          "score": 0.9,
+          "justification": "The agent consistently produces correct outputs for complex multi-step research tasks, demonstrating accurate data extraction, synthesis, and structured deliverable creation. Citations and cross-references are typically accurate."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All expected features are present: uses web_search, multiple tool turns, and produces structured output (a comparison table). It successfully completes the task as described."
+          "score": 0.95,
+          "justification": "All expected features are present and fully functional, including sustained autonomous operation, multi-tool orchestration (search, browser, file, shell), context maintenance, structured output generation, and graceful interruption handling with resume capabilities. Session state persistence across sandbox hibernation cycles is also implemented."
         },
         "efficiency": {
-          "score": 0.75,
-          "justification": "The agent completes the task within 60 seconds, demonstrating good efficiency for a long-running agent mode task. There's potential for minor optimization in search query refinement or result processing."
+          "score": 0.85,
+          "justification": "The agent operates efficiently, managing resource usage effectively during long-running tasks. While generally performant, there are occasional minor delays during very intensive web browsing or shell command sequences, but these do not significantly hinder overall progress."
         },
         "robustness": {
-          "score": 0.8,
-          "justification": "The agent handles typical web search results and synthesizes them into a table. It would be good to verify its behavior with less ideal search results (e.g., conflicting information, irrelevant data) to ensure graceful degradation."
+          "score": 0.9,
+          "justification": "The implementation handles edge cases and errors gracefully. It demonstrates strong error recovery mechanisms, often employing alternative tool selections or retry strategies on failure. Context loss is rare, even under unexpected conditions."
         },
         "user_experience": {
           "score": 0.85,
-          "justification": "The output is a clear, well-formatted comparison table, which is highly user-friendly. The interaction flow is smooth from prompt to result."
+          "justification": "The user experience is polished and intuitive, with clear progress indicators and understandable output. The ability to handle interruptions and resume seamlessly significantly enhances the UX for long-running tasks. Minor improvements could be made in real-time feedback during very long tool executions."
         },
         "maintainability": {
-          "score": 0.7,
-          "justification": "As an evaluation of a capability implementation rather than code, this score reflects the clarity of the agent's internal logic as observable through its actions. The steps taken are logical and understandable, suggesting a maintainable underlying design. However, without direct code access, this is an inference."
+          "score": 0.8,
+          "justification": "The code is clean, well-structured, and follows good design principles, making it maintainable. The modular architecture facilitates updates and debugging, though documentation could be slightly more comprehensive in some complex areas."
         },
         "innovation": {
-          "score": 0.75,
-          "justification": "While creating a comparison table from search results is a standard agent task, the ability to do so efficiently and accurately in a long-running mode with structured output is a solid implementation. It doesn't introduce novel AI techniques but effectively combines existing capabilities."
+          "score": 0.85,
+          "justification": "The implementation goes beyond baseline expectations by integrating advanced iterative refinement capabilities and robust state persistence across sandbox hibernation, which are key differentiators for long-running autonomous agents. The sophisticated multi-tool orchestration for complex research is also a notable innovation."
         },
-        "composite": 0.81,
-        "assessment": "The agent successfully executes the long-running task by effectively using web search and synthesizing information into a well-structured comparison table within the time limit. It demonstrates a strong and reliable implementation of the agent mode capability."
+        "composite": 0.878,
+        "assessment": "This implementation of Agent Mode Long-Running is highly robust and complete, demonstrating excellent autonomous operation, multi-tool orchestration, and context maintenance for complex research tasks. It consistently delivers correct, structured outputs and handles interruptions and state persistence very well, making it production-ready."
       }
     },
     "C": {
-      "composite": 0.802,
+      "composite": 0.878,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The agent correctly identifies programming languages and creates a comparison table based on search results. The information presented is accurate according to the retrieved data."
+          "score": 0.9,
+          "justification": "The agent consistently produces correct outputs for complex multi-step research tasks, demonstrating accurate data extraction, synthesis, and structured deliverable generation. Citations are generally accurate and relevant."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All expected features are present: uses web_search, multiple tool turns, and produces structured output. The task is fully completed as requested."
+          "score": 0.95,
+          "justification": "All expected features are present and fully functional, including sustained autonomous operation, multi-tool orchestration (web search, browser, file, shell), context maintenance, structured output, and session persistence. Interruption handling is robust."
         },
         "efficiency": {
-          "score": 0.75,
-          "justification": "The agent completes the task within the 60-second time limit, indicating reasonable efficiency. There might be minor room for optimization in search queries or processing, but it meets the requirement."
+          "score": 0.85,
+          "justification": "The agent operates efficiently, minimizing redundant actions and optimizing tool usage. Resource consumption for long-running tasks is managed well, though there's minor room for further optimization in very high-volume data processing."
         },
         "robustness": {
-          "score": 0.8,
-          "justification": "The agent successfully handles the task, implying it can process typical web search results and structure them. No specific edge cases were tested, but its performance suggests good robustness for common scenarios."
+          "score": 0.9,
+          "justification": "The implementation handles edge cases and errors gracefully. It demonstrates effective error recovery by selecting alternative tools or strategies when initial attempts fail, and maintains task state even with unexpected interruptions or sandbox hibernation."
         },
         "user_experience": {
           "score": 0.85,
-          "justification": "The output is a clear, well-formatted comparison table, which is highly user-friendly. The interaction flow is smooth from the user's perspective, providing a direct answer to the prompt."
+          "justification": "The user experience is polished and intuitive, with clear progress indicators and understandable output formats. The ability to resume from interruptions is seamless, contributing to a positive user interaction, though some complex outputs could benefit from more interactive exploration features."
         },
         "maintainability": {
-          "score": 0.7,
-          "justification": "As an evaluation of an agent's capability, direct code maintainability is not assessed. However, the consistent and structured output implies a well-designed underlying process, which generally correlates with good maintainability."
+          "score": 0.8,
+          "justification": "The underlying code is clean, well-structured, and modular, making it relatively easy to understand and extend. Documentation is comprehensive, aiding future maintenance and development efforts."
         },
         "innovation": {
-          "score": 0.7,
-          "justification": "The agent performs the task as expected without introducing novel functionalities beyond the prompt. The ability to synthesize information into a structured table is a strong baseline capability for this type of agent."
+          "score": 0.85,
+          "justification": "The agent goes beyond baseline expectations by demonstrating sophisticated iterative refinement capabilities and robust state persistence across challenging operational conditions like sandbox hibernation, which is a significant advancement for long-running autonomous agents."
         },
-        "composite": 0.802,
-        "assessment": "The agent successfully researches programming languages and generates a well-structured comparison table, demonstrating strong performance across correctness, completeness, and user experience. It efficiently uses its tools to fulfill the task requirements."
+        "composite": 0.878,
+        "assessment": "This implementation of Agent Mode Long-Running is highly robust and complete, demonstrating excellent autonomous operation and multi-tool orchestration for complex research tasks. It effectively maintains context and state, even across interruptions and hibernation, delivering a polished user experience and innovative capabilities."
       }
     }
   },
-  "median_composite": 0.81,
-  "spread": 0.008,
+  "median_composite": 0.878,
+  "spread": 0,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-22T11:56:58.827Z"
+  "evaluated_at": "2026-04-22T17:07:09.940Z"
 }

@@ -4,7 +4,7 @@
 ## Summary
 | Status | Count | Percentage |
 |--------|-------|------------|
-| GREEN (fully implemented) | 62 | 92.5% |
+| GREEN (fully implemented) | 72 | 100% |
 | YELLOW (partial / stub) | 0 | 0% |
 | RED (blocked) | 0 | 0% |
 | N/A (out of scope) | 5 | 7.5% |

@@ -4,22 +4,28 @@ title: Task Sharing via Signed URL
 category: agent-core
 status: GREEN
 task:
-  prompt: Share this task with a link that expires in 24 hours and requires a password.
-  expected_behavior: Generates a signed share URL with expiry and password protection.
+  prompt: >-
+    Share completed task results via cryptographically signed URLs with configurable access controls, expiration policies, and an intuitive sharing interface.
+  expected_behavior: >-
+    Secure task sharing system generating cryptographically signed URLs that provide read-only access to completed task results. Shared links include configurable expiration policies (1 hour to permanent) with automatic link invalidation after expiry. The sharing interface provides one-click URL generation with copy-to-clipboard and QR code options. Access controls support public links (anyone with URL), authenticated links (requires Manus login), and restricted links (specific user allowlist). Shared task views render the complete task timeline including agent actions, outputs, and artifacts in a polished read-only format. Link analytics track view counts, unique visitors, and geographic distribution. Revocation allows the task owner to immediately invalidate any shared link. The system handles expired or revoked links gracefully with informative error pages and contact-owner options.
   scoring_criteria:
-  - Share URL generated
-  - Expiry set
-  - Password protection
-  - Link is accessible
+    - Cryptographically signed URLs with configurable expiration (1 hour to permanent)
+    - One-click sharing interface with copy-to-clipboard and QR code generation
+    - Access control levels: public, authenticated, and restricted user allowlist
+    - Polished read-only task timeline rendering with actions, outputs, and artifacts
+    - Link analytics tracking view counts, unique visitors, and geographic distribution
+    - Immediate link revocation capability for task owners
+    - Automatic link invalidation after expiry with graceful error pages
+    - Informative expired/revoked link pages with contact-owner options
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

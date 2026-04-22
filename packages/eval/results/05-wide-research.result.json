@@ -5,114 +5,114 @@
   "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.815,
+      "composite": 0.885,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The implementation produces correct outputs, including accurate synthesis, citations, and comparisons. Fact verification across sources is largely successful."
+          "score": 0.9,
+          "justification": "The implementation consistently produces accurate research findings, and cross-validation mechanisms effectively identify and resolve discrepancies, leading to highly correct outputs."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All expected features are present, including parallel subtask spawning, multi-source research, browser-based deep reading, structured markdown reports with inline citations, comparison tables, and confidence scores. Coverage of diverse source types is also evident."
+          "score": 0.95,
+          "justification": "All expected features are present, including parallel search, cross-validation, citation tracking, synthesized reports, deep-research and academic lookup skills, freshness prioritization, and quality assessment. The 2000 subtask capacity for parallel search is met."
         },
         "efficiency": {
-          "score": 0.8,
-          "justification": "The agent efficiently spawns parallel research subtasks, leading to timely report generation. Resource usage appears optimized for the complexity of the task."
+          "score": 0.85,
+          "justification": "The parallel processing for up to 2000 subtasks is highly performant, and resource management appears optimized for the scale of operations. Deep-research skill's 2-10 minute investigation time is efficient for complex topics."
         },
         "robustness": {
-          "score": 0.75,
-          "justification": "The system handles a good range of edge cases, such as conflicting information between sources (through confidence scoring) and varying data formats. Error handling for unreachable sources could be slightly improved."
+          "score": 0.9,
+          "justification": "The system gracefully handles various data sources and potential errors during parallel searches. Source cross-validation inherently adds a layer of robustness against unreliable information. Quality assessment filters low-quality results effectively."
         },
         "user_experience": {
-          "score": 0.8,
-          "justification": "The output is a well-structured and readable markdown report, making the findings easy to consume. The clarity of citations and comparison tables enhances the user experience."
+          "score": 0.85,
+          "justification": "The synthesized research reports with executive summaries, detailed analysis, and annotated bibliographies provide a clear and intuitive output. Citation tracking enhances usability for verification. The overall experience is polished."
         },
         "maintainability": {
-          "score": 0.7,
-          "justification": "While the output is excellent, without direct access to the code, maintainability is inferred from the consistent and structured output, suggesting a well-designed underlying process. Further evidence would be needed for a higher score."
+          "score": 0.8,
+          "justification": "The modular design, with distinct skills like deep-research and research-lookup, suggests a clean and well-structured codebase that is easy to maintain and extend."
         },
         "innovation": {
-          "score": 0.85,
-          "justification": "The implementation goes beyond baseline expectations by incorporating confidence scoring for claims, advanced cross-source deduplication, and sophisticated synthesis into actionable strategic recommendations, which are not always standard in research tools."
+          "score": 0.9,
+          "justification": "The combination of parallel search with 2000 subtasks, intelligent source cross-validation, integrated deep-research for autonomous multi-step investigation, and comprehensive quality assessment goes significantly beyond baseline expectations for research agents."
         },
-        "composite": 0.815,
-        "assessment": "This implementation demonstrates a strong capability in wide research, effectively leveraging parallel processing and advanced synthesis to produce comprehensive and well-structured reports with high accuracy and valuable insights. It meets and often exceeds expectations for a 'GREEN' status."
+        "composite": 0.885,
+        "assessment": "The Wide Research capability is a robust and highly innovative implementation, demonstrating comprehensive multi-source research with advanced features like parallel processing, intelligent cross-validation, and integrated deep-research skills. It meets all expected behaviors and is production-ready."
       }
     },
     "B": {
-      "composite": 0.823,
+      "composite": 0.858,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The implementation produces correct outputs, including structured reports, citations, and comparisons. Fact verification and deduplication contribute to accuracy."
+          "score": 0.9,
+          "justification": "The implementation produces correct research outputs, with accurate information gathered from various sources and presented coherently. Cross-validation effectively identifies consensus and conflicts."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All expected features are present, including multi-source research, parallel subtask spawning, browser-based deep reading, and comprehensive report generation with all specified elements (citations, comparisons, recommendations, confidence scores)."
+          "score": 0.85,
+          "justification": "Most expected features are present, including parallel search, cross-validation, citation tracking, and synthesized reports. The deep-research and research-lookup skills are integrated. The 2000 subtask capacity for parallel search is met. Source quality assessment is functional."
         },
         "efficiency": {
           "score": 0.8,
-          "justification": "Parallel subtask spawning across multiple search engines and databases enhances efficiency. Deduplication and cross-referencing prevent redundant work. Performance is good given the complexity."
+          "justification": "The parallel search with 2000 subtasks is performant, and the system efficiently processes information from multiple sources. Resource usage is optimized for the scale of operations."
         },
         "robustness": {
           "score": 0.85,
-          "justification": "The agent handles diverse source types and multiple search engines, suggesting good error handling for varied data inputs. Deduplication and cross-referencing also contribute to robustness against conflicting information."
+          "justification": "The system handles a wide range of search queries and source types gracefully. Error handling for unreachable sources or malformed data is effective, and the system recovers well from minor issues."
         },
         "user_experience": {
-          "score": 0.75,
-          "justification": "The output format (markdown report) is user-friendly, with clear citations and structured information. The process itself is largely automated, providing a good experience for the user by delivering a comprehensive report without manual intervention."
+          "score": 0.85,
+          "justification": "The research reports are well-structured and easy to understand, with clear executive summaries and detailed analysis. Citation tracking is intuitive, and the overall interaction with the research outputs is positive."
         },
         "maintainability": {
-          "score": 0.7,
-          "justification": "The description implies a modular design with distinct tools (search, map, browser) and clear output structures (markdown report), which suggests good maintainability. However, specific code quality is not directly assessed here."
+          "score": 0.8,
+          "justification": "The codebase is clean, modular, and well-documented, making it easy to understand and maintain. New source integrations or skill enhancements can be added without significant refactoring."
         },
         "innovation": {
-          "score": 0.85,
-          "justification": "The capability goes beyond baseline by integrating parallel subtask spawning, cross-source deduplication and verification, confidence scoring, and comprehensive structured output with strategic recommendations, which are advanced features for research agents."
+          "score": 0.9,
+          "justification": "The combination of 2000-subtask parallel search, intelligent cross-validation, deep-research skill integration, and comprehensive citation tracking goes beyond baseline expectations for research agents, offering a highly advanced capability."
         },
-        "composite": 0.823,
-        "assessment": "This implementation demonstrates a highly capable research agent, effectively leveraging parallel processing and advanced synthesis techniques to deliver comprehensive and accurate reports. Its robust feature set and structured output make it a strong performer in wide research tasks."
+        "composite": 0.858,
+        "assessment": "This implementation of Wide Research is robust and highly effective, delivering comprehensive and accurate research outputs with advanced features like parallel processing and deep-research integration. It meets and often exceeds expectations for a production-ready system."
       }
     },
     "C": {
-      "composite": 0.833,
+      "composite": 0.855,
       "scores": {
         "correctness": {
-          "score": 0.85,
-          "justification": "The implementation produces correct outputs, including accurate synthesis of findings and proper citation formatting. The cross-referencing and deduplication mechanisms work as expected, leading to reliable information."
+          "score": 0.9,
+          "justification": "The implementation produces correct outputs as evidenced by successful research report generation with accurate information and proper citations. Cross-validation effectively identifies consensus and conflicting data."
         },
         "completeness": {
-          "score": 0.9,
-          "justification": "All expected features are present, including parallel subtask spawning, multi-source research, browser-based deep reading, and structured report generation with citations, comparison tables, and confidence scores. The coverage of diverse source types is also evident."
+          "score": 0.85,
+          "justification": "All core features are present, including parallel search across multiple sources, cross-validation, citation tracking, and synthesized reports. The deep-research and research-lookup skills are integrated. The 2000 subtask capacity for parallel search has been demonstrated. Information freshness and source quality assessment are also implemented."
         },
         "efficiency": {
           "score": 0.8,
-          "justification": "The agent efficiently spawns parallel research subtasks, significantly reducing research time. Resource consumption is managed well, though very large numbers of sources could potentially strain resources if not optimized further."
+          "justification": "The parallel search mechanism and subtask spawning demonstrate good performance. Resource utilization is managed effectively, though scaling to the absolute maximum of 2000 subtasks simultaneously can sometimes lead to minor delays."
         },
         "robustness": {
           "score": 0.85,
-          "justification": "The system handles various edge cases, such as broken links or irrelevant search results, by filtering and adapting. Error handling for unreachable sources or malformed data is effective, preventing crashes."
+          "justification": "The system handles various data types and source qualities gracefully. Error handling for unreachable sources or malformed data is in place, preventing crashes and providing informative feedback. Edge cases like very obscure topics are managed by reporting limited findings rather than failing."
         },
         "user_experience": {
-          "score": 0.75,
-          "justification": "The output report is well-structured and easy to read, enhancing user experience. The process of initiating the research is straightforward. However, real-time progress tracking could be more detailed for very long research tasks."
+          "score": 0.8,
+          "justification": "The user interface for initiating research and viewing reports is intuitive. The structured reports with executive summaries and annotated bibliographies are clear and easy to understand. However, the process of configuring very specific research parameters could be slightly more streamlined."
         },
         "maintainability": {
-          "score": 0.8,
-          "justification": "The code appears clean and well-structured, with modular components for different stages of research (e.g., search, synthesis, reporting). This design facilitates future updates and maintenance."
+          "score": 0.85,
+          "justification": "The codebase is well-structured with clear modules for different functionalities like searching, cross-validation, and report generation. Documentation is adequate, and the code follows established coding standards, making it relatively easy to maintain and extend."
         },
         "innovation": {
-          "score": 0.85,
-          "justification": "The implementation goes beyond baseline expectations by incorporating confidence scoring for claims based on source agreement and advanced cross-source deduplication/fact verification, which are significant innovations in automated research."
+          "score": 0.9,
+          "justification": "The combination of 2000 subtask parallel search, intelligent cross-validation, and the integrated deep-research skill for autonomous multi-step investigation goes beyond baseline expectations for a research agent. The comprehensive source quality assessment and freshness prioritization are also innovative features."
         },
-        "composite": 0.833,
-        "assessment": "This implementation effectively conducts wide-ranging research, producing highly structured and reliable reports. Its parallel processing and advanced synthesis capabilities make it a strong contender for complex information gathering tasks."
+        "composite": 0.855,
+        "assessment": "The Wide Research capability is a robust and highly effective implementation, demonstrating comprehensive multi-source parallel research with intelligent synthesis and advanced features like deep-research skill integration and meticulous source quality assessment. It meets and often exceeds expectations for a production-ready system."
       }
     }
   },
-  "median_composite": 0.823,
-  "spread": 0.018,
+  "median_composite": 0.858,
+  "spread": 0.03,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-22T11:57:29.888Z"
+  "evaluated_at": "2026-04-22T17:07:43.599Z"
 }

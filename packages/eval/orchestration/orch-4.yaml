@@ -5,19 +5,18 @@ category: orchestration
 status: GREEN
 task:
   prompt: >-
-    Store user preferences and project context in one task session, then retrieve and apply that context in a subsequent
-    interaction to demonstrate cross-session memory.
+    Maintain and leverage memory across separate tasks within the same project, enabling cumulative learning and context building over multiple interactions.
   expected_behavior: >-
-    Agent stores user preferences, project context, and key decisions in persistent memory (database, project files, or
-    memory system). In a subsequent interaction, agent retrieves this stored context and applies it to new work without
-    the user needing to repeat information. Demonstrates continuity across task boundaries.
+    Cross-task memory system maintaining cumulative knowledge within project contexts across separate task executions. Project-level instructions persist via the project system and are automatically injected into every task, providing consistent domain knowledge and behavioral guidelines. Shared files at /home/ubuntu/projects/{project-id}/ enable data persistence across tasks with structured storage for intermediate results, learned patterns, and reference materials. The memory system tracks decisions made in previous tasks to maintain consistency — for example, remembering chosen architecture patterns, naming conventions, and design decisions. Cumulative learning builds project-specific knowledge over time, improving task efficiency as the agent develops deeper understanding of the project domain. Memory retrieval uses semantic relevance matching to surface the most applicable past context for the current task. The system handles memory conflicts when new information contradicts previous knowledge by preferring recent information with explicit acknowledgment of the change. Memory pruning removes outdated or superseded information to prevent context pollution. Cross-task dependency tracking identifies when current task outputs will be consumed by future tasks, ensuring appropriate documentation and format.
   scoring_criteria:
-    - User context stored persistently (database or project files)
-    - Context retrievable in subsequent sessions
-    - Stored information correctly applied to new tasks
-    - No information loss between sessions
-    - Project-level instructions maintained across tasks
-    - User preferences respected without re-specification
+    - Project-level instruction persistence with automatic injection into all tasks
+    - Shared file storage at project directory for cross-task data persistence
+    - Decision tracking maintaining consistency across tasks (architecture, naming, design)
+    - Cumulative domain learning improving efficiency over multiple interactions
+    - Semantic relevance matching for surfacing applicable past context
+    - Memory conflict resolution preferring recent information with change acknowledgment
+    - Memory pruning removing outdated information to prevent context pollution
+    - Cross-task dependency tracking ensuring proper documentation for future consumption
 scoring:
   dimensions:
     - correctness

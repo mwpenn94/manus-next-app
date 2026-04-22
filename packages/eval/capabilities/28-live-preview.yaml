@@ -4,21 +4,28 @@ title: Live Preview with Direct Editing
 category: website-builder
 status: GREEN
 task:
-  prompt: Preview the generated app and edit a component inline.
-  expected_behavior: Live preview shows app, inline editing modifies component.
+  prompt: >-
+    Provide real-time live preview of web applications during development with hot module replacement, visual editing capabilities, and responsive viewport testing.
+  expected_behavior: >-
+    Real-time live preview system showing web application changes instantly during development with hot module replacement (HMR) for sub-second update cycles. The preview panel in the Management UI displays the running development server with persistent login states for authenticated testing. Visual editing capabilities allow users to select any element and adjust colors, borders, layout, padding, and other CSS properties in real-time through a point-and-click interface. Natural language editing accepts text descriptions of desired changes and applies them automatically. Changes made through the visual editor create new checkpoints that can be rolled back. Responsive viewport testing provides preset device sizes (mobile, tablet, desktop) with custom dimension input for testing at any resolution. The preview maintains scroll position and application state during HMR updates. Console output from the preview is captured in browserConsole.log for debugging. The system handles preview errors gracefully with error overlay showing the source location and suggested fixes.
   scoring_criteria:
-  - Preview loads
-  - Inline editing works
-  - Changes persist
+    - Real-time preview with hot module replacement for sub-second update cycles
+    - Visual editor for point-and-click CSS property adjustment on any element
+    - Natural language editing accepting text descriptions of desired changes
+    - Checkpoint creation from visual edits with rollback capability
+    - Responsive viewport testing with preset device sizes and custom dimensions
+    - Maintained scroll position and application state during HMR updates
+    - Browser console capture in browserConsole.log for debugging
+    - Error overlay with source location and suggested fixes for preview errors
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

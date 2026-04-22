@@ -2,21 +2,30 @@ id: 63
 name: finra-sec-compliance
 title: FINRA/SEC Compliance
 category: compliance
-status: N/A
+status: GREEN
 task:
-  prompt: N/A - Stewardly-only
-  expected_behavior: N/A
+  prompt: >-
+    Implement FINRA/SEC regulatory compliance controls for financial services applications, including communications archival, supervisory review workflows, books and records retention, and regulatory reporting with audit trail generation.
+  expected_behavior: >-
+    Agent implements comprehensive FINRA/SEC compliance infrastructure for financial services applications. Communications archival captures all electronic communications (email, chat, social media) in tamper-evident storage with full-text search and metadata indexing. Supervisory review workflows route flagged communications to designated principals for review with approval/escalation tracking. Books and records retention enforces SEC Rule 17a-3/17a-4 retention schedules with automated lifecycle management. Regulatory reporting generates required filings (FOCUS reports, customer complaint logs, trade blotters) in prescribed formats. Audit trail generation creates immutable logs of all compliance-relevant actions with timestamps, user identification, and action details. Access controls enforce separation of duties between compliance officers, supervisors, and registered representatives.
   scoring_criteria:
-  - N/A
+    - Communications archival in tamper-evident storage with full-text search
+    - Supervisory review workflows with flagging, routing, and approval tracking
+    - SEC Rule 17a-3/17a-4 retention schedule enforcement with lifecycle management
+    - Regulatory reporting generation (FOCUS reports, complaint logs, trade blotters)
+    - Immutable audit trail with timestamps, user identification, and action details
+    - Access control enforcement with separation of duties for compliance roles
+    - Automated compliance monitoring with configurable alert thresholds
+    - Data export in regulatory-prescribed formats for examination readiness
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

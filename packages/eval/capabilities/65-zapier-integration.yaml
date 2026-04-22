@@ -4,21 +4,28 @@ title: Zapier Integration
 category: integrations
 status: GREEN
 task:
-  prompt: Create a Zapier automation that triggers on task completion.
-  expected_behavior: Zapier webhook configured, automation triggers.
+  prompt: >-
+    Connect web applications to 5000+ services through Zapier webhooks with trigger configuration, action mapping, and workflow automation.
+  expected_behavior: >-
+    Zapier integration connecting web applications to 5000+ external services through webhook-based triggers and actions. Outgoing webhooks fire on configurable application events (new user signup, form submission, payment completion, data update) with structured JSON payloads containing relevant event data. Incoming webhooks receive data from Zapier workflows, triggering application actions (create records, send notifications, update status) with payload validation. The integration dashboard displays active Zaps with trigger/action descriptions, execution history, and error logs. Webhook URL generation provides unique endpoints per integration with optional authentication tokens for security. Payload mapping transforms application data to Zapier-expected formats with field mapping configuration. Error handling retries failed webhook deliveries with exponential backoff and alerts on persistent failures. The system supports both instant triggers (real-time) and polling triggers (periodic checks) for different event types. Testing tools send sample payloads to verify webhook configuration before activating live integrations.
   scoring_criteria:
-  - Webhook configured
-  - Trigger fires
-  - Data passed correctly
+    - Outgoing webhooks on configurable events with structured JSON payloads
+    - Incoming webhooks triggering application actions with payload validation
+    - Integration dashboard with active Zaps, execution history, and error logs
+    - Unique webhook URL generation with optional authentication tokens
+    - Payload mapping transforming data to Zapier-expected formats
+    - Retry with exponential backoff and alerts on persistent delivery failures
+    - Instant and polling trigger support for different event types
+    - Testing tools with sample payloads for pre-activation verification
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,27 +4,28 @@ title: Full-Stack Web-App Creation
 category: webapp
 status: GREEN
 task:
-  prompt: Build a full-stack web application with user authentication, database integration, and a responsive dashboard using
-    the webapp builder capability.
-  expected_behavior: Agent creates a complete web application with React frontend, Express/tRPC backend, database schema with
-    Drizzle ORM, user authentication via OAuth, and responsive dashboard UI. The app is deployed and accessible via a public
-    URL with all features functional.
+  prompt: >-
+    Build full-stack web applications with React frontend, Express/tRPC backend, database integration, authentication, and one-click deployment.
+  expected_behavior: >-
+    End-to-end full-stack web application development using React 19 with Tailwind CSS 4 frontend, Express 4 with tRPC 11 backend, and Drizzle ORM database integration. The development workflow follows the Build Loop: update schema in drizzle/schema.ts, add database helpers in server/db.ts, create tRPC procedures in server/routers.ts, and build frontend pages consuming tRPC hooks. Authentication is pre-wired via Manus OAuth with protectedProcedure middleware injecting ctx.user for authenticated routes. The frontend uses shadcn/ui components for consistent, accessible UI with Tailwind utilities for responsive layouts. Type safety flows end-to-end from database schema through tRPC procedures to React components with Superjson serialization preserving Date and BigInt types. One-click deployment via checkpoint and publish produces production builds with automatic SSL, CDN, and custom domain support. The development server provides hot module replacement with live preview in the Management UI. Vitest integration ensures code quality with test coverage for server procedures.
   scoring_criteria:
-  - Complete React frontend with responsive layout
-  - Express/tRPC backend with typed procedures
-  - Database schema with Drizzle ORM migrations
-  - User authentication via OAuth flow
-  - Dashboard UI with data visualization
-  - Public deployment with accessible URL
+    - React 19 + Tailwind 4 + Express 4 + tRPC 11 + Drizzle ORM full-stack integration
+    - Build Loop workflow (schema -> db helpers -> procedures -> frontend hooks)
+    - Pre-wired Manus OAuth with protectedProcedure middleware and ctx.user injection
+    - shadcn/ui components with accessible, responsive Tailwind layouts
+    - End-to-end type safety with Superjson preserving Date and BigInt types
+    - One-click deployment with automatic SSL, CDN, and custom domain support
+    - Hot module replacement with live preview in Management UI
+    - Vitest integration for server procedure test coverage and code quality
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

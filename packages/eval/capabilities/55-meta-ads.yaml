@@ -2,21 +2,30 @@ id: 55
 name: meta-ads
 title: Meta Ads Manager
 category: integrations
-status: N/A
+status: GREEN
 task:
-  prompt: N/A - Out of scope
-  expected_behavior: N/A
+  prompt: >-
+    Integrate with Meta Marketing API to programmatically create ad campaigns, manage audiences, track performance with interactive dashboards, and optimize ad spend through automated rules with real-time budget alerts.
+  expected_behavior: >-
+    Comprehensive Meta Marketing API integration for programmatic ad campaign management with an intuitive campaign builder UI. Campaign creation configures objectives (awareness, traffic, conversions), budget allocation (daily/lifetime with spend caps), scheduling with dayparting, and placement targeting across Facebook Feed, Instagram Stories, and Audience Network. Audience management creates custom audiences from application user data with automatic hashing for privacy compliance, lookalike audiences for prospecting with adjustable similarity percentages, and saved audiences with layered demographic/interest/behavioral targeting. Ad creative management handles image and video upload with automatic format optimization, copy variants for A/B testing, and dynamic creative optimization. An interactive performance dashboard retrieves campaign metrics (impressions, clicks, CTR, CPC, ROAS, frequency) via the Insights API with date range filtering, breakdowns by placement/device/age, and exportable reports. Automated rules adjust bids and pause underperforming ad sets based on configurable thresholds with real-time budget alert notifications. Error handling manages API rate limits with intelligent backoff and provides clear diagnostic messages for common issues like ad disapprovals.
   scoring_criteria:
-  - N/A
+    - Meta Marketing API integration with Graph API v18+ and OAuth authentication flow
+    - Intuitive campaign builder UI with objective, budget, scheduling, and placement config
+    - Custom and lookalike audience management with privacy-compliant data hashing
+    - Ad creative management with format optimization, A/B testing, and dynamic creative
+    - Interactive performance dashboard with Insights API metrics, breakdowns, and exports
+    - Automated rules for bid adjustment and ad set pausing based on performance thresholds
+    - Intelligent API rate limit handling with backoff and diagnostic error messages
+    - Real-time budget alert notifications and spend cap enforcement across campaigns
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

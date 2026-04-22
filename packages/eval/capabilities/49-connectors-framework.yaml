@@ -4,21 +4,28 @@ title: Connectors Framework
 category: integrations
 status: GREEN
 task:
-  prompt: Set up a connector to a SaaS service.
-  expected_behavior: Connector configured, data flows between systems.
+  prompt: >-
+    Provide an extensible connectors framework for integrating external services with unified error handling, retry logic, and health monitoring.
+  expected_behavior: >-
+    Extensible connectors framework providing a standardized pattern for integrating external services into web applications. Each connector follows a consistent interface with typed configuration, initialization, health check, and operation methods. Built-in connectors include Stripe (payments), S3 (storage), OAuth (authentication), Google Maps (location services), and LLM (AI capabilities). The framework provides unified error handling that maps service-specific errors to consistent application error types with user-friendly messages. Automatic retry with exponential backoff handles transient failures across all connectors with configurable retry counts and delay parameters. Circuit breaker protection prevents cascading failures by temporarily disabling connectors that exceed error rate thresholds. Health monitoring checks connector availability on application startup and exposes status via a system health endpoint. New connectors are added by implementing the standard interface, automatically inheriting retry, circuit breaker, and monitoring capabilities. Configuration is managed through environment variables with validation on startup.
   scoring_criteria:
-  - Connector configured
-  - Authentication works
-  - Data syncs
+    - Standardized connector interface with typed config, init, health check, and operations
+    - Built-in connectors for Stripe, S3, OAuth, Google Maps, and LLM services
+    - Unified error handling mapping service-specific errors to consistent application types
+    - Automatic retry with exponential backoff and configurable retry parameters
+    - Circuit breaker protection disabling connectors exceeding error rate thresholds
+    - Startup health monitoring with system health endpoint for all connectors
+    - New connector inheritance of retry, circuit breaker, and monitoring capabilities
+    - Environment variable configuration with startup validation for all connectors
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

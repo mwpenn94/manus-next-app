@@ -4,22 +4,28 @@ title: Event Notifications
 category: agent-core
 status: GREEN
 task:
-  prompt: Trigger a notification when a task completes.
-  expected_behavior: Notification appears in NotificationCenter after task completion.
+  prompt: >-
+    Deliver real-time event notifications for task completions, errors, and system events with configurable channels, priority routing, and a notification preferences dashboard.
+  expected_behavior: >-
+    Comprehensive event notification system delivering real-time alerts for task completions, error conditions, scheduled task triggers, and system events. Notifications are delivered through configurable channels including in-app notification center, email digests, and webhook integrations. Priority routing ensures critical events (errors, payment failures) bypass batching for immediate delivery while routine events are consolidated into periodic digests. The notification preferences dashboard allows users to configure per-event-type delivery preferences, quiet hours, and channel priorities. Each notification includes structured content with title, description, severity level, timestamp, and deep-link to the relevant resource. Read/unread state management with bulk actions (mark all read, clear all) keeps the notification center organized. Rate limiting prevents notification flooding during high-activity periods while preserving critical alerts. The system handles delivery failures gracefully with automatic retry and fallback channel activation.
   scoring_criteria:
-  - Notification created
-  - Displayed in UI
-  - Correct content
-  - Dismissible
+    - Real-time alerts for task completions, errors, scheduled triggers, and system events
+    - Configurable delivery channels: in-app center, email digests, and webhook integrations
+    - Priority routing bypassing batching for critical events (errors, payment failures)
+    - Notification preferences dashboard with per-event-type and quiet hours configuration
+    - Structured content with title, severity, timestamp, and deep-link to resource
+    - Read/unread state management with bulk actions (mark all read, clear all)
+    - Rate limiting preventing flooding while preserving critical alert delivery
+    - Automatic retry with fallback channel activation on delivery failures
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

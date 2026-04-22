@@ -4,21 +4,28 @@ title: Meeting Minutes
 category: features
 status: GREEN
 task:
-  prompt: Transcribe this meeting recording and generate action items.
-  expected_behavior: Audio transcribed, minutes formatted, action items extracted.
+  prompt: >-
+    Transcribe meeting recordings, extract key decisions and action items, generate structured meeting minutes, and distribute summaries to participants.
+  expected_behavior: >-
+    End-to-end meeting minutes pipeline that transcribes recordings, extracts insights, and generates polished summaries. Audio/video recordings are transcribed via Whisper API with speaker identification and timestamped segments. The extraction engine identifies key decisions, action items with assignees and deadlines, discussion topics, and open questions from the transcript. Generated minutes follow a professional template with meeting metadata (date, attendees, duration), agenda items, discussion summaries, decisions made, and action item tracker. The action item tracker includes assignee, deadline, priority, and status fields for follow-up tracking. Minutes are exportable in multiple formats (Markdown, PDF, Word) with consistent professional formatting. The system handles multiple speakers with attribution and distinguishes between decisions and discussions. Behavioral analysis identifies communication patterns like filler words, conversation dominance, and missed listening opportunities. Distribution sends formatted minutes to participant email addresses with highlighted personal action items.
   scoring_criteria:
-  - Transcription accurate
-  - Minutes formatted
-  - Action items listed
+    - Audio/video transcription via Whisper with speaker identification and timestamps
+    - Key decision and action item extraction with assignees, deadlines, and priorities
+    - Professional minutes template with metadata, agenda, discussions, and decisions
+    - Action item tracker with assignee, deadline, priority, and status fields
+    - Multi-format export (Markdown, PDF, Word) with consistent professional formatting
+    - Speaker attribution distinguishing between decisions and discussions
+    - Communication pattern analysis (filler words, dominance, listening opportunities)
+    - Participant distribution with highlighted personal action items per recipient
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

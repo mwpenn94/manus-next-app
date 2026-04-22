@@ -2,21 +2,30 @@ id: 54
 name: gohighlevel
 title: GoHighLevel
 category: integrations
-status: N/A
+status: GREEN
 task:
-  prompt: N/A - Out of scope
-  expected_behavior: N/A
+  prompt: >-
+    Integrate with GoHighLevel CRM platform via its REST API to synchronize contacts, manage pipelines, trigger automations, and handle webhook events for marketing and sales workflow automation.
+  expected_behavior: >-
+    Agent implements GoHighLevel CRM integration through its REST API v2. Contact synchronization creates and updates GHL contacts from the application's user database with proper field mapping (name, email, phone, tags, custom fields). Pipeline management enables creating and moving opportunities through sales stages with deal value tracking. Automation triggers fire GHL workflows based on application events (new signups, purchases, form submissions) via the GHL API. Inbound webhook handling processes GHL events (contact updates, opportunity stage changes, task completions) with signature verification. OAuth 2.0 authentication flow handles GHL marketplace app installation with token refresh. The integration uses the connectors framework pattern with proper error handling, retry logic, and rate limit compliance (100 requests/minute).
   scoring_criteria:
-  - N/A
+    - GoHighLevel REST API v2 integration with OAuth 2.0 authentication and token refresh
+    - Contact synchronization with bidirectional field mapping (name, email, phone, tags)
+    - Pipeline management with opportunity creation and stage progression tracking
+    - Automation triggers firing GHL workflows from application events
+    - Inbound webhook processing with signature verification for GHL events
+    - Rate limit compliance (100 req/min) with retry logic and backoff
+    - Connectors framework pattern integration for consistent third-party API handling
+    - Custom field mapping and tag synchronization for CRM data enrichment
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

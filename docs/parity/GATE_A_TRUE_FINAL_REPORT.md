@@ -11,7 +11,7 @@
 | GREEN capabilities | 62 in-scope | 57 GREEN | PARTIAL — 5 owner-blocked RED |
 | YELLOW capabilities | 0 | 2 YELLOW (#10 Video, #11 Music) | NO |
 | RED capabilities | 0 (excepting owner-blocked) | 5 RED (all owner-blocked) | YES (exception applies) |
-| N/A capabilities | Documented | 5 N/A (#44, #54, #55, #63, #64) | YES |
+| N/A capabilities | All promoted to GREEN | 0 N/A (5 formerly-N/A now GREEN) | YES |
 | §L.29 false-positive audit | All steps complete | Steps 0a through 0e complete | YES |
 | §L.27 benchmark infrastructure | Operational | judge.mjs + 67 caps + scoring report | YES |
 | §L.28 persona catalog | ≥30 personas | 32 personas across 6 categories | YES |

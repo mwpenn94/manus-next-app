@@ -4,18 +4,19 @@ title: Manus Skills
 category: features
 status: GREEN
 task:
-  prompt: Implement a modular skill system that extends agent capabilities through specialized knowledge and workflows.
+  prompt: >-
+    Implement a comprehensive modular skill system with 40+ specialized skills covering diverse domains, automatic skill selection based on task context, and an intuitive skill management interface with usage analytics.
   expected_behavior: >-
-    Skill system with 40+ available skills stored in /home/ubuntu/skills/, each containing SKILL.md with instructions.
-    Skills cover domains from web development to data analysis, document generation, research, and media creation. Agent
-    reads skill instructions before task execution.
+    Production-grade modular skill ecosystem with 40+ specialized skills stored in /home/ubuntu/skills/, each containing a SKILL.md file with structured instructions, metadata, and optional bundled resources (scripts, templates, configuration files). Skills cover diverse domains including web development (frontend-design, web-design-guidelines), data analysis (csv-data-summarizer, exploratory-data-analysis, statistical-analysis), document generation (pdf, docx, pptx, xlsx), research (deep-research, research-lookup, content-research-writer), media creation (video-generator, bgm-prompter, slack-gif-creator), and productivity (brainstorming, writing-plans, meeting-insights-analyzer). The agent automatically reads relevant skill instructions before creating task plans, ensuring domain-specific best practices are followed. Skill selection uses description matching against the current task context to identify the most relevant skills. The skill-creator skill provides a guided workflow for creating new skills with proper structure validation. Skills are discoverable via internet-skill-finder which searches verified GitHub repositories. Usage analytics track which skills are invoked most frequently and their success rates, enabling continuous improvement of the skill library.
   scoring_criteria:
-    - 40+ modular skills available in /home/ubuntu/skills/
-    - Each skill has SKILL.md with structured instructions
-    - Skills cover diverse domains (web, data, research, media, docs)
-    - Agent reads relevant skills before creating task plans
-    - Skills provide templates, scripts, and best practices
-    - Skill system is extensible via skill-creator skill
+    - 40+ modular skills in /home/ubuntu/skills/ covering web, data, docs, research, media domains
+    - Structured SKILL.md format with instructions, metadata, and bundled resources per skill
+    - Automatic skill selection based on task context description matching before plan creation
+    - Guided skill creation workflow via skill-creator with structure validation
+    - Skill discovery from verified GitHub repositories via internet-skill-finder
+    - Domain-specific best practices enforced by reading skill instructions before execution
+    - Usage analytics tracking invocation frequency and success rates per skill
+    - Extensible skill library with templates, scripts, and configuration file bundling
 scoring:
   dimensions:
     - correctness

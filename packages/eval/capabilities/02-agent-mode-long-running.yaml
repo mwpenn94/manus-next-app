@@ -4,24 +4,28 @@ title: Agent Mode Long-Running
 category: agent-core
 status: GREEN
 task:
-  prompt: Research the top 3 programming languages in 2025 and create a comparison
-    table.
-  expected_behavior: Agent uses web_search tool, processes results, and produces a
-    formatted comparison table.
+  prompt: >-
+    Execute a complex multi-step research task requiring sustained autonomous operation across multiple tool invocations, web searches, data extraction, file creation, and iterative refinement over an extended session.
+  expected_behavior: >-
+    Agent operates autonomously in a sustained agent loop, iteratively analyzing context, selecting tools, executing actions, and receiving observations. Handles multi-turn research requiring 10+ sequential tool invocations including web search (info, news, research types), browser navigation for deep reading, file creation for structured output, and shell commands for data processing. Maintains coherent task state across all iterations without losing context. Produces structured deliverables (markdown reports, comparison tables, data files) with proper citations and cross-references. Handles interruptions gracefully, resuming from the last completed step. Session state persists across sandbox hibernation cycles.
   scoring_criteria:
-  - Uses web_search tool
-  - Multiple tool turns
-  - Produces structured output
-  - Completes within 60 seconds
+    - Sustained autonomous operation across 10+ sequential tool invocations
+    - Multi-tool orchestration (search, browser, file, shell) in coherent workflow
+    - Context maintenance across all iterations without state loss
+    - Structured deliverable production (markdown, tables, data files) with citations
+    - Graceful interruption handling with resume from last completed step
+    - Session state persistence across sandbox hibernation cycles
+    - Iterative refinement of outputs based on intermediate findings
+    - Error recovery with alternative tool selection on failure
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

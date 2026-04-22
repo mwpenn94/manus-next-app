@@ -4,28 +4,28 @@ title: Design View
 category: webapp
 status: GREEN
 task:
-  prompt: Use the Design View to visually edit a web application's UI, adjusting colors, spacing, typography, and layout through
-    direct manipulation and natural language instructions.
-  expected_behavior: Design View opens as an interactive visual editor overlaying the live preview. Users can select any element
-    to adjust properties (colors, borders, padding, margins, fonts) via point-and-click controls. Natural language descriptions
-    trigger AI-powered design changes. All edits are reflected in real-time in the source code. Changes create a new checkpoint
-    that can be rolled back.
+  prompt: >-
+    Use the Design View visual editor to directly manipulate a web application's UI elements, adjusting colors, spacing, typography, borders, and layout through both point-and-click controls and natural language instructions, with real-time code synchronization and checkpoint-based rollback.
+  expected_behavior: >-
+    Design View opens as an interactive visual editor panel in the Management UI, overlaying the live preview of the deployed web application. Users can select any rendered DOM element to inspect and adjust its CSS properties (colors, borders, padding, margins, fonts, shadows, border-radius) via intuitive point-and-click controls. Natural language descriptions are processed by AI to generate corresponding CSS and component changes. All visual edits are synchronized in real-time to the source code files, maintaining consistency between the visual representation and the codebase. Every design change creates a new checkpoint that can be rolled back via the version history. The editor supports responsive breakpoint switching to preview and edit layouts at different viewport widths. Changes respect the existing Tailwind CSS utility class system and shadcn/ui component patterns.
   scoring_criteria:
-  - Visual editor overlay on live preview with element selection
-  - Point-and-click property adjustment (colors, spacing, borders, fonts)
-  - Natural language design change descriptions processed by AI
-  - Real-time source code synchronization with visual edits
-  - Checkpoint creation for every design change with rollback support
-  - Responsive breakpoint switching within the visual editor
+    - Visual editor overlay on live preview with interactive element selection
+    - Point-and-click CSS property adjustment (colors, spacing, borders, fonts, shadows)
+    - Natural language design change descriptions processed by AI into code changes
+    - Real-time bidirectional synchronization between visual edits and source code
+    - Checkpoint creation for every design change with version history rollback
+    - Responsive breakpoint switching for multi-viewport layout editing
+    - Tailwind CSS utility class preservation in generated code changes
+    - shadcn/ui component pattern respect in AI-generated modifications
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

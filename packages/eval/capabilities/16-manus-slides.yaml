@@ -4,28 +4,28 @@ title: Manus Slides
 category: content-creation
 status: GREEN
 task:
-  prompt: Create a 12-slide investor pitch deck with data visualizations, speaker notes, and professional design using the
-    Manus Slides capability.
-  expected_behavior: Slides are generated with professional layout, consistent branding, and data-driven visualizations. Each
-    slide has speaker notes. The deck includes title slide, problem/solution, market size, product demo, traction metrics
-    with charts, business model, competitive landscape, team, financials, and ask slide. Output available in both HTML and
-    image render modes.
+  prompt: >-
+    Generate professional slide presentations with two rendering modes (HTML for data-heavy content, image for visual impact), Chart.js integration, and export to PDF/PPT.
+  expected_behavior: >-
+    Professional slide presentation generation system with two distinct rendering modes optimized for different use cases. HTML mode generates editable slides using HTML/CSS with Chart.js integration for data-heavy presentations featuring interactive charts, tables, and code blocks. Image mode renders each slide as a single high-quality image for visually stunning presentations with artistic layouts and custom typography. The generation workflow requires content preparation in a markdown file before entering slides mode, ensuring structured content drives the presentation. Chart.js integration supports bar, line, pie, doughnut, radar, and scatter charts with customizable colors, labels, and animations. Slide count scales with content complexity from simple 5-slide overviews to detailed 30+ slide presentations. Export via manus-export-slides produces PDF and PPT formats for distribution and editing. The system follows the slides_content_writing -> slides_generation phase separation for optimal content organization. Template themes provide consistent visual identity with customizable color schemes and font selections.
   scoring_criteria:
-  - 12 professionally designed slides with consistent visual theme
-  - Data visualizations using Chart.js for metrics
-  - Speaker notes on every slide with talking points
-  - Title slide with company branding and tagline
-  - TAM/SAM/SOM market sizing with sourced data
-  - Competitive landscape comparison table
+    - Dual rendering modes: HTML (editable, data-heavy) and image (visual impact)
+    - Chart.js integration with bar, line, pie, radar, scatter charts and animations
+    - Content-first workflow with markdown preparation before slide generation
+    - Scalable slide count from 5-slide overviews to 30+ detailed presentations
+    - PDF and PPT export via manus-export-slides for distribution and editing
+    - Phase-separated content writing and slide generation for optimal organization
+    - Template themes with customizable color schemes and font selections
+    - Interactive data visualization with tables, code blocks, and chart customization
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

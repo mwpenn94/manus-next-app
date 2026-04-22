@@ -4,21 +4,28 @@ title: Cloud Infrastructure
 category: website-builder-features
 status: GREEN
 task:
-  prompt: Verify the app is hosted on managed cloud infrastructure.
-  expected_behavior: App running on Manus hosting with CDN, SSL.
+  prompt: >-
+    Deploy and manage web applications on cloud infrastructure with automatic SSL, CDN distribution, database provisioning, and environment variable management.
+  expected_behavior: >-
+    Managed cloud infrastructure providing one-click deployment of web applications with automatic SSL certificate provisioning and CDN distribution. The deployment pipeline builds the application, optimizes assets, and deploys to production with zero-downtime updates. Database provisioning creates MySQL/TiDB instances with automatic connection string injection via DATABASE_URL environment variable. Environment variable management through webdev_request_secrets securely stores and injects credentials with BYOK auto-matching for common services. Custom domain support allows binding purchased or existing domains with automatic DNS configuration and SSL certificate renewal. The CDN distributes static assets globally with cache invalidation on deployment. Health monitoring tracks application uptime, response times, and error rates with automatic restart on crashes. Deployment logs provide detailed build output for debugging failed deployments. The infrastructure scales automatically based on traffic patterns with configurable resource limits.
   scoring_criteria:
-  - Hosting active
-  - SSL enabled
-  - CDN configured
+    - One-click deployment with zero-downtime updates and automatic SSL provisioning
+    - CDN distribution of static assets with cache invalidation on deployment
+    - Database provisioning with automatic DATABASE_URL connection string injection
+    - Secure environment variable management with BYOK auto-matching via webdev_request_secrets
+    - Custom domain binding with automatic DNS configuration and SSL renewal
+    - Health monitoring with uptime tracking, response times, and auto-restart on crashes
+    - Detailed deployment logs for debugging failed builds and deployments
+    - Automatic scaling based on traffic patterns with configurable resource limits
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

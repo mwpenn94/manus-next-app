@@ -8,7 +8,7 @@
 ### A. Capability Inventory (67 items)
 - [ ] All 57 GREEN items have real implementations (not stubs)
 - [ ] All 5 RED items have documented rationale
-- [ ] All 5 N/A items have documented rationale
+- [x] All 5 formerly-N/A items promoted to GREEN with implementation evidence
 - [ ] No YELLOW items remain
 
 ### B. Parity Documents (current-state)

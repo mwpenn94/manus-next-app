@@ -4,21 +4,28 @@ title: Version Rollback
 category: desktop
 status: GREEN
 task:
-  prompt: Roll back to a previous version of the project.
-  expected_behavior: Previous checkpoint restored, app reverts to earlier state.
+  prompt: >-
+    Roll back web projects to any previous checkpoint state with full file system restoration, dependency recovery, and clear rollback confirmation workflow.
+  expected_behavior: >-
+    Comprehensive version rollback system restoring projects to any previously saved checkpoint state with full fidelity. Rollback reverts the file system (code, configuration, dependencies) to the exact checkpoint state while preserving database data (schema and data are not reverted). The rollback interface in the Management UI version history shows all available checkpoints with descriptions, timestamps, and preview screenshots. One-click rollback from the checkpoint card initiates restoration with a confirmation dialog showing what will be changed. The system handles rollback of dependencies by restoring package.json and lock files, then reinstalling to match the checkpoint state. Post-rollback, the development server automatically restarts with the restored configuration. Rollback operations are logged with timestamps and the checkpoint version restored for audit trail. The system warns users about potential data inconsistencies when rolling back schema changes that affect existing database data. Emergency rollback via webdev_rollback_checkpoint is available when the workspace is unrecoverable manually.
   scoring_criteria:
-  - Checkpoints listed
-  - Rollback works
-  - State restored
+    - Full file system restoration to exact checkpoint state (code, config, dependencies)
+    - Database data preservation during rollback (schema reverts, data persists)
+    - Version history UI with descriptions, timestamps, and preview screenshots
+    - One-click rollback with confirmation dialog showing planned changes
+    - Dependency restoration via package.json/lock file revert and reinstall
+    - Automatic development server restart after rollback completion
+    - Audit trail logging rollback timestamps and restored checkpoint versions
+    - Data inconsistency warnings when rolling back schema changes affecting data
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

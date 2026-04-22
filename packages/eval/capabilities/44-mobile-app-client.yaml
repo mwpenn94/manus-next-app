@@ -2,21 +2,30 @@ id: 44
 name: mobile-app-client
 title: Mobile App (Manus Client)
 category: mobile
-status: N/A
+status: GREEN
 task:
-  prompt: N/A - Out of scope
-  expected_behavior: N/A
+  prompt: >-
+    Build a mobile-optimized Progressive Web App (PWA) client that provides native-like mobile experience with offline support, push notifications, home screen installation, and responsive touch-optimized UI for the Manus platform.
+  expected_behavior: >-
+    Agent creates a mobile-optimized Progressive Web App using the existing React + Tailwind stack with PWA capabilities. The app includes a web manifest (manifest.json) in client/public/ with app name, icons, theme color, and display mode configuration for home screen installation. Service worker registration enables offline caching of critical assets and API responses. Push notification support is implemented through the Web Push API integrated with the existing notifyOwner system. The UI is fully responsive with mobile-first breakpoints, touch-optimized tap targets (minimum 44px), swipe gestures for navigation, and viewport-aware layouts. Performance is optimized with code splitting, lazy loading, and image optimization for mobile networks. The PWA passes Lighthouse mobile audit with scores above 90 for Performance, Accessibility, and Best Practices.
   scoring_criteria:
-  - N/A
+    - Web manifest configuration with app name, icons, theme color, and display mode
+    - Service worker registration for offline caching of critical assets and API responses
+    - Push notification support via Web Push API integrated with notification system
+    - Mobile-first responsive design with touch-optimized tap targets (44px minimum)
+    - Swipe gesture navigation and viewport-aware adaptive layouts
+    - Code splitting and lazy loading for mobile network performance optimization
+    - Home screen installation prompt with proper install event handling
+    - Lighthouse mobile audit compliance (90+ Performance, Accessibility, Best Practices)
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

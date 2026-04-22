@@ -4,18 +4,19 @@ title: Computer Use
 category: browser-computer
 status: GREEN
 task:
-  prompt: Provide full computer use capabilities including file management, software installation, and system administration.
+  prompt: >-
+    Interact with desktop applications through screen observation, mouse control, keyboard input, and application management for non-browser automation tasks.
   expected_behavior: >-
-    Complete Linux computer environment with shell access, file management, software installation (apt, pip, npm),
-    process management, network access, and system administration. Supports persistent state, sudo privileges, and
-    internet connectivity.
+    Desktop automation system enabling interaction with GUI applications through screen observation and input control. Screen observation captures the current desktop state with multi-modal analysis identifying UI elements, text content, and application state. Mouse control provides precise click, double-click, drag, and scroll operations with coordinate-based and element-based targeting. Keyboard input supports text typing, keyboard shortcuts, and modifier key combinations for application control. Application management launches, switches between, and closes desktop applications with window positioning and sizing. The system handles multi-monitor setups with coordinate translation between screens. File system operations through GUI (file dialogs, drag-and-drop) complement shell-based file management. OCR capabilities extract text from screen regions for applications that don't expose text programmatically. The automation pipeline chains multiple GUI operations into workflows with checkpoint verification between steps to ensure each action succeeded before proceeding.
   scoring_criteria:
-    - Full shell access with bash command execution
-    - File CRUD operations with persistent storage
-    - Software installation via apt, pip3, npm/pnpm
-    - Process management (start, stop, monitor)
-    - Network access with curl, wget, and internet connectivity
-    - System administration with sudo privileges
+    - Screen observation with multi-modal analysis of UI elements and application state
+    - Precise mouse control (click, double-click, drag, scroll) with coordinate targeting
+    - Keyboard input with text typing, shortcuts, and modifier key combinations
+    - Application management (launch, switch, close) with window positioning and sizing
+    - Multi-monitor support with coordinate translation between screens
+    - GUI file operations (file dialogs, drag-and-drop) complementing shell operations
+    - OCR text extraction from screen regions for non-programmatic text access
+    - Chained GUI workflows with checkpoint verification between steps
 scoring:
   dimensions:
     - correctness

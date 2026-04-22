@@ -4,21 +4,28 @@ title: Multimedia Processing
 category: features
 status: GREEN
 task:
-  prompt: Generate an image of a sunset over mountains.
-  expected_behavior: Image generated using generate_image tool and displayed in workspace.
+  prompt: >-
+    Process multimedia content including images, video, audio, and documents with format conversion, analysis, transcription, and intelligent content extraction.
+  expected_behavior: >-
+    Comprehensive multimedia processing pipeline handling images, video, audio, and documents with intelligent content extraction. Image processing supports crop, resize, rotate, format conversion, and multi-image stitching via programmatic operations. Video analysis uses multi-modal LLM to extract key points, summarize content, and generate timestamps from YouTube URLs and local files. Audio transcription via Whisper API converts speech to text with language detection, timestamped segments, and speaker diarization support. Document processing extracts text and tables from PDFs, Word documents, and spreadsheets with structure preservation. Format conversion handles common transformations (Markdown to PDF, images between formats, audio encoding). The processing pipeline handles large files efficiently with streaming and chunked processing. Error handling provides clear feedback on unsupported formats with suggested alternatives. Batch processing supports multiple files with progress tracking and parallel execution.
   scoring_criteria:
-  - Image generated
-  - Displayed in workspace
-  - Relevant to prompt
+    - Image processing with crop, resize, rotate, format conversion, and stitching
+    - Video analysis via multi-modal LLM with key points, summaries, and timestamps
+    - Audio transcription via Whisper with language detection and timestamped segments
+    - Document extraction from PDFs, Word, and spreadsheets with structure preservation
+    - Format conversion (Markdown to PDF, image formats, audio encoding)
+    - Efficient large file handling with streaming and chunked processing
+    - Clear error feedback on unsupported formats with suggested alternatives
+    - Batch processing with progress tracking and parallel execution support
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,18 +4,19 @@ title: Browser Operator
 category: browser-computer
 status: GREEN
 task:
-  prompt: Operate a web browser autonomously to navigate, interact with, and extract information from websites.
+  prompt: >-
+    Operate a full Chromium browser for web navigation, form filling, data extraction, authentication, and multi-tab workflows with screenshot verification.
   expected_behavior: >-
-    Full Chromium browser automation with navigation, form filling, clicking, scrolling, screenshot capture, and content
-    extraction. Supports login persistence, cookie management, and multi-tab workflows. Handles CAPTCHAs via user
-    takeover.
+    Full-featured browser automation operating Chromium stable with persistent login state and cookie management across tasks. Navigation supports URL-based browsing with intent classification (navigational, informational, transactional) for optimized page handling. Form filling automates text input, dropdown selection, checkbox toggling, and file upload with intelligent field detection. Data extraction captures structured content from web pages with CSS selector and XPath targeting for precise element identification. Multi-tab workflows manage concurrent browser sessions for comparison shopping, research aggregation, and parallel data collection. Screenshot capture verifies visual state after each significant action, enabling visual debugging and progress documentation. Authentication handling maintains login sessions across sandbox hibernation cycles for continuous access to authenticated services. The browser handles dynamic content (SPAs, infinite scroll, lazy loading) with configurable wait conditions and scroll-to-load automation. Error recovery detects navigation failures, timeout conditions, and CAPTCHA challenges with automatic retry and user escalation.
   scoring_criteria:
-    - Autonomous browser navigation with URL loading
-    - Form filling, clicking, and interactive element manipulation
-    - Screenshot capture for visual verification
-    - Content extraction from web pages
-    - Login state persistence across sessions
-    - User takeover support for CAPTCHAs and sensitive operations
+    - Full Chromium browser with persistent login state and cookie management
+    - Intent-classified navigation (navigational, informational, transactional)
+    - Intelligent form filling with text, dropdowns, checkboxes, and file uploads
+    - Structured data extraction via CSS selectors and XPath targeting
+    - Multi-tab concurrent workflows for comparison and parallel data collection
+    - Screenshot verification after significant actions for visual debugging
+    - Dynamic content handling (SPAs, infinite scroll) with configurable wait conditions
+    - Error recovery for navigation failures, timeouts, and CAPTCHA with user escalation
 scoring:
   dimensions:
     - correctness

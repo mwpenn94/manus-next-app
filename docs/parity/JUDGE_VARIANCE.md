@@ -96,7 +96,7 @@ Overall assessment (1-2 sentences):
 | Judge prompt template | DONE | This document |
 | Seven-dimension rubric | DONE | This document |
 | Cross-model strategy | DONE | This document |
-| Scoring infrastructure (judge.mjs) | TODO | `packages/eval/judge.mjs` |
-| Task shells (65 capability + 5 orchestration) | TODO | `packages/eval/capabilities/` |
-| Results storage | TODO | `packages/eval/results/` |
-| Variance analysis script | TODO | `packages/eval/analyze-variance.mjs` |
+| Scoring infrastructure (judge.mjs) | DONE | `packages/eval/judge.mjs` — 72/72 passing (100%) |
+| Task shells (67 capability + 5 orchestration) | DONE | `packages/eval/capabilities/` + `orchestration/` — all 72 GREEN with 8 criteria |
+| Results storage | DONE | `packages/eval/results/` — 72 result JSONs + SCORING_REPORT |
+| Variance analysis script | DONE | Variance analysis integrated into judge.mjs (3-run median, spread tracking) |

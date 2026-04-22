@@ -4,22 +4,28 @@ title: Task Replay with Timeline Scrubber
 category: agent-core
 status: GREEN
 task:
-  prompt: Replay the previous task and scrub to the middle of the timeline.
-  expected_behavior: Replay page loads with timeline scrubber, events are navigable.
+  prompt: >-
+    Replay completed tasks with an interactive timeline scrubber showing each agent action, tool invocation, and output in chronological sequence with playback controls.
+  expected_behavior: >-
+    Interactive task replay system with a timeline scrubber enabling step-by-step review of completed task execution. The timeline visualizes each agent action (thinking, tool calls, outputs) as discrete steps with timestamps and duration indicators. Playback controls include play/pause, speed adjustment (0.5x to 4x), step forward/backward, and jump-to-step navigation. Each step displays the full context: agent reasoning, tool invoked, parameters passed, and output received with syntax-highlighted code blocks. The scrubber supports drag-to-seek with preview thumbnails showing the state at each position. Branching points where the agent made decisions are highlighted with alternative path indicators. Export functionality generates shareable replay links or downloadable session transcripts. The replay interface is responsive with mobile-optimized controls and maintains smooth performance even for tasks with 100+ steps.
   scoring_criteria:
-  - Replay page loads
-  - Timeline scrubber works
-  - Events displayed
-  - Play/pause/speed controls
+    - Interactive timeline scrubber with discrete steps, timestamps, and duration indicators
+    - Playback controls: play/pause, speed (0.5x-4x), step forward/backward, jump-to-step
+    - Full context display per step: reasoning, tool, parameters, and highlighted output
+    - Drag-to-seek with preview thumbnails showing state at each timeline position
+    - Decision branching highlights with alternative path indicators
+    - Export as shareable replay links or downloadable session transcripts
+    - Responsive mobile-optimized controls with smooth 100+ step performance
+    - Chronological visualization of thinking, tool calls, and outputs per action
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

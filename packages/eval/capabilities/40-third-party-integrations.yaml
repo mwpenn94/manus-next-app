@@ -4,27 +4,28 @@ title: Third-Party Integrations
 category: platform
 status: GREEN
 task:
-  prompt: Integrate multiple third-party services (Stripe payments, S3 storage, OAuth authentication) into a web application
-    with proper error handling and configuration.
-  expected_behavior: Agent configures and integrates Stripe for payments (checkout sessions, webhooks, test mode), AWS S3
-    for file storage (upload, download, presigned URLs), and OAuth for authentication (login flow, session management, protected
-    routes). All integrations include proper error handling, environment variable management, and test coverage.
+  prompt: >-
+    Integrate multiple third-party services (Stripe payments, S3 storage, OAuth authentication, Google Maps) into a web application with unified error handling, automatic retry logic, health monitoring, and a connectors framework for extensibility.
+  expected_behavior: >-
+    Comprehensive third-party integration framework connecting Stripe for payments (checkout sessions, webhook signature verification, test mode with 4242 card), AWS S3 for file storage (storagePut/storageGet with presigned URLs and content-type detection), OAuth for authentication (Manus OAuth flow with session cookies, protected routes via protectedProcedure), and Google Maps (proxy-authenticated frontend SDK with Places, Directions, Drawing APIs). All integrations follow a unified connectors framework pattern with consistent error handling, automatic retry with exponential backoff, and circuit breaker protection against cascading failures. Environment variables are managed through webdev_request_secrets with BYOK auto-matching. Health monitoring checks integration availability on startup and exposes status via a system health endpoint. Each integration includes comprehensive Vitest test coverage with mocked external calls. The framework is extensible — new integrations follow the same connector pattern with typed configuration, error mapping, and retry policies.
   scoring_criteria:
-  - Stripe integration with checkout sessions and webhook handling
-  - S3 storage integration with upload and presigned URL generation
-  - OAuth authentication with login flow and session management
-  - Environment variable management for all service credentials
-  - Error handling for each integration with graceful degradation
-  - Test coverage for integration endpoints
+    - Stripe integration with checkout sessions, webhook signature verification, and test mode
+    - S3 storage with storagePut/storageGet, presigned URLs, and content-type detection
+    - OAuth authentication with session cookies, protected routes, and CSRF protection
+    - Google Maps proxy-authenticated SDK with Places, Directions, and Drawing APIs
+    - Unified connectors framework with consistent error handling and typed configuration
+    - Automatic retry with exponential backoff and circuit breaker for cascading failure protection
+    - Health monitoring with startup availability checks and system health endpoint
+    - Comprehensive Vitest test coverage with mocked external calls for each integration
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

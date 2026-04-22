@@ -1,24 +1,40 @@
 id: 29
 name: publishing-pipeline
 title: Publishing Pipeline
-category: website-builder
+category: website-builder-features
 status: GREEN
 task:
-  prompt: Publish the generated app to a public URL.
-  expected_behavior: App deployed and accessible at public URL.
+  prompt: >-
+    Build and publish a full-stack web application through a complete CI/CD pipeline, from code
+    compilation through deployment to a live public URL with SSL, custom domain support, and
+    rollback capability.
+  expected_behavior: >-
+    Agent triggers the full publishing pipeline: Vite production build with tree-shaking and
+    code splitting, esbuild server bundle compilation, database migration verification via
+    pnpm db:push, checkpoint creation via webdev_save_checkpoint, and deployment to managed
+    hosting infrastructure. The published app is accessible at a public URL (*.manus.space)
+    with automatic SSL certificate provisioning. Supports custom domain binding, version
+    history with rollback capability, and zero-downtime deployments. The pipeline includes
+    TypeScript compilation checks (0 errors required), test suite validation (all tests
+    passing), and static asset optimization via CDN upload.
   scoring_criteria:
-  - Deployment triggered
-  - Public URL generated
-  - App accessible
+    - Vite production build with tree-shaking, code splitting, and asset optimization
+    - esbuild server bundle compilation for Node.js deployment
+    - Database migration verification before deployment (pnpm db:push)
+    - Checkpoint creation with version history for rollback capability
+    - Deployment to managed hosting with automatic SSL certificate provisioning
+    - Public URL generation at *.manus.space with custom domain support
+    - Zero-downtime deployment with health checks and rollback on failure
+    - Static asset CDN upload via manus-upload-file for deployment timeout prevention
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

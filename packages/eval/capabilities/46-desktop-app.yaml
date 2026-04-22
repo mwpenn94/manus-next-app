@@ -5,18 +5,18 @@ category: desktop
 status: GREEN
 task:
   prompt: >-
-    Provide desktop application capabilities including computer use, file system access, and local environment
-    interaction.
+    Build cross-platform desktop applications using Electron or Tauri with native OS integration, auto-updates, and platform-specific packaging.
   expected_behavior: >-
-    Desktop-class application experience with sandbox runtime providing full Linux environment, file system operations,
-    package installation, shell command execution, and browser automation. Supports persistent state across sessions.
+    Cross-platform desktop application development using Electron or Tauri frameworks with native OS integration. The build pipeline generates platform-specific installers (DMG for macOS, MSI/NSIS for Windows, AppImage/deb for Linux) from a single codebase. Native OS integration includes system tray icons, native menus, file associations, and notification center integration. Auto-update functionality checks for new versions on startup with background download and one-click install. The application shell provides a responsive window with minimum size constraints, fullscreen support, and proper DPI scaling for high-resolution displays. IPC communication between main and renderer processes follows secure patterns with context isolation and preload scripts. Local data persistence uses SQLite or the system keychain for sensitive credentials. The development workflow includes hot reload for rapid iteration and debugging tools with Chrome DevTools integration. Code signing configuration ensures the application passes OS security checks (Gatekeeper on macOS, SmartScreen on Windows).
   scoring_criteria:
-    - Full Linux sandbox with sudo privileges and internet access
-    - File system CRUD operations with persistent storage
-    - Package installation via apt, pip, npm/pnpm
-    - Shell command execution with timeout and error handling
-    - Browser automation with Chromium for web interactions
-    - Desktop-class application deployment via webapp builder
+    - Platform-specific installer generation (DMG, MSI/NSIS, AppImage/deb) from single codebase
+    - Native OS integration (system tray, menus, file associations, notifications)
+    - Auto-update with background download and one-click install
+    - Responsive window with DPI scaling and fullscreen support
+    - Secure IPC with context isolation and preload scripts
+    - Local data persistence via SQLite and system keychain for credentials
+    - Hot reload development workflow with Chrome DevTools debugging
+    - Code signing for OS security checks (Gatekeeper, SmartScreen)
 scoring:
   dimensions:
     - correctness

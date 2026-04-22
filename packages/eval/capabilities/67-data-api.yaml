@@ -4,21 +4,28 @@ title: Data API Capability
 category: website-builder-features
 status: GREEN
 task:
-  prompt: Expose a structured data API from the generated app.
-  expected_behavior: REST or tRPC API endpoint returns structured data.
+  prompt: >-
+    Access external data through built-in API hub with automatic discovery, typed responses, and caching for common data sources.
+  expected_behavior: >-
+    Built-in data API capability providing access to external data sources through the Manus API Hub without manual API key configuration. The omni_search tool with search_type='api' discovers available built-in APIs for common data needs (financial data, weather, news, social metrics). API responses are typed and structured for direct consumption in tRPC procedures and frontend components. Automatic caching reduces redundant API calls with configurable TTL per data source. The Data API supports real-time data retrieval for time-sensitive information (stock prices, weather, news) with streaming updates. Rate limiting is managed automatically by the platform, preventing quota exhaustion across concurrent requests. Error handling provides clear feedback when APIs are unavailable or return unexpected data with fallback suggestions. The system prioritizes built-in APIs over external alternatives, only recommending external API integration when no suitable built-in option exists. Response transformation normalizes data from different sources into consistent formats for application consumption.
   scoring_criteria:
-  - API endpoint exists
-  - Returns structured data
-  - Authentication works
+    - Built-in API discovery via omni_search for common data needs without API keys
+    - Typed and structured API responses for direct tRPC and frontend consumption
+    - Automatic caching with configurable TTL per data source reducing redundant calls
+    - Real-time data retrieval with streaming updates for time-sensitive information
+    - Platform-managed rate limiting preventing quota exhaustion across requests
+    - Clear error feedback with fallback suggestions when APIs are unavailable
+    - Built-in API prioritization over external alternatives with gap identification
+    - Response normalization from different sources into consistent application formats
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

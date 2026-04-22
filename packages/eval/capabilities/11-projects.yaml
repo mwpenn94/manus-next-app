@@ -4,22 +4,28 @@ title: Projects
 category: features
 status: GREEN
 task:
-  prompt: Create a new project called 'AI Research' and add a knowledge base entry.
-  expected_behavior: Project created with CRUD operations, knowledge base entry added.
+  prompt: >-
+    Organize related tasks into persistent projects with shared instructions, file storage, cross-task context, and a project management dashboard.
+  expected_behavior: >-
+    Full-featured project management system organizing related tasks into persistent project containers with shared context. Each project maintains shared instructions that are automatically injected into every task within the project, ensuring consistent behavior and domain knowledge. Project-level file storage at /home/ubuntu/projects/{project-id}/ provides persistent shared files accessible across all project tasks. The project dashboard displays task history, shared files, project instructions, and activity timeline. Cross-task context enables the agent to reference outputs and decisions from previous tasks within the same project. Project settings allow customization of default behaviors, preferred tools, and domain-specific configurations. Multiple projects can be active simultaneously with clear separation of context and resources. The system handles project archival and restoration with full state preservation including files, instructions, and task history.
   scoring_criteria:
-  - Project created
-  - Listed in sidebar
-  - Knowledge base works
-  - Edit/delete works
+    - Persistent project containers with shared instructions auto-injected into tasks
+    - Project-level file storage at /home/ubuntu/projects/ accessible across tasks
+    - Project dashboard with task history, shared files, and activity timeline
+    - Cross-task context referencing outputs and decisions from previous project tasks
+    - Customizable project settings for default behaviors and domain configurations
+    - Multiple simultaneous active projects with clear context separation
+    - Project archival and restoration with full state preservation
+    - Shared instructions ensuring consistent behavior across all project tasks
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

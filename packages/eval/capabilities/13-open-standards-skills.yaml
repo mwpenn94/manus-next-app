@@ -4,18 +4,19 @@ title: Open-Standards Agent Skills
 category: features
 status: GREEN
 task:
-  prompt: Support open standards for skill definition and integration, enabling third-party skill development.
+  prompt: >-
+    Define, discover, install, and execute agent skills following an open standard format with guided creation workflows, cross-organization reuse, and real-time skill discovery from verified repositories.
   expected_behavior: >-
-    Skills follow open standard format with SKILL.md containing structured instructions, metadata, and optional
-    resources. skill-creator skill provides guide for creating/updating skills. Format is extensible and replicable
-    across organizations.
+    Comprehensive skill ecosystem with standardized SKILL.md format containing structured instructions, metadata, and bundled resources (scripts, templates, configuration). The skill-creator skill provides an interactive guided workflow for creating new skills with validation, testing, and proper directory structure generation. Skills are discoverable in real-time via internet-skill-finder which searches verified GitHub repositories with relevance ranking. Each skill directory supports templates, scripts, and resource files with dependency declarations. The format is fully documented with examples and extensible for third-party development. Dynamic capability extension works by reading SKILL.md at runtime and following its instructions, enabling hot-loading of new capabilities without restart. Version control integrates with git-based update workflows including diff previews before applying updates. Error handling provides clear feedback when skills fail to load, with fallback suggestions and diagnostic output for debugging.
   scoring_criteria:
-    - Standardized SKILL.md format with instructions and metadata
-    - skill-creator skill for guided skill development
-    - Skills support templates, scripts, and resource files
-    - Format documented and extensible for third-party development
-    - Skills discoverable via internet-skill-finder
-    - Version control and update workflow for skills
+    - Standardized SKILL.md format with structured instructions, metadata, and bundled resources
+    - Interactive skill-creator workflow with validation, testing, and directory structure generation
+    - Real-time skill discovery via internet-skill-finder with relevance ranking from verified repos
+    - Dependency declarations and resource bundling in skill directory structure
+    - Dynamic capability hot-loading by reading SKILL.md at runtime without restart
+    - Git-based version control with diff previews before applying skill updates
+    - Clear error feedback with fallback suggestions when skills fail to load
+    - Cross-organization reuse with documented examples and extensible format specification
 scoring:
   dimensions:
     - correctness

@@ -4,22 +4,28 @@ title: Document Generation
 category: content-generation
 status: GREEN
 task:
-  prompt: Generate a professional report about AI trends and provide a download link.
-  expected_behavior: Document generated, uploaded to S3, download link provided.
+  prompt: >-
+    Generate professional documents in multiple formats (PDF, Word, Excel, PowerPoint) with templates, styling, and data-driven content population.
+  expected_behavior: >-
+    Comprehensive document generation system producing professional outputs in PDF, Word (DOCX), Excel (XLSX), and PowerPoint (PPTX) formats. PDF generation via weasyprint and fpdf2 supports rich formatting with headers, footers, page numbers, tables, images, and custom fonts. Word document creation via python-docx provides structured content with table of contents, headings, numbered lists, and letterhead templates. Excel spreadsheet generation via openpyxl creates formatted workbooks with formulas, charts, conditional formatting, and multiple worksheets. PowerPoint presentation generation creates slide decks with layouts, themes, speaker notes, and embedded charts. Each format follows domain-specific skills (pdf, docx, xlsx, pptx) with best practices for professional output. Template-based generation populates pre-designed layouts with dynamic data from database queries or API responses. The system handles large documents efficiently with streaming generation for 100+ page reports. Export format conversion (Markdown to PDF, data to Excel) provides flexible output options.
   scoring_criteria:
-  - Document generated
-  - Uploaded to S3
-  - Download link works
-  - Content relevant
+    - PDF generation with headers, footers, page numbers, tables, images, and custom fonts
+    - Word document creation with TOC, headings, lists, and letterhead templates
+    - Excel workbook generation with formulas, charts, conditional formatting, and sheets
+    - PowerPoint slide decks with layouts, themes, speaker notes, and embedded charts
+    - Domain-specific skill integration (pdf, docx, xlsx, pptx) for best practices
+    - Template-based generation populating layouts with dynamic data from DB/API
+    - Efficient streaming generation for large documents (100+ pages)
+    - Flexible format conversion (Markdown to PDF, data to Excel) for output options
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

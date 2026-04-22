@@ -4,21 +4,28 @@ title: Voice STT + Hands-Free
 category: voice-audio
 status: GREEN
 task:
-  prompt: Use voice input to dictate a task to the agent.
-  expected_behavior: Voice recorded, transcribed, and submitted as task input.
+  prompt: >-
+    Transcribe voice input to text with real-time streaming, language detection, speaker identification, and hands-free operation mode.
+  expected_behavior: >-
+    Voice-to-text transcription system enabling hands-free agent interaction with real-time streaming recognition. The transcription pipeline uses Whisper API for high-accuracy speech recognition with automatic language detection across 50+ languages. Real-time streaming displays partial transcription results as the user speaks, providing immediate visual feedback. Speaker identification distinguishes between multiple speakers in multi-party conversations with labeled attribution. Hands-free operation mode allows continuous voice interaction without manual trigger buttons, using voice activity detection to identify speech segments. The system handles ambient noise with noise cancellation preprocessing for improved accuracy in non-ideal environments. Transcription results include timestamped segments for precise alignment with audio recordings. Confidence scores per segment enable quality assessment and flagging of uncertain transcriptions for review. The frontend handles audio capture with configurable input device selection and 16MB file size validation.
   scoring_criteria:
-  - Recording works
-  - Transcription accurate
-  - Input submitted
+    - Whisper API transcription with automatic language detection across 50+ languages
+    - Real-time streaming with partial results displayed as user speaks
+    - Speaker identification with labeled attribution in multi-party conversations
+    - Hands-free operation with voice activity detection for speech segment identification
+    - Noise cancellation preprocessing for accuracy in non-ideal environments
+    - Timestamped segments for precise alignment with audio recordings
+    - Confidence scores per segment for quality assessment and uncertain flagging
+    - Frontend audio capture with device selection and 16MB file size validation
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

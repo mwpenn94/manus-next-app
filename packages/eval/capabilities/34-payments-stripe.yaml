@@ -4,21 +4,28 @@ title: Payments (Stripe)
 category: website-builder-features
 status: GREEN
 task:
-  prompt: Set up Stripe payment processing for a subscription product.
-  expected_behavior: Stripe integration configured, checkout flow works.
+  prompt: >-
+    Integrate Stripe payments with checkout sessions, webhook handling, subscription management, and a payment history dashboard with test mode support.
+  expected_behavior: >-
+    Full Stripe payment integration with checkout sessions, webhook verification, and a polished payment experience. Checkout sessions are created server-side via stripe.checkout.sessions.create() with customer email prefill, metadata linking (user_id, customer_email), and promotion code support. The webhook endpoint at /api/stripe/webhook verifies signatures using stripe.webhooks.constructEvent() with express.raw() middleware registered before express.json(). Test events (evt_test_*) return {verified: true} for webhook verification. The payment history page displays completed purchases with date, amount, status, and items. Products and prices are defined in a centralized products.ts file. The frontend opens checkout in a new tab via window.open() with a toast notification. The system handles webhook events (payment_intent.succeeded, invoice.paid, customer.created) by extracting essential identifiers and metadata. Test mode uses card 4242 4242 4242 4242 with a 99% discount promo code for live testing.
   scoring_criteria:
-  - Stripe configured
-  - Checkout works
-  - Payment processed
+    - Server-side checkout session creation with email prefill and metadata linking
+    - Webhook endpoint at /api/stripe/webhook with signature verification
+    - Test event detection (evt_test_*) returning {verified: true} for verification
+    - Payment history page with date, amount, status, and item details
+    - Centralized product/price definitions in products.ts
+    - New-tab checkout opening with toast notification for user feedback
+    - Webhook event handling extracting essential identifiers and metadata only
+    - Test mode support with 4242 card and 99% discount promo code
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

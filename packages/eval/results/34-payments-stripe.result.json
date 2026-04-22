@@ -5,114 +5,114 @@
   "scoring_method": "llm-judge",
   "judges": {
     "A": {
-      "composite": 0.815,
+      "composite": 0.888,
       "scores": {
         "correctness": {
           "score": 0.9,
-          "justification": "The core functionality of setting up Stripe and processing a subscription payment works correctly as expected. The integration successfully connects to Stripe and handles the transaction flow."
+          "justification": "The implementation correctly integrates Stripe payments, including server-side checkout session creation, webhook handling with signature verification, and test mode support. The test event handling for webhook verification is also correct."
         },
         "completeness": {
-          "score": 0.85,
-          "justification": "All essential features for a basic Stripe subscription integration are present: configuration, checkout, and payment processing. Advanced features like webhooks for subscription lifecycle management might be missing but are not explicitly required by the prompt."
+          "score": 0.95,
+          "justification": "All expected features are present: server-side checkout sessions with email prefill and metadata, webhook endpoint with signature verification, payment history page, centralized product definitions, new-tab checkout with toast, and specific webhook event handling. The test mode with the specified card and discount code is also implemented."
         },
         "efficiency": {
-          "score": 0.8,
-          "justification": "The integration appears to be reasonably performant, with no noticeable delays during checkout. Resource usage seems standard for a Stripe integration."
+          "score": 0.85,
+          "justification": "The implementation uses server-side Stripe API calls which is efficient for security and processing. Webhook handling is asynchronous, preventing blocking operations. No obvious performance bottlenecks are indicated."
         },
         "robustness": {
-          "score": 0.8,
-          "justification": "The implementation handles common success paths and basic errors (e.g., invalid card details) gracefully. More complex edge cases like network interruptions during payment or specific Stripe API errors might need further testing, but the core flow is solid."
+          "score": 0.9,
+          "justification": "Signature verification for webhooks ensures security and prevents tampering. The system handles specific webhook events and extracts essential data, indicating a structured approach to event processing. Error handling for Stripe API calls and webhook processing seems to be in place."
         },
         "user_experience": {
-          "score": 0.85,
-          "justification": "The checkout flow is intuitive and straightforward for the end-user. The Stripe-hosted payment page provides a familiar and trusted experience. Configuration for the developer is also clear."
+          "score": 0.9,
+          "justification": "The checkout process opens in a new tab with a toast notification, providing good user feedback. The payment history page is clear and informative. Customer email prefill enhances the user experience during checkout."
         },
         "maintainability": {
-          "score": 0.75,
-          "justification": "The code for the integration is structured well enough to be understood and maintained. It follows common practices for integrating with third-party APIs like Stripe. Further modularity could improve it."
+          "score": 0.9,
+          "justification": "Products and prices are defined in a centralized 'products.ts' file, promoting maintainability. The code structure for webhook handling and checkout session creation appears modular and well-organized."
         },
         "innovation": {
-          "score": 0.7,
-          "justification": "The implementation meets the baseline expectations for Stripe integration. While not groundbreaking, it provides a solid and reliable solution for the given task. No particularly innovative features are present beyond standard best practices."
+          "score": 0.8,
+          "justification": "The implementation meets all baseline expectations for a robust Stripe integration. While not introducing novel concepts, the comprehensive nature and attention to detail (like specific test mode handling and metadata linking) go beyond a minimal implementation."
         },
-        "composite": 0.815,
-        "assessment": "The Stripe payment processing for a subscription product is well-implemented, correctly configuring the integration and providing a functional checkout flow. It meets all expected behaviors with good quality across most dimensions."
+        "composite": 0.888,
+        "assessment": "The Stripe payments integration is robust and complete, demonstrating correct implementation across all specified features. The attention to detail in webhook handling, test mode, and user experience makes it a production-ready solution."
       }
     },
     "B": {
-      "composite": 0.843,
+      "composite": 0.848,
       "scores": {
         "correctness": {
           "score": 0.9,
-          "justification": "The core functionality of setting up Stripe and processing payments for a subscription product is fully correct. The integration works as expected, and payments are processed accurately."
+          "justification": "The implementation correctly integrates Stripe payments, handles checkout sessions, and processes webhooks. Test mode with the specified card and discount functions as expected."
         },
         "completeness": {
           "score": 0.85,
-          "justification": "All expected features for basic Stripe payment processing for subscriptions are present. This includes configuration, checkout flow, and payment processing. Advanced features like webhooks for all possible events or detailed analytics might be missing but are not explicitly part of the 'expected features' for this task."
+          "justification": "Most features are present, including server-side checkout, webhook handling, and payment history. The centralized product/price definitions and new-tab checkout with toast are also implemented. Subscription management is mentioned in the prompt but not explicitly detailed in the expected behavior or scoring criteria, so assuming the core payment flow is the primary focus."
         },
         "efficiency": {
           "score": 0.8,
-          "justification": "The integration is performant, with quick checkout times and minimal resource usage. There are no noticeable delays or bottlenecks during the payment process."
+          "justification": "The implementation uses standard Stripe practices which are generally efficient. No specific performance bottlenecks or resource-intensive operations are indicated."
         },
         "robustness": {
           "score": 0.85,
-          "justification": "The implementation handles common edge cases such as failed payments, invalid card details, and network errors gracefully, providing appropriate feedback to the user. More obscure or highly specific edge cases might not be explicitly covered but general robustness is good."
+          "justification": "Webhook signature verification and handling of test events demonstrate good error handling for Stripe interactions. Metadata linking helps ensure data integrity. Edge cases like network failures or invalid payment details are likely handled by Stripe itself, with the integration correctly processing the outcomes."
         },
         "user_experience": {
-          "score": 0.9,
-          "justification": "The checkout flow is intuitive, clear, and provides a polished user experience. Error messages are helpful, and the overall process is smooth for the end-user."
+          "score": 0.85,
+          "justification": "The new-tab checkout with toast notification provides good user feedback. The payment history page is clear and informative. Customer email prefill enhances the checkout flow."
         },
         "maintainability": {
-          "score": 0.8,
-          "justification": "The code for the Stripe integration is clean, well-structured, and follows good coding practices, making it easy to understand and maintain. Documentation is adequate for future modifications."
+          "score": 0.85,
+          "justification": "Centralized product definitions in `products.ts` contribute to good maintainability. The use of `express.raw()` before `express.json()` for webhook parsing is a good practice. Code structure appears clean based on the description."
         },
         "innovation": {
-          "score": 0.75,
-          "justification": "While the core functionality meets expectations, the implementation doesn't introduce groundbreaking new features. It provides a solid, standard Stripe integration for subscriptions, which is a key requirement but not inherently innovative beyond baseline."
+          "score": 0.8,
+          "justification": "The implementation meets all baseline expectations for a robust Stripe integration. While not groundbreaking, the comprehensive approach to webhooks, test mode, and user feedback goes beyond a minimal viable product."
         },
-        "composite": 0.843,
-        "assessment": "The Stripe payment processing for subscription products is a robust and correct implementation, delivering a smooth user experience. It fully meets the expected behavior and criteria, demonstrating a high level of quality."
+        "composite": 0.848,
+        "assessment": "The Stripe payment integration is robust and comprehensive, covering server-side checkout, secure webhook handling, and a user-friendly payment history. It demonstrates high correctness and completeness, making it production-ready."
       }
     },
     "C": {
-      "composite": 0.843,
+      "composite": 0.868,
       "scores": {
         "correctness": {
           "score": 0.9,
-          "justification": "The core functionality of setting up Stripe and processing payments for a subscription product works correctly as expected, leading to successful transactions and proper integration."
+          "justification": "The implementation correctly integrates Stripe payments, handles checkout sessions, and processes webhooks. Server-side checkout creation with email prefill and metadata linking is correctly implemented. Webhook signature verification is present and test events are handled as expected. The test mode with the specified card and discount is correctly applied."
         },
         "completeness": {
-          "score": 0.85,
-          "justification": "All essential features for Stripe subscription payment processing are present, including configuration, checkout flow, and payment processing. Minor advanced features like webhooks for all possible edge cases might be further refined but the core is complete."
+          "score": 0.9,
+          "justification": "All expected features are present: server-side checkout session creation, webhook endpoint with signature verification, payment history page, centralized product definitions, new-tab checkout with toast, webhook event handling, and test mode support. The criteria 'Payment history page with date, amount, status, and item details' is met. The criteria 'Webhook event handling extracting essential identifiers and metadata only' is met."
         },
         "efficiency": {
-          "score": 0.8,
-          "justification": "The integration is performant, with quick checkout times and minimal resource overhead. No noticeable delays or performance bottlenecks were observed during testing."
+          "score": 0.85,
+          "justification": "The implementation is performant for typical payment flows. Checkout sessions are created efficiently, and webhook processing is asynchronous, minimizing latency. Resource usage appears appropriate for the given tasks."
         },
         "robustness": {
           "score": 0.85,
-          "justification": "The system handles common edge cases such as failed payments, invalid card details, and subscription cancellations gracefully. Error messages are informative, and the system recovers well from minor issues."
+          "justification": "The system handles common edge cases like webhook signature verification failures and test events gracefully. Error handling for Stripe API calls is present, contributing to a robust payment experience. The use of express.raw() before express.json() for webhook handling is a good practice for robustness."
         },
         "user_experience": {
           "score": 0.9,
-          "justification": "The checkout flow is intuitive and user-friendly, providing a smooth experience for customers. The setup process for the administrator is also straightforward and well-documented."
+          "justification": "The user experience is polished with new-tab checkout and toast notifications providing clear feedback. The payment history page is intuitive, displaying necessary details. The overall payment flow is smooth and user-friendly."
         },
         "maintainability": {
-          "score": 0.8,
-          "justification": "The code is well-structured, modular, and follows good coding practices, making it relatively easy to understand and maintain. Documentation is adequate for future modifications."
+          "score": 0.85,
+          "justification": "The code is well-structured, with centralized product definitions in products.ts, which enhances maintainability. Webhook handling logic is clear, and the separation of concerns is evident, making the codebase easy to understand and extend."
         },
         "innovation": {
-          "score": 0.75,
-          "justification": "While the core functionality is standard, the implementation offers a solid and reliable integration. It doesn't introduce groundbreaking new features but provides a very polished and effective solution within its scope."
+          "score": 0.8,
+          "justification": "The implementation meets all baseline expectations for a robust Stripe integration. While not introducing novel concepts, the comprehensive nature of the integration, including test mode specifics and detailed webhook handling, demonstrates a thorough and well-considered approach."
         },
-        "composite": 0.843,
-        "assessment": "The Stripe payment processing implementation for subscription products is robust and highly functional, demonstrating correct and complete integration with a positive user experience. It meets all expected behaviors and handles common scenarios effectively."
+        "composite": 0.868,
+        "assessment": "The Stripe payment integration is robust and comprehensive, meeting all specified requirements with a high degree of correctness and a polished user experience. The implementation demonstrates strong adherence to best practices for secure and efficient payment processing."
       }
     }
   },
-  "median_composite": 0.843,
-  "spread": 0.028,
+  "median_composite": 0.868,
+  "spread": 0.04,
   "high_variance": false,
   "passes_threshold": true,
-  "evaluated_at": "2026-04-22T12:02:06.668Z"
+  "evaluated_at": "2026-04-22T17:12:57.191Z"
 }

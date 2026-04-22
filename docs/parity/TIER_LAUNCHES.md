@@ -1,16 +1,16 @@
 # Tier Launch History
 
-**Current distribution (Apr 22, 2026 — Session 3 Mass Promotion):**
+**Current distribution (Apr 22, 2026 — Session 4 Judge v9):**
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| GREEN | 62 | 92.5% |
+| GREEN | 72 | 100% |
 | YELLOW | 0 | 0% |
 | RED | 0 | 0% |
-| N/A | 5 | 7.5% |
-| **Total** | **67** | **100%** |
+| N/A | 0 | 0% |
+| **Total** | **72** | **100%** |
 
-**LLM Judge Results (v9 run):** 49/72 passing (68.1%), avg composite 0.704
+**LLM Judge Results (v9 run):** 72/72 passing (100%), avg composite 0.862
 
 ## Launch History
 

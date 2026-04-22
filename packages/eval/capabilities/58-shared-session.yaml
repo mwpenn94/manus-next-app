@@ -4,21 +4,28 @@ title: Shared Session
 category: collaboration
 status: GREEN
 task:
-  prompt: Share a live session with another user.
-  expected_behavior: Session shared, both users see real-time updates.
+  prompt: >-
+    Enable real-time shared sessions where multiple users can observe and interact with the same agent task simultaneously with presence indicators.
+  expected_behavior: >-
+    Real-time shared session system enabling multiple users to observe and interact with the same agent task simultaneously. Session sharing generates invite links with configurable permission levels (observe-only, interact, full control). Live presence indicators show connected users with color-coded cursors and name labels. The shared view synchronizes in real-time, showing agent actions, tool outputs, and conversation updates to all participants within 100ms latency. Interaction permissions allow designated users to send messages and provide input to the running task. Session chat enables participants to communicate with each other alongside the agent conversation. The host maintains full control with ability to revoke access, change permissions, and end the shared session. Connection management handles participant join/leave gracefully with notifications and automatic reconnection on network interruptions. Session recordings capture the full shared experience for later replay with participant interactions preserved.
   scoring_criteria:
-  - Session shared
-  - Real-time updates
-  - Permissions enforced
+    - Invite link generation with configurable permission levels (observe, interact, control)
+    - Live presence indicators with color-coded cursors and name labels
+    - Sub-100ms real-time synchronization of agent actions and outputs to all participants
+    - Interaction permissions allowing designated users to send messages and input
+    - Participant chat alongside agent conversation for real-time communication
+    - Host controls for access revocation, permission changes, and session termination
+    - Graceful join/leave handling with notifications and automatic reconnection
+    - Session recording capturing full shared experience with participant interactions
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

@@ -4,21 +4,28 @@ title: Project Analytics
 category: website-builder-pm
 status: GREEN
 task:
-  prompt: View analytics for the published project (page views, visitors).
-  expected_behavior: Analytics dashboard shows traffic metrics.
+  prompt: >-
+    Track and visualize project analytics including page views, unique visitors, traffic sources, and user engagement metrics with an interactive dashboard.
+  expected_behavior: >-
+    Comprehensive project analytics system tracking page views (PV), unique visitors (UV), traffic sources, and engagement metrics with an interactive dashboard. The analytics endpoint is configured via VITE_ANALYTICS_ENDPOINT and VITE_ANALYTICS_WEBSITE_ID environment variables for automatic data collection. The dashboard panel in the Management UI displays real-time and historical metrics with date range filtering, comparison periods, and trend visualization. Traffic source breakdown shows referrer distribution, direct visits, search engine traffic, and social media referrals. Geographic distribution maps visitor locations by country and city. User engagement metrics track session duration, pages per session, bounce rate, and return visitor rate. The dashboard supports data export in CSV format for external analysis. Real-time visitor count shows currently active users on the site. The system respects user privacy with configurable data retention periods and opt-out mechanisms.
   scoring_criteria:
-  - Dashboard loads
-  - Metrics displayed
-  - Time range filter works
+    - Automatic PV/UV tracking via VITE_ANALYTICS_ENDPOINT configuration
+    - Interactive dashboard with date range filtering and comparison periods
+    - Traffic source breakdown (referrers, direct, search, social media)
+    - Geographic distribution mapping visitors by country and city
+    - Engagement metrics (session duration, pages/session, bounce rate, return rate)
+    - CSV data export for external analysis and reporting
+    - Real-time active visitor count showing currently online users
+    - Privacy-conscious design with configurable retention and opt-out mechanisms
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

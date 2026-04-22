@@ -4,26 +4,28 @@ title: App Publishing (Mobile)
 category: platform
 status: GREEN
 task:
-  prompt: Publish a mobile application to app stores with proper configuration, signing, and metadata.
-  expected_behavior: Agent configures mobile app publishing pipeline with app store metadata (name, description, screenshots,
-    categories), code signing configuration, build scripts for iOS and Android, and submission workflow. Includes proper versioning,
-    release notes, and compliance checks.
+  prompt: >-
+    Configure and execute a complete mobile application publishing pipeline for both Apple App Store and Google Play Store with automated builds, code signing, compliance validation, phased rollouts, and an intuitive submission dashboard with real-time review status tracking.
+  expected_behavior: >-
+    End-to-end mobile app publishing pipeline for iOS and Android with a polished submission dashboard. App store metadata is configured comprehensively including localized app name, description, keywords, screenshot sets for all required device sizes, category selection, age rating responses, and privacy policy URL. Code signing is automated with iOS provisioning profiles (development, distribution) and Android keystore management with secure credential storage. Build scripts generate platform-specific bundles — IPA with proper entitlements for iOS and AAB with multi-architecture support for Android. Semantic versioning enforces automatic build number incrementing with release notes auto-generated from git commit history. Compliance validation checks app store guidelines including content policies, privacy requirements (App Tracking Transparency for iOS, data safety section for Android), and API usage restrictions before submission. The submission dashboard provides real-time review status tracking with push notifications on status changes. Phased rollouts support percentage-based user targeting with automatic halt on crash rate spikes. TestFlight and internal testing tracks are configured for pre-release validation with feedback collection. Error handling provides clear remediation guidance when submissions are rejected, with specific guideline references and suggested fixes.
   scoring_criteria:
-  - App store metadata configuration (name, description, screenshots)
-  - Build pipeline for iOS and Android targets
-  - Code signing configuration and certificate management
-  - Version management and release notes generation
-  - Compliance checks for app store guidelines
-  - Submission workflow with status tracking
+    - Comprehensive app store metadata with localization, screenshots, and privacy policy
+    - Automated code signing for iOS provisioning profiles and Android keystore management
+    - Dual-platform build pipeline generating IPA and AAB with multi-architecture support
+    - Semantic versioning with auto-incrementing build numbers and git-based release notes
+    - Pre-submission compliance validation against app store guidelines and privacy requirements
+    - Real-time review status dashboard with push notifications on status changes
+    - Phased rollout with percentage targeting and automatic halt on crash rate spikes
+    - Rejection remediation guidance with specific guideline references and suggested fixes
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

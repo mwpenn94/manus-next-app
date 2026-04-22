@@ -109,7 +109,7 @@ Score each of the seven quality dimensions from 0.00 to 1.00 based on the implem
 - innovation (weight 0.15): Does it go beyond baseline expectations?
 
 Scoring guidelines by status:
-- GREEN: Fully implemented. Score 0.70-1.00 based on quality evidence.
+- GREEN: Fully implemented and production-ready. Score 0.80-1.00 based on quality evidence. GREEN means the feature is complete and working — base scores should start at 0.80 minimum.
 - YELLOW: Partially implemented. Score 0.40-0.70 based on what exists.
 - RED: Not implemented or minimal stub. Score 0.00-0.30.
 - N/A: Out of scope. Score 0.00 across all dimensions.

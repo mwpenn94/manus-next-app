@@ -4,22 +4,28 @@ title: Access Control
 category: website-builder-features
 status: GREEN
 task:
-  prompt: Verify that protected routes require authentication.
-  expected_behavior: Unauthenticated users redirected to login. Authenticated users
-    access protected content.
+  prompt: >-
+    Implement role-based access control with admin and user roles, protected routes, permission-gated procedures, and a user management interface.
+  expected_behavior: >-
+    Comprehensive role-based access control (RBAC) system with admin and user roles providing granular permission management. The user table includes a role field (enum: admin | user) for identity separation with ctx.user.role available in all tRPC procedures. Protected procedures use protectedProcedure middleware that injects authenticated user context, while admin-only operations use adminProcedure with role verification throwing FORBIDDEN errors for non-admin users. Frontend conditionally renders navigation, routes, and UI elements based on useAuth().user?.role for seamless role-appropriate experiences. The user management interface allows admins to view all users, modify roles, and manage account status. Permission checks are enforced at both the API layer (server-side) and UI layer (client-side) for defense-in-depth security. Role promotion requires direct database updates or admin UI actions to prevent privilege escalation. Audit logging tracks all permission changes with timestamps and the admin who made the change.
   scoring_criteria:
-  - Auth check works
-  - Redirect to login
-  - Protected content accessible after auth
+    - Role field (admin/user enum) on user table with ctx.user.role in procedures
+    - protectedProcedure middleware injecting authenticated user context
+    - adminProcedure with role verification throwing FORBIDDEN for non-admin users
+    - Conditional frontend rendering based on useAuth().user?.role
+    - Admin user management interface for viewing users, modifying roles, and status
+    - Defense-in-depth with permission checks at both API and UI layers
+    - Privilege escalation prevention requiring direct DB or admin UI for role promotion
+    - Audit logging of all permission changes with timestamps and admin attribution
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

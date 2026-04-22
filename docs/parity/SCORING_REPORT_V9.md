@@ -1,3 +1,5 @@
+> **SUPERSEDED:** This report is from the initial v9 judge run. See SCORING_REPORT_V9_FINAL.md for the current results (72/72 passing, 100%).
+
 # LLM-Judge Scoring Report
 
 **Generated:** 2026-04-22T10:28:12.605Z

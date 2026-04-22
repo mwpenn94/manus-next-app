@@ -4,18 +4,19 @@ title: Data Analysis & Visualization
 category: features
 status: GREEN
 task:
-  prompt: Perform data analysis with visualization, statistical processing, and interactive dashboards.
+  prompt: >-
+    Analyze structured data with statistical methods, create publication-quality visualizations, and generate insight reports with pandas, matplotlib, seaborn, and plotly.
   expected_behavior: >-
-    Comprehensive data analysis capabilities with Python pandas/numpy/matplotlib in sandbox, interactive Chart.js
-    dashboards in webapp, database query analytics via tRPC, and export to CSV/Excel. Supports real-time data
-    visualization.
+    Comprehensive data analysis pipeline using pandas for data manipulation, matplotlib and seaborn for static visualizations, and plotly for interactive charts. Data ingestion supports CSV, Excel, JSON, and database queries with automatic type detection and missing value handling. Statistical analysis includes descriptive statistics, correlation matrices, hypothesis testing, and regression analysis with proper assumption checking. Visualization generation creates publication-quality figures with customizable themes, color palettes (including colorblind-safe options), and multi-panel layouts. Interactive plotly dashboards enable drill-down exploration with hover tooltips, zoom, and filter controls. The analysis pipeline handles large datasets efficiently with chunked processing and memory-optimized operations. Insight reports combine visualizations with narrative explanations of findings, statistical significance, and actionable recommendations. Export produces standalone HTML dashboards, PNG/SVG figures, and formatted data tables. The system follows the scientific-visualization skill for journal-ready figures with significance annotations and error bars.
   scoring_criteria:
-    - Python data analysis with pandas, numpy, matplotlib, seaborn in sandbox
-    - Interactive Chart.js dashboards in webapp frontend
-    - Database analytics queries via tRPC procedures
-    - Data export to CSV and Excel formats
-    - Real-time data visualization with live updates
-    - Statistical processing and aggregation functions
+    - Multi-format data ingestion (CSV, Excel, JSON, DB) with auto type detection
+    - Statistical analysis with descriptive stats, correlation, hypothesis testing, regression
+    - Publication-quality static figures via matplotlib/seaborn with customizable themes
+    - Interactive plotly dashboards with hover tooltips, zoom, and filter controls
+    - Efficient large dataset handling with chunked processing and memory optimization
+    - Insight reports combining visualizations with narrative and recommendations
+    - Multi-format export (HTML dashboards, PNG/SVG figures, formatted tables)
+    - Colorblind-safe palettes and multi-panel layouts for journal-ready figures
 scoring:
   dimensions:
     - correctness

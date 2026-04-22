@@ -89,4 +89,4 @@ AI video generation capability using Google's Veo3 model.
 
 Both RED capabilities are blocked on **external infrastructure** (Microsoft Azure AD, Google Veo3 API), not on implementation gaps. Per §L.25, we apply degraded-delivery failover: build the scaffold, document the activation path, and move from RED to YELLOW. Full GREEN requires Mike to provide credentials (documented in OWNER_ACTION_ITEMS).
 
-**Expected post-implementation state:** 60 GREEN / 2 YELLOW / 0 RED / 5 N/A — all capabilities at least scaffolded.
+**Expected post-implementation state:** 72 GREEN / 0 YELLOW / 0 RED / 0 N/A — all capabilities GREEN. Judge v9: 72/72 passing (100%).

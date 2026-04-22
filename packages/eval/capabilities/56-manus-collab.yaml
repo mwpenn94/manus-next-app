@@ -4,21 +4,28 @@ title: Manus Collab
 category: collaboration
 status: GREEN
 task:
-  prompt: Start a collaborative session with another user.
-  expected_behavior: Real-time collaboration session active.
+  prompt: >-
+    Enable real-time multi-user collaboration on projects with shared workspaces, live cursor presence, synchronized editing, role-based permissions, and an intuitive collaboration dashboard with activity feeds.
+  expected_behavior: >-
+    Full-featured real-time collaboration system enabling multiple users to work simultaneously on shared projects with live presence awareness. Shared workspaces provide synchronized access to project files, configurations, and resources with conflict-free concurrent editing using operational transformation. Live cursor presence shows each collaborator's active location within files and UI elements with color-coded user indicators and name labels. Role-based permissions (owner, editor, viewer) control access levels with granular per-resource permission overrides. The collaboration dashboard displays an activity feed showing recent changes, who made them, and when, with one-click navigation to the changed resource. Real-time synchronization ensures all participants see changes within 100ms latency using WebSocket connections with automatic reconnection on network interruptions. Version history tracks all collaborative changes with per-user attribution, enabling rollback to any previous state. Invitation management supports email-based invites with customizable permission levels and expiration dates. Conflict resolution handles simultaneous edits gracefully with automatic merging for non-overlapping changes and visual conflict markers for overlapping edits requiring manual resolution.
   scoring_criteria:
-  - Session created
-  - Multiple users connected
-  - Real-time sync
+    - Real-time multi-user workspace with conflict-free concurrent editing via operational transform
+    - Live cursor presence with color-coded user indicators and name labels across files
+    - Role-based permissions (owner, editor, viewer) with granular per-resource overrides
+    - Activity feed dashboard showing recent changes with user attribution and deep-links
+    - Sub-100ms synchronization via WebSocket with automatic reconnection on network failures
+    - Version history with per-user attribution and rollback to any previous collaborative state
+    - Email-based invitation management with customizable permissions and expiration dates
+    - Visual conflict markers for overlapping edits with automatic merge for non-overlapping changes
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

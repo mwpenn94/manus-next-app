@@ -4,22 +4,28 @@ title: Cross-Session Memory
 category: agent-core
 status: GREEN
 task:
-  prompt: Remember that my favorite color is blue. Then in a new task, ask what my
-    favorite color is.
-  expected_behavior: Agent stores memory entry and retrieves it in subsequent tasks.
+  prompt: >-
+    Maintain persistent memory across separate sessions enabling the agent to recall user preferences, project context, past decisions, and learned patterns for continuity.
+  expected_behavior: >-
+    Persistent cross-session memory system that maintains user preferences, project context, and learned patterns across separate conversations. Memory is stored in structured format with categorization (preferences, facts, decisions, patterns) enabling efficient retrieval by relevance. Project-level instructions persist via the project system, allowing shared context across multiple tasks within the same project. The agent proactively recalls relevant past context when it detects continuity with previous sessions — for example, remembering coding style preferences or domain-specific terminology. Memory updates are incremental, preserving existing knowledge while incorporating new information without conflicts. Privacy-conscious design allows users to review and delete stored memories. The system handles memory staleness by tracking confidence decay over time and prioritizing recent information. Retrieval uses semantic similarity matching to surface the most relevant memories for the current task context.
   scoring_criteria:
-  - Memory stored
-  - Memory retrieved in new context
-  - Correct recall
+    - Persistent memory storage with categorization (preferences, facts, decisions, patterns)
+    - Project-level instruction persistence via project system for shared task context
+    - Proactive recall of relevant past context when continuity is detected
+    - Incremental memory updates preserving existing knowledge without conflicts
+    - Privacy-conscious design with user review and deletion of stored memories
+    - Confidence decay tracking prioritizing recent information over stale memories
+    - Semantic similarity retrieval surfacing most relevant memories for current context
+    - Structured format enabling efficient categorized retrieval by relevance
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15
