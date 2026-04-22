@@ -1529,3 +1529,48 @@ export async function getPageViewsByProject(projectId: number, limit: number = 1
     .orderBy(desc(pageViews.viewedAt))
     .limit(limit);
 }
+
+/** Geographic analytics — views grouped by country code */
+export async function getGeoAnalytics(projectId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const allViews = await db.select().from(pageViews)
+    .where(and(eq(pageViews.projectId, projectId), gte(pageViews.viewedAt, since)));
+
+  const countryMap: Record<string, number> = {};
+  for (const v of allViews) {
+    const country = v.country || "Unknown";
+    countryMap[country] = (countryMap[country] || 0) + 1;
+  }
+
+  return Object.entries(countryMap)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** Device analytics — views classified by screen width into mobile/tablet/desktop */
+export async function getDeviceAnalytics(projectId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) return { mobile: 0, tablet: 0, desktop: 0, unknown: 0, total: 0 };
+
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const allViews = await db.select().from(pageViews)
+    .where(and(eq(pageViews.projectId, projectId), gte(pageViews.viewedAt, since)));
+
+  let mobile = 0, tablet = 0, desktop = 0, unknown = 0;
+  for (const v of allViews) {
+    if (v.screenWidth == null) {
+      unknown++;
+    } else if (v.screenWidth < 768) {
+      mobile++;
+    } else if (v.screenWidth < 1024) {
+      tablet++;
+    } else {
+      desktop++;
+    }
+  }
+
+  return { mobile, tablet, desktop, unknown, total: allViews.length };
+}

@@ -26,9 +26,9 @@ import {
   Key, Bell, Link2, Server, Clock, CheckCircle, XCircle,
   Activity, Users, FileCode, Download, Upload, Shield, Zap,
   ChevronRight, MoreHorizontal, Copy, RotateCcw,
-  CreditCard, Search, AlertTriangle
+  CreditCard, Search, AlertTriangle, Smartphone, Tablet, Monitor, MapPin
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,7 @@ export default function WebAppProjectPage() {
   const [activePanel, setActivePanel] = useState<ManagementPanel>("preview");
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [deployConfirmOpen, setDeployConfirmOpen] = useState(false);
+  const [deployStatusMessage, setDeployStatusMessage] = useState("");
 
   // Queries
   const projectQuery = trpc.webappProject.get.useQuery(
@@ -62,6 +63,16 @@ export default function WebAppProjectPage() {
     { enabled: !!projectId && activePanel === "dashboard" }
   );
 
+  const geoQuery = trpc.webappProject.geoAnalytics.useQuery(
+    { externalId: projectId!, days: 30 },
+    { enabled: !!projectId && activePanel === "dashboard" }
+  );
+
+  const deviceQuery = trpc.webappProject.deviceAnalytics.useQuery(
+    { externalId: projectId!, days: 30 },
+    { enabled: !!projectId && activePanel === "dashboard" }
+  );
+
   // Mutations
   const updateProjectMut = trpc.webappProject.update.useMutation({
     onSuccess: () => {
@@ -72,13 +83,20 @@ export default function WebAppProjectPage() {
   });
 
   const deployMut = trpc.webappProject.deploy.useMutation({
+    onMutate: () => {
+      setDeployStatusMessage("Deploying...");
+    },
     onSuccess: () => {
       toast.success("Deployment started");
+      setDeployStatusMessage("Deployment successful — your app is live.");
       projectQuery.refetch();
       deploymentsQuery.refetch();
       setDeployConfirmOpen(false);
     },
-    onError: (err) => { toast.error(err.message); },
+    onError: (err) => {
+      toast.error(err.message);
+      setDeployStatusMessage(`Deployment failed: ${err.message}`);
+    },
   });
 
   const deleteProjectMut = trpc.webappProject.delete.useMutation({
@@ -140,14 +158,16 @@ export default function WebAppProjectPage() {
             </div>
             <span className="font-semibold text-sm">{project.name}</span>
           </div>
-          <Badge
-            variant={project.deployStatus === "live" ? "default" : "secondary"}
-            className={cn("text-[10px]",
-              project.deployStatus === "live" && "bg-green-500/20 text-green-400 border-green-500/30"
-            )}
-          >
-            {project.deployStatus === "live" ? "Live" : project.deployStatus}
-          </Badge>
+          <span aria-live="assertive" aria-atomic="true" role="status">
+            <Badge
+              variant={project.deployStatus === "live" ? "default" : "secondary"}
+              className={cn("text-[10px]",
+                project.deployStatus === "live" && "bg-green-500/20 text-green-400 border-green-500/30"
+              )}
+            >
+              {project.deployStatus === "live" ? "Live" : project.deployStatus}
+            </Badge>
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {project.publishedUrl && (
@@ -161,12 +181,15 @@ export default function WebAppProjectPage() {
             size="sm"
             onClick={() => setDeployConfirmOpen(true)}
             disabled={deployMut.isPending}
+            aria-busy={deployMut.isPending}
           >
             {deployMut.isPending ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Rocket className="w-3.5 h-3.5 mr-1" />}
             Publish
           </Button>
         </div>
       </div>
+      {/* Screen-reader-only deploy status announcements */}
+      <div className="sr-only" role="alert" aria-live="assertive">{deployStatusMessage}</div>
 
       {/* Panel Navigation — Manus-style tabs */}
       <div className="border-b border-border px-4">
@@ -399,6 +422,118 @@ export default function WebAppProjectPage() {
               </Card>
             )}
 
+            {/* Geographic Analytics — Country Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <Card className="border-border">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Visitors by Country
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {geoQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-6"><Loader2 className="w-4 h-4 animate-spin" /></div>
+                  ) : geoQuery.data && geoQuery.data.length > 0 ? (
+                    <div className="space-y-2">
+                      {geoQuery.data.slice(0, 10).map((g: { country: string; count: number }, i: number) => {
+                        const maxCount = geoQuery.data![0]?.count || 1;
+                        const pct = Math.round((g.count / maxCount) * 100);
+                        return (
+                          <div key={g.country} className="flex items-center gap-3">
+                            <span className="text-xs font-mono w-10 text-muted-foreground">{g.country}</span>
+                            <div className="flex-1 h-5 bg-muted/50 rounded overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded transition-all",
+                                  i === 0 ? "bg-primary" : i < 3 ? "bg-primary/70" : "bg-primary/40"
+                                )}
+                                style={{ width: `${Math.max(pct, 4)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground w-12 text-right">{g.count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-6">No geographic data yet. Country detection requires CDN headers (CF-IPCountry).</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Device Breakdown — Pie Chart */}
+              <Card className="border-border">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Monitor className="w-4 h-4" /> Device Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {deviceQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-6"><Loader2 className="w-4 h-4 animate-spin" /></div>
+                  ) : deviceQuery.data && deviceQuery.data.total > 0 ? (
+                    <div className="flex items-center gap-6">
+                      {/* SVG Donut Chart */}
+                      <div className="relative w-28 h-28 shrink-0">
+                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                          {(() => {
+                            const d = deviceQuery.data!;
+                            const total = d.total || 1;
+                            const segments = [
+                              { value: d.desktop, color: "oklch(0.65 0.15 250)" },
+                              { value: d.tablet, color: "oklch(0.70 0.12 160)" },
+                              { value: d.mobile, color: "oklch(0.75 0.14 50)" },
+                              { value: d.unknown, color: "oklch(0.55 0.02 250)" },
+                            ].filter(s => s.value > 0);
+                            let offset = 0;
+                            return segments.map((seg, i) => {
+                              const pct = (seg.value / total) * 100;
+                              const el = (
+                                <circle
+                                  key={i}
+                                  cx="18" cy="18" r="15.9155"
+                                  fill="none"
+                                  stroke={seg.color}
+                                  strokeWidth="3.5"
+                                  strokeDasharray={`${pct} ${100 - pct}`}
+                                  strokeDashoffset={-offset}
+                                  strokeLinecap="round"
+                                />
+                              );
+                              offset += pct;
+                              return el;
+                            });
+                          })()}
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-lg font-bold">{deviceQuery.data.total}</span>
+                        </div>
+                      </div>
+                      {/* Legend */}
+                      <div className="space-y-2 flex-1">
+                        {[
+                          { label: "Desktop", value: deviceQuery.data.desktop, icon: Monitor, color: "bg-[oklch(0.65_0.15_250)]" },
+                          { label: "Tablet", value: deviceQuery.data.tablet, icon: Tablet, color: "bg-[oklch(0.70_0.12_160)]" },
+                          { label: "Mobile", value: deviceQuery.data.mobile, icon: Smartphone, color: "bg-[oklch(0.75_0.14_50)]" },
+                          { label: "Unknown", value: deviceQuery.data.unknown, icon: Activity, color: "bg-muted" },
+                        ].filter(item => item.value > 0).map((item) => (
+                          <div key={item.label} className="flex items-center gap-2 text-sm">
+                            <div className={cn("w-3 h-3 rounded-sm shrink-0", item.color)} />
+                            <item.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="flex-1">{item.label}</span>
+                            <span className="font-medium">{item.value}</span>
+                            <span className="text-xs text-muted-foreground">({deviceQuery.data!.total > 0 ? Math.round((item.value / deviceQuery.data!.total) * 100) : 0}%)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-6">No device data yet. Analytics tracking captures screen width from visitors.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Project Info */}
             <Card className="border-border">
               <CardHeader className="py-3">
@@ -450,7 +585,7 @@ export default function WebAppProjectPage() {
                 <Rocket className="w-3.5 h-3.5 mr-1" /> New Deployment
               </Button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3" aria-live="polite" aria-label="Deployment history">
               {deploymentsQuery.isLoading && (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" /></div>
               )}

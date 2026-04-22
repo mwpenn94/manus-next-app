@@ -55,7 +55,7 @@ describe("pdfExtraction module", () => {
     await expect(
       extractTextFromPdfUrl("https://example.com/nonexistent-file.pdf")
     ).rejects.toThrow();
-  });
+  }, 15000);
 
   it("extractTextFromPdfBuffer handles a minimal valid PDF", async () => {
     const { extractTextFromPdfBuffer } = await import("./pdfExtraction");

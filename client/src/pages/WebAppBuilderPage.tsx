@@ -302,7 +302,7 @@ Generate the complete HTML code now.`,
                       className="mb-4"
                       aria-label="App description prompt"
                     />
-                    <Button onClick={buildApp} disabled={isBuilding || !prompt.trim()} className="w-full">
+                    <Button onClick={buildApp} disabled={isBuilding || !prompt.trim()} className="w-full" aria-busy={isBuilding}>
                       {isBuilding ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
@@ -326,9 +326,9 @@ Generate the complete HTML code now.`,
                         Describe your app and click Build to start
                       </p>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-3" aria-live="polite" aria-atomic="false" aria-label="Build progress steps" role="list">
                         {buildSteps.map((step) => (
-                          <div key={step.id} className="flex items-center gap-3">
+                          <div key={step.id} className="flex items-center gap-3" role="listitem" aria-label={`${step.label}: ${step.status}`}>
                             {step.status === "running" ? (
                               <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
                             ) : step.status === "done" ? (
@@ -397,7 +397,7 @@ Generate the complete HTML code now.`,
                 </div>
               </CardHeader>
               <CardContent>
-                <pre className="bg-muted/50 rounded-lg p-4 overflow-auto max-h-[600px] text-xs font-mono text-foreground">
+                <pre className="bg-muted/50 rounded-lg p-4 overflow-auto max-h-[600px] text-xs font-mono text-foreground" role="status" aria-live="polite" aria-label="Generated source code">
                   {generatedCode}
                 </pre>
               </CardContent>

@@ -298,12 +298,17 @@ async function startServer() {
       const project = await getWebappProjectByExternalId(String(projectId));
       if (!project) return res.status(404).json({ error: "Project not found" });
 
+      // Country detection: CloudFront CF-IPCountry, Cloudflare CF-IPCountry, or X-Country header
+      const countryHeader = req.headers["cf-ipcountry"] || req.headers["x-country"] || req.headers["x-vercel-ip-country"];
+      const country = countryHeader ? String(Array.isArray(countryHeader) ? countryHeader[0] : countryHeader).slice(0, 8).toUpperCase() : null;
+
       await recordPageView({
         projectId: project.id,
         path: String(path || "/").slice(0, 512),
         referrer: referrer ? String(referrer).slice(0, 2048) : null,
         userAgent,
         visitorHash,
+        country,
         screenWidth: screenWidth ? Number(screenWidth) : null,
       });
 

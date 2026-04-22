@@ -2478,35 +2478,26 @@ export const appRouter = router({
           status: "building",
         });
 
-        // Real deploy: if project has a linked webapp build with HTML, publish to S3
+        // Real deploy via CloudFront provisioning pipeline
         const startTime = Date.now();
         let publishedUrl = project.publishedUrl ?? null;
+        let cdnActive = false;
+        let distributionId: string | undefined;
         try {
-          // Check if there's a linked build with generated HTML
+          // Resolve HTML content from linked build
           let htmlContent: string | null = null;
           if (project.webappBuildId) {
             const build = await getWebappBuild(project.webappBuildId);
             if (build?.generatedHtml) htmlContent = build.generatedHtml;
           }
           if (!htmlContent) {
-            // Fall back: check most recent build for this user
             const builds = await getUserWebappBuilds(ctx.user.id);
             const readyBuild = builds.find((b: any) => b.generatedHtml && (b.status === "ready" || b.status === "published"));
             if (readyBuild?.generatedHtml) htmlContent = readyBuild.generatedHtml;
           }
 
           if (htmlContent) {
-            // Real S3 publish with analytics tracking pixel injection
-            const { storagePut } = await import("./storage");
-            const { nanoid: nanoidGen } = await import("nanoid");
-            const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-            
-            // Auto-generate subdomain prefix if not set
-            if (!project.subdomainPrefix) {
-              await updateWebappProject(project.id, { subdomainPrefix: subdomain });
-            }
-            
-            // Inject analytics tracking pixel into HTML before </body>
+            // Inject analytics tracking pixel
             const trackingScript = `<script src="/api/analytics/pixel.js?pid=${project.externalId}" defer></script>`;
             let finalHtml = htmlContent;
             if (finalHtml.includes("</body>")) {
@@ -2514,12 +2505,28 @@ export const appRouter = router({
             } else {
               finalHtml += `\n${trackingScript}`;
             }
-            
-            const key = `webapp-projects/${subdomain}/${nanoidGen(8)}/index.html`;
-            const { url } = await storagePut(key, Buffer.from(finalHtml, "utf-8"), "text/html");
-            publishedUrl = url;
+
+            // Deploy via CloudFront provisioning pipeline (S3 + optional CDN)
+            const { provisionDistribution } = await import("./cloudfront");
+            const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+            if (!project.subdomainPrefix) {
+              await updateWebappProject(project.id, { subdomainPrefix: subdomain });
+            }
+
+            const result = await provisionDistribution(
+              {
+                projectId: project.id,
+                projectName: project.name,
+                subdomainPrefix: subdomain,
+                customDomain: project.customDomain,
+              },
+              finalHtml
+            );
+
+            publishedUrl = result.publicUrl;
+            cdnActive = result.cdnActive;
+            distributionId = result.distributionId;
           } else {
-            // No HTML content available — record deployment but note no artifact
             publishedUrl = null;
           }
 
@@ -2540,7 +2547,7 @@ export const appRouter = router({
           throw new Error("Deploy failed: " + (err.message || "Unknown error"));
         }
 
-        return { deploymentId: depId, status: publishedUrl ? "live" : "failed", publishedUrl };
+        return { deploymentId: depId, status: publishedUrl ? "live" : "failed", publishedUrl, cdnActive, distributionId };
       }),
     /** Analyze SEO for a project using LLM */
     analyzeSeo: protectedProcedure
@@ -2623,6 +2630,24 @@ Provide a JSON response with this exact structure:
         if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
         const { getPageViewStats } = await import("./db");
         return getPageViewStats(project.id, input.days ?? 30);
+      }),
+    /** Geographic analytics — views by country */
+    geoAnalytics: protectedProcedure
+      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { getGeoAnalytics } = await import("./db");
+        return getGeoAnalytics(project.id, input.days ?? 30);
+      }),
+    /** Device analytics — mobile/tablet/desktop breakdown */
+    deviceAnalytics: protectedProcedure
+      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { getDeviceAnalytics } = await import("./db");
+        return getDeviceAnalytics(project.id, input.days ?? 30);
       }),
   }),
 

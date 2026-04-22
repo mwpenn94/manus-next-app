@@ -2457,3 +2457,30 @@
 - [x] Add role="tab" and aria-selected to panel navigation buttons
 - [x] Add aria-label to all Switch components for screen readers
 - [x] Total: 14 ARIA attributes across both pages (verified by tests)
+
+## Session 8 — Three Next Steps (Round 2)
+
+### Step 1: Wire Real CloudFront Distribution Auto-Provisioning
+- [x] Create server/cloudfront.ts helper using AWS CloudFront SDK
+- [x] Auto-provision CloudFront distribution on deploy with S3 origin
+- [x] Generate branded subdomain (projectname.apps.domain) per distribution
+- [x] Update deploy procedure to call CloudFront provisioning after S3 upload
+- [x] Store CloudFront distribution ID and domain in webappProjects table (customDomain already exists)
+- [x] Update WebAppProjectPage to show real CloudFront domain after deploy (shows publicUrl from deploy result)
+
+### Step 2: aria-live Regions for Dynamic Content Updates
+- [x] Add aria-live="polite" to deploy status area in WebAppProjectPage
+- [x] Add aria-live="polite" to code generation progress in WebAppBuilderPage
+- [x] Add aria-live="assertive" for error states (deploy failure, generation failure)
+- [x] Add screen reader announcements for state transitions (deploy complete, code generated)
+- [x] Add aria-busy attribute during loading states
+- [x] Add role="status" to progress indicators
+
+### Step 3: Geographic Analytics with World Map and Device Breakdown
+- [x] Add country and screenWidth columns to pageViews table (already present in schema)
+- [x] Parse geo data from request headers (CF-IPCountry or IP geolocation) in analytics collect endpoint
+- [x] Create geographic aggregation in analytics tRPC procedure (viewsByCountry)
+- [x] Create device breakdown aggregation (mobile/tablet/desktop based on screenWidth)
+- [x] Build country breakdown bar chart visualization in dashboard panel
+- [x] Build device breakdown donut chart (SVG pie chart) in dashboard panel
+- [x] Wire both visualizations into WebAppProjectPage dashboard
