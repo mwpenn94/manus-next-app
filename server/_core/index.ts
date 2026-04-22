@@ -195,6 +195,44 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
+  // ── Dev-only: Test Login for E2E (Playwright) ──
+  // Creates a valid session cookie for the owner user without OAuth redirect.
+  // Only available in development (NODE_ENV !== 'production').
+  if (process.env.NODE_ENV !== "production") {
+    app.post("/api/test-login", async (req, res) => {
+      try {
+        const { ENV } = await import("./env");
+        const { sdk: sdkLogin } = await import("./sdk");
+        const { getSessionCookieOptions } = await import("./cookies");
+        const { COOKIE_NAME, ONE_YEAR_MS } = await import("@shared/const");
+        const openId = ENV.ownerOpenId;
+        if (!openId) {
+          res.status(500).json({ error: "OWNER_OPEN_ID not configured" });
+          return;
+        }
+        // Ensure user exists in DB
+        const { upsertUser } = await import("../db");
+        await upsertUser({
+          openId,
+          name: process.env.OWNER_NAME || "Test User",
+          email: null,
+          lastSignedIn: new Date(),
+        });
+        // Create a session token (same as OAuth callback)
+        const sessionToken = await sdkLogin.createSessionToken(openId, {
+          name: process.env.OWNER_NAME || "Test User",
+          expiresInMs: ONE_YEAR_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(req);
+        res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        res.json({ ok: true, openId, message: "Test session created" });
+      } catch (e: any) {
+        console.error("[test-login] Failed:", e);
+        res.status(500).json({ error: e.message });
+      }
+    });
+  }
+
   // ── §L.33 Runtime Validator — Health & Diagnostics ──
   app.get("/api/health", async (_req, res) => {
     try {
@@ -412,6 +450,39 @@ async function startServer() {
     } catch (err: any) {
       console.error("[TTS Languages] Error:", err);
       res.status(500).json({ error: err.message || "Failed to list languages" });
+    }
+  });
+
+  // ── Confirmation Gate Response Endpoint ──
+  // Receives user approval/rejection for sensitive tool calls.
+  // The agentStream pauses at a gate and resumes when this endpoint is called.
+  app.post("/api/gate-response", async (req, res) => {
+    try {
+      const { taskExternalId, gateId, approved, reason } = req.body || {};
+      if (typeof approved !== "boolean") {
+        res.status(400).json({ error: "approved (boolean) is required" });
+        return;
+      }
+      const { resolveGate, resolveByTaskId } = await import("../confirmationGate");
+      let resolved = false;
+      if (gateId) {
+        // Direct gate ID resolution (if client knows the specific gate)
+        resolved = resolveGate(gateId, { approved, reason });
+      } else if (taskExternalId) {
+        // Resolve by task ID (client only knows the task, not the specific gate)
+        resolved = resolveByTaskId(taskExternalId, { approved, reason });
+      } else {
+        res.status(400).json({ error: "Either taskExternalId or gateId is required" });
+        return;
+      }
+      if (!resolved) {
+        res.status(404).json({ error: "Gate not found or already resolved" });
+        return;
+      }
+      res.json({ ok: true, taskExternalId, gateId, approved });
+    } catch (e: any) {
+      console.error("[gate-response] Error:", e);
+      res.status(500).json({ error: e.message });
     }
   });
 

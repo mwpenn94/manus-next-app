@@ -78,6 +78,8 @@ export const taskMessages = mysqlTable("task_messages", {
   role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
   content: text("content").notNull(),
   actions: json("actions"),
+  cardType: varchar("cardType", { length: 64 }),
+  cardData: json("cardData"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

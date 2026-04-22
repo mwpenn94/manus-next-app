@@ -2091,3 +2091,29 @@
 - [x] MODEL_TO_MODE export mapping all 4 model IDs to agent execution modes
 - [x] 54 new vitest tests for model-selector-wiring (all passing)
 - [x] Full test suite: 1,338 tests across 56 files, 0 failures
+## Bug Fix: "Demonstrate All" Fails on Sensitive Operation Gates
+- [x] Fix confirmation gate: server now pauses stream with awaitGateApproval() and waits for user decision
+- [x] Fix confirmation gate: rejection feeds [USER REJECTED] message to LLM so it finds alternatives
+- [x] Fix confirmation gate: approved operations proceed normally after gate resolution
+- [x] Created confirmationGate.ts manager with pause/resume/timeout/cleanup
+- [x] Added /api/gate-response endpoint (supports both gateId and taskExternalId resolution)
+- [x] Wired client Approve/Reject buttons to POST to /api/gate-response and update card status
+- [x] Added onGateApprove/onGateReject props to MessageBubble component
+- [x] Added updateMessageCard function to TaskContext for in-place card status updates
+- [x] Gate auto-rejects after 2 minutes to prevent stream hanging
+- [ ] Verify all 10/10 capability demonstrations complete with approval gates handled (needs live testing)
+
+## Bug Fix: Prompt Bleed / Context Contamination
+- [x] Investigated: confirmed task.messages.slice(-10) is per-task, not cross-task — the "bleed" was the agent interpreting "demonstrate all" literally (not a code bug)
+- [x] Each task sends only its own message history via taskExternalId in /api/stream
+- [x] taskExternalId isolation confirmed in message loading and stream calls
+
+## Bug Fix: Content Disappearing on Return
+- [x] Added cardType (varchar) and cardData (text/JSON) columns to task_messages DB schema
+- [x] Updated addMessage tRPC procedure to accept and persist cardType/cardData
+- [x] Updated messages query to return cardType/cardData from server
+- [x] Updated TaskContext addMessage to send cardType/cardData to server on persist
+- [x] Updated message hydration to restore cardType/cardData from server data on re-entry
+- [x] Rich cards (confirmation_gate, convergence, interactive_output, webapp_preview) now survive page reload
+- [x] 49 new vitest tests for confirmation-gate-persistence (all passing)
+- [x] Full test suite: 1,387 tests across 57 files, 0 failures

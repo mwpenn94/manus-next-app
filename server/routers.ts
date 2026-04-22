@@ -288,6 +288,8 @@ export const appRouter = router({
         role: z.enum(["user", "assistant", "system"]),
         content: z.string().max(100000),
         actions: z.any().optional(),
+        cardType: z.string().max(64).optional(),
+        cardData: z.any().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await verifyTaskOwnershipById(input.taskId, ctx.user.id);
@@ -298,6 +300,8 @@ export const appRouter = router({
           role: input.role,
           content: input.content,
           actions: input.actions ?? null,
+          cardType: input.cardType ?? null,
+          cardData: input.cardData ?? null,
         });
         return { success: true, externalId };
       }),

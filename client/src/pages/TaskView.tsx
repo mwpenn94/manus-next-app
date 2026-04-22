@@ -394,7 +394,7 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, onGateApprove, onGateReject }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; onGateApprove?: () => void; onGateReject?: () => void }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
   const isUser = message.role === "user";
@@ -488,13 +488,8 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             description={message.cardData?.description as string}
             category={(message.cardData?.category as any) ?? "general"}
             status={(message.cardData?.status as any) ?? "pending"}
-            onApprove={() => {
-              toast.success("Action approved");
-              // Update card status in message
-            }}
-            onReject={() => {
-              toast.info("Action rejected — agent will find an alternative");
-            }}
+            onApprove={onGateApprove}
+            onReject={onGateReject}
           />
         ) : message.cardType === "convergence" ? (
           <ConvergenceIndicator
@@ -1347,7 +1342,7 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -2417,6 +2412,34 @@ export default function TaskView() {
               onRegenerate={handleRegenerate}
               userTTSVoice={userTTSVoice}
               ttsRateStr={ttsRateStr}
+              onGateApprove={msg.cardType === "confirmation_gate" ? async () => {
+                updateMessageCard(task.id, msg.id, { status: "approved" });
+                toast.success("Action approved");
+                try {
+                  await fetch("/api/gate-response", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ taskExternalId: task.id, approved: true }),
+                  });
+                } catch (e) {
+                  console.error("[ConfirmationGate] Failed to send approval:", e);
+                }
+              } : undefined}
+              onGateReject={msg.cardType === "confirmation_gate" ? async () => {
+                updateMessageCard(task.id, msg.id, { status: "rejected" });
+                toast.info("Action rejected \u2014 agent will find an alternative");
+                try {
+                  await fetch("/api/gate-response", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ taskExternalId: task.id, approved: false }),
+                  });
+                } catch (e) {
+                  console.error("[ConfirmationGate] Failed to send rejection:", e);
+                }
+              } : undefined}
             />
           ))}
           {isTyping && <TypingIndicator />}

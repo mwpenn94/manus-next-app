@@ -87,6 +87,7 @@ interface TaskContextValue {
   updateTaskStatus: (taskId: string, status: Task["status"]) => void;
   renameTask: (taskId: string, title: string) => void;
   markAutoStreamed: (taskId: string) => void;
+  updateMessageCard: (taskId: string, messageId: string, cardData: Record<string, unknown>) => void;
 }
 
 const TaskContext = createContext<TaskContextValue | null>(null);
@@ -176,6 +177,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           content: sm.content,
           timestamp: new Date(sm.createdAt),
           actions: sm.actions ? (typeof sm.actions === "string" ? JSON.parse(sm.actions) : sm.actions) : undefined,
+          cardType: sm.cardType ?? undefined,
+          cardData: sm.cardData ? (typeof sm.cardData === "string" ? JSON.parse(sm.cardData) : sm.cardData) : undefined,
         }));
 
         // SERVER-SIDE DEDUP: Remove duplicate rows that exist in the server DB.
@@ -311,6 +314,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             role: message.role,
             content: message.content,
             actions: message.actions ? JSON.stringify(message.actions) : undefined,
+            cardType: message.cardType ?? undefined,
+            cardData: message.cardData ?? undefined,
           });
         }
         return prev.map((t) =>
@@ -613,6 +618,25 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const updateMessageCard = useCallback(
+    (taskId: string, messageId: string, newCardData: Record<string, unknown>) => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId) return t;
+          return {
+            ...t,
+            messages: t.messages.map((m) =>
+              m.id === messageId
+                ? { ...m, cardData: { ...(m.cardData || {}), ...newCardData } }
+                : m
+            ),
+          };
+        })
+      );
+    },
+    []
+  );
+
   return (
     <TaskContext.Provider
       value={{
@@ -626,6 +650,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         updateTaskStatus,
         renameTask,
         markAutoStreamed,
+        updateMessageCard,
       }}
     >
       {children}

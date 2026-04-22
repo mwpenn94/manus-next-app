@@ -153,6 +153,12 @@ export function buildStreamCallbacks(
         });
       }
     },
+    onGateResolved: (data: { taskExternalId: string; approved: boolean }) => {
+      // Update the pending confirmation gate card to show approved/rejected status
+      // This is handled by the gate resolution UI in TaskView, not here.
+      // The server sends this event after the user approves/rejects via /api/gate-response.
+      console.log(`[Stream] Gate resolved: ${data.approved ? 'approved' : 'rejected'}`);
+    },
     onConvergence: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => {
       if (setters.addMessage) {
         setters.addMessage(setters.taskId, {
