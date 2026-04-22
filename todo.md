@@ -2153,3 +2153,16 @@
 
 ## Final: Push and Merge to GitHub
 - [x] Push and merge all latest changes to the connected GitHub repository (auto-synced via webdev_save_checkpoint to user_github/main)
+
+## V9 State-Aware Parity Prompt Execution
+- [x] §L.29 Step 0a: STUB_AUDIT — grep codebase for stub patterns in GREEN capabilities (0 false positives found)
+- [x] §L.29 Step 0a-bis: DEPENDENCY_AUDIT — verify package.json against capability requirements (0 Category J gaps found)
+- [x] §L.29 Step 0b: OWNER_DOGFOOD pass — 10/10 endpoints verified (auth, stream, stripe, upload, tRPC)
+- [x] §L.29 Step 0c: SIDE_EFFECT_VERIFICATION audit — existing doc updated, 4 unverified items noted
+- [x] §L.29 Step 0d: TEST_TYPE_BREAKDOWN — 42 unit (927), 15 integration (457), 3 E2E (48) = 1432 total
+- [x] §L.29 Step 0e: STATUS_FRESHNESS scan — 0 stale files, 57 commits in 48h, all key files <48h old
+- [x] §L.29 Category J: No gaps found — playwright already installed, other deps not needed (architecture uses platform services)
+- [x] §L.27: Benchmark infrastructure verified — 67 cap YAMLs, judge.mjs scorer, 28 benchmark tasks, 17/18 GREEN passing
+- [x] §L.28: Persona catalog verified — 32 personas, 6 categories, journey index, 8 sweep results, 6 live API tests
+- [x] Create all required §L.29 audit artifacts (7 artifacts: STUB_AUDIT, DEPENDENCY_AUDIT, OWNER_DOGFOOD, SIDE_EFFECT_VERIFICATIONS, TEST_TYPE_BREAKDOWN, STATUS_FRESHNESS_V9, V9_PARITY_REPORT)
+- [ ] Push all changes to GitHub
