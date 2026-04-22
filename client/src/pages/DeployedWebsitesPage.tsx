@@ -127,7 +127,7 @@ export default function DeployedWebsitesPage() {
                           <div>
                             <p className="text-sm font-medium text-foreground">{project.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {project.publishedUrl || `${project.subdomainPrefix || project.externalId}.manus.space`}
+                              {project.publishedUrl || "Not deployed"}
                             </p>
                           </div>
                         </div>
@@ -169,7 +169,7 @@ export default function DeployedWebsitesPage() {
                           <Globe className="w-4 h-4 text-primary" />
                           <div>
                             <p className="text-sm font-medium text-foreground">{project.name}</p>
-                            <p className="text-xs text-muted-foreground">{project.publishedUrl || `${project.subdomainPrefix}.manus.space`}</p>
+                            <p className="text-xs text-muted-foreground">{project.publishedUrl || "Not deployed"}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-6 text-right">
@@ -293,7 +293,7 @@ export default function DeployedWebsitesPage() {
                           </div>
                           <div>
                             <p className="text-muted-foreground">URL</p>
-                            <p className="text-foreground font-medium truncate">{project.publishedUrl || `${project.subdomainPrefix}.manus.space`}</p>
+                            <p className="text-foreground font-medium truncate">{project.publishedUrl || "Not deployed"}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Framework</p>

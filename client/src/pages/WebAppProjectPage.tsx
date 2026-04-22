@@ -196,7 +196,7 @@ export default function WebAppProjectPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
               </div>
               <div className="flex-1 bg-background rounded-md px-3 py-1 text-xs text-muted-foreground border border-border">
-                {project.publishedUrl || `${project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.manus.space`}
+                {project.publishedUrl || "Not yet deployed"}
               </div>
               <Button variant="ghost" size="sm" onClick={() => projectQuery.refetch()}>
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -272,8 +272,7 @@ export default function WebAppProjectPage() {
                 <CardContent className="py-2">
                   <div className="flex items-center gap-2">
                     <code className="flex-1 bg-muted rounded px-3 py-2 text-xs font-mono text-muted-foreground">
-                      git clone {project.publishedUrl ? `https://github.com/${project.name}.git` : "(connect a GitHub repo in Settings → GitHub)"}
-                    </code>
+                    git clone https://github.com/{project.githubRepoId || project.name}.git                  </code>
                     {project.githubRepoId && (
                       <Button variant="ghost" size="sm" onClick={() => {
                         navigator.clipboard.writeText(`git clone https://github.com/${project.name}.git`);
@@ -594,7 +593,7 @@ export default function WebAppProjectPage() {
                               }
                             }}
                           />
-                          <span className="text-sm text-muted-foreground">.manus.space</span>
+                          <span className="text-sm text-muted-foreground">{project.publishedUrl ? new URL(project.publishedUrl).hostname.split('.').slice(-2).join('.') : ".your-domain.com"}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{project.publishedUrl ? <>Published at <a href={project.publishedUrl} target="_blank" rel="noopener" className="text-primary underline">{project.publishedUrl}</a></> : "Deploy your app to generate a public URL"}</p>
                       </div>
@@ -611,7 +610,7 @@ export default function WebAppProjectPage() {
                             }
                           }}
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Point a CNAME record to your .manus.space subdomain</p>
+                        <p className="text-xs text-muted-foreground mt-1">{project.publishedUrl ? "Point a CNAME record to your published URL" : "Deploy your app first to set up a custom domain"}</p>
                       </div>
                     </CardContent>
                   </Card>
