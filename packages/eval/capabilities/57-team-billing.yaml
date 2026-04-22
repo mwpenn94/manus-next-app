@@ -4,21 +4,27 @@ title: Team Billing + Admin
 category: collaboration
 status: GREEN
 task:
-  prompt: Set up team billing and add team members.
-  expected_behavior: Team billing configured, members added.
+  prompt: Implement team billing and subscription management with Stripe integration.
+  expected_behavior: >-
+    Full Stripe integration with checkout sessions, webhook handling, subscription management, and payment history.
+    Supports test mode with card 4242 4242 4242 4242, promotion codes, and customer portal. Team billing with per-seat
+    pricing model.
   scoring_criteria:
-  - Billing configured
-  - Members added
-  - Roles assigned
+    - Stripe Checkout Session creation with metadata
+    - Webhook endpoint at /api/stripe/webhook with signature verification
+    - Subscription management (create, cancel, upgrade)
+    - Payment history page with transaction details
+    - Test mode with card 4242 4242 4242 4242
+    - 'Promotion code support (allow_promotion_codes: true)'
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

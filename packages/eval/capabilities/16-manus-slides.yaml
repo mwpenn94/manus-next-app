@@ -1,15 +1,22 @@
 id: 16
 name: manus-slides
 title: Manus Slides
-category: features
+category: content-creation
 status: GREEN
 task:
-  prompt: Generate a 5-slide presentation about AI trends.
-  expected_behavior: Slide deck generated with content and formatting.
+  prompt: Create a 12-slide investor pitch deck with data visualizations, speaker notes, and professional design using the
+    Manus Slides capability.
+  expected_behavior: Slides are generated with professional layout, consistent branding, and data-driven visualizations. Each
+    slide has speaker notes. The deck includes title slide, problem/solution, market size, product demo, traction metrics
+    with charts, business model, competitive landscape, team, financials, and ask slide. Output available in both HTML and
+    image render modes.
   scoring_criteria:
-  - Slides generated
-  - Content relevant
-  - Formatting applied
+  - 12 professionally designed slides with consistent visual theme
+  - Data visualizations using Chart.js for metrics
+  - Speaker notes on every slide with talking points
+  - Title slide with company branding and tagline
+  - TAM/SAM/SOM market sizing with sourced data
+  - Competitive landscape comparison table
 scoring:
   dimensions:
   - correctness

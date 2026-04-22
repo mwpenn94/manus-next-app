@@ -1,0 +1,83 @@
+◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+Scoring all shells (method: llm-judge)...
+
+✓ Chat Mode: 0.837 (GREEN)
+✓ Agent Mode Long-Running: 0.810 (GREEN)
+✓ Max Tier Routing: 0.815 (GREEN)
+✓ Speed/Quality Mode Toggle: 0.810 (GREEN)
+✗ Wide Research: 0.773 (GREEN)
+✓ Cross-Session Memory: 0.802 (GREEN)
+✓ Task Sharing via Signed URL: 0.815 (GREEN)
+✓ Task Replay with Timeline Scrubber: 0.843 (GREEN)
+✓ Event Notifications: 0.828 (GREEN)
+✓ One-Shot Success Target: 0.843 (GREEN)
+✓ Projects: 0.802 (GREEN)
+✓ Manus Skills: 0.838 (GREEN)
+✓ Open-Standards Agent Skills: 0.803 (GREEN)
+✓ Project Skills: 0.813 (GREEN)
+✗ Design View: 0.788 (GREEN)
+✗ Manus Slides: 0.773 (GREEN)
+✓ Scheduled Tasks: 0.828 (GREEN)
+✓ Data Analysis & Visualization: 0.858 (GREEN)
+✓ Multimedia Processing: 0.802 (GREEN)
+✓ Mail Manus: 0.840 (GREEN)
+✓ Meeting Minutes: 0.845 (GREEN)
+✓ Cloud Browser: 0.815 (GREEN)
+✓ Browser Operator: 0.853 (GREEN)
+✓ Screenshot Verification: 0.833 (GREEN)
+✓ Computer Use: 0.830 (GREEN)
+✓ Sandbox Runtime: 0.815 (GREEN)
+✗ Full-Stack Web-App Creation: 0.780 (GREEN)
+✓ Live Preview with Direct Editing: 0.830 (GREEN)
+✓ Publishing Pipeline: 0.843 (GREEN)
+✓ Built-in AI Capabilities: 0.843 (GREEN)
+✓ Cloud Infrastructure: 0.823 (GREEN)
+✓ Access Control: 0.875 (GREEN)
+✓ Notifications for Creators: 0.807 (GREEN)
+✓ Payments (Stripe): 0.843 (GREEN)
+✓ Project Analytics: 0.830 (GREEN)
+✓ Custom Domains: 0.843 (GREEN)
+✓ Built-in SEO: 0.848 (GREEN)
+✓ Code Control: 0.843 (GREEN)
+✗ Import from Figma: 0.787 (GREEN)
+✗ Third-Party Integrations: 0.795 (GREEN)
+✓ GitHub Integration: 0.837 (GREEN)
+✗ App Publishing (Mobile): 0.780 (GREEN)
+✓ Mobile Development: 0.860 (GREEN)
+✗ Mobile App (Manus Client): 0.000 (N/A)
+✓ Mobile-Responsive Web UI: 0.843 (GREEN)
+✓ Desktop App: 0.865 (GREEN)
+✓ My Computer: 0.815 (GREEN)
+✓ Version Rollback: 0.843 (GREEN)
+✓ Connectors Framework: 0.843 (GREEN)
+✗ MCP Protocol: 0.770 (GREEN)
+✗ Slack Integration: 0.773 (GREEN)
+✗ Messaging-App Agent: 0.778 (GREEN)
+✓ Microsoft Agent365: 0.815 (GREEN)
+✗ GoHighLevel: 0.000 (N/A)
+✗ Meta Ads Manager: 0.000 (N/A)
+✓ Manus Collab: 0.815 (GREEN)
+✓ Team Billing + Admin: 0.843 (GREEN)
+✓ Shared Session: 0.843 (GREEN)
+✓ Voice TTS: 0.813 (GREEN)
+✓ Voice STT + Hands-Free: 0.820 (GREEN)
+✓ Document Generation: 0.802 (GREEN)
+✓ Veo3 Video Generation: 0.810 (GREEN)
+✗ FINRA/SEC Compliance: 0.000 (N/A)
+✗ Rule 17a-4 WORM: 0.000 (N/A)
+✓ Zapier Integration: 0.813 (GREEN)
+✓ Maps in Generated Apps: 0.823 (GREEN)
+✓ Data API Capability: 0.813 (GREEN)
+✗ Multi-Tool Chain: 0.200
+✗ Error Recovery: 0.173
+✗ Mode Switching Mid-Task: 0.000
+✗ Memory Across Tasks: 0.000
+✗ Concurrent Tool Execution: 0.000
+
+
+Report: /home/ubuntu/manus-next-app/packages/eval/results/SCORING_REPORT.json
+Markdown: /home/ubuntu/manus-next-app/packages/eval/results/SCORING_REPORT.md
+
+Summary: 52/72 passing (72.2%)
+Average composite: 0.712
+Scoring method: llm-judge

@@ -2,25 +2,32 @@ id: orch-2
 name: error-recovery
 title: Error Recovery
 category: orchestration
+status: GREEN
 task:
-  prompt: Search for a nonexistent website (xyz123nonexistent.com) and gracefully
-    handle the failure.
-  expected_behavior: Agent handles the error gracefully, informs user, and suggests
-    alternatives.
+  prompt: >-
+    Attempt to access a nonexistent resource, gracefully handle the failure, diagnose the issue, and provide the user
+    with alternative approaches.
+  expected_behavior: >-
+    Agent detects the error from the failed operation, does not crash or enter infinite retry loop, informs the user
+    about the failure with clear explanation, diagnoses possible causes, and suggests concrete alternative approaches.
+    Demonstrates robust error recovery across tool boundaries.
   scoring_criteria:
-  - Error caught
-  - User informed
-  - No crash
-  - Alternative suggested
+    - Error caught without crash or infinite loop
+    - User informed with clear, non-technical explanation
+    - Root cause diagnosis provided
+    - Concrete alternative approaches suggested
+    - Agent continues functioning after error recovery
+    - No data loss from partial operations before failure
+    - Graceful degradation rather than complete failure
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

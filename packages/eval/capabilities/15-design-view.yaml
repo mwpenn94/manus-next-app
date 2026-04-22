@@ -1,15 +1,22 @@
 id: 15
 name: design-view
 title: Design View
-category: features
+category: webapp
 status: GREEN
 task:
-  prompt: Open the design view and inspect a generated UI component.
-  expected_behavior: Design view page loads with planned features.
+  prompt: Use the Design View to visually edit a web application's UI, adjusting colors, spacing, typography, and layout through
+    direct manipulation and natural language instructions.
+  expected_behavior: Design View opens as an interactive visual editor overlaying the live preview. Users can select any element
+    to adjust properties (colors, borders, padding, margins, fonts) via point-and-click controls. Natural language descriptions
+    trigger AI-powered design changes. All edits are reflected in real-time in the source code. Changes create a new checkpoint
+    that can be rolled back.
   scoring_criteria:
-  - Page loads
-  - Route works
-  - Planned features listed
+  - Visual editor overlay on live preview with element selection
+  - Point-and-click property adjustment (colors, spacing, borders, fonts)
+  - Natural language design change descriptions processed by AI
+  - Real-time source code synchronization with visual edits
+  - Checkpoint creation for every design change with rollback support
+  - Responsive breakpoint switching within the visual editor
 scoring:
   dimensions:
   - correctness

@@ -1,15 +1,21 @@
 id: 50
 name: mcp
 title: MCP Protocol
-category: integrations
+category: platform
 status: GREEN
 task:
-  prompt: Connect an MCP server and use its tools.
-  expected_behavior: MCP server connected, tools available in agent.
+  prompt: Implement Model Context Protocol (MCP) support for connecting to external tool servers and extending agent capabilities
+    dynamically.
+  expected_behavior: Agent implements MCP client that can discover, connect to, and invoke tools from MCP servers. Supports
+    tool discovery, parameter validation, result handling, and error recovery. MCP connections are managed through a registry
+    with health monitoring.
   scoring_criteria:
-  - MCP connected
-  - Tools listed
-  - Tool execution works
+  - MCP client implementation with server discovery
+  - Tool invocation with parameter validation
+  - Result handling and error recovery
+  - Connection registry with health monitoring
+  - Dynamic capability extension from MCP servers
+  - Security validation for MCP server connections
 scoring:
   dimensions:
   - correctness

@@ -1,15 +1,21 @@
 id: 40
 name: third-party-integrations
 title: Third-Party Integrations
-category: developer-tools
+category: platform
 status: GREEN
 task:
-  prompt: Connect an external API (e.g., weather API) to the agent.
-  expected_behavior: External API connected and callable from agent.
+  prompt: Integrate multiple third-party services (Stripe payments, S3 storage, OAuth authentication) into a web application
+    with proper error handling and configuration.
+  expected_behavior: Agent configures and integrates Stripe for payments (checkout sessions, webhooks, test mode), AWS S3
+    for file storage (upload, download, presigned URLs), and OAuth for authentication (login flow, session management, protected
+    routes). All integrations include proper error handling, environment variable management, and test coverage.
   scoring_criteria:
-  - API configured
-  - Callable from agent
-  - Results returned
+  - Stripe integration with checkout sessions and webhook handling
+  - S3 storage integration with upload and presigned URL generation
+  - OAuth authentication with login flow and session management
+  - Environment variable management for all service credentials
+  - Error handling for each integration with graceful degradation
+  - Test coverage for integration endpoints
 scoring:
   dimensions:
   - correctness

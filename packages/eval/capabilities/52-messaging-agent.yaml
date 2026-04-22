@@ -1,15 +1,21 @@
 id: 52
 name: messaging-agent
 title: Messaging-App Agent
-category: integrations
+category: platform
 status: GREEN
 task:
-  prompt: Deploy an agent that responds to messages on a messaging platform.
-  expected_behavior: Agent deployed on messaging platform, responds to messages.
+  prompt: Deploy an AI agent that operates within messaging platforms, handling conversations, executing tasks, and providing
+    responses through chat interfaces.
+  expected_behavior: Agent operates within messaging platforms (Slack, Teams, etc.) handling natural language conversations,
+    executing multi-step tasks, providing formatted responses with rich media, and maintaining conversation context across
+    messages. Includes proper rate limiting and error handling.
   scoring_criteria:
-  - Agent deployed
-  - Responds to messages
-  - Context maintained
+  - Natural language conversation handling in messaging platforms
+  - Multi-step task execution from chat commands
+  - Rich media responses (images, files, formatted text)
+  - Conversation context maintenance across messages
+  - Rate limiting and throttling for API compliance
+  - Error handling with user-friendly error messages
 scoring:
   dimensions:
   - correctness

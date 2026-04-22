@@ -1,0 +1,10 @@
+{
+  "pid": "session-4",
+  "start_iso": "2026-04-22T07:00:00Z",
+  "last_heartbeat_iso": "2026-04-22T10:30:00Z",
+  "session_id": "s4-convergence",
+  "mode": "AFK",
+  "pass_count": 28,
+  "convergence_counter": 0,
+  "status": "active"
+}

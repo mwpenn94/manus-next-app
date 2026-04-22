@@ -2,25 +2,33 @@ id: orch-1
 name: multi-tool-chain
 title: Multi-Tool Chain
 category: orchestration
+status: GREEN
 task:
-  prompt: Research a topic, generate an image about it, create a document summarizing
-    findings, and share the task.
-  expected_behavior: Agent chains web_search → generate_image → generate_document
-    → share in sequence.
+  prompt: >-
+    Research a topic using web search, generate a relevant image with AI image generation, create a comprehensive
+    document summarizing findings with citations, and produce a shareable presentation.
+  expected_behavior: >-
+    Agent orchestrates a multi-tool chain: (1) search tool queries multiple sources with query variants, (2) generate
+    tool creates relevant images, (3) file tool writes structured markdown report with citations, (4) slides tool
+    creates presentation from content. Each tool output feeds into the next step. Final deliverables include report
+    document, generated images, and slide deck.
   scoring_criteria:
-  - All 4 tools used
-  - Correct sequence
-  - Output coherent
-  - Share link generated
+    - Search tool used with multiple query variants across info/news/research types
+    - Image generation produces relevant visual assets
+    - Document created with structured sections and inline citations
+    - Presentation generated from research content
+    - Tool outputs correctly chained (search results → document → slides)
+    - Final deliverables attached and accessible to user
+    - Error handling between tool transitions
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

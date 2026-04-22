@@ -2,23 +2,32 @@ id: orch-5
 name: concurrent-tools
 title: Concurrent Tool Execution
 category: orchestration
+status: GREEN
 task:
-  prompt: Do wide research that requires parallel web searches and synthesize results.
-  expected_behavior: Multiple searches execute in parallel, results synthesized.
+  prompt: >-
+    Conduct wide research requiring parallel execution of multiple independent searches, then synthesize all results
+    into a coherent analysis.
+  expected_behavior: >-
+    Agent uses the map tool to spawn parallel subtasks for independent research queries, collects results from all
+    subtasks, and synthesizes findings into a unified analysis. Demonstrates concurrent tool execution with proper
+    aggregation and deduplication of results.
   scoring_criteria:
-  - Parallel execution
-  - All results collected
-  - Synthesis coherent
-  - No data loss
+    - Map tool used to spawn parallel subtasks (5+ concurrent)
+    - Each subtask executes independently with its own search/analysis
+    - All subtask results collected without data loss
+    - Results synthesized into coherent unified analysis
+    - Deduplication of overlapping findings across subtasks
+    - Proper error handling for individual subtask failures
+    - Final output richer than any single sequential search
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

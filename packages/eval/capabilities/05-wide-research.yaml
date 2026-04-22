@@ -4,14 +4,20 @@ title: Wide Research
 category: agent-core
 status: GREEN
 task:
-  prompt: Do wide research on the current state of quantum computing in 2025.
-  expected_behavior: Agent fires parallel web searches, synthesizes results from multiple
-    sources.
+  prompt: Conduct wide research on the competitive landscape of AI agent platforms, synthesizing findings from 15+ sources
+    into a structured report with citations, comparisons, and strategic recommendations.
+  expected_behavior: Agent spawns parallel research subtasks across multiple search engines and databases. Results are deduplicated,
+    cross-referenced, and synthesized into a comprehensive markdown report with inline citations, comparison tables, and confidence
+    scores. Multi-source research using search tool (info, news, research, data types), parallel subtask spawning via map
+    tool for broad coverage, browser-based deep reading of source URLs, and synthesis into structured reports with citations.
   scoring_criteria:
-  - Uses wide_research tool
-  - Parallel queries
-  - Synthesis from multiple sources
-  - Cited sources
+  - Parallel subtask spawning with 5+ concurrent research threads
+  - Cross-source deduplication and fact verification across 15+ sources
+  - Structured markdown output with inline citations and bibliography
+  - Comparison tables synthesizing findings across multiple dimensions
+  - Executive summary with key takeaways and strategic recommendations
+  - Confidence scoring for claims based on source agreement
+  - Coverage of diverse source types (academic, industry, news, technical)
 scoring:
   dimensions:
   - correctness

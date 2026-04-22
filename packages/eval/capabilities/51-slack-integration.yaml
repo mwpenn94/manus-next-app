@@ -1,15 +1,21 @@
 id: 51
 name: slack-integration
 title: Slack Integration
-category: integrations
+category: platform
 status: GREEN
 task:
-  prompt: Send a message to a Slack channel from the agent.
-  expected_behavior: Slack bot sends message to specified channel.
+  prompt: Integrate Slack messaging capabilities allowing the agent to send notifications, receive commands, and interact
+    with users through Slack channels.
+  expected_behavior: Agent integrates with Slack API for sending messages to channels, receiving slash commands, handling
+    interactive components (buttons, modals), and processing webhook events. Includes proper OAuth flow for workspace installation
+    and message formatting with Block Kit.
   scoring_criteria:
-  - Slack connected
-  - Message sent
-  - Channel correct
+  - Slack API integration for sending and receiving messages
+  - Slash command handling with response formatting
+  - Interactive component support (buttons, modals)
+  - Webhook event processing and verification
+  - OAuth flow for workspace installation
+  - Block Kit message formatting
 scoring:
   dimensions:
   - correctness

@@ -4,21 +4,27 @@ title: Computer Use
 category: browser-computer
 status: GREEN
 task:
-  prompt: Use the computer to create a text file on the desktop.
-  expected_behavior: Desktop OS control creates file.
+  prompt: Provide full computer use capabilities including file management, software installation, and system administration.
+  expected_behavior: >-
+    Complete Linux computer environment with shell access, file management, software installation (apt, pip, npm),
+    process management, network access, and system administration. Supports persistent state, sudo privileges, and
+    internet connectivity.
   scoring_criteria:
-  - File created
-  - Content correct
-  - OS interaction logged
+    - Full shell access with bash command execution
+    - File CRUD operations with persistent storage
+    - Software installation via apt, pip3, npm/pnpm
+    - Process management (start, stop, monitor)
+    - Network access with curl, wget, and internet connectivity
+    - System administration with sudo privileges
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

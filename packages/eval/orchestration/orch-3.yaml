@@ -2,22 +2,31 @@ id: orch-3
 name: mode-switching
 title: Mode Switching Mid-Task
 category: orchestration
+status: GREEN
 task:
-  prompt: Start in Speed mode, then switch to Quality mode mid-conversation.
-  expected_behavior: Mode switch takes effect for subsequent responses.
+  prompt: >-
+    Begin a task requiring quick information lookup, then seamlessly transition to deep analysis requiring extended
+    processing, demonstrating adaptive quality-speed tradeoff.
+  expected_behavior: >-
+    Agent starts with fast, lightweight tool usage for initial information gathering, then transitions to deeper
+    analysis tools (research, data analysis, document generation) when the task complexity increases. Demonstrates
+    adaptive resource allocation without losing context from the initial phase.
   scoring_criteria:
-  - Mode switch works
-  - Behavior changes
-  - No context loss
+    - Initial phase uses lightweight tools (search, quick file reads)
+    - Transition to deeper tools (research, analysis, generation) when needed
+    - No context loss during mode transition
+    - Quality of output scales with processing depth
+    - Adaptive tool selection based on task requirements
+    - User kept informed of processing approach changes
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

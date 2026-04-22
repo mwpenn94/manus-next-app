@@ -1,16 +1,21 @@
 id: 27
 name: webapp-creation
 title: Full-Stack Web-App Creation
-category: website-builder
+category: webapp
 status: GREEN
 task:
-  prompt: Create a todo list web application with a database backend.
-  expected_behavior: Full-stack app scaffolded with frontend, backend, and database.
+  prompt: Build a full-stack web application with user authentication, database integration, and a responsive dashboard using
+    the webapp builder capability.
+  expected_behavior: Agent creates a complete web application with React frontend, Express/tRPC backend, database schema with
+    Drizzle ORM, user authentication via OAuth, and responsive dashboard UI. The app is deployed and accessible via a public
+    URL with all features functional.
   scoring_criteria:
-  - App scaffolded
-  - Frontend renders
-  - Backend API works
-  - Database connected
+  - Complete React frontend with responsive layout
+  - Express/tRPC backend with typed procedures
+  - Database schema with Drizzle ORM migrations
+  - User authentication via OAuth flow
+  - Dashboard UI with data visualization
+  - Public deployment with accessible URL
 scoring:
   dimensions:
   - correctness

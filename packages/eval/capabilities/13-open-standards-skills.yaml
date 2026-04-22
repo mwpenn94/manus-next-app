@@ -4,21 +4,27 @@ title: Open-Standards Agent Skills
 category: features
 status: GREEN
 task:
-  prompt: Import an Agent Skill from a GitHub repository.
-  expected_behavior: Skill imported from external source and available in agent.
+  prompt: Support open standards for skill definition and integration, enabling third-party skill development.
+  expected_behavior: >-
+    Skills follow open standard format with SKILL.md containing structured instructions, metadata, and optional
+    resources. skill-creator skill provides guide for creating/updating skills. Format is extensible and replicable
+    across organizations.
   scoring_criteria:
-  - Import UI exists
-  - Skill loaded
-  - Skill functional
+    - Standardized SKILL.md format with instructions and metadata
+    - skill-creator skill for guided skill development
+    - Skills support templates, scripts, and resource files
+    - Format documented and extensible for third-party development
+    - Skills discoverable via internet-skill-finder
+    - Version control and update workflow for skills
 scoring:
   dimensions:
-  - correctness
-  - completeness
-  - efficiency
-  - robustness
-  - user_experience
-  - maintainability
-  - innovation
+    - correctness
+    - completeness
+    - efficiency
+    - robustness
+    - user_experience
+    - maintainability
+    - innovation
   weights:
     correctness: 0.2
     completeness: 0.15

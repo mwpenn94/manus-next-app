@@ -24,3 +24,14 @@
 | CP-23 | Broad stale sweep | 0.25 | 1 gap (AFK_RUN_SUMMARY stale current claim) | 0/3 | 8.5 | 0.0 |
 | CP-24 | Targeted stale sweep | 0.18 | 0 (10 checks clean) | 1/3 | 8.6 | +0.1 |
 | CP-25 | Novel angle | 0.20 | 3 gaps (V9_CONVERGENCE_LOG, ESCALATE_DEPTH_LOG, TIER_LAUNCHES header) | 0/3 | 8.5 | -0.1 |
+| --- | --- | --- | **SESSION 4** | --- | --- | --- |
+| CP-26 | Judge re-run | 0.22 | 10 below-threshold GREEN caps, 5 orch shells missing status | 0/3 | 8.5 | 0.0 |
+| CP-27 | YAML fix + artifact batch | 0.18 | Fixed 10 YAML, created 14 artifacts | 0/3 | 8.6 | +0.1 |
+| CP-28 | Judge re-run v3 | 0.15 | 60/72 passing (83.3%), avg 0.766. 8 new caps passing. | 0/3 | 8.7 | +0.1 |
+| CP-29 | Comprehensive | 0.12 | 10 checks all clean. 0 findings. | 1/3 | 8.7 | 0.0 |
+| CP-30 | Novel angle | 0.10 | Cross-ref, freshness, completeness. 0 findings. | 2/3 | 8.7 | 0.0 |
+| CP-31 | Final synthesis | 0.08 | 10 final checks. 1 stale TBD in V9_CONVERGENCE_LOG fixed. | 0/3 | 8.7 | 0.0 |
+| CP-32 | Comprehensive | 0.07 | 10 checks. 1 stale Honest Assessment in SCORE_LEDGER fixed. | 0/3 | 8.7 | 0.0 |
+| CP-33 | Clean pass | 0.06 | 10 checks all clean. No findings. | 1/3 | 8.7 | 0.0 |
+| CP-34 | Clean pass | 0.05 | 10 checks all clean. No findings. | 2/3 | 8.7 | 0.0 |
+| CP-35 | Final pass | 0.05 | 10 checks all clean. No findings. | 3/3 CONVERGED | 8.7 | 0.0 |

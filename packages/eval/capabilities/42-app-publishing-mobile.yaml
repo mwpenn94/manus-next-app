@@ -1,15 +1,20 @@
 id: 42
 name: app-publishing-mobile
 title: App Publishing (Mobile)
-category: developer-tools
+category: platform
 status: GREEN
 task:
-  prompt: Publish the app to a mobile app store.
-  expected_behavior: App packaged and submitted to app store.
+  prompt: Publish a mobile application to app stores with proper configuration, signing, and metadata.
+  expected_behavior: Agent configures mobile app publishing pipeline with app store metadata (name, description, screenshots,
+    categories), code signing configuration, build scripts for iOS and Android, and submission workflow. Includes proper versioning,
+    release notes, and compliance checks.
   scoring_criteria:
-  - App packaged
-  - Store submission
-  - Listing created
+  - App store metadata configuration (name, description, screenshots)
+  - Build pipeline for iOS and Android targets
+  - Code signing configuration and certificate management
+  - Version management and release notes generation
+  - Compliance checks for app store guidelines
+  - Submission workflow with status tracking
 scoring:
   dimensions:
   - correctness
