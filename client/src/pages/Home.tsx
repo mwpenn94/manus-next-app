@@ -219,7 +219,7 @@ export default function Home() {
         {/* Greeting */}
         <motion.div
           className="text-center mb-10"
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0.01, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
@@ -237,7 +237,7 @@ export default function Home() {
         {/* Pill-shaped Input — Manus style */}
         <motion.div
           className="w-full max-w-[640px] mb-8"
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0.01, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
           onDragEnter={handleDragEnter}
@@ -392,7 +392,7 @@ export default function Home() {
         {/* Quick Action Chips — horizontal scroll */}
         <motion.div
           className="w-full max-w-[640px] mb-10"
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0.01, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
@@ -413,7 +413,7 @@ export default function Home() {
         {/* Suggestion Cards — horizontal scroll like Manus */}
         <motion.div
           className="w-full max-w-4xl"
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 0.01 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
@@ -421,7 +421,7 @@ export default function Home() {
             {SUGGESTIONS.map((suggestion, i) => (
               <motion.button
                 key={suggestion.title}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0.01, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
                 onClick={() => setInput(suggestion.title)}
@@ -448,7 +448,7 @@ export default function Home() {
         {/* Package badges — subtle footer */}
         <motion.div
           className="mt-12 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 0.01 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >

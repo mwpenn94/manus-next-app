@@ -15,12 +15,13 @@ import { registerServiceWorker, skipWaitingAndReload } from "@/lib/registerSW";
 // axe-core accessibility auditing in development
 if (import.meta.env.DEV) {
   import("@axe-core/react").then((axe) => {
-    // Delay set to 3000ms to avoid false positives from framer-motion
-    // entrance animations (opacity 0->1 transitions take ~1100ms max).
-    // axe-core checks computed styles mid-animation, reporting transient
-    // low-contrast states that don't reflect the final rendered UI.
-    axe.default(React, ReactDOM, 3000);
-    console.log("[a11y] axe-core enabled for development (3s debounce)");
+    // Delay set to 5000ms to avoid false positives from framer-motion
+    // entrance animations (opacity 0->1 transitions). axe-core checks
+    // computed styles mid-animation, reporting transient low-contrast
+    // states that don't reflect the final rendered UI. 5s gives enough
+    // margin for page load + auth queries + animation completion.
+    axe.default(React, ReactDOM, 5000);
+    console.log("[a11y] axe-core enabled for development (5s debounce)");
   });
 }
 

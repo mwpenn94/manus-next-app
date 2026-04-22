@@ -2137,3 +2137,11 @@
 - [x] Fix authenticated.auth.spec.ts endpoint — change user.getPreferences to preferences.get
 - [x] All 12 authenticated E2E tests passing (user profile, model selector, task creation, settings, billing, protected APIs)
 - [x] All 1,387 vitest tests still passing (no regressions)
+
+## Bug Fix: Color Contrast Errors (Round 3) — Home Page
+- [x] Fix Error 1: foreground #1c1c1f on background #09090c (contrast 1.16:1, need 4.5:1) — 14px normal text
+- [x] Fix Error 2: foreground #222124 on background #09090c (contrast 1.24:1, need 3:1) — 30px normal text (large)
+- [x] Root cause: framer-motion opacity:0→1 animations caught by axe-core/react during transition
+- [x] Fix: Changed initial opacity from 0 to 0.01 on all Home.tsx motion elements (visually identical, prevents computed-color false positives)
+- [x] Fix: Increased axe-core/react debounce from 3000ms to 5000ms for additional margin
+- [x] Verified: axe-core Playwright scan finds 0 violations, 1387 vitest tests passing
