@@ -2477,25 +2477,120 @@ export const appRouter = router({
           commitMessage: input.commitMessage ?? null,
           status: "building",
         });
-        // Generate published URL from subdomain prefix
-        const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-        const publishedUrl = `https://${subdomain}.manus.space`;
-        // Simulate build completion (in production, this would be async with real CI)
-        setTimeout(async () => {
-          try {
-            await updateWebappDeployment(depId, {
-              status: "live",
-              completedAt: new Date(),
-              buildDurationSec: Math.floor(Math.random() * 30) + 10,
-            });
-            await updateWebappProject(project.id, {
-              deployStatus: "live",
-              lastDeployedAt: new Date(),
-              publishedUrl,
-            });
-          } catch { /* ignore */ }
-        }, 3000);
-        return { deploymentId: depId, status: "building", publishedUrl };
+
+        // Real deploy: if project has a linked webapp build with HTML, publish to S3
+        const startTime = Date.now();
+        let publishedUrl = project.publishedUrl ?? null;
+        try {
+          // Check if there's a linked build with generated HTML
+          let htmlContent: string | null = null;
+          if (project.webappBuildId) {
+            const build = await getWebappBuild(project.webappBuildId);
+            if (build?.generatedHtml) htmlContent = build.generatedHtml;
+          }
+          if (!htmlContent) {
+            // Fall back: check most recent build for this user
+            const builds = await getUserWebappBuilds(ctx.user.id);
+            const readyBuild = builds.find((b: any) => b.generatedHtml && (b.status === "ready" || b.status === "published"));
+            if (readyBuild?.generatedHtml) htmlContent = readyBuild.generatedHtml;
+          }
+
+          if (htmlContent) {
+            // Real S3 publish
+            const { storagePut } = await import("./storage");
+            const { nanoid: nanoidGen } = await import("nanoid");
+            const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+            const key = `webapp-projects/${subdomain}/${nanoidGen(8)}/index.html`;
+            const { url } = await storagePut(key, Buffer.from(htmlContent, "utf-8"), "text/html");
+            publishedUrl = url;
+          } else {
+            // No HTML content available — record deployment but note no artifact
+            publishedUrl = null;
+          }
+
+          const buildDuration = Math.round((Date.now() - startTime) / 1000);
+          await updateWebappDeployment(depId, {
+            status: publishedUrl ? "live" : "failed",
+            completedAt: new Date(),
+            buildDurationSec: buildDuration,
+          });
+          await updateWebappProject(project.id, {
+            deployStatus: publishedUrl ? "live" : "failed",
+            lastDeployedAt: new Date(),
+            ...(publishedUrl ? { publishedUrl } : {}),
+          });
+        } catch (err: any) {
+          await updateWebappDeployment(depId, { status: "failed", completedAt: new Date() });
+          await updateWebappProject(project.id, { deployStatus: "failed" });
+          throw new Error("Deploy failed: " + (err.message || "Unknown error"));
+        }
+
+        return { deploymentId: depId, status: publishedUrl ? "live" : "failed", publishedUrl };
+      }),
+    /** Analyze SEO for a project using LLM */
+    analyzeSeo: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { invokeLLM } = await import("./_core/llm");
+        const seoPrompt = `Analyze the following web project for SEO and provide specific, actionable recommendations.
+
+Project: ${project.name}
+Description: ${project.description || "No description"}
+Framework: ${project.framework}
+Published URL: ${project.publishedUrl || "Not yet published"}
+Custom Domain: ${project.customDomain || "None"}
+
+Provide a JSON response with this exact structure:
+{
+  "score": <number 0-100>,
+  "items": [
+    { "label": "<check name>", "status": "pass|warn|fail", "detail": "<specific finding>" }
+  ],
+  "recommendations": ["<actionable recommendation 1>", "<actionable recommendation 2>"]
+}`;
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "You are an SEO analysis expert. Return only valid JSON, no markdown." },
+            { role: "user", content: seoPrompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "seo_analysis",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  score: { type: "number", description: "SEO score 0-100" },
+                  items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        label: { type: "string" },
+                        status: { type: "string", description: "pass, warn, or fail" },
+                        detail: { type: "string" },
+                      },
+                      required: ["label", "status", "detail"],
+                      additionalProperties: false,
+                    },
+                  },
+                  recommendations: { type: "array", items: { type: "string" } },
+                },
+                required: ["score", "items", "recommendations"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        try {
+          const content = response.choices[0].message.content;
+          return JSON.parse(typeof content === "string" ? content : JSON.stringify(content) || "{}");
+        } catch {
+          return { score: 0, items: [], recommendations: ["Failed to parse SEO analysis. Please try again."] };
+        }
       }),
     /** List deployments for a project */
     deployments: protectedProcedure

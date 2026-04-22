@@ -245,6 +245,38 @@ async function startServer() {
     }
   });
 
+  // ── §L.33 IA-1 through IA-5: Full Validation Endpoint ──
+  app.get("/_validate", async (req, res) => {
+    try {
+      const { buildValidationReport, getRecentTraces, getActiveTraceCount } = await import("../runtimeValidator");
+      const report = await buildValidationReport();
+      const traces = getRecentTraces(20);
+      const validation = {
+        ...report,
+        ia1_services: report.services,
+        ia2_traces: { activeCount: getActiveTraceCount(), recent: traces },
+        ia3_syntheticUsers: { supported: true, detectionMethod: "email+name+openId pattern matching" },
+        ia4_features: report.features,
+        ia5_artifactIntegrity: { endpoint: "POST /_validate/artifact", description: "Submit artifact for integrity check" },
+      };
+      const statusCode = report.overall === "down" ? 503 : report.overall === "degraded" ? 207 : 200;
+      res.status(statusCode).json(validation);
+    } catch (e: any) {
+      res.status(500).json({ overall: "down", error: e.message });
+    }
+  });
+
+  // ── §L.33 IA-5: Artifact integrity check endpoint ──
+  app.post("/_validate/artifact", express.json(), async (req, res) => {
+    try {
+      const { checkArtifactIntegrity } = await import("../runtimeValidator");
+      const result = checkArtifactIntegrity(req.body);
+      res.json(result);
+    } catch (e: any) {
+      res.status(500).json({ valid: false, reason: e.message });
+    }
+  });
+
   // ── Connector OAuth callback (receives redirect from GitHub/Google/Notion/Slack) ──
   app.get("/api/connector/oauth/callback", async (req, res) => {
     try {

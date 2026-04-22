@@ -1,5 +1,7 @@
 # V9 Parity Report — Session 3
 
+> **HISTORICAL SNAPSHOT** — This report captures Session 3 state. Current state (Session 5): 72/72 GREEN, 100% judge passing, avg 0.862. See SCORING_REPORT_V9_FINAL.md for latest.
+
 **Date:** April 22, 2026 | **Auditor:** Agent (Session 3)
 
 ## Executive Summary

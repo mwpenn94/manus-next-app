@@ -1,3 +1,4 @@
+# HISTORICAL SNAPSHOT — Session 4 v1 judge run. Current state (Session 5): 72/72 passing (100%), avg 0.862.
 ◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
 Scoring all shells (method: llm-judge)...
 

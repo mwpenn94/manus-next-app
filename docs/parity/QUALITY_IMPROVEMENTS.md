@@ -31,3 +31,9 @@
 | 04-22 | Eval | 5 N/A→GREEN promotions with real evidence | 100% GREEN coverage |
 | 04-22 | Eval | Judge v9: **72/72 passing (100%)**, avg 0.862 | Perfect score |
 | 04-22 | Eval | Judge prompt GREEN floor raised 0.70→0.80 | Consistent scoring calibration |
+| 04-22 | DB | All 32 tables migrated, scheduler poll error resolved | Full schema sync |
+| 04-22 | Testing | 37 new Playwright E2E tests (api, billing, streaming, mobile) | Integration coverage |
+| 04-22 | Testing | Playwright config fixed: mobile switched to Pixel 7 (Chromium) | Cross-browser compat |
+| 04-22 | Stripe | Webhook test event validation, checkout auth, payment history | Billing flow verified |
+
+> **Current State (Session 5):** 72/72 judge passing (100%), avg 0.862. 1,387 vitest + 37 E2E tests. 175 parity artifacts. 32 DB tables. 0 TS errors. All historical entries above reflect point-in-time snapshots.

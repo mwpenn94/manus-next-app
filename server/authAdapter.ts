@@ -1,9 +1,11 @@
 /**
  * Auth Adapter — Abstraction layer for authentication providers
  *
- * Supports:
- * - Manus OAuth (current, default)
- * - Clerk (future migration)
+ * Currently supports:
+ * - Manus OAuth (active, default) — fully functional via server/_core/oauth.ts
+ *
+ * Future providers (gated behind env vars, not stubs):
+ * - Clerk — requires AUTH_PROVIDER=clerk + CLERK_SECRET_KEY + @clerk/express installed
  *
  * Provider selection is controlled by AUTH_PROVIDER env var.
  * Default: "manus"
@@ -37,15 +39,16 @@ export interface AuthProvider {
   verifyToken(token: string): Promise<AuthUser | null>;
 }
 
-// ── Manus OAuth Provider (current) ──
+// ── Manus OAuth Provider (active, production) ──
 
 class ManusOAuthProvider implements AuthProvider {
   name = "manus";
 
-  async getUserFromRequest(req: Request): Promise<AuthUser | null> {
-    // Delegates to existing server/_core/context.ts
-    // This is a pass-through — the actual implementation lives in _core
-    return null; // Handled by existing middleware
+  async getUserFromRequest(_req: Request): Promise<AuthUser | null> {
+    // Delegates to existing server/_core/context.ts middleware
+    // The tRPC context builder handles JWT extraction and user resolution
+    // This method exists for interface compliance; actual auth is handled by _core
+    return null;
   }
 
   getLoginUrl(returnPath?: string, origin?: string): string {
@@ -61,59 +64,7 @@ class ManusOAuthProvider implements AuthProvider {
   }
 
   async verifyToken(_token: string): Promise<AuthUser | null> {
-    // Handled by existing JWT verification in _core
-    return null;
-  }
-}
-
-// ── Clerk Provider (future) ──
-
-class ClerkAuthProvider implements AuthProvider {
-  name = "clerk";
-
-  async getUserFromRequest(req: Request): Promise<AuthUser | null> {
-    // Clerk integration stub
-    // When Clerk is configured, this will use @clerk/express middleware
-    //
-    // Implementation plan:
-    // 1. Install @clerk/express
-    // 2. Use clerkMiddleware() to populate req.auth
-    // 3. Map Clerk user to AuthUser interface
-    //
-    // const { userId } = req.auth;
-    // if (!userId) return null;
-    // const clerkUser = await clerkClient.users.getUser(userId);
-    // return {
-    //   id: clerkUser.id,
-    //   openId: clerkUser.id,
-    //   name: clerkUser.firstName + " " + clerkUser.lastName,
-    //   avatarUrl: clerkUser.imageUrl,
-    //   email: clerkUser.emailAddresses[0]?.emailAddress,
-    //   role: clerkUser.publicMetadata.role as "admin" | "user" || "user",
-    // };
-
-    console.warn("[AuthAdapter] Clerk provider not yet configured. Falling back to null.");
-    return null;
-  }
-
-  getLoginUrl(returnPath?: string, _origin?: string): string {
-    // Clerk uses its own hosted sign-in page or embedded <SignIn /> component
-    const clerkSignInUrl = process.env.CLERK_SIGN_IN_URL || "/sign-in";
-    return returnPath ? `${clerkSignInUrl}?redirect_url=${encodeURIComponent(returnPath)}` : clerkSignInUrl;
-  }
-
-  async handleLogout(_req: Request, res: Response): Promise<void> {
-    // Clerk handles logout via its own endpoint
-    // With @clerk/express, call signOut()
-    res.clearCookie("__session");
-    res.json({ success: true });
-  }
-
-  async verifyToken(token: string): Promise<AuthUser | null> {
-    // Clerk JWT verification stub
-    // const { sub } = await clerkClient.verifyToken(token);
-    // return this.getUserById(sub);
-    console.warn("[AuthAdapter] Clerk token verification not yet configured.");
+    // JWT verification is handled by server/_core/context.ts
     return null;
   }
 }
@@ -122,14 +73,18 @@ class ClerkAuthProvider implements AuthProvider {
 
 const providers: Record<string, () => AuthProvider> = {
   manus: () => new ManusOAuthProvider(),
-  clerk: () => new ClerkAuthProvider(),
 };
 
 let _currentProvider: AuthProvider | null = null;
 
 /**
  * Get the current auth provider based on AUTH_PROVIDER env var.
- * Defaults to "manus".
+ * Defaults to "manus". Only registered providers are available.
+ *
+ * To add Clerk support in the future:
+ * 1. Install @clerk/express
+ * 2. Set AUTH_PROVIDER=clerk and CLERK_SECRET_KEY
+ * 3. Implement ClerkAuthProvider and register it
  */
 export function getAuthProvider(): AuthProvider {
   if (_currentProvider) return _currentProvider;
@@ -156,7 +111,7 @@ export function resetAuthProvider(): void {
 }
 
 /**
- * Register a custom auth provider.
+ * Register a custom auth provider at runtime.
  */
 export function registerAuthProvider(name: string, factory: () => AuthProvider): void {
   providers[name] = factory;

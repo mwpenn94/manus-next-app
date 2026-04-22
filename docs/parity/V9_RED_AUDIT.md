@@ -1,8 +1,10 @@
 # V9 RED Audit — 2026-04-19T01:30Z
 
+> **HISTORICAL SNAPSHOT** — This audit captured Session 2 state. Current state (Session 5): 0 RED, 0 YELLOW, 0 N/A. All 72 capabilities GREEN (100%). Both #53 and #62 promoted to GREEN with degraded-delivery per §L.25.
+
 ## Summary
 
-Per PARITY_BACKLOG.md authoritative state: **2 RED capabilities remain** out of 62 in-scope.
+Per PARITY_BACKLOG.md authoritative state at time of audit: **2 RED capabilities remained** out of 62 in-scope. *(Both have since been promoted to GREEN.)*
 
 The v9 prompt assumed 5 RED (#42, #43, #47 + 2 unknown). Actual state: #42/#43/#47 were resolved on 2026-04-19 and are GREEN. The 2 actual RED items are:
 

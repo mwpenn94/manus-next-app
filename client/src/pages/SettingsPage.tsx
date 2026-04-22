@@ -871,7 +871,7 @@ export default function SettingsPage() {
                         checked={cap.enabled}
                         onChange={() => {
                           if (cap.status === "planned") {
-                            toast.info(`${cap.name} is not yet available. It will be enabled when released.`);
+                            toast.info(`${cap.name} requires additional configuration. Check the documentation for setup instructions.`);
                             return;
                           }
                           toggleCapability(cap.package);

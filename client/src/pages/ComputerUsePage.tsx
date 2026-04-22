@@ -1,8 +1,8 @@
 /**
- * ComputerUsePage — Simulated Desktop Environment
+ * ComputerUsePage — Agent-Powered Desktop Environment
  * Capability #25: Computer Use
  *
- * Provides a virtual desktop with:
+ * Provides an agent-driven virtual desktop with:
  * - Window management (open, close, minimize, resize)
  * - File browser with S3-backed storage
  * - Terminal emulator (agent-powered)

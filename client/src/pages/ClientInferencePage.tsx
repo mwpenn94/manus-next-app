@@ -125,7 +125,7 @@ export default function ClientInferencePage() {
   const [selectedVoice, setSelectedVoice] = useState("af_heart");
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   
-  // Other model statuses (non-Kokoro models still simulated for now)
+  // Other model statuses — real availability tracking (not simulated)
   const [otherModelStatus, setOtherModelStatus] = useState<Record<string, { status: string; progress: number }>>({});
   
   // Voice clone state
@@ -159,19 +159,21 @@ export default function ClientInferencePage() {
       return;
     }
     
-    // Simulated download for other models (not yet integrated)
-    setOtherModelStatus(prev => ({ ...prev, [modelId]: { status: "downloading", progress: 0 } }));
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
-      if (progress >= 100) {
-        clearInterval(interval);
-        setOtherModelStatus(prev => ({ ...prev, [modelId]: { status: "ready", progress: 100 } }));
-        toast.success("Model downloaded and ready");
-      } else {
-        setOtherModelStatus(prev => ({ ...prev, [modelId]: { status: "downloading", progress: Math.min(progress, 99) } }));
-      }
-    }, 300);
+    // Real model availability check — these models require WebGPU runtime
+    // Check if the browser supports the required engine
+    const model = MODELS.find(m => m.id === modelId);
+    if (!model) return;
+    
+    if (model.engine === "webgpu" && !webgpu.supported) {
+      toast.error(`${model.name} requires WebGPU which is not available in this browser`);
+      setOtherModelStatus(prev => ({ ...prev, [modelId]: { status: "unavailable", progress: 0 } }));
+      return;
+    }
+    
+    // Mark as pending — actual model loading happens via Transformers.js or dedicated hooks
+    // when those integrations are wired up. For now, track readiness honestly.
+    setOtherModelStatus(prev => ({ ...prev, [modelId]: { status: "pending", progress: 0 } }));
+    toast.info(`${model.name}: Model integration pending — Kokoro TTS is fully operational. Other models require additional Transformers.js wiring.`);
   }, [kokoro]);
 
   const handleRemove = useCallback((modelId: string) => {

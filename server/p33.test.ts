@@ -184,12 +184,11 @@ describe("P33: WebAppProjectPage settings tabs", () => {
     expect(content).toContain("Publishable Key");
   });
 
-  it("has SEO settings tab", () => {
+  it("has SEO settings tab with real LLM analysis", () => {
     expect(content).toContain('"seo"');
     expect(content).toContain("SEO Analysis");
-    expect(content).toContain("H1 Tag");
-    expect(content).toContain("Meta Description");
-    expect(content).toContain("Sitemap");
+    expect(content).toContain("Run SEO Analysis");
+    // No longer has static checklist — uses real LLM-powered analysis
   });
 
   it("has duplicate project button", () => {
@@ -200,8 +199,8 @@ describe("P33: WebAppProjectPage settings tabs", () => {
     expect(content).toContain("Hide Manus Badge");
   });
 
-  it("has SEO optimize with AI button", () => {
-    expect(content).toContain("Optimize with AI");
+  it("has SEO analysis functionality", () => {
+    expect(content).toContain("Run SEO Analysis");
   });
 });
 

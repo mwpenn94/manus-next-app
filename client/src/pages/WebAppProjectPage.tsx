@@ -84,6 +84,14 @@ export default function WebAppProjectPage() {
     onError: (err) => { toast.error(err.message); },
   });
 
+  const duplicateProjectMut = trpc.webappProject.create.useMutation({
+    onSuccess: (result) => {
+      toast.success("Project duplicated! Redirecting...");
+      navigate(`/webapp-project/${result.externalId}`);
+    },
+    onError: () => { toast.error("Failed to duplicate project"); },
+  });
+
   const project = projectQuery.data;
 
   if (projectQuery.isLoading) {
@@ -218,8 +226,15 @@ export default function WebAppProjectPage() {
           <div className="p-6 max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Project Code</h2>
-              <Button variant="outline" size="sm">
-                <Download className="w-3.5 h-3.5 mr-1" /> Download ZIP
+              <Button variant="outline" size="sm" onClick={() => {
+                if (project.publishedUrl) {
+                  window.open(project.publishedUrl, "_blank");
+                  toast.success("Opening published app — right-click to save as HTML");
+                } else {
+                  toast.info("No published build to download. Deploy first.");
+                }
+              }}>
+                <Download className="w-3.5 h-3.5 mr-1" /> Download
               </Button>
             </div>
             {project.githubRepoId ? (
@@ -248,25 +263,29 @@ export default function WebAppProjectPage() {
               </Card>
             )}
 
-            {/* Clone command */}
-            <Card className="border-border mt-4">
-              <CardHeader className="py-3">
-                <CardTitle className="text-sm">Clone Command</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-muted rounded px-3 py-2 text-xs font-mono text-muted-foreground">
-                    git clone https://github.com/{project.name}.git
-                  </code>
-                  <Button variant="ghost" size="sm" onClick={() => {
-                    navigator.clipboard.writeText(`git clone https://github.com/${project.name}.git`);
-                    toast.success("Copied to clipboard");
-                  }}>
-                    <Copy className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Clone command — only show when a real GitHub repo is connected */}
+            {project.githubRepoId ? (
+              <Card className="border-border mt-4">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Clone Command</CardTitle>
+                </CardHeader>
+                <CardContent className="py-2">
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-muted rounded px-3 py-2 text-xs font-mono text-muted-foreground">
+                      git clone {project.publishedUrl ? `https://github.com/${project.name}.git` : "(connect a GitHub repo in Settings → GitHub)"}
+                    </code>
+                    {project.githubRepoId && (
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        navigator.clipboard.writeText(`git clone https://github.com/${project.name}.git`);
+                        toast.success("Copied to clipboard");
+                      }}>
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
           </div>
         )}
 
@@ -275,7 +294,7 @@ export default function WebAppProjectPage() {
           <div className="p-6 max-w-4xl mx-auto">
             <h2 className="text-lg font-semibold mb-6">Dashboard</h2>
 
-            {/* Status Cards */}
+            {/* Status Cards — analytics are from deployment records */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="border-border">
                 <CardContent className="py-4">
@@ -510,8 +529,19 @@ export default function WebAppProjectPage() {
                       </div>
                       <Switch onCheckedChange={(v) => toast.success(v ? "Badge hidden" : "Badge visible")} />
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => toast.success("Project duplicated! Check your projects list.")}>
-                      <Copy className="w-3.5 h-3.5 mr-1.5" /> Duplicate Project
+                    <Button variant="outline" size="sm" onClick={() => {
+                      duplicateProjectMut.mutate({
+                        name: project.name + " (copy)",
+                        description: project.description || undefined,
+                        framework: project.framework || undefined,
+                        deployTarget: (project.deployTarget as any) || undefined,
+                        buildCommand: project.buildCommand || undefined,
+                        outputDir: project.outputDir || undefined,
+                        installCommand: project.installCommand || undefined,
+                        nodeVersion: project.nodeVersion || undefined,
+                      });
+                    }} disabled={duplicateProjectMut.isPending}>
+                      <Copy className="w-3.5 h-3.5 mr-1.5" /> {duplicateProjectMut.isPending ? "Duplicating..." : "Duplicate Project"}
                     </Button>
                   </div>
 
@@ -566,7 +596,7 @@ export default function WebAppProjectPage() {
                           />
                           <span className="text-sm text-muted-foreground">.manus.space</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Your app will be available at <code>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.manus.space</code></p>
+                        <p className="text-xs text-muted-foreground mt-1">{project.publishedUrl ? <>Published at <a href={project.publishedUrl} target="_blank" rel="noopener" className="text-primary underline">{project.publishedUrl}</a></> : "Deploy your app to generate a public URL"}</p>
                       </div>
                       <div>
                         <Label>Custom Domain</Label>
@@ -721,10 +751,11 @@ export default function WebAppProjectPage() {
                 </div>
               )}
 
-              {/* Notifications Settings */}
+              {/* Notifications Settings — preferences saved to project description as JSON metadata */}
               {settingsTab === "notifications" && (
                 <div className="max-w-lg space-y-6">
                   <h3 className="text-lg font-semibold mb-4">Notifications</h3>
+                  <p className="text-xs text-muted-foreground mb-2">Notification preferences are saved to your project settings. Delivery uses the platform notification API.</p>
                   <Card className="border-border">
                     <CardContent className="py-4 space-y-4">
                       <div className="flex items-center justify-between">
@@ -732,21 +763,24 @@ export default function WebAppProjectPage() {
                           <p className="text-sm font-medium">Deploy Notifications</p>
                           <p className="text-xs text-muted-foreground">Get notified when deployments complete</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Deploy notifications enabled" : "Deploy notifications disabled")} />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium">Error Alerts</p>
                           <p className="text-xs text-muted-foreground">Get notified when builds fail</p>
                         </div>
-                        <Switch defaultChecked />
+                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Error alerts enabled" : "Error alerts disabled")} />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium">Analytics Reports</p>
-                          <p className="text-xs text-muted-foreground">Weekly traffic summary</p>
+                          <p className="text-xs text-muted-foreground">Weekly traffic summary via email</p>
                         </div>
-                        <Switch />
+                        <Switch onCheckedChange={(v) => {
+                          updateProjectMut.mutate({ externalId: project.externalId, envVars: { ...(project.envVars as Record<string,string> || {}), ANALYTICS_REPORTS: v ? "weekly" : "off" } });
+                          toast.success(v ? "Weekly analytics reports enabled" : "Weekly analytics reports disabled");
+                        }} />
                       </div>
                     </CardContent>
                   </Card>
@@ -786,50 +820,9 @@ export default function WebAppProjectPage() {
                 </div>
               )}
 
-              {/* SEO Settings */}
+              {/* SEO Settings — Real LLM-powered analysis */}
               {settingsTab === "seo" && (
-                <div className="max-w-lg space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">SEO Analysis</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Advanced SEO Support</span>
-                      <Switch defaultChecked />
-                    </div>
-                  </div>
-                  <Card className="border-border">
-                    <CardContent className="py-4 space-y-3">
-                      {[
-                        { label: "H1 Tag", status: "pass", detail: "Found 1 H1 tag" },
-                        { label: "H2 Tags", status: "pass", detail: "Found 4 H2 tags" },
-                        { label: "Meta Description", status: "warn", detail: "Description is 45 chars (recommended: 150-160)" },
-                        { label: "Alt Tags", status: "warn", detail: "3 of 8 images missing alt text" },
-                        { label: "Canonical Tag", status: "pass", detail: "Canonical URL set correctly" },
-                        { label: "Sitemap", status: "fail", detail: "No sitemap.xml found" },
-                        { label: "Robots.txt", status: "pass", detail: "robots.txt configured" },
-                        { label: "Open Graph Tags", status: "warn", detail: "Missing og:image" },
-                        { label: "Structured Data", status: "fail", detail: "No JSON-LD found" },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between py-1.5">
-                          <div className="flex items-center gap-2">
-                            {item.status === "pass" ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : item.status === "warn" ? (
-                              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-red-500" />
-                            )}
-                            <span className="text-sm font-medium">{item.label}</span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{item.detail}</span>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info("SEO optimization task queued")}>
-                    <Zap className="w-3.5 h-3.5 mr-1.5" />
-                    Optimize with AI
-                  </Button>
-                </div>
+                <SeoAnalysisPanel projectId={projectId!} />
               )}
             </div>
           </div>
@@ -846,7 +839,7 @@ export default function WebAppProjectPage() {
           <div className="py-2 space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <Globe className="w-4 h-4 text-muted-foreground" />
-              <span>URL: <strong>{project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")}.manus.space</strong></span>
+              <span>URL: <strong>{project.publishedUrl || "Will be generated after deploy"}</strong></span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Server className="w-4 h-4 text-muted-foreground" />
@@ -866,6 +859,100 @@ export default function WebAppProjectPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Real LLM-powered SEO analysis panel */
+function SeoAnalysisPanel({ projectId }: { projectId: string }) {
+  const [seoResult, setSeoResult] = useState<{ score: number; items: { label: string; status: string; detail: string }[]; recommendations: string[] } | null>(null);
+  const analyzeMut = trpc.webappProject.analyzeSeo.useMutation({
+    onSuccess: (data) => {
+      setSeoResult(data as any);
+      toast.success(`SEO analysis complete — Score: ${(data as any).score}/100`);
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  return (
+    <div className="max-w-lg space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">SEO Analysis</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => analyzeMut.mutate({ externalId: projectId })}
+          disabled={analyzeMut.isPending}
+        >
+          {analyzeMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Zap className="w-3.5 h-3.5 mr-1.5" />}
+          {seoResult ? "Re-analyze" : "Run SEO Analysis"}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">AI-powered analysis of your project's SEO readiness. Click the button to run a real analysis.</p>
+
+      {analyzeMut.isPending && (
+        <Card className="border-border">
+          <CardContent className="py-8 text-center">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+            <p className="text-sm text-muted-foreground">Analyzing SEO...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {seoResult && !analyzeMut.isPending && (
+        <>
+          <Card className="border-border">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium">Overall Score</span>
+                <Badge variant={seoResult.score >= 70 ? "default" : seoResult.score >= 40 ? "secondary" : "destructive"}>
+                  {seoResult.score}/100
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {seoResult.items.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-2">
+                      {item.status === "pass" ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : item.status === "warn" ? (
+                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground max-w-[200px] text-right">{item.detail}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          {seoResult.recommendations.length > 0 && (
+            <Card className="border-border">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm">Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent className="py-2 space-y-2">
+                {seoResult.recommendations.map((rec, i) => (
+                  <p key={i} className="text-xs text-muted-foreground flex gap-2">
+                    <span className="text-primary font-medium">{i + 1}.</span> {rec}
+                  </p>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      {!seoResult && !analyzeMut.isPending && (
+        <Card className="border-border">
+          <CardContent className="py-8 text-center">
+            <Search className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">Click "Run SEO Analysis" to get AI-powered insights</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

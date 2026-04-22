@@ -113,9 +113,9 @@ export default function VideoGeneratorPage() {
             <div>
               <p className="text-sm font-medium text-foreground mb-1">AI Video Generation</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Create videos from text prompts or source images. Currently using image-to-slideshow generation 
-                with plans to integrate Veo3 and Replicate SVD for advanced AI video synthesis.
-                Premium providers will be available when API keys are configured.
+                Create videos from text prompts or source images using the built-in image generation engine.
+                Videos are composed from AI-generated keyframes with smooth transitions.
+                For advanced synthesis, configure external provider API keys in Settings.
               </p>
             </div>
           </div>

@@ -55,7 +55,7 @@ export default defineConfig({
       testMatch: /\.auth\.spec\.ts/,
       dependencies: ["auth-setup"],
       use: {
-        ...devices["iPhone 14"],
+        ...devices["Pixel 7"],
         storageState: AUTH_STATE_PATH,
       },
     },
@@ -64,7 +64,7 @@ export default defineConfig({
     {
       name: "mobile",
       testIgnore: [/auth\.setup\.ts/, /\.auth\.spec\.ts/],
-      use: { ...devices["iPhone 14"] },
+      use: { ...devices["Pixel 7"] },
     },
   ],
 });
