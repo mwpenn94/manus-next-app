@@ -219,8 +219,8 @@ export default function Home() {
         {/* Greeting */}
         <motion.div
           className="text-center mb-10"
-          initial={{ opacity: 0.01, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ y: 16 }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <h1
@@ -237,8 +237,8 @@ export default function Home() {
         {/* Pill-shaped Input — Manus style */}
         <motion.div
           className="w-full max-w-[640px] mb-8"
-          initial={{ opacity: 0.01, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ y: 16 }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -392,8 +392,8 @@ export default function Home() {
         {/* Quick Action Chips — horizontal scroll */}
         <motion.div
           className="w-full max-w-[640px] mb-10"
-          initial={{ opacity: 0.01, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ y: 8 }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -413,16 +413,16 @@ export default function Home() {
         {/* Suggestion Cards — horizontal scroll like Manus */}
         <motion.div
           className="w-full max-w-4xl"
-          initial={{ opacity: 0.01 }}
-          animate={{ opacity: 1 }}
+          initial={{ y: 6 }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1">
             {SUGGESTIONS.map((suggestion, i) => (
               <motion.button
                 key={suggestion.title}
-                initial={{ opacity: 0.01, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ y: 8 }}
+                animate={{ y: 0 }}
                 transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
                 onClick={() => setInput(suggestion.title)}
                 className="text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]"
@@ -448,8 +448,8 @@ export default function Home() {
         {/* Package badges — subtle footer */}
         <motion.div
           className="mt-12 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
-          initial={{ opacity: 0.01 }}
-          animate={{ opacity: 1 }}
+          initial={{ y: 4 }}
+          animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
           <span className="text-[10px] text-muted-foreground mr-1.5 uppercase tracking-wider">Powered by</span>

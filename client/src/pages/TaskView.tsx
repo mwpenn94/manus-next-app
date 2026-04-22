@@ -1376,6 +1376,7 @@ export default function TaskView() {
   const [mediaAttachments, setMediaAttachments] = useState<Array<{ url: string; mimeType: string; type: string }>>([]);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
+  const [lastErrorRetryable, setLastErrorRetryable] = useState(false);
   const plusButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -1626,6 +1627,7 @@ export default function TaskView() {
       setStreaming(true);
       setStreamContent("");
       setAgentActions([]);
+      setLastErrorRetryable(false);
       setStreamImages([]);
       streamingTaskIdRef.current = task.id;
       accumulatedRef.current = "";
@@ -1647,7 +1649,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage, setIsReconnecting,
+          addMessage, setIsReconnecting, setLastErrorRetryable,
         });
 
         await streamWithRetry({
@@ -1739,6 +1741,7 @@ export default function TaskView() {
     setStreaming(true);
     setStreamContent("");
     setAgentActions([]);
+    setLastErrorRetryable(false);
     setStreamImages([]);
     streamingTaskIdRef.current = task.id;
     accumulatedRef.current = "";
@@ -1811,7 +1814,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting,
+        addMessage, setIsReconnecting, setLastErrorRetryable,
       });
 
       await streamWithRetry({
@@ -1855,6 +1858,7 @@ export default function TaskView() {
     setStreaming(true);
     setStreamContent("");
     setAgentActions([]);
+    setLastErrorRetryable(false);
     setStreamImages([]);
     streamingTaskIdRef.current = task.id;
     accumulatedRef.current = "";
@@ -1881,7 +1885,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting,
+        addMessage, setIsReconnecting, setLastErrorRetryable,
       });
 
       await streamWithRetry({
@@ -1940,6 +1944,7 @@ export default function TaskView() {
     setStreaming(true);
     setStreamContent("");
     setAgentActions([]);
+    setLastErrorRetryable(false);
     setStreamImages([]);
     streamingTaskIdRef.current = task.id;
     accumulatedRef.current = "";
@@ -1962,7 +1967,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting,
+        addMessage, setIsReconnecting, setLastErrorRetryable,
       });
 
       await streamWithRetry({
@@ -2568,6 +2573,20 @@ export default function TaskView() {
             }}
             taskId={taskExternalId}
           />
+          {/* Retry banner — shown when the last stream ended with a retryable error */}
+          {lastErrorRetryable && !streaming && (
+            <div className="flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+              <span className="text-sm text-destructive flex-1">A temporary error occurred. You can retry your last message.</span>
+              <button
+                onClick={() => { setLastErrorRetryable(false); handleRegenerate(); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity active:scale-95"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry
+              </button>
+            </div>
+          )}
           <div className="relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors">
             {/* Attached files preview — above textarea */}
             {files.length > 0 && (
@@ -2736,6 +2755,18 @@ export default function TaskView() {
                 <X className="w-3 h-3" />
               </button>
             </div>
+          )}
+          {/* Prompt length warning */}
+          {input.length > 8000 && (
+            <p className={cn(
+              "text-[11px] mt-1.5 px-2 flex items-center gap-1",
+              input.length > 15000 ? "text-destructive" : "text-yellow-500"
+            )}>
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              {input.length > 15000
+                ? `Very long prompt (${(input.length / 1000).toFixed(1)}k chars) — may cause errors or be truncated.`
+                : `Long prompt (${(input.length / 1000).toFixed(1)}k chars) — consider shortening for best results.`}
+            </p>
           )}
           <p className="text-[10px] text-muted-foreground text-center mt-2 hidden md:block">
             Manus Next may make mistakes. Verify important information.

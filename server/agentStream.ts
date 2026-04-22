@@ -406,6 +406,47 @@ function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknow
 }
 
 /**
+ * Invoke LLM with exponential backoff retry for transient 500 errors.
+ * Upstream LLM providers occasionally return 500/502/503 errors that resolve
+ * on retry. Attempts up to 3 retries with 1s, 2s, 4s delays.
+ */
+async function invokeLLMWithRetry(
+  invokeLLM: (params: any) => Promise<InvokeResult>,
+  params: any,
+  maxRetries = 3,
+  baseDelayMs = 1000
+): Promise<InvokeResult> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await invokeLLM(params);
+    } catch (err: any) {
+      const status = err.status || err.statusCode || 0;
+      const msg = err.message || "";
+      const isTransient = (
+        (status >= 500 && status < 600) ||
+        msg.includes("bad response from upstream") ||
+        msg.includes("Internal Server Error") ||
+        msg.includes("502") ||
+        msg.includes("503") ||
+        msg.includes("504") ||
+        msg.includes("ETIMEDOUT") ||
+        msg.includes("ECONNRESET")
+      );
+      if (!isTransient || attempt >= maxRetries) {
+        throw err; // Non-transient or exhausted retries — propagate to outer catch
+      }
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      console.warn(
+        `[Agent] LLM transient error (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}. Retrying in ${delay}ms...`
+      );
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  // TypeScript: unreachable, but satisfies the return type
+  throw new Error("LLM invocation failed after retries");
+}
+
+/**
  * Run the agentic streaming loop.
  *
  * Executes a multi-turn LLM conversation with tool calling over SSE.
@@ -576,7 +617,7 @@ will seamlessly continue you with full context. Write as extensively as the task
         llmParams.maxTokens = tierConfig.maxTokensPerCall;
       }
       // else: omit maxTokens entirely — model uses its full output window (Max tier)
-      const response: InvokeResult = await invokeLLM(llmParams);
+      const response: InvokeResult = await invokeLLMWithRetry(invokeLLM, llmParams);
 
       const choice = response.choices?.[0];
       if (!choice) {
