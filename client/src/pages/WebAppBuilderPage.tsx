@@ -228,7 +228,7 @@ Generate the complete HTML code now.`,
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Go back to home">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex-1">
@@ -292,6 +292,7 @@ Generate the complete HTML code now.`,
                       value={appName}
                       onChange={(e) => setAppName(e.target.value)}
                       className="mb-4"
+                      aria-label="App name"
                     />
                     <Textarea
                       placeholder="Describe what your web app should do. Be specific about features, layout, and functionality..."
@@ -299,6 +300,7 @@ Generate the complete HTML code now.`,
                       onChange={(e) => setPrompt(e.target.value)}
                       rows={8}
                       className="mb-4"
+                      aria-label="App description prompt"
                     />
                     <Button onClick={buildApp} disabled={isBuilding || !prompt.trim()} className="w-full">
                       {isBuilding ? (
@@ -355,7 +357,7 @@ Generate the complete HTML code now.`,
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Live Preview</CardTitle>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => iframeRef.current?.contentWindow?.location.reload()}>
+                    <Button variant="outline" size="sm" onClick={() => iframeRef.current?.contentWindow?.location.reload()} aria-label="Refresh preview">
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Refresh
                     </Button>
@@ -388,7 +390,7 @@ Generate the complete HTML code now.`,
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Generated Code</CardTitle>
-                  <Button variant="outline" size="sm" onClick={copyCode}>
+                  <Button variant="outline" size="sm" onClick={copyCode} aria-label="Copy generated code to clipboard">
                     <Copy className="w-4 h-4 mr-2" />
                     Copy
                   </Button>

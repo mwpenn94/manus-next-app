@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1462,4 +1462,70 @@ export async function getTaskPerformance(userId: number) {
   }
   const avgMessagesPerTask = totalTasks > 0 ? totalMessages / totalTasks : 0;
   return { avgDurationMs, avgMessagesPerTask, completionRate, totalMessages };
+}
+
+
+// ── Page Views (Analytics) ──
+
+export async function recordPageView(data: InsertPageView) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(pageViews).values(data);
+}
+
+export async function getPageViewStats(projectId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) return { totalViews: 0, uniqueVisitors: 0, viewsByDay: [], topPaths: [], topReferrers: [] };
+
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  // Total views
+  const allViews = await db.select().from(pageViews)
+    .where(and(eq(pageViews.projectId, projectId), gte(pageViews.viewedAt, since)));
+
+  const totalViews = allViews.length;
+  const uniqueHashes = new Set(allViews.map(v => v.visitorHash).filter(Boolean));
+  const uniqueVisitors = uniqueHashes.size;
+
+  // Views by day
+  const dayMap: Record<string, number> = {};
+  for (const v of allViews) {
+    const day = v.viewedAt.toISOString().slice(0, 10);
+    dayMap[day] = (dayMap[day] || 0) + 1;
+  }
+  const viewsByDay = Object.entries(dayMap)
+    .map(([date, count]) => ({ date, count }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // Top paths
+  const pathMap: Record<string, number> = {};
+  for (const v of allViews) {
+    pathMap[v.path] = (pathMap[v.path] || 0) + 1;
+  }
+  const topPaths = Object.entries(pathMap)
+    .map(([path, count]) => ({ path, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  // Top referrers
+  const refMap: Record<string, number> = {};
+  for (const v of allViews) {
+    const ref = v.referrer || "Direct";
+    refMap[ref] = (refMap[ref] || 0) + 1;
+  }
+  const topReferrers = Object.entries(refMap)
+    .map(([referrer, count]) => ({ referrer, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return { totalViews, uniqueVisitors, viewsByDay, topPaths, topReferrers };
+}
+
+export async function getPageViewsByProject(projectId: number, limit: number = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pageViews)
+    .where(eq(pageViews.projectId, projectId))
+    .orderBy(desc(pageViews.viewedAt))
+    .limit(limit);
 }

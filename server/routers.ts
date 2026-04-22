@@ -2496,12 +2496,27 @@ export const appRouter = router({
           }
 
           if (htmlContent) {
-            // Real S3 publish
+            // Real S3 publish with analytics tracking pixel injection
             const { storagePut } = await import("./storage");
             const { nanoid: nanoidGen } = await import("nanoid");
             const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+            
+            // Auto-generate subdomain prefix if not set
+            if (!project.subdomainPrefix) {
+              await updateWebappProject(project.id, { subdomainPrefix: subdomain });
+            }
+            
+            // Inject analytics tracking pixel into HTML before </body>
+            const trackingScript = `<script src="/api/analytics/pixel.js?pid=${project.externalId}" defer></script>`;
+            let finalHtml = htmlContent;
+            if (finalHtml.includes("</body>")) {
+              finalHtml = finalHtml.replace("</body>", `${trackingScript}\n</body>`);
+            } else {
+              finalHtml += `\n${trackingScript}`;
+            }
+            
             const key = `webapp-projects/${subdomain}/${nanoidGen(8)}/index.html`;
-            const { url } = await storagePut(key, Buffer.from(htmlContent, "utf-8"), "text/html");
+            const { url } = await storagePut(key, Buffer.from(finalHtml, "utf-8"), "text/html");
             publishedUrl = url;
           } else {
             // No HTML content available — record deployment but note no artifact
@@ -2599,6 +2614,15 @@ Provide a JSON response with this exact structure:
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
         return getProjectDeployments(project.id);
+      }),
+    /** Get real analytics data for a project */
+    analytics: protectedProcedure
+      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { getPageViewStats } = await import("./db");
+        return getPageViewStats(project.id, input.days ?? 30);
       }),
   }),
 

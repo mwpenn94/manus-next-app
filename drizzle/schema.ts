@@ -817,3 +817,26 @@ export const webappDeployments = mysqlTable("webapp_deployments", {
 });
 export type WebappDeployment = typeof webappDeployments.$inferSelect;
 export type InsertWebappDeployment = typeof webappDeployments.$inferInsert;
+
+// ── Page Views (analytics tracking for deployed apps) ──
+export const pageViews = mysqlTable("page_views", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Which deployed project this view belongs to */
+  projectId: int("projectId").notNull(),
+  /** Page path visited (e.g. "/", "/about", "/contact") */
+  path: varchar("path", { length: 512 }).default("/").notNull(),
+  /** HTTP referrer header */
+  referrer: text("referrer"),
+  /** User-Agent string (truncated to 512 chars) */
+  userAgent: varchar("userAgent", { length: 512 }),
+  /** Visitor IP hash (SHA-256 of IP + daily salt for privacy) */
+  visitorHash: varchar("visitorHash", { length: 64 }),
+  /** Country code from IP geolocation (if available) */
+  country: varchar("country", { length: 8 }),
+  /** Screen width for device type classification */
+  screenWidth: int("screenWidth"),
+  /** Timestamp of the page view */
+  viewedAt: timestamp("viewedAt").defaultNow().notNull(),
+});
+export type PageView = typeof pageViews.$inferSelect;
+export type InsertPageView = typeof pageViews.$inferInsert;

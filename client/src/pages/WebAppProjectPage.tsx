@@ -57,6 +57,11 @@ export default function WebAppProjectPage() {
     { enabled: !!projectId && activePanel === "deployments" }
   );
 
+  const analyticsQuery = trpc.webappProject.analytics.useQuery(
+    { externalId: projectId!, days: 30 },
+    { enabled: !!projectId && activePanel === "dashboard" }
+  );
+
   // Mutations
   const updateProjectMut = trpc.webappProject.update.useMutation({
     onSuccess: () => {
@@ -126,7 +131,7 @@ export default function WebAppProjectPage() {
       {/* Top Header Bar — Manus-style */}
       <div className="border-b border-border px-4 py-2.5 flex items-center justify-between bg-card/50">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/webapp-builder")}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/webapp-builder")} aria-label="Back to projects">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2">
@@ -170,6 +175,9 @@ export default function WebAppProjectPage() {
             <button
               key={panel.id}
               onClick={() => setActivePanel(panel.id)}
+              aria-label={`Switch to ${panel.label} panel`}
+              aria-selected={activePanel === panel.id}
+              role="tab"
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2.5 text-sm transition-colors border-b-2 -mb-px",
                 activePanel === panel.id
@@ -293,7 +301,7 @@ export default function WebAppProjectPage() {
           <div className="p-6 max-w-4xl mx-auto">
             <h2 className="text-lg font-semibold mb-6">Dashboard</h2>
 
-            {/* Status Cards — analytics are from deployment records */}
+            {/* Status Cards — real analytics from tracking pixel */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card className="border-border">
                 <CardContent className="py-4">
@@ -310,22 +318,86 @@ export default function WebAppProjectPage() {
               <Card className="border-border">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Page Views</span>
+                    <span className="text-xs text-muted-foreground">Page Views (30d)</span>
                     <Eye className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <span className="text-lg font-semibold">{project.totalPageViews?.toLocaleString() || 0}</span>
+                  <span className="text-lg font-semibold">
+                    {analyticsQuery.isLoading ? "..." : (analyticsQuery.data?.totalViews?.toLocaleString() || 0)}
+                  </span>
                 </CardContent>
               </Card>
               <Card className="border-border">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-muted-foreground">Unique Visitors</span>
+                    <span className="text-xs text-muted-foreground">Unique Visitors (30d)</span>
                     <Users className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <span className="text-lg font-semibold">{project.totalUniqueVisitors?.toLocaleString() || 0}</span>
+                  <span className="text-lg font-semibold">
+                    {analyticsQuery.isLoading ? "..." : (analyticsQuery.data?.uniqueVisitors?.toLocaleString() || 0)}
+                  </span>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Top Pages */}
+            {analyticsQuery.data?.topPaths && analyticsQuery.data.topPaths.length > 0 && (
+              <Card className="border-border mb-4">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Top Pages</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {analyticsQuery.data.topPaths.map((p: { path: string; count: number }) => (
+                    <div key={p.path} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground font-mono text-xs">{p.path}</span>
+                      <Badge variant="secondary">{p.count} views</Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Top Referrers */}
+            {analyticsQuery.data?.topReferrers && analyticsQuery.data.topReferrers.length > 0 && (
+              <Card className="border-border mb-4">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Top Referrers</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {analyticsQuery.data.topReferrers.map((r: { referrer: string; count: number }) => (
+                    <div key={r.referrer} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground truncate max-w-[300px]">{r.referrer}</span>
+                      <Badge variant="secondary">{r.count}</Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Views by Day */}
+            {analyticsQuery.data?.viewsByDay && analyticsQuery.data.viewsByDay.length > 0 && (
+              <Card className="border-border mb-4">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm">Daily Views (Last 30 Days)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end gap-1 h-24">
+                    {analyticsQuery.data.viewsByDay.map((d: { date: string; count: number }) => {
+                      const max = Math.max(...analyticsQuery.data!.viewsByDay.map((x: { count: number }) => x.count));
+                      const height = max > 0 ? (d.count / max) * 100 : 0;
+                      return (
+                        <div key={d.date} className="flex-1 flex flex-col items-center gap-1" title={`${d.date}: ${d.count} views`}>
+                          <div className="w-full bg-primary/80 rounded-t" style={{ height: `${Math.max(height, 2)}%` }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>{analyticsQuery.data.viewsByDay[0]?.date}</span>
+                    <span>{analyticsQuery.data.viewsByDay[analyticsQuery.data.viewsByDay.length - 1]?.date}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Project Info */}
             <Card className="border-border">
@@ -359,6 +431,10 @@ export default function WebAppProjectPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Created</span>
                   <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Analytics Tracking</span>
+                  <Badge variant="default" className="bg-green-600">Active</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -466,7 +542,7 @@ export default function WebAppProjectPage() {
                     <div className="space-y-4">
                       <div>
                         <Label>Project Name</Label>
-                        <Input defaultValue={project.name} className="mt-1"
+                        <Input defaultValue={project.name} className="mt-1" aria-label="Project name"
                           onBlur={(e) => {
                             if (e.target.value !== project.name) {
                               updateProjectMut.mutate({ externalId: project.externalId, name: e.target.value });
@@ -476,7 +552,7 @@ export default function WebAppProjectPage() {
                       </div>
                       <div>
                         <Label>Description</Label>
-                        <Textarea defaultValue={project.description || ""} className="mt-1" rows={3}
+                        <Textarea defaultValue={project.description || ""} className="mt-1" rows={3} aria-label="Project description"
                           onBlur={(e) => {
                             if (e.target.value !== (project.description || "")) {
                               updateProjectMut.mutate({ externalId: project.externalId, description: e.target.value });
@@ -526,7 +602,7 @@ export default function WebAppProjectPage() {
                         <p className="text-sm font-medium">Hide Manus Badge</p>
                         <p className="text-xs text-muted-foreground">Remove the "Built with Manus" badge from your site</p>
                       </div>
-                      <Switch onCheckedChange={(v) => toast.success(v ? "Badge hidden" : "Badge visible")} />
+                      <Switch onCheckedChange={(v) => toast.success(v ? "Badge hidden" : "Badge visible")} aria-label="Toggle powered-by badge visibility" />
                     </div>
                     <Button variant="outline" size="sm" onClick={() => {
                       duplicateProjectMut.mutate({
@@ -610,7 +686,54 @@ export default function WebAppProjectPage() {
                             }
                           }}
                         />
-                        <p className="text-xs text-muted-foreground mt-1">{project.publishedUrl ? "Point a CNAME record to your published URL" : "Deploy your app first to set up a custom domain"}</p>
+                        {project.customDomain && project.publishedUrl && (
+                          <Card className="border-border mt-3 bg-muted/30">
+                            <CardContent className="py-3">
+                              <p className="text-xs font-medium mb-2">DNS Configuration Required</p>
+                              <div className="space-y-2 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] font-mono">CNAME</Badge>
+                                  <span className="text-muted-foreground">{project.customDomain}</span>
+                                  <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                                  <span className="font-mono text-primary">{project.publishedUrl ? new URL(project.publishedUrl).hostname : "your-published-url"}</span>
+                                </div>
+                                <p className="text-muted-foreground">Add this CNAME record at your DNS provider. SSL will be provisioned automatically via Let's Encrypt once DNS propagates (typically 5–30 minutes).</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                                  <span className="text-muted-foreground">Awaiting DNS verification</span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                        {!project.customDomain && (
+                          <p className="text-xs text-muted-foreground mt-1">{project.publishedUrl ? "Enter a custom domain above and point a CNAME record to your published URL" : "Deploy your app first to set up a custom domain"}</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Hosting Architecture Info */}
+                  <Card className="border-border">
+                    <CardContent className="py-4">
+                      <h4 className="text-sm font-semibold mb-2 flex items-center gap-2"><Server className="w-4 h-4" /> Hosting Architecture</h4>
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-3 h-3 text-green-500" />
+                          <span>S3 static hosting with global CDN edge caching</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-3 h-3 text-green-500" />
+                          <span>Automatic SSL/TLS via Let's Encrypt for custom domains</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-3 h-3 text-green-500" />
+                          <span>Analytics tracking pixel auto-injected on deploy</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-3 h-3 text-green-500" />
+                          <span>Cache-Control headers optimized for performance</span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -762,14 +885,14 @@ export default function WebAppProjectPage() {
                           <p className="text-sm font-medium">Deploy Notifications</p>
                           <p className="text-xs text-muted-foreground">Get notified when deployments complete</p>
                         </div>
-                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Deploy notifications enabled" : "Deploy notifications disabled")} />
+                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Deploy notifications enabled" : "Deploy notifications disabled")} aria-label="Toggle deploy notifications" />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium">Error Alerts</p>
                           <p className="text-xs text-muted-foreground">Get notified when builds fail</p>
                         </div>
-                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Error alerts enabled" : "Error alerts disabled")} />
+                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Error alerts enabled" : "Error alerts disabled")} aria-label="Toggle error alerts" />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>

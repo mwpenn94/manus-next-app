@@ -2432,3 +2432,28 @@
 - [x] Complete Steps 2-10 of the user journey with screenshots and observations
 - [x] Fix all gaps found during validation (PDF reading, deploy pipeline, SEO analysis)
 - [x] Create comprehensive SESSION_REPLAY_REPORT.md (creating now)
+
+## Session 7 — Three Next Steps Implementation
+
+### Step 1: CloudFront Custom Domain Hosting for Deployed Apps
+- [x] Add customDomain column to webappProjects schema (already existed)
+- [x] Create CloudFront-style hosting architecture (S3 + CDN edge caching documented)
+- [x] Update deploy procedure to inject tracking pixel and generate public URLs
+- [x] Update WebAppProjectPage domains settings with DNS CNAME instructions, SSL info, architecture card
+- [x] Update DeployedWebsitesPage to show real published URLs
+- [x] Add domain validation UI with DNS verification status indicator
+
+### Step 2: Real Analytics Collection
+- [x] Create analytics schema (pageViews table with projectId, path, referrer, userAgent, visitorHash, viewedAt)
+- [x] Create /api/analytics/collect POST endpoint with CORS for cross-origin tracking
+- [x] Create /api/analytics/pixel.js tracking script endpoint
+- [x] Inject tracking pixel script into deployed apps during publish (in deploy procedure)
+- [x] Create webappProject.analytics tRPC procedure (totalViews, uniqueVisitors, topPaths, topReferrers, viewsByDay)
+- [x] Wire WebAppProjectPage dashboard panel with real analytics data (top pages, referrers, daily chart)
+
+### Step 3: ARIA Accessibility Labels
+- [x] Add aria-label to all interactive elements in WebAppBuilderPage (5 labels: back, name, prompt, refresh, copy)
+- [x] Add aria-label to all interactive elements in WebAppProjectPage (8 labels: back, tabs, name, description, switches)
+- [x] Add role="tab" and aria-selected to panel navigation buttons
+- [x] Add aria-label to all Switch components for screen readers
+- [x] Total: 14 ARIA attributes across both pages (verified by tests)

@@ -277,6 +277,86 @@ async function startServer() {
     }
   });
 
+  // ── Analytics Collection Endpoint ──
+  app.post("/api/analytics/collect", express.json(), async (req, res) => {
+    try {
+      const { projectId, path, referrer, screenWidth } = req.body;
+      if (!projectId) return res.status(400).json({ error: "projectId required" });
+
+      // Privacy-preserving visitor hash: SHA-256(IP + daily salt)
+      const crypto = await import("crypto");
+      const dailySalt = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+      const ipStr = Array.isArray(ip) ? ip[0] : ip;
+      const visitorHash = crypto.createHash("sha256").update(`${ipStr}:${dailySalt}`).digest("hex").slice(0, 32);
+
+      const userAgent = (req.headers["user-agent"] || "").slice(0, 512);
+
+      const { recordPageView, getWebappProjectByExternalId, updateWebappProject } = await import("../db");
+      
+      // Look up project by externalId
+      const project = await getWebappProjectByExternalId(String(projectId));
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      await recordPageView({
+        projectId: project.id,
+        path: String(path || "/").slice(0, 512),
+        referrer: referrer ? String(referrer).slice(0, 2048) : null,
+        userAgent,
+        visitorHash,
+        screenWidth: screenWidth ? Number(screenWidth) : null,
+      });
+
+      // Increment aggregate counters on the project
+      await updateWebappProject(project.id, {
+        totalPageViews: (project.totalPageViews ?? 0) + 1,
+      });
+
+      // Set CORS headers for cross-origin tracking
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+      res.status(204).end();
+    } catch (err: any) {
+      console.error("[Analytics] Collection error:", err.message);
+      res.status(500).json({ error: "Internal error" });
+    }
+  });
+
+  // CORS preflight for analytics
+  app.options("/api/analytics/collect", (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.status(204).end();
+  });
+
+  // Tracking pixel script served to deployed apps
+  app.get("/api/analytics/pixel.js", (req, res) => {
+    const projectId = req.query.pid || "";
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const script = `
+(function() {
+  if (typeof navigator !== 'undefined' && navigator.doNotTrack === '1') return;
+  var data = {
+    projectId: "${String(projectId).replace(/"/g, '')}",
+    path: location.pathname,
+    referrer: document.referrer || null,
+    screenWidth: screen.width
+  };
+  fetch("${origin}/api/analytics/collect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    keepalive: true
+  }).catch(function() {});
+})();
+`.trim();
+    res.setHeader("Content-Type", "application/javascript");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(script);
+  });
+
   // ── Connector OAuth callback (receives redirect from GitHub/Google/Notion/Slack) ──
   app.get("/api/connector/oauth/callback", async (req, res) => {
     try {
