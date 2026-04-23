@@ -348,9 +348,9 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="h-full flex">
-      {/* Settings Sidebar */}
-      <div className="w-[200px] border-r border-border bg-card p-3 space-y-0.5 shrink-0">
+    <div className="h-full flex flex-col md:flex-row">
+      {/* Settings Sidebar — hidden on mobile, shown on desktop */}
+      <div className="hidden md:block w-[200px] border-r border-border bg-card p-3 space-y-0.5 shrink-0">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-3 py-2 font-medium">
           Settings
         </p>
@@ -371,8 +371,29 @@ export default function SettingsPage() {
         ))}
       </div>
 
+      {/* Mobile horizontal tab bar */}
+      <div className="md:hidden border-b border-border bg-card overflow-x-auto shrink-0">
+        <div className="flex px-2 py-2 gap-1 min-w-max">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors",
+                activeTab === tab.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Settings Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-2xl">
           {/* ── Account ── */}
           {activeTab === "account" && (

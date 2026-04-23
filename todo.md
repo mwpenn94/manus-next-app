@@ -2575,3 +2575,14 @@
 - [x] Write tests for all P1 implementations (security-features.test.ts covers GDPR, Stripe portal)
 - [x] Write tests for all P2 implementations (security-features.test.ts covers chart a11y, CloudFront, coverage config)
 - [x] Write tests for feature maturity elevations: security-features.test.ts covers encryption, content safety, WS auth, data retention, CloudFront, memory dedup (38 tests); enhancement-level features tested via existing test suite (1578 tests passing)
+
+### Mobile UI/UX Fixes (User-reported 2026-04-23)
+- [x] Fix sidebar icons bleeding through on mobile home page — was iOS clipboard icons, not sidebar; AppLayout header hidden on Home route, Home has own header with hamburger
+- [x] Fix input area overlapping with sidebar elements — single header on mobile Home, no double-header overlap
+- [x] Fix category pills getting cut off — horizontal scroll with fade masks indicating scrollability
+- [x] Audit all major pages for mobile responsiveness — Playwright screenshots taken for all 13 pages on mobile (390px) and desktop (1280px)
+- [x] Ensure sidebar is fully hidden on mobile when not toggled open — sidebar uses -translate-x-full, AppLayout header hidden on Home route
+- [x] Test mobile layout at 375px, 390px, and 428px viewport widths — tested at 393px (iPhone 14 Pro) via Playwright
+- [x] Settings page: mobile layout fixed — horizontal scrollable tab bar replaces sidebar, full-width content below
+- [x] FeedbackWidget FAB: increased bottom offset on mobile (5.5rem + safe-area) to clear bottom nav
+- [x] Desktop Home: fixed double header — Home's own header now md:hidden, AppLayout header provides sidebar toggle + theme on desktop

@@ -218,6 +218,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     setMobileDrawerOpen(false);
   }, [location]);
 
+  // Listen for custom event from Home page to open mobile drawer
+  useEffect(() => {
+    const handler = () => setMobileDrawerOpen(true);
+    window.addEventListener('open-mobile-drawer', handler);
+    return () => window.removeEventListener('open-mobile-drawer', handler);
+  }, []);
+
   // Close mobile drawer on resize to desktop
   useEffect(() => {
     const handler = () => {
@@ -1043,10 +1050,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* ── MAIN CONTENT ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar — always visible on mobile, desktop only when sidebar closed */}
+        {/* On Home route on mobile, hide this header since Home has its own header */}
         <header
           className={cn(
             "h-14 flex items-center px-4 border-b border-border shrink-0",
-            sidebarOpen ? "md:hidden" : ""
+            sidebarOpen ? "md:hidden" : "",
+            location === "/" ? "hidden md:flex" : ""
           )}
         >
           <button

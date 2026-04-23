@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import ModelSelector from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
+import { Menu } from "lucide-react";
 
 // Quick action chips — Manus-style horizontal row
 const QUICK_ACTIONS = [
@@ -194,8 +195,19 @@ export default function Home() {
 
   return (
     <div className="h-full overflow-y-auto relative bg-background" role="region" aria-label="Home" tabIndex={-1}>
-      {/* Top header bar — ModelSelector left, Credits right (Manus-style) */}
-      <div className="sticky top-0 z-20 flex items-center justify-between px-4 md:px-6 py-3 bg-background/80 backdrop-blur-sm">
+      {/* Top header bar — hamburger + ModelSelector left, Credits right (mobile only; desktop uses AppLayout header) */}
+      <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-background/80 backdrop-blur-sm md:hidden">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              // Dispatch custom event to open sidebar drawer on mobile
+              window.dispatchEvent(new CustomEvent('open-mobile-drawer'));
+            }}
+            className="p-2 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 md:hidden"
+            aria-label="Open sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         <ModelSelector
           selectedModelId={selectedModel}
           onModelChange={(modelId) => {
@@ -204,6 +216,7 @@ export default function Home() {
           }}
           compact
         />
+        </div>
         <button
           onClick={() => navigate("/billing")}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
@@ -215,10 +228,10 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100%-60px)] px-4 md:px-6 py-8 md:py-12">
+      <div className="relative z-10 flex flex-col items-center justify-start md:justify-center min-h-[calc(100%-60px)] px-3 md:px-6 pt-4 pb-8 md:py-12">
         {/* Greeting */}
         <motion.div
-          className="text-center mb-10"
+          className="text-center mb-6 md:mb-10"
           initial={{ y: 16 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
@@ -236,7 +249,7 @@ export default function Home() {
 
         {/* Pill-shaped Input — Manus style */}
         <motion.div
-          className="w-full max-w-[640px] mb-8"
+          className="w-full max-w-[640px] mb-6 md:mb-8"
           initial={{ y: 16 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
@@ -311,7 +324,7 @@ export default function Home() {
                 }
               }}
               onPaste={handlePaste}
-              placeholder="Give Manus Next a task to work on..."
+              placeholder="What would you like to do?"
               aria-label="Task input"
               rows={1}
               className={cn(
@@ -391,12 +404,12 @@ export default function Home() {
 
         {/* Quick Action Chips — horizontal scroll */}
         <motion.div
-          className="w-full max-w-[640px] mb-10"
+          className="w-full max-w-[640px] mb-6 md:mb-10"
           initial={{ y: 8 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pr-8 md:pr-0" style={{ maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' }}>
             {QUICK_ACTIONS.map((action) => (
               <button
                 key={action.label}
@@ -417,7 +430,7 @@ export default function Home() {
           animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1 pr-8 md:pr-1" style={{ maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' }}>
             {SUGGESTIONS.map((suggestion, i) => (
               <motion.button
                 key={suggestion.title}

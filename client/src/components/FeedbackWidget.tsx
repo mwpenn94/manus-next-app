@@ -54,7 +54,7 @@ export default function FeedbackWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex items-center justify-center"
+        className="fixed right-4 z-40 w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex items-center justify-center bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6 md:right-6 md:w-12 md:h-12"
         title="Send Feedback"
       >
         <MessageSquare className="w-5 h-5" />
@@ -63,7 +63,7 @@ export default function FeedbackWidget() {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 z-50 w-80 shadow-2xl border-border bg-card">
+    <Card className="fixed right-4 z-40 w-[calc(100vw-2rem)] max-w-80 shadow-2xl border-border bg-card bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6 md:right-6">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm">Send Feedback</CardTitle>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
