@@ -162,8 +162,8 @@ describe("Memory relevance filter in index.ts", () => {
     expect(indexSource).toContain("if (relevantMemories.length > 0)");
   });
 
-  it("should skip short words (3 chars or less) in keyword matching", () => {
-    expect(indexSource).toContain("w.length > 3");
+  it("should skip short words (less than 5 chars) in keyword matching", () => {
+    expect(indexSource).toContain("w.length >= 5");
   });
 });
 

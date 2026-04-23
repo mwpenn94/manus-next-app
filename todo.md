@@ -3015,3 +3015,20 @@
 ### Next Steps (from previous session)
 - [x] Add credit usage warning banner when credits are exhausted (CreditWarningBanner component + SSE event dispatch)
 - [x] Add task templates/presets for frequently-used prompts (Save as Template in TaskView More menu + templates on Home page)
+
+## Session 18: Memory Context Bleed from Older Chats + Stale Tasks
+
+### Critical Bugs (from pasted_content_4.txt)
+- [x] BUG: Agent pulls specific details from older chats into new task — "Dark Elf Arcanist one-bar brawler" injected into vague "help refine this build?" query
+- [x] BUG: Agent responds before processing user attachments — should acknowledge and analyze attached images first
+- [x] BUG: Many tasks stuck "In progress" indefinitely — tasks from hours/days ago still showing running status
+- [x] BUG: Memory relevance filter too permissive — short keywords like "build" match too broadly across gaming memories
+
+### Fixes Required
+- [x] Tighten memory relevance filter — increase min word length to >=5 chars, require 2+ keyword matches, stop word exclusion
+- [x] Strengthen memory isolation rules — 10 rules now including vague query, attachment-first, and never-assume rules
+- [x] Add attachment-aware prompting — ATTACHMENT-AWARE RESPONSE section injected when multimodal content detected
+- [x] Add stale task auto-completion — sweepStaleTasks runs every 15min, 2h timeout, tRPC endpoint for manual sweep
+- [x] Write Session 18 tests (32 tests in session18-context-bleed.test.ts)
+- [x] Run full test suite (1,893 tests passing across 81 files)
+- [x] Save checkpoint

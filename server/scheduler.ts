@@ -276,6 +276,22 @@ export function startScheduler(): void {
     pollDueTasks().catch(console.error);
   }, POLL_INTERVAL_MS);
 
+  // Stale task sweep — runs every 15 minutes to clean up stuck tasks
+  const STALE_SWEEP_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+  const STALE_TASK_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours
+  setInterval(async () => {
+    try {
+      const { sweepStaleTasks } = await import("./db");
+      const swept = await sweepStaleTasks(STALE_TASK_TIMEOUT_MS);
+      if (swept > 0) {
+        console.log(`[Scheduler] Stale sweep: ${swept} task(s) auto-completed`);
+      }
+    } catch (err: any) {
+      console.error("[Scheduler] Stale sweep error:", err.message?.slice(0, 200));
+    }
+  }, STALE_SWEEP_INTERVAL_MS);
+  console.log(`[Scheduler] Stale task sweep scheduled — every ${STALE_SWEEP_INTERVAL_MS / 60000}min (timeout: ${STALE_TASK_TIMEOUT_MS / 3600000}h)`);
+
   // Data retention job — runs daily at 02:00 UTC
   const scheduleRetentionJob = () => {
     const now = new Date();

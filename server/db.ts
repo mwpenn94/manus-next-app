@@ -158,6 +158,38 @@ export async function updateTaskStatus(externalId: string, status: "idle" | "run
   await db.update(tasks).set({ status }).where(eq(tasks.externalId, externalId));
 }
 
+/**
+ * Sweep stale tasks — mark tasks stuck in "running" or "paused" for longer than
+ * the specified timeout as "completed" (or "error" if they never produced output).
+ * This prevents the sidebar from showing perpetually "In progress" tasks.
+ * @param timeoutMs - How long a task can be in running/paused state before being swept (default: 2 hours)
+ * @returns Number of tasks swept
+ */
+export async function sweepStaleTasks(timeoutMs: number = 2 * 60 * 60 * 1000): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const cutoff = new Date(Date.now() - timeoutMs);
+  // Find tasks that have been running/paused since before the cutoff
+  const staleTasks = await db.select({ id: tasks.id, externalId: tasks.externalId, status: tasks.status })
+    .from(tasks)
+    .where(
+      and(
+        or(eq(tasks.status, "running"), eq(tasks.status, "paused")),
+        lte(tasks.updatedAt, cutoff)
+      )
+    )
+    .limit(100);
+  if (staleTasks.length === 0) return 0;
+  // Mark them as completed (they ran but didn't finish cleanly)
+  for (const t of staleTasks) {
+    await db.update(tasks)
+      .set({ status: "completed" })
+      .where(eq(tasks.id, t.id));
+  }
+  console.log(`[StaleSweep] Marked ${staleTasks.length} stale task(s) as completed`);
+  return staleTasks.length;
+}
+
 export async function renameTask(externalId: string, userId: number, title: string) {
   const db = await getDb();
   if (!db) return;

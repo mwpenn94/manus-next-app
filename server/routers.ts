@@ -287,6 +287,14 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /** Manually sweep stale tasks — marks tasks stuck in running/paused for >2h as completed */
+    sweepStale: protectedProcedure
+      .mutation(async () => {
+        const { sweepStaleTasks } = await import("./db");
+        const swept = await sweepStaleTasks();
+        return { swept };
+      }),
+
     search: protectedProcedure
       .input(z.object({
         query: z.string().min(1),

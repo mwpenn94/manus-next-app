@@ -599,7 +599,31 @@ ${memoryContext}
 4. If the user asks about Topic A, do NOT inject content from a memory about Topic B.
 5. If no memories are relevant to the current request, IGNORE ALL MEMORIES completely.
 6. Do not mention that you have "memory" unless the user asks.
-7. The current user message is your PRIMARY directive — memories are secondary.`;
+7. The current user message is your PRIMARY directive — memories are secondary.
+8. If the user's message is SHORT or VAGUE (e.g., "help refine this build?", "continue", "fix this"), do NOT fill in specific details from memory. Instead, ASK the user what they need help with.
+9. NEVER assume you know what the user is referring to based on memory alone. If the request is ambiguous, ask for clarification.
+10. If the user has attached files or images, PROCESS THE ATTACHMENTS FIRST before responding. Do not assume the topic from memory — let the attachments inform your response.`;
+    }
+
+    // Detect if the user has attached files/images in the latest message
+    const lastUserMsg = [...conversation].reverse().find(m => m.role === "user");
+    const hasAttachments = lastUserMsg && Array.isArray(lastUserMsg.content) &&
+      (lastUserMsg.content as any[]).some((part: any) =>
+        part.type === "image_url" || part.type === "file_url"
+      );
+    if (hasAttachments) {
+      systemPrompt += `\n\n## ATTACHMENT-AWARE RESPONSE\nThe user has attached files or images with their message. You MUST:\n1. Analyze and describe the attached content FIRST before responding.\n2. Base your response primarily on what you see in the attachments.\n3. Do NOT assume what the attachments contain based on memory or previous tasks.\n4. If the user's text is vague (e.g., "help with this", "refine this"), let the attachment content guide your response rather than making assumptions.\n5. Acknowledge the attachments explicitly in your response (e.g., "Looking at your attached image, I can see...").`;
+    }
+
+    // Detect vague/short queries and add clarification instruction
+    const lastUserText = lastUserMsg
+      ? (typeof lastUserMsg.content === "string" ? lastUserMsg.content
+        : Array.isArray(lastUserMsg.content)
+          ? (lastUserMsg.content as any[]).filter((p: any) => p.type === "text").map((p: any) => p.text).join(" ")
+          : "")
+      : "";
+    if (lastUserText.length > 0 && lastUserText.length < 80 && !hasAttachments) {
+      systemPrompt += `\n\n## SHORT/VAGUE QUERY DETECTED\nThe user's message is brief. Do NOT assume specific details from memory or previous conversations. If the request is ambiguous, ask clarifying questions before proceeding. For example, if they say "help refine this build" without specifying which build, ask them to provide details rather than assuming from stored memories.`;
     }
 
     // Mode-specific instructions — deeply aligned with Manus tiers

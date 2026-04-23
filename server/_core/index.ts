@@ -748,7 +748,7 @@ async function startServer() {
             const prefs = await getUserPreferences(user.id);
             if (prefs?.systemPrompt) resolvedSystemPrompt = prefs.systemPrompt as string;
           }
-          // Load cross-session memory with relevance filtering
+          // Load cross-session memory with strict relevance filtering
           try {
             const { getUserMemories } = await import("../db");
             const memories = await getUserMemories(user.id, 20);
@@ -758,6 +758,23 @@ async function startServer() {
               const taskText = firstUserMsg
                 ? (typeof firstUserMsg.content === "string" ? firstUserMsg.content : "").toLowerCase()
                 : "";
+              
+              // Detect short/vague queries — if the user's message is very short,
+              // only inject identity memories, never topic-specific ones.
+              // This prevents "help refine this build?" from pulling in specific build details.
+              const isVagueQuery = taskText.length < 80;
+              
+              // Stop words that are too common to be meaningful for relevance matching
+              const STOP_WORDS = new Set([
+                "help", "make", "create", "build", "show", "give", "find", "tell",
+                "want", "need", "like", "good", "best", "that", "this", "with",
+                "from", "have", "been", "will", "would", "could", "should",
+                "about", "what", "when", "where", "which", "there", "their",
+                "them", "then", "than", "some", "more", "also", "just",
+                "into", "over", "after", "before", "between", "under",
+                "level", "step", "guide", "setup", "using", "following",
+                "refine", "generate", "update", "change", "modify",
+              ]);
               
               // Filter memories by relevance to the current task
               // Always include identity/preference memories; filter out topic-specific ones
@@ -771,12 +788,16 @@ async function startServer() {
                 const valueLower = (m.value || "").toLowerCase();
                 // Always include identity/preference memories
                 if (ALWAYS_RELEVANT_KEYS.some(k => keyLower.includes(k))) return true;
-                // Include if any significant word from the memory appears in the task
+                // For vague queries, ONLY include identity memories — never topic-specific
+                if (isVagueQuery) return false;
+                // For substantive queries: require 2+ significant keyword matches
+                // with min word length of 5 chars and stop word exclusion
                 if (taskText.length > 0) {
                   const memWords = (keyLower + " " + valueLower)
                     .split(/\W+/)
-                    .filter((w: string) => w.length > 3); // skip short words
-                  return memWords.some((w: string) => taskText.includes(w));
+                    .filter((w: string) => w.length >= 5 && !STOP_WORDS.has(w));
+                  const matchCount = memWords.filter((w: string) => taskText.includes(w)).length;
+                  return matchCount >= 2; // Require 2+ keyword matches
                 }
                 return false;
               });
