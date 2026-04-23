@@ -405,24 +405,37 @@ export default function WebAppProjectPage() {
             {analyticsQuery.data?.viewsByDay && analyticsQuery.data.viewsByDay.length > 0 && (
               <Card className="border-border mb-4">
                 <CardHeader className="py-3">
-                  <CardTitle className="text-sm">Daily Views (Last 30 Days)</CardTitle>
+                  <CardTitle className="text-sm" id="daily-views-heading">Daily Views (Last 30 Days)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-end gap-1 h-24">
+                  <div className="flex items-end gap-1 h-24" role="img" aria-labelledby="daily-views-heading" aria-describedby="daily-views-summary">
                     {analyticsQuery.data.viewsByDay.map((d: { date: string; count: number }) => {
                       const max = Math.max(...analyticsQuery.data!.viewsByDay.map((x: { count: number }) => x.count));
                       const height = max > 0 ? (d.count / max) * 100 : 0;
                       return (
-                        <div key={d.date} className="flex-1 flex flex-col items-center gap-1" title={`${d.date}: ${d.count} views`}>
-                          <div className="w-full bg-primary/80 rounded-t" style={{ height: `${Math.max(height, 2)}%` }} />
+                        <div key={d.date} className="flex-1 flex flex-col items-center gap-1" title={`${d.date}: ${d.count} views`} role="presentation">
+                          <div className="w-full bg-primary/80 rounded-t" style={{ height: `${Math.max(height, 2)}%` }} aria-hidden="true" />
                         </div>
                       );
                     })}
                   </div>
+                  <p id="daily-views-summary" className="sr-only">
+                    Bar chart showing daily page views. Total: {analyticsQuery.data.viewsByDay.reduce((sum: number, d: { count: number }) => sum + d.count, 0)} views over {analyticsQuery.data.viewsByDay.length} days.
+                  </p>
                   <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                     <span>{analyticsQuery.data.viewsByDay[0]?.date}</span>
                     <span>{analyticsQuery.data.viewsByDay[analyticsQuery.data.viewsByDay.length - 1]?.date}</span>
                   </div>
+                  {/* Hidden data table for screen readers */}
+                  <table className="sr-only">
+                    <caption>Daily page views data</caption>
+                    <thead><tr><th scope="col">Date</th><th scope="col">Views</th></tr></thead>
+                    <tbody>
+                      {analyticsQuery.data.viewsByDay.map((d: { date: string; count: number }) => (
+                        <tr key={d.date}><td>{d.date}</td><td>{d.count}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </CardContent>
               </Card>
             )}
@@ -439,12 +452,12 @@ export default function WebAppProjectPage() {
                   {geoQuery.isLoading ? (
                     <div className="flex items-center justify-center py-6"><Loader2 className="w-4 h-4 animate-spin" /></div>
                   ) : geoQuery.data && geoQuery.data.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-2" role="list" aria-label="Visitors by country">
                       {geoQuery.data.slice(0, 10).map((g: { country: string; count: number }, i: number) => {
                         const maxCount = geoQuery.data![0]?.count || 1;
                         const pct = Math.round((g.count / maxCount) * 100);
                         return (
-                          <div key={g.country} className="flex items-center gap-3">
+                          <div key={g.country} className="flex items-center gap-3" role="listitem" aria-label={`${g.country}: ${g.count} visitors`}>
                             <span className="text-xs font-mono w-10 text-muted-foreground">{g.country}</span>
                             <div className="flex-1 h-5 bg-muted/50 rounded overflow-hidden">
                               <div
@@ -463,6 +476,18 @@ export default function WebAppProjectPage() {
                   ) : (
                     <p className="text-xs text-muted-foreground text-center py-6">No geographic data yet. Country detection requires CDN headers (CF-IPCountry).</p>
                   )}
+                  {/* Hidden data table for screen readers */}
+                  {geoQuery.data && geoQuery.data.length > 0 && (
+                    <table className="sr-only">
+                      <caption>Visitors by country data</caption>
+                      <thead><tr><th scope="col">Country</th><th scope="col">Visitors</th></tr></thead>
+                      <tbody>
+                        {geoQuery.data.map((g: { country: string; count: number }) => (
+                          <tr key={g.country}><td>{g.country}</td><td>{g.count}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </CardContent>
               </Card>
 
@@ -479,8 +504,8 @@ export default function WebAppProjectPage() {
                   ) : deviceQuery.data && deviceQuery.data.total > 0 ? (
                     <div className="flex items-center gap-6">
                       {/* SVG Donut Chart */}
-                      <div className="relative w-28 h-28 shrink-0">
-                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                      <div className="relative w-28 h-28 shrink-0" role="img" aria-label={`Device breakdown: ${deviceQuery.data.desktop} desktop, ${deviceQuery.data.tablet} tablet, ${deviceQuery.data.mobile} mobile, ${deviceQuery.data.unknown} unknown out of ${deviceQuery.data.total} total visitors`}>
+                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90" aria-hidden="true">
                           {(() => {
                             const d = deviceQuery.data!;
                             const total = d.total || 1;
@@ -534,6 +559,18 @@ export default function WebAppProjectPage() {
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground text-center py-6">No device data yet. Analytics tracking captures screen width from visitors.</p>
+                  )}
+                  {/* Hidden data table for screen readers */}
+                  {deviceQuery.data && deviceQuery.data.total > 0 && (
+                    <table className="sr-only">
+                      <caption>Device breakdown data</caption>
+                      <thead><tr><th scope="col">Device Type</th><th scope="col">Count</th><th scope="col">Percentage</th></tr></thead>
+                      <tbody>
+                        {[{ label: "Desktop", value: deviceQuery.data.desktop }, { label: "Tablet", value: deviceQuery.data.tablet }, { label: "Mobile", value: deviceQuery.data.mobile }, { label: "Unknown", value: deviceQuery.data.unknown }].filter(d => d.value > 0).map(d => (
+                          <tr key={d.label}><td>{d.label}</td><td>{d.value}</td><td>{Math.round((d.value / deviceQuery.data!.total) * 100)}%</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
                 </CardContent>
               </Card>

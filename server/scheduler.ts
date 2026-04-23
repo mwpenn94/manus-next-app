@@ -247,7 +247,7 @@ async function pollDueTasks(): Promise<void> {
     // Suppress repeated connection errors — only log once per 10 minutes
     const now = Date.now();
     if (now - lastPollErrLog > 600_000) {
-      console.warn("[Scheduler] Poll error (suppressing repeats for 10m):", err.message?.slice(0, 120));
+      console.warn("[Scheduler] Poll error (suppressing repeats for 10m):", err.message?.slice(0, 500));
       lastPollErrLog = now;
     }
   } finally {
@@ -275,6 +275,34 @@ export function startScheduler(): void {
   schedulerTimer = setInterval(() => {
     pollDueTasks().catch(console.error);
   }, POLL_INTERVAL_MS);
+
+  // Data retention job — runs daily at 02:00 UTC
+  const scheduleRetentionJob = () => {
+    const now = new Date();
+    const next2am = new Date(now);
+    next2am.setUTCHours(2, 0, 0, 0);
+    if (next2am <= now) next2am.setUTCDate(next2am.getUTCDate() + 1);
+    const delayMs = next2am.getTime() - now.getTime();
+    setTimeout(async () => {
+      try {
+        const { runRetentionJob } = await import("./dataRetention");
+        await runRetentionJob();
+      } catch (err) {
+        console.error("[Scheduler] Retention job failed:", err);
+      }
+      // Schedule next run (24h later)
+      setInterval(async () => {
+        try {
+          const { runRetentionJob } = await import("./dataRetention");
+          await runRetentionJob();
+        } catch (err) {
+          console.error("[Scheduler] Retention job failed:", err);
+        }
+      }, 24 * 60 * 60 * 1000);
+    }, delayMs);
+    console.log(`[Scheduler] Retention job scheduled — next run in ${Math.round(delayMs / 60000)}min`);
+  };
+  scheduleRetentionJob();
 }
 
 /**

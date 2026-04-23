@@ -243,3 +243,112 @@ export async function getSubscriptionDetails(subscriptionId: string): Promise<{
     return null;
   }
 }
+
+
+/**
+ * Create a Stripe Customer Portal session for self-service subscription management.
+ * Allows customers to update payment methods, cancel subscriptions, view invoices.
+ */
+export async function createPortalSession(
+  stripeCustomerId: string,
+  origin: string
+): Promise<{ url: string }> {
+  const stripe = getStripe();
+  const session = await stripe.billingPortal.sessions.create({
+    customer: stripeCustomerId,
+    return_url: `${origin}/settings`,
+  });
+  return { url: session.url };
+}
+
+/**
+ * Get invoice history for a customer.
+ * Returns paginated invoices with line items, status, and PDF URLs.
+ */
+export async function getInvoiceHistory(stripeCustomerId: string, limit = 20): Promise<{
+  invoices: Array<{
+    id: string;
+    number: string | null;
+    status: string | null;
+    amountDue: number;
+    amountPaid: number;
+    currency: string;
+    created: number;
+    periodStart: number;
+    periodEnd: number;
+    hostedInvoiceUrl: string | null;
+    invoicePdf: string | null;
+    lineItems: Array<{ description: string | null; amount: number }>;
+  }>;
+}> {
+  const stripe = getStripe();
+  const invoices = await stripe.invoices.list({
+    customer: stripeCustomerId,
+    limit,
+  });
+
+  return {
+    invoices: invoices.data.map((inv) => ({
+      id: inv.id,
+      number: inv.number,
+      status: inv.status,
+      amountDue: inv.amount_due,
+      amountPaid: inv.amount_paid,
+      currency: inv.currency,
+      created: inv.created,
+      periodStart: inv.period_start,
+      periodEnd: inv.period_end,
+      hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+      invoicePdf: inv.invoice_pdf ?? null,
+      lineItems: (inv.lines?.data ?? []).map((li) => ({
+        description: li.description,
+        amount: li.amount,
+      })),
+    })),
+  };
+}
+
+/**
+ * Get usage summary for metered billing subscriptions.
+ * Returns usage records for the current billing period.
+ */
+export async function getUsageSummary(subscriptionId: string): Promise<{
+  currentPeriodStart: number;
+  currentPeriodEnd: number;
+  items: Array<{
+    id: string;
+    priceId: string;
+    productName: string;
+    totalUsage: number;
+    unitAmount: number;
+    currency: string;
+  }>;
+} | null> {
+  try {
+    const stripe = getStripe();
+    const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ["items.data.price.product"],
+    }) as any;
+
+    const items = (sub.items?.data ?? []).map((item: any) => {
+      const price = item.price;
+      const product = typeof price?.product === "object" ? price.product : null;
+      return {
+        id: item.id,
+        priceId: price?.id ?? "",
+        productName: product?.name ?? "Unknown",
+        totalUsage: item.quantity ?? 0,
+        unitAmount: price?.unit_amount ?? 0,
+        currency: price?.currency ?? "usd",
+      };
+    });
+
+    return {
+      currentPeriodStart: sub.current_period_start ?? 0,
+      currentPeriodEnd: sub.current_period_end ?? 0,
+      items,
+    };
+  } catch {
+    return null;
+  }
+}

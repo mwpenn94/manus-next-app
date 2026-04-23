@@ -15,6 +15,7 @@
 import { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { URL } from "url";
+import { authenticateWsUpgrade } from "./wsAuth";
 
 // ── Types ──
 
@@ -227,8 +228,19 @@ export function initAnalyticsRelay(server: HttpServer): void {
       return;
     }
 
-    wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
-      wss.emit("connection", ws, request, projectId);
+    // V-001: Authenticate dashboard WS via JWT cookie
+    authenticateWsUpgrade(request).then(user => {
+      if (!user) {
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
+        wss.emit("connection", ws, request, projectId);
+      });
+    }).catch(() => {
+      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+      socket.destroy();
     });
   });
 

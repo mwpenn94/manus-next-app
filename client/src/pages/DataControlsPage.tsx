@@ -69,24 +69,32 @@ export default function DataControlsPage() {
     [webappProjects.data]
   );
 
+  const exportMutation = trpc.gdpr.exportData.useMutation({
+    onSuccess: (data) => {
+      window.open(data.url, "_blank");
+      toast.success(`Data exported successfully (${data.exportedAt})`);
+      setExporting(false);
+    },
+    onError: (err) => {
+      toast.error(`Export failed: ${err.message}`);
+      setExporting(false);
+    },
+  });
+
+  const deleteMutation = trpc.gdpr.deleteAllData.useMutation({
+    onSuccess: () => {
+      toast.success("All data deleted. You will be logged out.");
+      setConfirmDeleteData(false);
+      setTimeout(() => { window.location.href = "/"; }, 2000);
+    },
+    onError: (err) => {
+      toast.error(`Deletion failed: ${err.message}`);
+    },
+  });
+
   const handleExportData = async () => {
     setExporting(true);
-    try {
-      // Gather all user data
-      const tasks = await fetch("/api/trpc/task.list", { credentials: "include" }).then((r) => r.json());
-      const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `manus-next-data-export-${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Data exported successfully");
-    } catch {
-      toast.error("Export failed");
-    } finally {
-      setExporting(false);
-    }
+    exportMutation.mutate();
   };
 
   const handleClearBrowserData = () => {
@@ -312,7 +320,7 @@ export default function DataControlsPage() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDeleteData(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { toast.info("Data deletion request submitted. This may take a few minutes."); setConfirmDeleteData(false); }}>
+            <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>
               Delete Everything
             </Button>
           </DialogFooter>

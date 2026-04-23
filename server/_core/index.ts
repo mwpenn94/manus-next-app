@@ -119,7 +119,22 @@ async function startServer() {
 
   // ── Security Headers ──
   app.use(helmet({
-    contentSecurityPolicy: false, // CSP handled by Vite in dev, custom in prod
+    contentSecurityPolicy: process.env.NODE_ENV === "production" ? {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        connectSrc: ["'self'", "wss:", "ws:", "https://api.manus.im", "https://api.stripe.com", "https://*.amazonaws.com"],
+        frameSrc: ["'self'", "https://js.stripe.com"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    } : false, // CSP disabled in dev for Vite HMR
     crossOriginEmbedderPolicy: false, // Required for OAuth popups
   }));
 
@@ -156,10 +171,19 @@ async function startServer() {
     standardHeaders: true,
     legacyHeaders: false,
   });
+  // Analytics collect rate limit (P0 security fix)
+  const analyticsLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60, // 60 page views per minute per IP
+    message: { error: "Analytics rate limit exceeded." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
   app.use("/api/stream", streamLimiter);
   app.use("/api/upload", uploadLimiter);
   app.use("/api/tts", ttsLimiter);
   app.use("/api/trpc", apiLimiter);
+  app.use("/api/analytics/collect", analyticsLimiter);
 
   // ── Stripe webhook (raw body required BEFORE json parser) ──
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {

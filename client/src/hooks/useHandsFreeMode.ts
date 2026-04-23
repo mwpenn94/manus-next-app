@@ -38,8 +38,11 @@ export interface HandsFreeConfig {
   language?: string;          // ISO 639-1 language code for Whisper transcription (default: "en")
   autoListen?: boolean;       // Auto-restart mic after TTS finishes
   soundEffects?: boolean;     // Play audible cues
+  noiseGateThreshold?: number; // RMS threshold below which audio is treated as noise (default: 15)
+  inactivityTimeoutMs?: number; // Auto-deactivate after this many ms of no interaction (default: 120000 = 2min)
   onTranscription?: (text: string) => void;  // Called when speech is transcribed
   onSendMessage?: (text: string) => void;    // Called to send message to agent
+  onTimeout?: () => void;     // Called when inactivity timeout triggers
   /** Upload audio blob to S3 and return the URL. Injected from parent to use proper auth. */
   uploadAudio?: (blob: Blob, fileName: string, mimeType: string) => Promise<string>;
   /** Transcribe audio URL via Whisper. Injected from parent to use tRPC mutation with proper auth. */
@@ -77,6 +80,30 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
   
   const configRef = useRef(config);
   configRef.current = config;
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastInteractionRef = useRef<number>(Date.now());
+
+  // Inactivity timeout: auto-deactivate after configurable period
+  const resetInactivityTimer = useCallback(() => {
+    lastInteractionRef.current = Date.now();
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    const timeout = configRef.current.inactivityTimeoutMs ?? 120_000;
+    if (timeout > 0 && isActiveRef.current) {
+      inactivityTimerRef.current = setTimeout(() => {
+        if (isActiveRef.current) {
+          console.log("[HandsFree] Inactivity timeout — deactivating");
+          configRef.current.onTimeout?.();
+          // Deactivate inline to avoid stale closure
+          tts.stop();
+          stopMic();
+          stopProcessingPulse();
+          setState("idle");
+          setIsActive(false);
+          isActiveRef.current = false;
+        }
+      }, timeout);
+    }
+  }, [tts]);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -231,7 +258,7 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         let silenceStart = 0;
         let hasSpoken = false;
-        const SILENCE_THRESHOLD = 15;  // RMS below this = silence
+        const SILENCE_THRESHOLD = configRef.current.noiseGateThreshold ?? 15;  // Configurable noise gate
         const SILENCE_DURATION = 2000; // 2 seconds of silence to auto-stop
         const MIN_SPEECH_DURATION = 500; // Must speak for at least 500ms
         let speechStart = Date.now();
@@ -294,8 +321,9 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
   const activate = useCallback(() => {
     setIsActive(true);
     isActiveRef.current = true;
+    resetInactivityTimer();
     // startListening will be triggered by the isActive effect
-  }, []);
+  }, [resetInactivityTimer]);
 
   const deactivate = useCallback(() => {
     tts.stop();
@@ -304,15 +332,17 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
     setState("idle");
     setIsActive(false);
     isActiveRef.current = false;
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
   }, [tts, stopMic]);
 
   const interrupt = useCallback(() => {
     tts.stop();
     stopProcessingPulse();
+    resetInactivityTimer();
     if (isActiveRef.current) {
       startListening();
     }
-  }, [tts, startListening]);
+  }, [tts, startListening, resetInactivityTimer]);
 
   const notifyProcessing = useCallback(() => {
     if (!isActiveRef.current) return;
@@ -396,6 +426,7 @@ export function useHandsFreeMode(config: HandsFreeConfig): HandsFreeControls {
       stopMic();
       tts.stop();
       stopProcessingPulse();
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
   }, []);
 

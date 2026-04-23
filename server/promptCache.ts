@@ -107,6 +107,56 @@ class LRUCache<T> {
     this.cache.clear();
     this.metrics.size = 0;
   }
+
+  delete(key: string): boolean {
+    const existed = this.cache.delete(key);
+    if (existed) {
+      this.metrics.size = this.cache.size;
+    }
+    return existed;
+  }
+
+  keys(): string[] {
+    return Array.from(this.cache.keys());
+  }
+
+  /** Invalidate all entries matching a predicate */
+  invalidateWhere(predicate: (key: string, entry: CacheEntry<T>) => boolean): number {
+    let count = 0;
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
+      if (predicate(key, entry)) {
+        this.cache.delete(key);
+        count++;
+      }
+    }
+    this.metrics.size = this.cache.size;
+    return count;
+  }
+
+  /** Export all entries for persistence */
+  exportEntries(): Array<{ key: string; value: T; createdAt: number }> {
+    const result: Array<{ key: string; value: T; createdAt: number }> = [];
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
+      if (Date.now() - entry.createdAt <= this.ttlMs) {
+        result.push({ key, value: entry.value, createdAt: entry.createdAt });
+      }
+    }
+    return result;
+  }
+
+  /** Import entries from persistence (skips expired) */
+  importEntries(entries: Array<{ key: string; value: T; createdAt: number }>): number {
+    let imported = 0;
+    for (const entry of entries) {
+      if (Date.now() - entry.createdAt <= this.ttlMs) {
+        this.set(entry.key, entry.value);
+        imported++;
+      }
+    }
+    return imported;
+  }
 }
 
 // ── Hash Helpers ──
@@ -211,4 +261,53 @@ export function getCacheMetrics(): {
 export function clearAllCaches(): void {
   prefixCache.clear();
   memoryCache.clear();
+}
+
+/**
+ * Invalidate a specific prefix cache entry by hash.
+ */
+export function invalidatePrefix(hash: string): boolean {
+  return prefixCache.delete(hash);
+}
+
+/**
+ * Invalidate a specific memory cache entry by transcript hash.
+ */
+export function invalidateMemoryCache(transcript: string): boolean {
+  const hash = hashContent(transcript);
+  return memoryCache.delete(hash);
+}
+
+/**
+ * Invalidate all memory cache entries older than a given age (ms).
+ */
+export function invalidateStaleMemoryEntries(maxAgeMs: number): number {
+  const cutoff = Date.now() - maxAgeMs;
+  return memoryCache.invalidateWhere((_key, entry) => entry.createdAt < cutoff);
+}
+
+/**
+ * Export cache state for persistence (e.g., to disk or database).
+ */
+export function exportCacheState(): {
+  prefix: Array<{ key: string; value: PrefixCacheEntry; createdAt: number }>;
+  memory: Array<{ key: string; value: MemoryCacheEntry; createdAt: number }>;
+} {
+  return {
+    prefix: prefixCache.exportEntries(),
+    memory: memoryCache.exportEntries(),
+  };
+}
+
+/**
+ * Import cache state from persistence.
+ */
+export function importCacheState(state: {
+  prefix?: Array<{ key: string; value: PrefixCacheEntry; createdAt: number }>;
+  memory?: Array<{ key: string; value: MemoryCacheEntry; createdAt: number }>;
+}): { prefixImported: number; memoryImported: number } {
+  return {
+    prefixImported: state.prefix ? prefixCache.importEntries(state.prefix) : 0,
+    memoryImported: state.memory ? memoryCache.importEntries(state.memory) : 0,
+  };
 }

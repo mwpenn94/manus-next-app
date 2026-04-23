@@ -395,6 +395,73 @@ export default function ReplayPage() {
   const handleSkipForward = () => {
     setCurrentIndex((prev) => Math.min(prev + 10, events.length - 1));
   };
+  const handleStepBack = () => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  };
+  const handleStepForward = () => {
+    setCurrentIndex((prev) => Math.min(prev + 1, events.length - 1));
+  };
+  const handleSkipBack = () => {
+    setCurrentIndex((prev) => Math.max(prev - 10, 0));
+  };
+
+  // ── Keyboard Controls ──
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Don't capture when typing in inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (!taskId || events.length === 0) return;
+
+      switch (e.key) {
+        case " ":
+        case "k":
+          e.preventDefault();
+          if (isPlaying) handlePause();
+          else handlePlay();
+          break;
+        case "ArrowLeft":
+        case "j":
+          e.preventDefault();
+          if (e.shiftKey) handleSkipBack();
+          else handleStepBack();
+          break;
+        case "ArrowRight":
+        case "l":
+          e.preventDefault();
+          if (e.shiftKey) handleSkipForward();
+          else handleStepForward();
+          break;
+        case "Home":
+        case "0":
+          e.preventDefault();
+          handleRestart();
+          break;
+        case "End":
+          e.preventDefault();
+          setCurrentIndex(events.length - 1);
+          setIsPlaying(false);
+          break;
+        case "1":
+          e.preventDefault();
+          setPlaybackSpeed(0.5);
+          break;
+        case "2":
+          e.preventDefault();
+          setPlaybackSpeed(1);
+          break;
+        case "3":
+          e.preventDefault();
+          setPlaybackSpeed(2);
+          break;
+        case "4":
+          e.preventDefault();
+          setPlaybackSpeed(4);
+          break;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [taskId, events.length, isPlaying]);
 
   // Group events into logical steps for summary
   const stepSummary = useMemo(() => {
@@ -581,6 +648,16 @@ export default function ReplayPage() {
                       </Button>
                     ))}
                   </div>
+                </div>
+
+                {/* Keyboard shortcut hint */}
+                <div className="mt-2 text-center">
+                  <p className="text-[10px] text-muted-foreground/60">
+                    Keyboard: <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Space</kbd> play/pause
+                    {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">←→</kbd> step
+                    {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Shift+←→</kbd> skip 10
+                    {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">1-4</kbd> speed
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -133,7 +133,7 @@ describe("P25b — Hands-Free Mode Transcription Fix", () => {
 
     it("VAD auto-stops recording after 2s of silence", () => {
       expect(hook).toContain("SILENCE_DURATION = 2000");
-      expect(hook).toContain("SILENCE_THRESHOLD = 15");
+      expect(hook).toContain("noiseGateThreshold ?? 15");
     });
 
     it("hard ceiling stops recording after 30 seconds", () => {

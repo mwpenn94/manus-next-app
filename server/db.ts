@@ -384,7 +384,13 @@ export async function getUserLibraryArtifacts(userId: number, opts?: { type?: st
     conditions.push(eq(workspaceArtifacts.artifactType, opts.type as any));
   }
   if (opts?.search) {
-    conditions.push(like(workspaceArtifacts.label, `%${opts.search}%`));
+    // Full-text search across label and content
+    conditions.push(
+      or(
+        like(workspaceArtifacts.label, `%${opts.search}%`),
+        like(workspaceArtifacts.content, `%${opts.search}%`)
+      )
+    );
   }
 
   const [items, countResult] = await Promise.all([
@@ -442,6 +448,19 @@ export async function getUserMemories(userId: number, limit = 50) {
 export async function addMemoryEntry(entry: InsertMemoryEntry) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  // Deduplication: check if a memory with the same key already exists for this user
+  if (entry.userId && entry.key) {
+    const existing = await db.select({ id: memoryEntries.id }).from(memoryEntries)
+      .where(and(eq(memoryEntries.userId, entry.userId), eq(memoryEntries.key, entry.key)))
+      .limit(1);
+    if (existing.length > 0) {
+      // Update existing memory instead of creating duplicate
+      await db.update(memoryEntries)
+        .set({ value: entry.value })
+        .where(eq(memoryEntries.id, existing[0].id));
+      return;
+    }
+  }
   await db.insert(memoryEntries).values(entry);
 }
 
@@ -795,9 +814,16 @@ export async function getSlideDeck(id: number) {
 // ── Connectors helpers ──
 
 export async function getUserConnectors(userId: number) {
+  const { decryptToken } = await import("./encryption");
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(connectors).where(eq(connectors.userId, userId)).orderBy(desc(connectors.createdAt));
+  const rows = await db.select().from(connectors).where(eq(connectors.userId, userId)).orderBy(desc(connectors.createdAt));
+  // Decrypt tokens at read time (V-004 security fix — transparent to callers)
+  return rows.map(row => ({
+    ...row,
+    accessToken: row.accessToken ? decryptToken(row.accessToken) : row.accessToken,
+    refreshToken: row.refreshToken ? decryptToken(row.refreshToken) : row.refreshToken,
+  }));
 }
 
 export async function upsertConnector(connector: InsertConnector) {
@@ -1243,9 +1269,18 @@ export async function updateConnectorOAuthTokens(
     oauthScopes?: string | null;
   }
 ) {
+  const { encryptToken } = await import("./encryption");
   const db = await getDb();
   if (!db) return;
-  await db.update(connectors).set(data as any).where(eq(connectors.id, connectorDbId));
+  // Encrypt tokens at rest (V-004 security fix)
+  const encrypted = { ...data } as any;
+  if (encrypted.accessToken) {
+    encrypted.accessToken = encryptToken(encrypted.accessToken);
+  }
+  if (encrypted.refreshToken) {
+    encrypted.refreshToken = encryptToken(encrypted.refreshToken);
+  }
+  await db.update(connectors).set(encrypted).where(eq(connectors.id, connectorDbId));
 }
 
 export async function getConnectorById(id: number) {
@@ -1573,4 +1608,79 @@ export async function getDeviceAnalytics(projectId: number, days: number = 30) {
   }
 
   return { mobile, tablet, desktop, unknown, total: allViews.length };
+}
+
+/** Analytics with peak tracking and historical comparison */
+export async function getAnalyticsWithPeaks(projectId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) return { peakDay: null, peakHour: null, dailyAverage: 0, weekOverWeekChange: null };
+
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const allViews = await db.select().from(pageViews)
+    .where(and(eq(pageViews.projectId, projectId), gte(pageViews.viewedAt, since)));
+
+  // Peak day tracking
+  const dayMap: Record<string, number> = {};
+  const hourMap: Record<number, number> = {};
+  for (const v of allViews) {
+    if (v.viewedAt) {
+      const dateKey = v.viewedAt.toISOString().split("T")[0];
+      dayMap[dateKey] = (dayMap[dateKey] || 0) + 1;
+      hourMap[v.viewedAt.getUTCHours()] = (hourMap[v.viewedAt.getUTCHours()] || 0) + 1;
+    }
+  }
+
+  // Find peak day
+  let peakDay: { date: string; count: number } | null = null;
+  for (const [date, count] of Object.entries(dayMap)) {
+    if (!peakDay || count > peakDay.count) peakDay = { date, count };
+  }
+
+  // Find peak hour (0-23 UTC)
+  let peakHour: { hour: number; count: number } | null = null;
+  for (const [hour, count] of Object.entries(hourMap)) {
+    if (!peakHour || count > peakHour.count) peakHour = { hour: Number(hour), count };
+  }
+
+  // Daily average
+  const uniqueDays = Object.keys(dayMap).length;
+  const dailyAverage = uniqueDays > 0 ? Math.round(allViews.length / uniqueDays) : 0;
+
+  // Week-over-week comparison
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const thisWeek = allViews.filter(v => v.viewedAt && v.viewedAt >= oneWeekAgo).length;
+  const lastWeek = allViews.filter(v => v.viewedAt && v.viewedAt >= twoWeeksAgo && v.viewedAt < oneWeekAgo).length;
+  const weekOverWeekChange = lastWeek > 0 ? Math.round(((thisWeek - lastWeek) / lastWeek) * 100) : null;
+
+  return { peakDay, peakHour, dailyAverage, weekOverWeekChange };
+}
+
+/** Export analytics data as CSV-ready format */
+export async function exportAnalyticsData(projectId: number, days: number = 30): Promise<{
+  headers: string[];
+  rows: string[][];
+}> {
+  const db = await getDb();
+  if (!db) return { headers: [], rows: [] };
+
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const allViews = await db.select().from(pageViews)
+    .where(and(eq(pageViews.projectId, projectId), gte(pageViews.viewedAt, since)))
+    .orderBy(desc(pageViews.viewedAt));
+
+  const headers = ["Date", "Path", "Country", "Referrer", "Device Type", "Screen Width"];
+  const rows = allViews.map(v => {
+    const deviceType = v.screenWidth == null ? "unknown" : v.screenWidth < 768 ? "mobile" : v.screenWidth < 1024 ? "tablet" : "desktop";
+    return [
+      v.viewedAt?.toISOString() ?? "",
+      v.path ?? "/",
+      v.country ?? "Unknown",
+      v.referrer ?? "direct",
+      deviceType,
+      String(v.screenWidth ?? ""),
+    ];
+  });
+
+  return { headers, rows };
 }

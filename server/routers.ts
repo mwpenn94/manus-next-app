@@ -146,7 +146,14 @@ import {
   getReplayableTasks,
   getTaskTrends,
   getTaskPerformance,
+  getDb,
 } from "./db";
+import { eq, inArray } from "drizzle-orm";
+import {
+  tasks, taskMessages, memoryEntries, connectors, designs,
+  scheduledTasks, userPreferences, taskShares,
+  webappProjects, webappBuilds, webappDeployments,
+} from "../drizzle/schema";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"] as const;
 
@@ -406,6 +413,84 @@ export const appRouter = router({
       }),
   }),
 
+  /** GDPR Data Export & Deletion */
+  gdpr: router({
+    /** Export all user data as a JSON bundle */
+    exportData: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      const userId = ctx.user.id;
+      // Gather all user data from all tables
+      const [userTasks, userPrefs, userMemories, userConnectors, userWebapps, userDesigns, userSchedules] = await Promise.all([
+        db.select().from(tasks).where(eq(tasks.userId, userId)),
+        getUserPreferences(userId),
+        db.select().from(memoryEntries).where(eq(memoryEntries.userId, userId)),
+        db.select().from(connectors).where(eq(connectors.userId, userId)),
+        db.select().from(webappProjects).where(eq(webappProjects.userId, userId)),
+        db.select().from(designs).where(eq(designs.userId, userId)),
+        db.select().from(scheduledTasks).where(eq(scheduledTasks.userId, userId)),
+      ]);
+      // Get messages for all tasks
+      const taskIds = userTasks.map(t => t.id);
+      let allMessages: any[] = [];
+      if (taskIds.length > 0) {
+        allMessages = await db.select().from(taskMessages).where(inArray(taskMessages.taskId, taskIds));
+      }
+      const exportBundle = {
+        exportedAt: new Date().toISOString(),
+        user: { id: userId, name: ctx.user.name, email: ctx.user.email, role: ctx.user.role },
+        tasks: userTasks,
+        messages: allMessages,
+        preferences: userPrefs,
+        memories: userMemories,
+        connectors: userConnectors.map(c => ({ ...c, accessToken: "[REDACTED]", refreshToken: "[REDACTED]" })),
+        webappProjects: userWebapps,
+        designs: userDesigns,
+        scheduledTasks: userSchedules,
+      };
+      // Upload to S3 for download
+      const { storagePut } = await import("./storage");
+      const key = `gdpr-exports/${userId}/export-${Date.now()}.json`;
+      const { url } = await storagePut(key, JSON.stringify(exportBundle, null, 2), "application/json");
+      return { url, exportedAt: exportBundle.exportedAt };
+    }),
+    /** Delete all user data (GDPR right to erasure) */
+    deleteAllData: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database unavailable");
+      const userId = ctx.user.id;
+      // Delete in dependency order
+      const userTaskRows = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.userId, userId));
+      const taskIds = userTaskRows.map(t => t.id);
+      if (taskIds.length > 0) {
+        await db.delete(taskMessages).where(inArray(taskMessages.taskId, taskIds));
+        // taskShares uses taskExternalId, get external IDs first
+        const taskExternalIds = userTaskRows.map((t: any) => t.externalId).filter(Boolean);
+        if (taskExternalIds.length > 0) {
+          await db.delete(taskShares).where(inArray(taskShares.taskExternalId, taskExternalIds));
+        }
+      }
+      await db.delete(tasks).where(eq(tasks.userId, userId));
+      await db.delete(memoryEntries).where(eq(memoryEntries.userId, userId));
+      await db.delete(connectors).where(eq(connectors.userId, userId));
+      await db.delete(webappBuilds).where(eq(webappBuilds.userId, userId));
+      const projectRows = await db.select({ id: webappProjects.id }).from(webappProjects).where(eq(webappProjects.userId, userId));
+      if (projectRows.length > 0) {
+        await db.delete(webappDeployments).where(inArray(webappDeployments.projectId, projectRows.map(p => p.id)));
+      }
+      await db.delete(webappProjects).where(eq(webappProjects.userId, userId));
+      await db.delete(designs).where(eq(designs.userId, userId));
+      await db.delete(scheduledTasks).where(eq(scheduledTasks.userId, userId));
+      await db.delete(userPreferences).where(eq(userPreferences.userId, userId));
+      // Notify owner
+      try {
+        const { notifyOwner } = await import("./_core/notification");
+        await notifyOwner({ title: "GDPR Data Deletion", content: `User ${ctx.user.name} (ID: ${userId}) requested full data deletion.` });
+      } catch {}
+      return { deleted: true, deletedAt: new Date().toISOString() };
+    }),
+  }),
+
   /** Usage stats — real task counts from the database */
   usage: router({
     stats: protectedProcedure.query(async ({ ctx }) => {
@@ -625,47 +710,60 @@ export const appRouter = router({
     /** Public: view a shared task (no auth required) */
     view: publicProcedure
       .input(z.object({
-        shareToken: z.string().max(50),
+        shareToken: z.string().min(1).max(50),
         password: z.string().max(200).optional(),
       }))
       .query(async ({ input }) => {
-        const share = await getTaskShareByToken(input.shareToken);
-        if (!share) return { error: "Share not found" };
+        try {
+          const share = await getTaskShareByToken(input.shareToken);
+          if (!share) return { error: "Share not found", code: "NOT_FOUND" };
 
-        // Check expiration
-        if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
-          return { error: "This share link has expired" };
-        }
-
-        // Check password
-        if (share.passwordHash) {
-          if (!input.password) {
-            return { error: "password_required" };
+          // Check expiration with tolerance for clock skew (30s)
+          if (share.expiresAt) {
+            const expiryTime = new Date(share.expiresAt).getTime();
+            const now = Date.now() - 30_000; // 30s tolerance
+            if (expiryTime < now) {
+              return { error: "This share link has expired", code: "EXPIRED" };
+            }
           }
-          const crypto = await import("crypto");
-          const hash = crypto.createHash("sha256").update(input.password).digest("hex");
-          if (hash !== share.passwordHash) {
-            return { error: "Incorrect password" };
+
+          // Check password
+          if (share.passwordHash) {
+            if (!input.password) {
+              return { error: "password_required", code: "PASSWORD_REQUIRED" };
+            }
+            const crypto = await import("crypto");
+            const hash = crypto.createHash("sha256").update(input.password).digest("hex");
+            if (hash !== share.passwordHash) {
+              return { error: "Incorrect password", code: "WRONG_PASSWORD" };
+            }
           }
+
+          // Increment view count (non-blocking — don't fail the view if count update fails)
+          incrementShareViewCount(input.shareToken).catch(err => {
+            console.error("[Share] Failed to increment view count:", err);
+          });
+
+          // Get task and messages
+          const task = await getTaskByExternalId(share.taskExternalId);
+          if (!task) return { error: "Task not found", code: "TASK_DELETED" };
+
+          const messages = await getTaskMessages(task.id);
+
+          return {
+            task: { title: task.title, status: task.status, createdAt: task.createdAt },
+            messages: messages.map(m => ({
+              role: m.role,
+              content: m.content,
+              createdAt: m.createdAt,
+            })),
+            viewCount: (share as any).viewCount ?? 0,
+            expiresAt: share.expiresAt ?? null,
+          };
+        } catch (err) {
+          console.error("[Share] Error viewing shared task:", err);
+          return { error: "An unexpected error occurred", code: "INTERNAL_ERROR" };
         }
-
-        // Increment view count
-        await incrementShareViewCount(input.shareToken);
-
-        // Get task and messages
-        const task = await getTaskByExternalId(share.taskExternalId);
-        if (!task) return { error: "Task not found" };
-
-        const messages = await getTaskMessages(task.id);
-
-        return {
-          task: { title: task.title, status: task.status, createdAt: task.createdAt },
-          messages: messages.map(m => ({
-            role: m.role,
-            content: m.content,
-            createdAt: m.createdAt,
-          })),
-        };
       }),
   }),
 
@@ -1961,6 +2059,16 @@ export const appRouter = router({
       const { getSubscriptionDetails } = await import("./stripe");
       return getSubscriptionDetails(ctx.user.stripeSubscriptionId);
     }),
+    /** Create a Stripe Customer Portal session for self-service management */
+    createPortalSession: protectedProcedure
+      .input(z.object({ origin: z.string().url() }))
+      .mutation(async ({ ctx, input }) => {
+        const { createPortalSession } = await import("./stripe");
+        if (!ctx.user.stripeCustomerId) {
+          throw new Error("No Stripe customer found. Please make a purchase first.");
+        }
+        return createPortalSession(ctx.user.stripeCustomerId, input.origin);
+      }),
   }),
   // ── Video Generation (#62) ────────────────────────────────────────────────────────
   video: router({
@@ -2431,7 +2539,7 @@ export const appRouter = router({
         description: z.string().optional(),
         framework: z.string().optional(),
         githubRepoId: z.number().nullable().optional(),
-        customDomain: z.string().nullable().optional(),
+        customDomain: z.string().regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i, "Invalid domain format").nullable().optional(),
         subdomainPrefix: z.string().optional(),
         envVars: z.record(z.string(), z.string()).optional(),
         buildCommand: z.string().optional(),
@@ -2441,6 +2549,11 @@ export const appRouter = router({
         deployTarget: z.enum(["manus", "github_pages", "vercel", "netlify"]).optional(),
         visibility: z.enum(["public", "private"]).optional(),
         faviconUrl: z.string().nullable().optional(),
+        metaDescription: z.string().max(500).nullable().optional(),
+        ogImageUrl: z.string().nullable().optional(),
+        canonicalUrl: z.string().nullable().optional(),
+        ogTitle: z.string().max(256).nullable().optional(),
+        keywords: z.string().max(500).nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
@@ -2497,6 +2610,19 @@ export const appRouter = router({
           }
 
           if (htmlContent) {
+            // V-005: Content safety check before publishing
+            const { checkContentSafety } = await import("./contentSafety");
+            const safetyVerdict = await checkContentSafety(htmlContent);
+            if (!safetyVerdict.safe) {
+              const reasons = [
+                ...safetyVerdict.tier1Flags.map(f => `[${f.severity}] ${f.category}: ${f.detail}`),
+                ...(safetyVerdict.tier2Verdict?.categories || []),
+              ].join("; ");
+              await updateWebappDeployment(depId, { status: "failed", errorMessage: `Content safety check failed: ${reasons}` });
+              await updateWebappProject(project.id, { deployStatus: "failed" });
+              throw new Error(`Content safety check failed: ${reasons}`);
+            }
+
             // Inject analytics tracking pixel
             const trackingScript = `<script src="/api/analytics/pixel.js?pid=${project.externalId}" defer></script>`;
             let finalHtml = htmlContent;
@@ -2650,9 +2776,49 @@ Provide a JSON response with this exact structure:
         return getDeviceAnalytics(project.id, input.days ?? 30);
       }),
 
+    /** Analytics with peak tracking and historical comparison */
+    analyticsWithPeaks: protectedProcedure
+      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { getAnalyticsWithPeaks } = await import("./db");
+        return getAnalyticsWithPeaks(project.id, input.days ?? 30);
+      }),
+    /** Export analytics data as CSV-ready format */
+    exportAnalytics: protectedProcedure
+      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const { exportAnalyticsData } = await import("./db");
+        return exportAnalyticsData(project.id, input.days ?? 30);
+      }),
+
+    /** Generate sitemap.xml for a project */
+    generateSitemap: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        const domain = project.customDomain || `${project.subdomainPrefix}.manus.space`;
+        const baseUrl = `https://${domain}`;
+        // Get top paths from analytics
+        const { getPageViewStats } = await import("./db");
+        const stats = await getPageViewStats(project.id, 90);
+        const paths = stats?.topPaths?.map((p: { path: string }) => p.path) ?? ["/"];
+        if (!paths.includes("/")) paths.unshift("/");
+        const now = new Date().toISOString().split("T")[0];
+        const urls = paths.map((path: string) =>
+          `  <url>\n    <loc>${baseUrl}${path}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${path === "/" ? "1.0" : "0.8"}</priority>\n  </url>`
+        ).join("\n");
+        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+        return { sitemap, urlCount: paths.length };
+      }),
+
     /** Request SSL certificate for custom domain */
     requestSsl: protectedProcedure
-      .input(z.object({ externalId: z.string(), domain: z.string().min(1).max(256) }))
+      .input(z.object({ externalId: z.string(), domain: z.string().min(1).max(256).regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i, "Invalid domain format") }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");

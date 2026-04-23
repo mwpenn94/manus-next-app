@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -11,15 +11,50 @@ import {
   Clock,
   Plus,
   Trash2,
-  ToggleLeft,
-  ToggleRight,
   Calendar,
   Timer,
   Play,
   Pause,
   Loader2,
   AlertCircle,
+  Globe,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  RotateCw,
 } from "lucide-react";
+
+/** Get the user's IANA timezone string */
+function getUserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
+
+/** Format a date in the user's local timezone with explicit TZ label */
+function formatLocalTime(date: Date | string | null | undefined): string {
+  if (!date) return "—";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "—";
+  const tz = getUserTimezone();
+  return d.toLocaleString(undefined, {
+    timeZone: tz,
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
+
+/** Get a short timezone abbreviation (e.g., "MST", "EST") */
+function getTimezoneAbbr(): string {
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(new Date());
+    return parts.find(p => p.type === "timeZoneName")?.value ?? getUserTimezone();
+  } catch {
+    return getUserTimezone();
+  }
+}
 
 export default function SchedulePage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -32,8 +67,12 @@ export default function SchedulePage() {
   const [intervalMinutes, setIntervalMinutes] = useState(60);
   const [repeat, setRepeat] = useState(true);
 
+  const timezone = useMemo(() => getUserTimezone(), []);
+  const tzAbbr = useMemo(() => getTimezoneAbbr(), []);
+
   const schedulesQuery = trpc.schedule.list.useQuery(undefined, {
     enabled: isAuthenticated,
+    refetchInterval: 30_000, // Auto-refresh every 30s to show status updates
   });
 
   const createMutation = trpc.schedule.create.useMutation({
@@ -90,6 +129,9 @@ export default function SchedulePage() {
     });
   };
 
+  // Count failed schedules for notification badge
+  const failedCount = schedules.filter(s => s.lastStatus === "error").length;
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -99,14 +141,28 @@ export default function SchedulePage() {
               <Clock className="w-6 h-6" />
               Scheduled Tasks
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Automate recurring tasks with cron or interval schedules
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-muted-foreground">
+                Automate recurring tasks with cron or interval schedules
+              </p>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1">
+                <Globe className="w-3 h-3" />
+                {tzAbbr}
+              </span>
+            </div>
           </div>
-          <Button onClick={() => setShowCreate(!showCreate)} size="sm">
-            <Plus className="w-4 h-4 mr-1" />
-            New Schedule
-          </Button>
+          <div className="flex items-center gap-2">
+            {failedCount > 0 && (
+              <span className="text-[11px] px-2 py-1 rounded-full bg-red-500/10 text-red-500 flex items-center gap-1 font-medium">
+                <AlertTriangle className="w-3 h-3" />
+                {failedCount} failed
+              </span>
+            )}
+            <Button onClick={() => setShowCreate(!showCreate)} size="sm">
+              <Plus className="w-4 h-4 mr-1" />
+              New Schedule
+            </Button>
+          </div>
         </div>
 
         {/* Create Form */}
@@ -169,6 +225,9 @@ export default function SchedulePage() {
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     6-field format: seconds minutes hours day-of-month month day-of-week
+                    <span className="ml-1 text-muted-foreground/60">
+                      (times are in your local timezone: {timezone})
+                    </span>
                   </p>
                 </div>
               )}
@@ -217,7 +276,12 @@ export default function SchedulePage() {
         ) : (
           <div className="space-y-3">
             {schedules.map((schedule) => (
-              <Card key={schedule.id} className={!schedule.enabled ? "opacity-60" : ""}>
+              <Card
+                key={schedule.id}
+                className={`${!schedule.enabled ? "opacity-60" : ""} ${
+                  schedule.lastStatus === "error" ? "border-red-500/30" : ""
+                }`}
+              >
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -234,7 +298,7 @@ export default function SchedulePage() {
                         </span>
                         {schedule.lastStatus && (
                           <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                            className={`text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
                               schedule.lastStatus === "success"
                                 ? "bg-blue-500/10 text-blue-500"
                                 : schedule.lastStatus === "error"
@@ -242,6 +306,9 @@ export default function SchedulePage() {
                                 : "bg-yellow-500/10 text-yellow-500"
                             }`}
                           >
+                            {schedule.lastStatus === "success" && <CheckCircle2 className="w-2.5 h-2.5" />}
+                            {schedule.lastStatus === "error" && <XCircle className="w-2.5 h-2.5" />}
+                            {schedule.lastStatus === "running" && <RotateCw className="w-2.5 h-2.5 animate-spin" />}
                             {schedule.lastStatus}
                           </span>
                         )}
@@ -249,7 +316,19 @@ export default function SchedulePage() {
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                         {schedule.prompt}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+
+                      {/* Failure notification banner */}
+                      {schedule.lastStatus === "error" && (
+                        <div className="mt-2 px-2.5 py-1.5 bg-red-500/5 border border-red-500/20 rounded-md flex items-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                          <p className="text-xs text-red-400">
+                            Last execution failed. Check task history for details.
+                            {schedule.enabled && " The schedule will retry at the next scheduled time."}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                         {schedule.scheduleType === "cron" ? (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -265,7 +344,17 @@ export default function SchedulePage() {
                           <span>Runs: {schedule.runCount}</span>
                         )}
                         {schedule.lastRunAt && (
-                          <span>Last: {new Date(schedule.lastRunAt).toLocaleString()}</span>
+                          <span title={`Last run: ${new Date(schedule.lastRunAt).toISOString()}`}>
+                            Last: {formatLocalTime(schedule.lastRunAt)}
+                          </span>
+                        )}
+                        {schedule.nextRunAt && schedule.enabled && (
+                          <span
+                            className="text-primary/70"
+                            title={`Next run: ${new Date(schedule.nextRunAt).toISOString()}`}
+                          >
+                            Next: {formatLocalTime(schedule.nextRunAt)} {tzAbbr}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -313,6 +402,10 @@ export default function SchedulePage() {
                 Scheduled tasks run automatically at the specified interval or cron time.
                 Each execution creates a new task with the specified prompt. The scheduler
                 checks for due tasks every minute. Minimum interval is 1 minute.
+              </p>
+              <p className="mt-1.5 flex items-center gap-1">
+                <Globe className="w-3 h-3" />
+                All times shown in your local timezone: <strong>{timezone}</strong> ({tzAbbr})
               </p>
             </div>
           </div>

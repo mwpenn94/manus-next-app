@@ -363,3 +363,166 @@ export function isSslAvailable(): boolean {
 export function getSslProvider(): "acm" | "simulated" {
   return isAcmConfigured() ? "acm" : "simulated";
 }
+
+// ── Auto-Renewal & Expiry Warnings ──
+
+/** Days before expiry to trigger a warning */
+const EXPIRY_WARNING_DAYS = 30;
+/** Days before expiry to trigger auto-renewal */
+const AUTO_RENEWAL_DAYS = 14;
+
+export interface CertExpiryInfo {
+  certArn: string;
+  domain: string | null;
+  status: SslStatus;
+  issuedAt: number | null;
+  /** Estimated expiry (ACM certs are valid for 13 months) */
+  estimatedExpiryAt: number | null;
+  /** Days until expiry (null if not issued) */
+  daysUntilExpiry: number | null;
+  /** Whether the cert is in the warning zone */
+  expiryWarning: boolean;
+  /** Whether auto-renewal should be triggered */
+  needsRenewal: boolean;
+}
+
+/**
+ * Check certificate expiry and return warning/renewal status.
+ * ACM certificates are valid for 13 months (~395 days).
+ */
+export async function checkCertificateExpiry(certArn: string): Promise<CertExpiryInfo> {
+  const status = await getCertificateStatus(certArn);
+  const ACM_VALIDITY_DAYS = 395; // ~13 months
+
+  let estimatedExpiryAt: number | null = null;
+  let daysUntilExpiry: number | null = null;
+  let expiryWarning = false;
+  let needsRenewal = false;
+
+  if (status.issuedAt) {
+    estimatedExpiryAt = status.issuedAt + ACM_VALIDITY_DAYS * 24 * 60 * 60 * 1000;
+    daysUntilExpiry = Math.floor((estimatedExpiryAt - Date.now()) / (24 * 60 * 60 * 1000));
+    expiryWarning = daysUntilExpiry <= EXPIRY_WARNING_DAYS;
+    needsRenewal = daysUntilExpiry <= AUTO_RENEWAL_DAYS;
+  }
+
+  // Also flag expired/revoked certs
+  if (status.status === "expired" || status.status === "revoked") {
+    expiryWarning = true;
+    needsRenewal = true;
+    daysUntilExpiry = 0;
+  }
+
+  return {
+    certArn,
+    domain: status.domain,
+    status: status.status,
+    issuedAt: status.issuedAt,
+    estimatedExpiryAt,
+    daysUntilExpiry,
+    expiryWarning,
+    needsRenewal,
+  };
+}
+
+/**
+ * Request a certificate covering multiple domains (SAN certificate).
+ * The first domain is the primary, additional domains are Subject Alternative Names.
+ */
+export async function requestMultiDomainCertificate(
+  primaryDomain: string,
+  additionalDomains: string[]
+): Promise<SslProvisioningResult> {
+  // Validate all domains
+  const allDomains = [primaryDomain, ...additionalDomains];
+  for (const domain of allDomains) {
+    if (!isValidDomain(domain)) {
+      return {
+        success: false,
+        certArn: null,
+        status: "failed",
+        validationRecords: [],
+        error: `Invalid domain format: ${domain}`,
+      };
+    }
+  }
+
+  if (isAcmConfigured()) {
+    return requestAcmMultiDomainCertificate(primaryDomain, additionalDomains);
+  }
+
+  // Simulated: just create a cert for the primary domain
+  return requestSimulatedCertificate(primaryDomain);
+}
+
+async function requestAcmMultiDomainCertificate(
+  primaryDomain: string,
+  additionalDomains: string[]
+): Promise<SslProvisioningResult> {
+  try {
+    const { ACMClient, RequestCertificateCommand, DescribeCertificateCommand } = await import("@aws-sdk/client-acm");
+
+    const client = new ACMClient({
+      region: process.env.AWS_REGION || "us-east-1",
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+
+    const requestResult = await client.send(new RequestCertificateCommand({
+      DomainName: primaryDomain,
+      SubjectAlternativeNames: additionalDomains.length > 0 ? [primaryDomain, ...additionalDomains] : undefined,
+      ValidationMethod: "DNS",
+      Tags: [
+        { Key: "ManagedBy", Value: "manus-next" },
+        { Key: "Domain", Value: primaryDomain },
+        { Key: "MultiDomain", Value: "true" },
+      ],
+    }));
+
+    const certArn = requestResult.CertificateArn;
+    if (!certArn) {
+      return {
+        success: false,
+        certArn: null,
+        status: "failed",
+        validationRecords: [],
+        error: "ACM did not return a certificate ARN",
+      };
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const describeResult = await client.send(new DescribeCertificateCommand({
+      CertificateArn: certArn,
+    }));
+
+    const validationRecords: DnsValidationRecord[] = [];
+    for (const opt of describeResult.Certificate?.DomainValidationOptions || []) {
+      if (opt.ResourceRecord) {
+        validationRecords.push({
+          name: opt.ResourceRecord.Name || "",
+          value: opt.ResourceRecord.Value || "",
+          type: "CNAME",
+        });
+      }
+    }
+
+    return {
+      success: true,
+      certArn,
+      status: "pending_validation",
+      validationRecords,
+    };
+  } catch (err: any) {
+    console.error("[SSL] ACM multi-domain certificate request failed:", err.message);
+    return {
+      success: false,
+      certArn: null,
+      status: "failed",
+      validationRecords: [],
+      error: err.message,
+    };
+  }
+}

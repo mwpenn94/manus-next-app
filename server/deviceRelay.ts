@@ -9,6 +9,7 @@ import { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { URL } from "url";
 import { getDeviceByPairingCode, getDeviceByExternalId, updateDeviceStatus } from "./db";
+import { authenticateWsUpgrade } from "./wsAuth";
 
 type WsType = any;
 
@@ -53,8 +54,19 @@ export function initDeviceRelay(server: HttpServer) {
       return;
     }
 
-    wss.handleUpgrade(request, socket, head, (ws: any) => {
-      handleDeviceConnection(ws, deviceId, pairingCode || undefined);
+    // V-001: Authenticate WebSocket upgrade via JWT cookie
+    authenticateWsUpgrade(request).then(user => {
+      if (!user) {
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      wss.handleUpgrade(request, socket, head, (ws: any) => {
+        handleDeviceConnection(ws, deviceId, pairingCode || undefined);
+      });
+    }).catch(() => {
+      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+      socket.destroy();
     });
   });
 

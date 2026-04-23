@@ -784,6 +784,16 @@ export const webappProjects = mysqlTable("webapp_projects", {
   sslStatus: mysqlEnum("sslStatus", ["none", "pending_validation", "issued", "failed", "expired", "revoked"]).default("none"),
   /** DNS validation records as JSON */
   sslValidationRecords: json("sslValidationRecords").$type<Array<{ name: string; value: string; type: string }>>(),
+  /** SEO: meta description */
+  metaDescription: varchar("metaDescription", { length: 500 }),
+  /** SEO: Open Graph image URL */
+  ogImageUrl: text("ogImageUrl"),
+  /** SEO: canonical URL override */
+  canonicalUrl: text("canonicalUrl"),
+  /** SEO: social media title (og:title) */
+  ogTitle: varchar("ogTitle", { length: 256 }),
+  /** SEO: keywords (comma-separated) */
+  keywords: varchar("keywords", { length: 500 }),
   /** Last deployed at */
   lastDeployedAt: timestamp("lastDeployedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -46,6 +46,7 @@ import { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { URL } from "url";
 import crypto from "crypto";
+import { authenticateWsUpgrade } from "./wsAuth";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -421,12 +422,21 @@ export function initVoiceStream(httpServer: HttpServer): void {
       return; // Let other upgrade handlers (Vite HMR, device relay) handle it
     }
 
-    // Extract auth from query params (cookie-based auth not available in WS upgrade)
-    const userId = url.searchParams.get("userId");
+    // V-001: Authenticate via JWT cookie (replaces query param userId)
     const taskId = url.searchParams.get("taskId");
 
-    wss.handleUpgrade(request, socket, head, (ws: any) => {
-      wss.emit("connection", ws, request, userId, taskId);
+    authenticateWsUpgrade(request).then(user => {
+      if (!user) {
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      wss.handleUpgrade(request, socket, head, (ws: any) => {
+        wss.emit("connection", ws, request, String(user.id), taskId);
+      });
+    }).catch(() => {
+      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+      socket.destroy();
     });
   });
 
