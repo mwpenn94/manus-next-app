@@ -724,7 +724,12 @@ async function fetchPageContent(url: string, maxChars = 8000): Promise<string> {
       redirect: "follow",
     });
 
-    if (!resp.ok) return `(Failed to fetch: HTTP ${resp.status})`;
+    if (!resp.ok) {
+      if (resp.status === 403 || resp.status === 401) {
+        return `(Access blocked: HTTP ${resp.status}. This site blocks automated access. Use the SITE ACCESS FALLBACK STRATEGY: try web_search for cached content, cloud_browser for JS rendering, or Archive.org for historical snapshots.)`;
+      }
+      return `(Failed to fetch: HTTP ${resp.status})`;
+    }
 
     const contentType = resp.headers.get("content-type") || "";
     if (!contentType.includes("text/html") && !contentType.includes("text/plain")) {
@@ -2466,8 +2471,12 @@ async function executeRunCommand(args: {
     return { success: false, result: "No active webapp project. Use create_webapp first." };
   }
 
-  // Security: block dangerous commands
+  // Security: block dangerous commands and host-app modification
   const blocked = ["rm -rf /", "rm -rf /*", "mkfs", "dd if=", ":(){ :|:& };:"];
+  const hostAppPaths = ["/home/ubuntu/manus-next-app", "manus-next-app"];
+  if (hostAppPaths.some(p => args.command.includes(p))) {
+    return { success: false, result: "Cannot modify the host application. Commands must operate within the active project sandbox only." };
+  }
   if (blocked.some(b => args.command.includes(b))) {
     return { success: false, result: "Command blocked for safety reasons." };
   }

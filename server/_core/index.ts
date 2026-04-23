@@ -841,6 +841,33 @@ async function startServer() {
     }
   });
 
+  // Webapp preview proxy — forwards /api/webapp-preview/* to the agent's dev server
+  app.use("/api/webapp-preview", async (req, res) => {
+    try {
+      const { getActiveProject } = await import("../agentTools");
+      const { port } = getActiveProject();
+      if (!port) {
+        return res.status(503).json({ error: "No active webapp project" });
+      }
+      const targetUrl = `http://127.0.0.1:${port}${req.url}`;
+      const http = await import("http");
+      const proxyReq = http.request(targetUrl, { method: req.method, headers: { ...req.headers, host: `127.0.0.1:${port}` } }, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+        proxyRes.pipe(res, { end: true });
+      });
+      proxyReq.on("error", () => {
+        if (!res.headersSent) res.status(502).json({ error: "Webapp dev server not reachable" });
+      });
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        req.pipe(proxyReq, { end: true });
+      } else {
+        proxyReq.end();
+      }
+    } catch (err: any) {
+      if (!res.headersSent) res.status(500).json({ error: err.message });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

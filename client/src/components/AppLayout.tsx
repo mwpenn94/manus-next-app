@@ -20,7 +20,7 @@ import { useBridge } from "@/contexts/BridgeContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import ModelSelector from "@/components/ModelSelector";
+import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -1085,7 +1085,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           {/* ModelSelector — show on desktop Home route so users can switch models */}
           {location === "/" && (
             <div className="ml-4">
-              <ModelSelector compact />
+              <ModelSelector
+                compact
+                selectedModelId={(() => { try { const m = localStorage.getItem("manus-agent-mode"); if (m && MODE_TO_MODEL[m]) return MODE_TO_MODEL[m]; } catch {} return "manus-next-max"; })()}
+                onModelChange={(modelId) => { try { localStorage.setItem("manus-selected-model", modelId); localStorage.setItem("manus-agent-mode", MODEL_TO_MODE[modelId] || "quality"); } catch {} }}
+              />
             </div>
           )}
           <div className="ml-auto flex items-center gap-1">

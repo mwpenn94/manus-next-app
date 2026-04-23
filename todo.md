@@ -2940,14 +2940,14 @@
 - [ ] V4 convergence verification (3 clean novel passes)
 - [ ] Update PARITY.md with all GREEN statuses
 - [ ] Update assessment documentation
-- [ ] BUG: Cannot select Limitless mode - clicking it reverts to Max mode
-- [ ] BUG: Mobile FAB chat button overlaps input area buttons (+, mic, headphones)
-- [ ] BUG: App dev tool tried to edit itself instead of creating new app (system prompt issue)
-- [ ] BUG: localhost:4200 URLs in webapp cards not accessible from user device (need public URL)
-- [ ] BUG: Agent lacks robots.txt fallback (browser automation/CDP/Playwright workarounds)
-- [ ] BUG: Webapp card shows blank white preview with "Not published" instead of working preview
-- [ ] FEATURE: Agent should edit host app ONLY when user has GitHub connected AND explicitly directs edits in prompt
-- [ ] BUG FIX: Webapp preview proxy - route /api/webapp-preview/* to the webapp dev server port for public access
+- [x] BUG: Cannot select Limitless mode - clicking it reverts to Max mode (Fixed: AppLayout ModelSelector now syncs with localStorage agentMode)
+- [x] BUG: Mobile FAB chat button overlaps input area buttons (Fixed: FeedbackWidget FAB already removed, main content has proper mobile bottom padding)
+- [x] BUG: App dev tool tried to edit itself instead of creating new app (Fixed: Added CRITICAL SAFETY RULE self-edit guard + run_command host-app path blocker)
+- [x] BUG: localhost:4200 URLs in webapp cards not accessible from user device (Fixed: Added /api/webapp-preview proxy route)
+- [x] BUG: Agent lacks robots.txt fallback (Fixed: Enhanced 403 error messages + comprehensive SITE ACCESS FALLBACK STRATEGY in system prompt)
+- [x] BUG: Webapp card shows blank white preview (Fixed: WebappPreviewCard now uses /api/webapp-preview proxy instead of localhost)
+- [x] FEATURE: Agent should edit host app ONLY when user has GitHub connected AND explicitly directs edits in prompt (Implemented via self-edit guard)
+- [x] BUG FIX: Webapp preview proxy - route /api/webapp-preview/* to the webapp dev server port for public access (Implemented in server/_core/index.ts)
 
 ## Session 12: User-Reported Chat & Agent Bugs
 

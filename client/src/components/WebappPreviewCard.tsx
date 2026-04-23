@@ -69,7 +69,9 @@ export default function WebappPreviewCard({
   const [activeTab, setActiveTab] = useState<ManagementTab>("preview");
   const [deviceView, setDeviceView] = useState<DeviceView>("desktop");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [iframeSrc, setIframeSrc] = useState(previewUrl || "");
+  // Use the webapp preview proxy for live preview instead of localhost
+  const proxyUrl = previewUrl?.startsWith("http://localhost") ? `/api/webapp-preview/` : previewUrl;
+  const [iframeSrc, setIframeSrc] = useState(proxyUrl || "");
   const [copied, setCopied] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -222,7 +224,7 @@ export default function WebappPreviewCard({
             <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-md px-2 py-1">
               <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
               <span className="text-[11px] text-muted-foreground truncate flex-1">
-                {previewUrl || `localhost:${port || 4200}`}
+                {previewUrl?.startsWith("http://localhost") ? `Preview (port ${port || 4200})` : previewUrl || `Preview (port ${port || 4200})`}
               </span>
               <button
                 onClick={handleCopyUrl}
@@ -251,10 +253,10 @@ export default function WebappPreviewCard({
               isExpanded ? "flex-1" : "aspect-[16/10]"
             )}
           >
-            {previewUrl ? (
+            {(proxyUrl || previewUrl) ? (
               <iframe
                 ref={iframeRef}
-                src={iframeSrc}
+                src={iframeSrc || proxyUrl || ""}
                 className="bg-white transition-all duration-300"
                 style={{
                   width: deviceWidths[deviceView],
@@ -404,7 +406,7 @@ export default function WebappPreviewCard({
             <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground border border-border/50">
               <Terminal className="w-3.5 h-3.5 text-muted-foreground" />
               <span className="font-mono text-xs">
-                localhost:{port || 4200}
+                Dev server (port {port || 4200})
               </span>
             </div>
           </div>
