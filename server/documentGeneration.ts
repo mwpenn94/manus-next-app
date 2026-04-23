@@ -445,3 +445,122 @@ export async function generateDOCX(title: string, markdownContent: string): Prom
   const buffer = await Packer.toBuffer(doc);
   return Buffer.from(buffer);
 }
+
+// ── CSV Generation ──
+
+/**
+ * Generate a CSV buffer from markdown content.
+ * Extracts tables from the markdown; if no tables are found, treats each line as a row.
+ */
+export function generateCSV(title: string, markdownContent: string): Buffer {
+  const blocks = parseMarkdownBlocks(markdownContent);
+  const csvLines: string[] = [];
+
+  // First try to extract tables
+  const tableBlocks = blocks.filter((b) => b.type === "table" && b.rows && b.rows.length > 0);
+
+  if (tableBlocks.length > 0) {
+    for (const table of tableBlocks) {
+      for (const row of table.rows!) {
+        csvLines.push(row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","));
+      }
+      csvLines.push(""); // blank line between tables
+    }
+  } else {
+    // Fallback: try to parse content as structured data
+    // Split by lines and treat pipe-delimited or comma-delimited content
+    const lines = markdownContent.split("\n").filter((l) => l.trim());
+    for (const line of lines) {
+      if (line.includes("|")) {
+        const cells = line
+          .split("|")
+          .map((c) => c.trim())
+          .filter((c) => c && !c.match(/^[-:]+$/));
+        if (cells.length > 0) {
+          csvLines.push(cells.map((c) => `"${c.replace(/"/g, '""')}"`).join(","));
+        }
+      } else if (line.includes(",")) {
+        csvLines.push(line);
+      } else {
+        csvLines.push(`"${line.replace(/"/g, '""')}"`);
+      }
+    }
+  }
+
+  return Buffer.from(csvLines.join("\n"), "utf-8");
+}
+
+// ── XLSX Generation ──
+
+/**
+ * Generate an XLSX buffer from markdown content.
+ * Extracts tables from the markdown and creates worksheets.
+ */
+export async function generateXLSX(title: string, markdownContent: string): Promise<Buffer> {
+  const ExcelJS = await import("exceljs");
+  const workbook = new ExcelJS.default.Workbook();
+  workbook.creator = "Manus";
+  workbook.created = new Date();
+
+  const blocks = parseMarkdownBlocks(markdownContent);
+  const tableBlocks = blocks.filter((b) => b.type === "table" && b.rows && b.rows.length > 0);
+
+  if (tableBlocks.length > 0) {
+    tableBlocks.forEach((table, idx) => {
+      const sheetName = tableBlocks.length === 1 ? title.slice(0, 31) : `Sheet ${idx + 1}`;
+      const worksheet = workbook.addWorksheet(sheetName.replace(/[\\/*?[\]:]/g, ""));
+
+      for (let r = 0; r < table.rows!.length; r++) {
+        const row = table.rows![r];
+        const excelRow = worksheet.addRow(row);
+
+        if (r === 0) {
+          // Style header row
+          excelRow.eachCell((cell) => {
+            cell.font = { bold: true, size: 11 };
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "FFE8E8E8" },
+            };
+            cell.border = {
+              bottom: { style: "thin", color: { argb: "FFCCCCCC" } },
+            };
+          });
+        }
+      }
+
+      // Auto-fit column widths
+      worksheet.columns.forEach((col) => {
+        let maxLen = 10;
+        col.eachCell?.({ includeEmpty: false }, (cell) => {
+          const len = String(cell.value || "").length;
+          if (len > maxLen) maxLen = len;
+        });
+        col.width = Math.min(maxLen + 2, 50);
+      });
+    });
+  } else {
+    // No tables found — put content as rows in a single sheet
+    const worksheet = workbook.addWorksheet(title.slice(0, 31).replace(/[\\/*?[\]:]/g, ""));
+    const lines = markdownContent.split("\n").filter((l) => l.trim());
+    for (const line of lines) {
+      if (line.includes(",")) {
+        worksheet.addRow(line.split(",").map((c) => c.trim()));
+      } else {
+        worksheet.addRow([stripMarkdownInline(line)]);
+      }
+    }
+    worksheet.columns.forEach((col) => {
+      let maxLen = 10;
+      col.eachCell?.({ includeEmpty: false }, (cell) => {
+        const len = String(cell.value || "").length;
+        if (len > maxLen) maxLen = len;
+      });
+      col.width = Math.min(maxLen + 2, 50);
+    });
+  }
+
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
+}

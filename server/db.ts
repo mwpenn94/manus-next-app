@@ -99,9 +99,10 @@ export async function createTask(task: InsertTask) {
   return result[0] ?? null;
 }
 
-export async function getUserTasks(userId: number, opts?: { includeArchived?: boolean; statusFilter?: string }) {
+export async function getUserTasks(userId: number, opts?: { includeArchived?: boolean; statusFilter?: string; limit?: number; cursor?: number }) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return { items: [], nextCursor: null as number | null };
+  const pageLimit = Math.min(opts?.limit ?? 50, 200);
   const conditions = [eq(tasks.userId, userId)];
   if (!opts?.includeArchived) {
     conditions.push(eq(tasks.archived, 0));
@@ -109,7 +110,14 @@ export async function getUserTasks(userId: number, opts?: { includeArchived?: bo
   if (opts?.statusFilter && opts.statusFilter !== "all") {
     conditions.push(eq(tasks.status, opts.statusFilter as any));
   }
-  return db.select().from(tasks).where(and(...conditions)).orderBy(desc(tasks.updatedAt)).limit(200);
+  if (opts?.cursor) {
+    conditions.push(lte(tasks.id, opts.cursor));
+  }
+  const items = await db.select().from(tasks).where(and(...conditions)).orderBy(desc(tasks.updatedAt)).limit(pageLimit + 1);
+  const hasMore = items.length > pageLimit;
+  const page = hasMore ? items.slice(0, pageLimit) : items;
+  const nextCursor = hasMore ? page[page.length - 1].id : null;
+  return { items: page, nextCursor };
 }
 
 export async function getTaskByExternalId(externalId: string) {
@@ -210,15 +218,18 @@ export async function searchTasks(userId: number, query: string, opts?: { dateFr
   ).limit(200);
   const taskIds = allUserTasks.map(t => t.id);
   if (taskIds.length === 0) return titleMatches;
-  const messageMatches: typeof allUserTasks = [];
-  for (const t of allUserTasks) {
-    // Skip tasks already found by title
-    if (titleMatches.some(tm => tm.id === t.id)) continue;
-    const msgs = await db.select().from(taskMessages).where(
-      and(eq(taskMessages.taskId, t.id), like(taskMessages.content, pattern))
-    ).limit(1);
-    if (msgs.length > 0) messageMatches.push(t);
-  }
+  // Batch query: find all taskIds with matching messages in a single query (fixes N+1)
+  const titleMatchIds = new Set(titleMatches.map(t => t.id));
+  const candidateIds = taskIds.filter(id => !titleMatchIds.has(id));
+  if (candidateIds.length === 0) return titleMatches;
+  const matchingMsgRows = await db.selectDistinct({ taskId: taskMessages.taskId })
+    .from(taskMessages)
+    .where(and(
+      inArray(taskMessages.taskId, candidateIds),
+      like(taskMessages.content, pattern)
+    ));
+  const matchingTaskIds = new Set(matchingMsgRows.map(r => r.taskId));
+  const messageMatches = allUserTasks.filter(t => matchingTaskIds.has(t.id));
   return [...titleMatches, ...messageMatches];
 }
 

@@ -132,7 +132,7 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "generate_document",
       description:
-        "Generate a structured document (report, analysis, summary, article, plan) as a downloadable file. Supports markdown, PDF, and DOCX output formats. Use this when the user asks you to create, write, draft, or produce a document, report, or any long-form structured content. When the user specifically asks for PDF or Word/DOCX format, set output_format accordingly. Returns the document content and a download URL.",
+        "Generate a structured document (report, analysis, summary, article, plan, spreadsheet) as a downloadable file. Supports markdown, PDF, DOCX, CSV, and XLSX output formats. Use this when the user asks you to create, write, draft, or produce a document, report, spreadsheet, or any long-form structured content. Match the output_format to what the user requests: 'pdf' for PDF, 'docx' for Word, 'csv' for CSV data, 'xlsx' for Excel spreadsheets. For CSV/XLSX, structure the content with markdown tables. Returns the document content and a download URL.",
       parameters: {
         type: "object",
         properties: {
@@ -152,8 +152,8 @@ export const AGENT_TOOLS: Tool[] = [
           },
           output_format: {
             type: "string",
-            enum: ["markdown", "pdf", "docx"],
-            description: "The file format to output. Use 'pdf' when user asks for PDF, 'docx' when user asks for Word document, 'markdown' for default. Defaults to 'markdown' if not specified.",
+            enum: ["markdown", "pdf", "docx", "csv", "xlsx"],
+            description: "The file format to output. Use 'pdf' for PDF, 'docx' for Word, 'csv' for CSV data, 'xlsx' for Excel spreadsheets, 'markdown' for default. Always match the user's requested format.",
           },
         },
         required: ["title", "content"],
@@ -1572,6 +1572,22 @@ async function executeGenerateDocument(args: {
         artifactType = "document_docx";
         break;
       }
+      case "csv": {
+        const { generateCSV } = await import("./documentGeneration");
+        buffer = generateCSV(args.title, args.content);
+        fileName = `${safeTitle}-${nanoid(6)}.csv`;
+        contentType = "text/csv";
+        artifactType = "document" as any;
+        break;
+      }
+      case "xlsx": {
+        const { generateXLSX } = await import("./documentGeneration");
+        buffer = await generateXLSX(args.title, args.content);
+        fileName = `${safeTitle}-${nanoid(6)}.xlsx`;
+        contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        artifactType = "document" as any;
+        break;
+      }
       default: {
         buffer = Buffer.from(docContent, "utf-8");
         fileName = `${safeTitle}-${nanoid(6)}.md`;
@@ -1584,7 +1600,14 @@ async function executeGenerateDocument(args: {
     const fileKey = `documents/${fileName}`;
     const { url } = await storagePut(fileKey, buffer, contentType);
 
-    const formatLabel = outputFormat === "pdf" ? "PDF" : outputFormat === "docx" ? "Word Document" : "Markdown";
+    const formatLabels: Record<string, string> = {
+      pdf: "PDF",
+      docx: "Word Document",
+      csv: "CSV Spreadsheet",
+      xlsx: "Excel Spreadsheet",
+      markdown: "Markdown",
+    };
+    const formatLabel = formatLabels[outputFormat] || "Markdown";
 
     return {
       success: true,

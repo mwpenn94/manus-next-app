@@ -78,7 +78,9 @@ export default function BillingPage() {
   const stats = statsQuery.data;
   const recentTasks = useMemo(() => {
     if (!tasksQuery.data) return [];
-    return tasksQuery.data.slice(0, 10);
+    const items = (tasksQuery.data as any)?.items ?? tasksQuery.data;
+    if (!items || !Array.isArray(items)) return [];
+    return items.slice(0, 10);
   }, [tasksQuery.data]);
 
   const payments = historyQuery.data?.payments ?? [];

@@ -8,7 +8,7 @@ import { TaskProvider } from "./contexts/TaskContext";
 import { BridgeProvider } from "./contexts/BridgeContext";
 import { lazy, Suspense } from "react";
 import AppLayout from "./components/AppLayout";
-import FeedbackWidget from "./components/FeedbackWidget";
+// FeedbackWidget removed from global layout — feedback moved to Settings page (Manus alignment)
 import OnboardingTooltips from "./components/OnboardingTooltips";
 
 // Eagerly loaded
@@ -298,7 +298,7 @@ function App() {
             <AppLayout>
               <Router />
             </AppLayout>
-            <FeedbackWidget />
+            {/* FeedbackWidget FAB removed — feedback accessible via Settings page (Manus alignment) */}
             <OnboardingTooltips />
           </TooltipProvider>
           </TaskProvider>

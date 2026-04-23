@@ -190,4 +190,12 @@ export const MODEL_TO_MODE: Record<string, string> = {
   "manus-next-lite": "speed",
 };
 
+/** Reverse mapping: agent mode → model ID */
+export const MODE_TO_MODEL: Record<string, string> = {
+  "limitless": "manus-next-limitless",
+  "max": "manus-next-max",
+  "quality": "manus-next-standard",
+  "speed": "manus-next-lite",
+};
+
 export { MODELS };

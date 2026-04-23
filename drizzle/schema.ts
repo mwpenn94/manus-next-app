@@ -1,4 +1,4 @@
-import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, boolean } from "drizzle-orm/mysql-core";
+import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, boolean, index } from "drizzle-orm/mysql-core";
 import { nanoid } from "nanoid";
 
 /**
@@ -51,7 +51,11 @@ export const tasks = mysqlTable("tasks", {
   favorite: int("favorite").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("tasks_userId_idx").on(table.userId),
+  statusIdx: index("tasks_status_idx").on(table.status),
+  projectIdIdx: index("tasks_projectId_idx").on(table.projectId),
+}));
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
@@ -81,7 +85,9 @@ export const taskMessages = mysqlTable("task_messages", {
   cardType: varchar("cardType", { length: 64 }),
   cardData: json("cardData"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  taskIdIdx: index("taskMessages_taskId_idx").on(table.taskId),
+}));
 
 export type TaskMessage = typeof taskMessages.$inferSelect;
 export type InsertTaskMessage = typeof taskMessages.$inferInsert;
@@ -202,7 +208,9 @@ export const notifications = mysqlTable("notifications", {
   /** Read status */
   read: int("read").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("notifications_userId_idx").on(table.userId),
+}));
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;

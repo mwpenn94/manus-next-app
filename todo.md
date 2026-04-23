@@ -2929,3 +2929,56 @@
 - [x] Session 10: Update all audit documentation (SESSION10_CONSOLIDATED_ASSESSMENT.md)
 - [x] Session 10: Create ULTIMATE_PARITY_ASSESSMENT_PROMPT v4
 - [x] Session 10: Meta-process recursive convergence (3 clean passes: M1 Completeness, M2 Depth, M3 Actionability)
+
+## Session 11: V4 Assessment Execution + YELLOW→GREEN Upgrades
+
+- [ ] Execute v4 assessment prompt against live app (all 12 expert panels)
+- [ ] Identify all YELLOW parity items
+- [ ] Upgrade G1 Microsoft 365 to GREEN (full OAuth flow with degraded-mode fallback)
+- [ ] Upgrade all remaining YELLOW items to GREEN
+- [ ] Run vitest to verify all changes
+- [ ] V4 convergence verification (3 clean novel passes)
+- [ ] Update PARITY.md with all GREEN statuses
+- [ ] Update assessment documentation
+- [ ] BUG: Cannot select Limitless mode - clicking it reverts to Max mode
+- [ ] BUG: Mobile FAB chat button overlaps input area buttons (+, mic, headphones)
+- [ ] BUG: App dev tool tried to edit itself instead of creating new app (system prompt issue)
+- [ ] BUG: localhost:4200 URLs in webapp cards not accessible from user device (need public URL)
+- [ ] BUG: Agent lacks robots.txt fallback (browser automation/CDP/Playwright workarounds)
+- [ ] BUG: Webapp card shows blank white preview with "Not published" instead of working preview
+- [ ] FEATURE: Agent should edit host app ONLY when user has GitHub connected AND explicitly directs edits in prompt
+- [ ] BUG FIX: Webapp preview proxy - route /api/webapp-preview/* to the webapp dev server port for public access
+
+## Session 12: User-Reported Chat & Agent Bugs
+
+### Bug 1: Duplicate document generation
+- [x] Agent calls generate_document tool multiple times for identical content (4x "Sample Markdown Document")
+- [x] Add dedup guard in agentStream.ts to prevent consecutive identical tool calls
+
+### Bug 2: Only markdown files generated (PDF/DOCX/CSV/XLSX missing)
+- [x] Agent claims PDF/DOCX capability but only produces .md files
+- [x] Install pdfkit and docx packages for real PDF/DOCX generation (already installed)
+- [x] Install exceljs for real XLSX generation
+- [x] Add CSV generation support
+- [x] Update documentGeneration.ts to actually produce binary PDF/DOCX/CSV/XLSX files
+
+### Bug 3: Chat messages out of order
+- [x] Messages sent after a response appear above the response in chat
+- [x] Add timestamp-based sorting in TaskContext message merge logic
+
+### Bug 4: Progress indicators scattered throughout chat
+- [x] TaskProgressCard, ActionStep list, and ActiveToolIndicator appear in different positions
+- [x] Consolidate all progress into a single bottom-anchored streaming area (like real Manus)
+
+### Bug 5: Agent ignores prompt / over-researches simple questions
+- [x] Agent uses recursive optimization prompt to over-research simple document capability questions
+- [x] Add prompt intelligence to distinguish simple vs complex queries (TASK TYPE DETECTION section)
+- [x] Prevent agent from duplicating work across tool calls (DEDUPLICATION section)
+
+## Session 12 (cont): Issues from Pasted Chat
+- [x] Bug 12A: Agent generates document instead of modifying inline HTML when asked to add content (TASK TYPE DETECTION)
+- [x] Bug 12B: Agent asks user for content they should create (misunderstands creative tasks) (CREATIVE task type)
+- [x] Bug 12C: Agent repeats itself in apology loops (DEDUPLICATION + dedup guard)
+- [x] Bug 12D: PDF generation produces markdown file instead of actual PDF (generate_document now uses real PDF)
+- [x] Bug 12E: Agent over-researches creative tasks (TASK TYPE DETECTION: creative tasks skip research)
+- [x] Bug 12F: LIMITLESS mode causes exhaustive research for every task regardless of type (TASK TYPE DETECTION applies to all modes)

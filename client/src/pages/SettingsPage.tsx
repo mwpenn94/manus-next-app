@@ -34,6 +34,10 @@ import {
   WifiOff,
   Sun,
   Moon,
+  MessageSquare,
+  Star,
+  Bug,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -45,7 +49,7 @@ import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 
-type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge" | "cloud_browser" | "data_controls";
+type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge" | "cloud_browser" | "data_controls" | "feedback";
 
 interface Capability {
   name: string;
@@ -351,6 +355,7 @@ export default function SettingsPage() {
     { id: "cloud_browser", label: "Cloud Browser", icon: Globe },
     { id: "data_controls", label: "Data Controls", icon: Monitor },
     { id: "bridge", label: "Bridge", icon: Unplug },
+    { id: "feedback", label: "Feedback", icon: MessageSquare },
   ];
 
   return (
@@ -1235,6 +1240,84 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          )}
+          {/* ── Feedback & Help ── */}
+          {activeTab === "feedback" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Feedback & Help
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Help us improve Manus Next. Your feedback shapes the product.
+              </p>
+              <div className="space-y-4">
+                {/* Feature Request */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Lightbulb className="w-4.5 h-4.5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Feature Request</p>
+                      <p className="text-xs text-muted-foreground">Suggest new features or improvements</p>
+                    </div>
+                  </div>
+                  <textarea
+                    className="w-full bg-muted/30 border border-border rounded-lg p-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    rows={3}
+                    placeholder="What feature would make Manus Next better for you?"
+                  />
+                  <button
+                    onClick={() => toast.success("Thank you for your feedback!")}
+                    className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Submit
+                  </button>
+                </div>
+                {/* Bug Report */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+                      <Bug className="w-4.5 h-4.5 text-destructive" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Bug Report</p>
+                      <p className="text-xs text-muted-foreground">Report issues or unexpected behavior</p>
+                    </div>
+                  </div>
+                  <textarea
+                    className="w-full bg-muted/30 border border-border rounded-lg p-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    rows={3}
+                    placeholder="Describe the issue you encountered..."
+                  />
+                  <button
+                    onClick={() => toast.success("Bug report submitted. We'll investigate.")}
+                    className="mt-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Report Bug
+                  </button>
+                </div>
+                {/* Rate Experience */}
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                      <Star className="w-4.5 h-4.5 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Rate Your Experience</p>
+                      <p className="text-xs text-muted-foreground">How would you rate Manus Next overall?</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map((star) => (
+                      <button key={star} onClick={() => toast.success(`Rated ${star}/5 — thank you!`)} className="p-1 hover:scale-110 transition-transform">
+                        <Star className="w-6 h-6 text-amber-400 hover:fill-amber-400 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

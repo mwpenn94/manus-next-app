@@ -81,7 +81,7 @@ import TaskProgressCard from "@/components/TaskProgressCard";
 import { BranchBanner, ChildBranches, BranchButton } from "@/components/BranchIndicator";
 import ActiveToolIndicator from "@/components/ActiveToolIndicator";
 import SandboxViewer from "@/components/SandboxViewer";
-import ModelSelector from "@/components/ModelSelector";
+import ModelSelector, { MODE_TO_MODEL } from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
 import GitHubBadge from "@/components/GitHubBadge";
 import VoiceRecordingUI, { VoiceWaveStyles } from "@/components/VoiceRecordingUI";
@@ -2225,6 +2225,7 @@ export default function TaskView() {
             <ModelSelector
               compact
               className="hidden md:flex"
+              selectedModelId={MODE_TO_MODEL[agentMode] || "manus-next-max"}
               onModelChange={(modelId) => {
                 // Sync model tier selection → agent execution mode
                 const modeMap: Record<string, AgentMode> = {
@@ -2462,7 +2463,13 @@ export default function TaskView() {
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain">
-          {task.messages.map((msg, i) => (
+          {/* During streaming, hide card-type messages that were added mid-stream
+              (convergence, system_notice, context_compressed) to prevent scattered
+              progress indicators. They stay in the message list for history. */}
+          {(streaming
+            ? task.messages.filter(m => !m.cardType || ["webapp_preview", "confirmation_gate", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output"].includes(m.cardType))
+            : task.messages
+          ).map((msg, i) => (
             <MessageBubble
               key={msg.id}
               message={msg}

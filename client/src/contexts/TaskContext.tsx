@@ -122,7 +122,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated || serverSyncedRef.current) return;
     if (!serverTasksQuery.data) return;
 
-    const serverTasks = serverTasksQuery.data;
+    const serverTasks = serverTasksQuery.data?.items ?? serverTasksQuery.data;
+    if (!serverTasks || !Array.isArray(serverTasks) || serverTasks.length === 0) { serverSyncedRef.current = true; return; }
     if (serverTasks.length > 0) {
       const mapped: Task[] = serverTasks.map((st: any) => ({
         id: st.externalId,
@@ -221,7 +222,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           m => !serverMsgKeys.has(`${m.role}:${m.content.slice(0, 300).trim()}`)
         );
         
-        return { ...t, messages: [...dedupedServerMsgs, ...uniqueLocalMsgs], messagesLoaded: true };
+        // Sort merged messages by timestamp to ensure correct ordering
+        const merged = [...dedupedServerMsgs, ...uniqueLocalMsgs].sort((a, b) => {
+          const ta = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+          const tb = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+          return ta - tb;
+        });
+        return { ...t, messages: merged, messagesLoaded: true };
       })
     );
   }, [activeServerId, serverMessagesQuery.data, needsMessageLoad]);
