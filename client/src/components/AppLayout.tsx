@@ -23,6 +23,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
+import { CreditWarningBanner } from "@/components/CreditWarningBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSWUpdate } from "@/hooks/useSWUpdate";
@@ -1107,6 +1108,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Network status banner */}
         <NetworkBanner />
+
+        {/* Credit exhaustion warning banner */}
+        <CreditWarningBanner />
 
         {/* Page content */}
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">{children}</main>

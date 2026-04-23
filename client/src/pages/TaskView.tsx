@@ -74,6 +74,7 @@ import {
   Crown,
   Sparkles,
   Zap,
+  BookmarkPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1461,6 +1462,10 @@ export default function TaskView() {
     onSuccess: () => { toast.success("System prompt saved"); },
     onError: () => { toast.error("Failed to save system prompt"); },
   });
+  const saveTemplateMutation = trpc.templates.create.useMutation({
+    onSuccess: () => { toast.success("Saved as template"); },
+    onError: () => { toast.error("Failed to save template"); },
+  });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },
     { enabled: !!taskExternalId && isAuthenticated }
@@ -2381,6 +2386,25 @@ export default function TaskView() {
                     >
                       <Bookmark className="w-3.5 h-3.5" />
                       {isFavorited ? "Remove Bookmark" : "Bookmark"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!task) return;
+                        const firstUserMsg = task.messages.find(m => m.role === "user");
+                        if (!firstUserMsg) {
+                          toast.error("No user message to save as template");
+                          setShowMoreMenu(false);
+                          return;
+                        }
+                        const title = task.title.length > 60 ? task.title.slice(0, 60) + "..." : task.title;
+                        const prompt = firstUserMsg.content;
+                        saveTemplateMutation.mutate({ title, prompt });
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <BookmarkPlus className="w-3.5 h-3.5" />
+                      Save as Template
                     </button>
                     <div className="h-px bg-border my-1" />
                     {showDeleteConfirm ? (

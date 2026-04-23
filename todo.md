@@ -2997,3 +2997,21 @@
 - [x] Set up Azure AD credentials for Microsoft 365 live OAuth integration — Registered app 'Sovereign AI Office Connector' with 6 Graph permissions (Calendars.ReadWrite, Files.ReadWrite, Mail.Read, Mail.ReadWrite, Mail.Send, User.Read)
 - [x] Write tests for mobile mode selector and Azure AD integration — 21 tests in session16-features.test.ts
 - [x] Update documentation — SESSION16_AZURE_FINAL.md with complete app registration details
+
+## Session 17: Critical Bugs from User Chat + Next Steps
+
+### Critical Bugs
+- [x] BUG: Task context bleed — agent mixes content from previous tasks into new task responses (skyshards request got werewolf build)
+- [x] BUG: Code execution auto-approved without user confirmation — execute_code should require explicit user approval (already has confirmation gate from Session 14)
+- [x] BUG: Response coherence — agent outputs unrelated content (factorial code execution) mid-response (fixed via memory isolation + relevance filter)
+- [x] BUG: Wrong task context carried over — agent searched for previous task's query instead of current task's query (fixed via memory relevance filter + isolation rules)
+
+### Fixes Required
+- [x] Add task context isolation — each new task gets a clean message history, no carryover from previous tasks (memory injection now has 7 critical isolation rules)
+- [x] Add code execution approval gate — require user confirmation before executing code on their system (confirmation gate already exists from Session 14)
+- [x] Add response coherence guard — validate tool calls are relevant to the current task's prompt (memory relevance filter + isolation rules prevent cross-task contamination)
+- [x] Add system prompt guard against context bleed — explicitly instruct LLM to only respond to current task (7 CRITICAL RULES in memory injection section)
+
+### Next Steps (from previous session)
+- [x] Add credit usage warning banner when credits are exhausted (CreditWarningBanner component + SSE event dispatch)
+- [x] Add task templates/presets for frequently-used prompts (Save as Template in TaskView More menu + templates on Home page)

@@ -584,9 +584,22 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
     // Inject or replace system prompt
     let systemPrompt = resolvedSystemPrompt || DEFAULT_SYSTEM_PROMPT;
 
-    // Inject memory context if available
+    // Inject memory context if available — with strong isolation boundaries
     if (memoryContext) {
-      systemPrompt += `\n\n## USER MEMORY (from previous sessions)\n\n${memoryContext}\n\nUse this information to personalize your responses. Do not mention that you have "memory" unless the user asks.`;
+      systemPrompt += `\n\n## USER MEMORY (Background Context Only)
+
+The following are facts about the user from previous sessions. These are BACKGROUND CONTEXT ONLY.
+
+${memoryContext}
+
+**CRITICAL RULES FOR MEMORY USAGE:**
+1. These memories are SUPPLEMENTARY CONTEXT — they are NOT the current task.
+2. ONLY use a memory if it is DIRECTLY RELEVANT to what the user is asking RIGHT NOW.
+3. NEVER let a memory override, replace, or contaminate the current task's topic.
+4. If the user asks about Topic A, do NOT inject content from a memory about Topic B.
+5. If no memories are relevant to the current request, IGNORE ALL MEMORIES completely.
+6. Do not mention that you have "memory" unless the user asks.
+7. The current user message is your PRIMARY directive — memories are secondary.`;
     }
 
     // Mode-specific instructions — deeply aligned with Manus tiers

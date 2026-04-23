@@ -748,12 +748,42 @@ async function startServer() {
             const prefs = await getUserPreferences(user.id);
             if (prefs?.systemPrompt) resolvedSystemPrompt = prefs.systemPrompt as string;
           }
-          // Load cross-session memory
+          // Load cross-session memory with relevance filtering
           try {
             const { getUserMemories } = await import("../db");
             const memories = await getUserMemories(user.id, 20);
             if (memories.length > 0) {
-              memoryContext = memories.map(m => `- **${m.key}**: ${m.value}`).join("\n");
+              // Extract the first user message to determine current task topic
+              const firstUserMsg = messages.find((m: any) => m.role === "user");
+              const taskText = firstUserMsg
+                ? (typeof firstUserMsg.content === "string" ? firstUserMsg.content : "").toLowerCase()
+                : "";
+              
+              // Filter memories by relevance to the current task
+              // Always include identity/preference memories; filter out topic-specific ones
+              const ALWAYS_RELEVANT_KEYS = [
+                "name", "identity", "location", "timezone", "language",
+                "preference", "communication", "style", "role", "expertise",
+                "stack", "framework", "profession", "job",
+              ];
+              const relevantMemories = memories.filter((m: any) => {
+                const keyLower = (m.key || "").toLowerCase();
+                const valueLower = (m.value || "").toLowerCase();
+                // Always include identity/preference memories
+                if (ALWAYS_RELEVANT_KEYS.some(k => keyLower.includes(k))) return true;
+                // Include if any significant word from the memory appears in the task
+                if (taskText.length > 0) {
+                  const memWords = (keyLower + " " + valueLower)
+                    .split(/\W+/)
+                    .filter((w: string) => w.length > 3); // skip short words
+                  return memWords.some((w: string) => taskText.includes(w));
+                }
+                return false;
+              });
+              
+              if (relevantMemories.length > 0) {
+                memoryContext = relevantMemories.map((m: any) => `- **${m.key}**: ${m.value}`).join("\n");
+              }
             }
           } catch { /* memory is optional */ }
         }

@@ -92,7 +92,16 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.interactive_output && callbacks.onInteractiveOutput) callbacks.onInteractiveOutput(data.interactive_output);
     if (data.continuation && callbacks.onContinuation) callbacks.onContinuation(data.continuation);
     if (data.type === "context_compressed" && callbacks.onContextCompressed) callbacks.onContextCompressed(data.detail);
-    if (data.error) callbacks.onError(data.error, data.retryable === true);
+    if (data.error) {
+      // Detect credit exhaustion errors and dispatch global event for the banner
+      const errMsg = (data.error || "").toLowerCase();
+      if (errMsg.includes("credits") && (errMsg.includes("exhausted") || errMsg.includes("used up"))) {
+        try {
+          window.dispatchEvent(new CustomEvent("manus:credit-exhausted"));
+        } catch { /* SSR safety */ }
+      }
+      callbacks.onError(data.error, data.retryable === true);
+    }
 
     return true;
   } catch {

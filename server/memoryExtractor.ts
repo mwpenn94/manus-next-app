@@ -18,13 +18,29 @@ interface ExtractedMemory {
   value: string;
 }
 
-const EXTRACTION_PROMPT = `Analyze this conversation and extract key facts, preferences, and notable information about the user that would be useful to remember for future conversations.
+const EXTRACTION_PROMPT = `Analyze this conversation and extract ONLY enduring personal facts about the user that would be useful across MANY different future conversations.
+
+DO STORE (long-term, cross-session value):
+- User's name, identity, location, timezone
+- Recurring interests and hobbies (e.g., "plays Elder Scrolls Online", "interested in AI")
+- Technical stack they consistently use (e.g., "prefers React + TypeScript")
+- Long-term goals and ongoing projects (e.g., "building a SaaS startup")
+- Communication preferences (e.g., "prefers concise answers", "likes code examples")
+- Professional role or expertise (e.g., "senior backend engineer")
+
+DO NOT STORE (task-specific, ephemeral, one-off):
+- Specific task requests (e.g., "wanted a werewolf PvP build", "asked about skyshards")
+- One-time queries or temporary project details
+- Specific game builds, recipes, itineraries, or other single-use outputs
+- Tool results, code snippets, or generated content from the conversation
+- Generic conversation flow or acknowledgments
+- Anything that would only be relevant if the user asks the EXACT same question again
+
+The test: Would this fact help personalize a response about a COMPLETELY DIFFERENT topic? If not, don't store it.
 
 Rules:
-- Extract 0-5 memories (only extract what's genuinely useful)
+- Extract 0-5 memories (only extract what's genuinely useful across topics)
 - Each memory has a short "key" (label, max 100 chars) and a "value" (detail, max 500 chars)
-- Focus on: user preferences, goals, projects they're working on, technical stack, personal details they shared, decisions made
-- Do NOT extract: generic conversation flow, tool results, temporary task details
 - If the conversation is purely informational with no personal context, return an empty array
 - Return ONLY valid JSON, no markdown fences
 
