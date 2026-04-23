@@ -849,6 +849,12 @@ async function startServer() {
               
               if (relevantMemories.length > 0) {
                 memoryContext = relevantMemories.map((m: any) => `- **${m.key}**: ${m.value}`).join("\n");
+                // Touch lastAccessedAt for injected memories (memory decay/TTL)
+                try {
+                  const { touchMemoryAccess } = await import("../db");
+                  const memoryIds = relevantMemories.map((m: any) => m.id).filter(Boolean);
+                  if (memoryIds.length > 0) await touchMemoryAccess(memoryIds);
+                } catch { /* non-critical */ }
               }
             }
           } catch { /* memory is optional */ }

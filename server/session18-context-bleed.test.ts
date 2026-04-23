@@ -192,9 +192,9 @@ describe("Attachment-aware prompting in agentStream", () => {
 
   it("should add ATTACHMENT-AWARE RESPONSE section when attachments detected", () => {
     expect(agentStreamSource).toContain("ATTACHMENT-AWARE RESPONSE");
-    expect(agentStreamSource).toContain("Analyze and describe the attached content FIRST");
+    expect(agentStreamSource).toContain("Analyze the attached content FIRST");
     expect(agentStreamSource).toContain("Base your response primarily on what you see in the attachments");
-    expect(agentStreamSource).toContain("Do NOT assume what the attachments contain based on memory");
+    expect(agentStreamSource).toContain("NEVER say any of these phrases");
   });
 
   it("should instruct agent to acknowledge attachments explicitly", () => {

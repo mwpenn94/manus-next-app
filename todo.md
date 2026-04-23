@@ -3064,3 +3064,36 @@
 - [x] Default: ON (Manus-aligned — memory persists across tasks)
 - [x] When OFF: skip memory injection in agentStream AND skip memory extraction after task completion
 - [x] Persist setting in generalSettings JSON alongside other data controls
+
+## Session 20: Attachment Processing Bug Fix, Loop Detection, Session 19 Next Steps
+
+### BUG FIX: Agent Cannot Process Image Attachments (CRITICAL)
+- [x] BUG: Agent says "I don't have direct access to view attachments" when user sends images — agent doesn't know it has vision capabilities
+- [x] Add explicit vision capability declaration to agent system prompt (VISION CAPABILITIES section)
+- [x] When user message contains image_url content, inject system instruction confirming agent CAN see the image
+- [x] Strengthen attachment-aware prompting to prevent "paste the content" responses (7-point ATTACHMENT-AWARE RESPONSE section)
+
+### BUG FIX: Agent Stuck in Repetitive Loop
+- [x] BUG: Agent repeated "Conducting deeper research..." 6+ times without progress
+- [x] Add loop/stuck detection — track consecutive similar messages and force different approach after 2 repetitions (Jaccard similarity > 0.7 detection)
+- [x] Add max iteration guard to prevent infinite research loops (stuckCount >= 2 triggers break with apology)
+
+### Feature 1: Memory Decay/TTL
+- [x] Add lastAccessedAt timestamp to memories table
+- [x] Update memory access tracking when memories are injected into agent context (touchMemoryAccess in index.ts)
+- [x] Add auto-archive for memories unused for 30+ days (archiveStaleMemories in db.ts)
+- [x] Add memory decay sweep to scheduler (daily sweep, first run 10min after startup)
+
+### Feature 2: Notification Center
+- [x] Add notification dropdown in top nav with unread count badge
+- [x] Group stale_completed notifications with batch "Resume All" action
+- [x] Mark notifications as read when dropdown is opened
+
+### Feature 3: Thumbnail Lightbox
+- [x] When clicking sidebar thumbnail, open full-resolution lightbox overlay (ImageLightbox component)
+- [x] Add prev/next navigation across all task attachments in lightbox (keyboard + button + thumbnail strip)
+
+### Testing & Checkpoint
+- [x] Write Session 20 tests (34 tests in session20-attachment-loop-decay.test.ts)
+- [x] Run full test suite (1,952 tests passing across 82 files + 1 transient worker OOM)
+- [x] Save checkpoint

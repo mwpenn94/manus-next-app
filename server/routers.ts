@@ -791,6 +791,22 @@ export const appRouter = router({
         return searchMemories(ctx.user.id, input.query, input.limit ?? 10);
       }),
 
+    /** Unarchive a memory that was auto-archived by the decay sweep */
+    unarchive: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { unarchiveMemory } = await import("./db");
+        await unarchiveMemory(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    /** List archived memories */
+    listArchived: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(200).optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return getUserMemories(ctx.user.id, input?.limit ?? 50, true);
+      }),
+
     /** Bulk add memory entries (for file import) */
     bulkAdd: protectedProcedure
       .input(z.object({

@@ -116,6 +116,8 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 
 4. **NEVER ask the user to provide information** that you could find yourself via web_search or read_webpage.
 
+4b. **YOU HAVE VISION CAPABILITIES.** You can see and analyze images that users attach to their messages. When a user sends an image (screenshot, photo, diagram, document scan, etc.), you can SEE it directly in the conversation. NEVER say "I cannot view attachments", "I don't have access to view attachments", "please paste the content", or anything similar. You CAN see images. Analyze them directly and respond based on what you see.
+
 5. **READ YOUR SEARCH RESULTS CAREFULLY.** When web_search returns results with URLs, USE read_webpage to get detailed content from the most relevant URLs. Do NOT ignore search results.
 
 6. **Use multiple tools together** for complex tasks:
@@ -612,7 +614,15 @@ ${memoryContext}
         part.type === "image_url" || part.type === "file_url"
       );
     if (hasAttachments) {
-      systemPrompt += `\n\n## ATTACHMENT-AWARE RESPONSE\nThe user has attached files or images with their message. You MUST:\n1. Analyze and describe the attached content FIRST before responding.\n2. Base your response primarily on what you see in the attachments.\n3. Do NOT assume what the attachments contain based on memory or previous tasks.\n4. If the user's text is vague (e.g., "help with this", "refine this"), let the attachment content guide your response rather than making assumptions.\n5. Acknowledge the attachments explicitly in your response (e.g., "Looking at your attached image, I can see...").`;
+      // Count the attachments by type for specificity
+      const imageCount = (lastUserMsg.content as any[]).filter((p: any) => p.type === "image_url").length;
+      const fileCount = (lastUserMsg.content as any[]).filter((p: any) => p.type === "file_url").length;
+      const attachmentDesc = [
+        imageCount > 0 ? `${imageCount} image(s)` : "",
+        fileCount > 0 ? `${fileCount} file(s)` : "",
+      ].filter(Boolean).join(" and ");
+
+      systemPrompt += `\n\n## ATTACHMENT-AWARE RESPONSE — CRITICAL\n**The user has attached ${attachmentDesc} with their message. YOU CAN SEE THEM.**\n\nYou MUST:\n1. **You have full vision capabilities.** You can see images, screenshots, photos, diagrams, and document scans directly. NEVER claim you cannot view or access attachments.\n2. **Analyze the attached content FIRST** — describe what you see before responding to the text.\n3. Base your response primarily on what you see in the attachments, not on memory or assumptions.\n4. If the user's text is vague (e.g., "help with this", "improve this", "refine this"), the attachment IS the context. Analyze it directly.\n5. Acknowledge the attachments explicitly (e.g., "Looking at your attached image, I can see a [description]...").\n6. **NEVER say any of these phrases:** "I cannot view attachments", "I don't have access to attachments", "please paste the content", "please describe the attachment", "I cannot access files from our chat". These are ALL FALSE — you CAN see the attachments.\n7. If the attachment is an image, describe its visual content in detail before offering improvements or analysis.`;
     }
 
     // Detect vague/short queries and add clarification instruction
@@ -719,6 +729,13 @@ will seamlessly continue you with full context. Write as extensively as the task
     // same tool with identical arguments multiple times in a single stream.
     // Key = "toolName:argHash", value = turn number when it was last called.
     const recentToolCallKeys = new Map<string, number>();
+
+    // STUCK/LOOP DETECTION: Track consecutive similar text-only responses.
+    // If the agent produces 2+ consecutive text responses with high similarity
+    // (e.g., "Conducting deeper research..." repeated), force a different approach.
+    const recentTextResponses: string[] = [];
+    let stuckBreakCount = 0;
+    const MAX_STUCK_BREAKS = 3; // After 3 stuck-break interventions, force final answer
 
     // Register prefix for caching (system prompt + tool definitions)
     const toolsJson = JSON.stringify(AGENT_TOOLS);
@@ -920,6 +937,60 @@ will seamlessly continue you with full context. Write as extensively as the task
 
       // If no tool calls, check if we should auto-continue
       if (!toolCalls || toolCalls.length === 0) {
+        // ═══════════════════════════════════════════════════════════════════
+        // STUCK/LOOP DETECTION — Prevent infinite repetitive responses
+        // ═══════════════════════════════════════════════════════════════════
+        // Track text-only responses and detect when the agent is repeating
+        // itself (e.g., "Conducting deeper research..." loop from the bug report).
+        const normalizedText = (textContent || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 500);
+        if (normalizedText.length > 20) {
+          // Check similarity against recent text responses
+          const isSimilarToRecent = recentTextResponses.some(prev => {
+            // Simple Jaccard-like similarity: shared words / total words
+            const prevWords = new Set(prev.split(" ").filter(w => w.length > 3));
+            const currWords = new Set(normalizedText.split(" ").filter(w => w.length > 3));
+            if (prevWords.size === 0 || currWords.size === 0) return false;
+            let shared = 0;
+            Array.from(currWords).forEach(w => { if (prevWords.has(w)) shared++; });
+            const similarity = shared / Math.max(prevWords.size, currWords.size);
+            return similarity > 0.6; // 60%+ word overlap = repetitive
+          });
+
+          recentTextResponses.push(normalizedText);
+          // Keep only last 4 responses for comparison
+          if (recentTextResponses.length > 4) recentTextResponses.shift();
+
+          if (isSimilarToRecent) {
+            stuckBreakCount++;
+            console.log(`[Agent] STUCK DETECTED (${stuckBreakCount}/${MAX_STUCK_BREAKS}): Agent producing repetitive text-only responses`);
+
+            if (stuckBreakCount >= MAX_STUCK_BREAKS) {
+              // Force final answer — agent has been stuck too long
+              console.log(`[Agent] STUCK BREAK: Forcing final answer after ${stuckBreakCount} stuck interventions`);
+              finalContent = "";
+              sendSSE(safeWrite, { delta: "\n\n" });
+              conversation.push({ role: "assistant", content: textContent || "" });
+              conversation.push({
+                role: "user",
+                content: `STOP LOOPING. You have been repeating similar responses without making progress. This is your FINAL chance to respond. Based on everything you have gathered so far, produce your BEST possible answer to the user's original request RIGHT NOW. Do NOT search again, do NOT say you need more research, do NOT repeat what you already said. Just give the user a complete, helpful response with what you have.`,
+              });
+              // Set stuckBreakCount very high so next iteration won't loop again
+              stuckBreakCount = MAX_STUCK_BREAKS + 10;
+              continue;
+            } else {
+              // Try a different approach
+              console.log(`[Agent] STUCK INTERVENTION: Redirecting agent to try a different approach`);
+              finalContent = "";
+              conversation.push({ role: "assistant", content: textContent || "" });
+              conversation.push({
+                role: "user",
+                content: `You appear to be stuck in a loop, repeating similar responses. CHANGE YOUR APPROACH. Instead of what you've been doing:\n- If you've been trying to research, try producing the answer from what you already know\n- If you've been asking for clarification, make your best assumption and proceed\n- If you've been claiming you can't access something, try a different tool or method\n- If the user attached files/images, remember: YOU CAN SEE THEM. Analyze them directly.\nDo something DIFFERENT this turn.`,
+              });
+              continue;
+            }
+          }
+        }
+
         // Detect if user asked for multi-tool demonstration or continuous work
         const userMessages = messages.filter(m => m.role === "user");
         const lastUserMsg = userMessages[userMessages.length - 1];

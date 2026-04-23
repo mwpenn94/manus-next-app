@@ -25,6 +25,7 @@ import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
 import { CreditWarningBanner } from "@/components/CreditWarningBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
+import ImageLightbox from "@/components/ImageLightbox";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSWUpdate } from "@/hooks/useSWUpdate";
 import {
@@ -186,6 +187,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
   const [location, navigate] = useLocation();
   const { tasks, activeTaskId, setActiveTask } = useTask();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -570,7 +572,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                       </div>
                       {/* Attachment thumbnail preview */}
                       {thumbnails[task.id] && (
-                        <div className="mt-1 mb-0.5">
+                        <div
+                          className="mt-1 mb-0.5 cursor-zoom-in"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setLightbox({ images: [thumbnails[task.id]], index: 0 });
+                          }}
+                        >
                           <img
                             src={thumbnails[task.id]}
                             alt=""
@@ -1148,6 +1157,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Keyboard Shortcuts Help Dialog */}
       <KeyboardShortcutsDialog open={showHelp} onClose={() => setShowHelp(false)} />
+      {/* Image Lightbox */}
+      {lightbox && (
+        <ImageLightbox
+          images={lightbox.images}
+          currentIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+          onNavigate={(index: number) => setLightbox({ ...lightbox, index })}
+        />
+      )}
     </div>
   );
 }

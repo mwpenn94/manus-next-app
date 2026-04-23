@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, or, like, ne, sql, lte, gte, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -533,10 +533,14 @@ export async function getUserLibraryFiles(userId: number, opts?: { search?: stri
 
 // ── Memory Entry Queries ──
 
-export async function getUserMemories(userId: number, limit = 50) {
+export async function getUserMemories(userId: number, limit = 50, includeArchived = false) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(memoryEntries).where(eq(memoryEntries.userId, userId)).orderBy(desc(memoryEntries.createdAt)).limit(limit);
+  const conditions = [eq(memoryEntries.userId, userId)];
+  if (!includeArchived) {
+    conditions.push(eq(memoryEntries.archived, 0));
+  }
+  return db.select().from(memoryEntries).where(and(...conditions)).orderBy(desc(memoryEntries.createdAt)).limit(limit);
 }
 
 export async function addMemoryEntry(entry: InsertMemoryEntry) {
@@ -569,8 +573,56 @@ export async function searchMemories(userId: number, query: string, limit = 10) 
   if (!db) return [];
   const pattern = `%${query}%`;
   return db.select().from(memoryEntries).where(
-    and(eq(memoryEntries.userId, userId), or(like(memoryEntries.key, pattern), like(memoryEntries.value, pattern)))
+    and(
+      eq(memoryEntries.userId, userId),
+      eq(memoryEntries.archived, 0),
+      or(like(memoryEntries.key, pattern), like(memoryEntries.value, pattern))
+    )
   ).orderBy(desc(memoryEntries.createdAt)).limit(limit);
+}
+
+/**
+ * Touch lastAccessedAt for a batch of memory IDs (called when memories are injected into agent context).
+ */
+export async function touchMemoryAccess(memoryIds: number[]) {
+  if (memoryIds.length === 0) return;
+  const db = await getDb();
+  if (!db) return;
+  await db.update(memoryEntries)
+    .set({ lastAccessedAt: new Date() })
+    .where(inArray(memoryEntries.id, memoryIds));
+}
+
+/**
+ * Archive memories that haven't been accessed in the given number of days.
+ * Only archives auto-extracted memories (source='auto'); user-created memories are never auto-archived.
+ * Returns the count of archived memories.
+ */
+export async function archiveStaleMemories(staleDays = 30): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const cutoff = new Date(Date.now() - staleDays * 24 * 60 * 60 * 1000);
+  const result = await db.update(memoryEntries)
+    .set({ archived: 1 })
+    .where(
+      and(
+        eq(memoryEntries.archived, 0),
+        eq(memoryEntries.source, "auto"),
+        lt(memoryEntries.lastAccessedAt, cutoff)
+      )
+    );
+  return (result as any)[0]?.affectedRows ?? 0;
+}
+
+/**
+ * Unarchive a specific memory (for user-initiated restore).
+ */
+export async function unarchiveMemory(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(memoryEntries)
+    .set({ archived: 0, lastAccessedAt: new Date() })
+    .where(and(eq(memoryEntries.id, id), eq(memoryEntries.userId, userId)));
 }
 
 // ── Task Share Queries ──

@@ -172,6 +172,10 @@ export const memoryEntries = mysqlTable("memory_entries", {
   source: mysqlEnum("source", ["auto", "user"]).default("auto").notNull(),
   /** Task that produced this memory (null for user-created) */
   taskExternalId: varchar("taskExternalId", { length: 64 }),
+  /** Last time this memory was injected into an agent context */
+  lastAccessedAt: timestamp("lastAccessedAt").defaultNow().notNull(),
+  /** Whether this memory has been auto-archived due to inactivity */
+  archived: int("archived").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

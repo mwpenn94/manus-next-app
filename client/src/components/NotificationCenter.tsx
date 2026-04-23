@@ -3,25 +3,38 @@
  *
  * Shows unread count badge, lists recent notifications with
  * mark-read and mark-all-read actions.
+ * Groups stale_completed notifications with a batch "Resume All" action.
  */
-import { useState, useRef, useEffect } from "react";
-import { Bell, Check, CheckCheck, ExternalLink, X } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Bell, Check, CheckCheck, X, Clock, Play, AlertCircle, Share2, Info } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
+
+interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  content: string | null;
+  taskExternalId: string | null;
+  read: number;
+  createdAt: Date;
+}
 
 export default function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
 
   const { data: unreadData } = trpc.notification.unreadCount.useQuery(undefined, {
     refetchInterval: 30000, // Poll every 30s
   });
   const unreadCount: number = typeof unreadData === "number" ? unreadData : 0;
   const { data: notifications = [], refetch } = trpc.notification.list.useQuery(
-    { limit: 20 },
+    { limit: 30 },
     { enabled: open }
   );
 
@@ -30,6 +43,13 @@ export default function NotificationCenter() {
   });
   const markAllRead = trpc.notification.markAllRead.useMutation({
     onSuccess: () => { refetch(); },
+  });
+  const resumeStale = trpc.task.resumeStale.useMutation({
+    onSuccess: () => {
+      toast.success("Task resumed");
+      utils.task.list.invalidate();
+      refetch();
+    },
   });
 
   // Close on outside click
@@ -43,14 +63,82 @@ export default function NotificationCenter() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  // Group stale_completed notifications
+  const { staleGroup, otherNotifications } = useMemo(() => {
+    const stale: Notification[] = [];
+    const other: Notification[] = [];
+    for (const n of notifications as Notification[]) {
+      if (n.type === "stale_completed") {
+        stale.push(n);
+      } else {
+        other.push(n);
+      }
+    }
+    return { staleGroup: stale, otherNotifications: other };
+  }, [notifications]);
+
+  const handleResumeAll = () => {
+    const taskIds = staleGroup
+      .map(n => n.taskExternalId)
+      .filter((id): id is string => !!id);
+    const unique = Array.from(new Set(taskIds));
+    for (const id of unique) {
+      resumeStale.mutate({ externalId: id });
+    }
+    // Mark all stale notifications as read
+    for (const n of staleGroup) {
+      if (!n.read) markRead.mutate({ id: n.id });
+    }
+    toast.info(`Resuming ${unique.length} task${unique.length !== 1 ? "s" : ""}...`);
+  };
+
   const typeIcon = (type: string) => {
     switch (type) {
-      case "task_completed": return "✓";
-      case "task_error": return "✕";
-      case "share_viewed": return "👁";
-      default: return "ℹ";
+      case "task_completed": return <Check className="w-3.5 h-3.5 text-emerald-400" />;
+      case "task_error": return <AlertCircle className="w-3.5 h-3.5 text-red-400" />;
+      case "share_viewed": return <Share2 className="w-3.5 h-3.5 text-blue-400" />;
+      case "stale_completed": return <Clock className="w-3.5 h-3.5 text-amber-400" />;
+      default: return <Info className="w-3.5 h-3.5 text-muted-foreground" />;
     }
   };
+
+  const renderNotification = (n: Notification) => (
+    <div
+      key={n.id}
+      className={cn(
+        "px-4 py-3 border-b border-border/50 hover:bg-accent/50 transition-colors cursor-pointer group",
+        !n.read && "bg-primary/5"
+      )}
+      onClick={() => {
+        if (!n.read) markRead.mutate({ id: n.id });
+        if (n.taskExternalId) {
+          navigate(`/task/${n.taskExternalId}`);
+          setOpen(false);
+        }
+      }}
+    >
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 shrink-0">{typeIcon(n.type)}</span>
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            "text-sm leading-tight",
+            n.read ? "text-muted-foreground" : "text-foreground font-medium"
+          )}>
+            {n.title}
+          </p>
+          {n.content && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.content}</p>
+          )}
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+          </p>
+        </div>
+        {!n.read && (
+          <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div ref={ref} className="relative">
@@ -93,49 +181,47 @@ export default function NotificationCenter() {
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 No notifications yet
               </div>
             ) : (
-              notifications.map((n: any) => (
-                <div
-                  key={n.id}
-                  className={cn(
-                    "px-4 py-3 border-b border-border/50 hover:bg-accent/50 transition-colors cursor-pointer group",
-                    !n.readAt && "bg-primary/5"
-                  )}
-                  onClick={() => {
-                    if (!n.readAt) markRead.mutate({ id: n.id });
-                    if (n.taskExternalId) {
-                      navigate(`/task/${n.taskExternalId}`);
-                      setOpen(false);
-                    }
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-base mt-0.5">{typeIcon(n.type)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "text-sm leading-tight",
-                        n.readAt ? "text-muted-foreground" : "text-foreground font-medium"
-                      )}>
-                        {n.title}
-                      </p>
-                      {n.content && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.content}</p>
-                      )}
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-                      </p>
+              <>
+                {/* Stale-completed group */}
+                {staleGroup.length > 0 && (
+                  <div className="border-b border-border">
+                    <div className="px-4 py-2.5 bg-amber-500/5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="text-xs font-medium text-amber-400">
+                          {staleGroup.length} auto-completed task{staleGroup.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleResumeAll();
+                        }}
+                        disabled={resumeStale.isPending}
+                        className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-amber-500/10 transition-colors disabled:opacity-50"
+                      >
+                        <Play className="w-3 h-3" />
+                        Resume All
+                      </button>
                     </div>
-                    {!n.readAt && (
-                      <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                    {staleGroup.slice(0, 3).map(renderNotification)}
+                    {staleGroup.length > 3 && (
+                      <div className="px-4 py-2 text-[10px] text-muted-foreground text-center">
+                        +{staleGroup.length - 3} more auto-completed
+                      </div>
                     )}
                   </div>
-                </div>
-              ))
+                )}
+
+                {/* Other notifications */}
+                {otherNotifications.map(renderNotification)}
+              </>
             )}
           </div>
         </div>

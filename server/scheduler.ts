@@ -292,6 +292,34 @@ export function startScheduler(): void {
   }, STALE_SWEEP_INTERVAL_MS);
   console.log(`[Scheduler] Stale task sweep scheduled — every ${STALE_SWEEP_INTERVAL_MS / 60000}min (timeout: ${STALE_TASK_TIMEOUT_MS / 3600000}h)`);
 
+  // Memory decay sweep — runs daily, archives auto-extracted memories not accessed in 30+ days
+  const MEMORY_DECAY_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+  const MEMORY_STALE_DAYS = 30;
+  // Run first sweep 10 minutes after startup, then daily
+  setTimeout(async () => {
+    try {
+      const { archiveStaleMemories } = await import("./db");
+      const archived = await archiveStaleMemories(MEMORY_STALE_DAYS);
+      if (archived > 0) {
+        console.log(`[Scheduler] Memory decay: ${archived} stale memor${archived === 1 ? 'y' : 'ies'} archived (>${MEMORY_STALE_DAYS}d unused)`);
+      }
+    } catch (err: any) {
+      console.error("[Scheduler] Memory decay error:", err.message?.slice(0, 200));
+    }
+    setInterval(async () => {
+      try {
+        const { archiveStaleMemories } = await import("./db");
+        const archived = await archiveStaleMemories(MEMORY_STALE_DAYS);
+        if (archived > 0) {
+          console.log(`[Scheduler] Memory decay: ${archived} stale memor${archived === 1 ? 'y' : 'ies'} archived (>${MEMORY_STALE_DAYS}d unused)`);
+        }
+      } catch (err: any) {
+        console.error("[Scheduler] Memory decay error:", err.message?.slice(0, 200));
+      }
+    }, MEMORY_DECAY_INTERVAL_MS);
+  }, 10 * 60 * 1000); // 10 min after startup
+  console.log(`[Scheduler] Memory decay sweep scheduled — daily (threshold: ${MEMORY_STALE_DAYS}d)`);
+
   // Data retention job — runs daily at 02:00 UTC
   const scheduleRetentionJob = () => {
     const now = new Date();
