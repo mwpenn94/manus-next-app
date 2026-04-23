@@ -151,7 +151,7 @@ function BridgeStatusBadge() {
   );
 }
 
-type StatusFilter = "all" | "running" | "completed" | "error";
+type StatusFilter = "all" | "running" | "completed" | "error" | "favorites";
 
 // ── Sidebar status badges ──
 
@@ -262,6 +262,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         favorite: st.favorite,
         source: "server" as const,
       }));
+      if (statusFilter === "favorites") {
+        return serverResults.filter((t: any) => t.favorite === 1);
+      }
       if (statusFilter !== "all") {
         return serverResults.filter((t: any) => t.status === statusFilter);
       }
@@ -274,7 +277,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((t) => t.title.toLowerCase().includes(q));
     }
-    if (statusFilter !== "all") {
+    if (statusFilter === "favorites") {
+      filtered = filtered.filter((t) => t.favorite === 1);
+    } else if (statusFilter !== "all") {
       filtered = filtered.filter((t) => t.status === statusFilter);
     }
     if (dateFrom) {
@@ -290,7 +295,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       title: t.title,
       status: t.status,
       updatedAt: t.updatedAt,
-      favorite: 0,
+      favorite: t.favorite ?? 0,
       source: "local" as const,
     }));
   })();
@@ -352,11 +357,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  const statusFilters: { id: StatusFilter; label: string; count?: number }[] = [
+  const favoritesCount = tasks.filter(t => t.favorite === 1).length;
+  const statusFilters: { id: StatusFilter; label: string; count?: number; icon?: string }[] = [
     { id: "all", label: "All", count: tasks.length },
     { id: "running", label: "Running", count: tasks.filter(t => t.status === "running").length },
     { id: "completed", label: "Done", count: tasks.filter(t => t.status === "completed").length },
     { id: "error", label: "Error", count: tasks.filter(t => t.status === "error").length },
+    { id: "favorites", label: "★", count: favoritesCount },
   ];
 
   const sidebarContent = (
@@ -514,7 +521,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto px-2 py-1 overscroll-contain">
+      <div
+        className="flex-1 overflow-y-auto px-2 py-1 overscroll-contain"
+        tabIndex={0}
+        role="region"
+        aria-label="Task list"
+      >
         {searchEnabled && serverSearch.isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -523,11 +535,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         ) : displayedTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <div className="text-3xl mb-3 opacity-40" aria-hidden="true">
-              {searchQuery ? "🔍" : statusFilter !== "all" ? "📋" : "📋"}
+              {searchQuery ? "🔍" : statusFilter === "favorites" ? "⭐" : statusFilter !== "all" ? "📋" : "📋"}
             </div>
             <p className="text-xs">
               {searchQuery
                 ? "No matching tasks found"
+                : statusFilter === "favorites"
+                ? "No favorited tasks yet — star a task to pin it here"
                 : statusFilter !== "all"
                 ? `No ${statusFilter} tasks`
                 : "Create a new task to get started"}
@@ -648,7 +662,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <BridgeStatusBadge />
 
       {/* Sidebar Footer — Nav links (scrollable) */}
-      <div className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto max-h-[40vh] min-h-0">
+      <nav
+        className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto max-h-[40vh] min-h-0"
+        aria-label="Sidebar navigation"
+      >
         {/* Section: Manus */}
         <div className="px-3 pt-2 pb-1">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus">Manus</span>
@@ -975,7 +992,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <Settings className="w-4 h-4" />
           Settings
         </Link>
-      </div>
+      </nav>
 
       {/* Referral/Invite Banner — Manus parity */}
       {isAuthenticated && (

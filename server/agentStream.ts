@@ -740,6 +740,10 @@ will seamlessly continue you with full context. Write as extensively as the task
     let nudgedForDeepResearch = false;
     let continuationRounds = 0; // Track consecutive auto-continuation rounds (Manus parity)
 
+    // ── Token usage tracking (Session 23: Context Window Indicator) ──
+    let cumulativePromptTokens = 0;
+    let cumulativeCompletionTokens = 0;
+
     // DEDUP GUARD: Track recent tool calls to prevent the LLM from calling the
     // same tool with identical arguments multiple times in a single stream.
     // Key = "toolName:argHash", value = turn number when it was last called.
@@ -782,6 +786,20 @@ will seamlessly continue you with full context. Write as extensively as the task
       }
       // else: omit maxTokens entirely — model uses its full output window (Max tier)
       const response: InvokeResult = await invokeLLMWithRetry(invokeLLM, llmParams);
+
+      // ── Accumulate and stream token usage (Session 23) ──
+      if (response.usage) {
+        cumulativePromptTokens += response.usage.prompt_tokens;
+        cumulativeCompletionTokens += response.usage.completion_tokens;
+        sendSSE(safeWrite, {
+          token_usage: {
+            prompt_tokens: cumulativePromptTokens,
+            completion_tokens: cumulativeCompletionTokens,
+            total_tokens: cumulativePromptTokens + cumulativeCompletionTokens,
+            turn,
+          },
+        });
+      }
 
       const choice = response.choices?.[0];
       if (!choice) {

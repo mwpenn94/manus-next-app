@@ -3160,3 +3160,34 @@
 - [x] Write Session 22 tests (convergence-validated) — 15 new tests across 4 describe blocks
 - [x] Run full test suite — 1994/2010 pass (16 missing from OOM in unrelated file)
 - [x] Save checkpoint
+
+## Accessibility Bug Fix
+- [x] Fix axe-core error on home page: "Element should have focusable content" / "Element should be focusable"
+
+## Session 23: Parity Expert Convergence — Accessibility, Model Wiring, Context Window
+
+### Step 1: Fix Scrollable Region Focusable (Landscape → Depth → Adversarial → Convergence)
+- [x] Add tabindex={0} and role="region" with aria-label to scrollable task list div in AppLayout
+- [x] Verify axe-core error resolves in browser
+- [x] Depth pass: check all other scrollable regions in the app for same issue
+- [x] Adversarial pass: ensure tabindex doesn't break keyboard navigation flow
+
+### Step 2: Context Window Token Usage Indicator (Landscape → Depth → Adversarial → Convergence)
+- [x] Add server-side token counting to agentStream (track input + output tokens per LLM call)
+- [x] Stream token usage events to frontend via SSE (cumulative input/output tokens)
+- [x] Display context usage as compact badge in TaskView header (e.g., "12.4k tokens")
+- [x] Show visual progress indicator when approaching context limits (green/amber/red dot)
+- [x] Depth pass: account for system prompt + tool definitions + memory context in token budget
+- [x] Adversarial pass: handle edge cases (missing usage data, very long conversations, mode switches)
+
+### Step 3: Task Favorites Filter in Sidebar (Landscape → Depth → Adversarial → Convergence)
+- [x] Add "Favorites" tab to sidebar status filter tabs (alongside All/Running/Done/Error)
+- [x] Wire favorites filter to show only tasks with favorite === 1
+- [x] Add optimistic local state update via updateTaskFavorite + task.list.invalidate
+- [x] Depth pass: favorites filter works with search and date filters simultaneously
+- [x] Adversarial pass: handle empty favorites state with helpful empty message
+
+### Testing & Checkpoint
+- [x] Write Session 23 tests (convergence-validated) — 23 tests across 3 describe blocks
+- [x] Run full test suite — 2016/2033 pass (1 OOM worker crash, pre-existing)
+- [x] Save checkpoint

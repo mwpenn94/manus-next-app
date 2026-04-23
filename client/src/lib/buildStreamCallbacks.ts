@@ -28,6 +28,8 @@ export interface StreamStateSetters {
   setIsReconnecting?: (reconnecting: boolean) => void;
   setLastErrorRetryable?: (retryable: boolean) => void;
   setPendingGate?: (gate: { action: string; description?: string; category?: string; taskId: string } | null) => void;
+  /** Session 23: Token usage state setter */
+  setTokenUsage?: (usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null) => void;
 }
 
 export function buildStreamCallbacks(
@@ -215,6 +217,9 @@ export function buildStreamCallbacks(
       setters.setIsReconnecting?.(false);
       // Restore the clean accumulated content (remove reconnecting message)
       setters.setStreamContent(state.accumulated);
+    },
+    onTokenUsage: (data: { prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number }) => {
+      setters.setTokenUsage?.(data);
     },
     onContextCompressed: (detail: string) => {
       // F1.1: Show context compression visibility indicator

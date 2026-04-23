@@ -74,6 +74,7 @@ export interface Task {
   serverId?: number; // DB auto-increment id, set after server mutation completes
   messagesLoaded?: boolean; // Whether server messages have been hydrated
   autoStreamed?: boolean; // Whether the initial auto-stream has been triggered for this task
+  favorite?: number; // 0 = not favorited, 1 = favorited (synced from server)
 }
 
 interface TaskContextValue {
@@ -88,6 +89,7 @@ interface TaskContextValue {
   renameTask: (taskId: string, title: string) => void;
   markAutoStreamed: (taskId: string) => void;
   updateMessageCard: (taskId: string, messageId: string, cardData: Record<string, unknown>) => void;
+  updateTaskFavorite: (taskId: string, favorite: number) => void;
 }
 
 const TaskContext = createContext<TaskContextValue | null>(null);
@@ -137,6 +139,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         workspaceUrl: st.workspaceUrl ?? undefined,
         serverId: st.id,
         messagesLoaded: false,
+        favorite: st.favorite ?? 0,
       }));
       setTasks((prev) => {
         const existingIds = new Set(prev.map((t) => t.id));
@@ -644,6 +647,10 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const updateTaskFavorite = useCallback((taskId: string, favorite: number) => {
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, favorite } : t));
+  }, []);
+
   return (
     <TaskContext.Provider
       value={{
@@ -658,6 +665,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         renameTask,
         markAutoStreamed,
         updateMessageCard,
+        updateTaskFavorite,
       }}
     >
       {children}

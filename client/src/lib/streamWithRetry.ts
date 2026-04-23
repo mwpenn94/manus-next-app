@@ -33,6 +33,8 @@ export interface StreamCallbacks {
    */
   onContinuation?: (data: { round: number; maxRounds: number; reason: string }) => void;
   onContextCompressed?: (detail: string) => void;
+  /** Session 23: Called with cumulative token usage after each LLM turn */
+  onTokenUsage?: (data: { prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number }) => void;
   onError: (error: string, retryable?: boolean) => void;
   onReconnecting?: (attempt: number, maxRetries: number) => void;
   onReconnected?: () => void;
@@ -91,6 +93,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.convergence && callbacks.onConvergence) callbacks.onConvergence(data.convergence);
     if (data.interactive_output && callbacks.onInteractiveOutput) callbacks.onInteractiveOutput(data.interactive_output);
     if (data.continuation && callbacks.onContinuation) callbacks.onContinuation(data.continuation);
+    if (data.token_usage && callbacks.onTokenUsage) callbacks.onTokenUsage(data.token_usage);
     if (data.type === "context_compressed" && callbacks.onContextCompressed) callbacks.onContextCompressed(data.detail);
     if (data.error) {
       // Detect credit exhaustion errors and dispatch global event for the banner

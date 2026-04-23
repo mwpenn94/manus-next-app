@@ -1481,7 +1481,7 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -1491,6 +1491,7 @@ export default function TaskView() {
   const [streamImages, setStreamImages] = useState<string[]>([]);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [stepProgress, setStepProgress] = useState<{ completed: number; total: number; turn: number } | null>(null);
+  const [tokenUsage, setTokenUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -1559,6 +1560,14 @@ export default function TaskView() {
     onError: () => { toast.error("Failed to delete task"); },
   });
   const favoriteMutation = trpc.task.toggleFavorite.useMutation({
+    onSuccess: () => {
+      // Optimistically update local task state so the favorites filter reflects immediately
+      if (task) {
+        const newFav = task.favorite === 1 ? 0 : 1;
+        updateTaskFavorite(task.id, newFav);
+      }
+      utils.task.list.invalidate();
+    },
     onError: () => { toast.error("Failed to update bookmark"); },
   });
   const systemPromptMutation = trpc.task.updateSystemPrompt.useMutation({
@@ -1786,6 +1795,7 @@ export default function TaskView() {
       setStreaming(true);
       setStreamContent("");
       setAgentActions([]);
+      setTokenUsage(null);
       setLastErrorRetryable(false);
       setStreamImages([]);
       streamingTaskIdRef.current = task.id;
@@ -1808,7 +1818,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
+          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
         });
 
         await streamWithRetry({
@@ -1974,7 +1984,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
       });
 
       await streamWithRetry({
@@ -2007,6 +2017,7 @@ export default function TaskView() {
       setStreaming(false);
       setStreamContent("");
       setAgentActions([]);
+      setTokenUsage(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -2046,7 +2057,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
       });
 
       await streamWithRetry({
@@ -2081,6 +2092,7 @@ export default function TaskView() {
       setStreaming(false);
       setStreamContent("");
       setAgentActions([]);
+      setTokenUsage(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -2129,7 +2141,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
       });
 
       await streamWithRetry({
@@ -2157,6 +2169,7 @@ export default function TaskView() {
       setStreaming(false);
       setStreamContent("");
       setAgentActions([]);
+      setTokenUsage(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -2324,6 +2337,24 @@ export default function TaskView() {
               <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0" title={`${agentActions.length} tool calls executed`}>
                 <span className="text-[10px] text-muted-foreground font-mono">{agentActions.length}</span>
                 <span className="text-[9px] text-muted-foreground">tools</span>
+              </span>
+            )}
+            {/* Token usage indicator — Session 23 */}
+            {tokenUsage && tokenUsage.total_tokens > 0 && (
+              <span
+                className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0"
+                title={`Prompt: ${tokenUsage.prompt_tokens.toLocaleString()} | Completion: ${tokenUsage.completion_tokens.toLocaleString()} | Turn ${tokenUsage.turn}`}
+              >
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {tokenUsage.total_tokens >= 1000
+                    ? `${(tokenUsage.total_tokens / 1000).toFixed(1)}k`
+                    : tokenUsage.total_tokens}
+                </span>
+                <span className="text-[9px] text-muted-foreground">tokens</span>
+                {/* Visual context pressure indicator */}
+                {tokenUsage.prompt_tokens > 100000 && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${tokenUsage.prompt_tokens > 180000 ? 'bg-red-500 animate-pulse' : tokenUsage.prompt_tokens > 140000 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                )}
               </span>
             )}
           </div>
