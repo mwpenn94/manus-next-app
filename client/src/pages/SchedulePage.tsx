@@ -88,6 +88,7 @@ export default function SchedulePage() {
 
   const toggleMutation = trpc.schedule.toggle.useMutation({
     onSuccess: () => { schedulesQuery.refetch(); },
+    onError: (err) => { toast.error("Toggle failed: " + err.message); },
   });
 
   const deleteMutation = trpc.schedule.delete.useMutation({
@@ -95,6 +96,7 @@ export default function SchedulePage() {
       toast.success("Schedule deleted");
       schedulesQuery.refetch();
     },
+    onError: (err) => { toast.error("Delete failed: " + err.message); },
   });
 
   if (authLoading) {

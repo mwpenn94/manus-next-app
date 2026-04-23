@@ -510,8 +510,12 @@ async function startServer() {
           if (body.length > maxSize) {
             return res.status(413).json({ error: `File too large. Maximum size is ${isVideo ? "100MB" : "50MB"}.` });
           }
-          const fileName = (req.headers["x-file-name"] as string) || `upload-${Date.now()}`;
-          const taskId = (req.headers["x-task-id"] as string) || "unknown";
+          // ADV-01 fix: Sanitize file name and task ID to prevent path traversal
+          const rawFileName = (req.headers["x-file-name"] as string) || `upload-${Date.now()}`;
+          const rawTaskId = (req.headers["x-task-id"] as string) || "unknown";
+          const sanitize = (s: string) => s.replace(/[\/\\:*?"<>|\x00-\x1f]/g, "_").replace(/\.\./g, "_").slice(0, 200);
+          const fileName = sanitize(rawFileName);
+          const taskId = sanitize(rawTaskId);
           const fileKey = `task-files/${taskId}/${Date.now()}-${fileName}`;
           const { key, url } = await storagePut(fileKey, body, contentType);
           res.json({ success: true, key, url, fileName });

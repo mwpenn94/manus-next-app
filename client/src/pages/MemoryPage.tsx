@@ -215,13 +215,16 @@ export default function MemoryPage() {
     onError: (err) => { toast.error(err.message); },
   });
 
-  const bulkAdd = trpc.memory.bulkAdd.useMutation();
+  const bulkAdd = trpc.memory.bulkAdd.useMutation({
+    onError: (err) => { toast.error("Bulk add failed: " + err.message); },
+  });
 
   const deleteMemory = trpc.memory.delete.useMutation({
     onSuccess: () => {
       toast.success("Memory deleted");
       refetch();
     },
+    onError: (err) => { toast.error("Delete failed: " + err.message); },
   });
 
   /** Process a batch of files for upload */

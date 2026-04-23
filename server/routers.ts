@@ -1692,7 +1692,7 @@ export const appRouter = router({
     completePairing: protectedProcedure
       .input(z.object({
         pairingCode: z.string().min(1),
-        tunnelUrl: z.string().min(1),
+        tunnelUrl: z.string().min(1).url().refine(url => /^https?:\/\//.test(url), { message: "Tunnel URL must use http:// or https://" }),
         osInfo: z.string().optional(),
         capabilities: z.record(z.string(), z.unknown()).optional(),
       }))
@@ -1703,7 +1703,7 @@ export const appRouter = router({
         return { success: true, deviceId: device.externalId };
       }),
     updateConnection: protectedProcedure
-      .input(z.object({ externalId: z.string(), tunnelUrl: z.string().min(1) }))
+      .input(z.object({ externalId: z.string(), tunnelUrl: z.string().min(1).url().refine(url => /^https?:\/\//.test(url), { message: "Tunnel URL must use http:// or https://" }) }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.externalId);
         if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });

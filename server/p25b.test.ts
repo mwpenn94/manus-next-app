@@ -72,7 +72,7 @@ describe("P25b — Hands-Free Mode Transcription Fix", () => {
     const tv = read("client/src/pages/TaskView.tsx");
 
     it("creates a dedicated tRPC mutation for hands-free transcription", () => {
-      expect(tv).toContain("handsFreeTranscribeMutation = trpc.voice.transcribe.useMutation()");
+      expect(tv).toContain("handsFreeTranscribeMutation = trpc.voice.transcribe.useMutation(");
     });
 
     it("passes uploadAudio callback to useHandsFreeMode", () => {

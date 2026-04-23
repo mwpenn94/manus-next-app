@@ -60,9 +60,12 @@ export default function WebAppBuilderPage() {
   });
 
   // Real tRPC mutations
-  const createBuild = trpc.webapp.create.useMutation();
+  const createBuild = trpc.webapp.create.useMutation({
+    onError: (err) => { toast.error("Build creation failed: " + err.message); },
+  });
   const updateBuild = trpc.webapp.update.useMutation({
     onSuccess: () => { utils.webapp.list.invalidate(); },
+    onError: (err) => { toast.error("Build update failed: " + err.message); },
   });
   const publishBuild = trpc.webapp.publish.useMutation({
     onSuccess: (data) => {

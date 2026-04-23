@@ -122,6 +122,7 @@ export default function MeetingsPage() {
     onSuccess: () => {
       meetingsQuery.refetch();
     },
+    onError: (err) => { toast.error("Failed to create meeting: " + err.message); },
   });
   const generateFromTranscript = trpc.meeting.generateFromTranscript.useMutation({
     onSuccess: (data) => {

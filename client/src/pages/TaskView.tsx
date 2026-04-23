@@ -156,7 +156,9 @@ function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: numb
     { taskExternalId: taskId },
     { enabled: !!taskId }
   );
-  const rateMutation = trpc.task.rateTask.useMutation();
+  const rateMutation = trpc.task.rateTask.useMutation({
+    onError: (err) => { toast.error("Rating failed: " + err.message); },
+  });
 
   // Sync existing rating on load
   useEffect(() => {
@@ -1218,7 +1220,9 @@ function useVoiceRecorder(onTranscription: (text: string) => void) {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
-  const transcribeMutation = trpc.voice.transcribe.useMutation();
+  const transcribeMutation = trpc.voice.transcribe.useMutation({
+    onError: (err) => { toast.error("Transcription failed: " + err.message); },
+  });
 
   const startRecording = useCallback(async () => {
     try {
@@ -1475,7 +1479,9 @@ export default function TaskView() {
   // ── Hands-Free Voice Mode (P15) ──
   const handsFreeInputRef = useRef<string>("");
   // Hands-free transcription uses the same tRPC mutation as the regular voice recorder
-  const handsFreeTranscribeMutation = trpc.voice.transcribe.useMutation();
+  const handsFreeTranscribeMutation = trpc.voice.transcribe.useMutation({
+    onError: (err) => { toast.error("Voice transcription failed: " + err.message); },
+  });
 
   const handsFree = useHandsFreeMode({
     voice: userTTSVoice,
@@ -2191,6 +2197,13 @@ export default function TaskView() {
                 <span className="text-[9px] text-muted-foreground">
                   {agentMode === "speed" ? "speed" : agentMode === "limitless" ? "limitless" : agentMode === "max" ? "max" : "quality"}
                 </span>
+              </span>
+            )}
+            {/* Tool turn counter — VU-02 fix */}
+            {streaming && agentActions.length > 0 && (
+              <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0" title={`${agentActions.length} tool calls executed`}>
+                <span className="text-[10px] text-muted-foreground font-mono">{agentActions.length}</span>
+                <span className="text-[9px] text-muted-foreground">tools</span>
               </span>
             )}
           </div>

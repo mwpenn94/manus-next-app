@@ -9,6 +9,7 @@ import { BridgeProvider } from "./contexts/BridgeContext";
 import { lazy, Suspense } from "react";
 import AppLayout from "./components/AppLayout";
 import FeedbackWidget from "./components/FeedbackWidget";
+import OnboardingTooltips from "./components/OnboardingTooltips";
 
 // Eagerly loaded
 import Home from "./pages/Home";
@@ -298,6 +299,7 @@ function App() {
               <Router />
             </AppLayout>
             <FeedbackWidget />
+            <OnboardingTooltips />
           </TooltipProvider>
           </TaskProvider>
         </BridgeProvider>
