@@ -836,7 +836,23 @@ async function startServer() {
       }
     } catch (err: any) {
       console.error("[Stream] Error:", err);
-      safeWrite(`data: ${JSON.stringify({ error: err.message || "Streaming failed" })}\n\n`);
+      // Map raw errors to user-friendly messages before sending to frontend
+      const rawMsg = err.message || "Streaming failed";
+      const status = err.status || err.statusCode || 0;
+      let friendlyMsg = rawMsg;
+      let retryable = false;
+      if (status === 412 || rawMsg.includes("usage exhausted") || rawMsg.includes("usage_exhausted")) {
+        friendlyMsg = "Your account credits have been exhausted. Please add more credits to continue.";
+      } else if (status === 402 || rawMsg.includes("payment required")) {
+        friendlyMsg = "A payment issue is preventing the request. Please check your billing settings.";
+      } else if (status >= 500) {
+        friendlyMsg = "The AI service encountered a temporary error. Please try again.";
+        retryable = true;
+      } else if (rawMsg.includes("LLM invoke failed")) {
+        friendlyMsg = "The AI service was unable to process your request. Please try again.";
+        retryable = true;
+      }
+      safeWrite(`data: ${JSON.stringify({ error: friendlyMsg, retryable })}\n\n`);
       safeEnd();
     }
   });

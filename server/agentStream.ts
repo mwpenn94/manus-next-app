@@ -1281,20 +1281,46 @@ Do NOT produce a final answer yet. Research more deeply first.`,
     let userMessage = err.message || "Agent execution failed";
     let retryable = false;
     // Provide user-friendly error messages for common failure modes
-    if (err.code === "ETIMEDOUT" || err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+    const msg = err.message || "";
+    const status = err.status || err.statusCode || 0;
+
+    if (status === 412 || msg.includes("usage exhausted") || msg.includes("usage_exhausted") || msg.includes("credits") || msg.includes("quota exceeded")) {
+      userMessage = "Your account credits have been exhausted. Please add more credits in your account settings to continue using the agent. Your conversation has been saved and you can resume once credits are available.";
+      retryable = false;
+    } else if (status === 402 || msg.includes("payment required") || msg.includes("Payment Required") || msg.includes("billing")) {
+      userMessage = "A payment issue is preventing the AI service from processing your request. Please check your billing settings and try again.";
+      retryable = false;
+    } else if (err.code === "ETIMEDOUT" || err.code === "ECONNABORTED" || msg.includes("timeout")) {
       userMessage = "The request timed out. Please try again with a simpler query or switch to Speed mode.";
       retryable = true;
-    } else if (err.status >= 500 || err.message?.includes("500") || err.message?.includes("bad response from upstream") || err.message?.includes("Internal Server Error")) {
+    } else if (status >= 500 || msg.includes("500") || msg.includes("bad response from upstream") || msg.includes("Internal Server Error")) {
       userMessage = "The AI service encountered a temporary error. This usually resolves on its own \u2014 please try again.";
       retryable = true;
-    } else if (err.status === 429 || err.message?.includes("rate limit") || err.message?.includes("Rate limit")) {
+    } else if (status === 429 || msg.includes("rate limit") || msg.includes("Rate limit") || msg.includes("too many requests")) {
       userMessage = "Rate limit reached. Please wait a moment before sending another message.";
       retryable = true;
-    } else if (err.status === 401 || err.status === 403 || err.message?.includes("unauthorized") || err.message?.includes("Unauthorized")) {
+    } else if (status === 401 || status === 403 || msg.includes("unauthorized") || msg.includes("Unauthorized")) {
       userMessage = "Authentication expired. Please refresh the page and log in again.";
-    } else if (err.message?.includes("ECONNREFUSED")) {
+    } else if (msg.includes("ECONNREFUSED")) {
       userMessage = "Unable to connect to the AI service. Please try again in a moment.";
       retryable = true;
+    } else if (msg.includes("context_length_exceeded") || msg.includes("maximum context length")) {
+      userMessage = "This conversation has become too long for the AI to process. Please start a new task or switch to Limitless mode for longer conversations.";
+      retryable = false;
+    } else if (msg.includes("content_filter") || msg.includes("content_policy")) {
+      userMessage = "Your message was flagged by the content safety filter. Please rephrase your request and try again.";
+      retryable = false;
+    } else if (msg.includes("LLM invoke failed")) {
+      // Catch-all for LLM errors that weren't matched above — extract the status code for a cleaner message
+      const statusMatch = msg.match(/LLM invoke failed: (\d+)/);
+      const extractedStatus = statusMatch ? parseInt(statusMatch[1]) : 0;
+      if (extractedStatus >= 500) {
+        userMessage = "The AI service encountered a temporary error. This usually resolves on its own \u2014 please try again.";
+        retryable = true;
+      } else {
+        userMessage = "The AI service was unable to process your request. Please try again or rephrase your message.";
+        retryable = true;
+      }
     }
     sendSSE(safeWrite, { error: userMessage, retryable });
     safeEnd();

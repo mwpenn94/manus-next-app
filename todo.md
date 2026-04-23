@@ -2982,3 +2982,10 @@
 - [x] Bug 12D: PDF generation produces markdown file instead of actual PDF (generate_document now uses real PDF)
 - [x] Bug 12E: Agent over-researches creative tasks (TASK TYPE DETECTION: creative tasks skip research)
 - [x] Bug 12F: LIMITLESS mode causes exhaustive research for every task regardless of type (TASK TYPE DETECTION applies to all modes)
+
+## Session 15: LLM Error Handling & Graceful Degradation
+
+- [x] BUG: Raw LLM error "412 Precondition Failed – usage exhausted" shown to user instead of friendly message
+- [x] Add user-friendly error messages for LLM API failures (usage exhausted, rate limit, network errors)
+- [x] Add graceful degradation when credits are exhausted (inform user, suggest actions)
+- [x] Ensure error messages are displayed as proper chat messages, not raw error dumps
