@@ -75,8 +75,11 @@ import {
   Sparkles,
   Zap,
   BookmarkPlus,
+  Grid2x2,
+  Maximize,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ImageLightbox from "@/components/ImageLightbox";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -681,6 +684,15 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
   const [selectedCodeIdx, setSelectedCodeIdx] = useState(0);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [selectedDocIdx, setSelectedDocIdx] = useState(0);
+  const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
+  const [imageViewMode, setImageViewMode] = useState<"preview" | "gallery">("preview");
+
+  // Fetch user-uploaded files for this task (for image gallery)
+  const userFiles = trpc.file.list.useQuery(
+    { taskExternalId: task?.id || "" },
+    { enabled: !!task?.id, refetchInterval: task?.status === "running" ? 5000 : false }
+  );
 
   // Fetch real artifacts from DB — queries auto-enable when serverId becomes available
   const serverId = task?.serverId ?? 0;
@@ -757,7 +769,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { id: "browser", label: "Browser", icon: Globe },
     { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
     { id: "terminal", label: "Terminal", icon: Terminal, count: terminalArtifacts.data?.length },
-    { id: "images", label: "Images", icon: ImageIcon, count: imageArtifacts.data?.length },
+    { id: "images", label: "Images", icon: ImageIcon, count: (imageArtifacts.data?.length || 0) + (userFiles.data?.filter((f: any) => f.mimeType?.startsWith("image/")).length || 0) || undefined },
     { id: "documents", label: "Docs", icon: FileText, count: allDocuments.length || undefined },
   ];
 
@@ -996,89 +1008,180 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
           </div>
         )}
 
-        {activeTab === "images" && (
-          <div className="h-full overflow-hidden flex flex-col">
-            {imageArtifacts.data && imageArtifacts.data.length > 0 ? (
-              <>
-                {/* Selected image preview */}
-                {(() => {
-                  const selected = imageArtifacts.data[selectedImageIdx ?? 0] as any;
-                  if (!selected) return null;
-                  return (
-                    <div className="flex-1 flex items-center justify-center p-4 bg-black/5 relative">
-                      <img
-                        src={selected.url}
-                        alt={selected.label || "Generated image"}
-                        className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                      />
-                      <div className="absolute top-3 right-3 flex items-center gap-1">
-                        <button
-                          onClick={() => selected.url && window.open(selected.url, "_blank")}
-                          className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
-                          title="Open full size"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (selected.url) {
-                              const a = document.createElement("a");
-                              a.href = selected.url;
-                              a.download = selected.label || "image";
-                              a.click();
-                            }
-                          }}
-                          className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
-                          title="Download"
-                        >
-                          <Download className="w-3 h-3" />
-                        </button>
-                      </div>
-                      {selected.label && (
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <p className="text-[11px] text-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded truncate">
-                            {selected.label}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-                {/* Thumbnail strip */}
-                <div className="shrink-0 border-t border-border p-2 overflow-x-auto">
-                  <div className="flex items-center gap-2">
-                    {imageArtifacts.data.map((img: any, i: number) => (
+        {activeTab === "images" && (() => {
+          // Collect ALL images: agent-generated + user-uploaded
+          const generatedImages = (imageArtifacts.data || []).map((img: any) => ({
+            url: img.url,
+            label: img.label || "Generated image",
+            source: "generated" as const,
+          }));
+          const uploadedImages = (userFiles.data || [])
+            .filter((f: any) => f.mimeType?.startsWith("image/"))
+            .map((f: any) => ({
+              url: f.url,
+              label: f.fileName || "Uploaded image",
+              source: "uploaded" as const,
+            }));
+          const allImages = [...generatedImages, ...uploadedImages];
+          const allImageUrls = allImages.map((img) => img.url);
+
+          return (
+            <div className="h-full overflow-hidden flex flex-col">
+              {allImages.length > 0 ? (
+                <>
+                  {/* View mode toggle */}
+                  <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-border">
+                    <span className="text-[11px] text-muted-foreground">
+                      {generatedImages.length > 0 && <span>{generatedImages.length} generated</span>}
+                      {generatedImages.length > 0 && uploadedImages.length > 0 && <span> · </span>}
+                      {uploadedImages.length > 0 && <span>{uploadedImages.length} uploaded</span>}
+                    </span>
+                    <div className="flex items-center gap-1 p-0.5 bg-muted/50 rounded-md">
                       <button
-                        key={img.id || i}
-                        onClick={() => setSelectedImageIdx(i)}
-                        className={cn(
-                          "w-14 h-14 rounded-md overflow-hidden border-2 shrink-0 transition-all",
-                          (selectedImageIdx ?? 0) === i
-                            ? "border-primary shadow-sm shadow-primary/20"
-                            : "border-border hover:border-foreground/30"
-                        )}
+                        onClick={() => setImageViewMode("preview")}
+                        className={cn("p-1 rounded transition-colors", imageViewMode === "preview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                        title="Preview mode"
                       >
-                        <img
-                          src={img.url}
-                          alt={img.label || `Image ${i + 1}`}
-                          className="w-full h-full object-cover"
-                        />
+                        <Maximize className="w-3.5 h-3.5" />
                       </button>
-                    ))}
+                      <button
+                        onClick={() => setImageViewMode("gallery")}
+                        className={cn("p-1 rounded transition-colors", imageViewMode === "gallery" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                        title="Gallery grid"
+                      >
+                        <Grid2x2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {imageViewMode === "preview" ? (
+                    <>
+                      {/* Selected image preview */}
+                      {(() => {
+                        const selected = allImages[selectedImageIdx ?? 0];
+                        if (!selected) return null;
+                        return (
+                          <div
+                            className="flex-1 flex items-center justify-center p-4 bg-black/5 relative cursor-pointer"
+                            onClick={() => { setLightboxIdx(selectedImageIdx ?? 0); setImageLightboxOpen(true); }}
+                          >
+                            <img
+                              src={selected.url}
+                              alt={selected.label}
+                              className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                            />
+                            <div className="absolute top-3 right-3 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => window.open(selected.url, "_blank")}
+                                className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
+                                title="Open full size"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const a = document.createElement("a");
+                                  a.href = selected.url;
+                                  a.download = selected.label || "image";
+                                  a.click();
+                                }}
+                                className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
+                                title="Download"
+                              >
+                                <Download className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center gap-1.5">
+                                {selected.label && (
+                                  <p className="text-[11px] text-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded truncate max-w-[200px]">
+                                    {selected.label}
+                                  </p>
+                                )}
+                                <span className={cn("text-[9px] px-1.5 py-0.5 rounded-full", selected.source === "generated" ? "bg-primary/20 text-primary" : "bg-blue-500/20 text-blue-400")}>
+                                  {selected.source}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => { setLightboxIdx(selectedImageIdx ?? 0); setImageLightboxOpen(true); }}
+                                className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
+                                title="Expand"
+                              >
+                                <Maximize2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {/* Thumbnail strip */}
+                      <div className="shrink-0 border-t border-border p-2 overflow-x-auto">
+                        <div className="flex items-center gap-2">
+                          {allImages.map((img, i) => (
+                            <button
+                              key={`${img.source}-${i}`}
+                              onClick={() => setSelectedImageIdx(i)}
+                              className={cn(
+                                "w-14 h-14 rounded-md overflow-hidden border-2 shrink-0 transition-all relative",
+                                (selectedImageIdx ?? 0) === i
+                                  ? "border-primary shadow-sm shadow-primary/20"
+                                  : "border-border hover:border-foreground/30"
+                              )}
+                            >
+                              <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                              <span className={cn("absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full", img.source === "generated" ? "bg-primary" : "bg-blue-400")} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* Gallery grid view */
+                    <div className="flex-1 overflow-y-auto p-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        {allImages.map((img, i) => (
+                          <button
+                            key={`gallery-${img.source}-${i}`}
+                            onClick={() => { setLightboxIdx(i); setImageLightboxOpen(true); }}
+                            className="relative aspect-square rounded-lg overflow-hidden border border-border hover:border-primary/30 transition-all group"
+                          >
+                            <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                            </div>
+                            <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between">
+                              <span className="text-[9px] text-white bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded truncate max-w-[80%]">
+                                {img.label}
+                              </span>
+                              <span className={cn("w-2 h-2 rounded-full shrink-0", img.source === "generated" ? "bg-primary" : "bg-blue-400")} />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                  <div>
+                    <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-xs">No images yet</p>
+                    <p className="text-[10px] mt-1 text-muted-foreground">Generated and uploaded images will appear here</p>
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                <div>
-                  <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-xs">No generated images yet</p>
-                  <p className="text-[10px] mt-1 text-muted-foreground">Images will appear here when the agent generates them</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+
+              {/* Lightbox */}
+              {imageLightboxOpen && allImageUrls.length > 0 && (
+                <ImageLightbox
+                  images={allImageUrls}
+                  currentIndex={lightboxIdx}
+                  onClose={() => setImageLightboxOpen(false)}
+                  onNavigate={(idx) => setLightboxIdx(idx)}
+                />
+              )}
+            </div>
+          );
+        })()}
 
         {activeTab === "documents" && (
           <div className="h-full overflow-hidden flex flex-col">

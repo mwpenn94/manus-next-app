@@ -730,12 +730,14 @@ will seamlessly continue you with full context. Write as extensively as the task
     // Key = "toolName:argHash", value = turn number when it was last called.
     const recentToolCallKeys = new Map<string, number>();
 
-    // STUCK/LOOP DETECTION: Track consecutive similar text-only responses.
-    // If the agent produces 2+ consecutive text responses with high similarity
-    // (e.g., "Conducting deeper research..." repeated), force a different approach.
+    // STUCK/LOOP DETECTION with INTELLIGENT SELF-CORRECTION
+    // Deeply aligned with Manus: instead of just stopping, the agent rotates through
+    // progressively different strategies before giving up. Each intervention is
+    // context-aware — it analyzes WHAT the agent was doing and suggests the opposite.
     const recentTextResponses: string[] = [];
     let stuckBreakCount = 0;
-    const MAX_STUCK_BREAKS = 3; // After 3 stuck-break interventions, force final answer
+    const MAX_STUCK_BREAKS = 4; // 3 self-correction attempts + 1 forced final answer
+    const stuckStrategiesUsed: string[] = []; // Track which strategies we've tried
 
     // Register prefix for caching (system prompt + tool definitions)
     const toolsJson = JSON.stringify(AGENT_TOOLS);
@@ -964,30 +966,62 @@ will seamlessly continue you with full context. Write as extensively as the task
             stuckBreakCount++;
             console.log(`[Agent] STUCK DETECTED (${stuckBreakCount}/${MAX_STUCK_BREAKS}): Agent producing repetitive text-only responses`);
 
+            // Analyze what the agent was doing to generate context-aware correction
+            const stuckText = normalizedText;
+            const wasResearching = /research|search|look|find|gather|investigat/i.test(stuckText);
+            const wasClaiming = /can't|cannot|unable|don't have|no access|not able/i.test(stuckText);
+            const wasAsking = /could you|please provide|can you|what would|which|clarif/i.test(stuckText);
+            const wasApologizing = /sorry|apologize|unfortunately|i'm afraid/i.test(stuckText);
+            const wasRepeatingPlan = /let me|i'll|i will|going to|plan to|next step/i.test(stuckText);
+
             if (stuckBreakCount >= MAX_STUCK_BREAKS) {
-              // Force final answer — agent has been stuck too long
-              console.log(`[Agent] STUCK BREAK: Forcing final answer after ${stuckBreakCount} stuck interventions`);
+              // Force final answer — agent has exhausted all self-correction attempts
+              console.log(`[Agent] STUCK BREAK: Forcing final answer after ${stuckBreakCount} stuck interventions (strategies tried: ${stuckStrategiesUsed.join(", ")})`);
               finalContent = "";
               sendSSE(safeWrite, { delta: "\n\n" });
               conversation.push({ role: "assistant", content: textContent || "" });
               conversation.push({
                 role: "user",
-                content: `STOP LOOPING. You have been repeating similar responses without making progress. This is your FINAL chance to respond. Based on everything you have gathered so far, produce your BEST possible answer to the user's original request RIGHT NOW. Do NOT search again, do NOT say you need more research, do NOT repeat what you already said. Just give the user a complete, helpful response with what you have.`,
+                content: `FINAL INSTRUCTION: You have been stuck in a loop for ${stuckBreakCount} turns despite multiple strategy changes (${stuckStrategiesUsed.join(" → ")}). This is your ABSOLUTE LAST turn. You MUST produce a complete, useful response NOW using ONLY what you already know. Rules:\n1. Do NOT search, research, or use any tools\n2. Do NOT say you need more information\n3. Do NOT apologize or explain limitations\n4. DO synthesize everything gathered so far into a coherent answer\n5. If you truly have nothing, honestly say so in ONE sentence and suggest what the user could try\nRespond NOW.`,
               });
-              // Set stuckBreakCount very high so next iteration won't loop again
               stuckBreakCount = MAX_STUCK_BREAKS + 10;
               continue;
-            } else {
-              // Try a different approach
-              console.log(`[Agent] STUCK INTERVENTION: Redirecting agent to try a different approach`);
-              finalContent = "";
-              conversation.push({ role: "assistant", content: textContent || "" });
-              conversation.push({
-                role: "user",
-                content: `You appear to be stuck in a loop, repeating similar responses. CHANGE YOUR APPROACH. Instead of what you've been doing:\n- If you've been trying to research, try producing the answer from what you already know\n- If you've been asking for clarification, make your best assumption and proceed\n- If you've been claiming you can't access something, try a different tool or method\n- If the user attached files/images, remember: YOU CAN SEE THEM. Analyze them directly.\nDo something DIFFERENT this turn.`,
-              });
-              continue;
             }
+
+            // INTELLIGENT STRATEGY ROTATION — each intervention is context-aware
+            let correctionStrategy: string;
+            let strategyLabel: string;
+
+            if (stuckBreakCount === 1) {
+              // First intervention: Diagnose and redirect
+              strategyLabel = "diagnose-redirect";
+              if (wasResearching) {
+                correctionStrategy = `SELF-CORRECTION: You've been repeatedly trying to research/search without making progress. STOP RESEARCHING. Instead:\n1. Use what you already know to answer the question directly\n2. If you found partial results, synthesize them into a useful response\n3. Be upfront about gaps: "Based on what I found so far..."\nProduce a substantive response THIS turn using existing knowledge.`;
+              } else if (wasClaiming) {
+                correctionStrategy = `SELF-CORRECTION: You've been repeatedly claiming you can't do something. STOP CLAIMING LIMITATIONS. Instead:\n1. If the user attached images/files: YOU CAN SEE THEM. Describe what you observe.\n2. If you said you can't access something: try a different tool (web_search, code_execute, etc.)\n3. If you truly can't: explain what you CAN do and offer a concrete alternative.\nTake ACTION this turn instead of explaining what you can't do.`;
+              } else if (wasAsking) {
+                correctionStrategy = `SELF-CORRECTION: You've been repeatedly asking for clarification without progressing. STOP ASKING. Instead:\n1. Make your best reasonable assumption about what the user wants\n2. State your assumption clearly: "I'll assume you mean X..."\n3. Produce a complete answer based on that assumption\nDeliver a response THIS turn.`;
+              } else if (wasApologizing) {
+                correctionStrategy = `SELF-CORRECTION: You've been apologizing repeatedly without delivering value. STOP APOLOGIZING. Instead:\n1. Skip all preamble and apologies\n2. Go directly to the most useful thing you can provide\n3. If the task is partially complete, deliver what you have\nProvide VALUE this turn, not apologies.`;
+              } else {
+                correctionStrategy = `SELF-CORRECTION: You're repeating yourself without making progress. CHANGE YOUR APPROACH COMPLETELY:\n1. Re-read the user's original message carefully\n2. Identify the core ask (not what you think they want, what they actually said)\n3. Take the most direct path to answering it\n4. If you've been planning, stop planning and start doing\nDeliver something CONCRETE this turn.`;
+              }
+            } else if (stuckBreakCount === 2) {
+              // Second intervention: Force tool use or direct answer
+              strategyLabel = "force-action";
+              correctionStrategy = `CRITICAL: Your previous self-correction didn't work — you're STILL repeating yourself. You MUST take a COMPLETELY DIFFERENT action this turn. Previous strategy (${stuckStrategiesUsed[stuckStrategiesUsed.length - 1]}) failed.\n\nCHOOSE ONE of these escape routes:\nA) If you have ANY information: Write your response immediately, starting with the answer (no preamble)\nB) If you need data: Use a DIFFERENT tool than what you've been using (try code_execute to compute, or web_search with different keywords)\nC) If the user sent attachments: Describe exactly what you see in them\nD) If nothing works: Give the user a honest 2-sentence summary of where you're stuck and ask ONE specific question\n\nYou MUST pick A, B, C, or D. No other option.`;
+            } else {
+              // Third intervention: Last chance before forced answer
+              strategyLabel = "last-chance";
+              correctionStrategy = `LAST CHANCE before I force a final answer. You have ONE more turn. Strategies tried: ${stuckStrategiesUsed.join(" → ")}. All failed.\n\nYour ONLY option now: Write your best possible response using ONLY what's in your conversation history. Do not use any tools. Do not search. Do not ask questions. Just write. Start with the most important information first. If you have nothing useful, say "I wasn't able to complete this task" and explain why in one sentence.`;
+            }
+
+            stuckStrategiesUsed.push(strategyLabel);
+            console.log(`[Agent] STUCK INTERVENTION #${stuckBreakCount}: Strategy=${strategyLabel}`);
+            finalContent = "";
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({ role: "user", content: correctionStrategy });
+            continue;
           }
         }
 

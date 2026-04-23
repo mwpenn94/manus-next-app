@@ -3097,3 +3097,29 @@
 - [x] Write Session 20 tests (34 tests in session20-attachment-loop-decay.test.ts)
 - [x] Run full test suite (1,952 tests passing across 82 files + 1 transient worker OOM)
 - [x] Save checkpoint
+
+## Session 21: Archived Memories UI, Multi-Image Lightbox, Agent Self-Correction (Manus-Aligned)
+
+### Feature 1: Archived Memories UI
+- [x] Add "Archived" tab on Memory page showing auto-archived memories
+- [x] Show archive reason (e.g., "Unused for 30+ days") and archived date
+- [x] One-click unarchive button to restore individual memories
+- [x] Bulk unarchive action for multiple selected memories
+- [x] Empty state with explanation of memory decay system
+
+### Feature 2: Multi-Image Lightbox in TaskView
+- [x] Detect all images in task conversation messages (user uploads + agent-generated)
+- [x] Show gallery grid of all task images in a collapsible section
+- [x] Click any image to open full-resolution lightbox with prev/next navigation
+- [x] Integrate with existing ImageLightbox component
+
+### Feature 3: Agent Self-Correction on Loop Detection
+- [x] When loop detection triggers (stuckCount >= 2), inject context-aware self-correction with strategy rotation
+- [x] Give agent 3 self-correction chances with progressive escalation before forcing final answer
+- [x] Force final answer at stuckCount >= 4 after exhausting all strategies (diagnose-redirect → force-action → last-chance)
+- [x] Log self-correction attempts with strategy labels for debugging
+
+### Testing & Checkpoint
+- [x] Write Session 21 tests (27 tests in session21-archived-lightbox-selfcorrect.test.ts)
+- [x] Run full test suite (1,979 tests passing across 83 files)
+- [x] Save checkpoint
