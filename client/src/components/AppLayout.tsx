@@ -20,6 +20,7 @@ import { useBridge } from "@/contexts/BridgeContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ModelSelector from "@/components/ModelSelector";
 import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -610,7 +611,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <BridgeStatusBadge />
 
       {/* Sidebar Footer — Nav links (scrollable) */}
-      <div className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
+      <div className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto max-h-[40vh] min-h-0">
         {/* Section: Manus Next */}
         <div className="px-3 pt-2 pb-1">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus Next">Manus Next</span>
@@ -941,7 +942,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Referral/Invite Banner — Manus parity */}
       {isAuthenticated && (
-        <div className="mx-2 mb-1 p-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border cursor-pointer hover:bg-sidebar-accent transition-colors"
+        <div className="mx-2 mb-1 p-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border cursor-pointer hover:bg-sidebar-accent transition-colors relative z-10"
           onClick={() => { navigator.clipboard.writeText(window.location.origin); toast.success("Invite link copied!"); }}
         >
           <div className="flex items-center gap-2">
@@ -953,7 +954,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Auth Section — pinned at bottom, never scrolls away */}
-      <div className="border-t border-sidebar-border p-2 shrink-0">
+      <div className="border-t border-sidebar-border p-2 shrink-0 relative z-10 bg-sidebar">
         {authLoading ? (
           <div className="flex items-center gap-2.5 px-3 py-2">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -1081,10 +1082,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               manus next
             </span>
           </Link>
+          {/* ModelSelector — show on desktop Home route so users can switch models */}
+          {location === "/" && (
+            <div className="ml-4">
+              <ModelSelector compact />
+            </div>
+          )}
           <div className="ml-auto flex items-center gap-1">
             <button
               onClick={cycleTheme}
-              className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}`}
               aria-label={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}. Click to cycle.`}
             >

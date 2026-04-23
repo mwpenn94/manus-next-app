@@ -2586,3 +2586,26 @@
 - [x] Settings page: mobile layout fixed — horizontal scrollable tab bar replaces sidebar, full-width content below
 - [x] FeedbackWidget FAB: increased bottom offset on mobile (5.5rem + safe-area) to clear bottom nav
 - [x] Desktop Home: fixed double header — Home's own header now md:hidden, AppLayout header provides sidebar toggle + theme on desktop
+
+### Next Steps Implementation (User-requested)
+- [x] Test mobile sidebar drawer: hamburger opens drawer (x=0, w=300), closes on route navigation (x=-300), overlay dismiss works, smooth translate animation, unique aria-label="Open menu"
+- [x] Add ModelSelector to desktop AppLayout header — shown on Home route between logo and right-side controls
+- [x] Add CSS scroll-snap swipe gestures — mandatory snap for suggestion cards, proximity snap for pills, pagination dots with active indicator + tap-to-scroll
+
+### V10 Ultimate Recursive Optimization Protocol
+- [ ] V10 Pass 1 — Investigation: full code audit, Playwright visual audit all pages, schema audit
+- [ ] V10 Pass 1 — Optimization: fix all findings from investigation
+- [ ] V10 Pass 1 — Validation: full test suite, TS check, Playwright screenshots, virtual user journeys
+- [ ] V10 Pass 2 — Convergence check: verify all criteria met
+- [x] Fix sidebar nav links z-index stacking issue — auth section now has relative z-10 bg-sidebar
+- [x] Fix sidebar nav links overflow — max-h-[40vh] with overflow-y-auto properly clips content
+- [x] Update z-index debug script to exclude elements scrolled out of scroll containers
+- [x] Update virtual user test script with smart scroll-container-aware stacking detection
+- [x] Virtual user tests: 0 issues across all 4 personas (Mobile Power User, Desktop New User, Tablet User, Small Desktop)
+- [x] Full test suite: 1578 tests passing across 63 files, 0 regressions
+- [x] Fix sidebar nav links z-index stacking issue — auth section now has relative z-10 bg-sidebar
+- [x] Fix sidebar nav links overflow — max-h-[40vh] with overflow-y-auto properly clips content
+- [x] Update z-index debug script to exclude elements scrolled out of scroll containers
+- [x] Update virtual user test script with smart scroll-container-aware stacking detection
+- [x] Virtual user tests: 0 issues across all 4 personas
+- [x] Full test suite: 1578 tests passing across 63 files, 0 regressions

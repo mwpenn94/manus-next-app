@@ -372,14 +372,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Mobile horizontal tab bar */}
-      <div className="md:hidden border-b border-border bg-card overflow-x-auto shrink-0">
-        <div className="flex px-2 py-2 gap-1 min-w-max">
+      <div className="md:hidden border-b border-border bg-card overflow-x-auto shrink-0 scrollbar-none">
+        <div className="flex px-2 py-2 gap-1.5" style={{ minWidth: 'max-content' }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors",
+                "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs whitespace-nowrap transition-colors min-h-[44px]",
                 activeTab === tab.id
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"

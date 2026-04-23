@@ -81,6 +81,17 @@ export default function Home() {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounterRef = useRef(0);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [activeDot, setActiveDot] = useState(0);
+
+  // Track which suggestion card is in view for pagination dots
+  const handleSuggestionsScroll = useCallback(() => {
+    const el = suggestionsRef.current;
+    if (!el) return;
+    const cardWidth = 260 + 12; // card width + gap
+    const index = Math.round(el.scrollLeft / cardWidth);
+    setActiveDot(Math.min(index, SUGGESTIONS.length - 1));
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -204,7 +215,7 @@ export default function Home() {
               window.dispatchEvent(new CustomEvent('open-mobile-drawer'));
             }}
             className="p-2 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 md:hidden"
-            aria-label="Open sidebar"
+            aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -404,17 +415,18 @@ export default function Home() {
 
         {/* Quick Action Chips — horizontal scroll */}
         <motion.div
-          className="w-full max-w-[640px] mb-6 md:mb-10"
+          className="w-full max-w-[640px] mb-6 md:mb-10 overflow-hidden"
           initial={{ y: 8 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pr-8 md:pr-0" style={{ maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' }}>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pr-8 md:pr-0" style={{ scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch', maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' }}>
             {QUICK_ACTIONS.map((action) => (
               <button
                 key={action.label}
                 onClick={() => setInput(action.prompt)}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-border bg-transparent text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all whitespace-nowrap shrink-0"
+                style={{ scrollSnapAlign: 'start' }}
               >
                 <action.icon className="w-3.5 h-3.5" />
                 {action.label}
@@ -425,12 +437,17 @@ export default function Home() {
 
         {/* Suggestion Cards — horizontal scroll like Manus */}
         <motion.div
-          className="w-full max-w-4xl"
+          className="w-full max-w-4xl overflow-hidden"
           initial={{ y: 6 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1 pr-8 md:pr-1" style={{ maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' }}>
+          <div
+            ref={suggestionsRef}
+            onScroll={handleSuggestionsScroll}
+            className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-1 pr-8 md:pr-1"
+            style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth', maskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)', WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 2rem), transparent)' }}
+          >
             {SUGGESTIONS.map((suggestion, i) => (
               <motion.button
                 key={suggestion.title}
@@ -439,6 +456,7 @@ export default function Home() {
                 transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
                 onClick={() => setInput(suggestion.title)}
                 className="text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]"
+                style={{ scrollSnapAlign: 'start' }}
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-accent transition-colors">
@@ -454,6 +472,31 @@ export default function Home() {
                   </div>
                 </div>
               </motion.button>
+            ))}
+          </div>
+          {/* Pagination dots — mobile only */}
+          <div className="flex items-center justify-center gap-3 mt-2 md:hidden">
+            {SUGGESTIONS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  const el = suggestionsRef.current;
+                  if (el) {
+                    el.scrollTo({ left: i * (260 + 12), behavior: 'smooth' });
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-center w-11 h-11 -m-4 rounded-full transition-all duration-200"
+                )}
+                aria-label={`Go to suggestion ${i + 1}`}
+              >
+                <span className={cn(
+                  "rounded-full transition-all duration-200",
+                  activeDot === i
+                    ? "bg-foreground w-3 h-2"
+                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2 h-2"
+                )} />
+              </button>
             ))}
           </div>
         </motion.div>

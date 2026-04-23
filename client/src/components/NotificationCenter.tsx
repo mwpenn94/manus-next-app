@@ -56,7 +56,7 @@ export default function NotificationCenter() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        className="relative p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
         title="Notifications"
       >
         <Bell className="w-4.5 h-4.5" />
