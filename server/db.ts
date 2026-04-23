@@ -170,7 +170,13 @@ export async function sweepStaleTasks(timeoutMs: number = 2 * 60 * 60 * 1000): P
   if (!db) return 0;
   const cutoff = new Date(Date.now() - timeoutMs);
   // Find tasks that have been running/paused since before the cutoff
-  const staleTasks = await db.select({ id: tasks.id, externalId: tasks.externalId, status: tasks.status })
+  const staleTasks = await db.select({
+    id: tasks.id,
+    externalId: tasks.externalId,
+    status: tasks.status,
+    userId: tasks.userId,
+    title: tasks.title,
+  })
     .from(tasks)
     .where(
       and(
@@ -180,13 +186,25 @@ export async function sweepStaleTasks(timeoutMs: number = 2 * 60 * 60 * 1000): P
     )
     .limit(100);
   if (staleTasks.length === 0) return 0;
-  // Mark them as completed (they ran but didn't finish cleanly)
+  // Mark them as completed with staleCompleted flag + create notifications
   for (const t of staleTasks) {
     await db.update(tasks)
-      .set({ status: "completed" })
+      .set({ status: "completed", staleCompleted: 1 })
       .where(eq(tasks.id, t.id));
+    // Create a notification for the user
+    try {
+      await db.insert(notifications).values({
+        userId: t.userId,
+        type: "stale_completed" as any,
+        title: `Task auto-completed: ${(t.title || "Untitled").slice(0, 100)}`,
+        content: `This task was inactive for over ${Math.round(timeoutMs / 3600000)} hour(s) and was automatically marked as completed. You can resume it from the task view.`,
+        taskExternalId: t.externalId,
+      });
+    } catch (notifErr: any) {
+      console.warn(`[StaleSweep] Failed to create notification for task ${t.externalId}:`, notifErr.message?.slice(0, 100));
+    }
   }
-  console.log(`[StaleSweep] Marked ${staleTasks.length} stale task(s) as completed`);
+  console.log(`[StaleSweep] Marked ${staleTasks.length} stale task(s) as completed with notifications`);
   return staleTasks.length;
 }
 
@@ -340,6 +358,39 @@ export async function getTaskFiles(taskExternalId: string) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(taskFiles).where(eq(taskFiles.taskExternalId, taskExternalId)).orderBy(desc(taskFiles.createdAt)).limit(100);
+}
+
+/**
+ * Batch-fetch the first image attachment for each task.
+ * Returns a map of taskExternalId → thumbnail URL.
+ * Used for sidebar attachment previews.
+ */
+export async function getTaskThumbnails(taskExternalIds: string[]): Promise<Record<string, string>> {
+  const db = await getDb();
+  if (!db || taskExternalIds.length === 0) return {};
+  // Fetch all image files for these tasks
+  const imageFiles = await db.select({
+    taskExternalId: taskFiles.taskExternalId,
+    url: taskFiles.url,
+    mimeType: taskFiles.mimeType,
+  })
+    .from(taskFiles)
+    .where(
+      and(
+        inArray(taskFiles.taskExternalId, taskExternalIds),
+        sql`${taskFiles.mimeType} LIKE 'image/%'`
+      )
+    )
+    .orderBy(desc(taskFiles.createdAt))
+    .limit(taskExternalIds.length * 3); // Get a few per task to ensure coverage
+  // Pick the first image per task
+  const result: Record<string, string> = {};
+  for (const f of imageFiles) {
+    if (!result[f.taskExternalId]) {
+      result[f.taskExternalId] = f.url;
+    }
+  }
+  return result;
 }
 
 // ── User Preferences Queries ──

@@ -176,6 +176,13 @@
       "when": 1776956820871,
       "tag": "0024_gorgeous_marauders",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1776974028669,
+      "tag": "0025_strange_electro",
+      "breakpoints": true
     }
   ]
 }

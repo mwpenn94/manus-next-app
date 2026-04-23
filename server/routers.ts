@@ -157,6 +157,7 @@ import {
   getTaskBranches,
   getParentBranch,
   getChildBranches,
+  getTaskThumbnails,
 } from "./db";
 import { eq, inArray } from "drizzle-orm";
 import { validateTunnelUrl } from "./urlValidator";
@@ -295,6 +296,19 @@ export const appRouter = router({
         return { swept };
       }),
 
+    /** Resume a stale-completed task — resets it to idle so the user can continue */
+    resumeStale: protectedProcedure
+      .input(z.object({ externalId: z.string().max(50) }))
+      .mutation(async ({ ctx, input }) => {
+        const task = await getTaskByExternalId(input.externalId);
+        if (!task || task.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
+        if (!task.staleCompleted) throw new TRPCError({ code: "BAD_REQUEST", message: "Task was not auto-completed" });
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        await db.update(tasks).set({ status: "idle", staleCompleted: 0 }).where(eq(tasks.externalId, input.externalId));
+        return { success: true };
+      }),
+
     search: protectedProcedure
       .input(z.object({
         query: z.string().min(1),
@@ -390,6 +404,13 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         await verifyTaskOwnership(input.taskExternalId, ctx.user.id);
         return getTaskFiles(input.taskExternalId);
+      }),
+
+    /** Batch-fetch first image thumbnail per task for sidebar previews */
+    thumbnails: protectedProcedure
+      .input(z.object({ taskExternalIds: z.array(z.string().max(50)).max(100) }))
+      .query(async ({ input }) => {
+        return getTaskThumbnails(input.taskExternalIds);
       }),
   }),
 

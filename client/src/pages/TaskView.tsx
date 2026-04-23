@@ -1466,6 +1466,14 @@ export default function TaskView() {
     onSuccess: () => { toast.success("Saved as template"); },
     onError: () => { toast.error("Failed to save template"); },
   });
+  const resumeStaleMutation = trpc.task.resumeStale.useMutation({
+    onSuccess: () => {
+      toast.success("Task resumed — you can continue where you left off");
+      utils.task.list.invalidate();
+      utils.task.get.invalidate();
+    },
+    onError: () => { toast.error("Failed to resume task"); },
+  });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },
     { enabled: !!taskExternalId && isAuthenticated }
@@ -2630,10 +2638,38 @@ export default function TaskView() {
             {/* Completion badge + rating row */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium text-muted-foreground">Task completed</span>
+                <div className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                  (task as any).staleCompleted === 1
+                    ? "bg-amber-500/10 border-amber-500/30"
+                    : "bg-muted border-border"
+                )}>
+                  <CheckCircle2 className={cn(
+                    "w-3.5 h-3.5",
+                    (task as any).staleCompleted === 1 ? "text-amber-400" : "text-muted-foreground"
+                  )} />
+                  <span className={cn(
+                    "text-xs font-medium",
+                    (task as any).staleCompleted === 1 ? "text-amber-400" : "text-muted-foreground"
+                  )}>
+                    {(task as any).staleCompleted === 1 ? "Auto-completed (inactive)" : "Task completed"}
+                  </span>
                 </div>
+                {(task as any).staleCompleted === 1 && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await resumeStaleMutation.mutateAsync({ externalId: task.id });
+                      } catch (err: any) {
+                        console.error("Resume failed:", err);
+                      }
+                    }}
+                    disabled={resumeStaleMutation.isPending}
+                    className="text-xs px-3 py-1 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity font-medium"
+                  >
+                    {resumeStaleMutation.isPending ? "Resuming..." : "Resume Task"}
+                  </button>
+                )}
                 {task.completedSteps && task.totalSteps && (
                   <span className="text-[11px] text-muted-foreground">
                     {task.completedSteps}/{task.totalSteps} steps

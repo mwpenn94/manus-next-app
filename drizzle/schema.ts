@@ -49,6 +49,8 @@ export const tasks = mysqlTable("tasks", {
   archived: int("archived").default(0).notNull(),
   /** Favorite/bookmark flag for quick access */
   favorite: int("favorite").default(0).notNull(),
+  /** Flag: set to 1 when task was auto-completed by stale sweep */
+  staleCompleted: int("staleCompleted").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -199,8 +201,8 @@ export type InsertTaskShare = typeof taskShares.$inferInsert;
 export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  /** Notification type: task_completed, task_error, share_viewed, system */
-  type: mysqlEnum("type", ["task_completed", "task_error", "share_viewed", "system"]).notNull(),
+  /** Notification type: task_completed, task_error, share_viewed, system, stale_completed */
+  type: mysqlEnum("type", ["task_completed", "task_error", "share_viewed", "system", "stale_completed"]).notNull(),
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content"),
   /** Related task external ID (optional) */

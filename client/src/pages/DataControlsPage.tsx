@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Shield, Globe, Monitor, Trash2, Download, Share2, Eye, EyeOff, Cookie, RefreshCw, AlertTriangle, Loader2, HardDrive, Lock } from "lucide-react";
+import { Shield, Globe, Monitor, Trash2, Download, Share2, Eye, EyeOff, Cookie, RefreshCw, AlertTriangle, Loader2, HardDrive, Lock, Brain } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ interface DataControlSettings {
   allowCookieStorage: boolean;
   autoDeleteHistory: boolean;
   historyRetentionDays: number;
+  memoryEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: DataControlSettings = {
@@ -23,6 +24,7 @@ const DEFAULT_SETTINGS: DataControlSettings = {
   allowCookieStorage: true,
   autoDeleteHistory: false,
   historyRetentionDays: 90,
+  memoryEnabled: true, // Manus-aligned default: memory persists across tasks
 };
 
 export default function DataControlsPage() {
@@ -49,6 +51,7 @@ export default function DataControlsPage() {
         allowCookieStorage: typeof gs.allowCookieStorage === "boolean" ? gs.allowCookieStorage : prev.allowCookieStorage,
         autoDeleteHistory: typeof gs.autoDeleteHistory === "boolean" ? gs.autoDeleteHistory : prev.autoDeleteHistory,
         historyRetentionDays: typeof gs.historyRetentionDays === "number" ? gs.historyRetentionDays : prev.historyRetentionDays,
+        memoryEnabled: typeof gs.memoryEnabled === "boolean" ? gs.memoryEnabled : prev.memoryEnabled,
       }));
     }
   }, [prefsQuery.data]);
@@ -227,6 +230,46 @@ export default function DataControlsPage() {
             <Button variant="outline" size="sm" onClick={() => setConfirmClearBrowser(true)} className="mt-2">
               <Cookie className="w-3.5 h-3.5 mr-1.5" /> Clear Browser Data
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Memory & Personalization */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Brain className="w-4 h-4 text-primary" /> Memory & Personalization
+            </CardTitle>
+            <CardDescription>Control whether the agent remembers context across sessions to personalize responses.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Cross-session memory</p>
+                <p className="text-xs text-muted-foreground mt-0.5">When enabled, the agent learns your preferences and context over time. When disabled, each task starts fresh with no memory from previous sessions.</p>
+              </div>
+              <Switch
+                checked={settings.memoryEnabled}
+                onCheckedChange={(v) => saveSettings({ memoryEnabled: v })}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {settings.memoryEnabled ? (
+                  <><Brain className="w-3 h-3 mr-1" /> Memory active</>
+                ) : (
+                  <><EyeOff className="w-3 h-3 mr-1" /> Memory disabled</>
+                )}
+              </Badge>
+              {settings.memoryEnabled && (
+                <a href="/memory" className="text-xs text-primary hover:underline">Manage memories</a>
+              )}
+            </div>
+            {!settings.memoryEnabled && (
+              <p className="text-xs text-amber-500/80 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                The agent will not remember your preferences or context between tasks.
+              </p>
+            )}
           </CardContent>
         </Card>
 

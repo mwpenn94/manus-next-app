@@ -1,0 +1,2 @@
+ALTER TABLE `notifications` MODIFY COLUMN `type` enum('task_completed','task_error','share_viewed','system','stale_completed') NOT NULL;--> statement-breakpoint
+ALTER TABLE `tasks` ADD `staleCompleted` int DEFAULT 0 NOT NULL;

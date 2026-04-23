@@ -10,7 +10,7 @@
  * Mobile: Responsive sidebar drawer with overlay, stacked workspace, touch UX
  * Bridge: Real-time connection status indicator in sidebar footer
  */
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -293,6 +293,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     }));
   })();
 
+  // Batch-fetch thumbnails for displayed tasks
+  const thumbnailIds = useMemo(
+    () => displayedTasks.map((t: any) => t.id).filter(Boolean),
+    [displayedTasks]
+  );
+  const thumbnailsQuery = trpc.file.thumbnails.useQuery(
+    { taskExternalIds: thumbnailIds },
+    { enabled: isAuthenticated && thumbnailIds.length > 0, staleTime: 60_000 }
+  );
+  const thumbnails = thumbnailsQuery.data || {};
+
   const { showHelp, setShowHelp } = useKeyboardShortcuts({
     onNewTask: () => {
       setActiveTask(null);
@@ -557,6 +568,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                           <Star className="w-3 h-3 text-foreground fill-foreground shrink-0" />
                         )}
                       </div>
+                      {/* Attachment thumbnail preview */}
+                      {thumbnails[task.id] && (
+                        <div className="mt-1 mb-0.5">
+                          <img
+                            src={thumbnails[task.id]}
+                            alt=""
+                            className="w-full h-12 object-cover rounded-md opacity-70 group-hover:opacity-90 transition-opacity"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] text-muted-foreground">
                           {formatTimeAgo(task.updatedAt)}
@@ -564,6 +586,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         {task.status === "running" && (
                           <span className="text-[9px] px-1.5 py-px rounded-full bg-muted text-foreground font-medium">
                             In progress
+                          </span>
+                        )}
+                        {(task as any).staleCompleted === 1 && (
+                          <span className="text-[9px] px-1.5 py-px rounded-full bg-amber-500/20 text-amber-400 font-medium">
+                            Auto-completed
                           </span>
                         )}
                       </div>

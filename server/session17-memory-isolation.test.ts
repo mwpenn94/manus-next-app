@@ -143,8 +143,9 @@ describe("Memory relevance filter in index.ts", () => {
     expect(indexSource).toContain("relevantMemories");
   });
 
-  it("should have ALWAYS_RELEVANT_KEYS for identity/preference memories", () => {
-    expect(indexSource).toContain("ALWAYS_RELEVANT_KEYS");
+  it("should have tiered identity/preference keys (STRICT_IDENTITY_KEYS + SOFT_PREFERENCE_KEYS)", () => {
+    expect(indexSource).toContain("STRICT_IDENTITY_KEYS");
+    expect(indexSource).toContain("SOFT_PREFERENCE_KEYS");
     expect(indexSource).toContain('"name"');
     expect(indexSource).toContain('"identity"');
     expect(indexSource).toContain('"preference"');

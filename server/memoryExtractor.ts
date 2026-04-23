@@ -38,7 +38,15 @@ DO NOT STORE (task-specific, ephemeral, one-off):
 
 The test: Would this fact help personalize a response about a COMPLETELY DIFFERENT topic? If not, don't store it.
 
-Rules:
+KEY NAMING RULES (critical for downstream filtering):
+- Keys for identity facts MUST use these prefixes: "User Name", "User Location", "User Timezone", "User Language", "User Role", "User Profession"
+- Keys for preferences MUST use clean prefix: "Communication preference", "Style preference", "General preference"
+- Keys for technical context MUST use: "Tech stack", "Framework preference"
+- Keys for interests MUST use: "Recurring interest: [topic]" (e.g., "Recurring interest: Elder Scrolls Online")
+- NEVER put topic-specific words directly in preference keys (BAD: "ESO PvP preference", GOOD: "Recurring interest: ESO PvP")
+- NEVER use game names, project names, or domain jargon in the key itself for preference-type memories
+
+General rules:
 - Extract 0-5 memories (only extract what's genuinely useful across topics)
 - Each memory has a short "key" (label, max 100 chars) and a "value" (detail, max 500 chars)
 - If the conversation is purely informational with no personal context, return an empty array

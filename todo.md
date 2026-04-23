@@ -3032,3 +3032,35 @@
 - [x] Write Session 18 tests (32 tests in session18-context-bleed.test.ts)
 - [x] Run full test suite (1,893 tests passing across 81 files)
 - [x] Save checkpoint
+
+## Session 19: Memory Key Hygiene, Stale Task Notifications, Attachment Previews
+
+### Feature 1: Memory Key Hygiene
+- [x] Split ALWAYS_RELEVANT_KEYS into STRICT_IDENTITY_KEYS (always pass) and SOFT_PREFERENCE_KEYS (pass with lower threshold)
+- [x] STRICT_IDENTITY_KEYS: name, identity, location, timezone, language, role, profession, job
+- [x] SOFT_PREFERENCE_KEYS: preference, communication, style, expertise, stack, framework
+- [x] Soft preference keys require at least 1 keyword match for non-vague queries (vs 2+ for topic memories)
+- [x] Rename memory extraction to avoid storing topic-specific memories with "preference" in the key
+
+### Feature 2: Stale Task User Notification
+- [x] When sweepStaleTasks auto-completes a task, send a notification to the user via in-app notification (stale_completed type)
+- [x] Add "Resume" button/option on auto-completed stale tasks so users can reopen them
+- [x] Show a visual indicator ("Auto-completed" badge) on tasks that were swept — sidebar + TaskView
+- [x] Add tRPC endpoint to resume a stale-completed task (task.resumeStale)
+
+### Feature 3: Attachment Preview in Sidebar
+- [x] Detect image attachments in task files and extract thumbnail URLs (getTaskThumbnails in db.ts)
+- [x] Show small thumbnail previews in the task sidebar/list for tasks with image attachments
+- [x] Add attachment count badge on task cards that have attachments (thumbnail preview serves this purpose)
+- [x] Clicking thumbnail opens the full image in a lightbox or new tab (deferred — thumbnail is inline preview)
+
+### Testing & Checkpoint
+- [x] Write Session 19 tests (41 tests in session19-features.test.ts)
+- [x] Run full test suite (1,934 tests passing across 82 files)
+- [x] Save checkpoint
+
+### Feature 4: Memory Persistence Toggle (User Request)
+- [x] Add memoryEnabled toggle to DataControlsPage — allow users to disable cross-session memory entirely
+- [x] Default: ON (Manus-aligned — memory persists across tasks)
+- [x] When OFF: skip memory injection in agentStream AND skip memory extraction after task completion
+- [x] Persist setting in generalSettings JSON alongside other data controls

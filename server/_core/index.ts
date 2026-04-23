@@ -748,8 +748,23 @@ async function startServer() {
             const prefs = await getUserPreferences(user.id);
             if (prefs?.systemPrompt) resolvedSystemPrompt = prefs.systemPrompt as string;
           }
-          // Load cross-session memory with strict relevance filtering
+          // Check if user has disabled cross-session memory
+          let memoryEnabled = true; // Default: ON (Manus-aligned)
           try {
+            const { getUserPreferences: gup } = await import("../db");
+            const memPrefs = await gup(user.id);
+            if (memPrefs?.generalSettings && typeof memPrefs.generalSettings === "object") {
+              const gs = memPrefs.generalSettings as Record<string, unknown>;
+              if (gs.memoryEnabled === false) memoryEnabled = false;
+            }
+          } catch { /* default to enabled */ }
+
+          // Load cross-session memory with strict relevance filtering (skip if disabled)
+          if (!memoryEnabled) {
+            console.log("[Stream] Memory disabled by user preference — skipping injection");
+          }
+          try {
+            if (!memoryEnabled) throw new Error("skip"); // Skip to catch block
             const { getUserMemories } = await import("../db");
             const memories = await getUserMemories(user.id, 20);
             if (memories.length > 0) {
@@ -776,19 +791,49 @@ async function startServer() {
                 "refine", "generate", "update", "change", "modify",
               ]);
               
-              // Filter memories by relevance to the current task
-              // Always include identity/preference memories; filter out topic-specific ones
-              const ALWAYS_RELEVANT_KEYS = [
+              // Filter memories by relevance using a 3-tier system:
+              // Tier 1 (STRICT_IDENTITY_KEYS): Always included — core user identity
+              // Tier 2 (SOFT_PREFERENCE_KEYS): Included for non-vague queries with 1+ keyword match
+              // Tier 3 (Topic memories): Included only for substantive queries with 2+ keyword matches
+              const STRICT_IDENTITY_KEYS = [
                 "name", "identity", "location", "timezone", "language",
-                "preference", "communication", "style", "role", "expertise",
-                "stack", "framework", "profession", "job",
+                "role", "profession", "job",
+              ];
+              const SOFT_PREFERENCE_KEYS = [
+                "preference", "communication", "style", "expertise",
+                "stack", "framework",
               ];
               const relevantMemories = memories.filter((m: any) => {
                 const keyLower = (m.key || "").toLowerCase();
                 const valueLower = (m.value || "").toLowerCase();
-                // Always include identity/preference memories
-                if (ALWAYS_RELEVANT_KEYS.some(k => keyLower.includes(k))) return true;
-                // For vague queries, ONLY include identity memories — never topic-specific
+                // Tier 1: Always include strict identity memories (name, location, role, etc.)
+                if (STRICT_IDENTITY_KEYS.some(k => keyLower.includes(k))) return true;
+                // Tier 2: Soft preference memories (communication style, tech stack, etc.)
+                // For vague queries: only include if the key itself is purely about preferences
+                // (e.g., "Communication preference" yes, "ESO PvP preference" no)
+                if (SOFT_PREFERENCE_KEYS.some(k => keyLower.includes(k))) {
+                  // Check if the key is purely preference-related (no topic-specific words)
+                  const keyWords = keyLower.split(/\W+/).filter((w: string) => w.length >= 4);
+                  const topicWords = keyWords.filter((w: string) =>
+                    !SOFT_PREFERENCE_KEYS.some(pk => w.includes(pk)) &&
+                    !STRICT_IDENTITY_KEYS.some(ik => w.includes(ik)) &&
+                    !["user", "general", "default", "personal", "overall"].includes(w)
+                  );
+                  // If no topic-specific words in key, it's a pure preference — always include
+                  if (topicWords.length === 0) return true;
+                  // If topic-specific words exist (e.g., "ESO PvP preference"), treat as Tier 3
+                  // but with relaxed threshold: 1+ keyword match instead of 2+
+                  if (!isVagueQuery && taskText.length > 0) {
+                    const memWords = (keyLower + " " + valueLower)
+                      .split(/\W+/)
+                      .filter((w: string) => w.length >= 5 && !STOP_WORDS.has(w));
+                    const matchCount = memWords.filter((w: string) => taskText.includes(w)).length;
+                    return matchCount >= 1; // Relaxed: 1+ match for topic-tagged preferences
+                  }
+                  return false;
+                }
+                // Tier 3: Topic-specific memories — strict filtering
+                // For vague queries, NEVER include topic-specific memories
                 if (isVagueQuery) return false;
                 // For substantive queries: require 2+ significant keyword matches
                 // with min word length of 5 chars and stop word exclusion
@@ -876,14 +921,32 @@ async function startServer() {
       });
 
       // Fire-and-forget: extract memories from the completed conversation
+      // Skip extraction if user has disabled memory persistence
       if (streamUserId && taskExternalId && messages.length >= 2) {
-        import("../memoryExtractor").then(({ extractMemories }) => {
-          extractMemories(
-            streamUserId!,
-            taskExternalId,
-            messages.map((m: any) => ({ role: m.role, content: typeof m.content === "string" ? m.content : "[non-text]" }))
-          ).catch(() => { /* fire-and-forget */ });
-        }).catch(() => { /* ignore */ });
+        // Check memoryEnabled preference before extracting
+        const shouldExtract = await (async () => {
+          try {
+            const { getUserPreferences: gup2 } = await import("../db");
+            const p = await gup2(streamUserId!);
+            if (p?.generalSettings && typeof p.generalSettings === "object") {
+              const gs = p.generalSettings as Record<string, unknown>;
+              if (gs.memoryEnabled === false) {
+                console.log("[Stream] Memory disabled — skipping extraction");
+                return false;
+              }
+            }
+          } catch { /* default to enabled */ }
+          return true;
+        })();
+        if (shouldExtract) {
+          import("../memoryExtractor").then(({ extractMemories }) => {
+            extractMemories(
+              streamUserId!,
+              taskExternalId,
+              messages.map((m: any) => ({ role: m.role, content: typeof m.content === "string" ? m.content : "[non-text]" }))
+            ).catch(() => { /* fire-and-forget */ });
+          }).catch(() => { /* ignore */ });
+        }
       }
     } catch (err: any) {
       console.error("[Stream] Error:", err);
