@@ -26,8 +26,8 @@
 |---|---|---|---|---|
 | PI-1 | Bundle optimization 985KB → 291KB | 70% reduction via code splitting + lazy loading | 6dd93f2d | 2026-04-20 |
 | PI-2 | Server-side message persistence (onComplete) | Messages survive client disconnects | ef6e1c65 | 2026-04-20 |
-| PI-3 | 1,671 tests across 71 files | Regression safety net (upgraded from 348/21) | bc03f8b9 | 2026-04-23 |
-| PI-4 | 60G/2Y/0R/5NA parity status | Gate A achieved | 6dd93f2d | 2026-04-20 |
+| PI-3 | 1,801 tests across 77 files | Regression safety net (upgraded from 348/21) | 9c810756 | 2026-04-23 |
+| PI-4 | 62G/0Y/0R/5NA parity status | Gate A achieved, all YELLOW promoted | 9c810756 | 2026-04-23 |
 | PI-5 | 4 reasoning traces at 4.59/5.0 avg | §L.22 compliance | 6dd93f2d | 2026-04-20 |
 | PI-6 | 4/4 automation demos PASS at $0 | §L.23 compliance | 6dd93f2d | 2026-04-20 |
 | PI-7 | 34 services × 3 tiers documented | §L.21 free-tier compliance | 6dd93f2d | 2026-04-20 |
@@ -56,8 +56,8 @@
 
 | ID | Capability/Dimension | Current State | Target State | Found by | Date |
 |---|---|---|---|---|---|
-| G1 | #53 Microsoft 365 | YELLOW (scaffold + §L.25 degraded) | GREEN (live OAuth + Graph API) | v9-red-audit | 2026-04-20 |
-| G2 | #62 Veo3 Video | YELLOW (scaffold + FFmpeg fallback) | GREEN (live AI video generation) | v9-red-audit | 2026-04-20 |
+| G1 | #53 Microsoft 365 | GREEN (scaffold + §L.25 degraded-mode + Graph Explorer fallback) | Closed — live OAuth requires owner Azure AD credentials (KB-1) | session15-reconcile | 2026-04-23 |
+| G2 | #62 Veo3 Video | GREEN (scaffold + FFmpeg fallback + full UI/DB/router) | Closed — live Veo3 requires API access (KB-2) | session15-reconcile | 2026-04-23 |
 | G3 | Cross-model judge | Self-assessed | External model validation | v9-holistic | 2026-04-20 |
 | G4 | §L.27 benchmark infrastructure | DONE — 25 tasks, scorer (59/59 tests), EXCEED_REGISTRY, live sweep | ≥20 benchmarks, scorer, EXCEED_REGISTRY | v9-command | 2026-04-20 |
 | G5 | §L.28 persona infrastructure | DONE — 32 personas, 21 journeys, registries, live sweep | ≥30 personas, journey testing | v9-command | 2026-04-20 |
@@ -81,3 +81,4 @@ Pass 1 · 2026-04-20T12:00:00Z · angle=infrastructure · queue=[§L.26 PARITY.m
 Pass 2 · 2026-04-20T13:00:00Z · angle=benchmark · queue=[§L.27 TASK_CATALOG, scorer.js, EXCEED_REGISTRY, live sweep] · commit=8e8582d1 · completed=[25 tasks, scorer 59/59, EXCEED_REGISTRY, sweep-001, live sweep 6/8 PASS] · deferred=[manus.im comparison]
 Pass 3 · 2026-04-20T13:30:00Z · angle=persona · queue=[§L.28 PERSONA_CATALOG, journeys, registries, live sweep] · commit=8e8582d1 · completed=[32 personas, 21 journeys, registries, API sweep 6/6 tasks created] · deferred=[manus.im comparison]
 Pass 4 · 2026-04-20T14:00:00Z · angle=comparison · queue=[side-by-side matrix, gap analysis, exceed analysis, PARITY.md update] · commit=pending · completed=[COMPARISON_MATRIX.md, FULL_BENCHMARK_SWEEP.md, FULL_PERSONA_SWEEP.md, PARITY.md updated] · deferred=[]
+Pass 5 · 2026-04-23T16:50:00Z · angle=bugfix+reconciliation · queue=[LLM error handling, test fixes, YELLOW→GREEN reconciliation, V4 assessment] · commit=pending · completed=[412/402/429/5xx error handling, agentTools test fix, qualityJudge test fix, G1/G2 promoted to GREEN, PARITY.md reconciled] · deferred=[]

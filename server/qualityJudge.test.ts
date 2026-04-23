@@ -94,13 +94,15 @@ describe("Quality Judge", () => {
     });
 
     it("handles LLM error gracefully", async () => {
+      // Both dual-pass evaluations must fail to trigger the fallback report
+      mockInvokeLLM.mockRejectedValueOnce(new Error("API timeout"));
       mockInvokeLLM.mockRejectedValueOnce(new Error("API timeout"));
 
       const report = await evaluateResponseQuality("test", "test response");
 
       expect(report.overallScore).toBe(0);
       expect(report.flagged).toBe(true);
-      expect(report.dimensions[0].rationale).toContain("API timeout");
+      expect(report.dimensions[0].rationale).toContain("Evaluation failed");
     });
 
     it("includes tool context when provided", async () => {

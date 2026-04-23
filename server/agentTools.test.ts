@@ -320,7 +320,7 @@ describe("System Prompt Identity & Research Rules", () => {
   it("system prompt mandates web_search for real-world questions", async () => {
     const fs = await import("fs");
     const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
-    expect(source).toContain("ALWAYS use web_search FIRST");
+    expect(source).toContain("Use web_search when the task REQUIRES external information");
     expect(source).toContain("NEVER claim you cannot find information");
   });
 
