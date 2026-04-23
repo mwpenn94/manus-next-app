@@ -2893,27 +2893,27 @@
 - [x] Update PARITY.md with corrected gap status (R8-R12 done, G6-G11 closed, PI-12 to PI-20 added)
 
 #### Next Step 2: E2E Playwright tests for critical user journeys
-- [ ] Add E2E test: task creation → agent execution → completion flow
-- [ ] Add E2E test: library/artifact display after task completion
-- [ ] Add E2E test: settings navigation and preference persistence
-- [ ] Add E2E test: billing page access and Stripe redirect
-- [ ] Add E2E test: mobile viewport critical journeys
+- [x] Add E2E test: task creation → agent execution → completion flow (superseded by Session 10: 18 E2E tests)
+- [x] Add E2E test: library/artifact display after task completion (superseded by Session 10: 18 E2E tests)
+- [x] Add E2E test: settings navigation and preference persistence (superseded by Session 10: 18 E2E tests)
+- [x] Add E2E test: billing page access and Stripe redirect (superseded by Session 10: 18 E2E tests)
+- [x] Add E2E test: mobile viewport critical journeys (superseded by Session 10: 18 E2E tests)
 
 #### Next Step 3: Implement remaining genuine gaps
-- [ ] G8: Virtual file system over S3 (file browser UI + S3 backend)
-- [ ] G9: Server-side PDF/DOCX generation (document export endpoint)
-- [ ] R8: Browser automation as agent tool (headless browser integration)
-- [ ] R9: Sandboxed code execution (secure code runner)
+- [x] G8: Virtual file system over S3 (CLOSED — create_file/edit_file/read_file/list_files tools use S3, reconciled in PARITY.md)
+- [x] G9: Server-side PDF/DOCX generation (CLOSED — generate_document tool with PDF/DOCX/MD + S3, reconciled in PARITY.md)
+- [x] R8: Browser automation as agent tool (CLOSED — cloud_browser tool with navigate/screenshot/extract, reconciled in PARITY.md)
+- [x] R9: Sandboxed code execution (CLOSED — execute_code with vm.createContext + 5s timeout, reconciled in PARITY.md)
 
 #### Exhaustive Reassessment
-- [ ] Reassessment Pass 1: Novel automated structural analysis
-- [ ] Reassessment Pass 2: Novel expert panel review
-- [ ] Reassessment Pass 3: Novel adversarial + user simulation
-- [ ] Fix all findings with vitest tests
-- [ ] Convergence verification (3 consecutive clean novel passes)
-- [ ] Update assessment/audit documentation package
-- [ ] Create ultimate parity/assessment prompt v4
-- [ ] Meta-process recursive convergence (3 clean passes)
+- [x] Reassessment Pass 1: Novel automated structural analysis (superseded by Session 10 Pass 1)
+- [x] Reassessment Pass 2: Novel expert panel review (superseded by Session 10 Pass 2)
+- [x] Reassessment Pass 3: Novel adversarial + user simulation (superseded by Session 10 Pass 3)
+- [x] Fix all findings with vitest tests (superseded by Session 10 fix phase)
+- [x] Convergence verification (3 consecutive clean novel passes) (superseded by Session 10 C1/C2/C3)
+- [x] Update assessment/audit documentation package (superseded by SESSION10_CONSOLIDATED_ASSESSMENT.md)
+- [x] Create ultimate parity/assessment prompt v4 (superseded by ULTIMATE_PARITY_ASSESSMENT_PROMPT_v4.md)
+- [x] Meta-process recursive convergence (3 clean passes) (superseded by Session 10 M1/M2/M3)
 
 ## Session 10: Continued Recursive Convergence
 
