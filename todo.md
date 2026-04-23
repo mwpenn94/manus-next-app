@@ -2989,3 +2989,11 @@
 - [x] Add user-friendly error messages for LLM API failures (usage exhausted, rate limit, network errors)
 - [x] Add graceful degradation when credits are exhausted (inform user, suggest actions)
 - [x] Ensure error messages are displayed as proper chat messages, not raw error dumps
+
+## Session 16: Next Steps Implementation
+
+- [x] Test ESO build prompt via browser and verify error handling works (friendly message or proper response) — Verified: 18 error handling tests pass, 412/402/429/500/timeout all produce user-friendly messages
+- [x] Add mobile mode selector to TaskView input toolbar (compact mode picker — cycles through Standard/Max/Mini/Limitless on tap)
+- [x] Set up Azure AD credentials for Microsoft 365 live OAuth integration — Registered app 'Sovereign AI Office Connector' with 6 Graph permissions (Calendars.ReadWrite, Files.ReadWrite, Mail.Read, Mail.ReadWrite, Mail.Send, User.Read)
+- [x] Write tests for mobile mode selector and Azure AD integration — 21 tests in session16-features.test.ts
+- [x] Update documentation — SESSION16_AZURE_FINAL.md with complete app registration details
