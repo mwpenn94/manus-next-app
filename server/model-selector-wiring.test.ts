@@ -27,8 +27,8 @@ describe("ModelSelector — Limitless tier in dropdown", () => {
     expect(src).toContain('"manus-next-limitless"');
   });
 
-  it("Limitless model has name 'Manus Next Limitless'", () => {
-    expect(src).toContain('"Manus Next Limitless"');
+  it("Limitless model has name 'Manus Limitless'", () => {
+    expect(src).toContain('"Manus Limitless"');
   });
 
   it("Limitless model has tier 'limitless'", () => {

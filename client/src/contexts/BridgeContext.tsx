@@ -1,5 +1,5 @@
 /**
- * BridgeContext — Manus Next Bridge WebSocket Connection Manager
+ * BridgeContext — Manus Bridge WebSocket Connection Manager
  *
  * Enhanced with:
  * - Exponential backoff reconnection (max 5 retries)

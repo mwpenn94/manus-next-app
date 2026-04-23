@@ -109,8 +109,8 @@ describe("P24 — Theme Toggle", () => {
       expect(app).toContain("switchable");
     });
 
-    it("sets defaultTheme to dark", () => {
-      expect(app).toContain('defaultTheme="dark"');
+    it("sets defaultTheme to light", () => {
+      expect(app).toContain('defaultTheme="light"');
     });
 
     it("has ThemedToaster component that uses theme", () => {

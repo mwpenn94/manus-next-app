@@ -169,7 +169,7 @@ export default function ConfirmationGate({
         {/* Manus-style notice */}
         {status === "pending" && (
           <p className="text-[11px] text-muted-foreground mt-2.5 italic">
-            Manus Next will continue after your confirmation.
+            Manus will continue after your confirmation.
           </p>
         )}
 

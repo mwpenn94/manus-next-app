@@ -46,11 +46,11 @@ export async function setupVite(app: Express, server: Server) {
           const { getTaskShareByToken } = await import("../db");
           const share = await getTaskShareByToken(token);
           if (share) {
-            const title = `Shared Task — Manus Next`;
-            const desc = `View a shared AI agent task on Manus Next.`;
+            const title = `Shared Task — Manus`;
+            const desc = `View a shared AI agent task on Manus.`;
             template = template
               .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-              .replace(/content="Manus Next — Your Autonomous AI Agent"/, `content="${title}"`)
+              .replace(/content="Manus — Your Autonomous AI Agent"/, `content="${title}"`)
               .replace(/content="An open-source autonomous AI agent[^"]*"/, `content="${desc}"`);
           }
         } catch { /* fallback to default meta */ }
@@ -89,11 +89,11 @@ export function serveStatic(app: Express) {
         const share = await getTaskShareByToken(token);
         if (share) {
           let html = fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
-          const title = `Shared Task — Manus Next`;
-          const desc = `View a shared AI agent task on Manus Next.`;
+          const title = `Shared Task — Manus`;
+          const desc = `View a shared AI agent task on Manus.`;
           html = html
             .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-            .replace(/content="Manus Next — Your Autonomous AI Agent"/, `content="${title}"`)
+            .replace(/content="Manus — Your Autonomous AI Agent"/, `content="${title}"`)
             .replace(/content="An open-source autonomous AI agent[^"]*"/, `content="${desc}"`);
           return res.status(200).set({ "Content-Type": "text/html" }).end(html);
         }

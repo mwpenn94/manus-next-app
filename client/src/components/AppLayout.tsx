@@ -350,14 +350,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* Sidebar Header */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border shrink-0">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="text-lg" role="img" aria-label="Manus Next">
+          <span className="text-lg" role="img" aria-label="Manus">
             🐾
           </span>
           <span
             className="text-[15px] font-semibold tracking-tight text-sidebar-foreground"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            manus next
+            manus
           </span>
         </Link>
         <button
@@ -612,9 +612,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Sidebar Footer — Nav links (scrollable) */}
       <div className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto max-h-[40vh] min-h-0">
-        {/* Section: Manus Next */}
+        {/* Section: Manus */}
         <div className="px-3 pt-2 pb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus Next">Manus Next</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus">Manus</span>
         </div>
         <Link
           href="/analytics"
@@ -1079,7 +1079,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               className="text-[15px] font-semibold tracking-tight"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              manus next
+              manus
             </span>
           </Link>
           {/* ModelSelector — show on desktop Home route so users can switch models */}

@@ -27,7 +27,7 @@ describe("Prompt Cache", () => {
     });
 
     it("returns cached=true on second registration with same content", () => {
-      const systemPrompt = "You are Manus Next, an autonomous AI agent.";
+      const systemPrompt = "You are Manus, an autonomous AI agent.";
       const tools = '[{"type":"function","function":{"name":"web_search"}}]';
 
       const first = registerPrefix(systemPrompt, tools);

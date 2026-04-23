@@ -1,7 +1,7 @@
 {
-  "name": "Manus Next",
+  "name": "Manus",
   "short_name": "Manus",
-  "description": "Manus Next AI agent — autonomous task execution, research, coding, and document generation.",
+  "description": "Manus AI agent — autonomous task execution, research, coding, and document generation.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

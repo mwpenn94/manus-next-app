@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import ModelSelector from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
+import TaskTemplates from "@/components/TaskTemplates";
 import { Menu } from "lucide-react";
 
 // Quick action chips — Manus-style horizontal row
@@ -411,6 +412,23 @@ export default function Home() {
               </button>
             </div>
           </div>
+        </motion.div>
+
+        {/* User Templates — shown above quick actions when user has saved templates */}
+        <motion.div
+          className="w-full max-w-[640px] mb-3 overflow-hidden"
+          initial={{ y: 8 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          {isAuthenticated && (
+            <TaskTemplates
+              compact
+              onUseTemplate={(prompt) => setInput(prompt)}
+              showSaveButton
+              currentInput={input}
+            />
+          )}
         </motion.div>
 
         {/* Quick Action Chips — horizontal scroll */}

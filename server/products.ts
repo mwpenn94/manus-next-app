@@ -16,7 +16,7 @@ export interface ProductConfig {
 export const PRODUCTS: ProductConfig[] = [
   {
     id: "pro_monthly",
-    name: "Manus Next Pro (Monthly)",
+    name: "Manus Pro (Monthly)",
     description: "Full access to all agent capabilities, unlimited tasks, priority execution",
     priceAmount: 3900, // $39/month
     currency: "usd",
@@ -25,7 +25,7 @@ export const PRODUCTS: ProductConfig[] = [
   },
   {
     id: "pro_yearly",
-    name: "Manus Next Pro (Yearly)",
+    name: "Manus Pro (Yearly)",
     description: "Full access to all agent capabilities, unlimited tasks, priority execution — save 20%",
     priceAmount: 37400, // $374/year ($31.17/mo)
     currency: "usd",
@@ -34,7 +34,7 @@ export const PRODUCTS: ProductConfig[] = [
   },
   {
     id: "team_monthly",
-    name: "Manus Next Team (Monthly)",
+    name: "Manus Team (Monthly)",
     description: "Team collaboration, shared sessions, admin controls, 10 seats included",
     priceAmount: 9900, // $99/month
     currency: "usd",

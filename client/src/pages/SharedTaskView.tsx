@@ -94,7 +94,7 @@ export default function SharedTaskView() {
           <div>
             <h1 className="text-sm font-semibold text-foreground">{task?.title || "Shared Task"}</h1>
             <p className="text-xs text-muted-foreground">
-              Shared via Manus Next · {task?.status || "unknown"}
+              Shared via Manus · {task?.status || "unknown"}
             </p>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function SharedTaskView() {
       {/* Footer */}
       <footer className="border-t border-border py-4 text-center">
         <p className="text-xs text-muted-foreground">
-          Powered by <a href="/" className="text-primary hover:underline">Manus Next</a> — Open-source AI Agent Platform
+          Powered by <a href="/" className="text-primary hover:underline">Manus</a> — Open-source AI Agent Platform
         </p>
       </footer>
     </div>

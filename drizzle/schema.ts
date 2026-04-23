@@ -856,3 +856,41 @@ export const pageViews = mysqlTable("page_views", {
 });
 export type PageView = typeof pageViews.$inferSelect;
 export type InsertPageView = typeof pageViews.$inferInsert;
+
+// ── Task Templates (user-saved prompt templates for quick reuse) ──
+export const taskTemplates = mysqlTable("task_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Template title shown in the UI */
+  title: varchar("title", { length: 256 }).notNull(),
+  /** The prompt text to pre-fill */
+  prompt: text("prompt").notNull(),
+  /** Icon identifier (lucide icon name) */
+  icon: varchar("icon", { length: 64 }).default("Sparkles"),
+  /** Category for grouping (e.g., "research", "writing", "coding") */
+  category: varchar("category", { length: 64 }),
+  /** Usage count for sorting by popularity */
+  usageCount: int("usageCount").default(0).notNull(),
+  /** Display order for manual sorting */
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TaskTemplate = typeof taskTemplates.$inferSelect;
+export type InsertTaskTemplate = typeof taskTemplates.$inferInsert;
+
+// ── Task Branches (conversation forking — tracks parent-child relationships between tasks) ──
+export const taskBranches = mysqlTable("task_branches", {
+  id: int("id").autoincrement().primaryKey(),
+  /** The new (child) task that was branched off */
+  childTaskId: int("childTaskId").notNull(),
+  /** The original (parent) task that was branched from */
+  parentTaskId: int("parentTaskId").notNull(),
+  /** The message ID in the parent task where the branch was created */
+  branchPointMessageId: int("branchPointMessageId").notNull(),
+  /** Human-readable label for the branch */
+  label: varchar("label", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TaskBranch = typeof taskBranches.$inferSelect;
+export type InsertTaskBranch = typeof taskBranches.$inferInsert;

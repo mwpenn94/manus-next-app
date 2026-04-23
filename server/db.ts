@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1683,4 +1683,76 @@ export async function exportAnalyticsData(projectId: number, days: number = 30):
   });
 
   return { headers, rows };
+}
+
+
+// ── Task Templates ──
+
+export async function createTaskTemplate(data: InsertTaskTemplate) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(taskTemplates).values(data).$returningId();
+  return result;
+}
+
+export async function getUserTaskTemplates(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskTemplates).where(eq(taskTemplates.userId, userId)).orderBy(asc(taskTemplates.sortOrder), desc(taskTemplates.usageCount));
+}
+
+export async function updateTaskTemplate(id: number, userId: number, data: Partial<InsertTaskTemplate>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(taskTemplates).set(data).where(and(eq(taskTemplates.id, id), eq(taskTemplates.userId, userId)));
+}
+
+export async function deleteTaskTemplate(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(taskTemplates).where(and(eq(taskTemplates.id, id), eq(taskTemplates.userId, userId)));
+}
+
+export async function incrementTemplateUsage(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(taskTemplates).set({ usageCount: sql`${taskTemplates.usageCount} + 1` }).where(and(eq(taskTemplates.id, id), eq(taskTemplates.userId, userId)));
+}
+
+// ── Task Branches ──
+
+export async function createTaskBranch(data: InsertTaskBranch) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(taskBranches).values(data).$returningId();
+  return result;
+}
+
+export async function getTaskBranches(parentTaskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(taskBranches).where(eq(taskBranches.parentTaskId, parentTaskId)).orderBy(desc(taskBranches.createdAt));
+}
+
+export async function getParentBranch(childTaskId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(taskBranches).where(eq(taskBranches.childTaskId, childTaskId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getChildBranches(parentTaskId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    branch: taskBranches,
+    task: {
+      externalId: tasks.externalId,
+      title: tasks.title,
+      status: tasks.status,
+    },
+  }).from(taskBranches)
+    .innerJoin(tasks, eq(taskBranches.childTaskId, tasks.id))
+    .where(eq(taskBranches.parentTaskId, parentTaskId))
+    .orderBy(desc(taskBranches.createdAt));
 }

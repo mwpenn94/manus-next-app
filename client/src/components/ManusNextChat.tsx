@@ -60,7 +60,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
       style,
       showHeader = true,
       headerContent,
-      placeholder = "Give Manus Next a task to work on...",
+      placeholder = "Give Manus a task to work on...",
       loading = false,
       disabled = false,
     },
@@ -295,7 +295,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
                 >
                   <Sparkles className="w-3.5 h-3.5" style={{ color: theme.colors.primaryForeground }} />
                 </div>
-                <span className="text-sm font-medium">Manus Next</span>
+                <span className="text-sm font-medium">Manus</span>
               </div>
             )}
             <div className="flex items-center gap-1">

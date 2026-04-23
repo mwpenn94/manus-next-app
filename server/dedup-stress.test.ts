@@ -238,7 +238,7 @@ describe("Layer 3: LLM Conversation History Dedup", () => {
       "approaches to task decomposition, memory management, and tool use...";
 
     const messages: ConversationMessage[] = [
-      { role: "system", content: "You are Manus Next, an AI agent." },
+      { role: "system", content: "You are Manus, an AI agent." },
       { role: "user", content: "Research AI agent architectures" },
       { role: "assistant", content: longResponse },
       { role: "assistant", content: longResponse }, // duplicate from re-stream

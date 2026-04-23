@@ -127,7 +127,7 @@ describe("PWA Manifest", () => {
     const content = fs.readFileSync(manifestPath, "utf-8");
     const manifest = JSON.parse(content);
 
-    expect(manifest.name).toBe("Manus Next");
+    expect(manifest.name).toBe("Manus");
     expect(manifest.short_name).toBe("Manus");
     expect(manifest.display).toBe("standalone");
     expect(manifest.start_url).toBe("/");

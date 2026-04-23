@@ -303,7 +303,7 @@ describe("System Prompt Identity & Research Rules", () => {
     expect(source).toContain("NOT Google Gemini");
     expect(source).toContain("NOT ChatGPT");
     expect(source).toContain("NOT Claude");
-    expect(source).toContain("Manus Next is an independent project");
+    expect(source).toContain("Manus is an independent project");
   });
 
   it("system prompt contains research nudge logic for deeper research", async () => {
@@ -324,7 +324,7 @@ describe("System Prompt Identity & Research Rules", () => {
     expect(source).toContain("NEVER claim you cannot find information");
   });
 
-  it("system prompt includes self-knowledge about Manus Next", async () => {
+  it("system prompt includes self-knowledge about Manus", async () => {
     const fs = await import("fs");
     const source = fs.readFileSync("./server/agentStream.ts", "utf-8");
     expect(source).toContain("ABOUT YOURSELF");

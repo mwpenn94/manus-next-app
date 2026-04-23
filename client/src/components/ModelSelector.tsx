@@ -4,7 +4,7 @@
  * Matches the Manus UI pattern: dropdown with model name, description,
  * and checkmark on selected. Shown in task header or home page.
  *
- * Models: Manus Next Max (default), Manus Next 1.0, Manus Next Lite
+ * Models: Manus Max (default), Manus 1.0, Manus Lite
  */
 import { useState, useRef, useEffect } from "react";
 import { Check, ChevronDown, Zap, Sparkles, Leaf, Infinity } from "lucide-react";
@@ -22,28 +22,28 @@ export interface ModelOption {
 const MODELS: ModelOption[] = [
   {
     id: "manus-next-limitless",
-    name: "Manus Next Limitless",
+    name: "Manus Limitless",
     description: "Unlimited reasoning and execution. No token, turn, or continuation limits.",
     icon: Infinity,
     tier: "limitless",
   },
   {
     id: "manus-next-max",
-    name: "Manus Next Max",
+    name: "Manus Max",
     description: "High-performance agent designed for complex tasks.",
     icon: Zap,
     tier: "max",
   },
   {
     id: "manus-next-standard",
-    name: "Manus Next 1.0",
+    name: "Manus 1.0",
     description: "Versatile agent capable of handling most tasks.",
     icon: Sparkles,
     tier: "standard",
   },
   {
     id: "manus-next-lite",
-    name: "Manus Next Lite",
+    name: "Manus Lite",
     description: "A lightweight agent for everyday tasks.",
     icon: Leaf,
     tier: "lite",

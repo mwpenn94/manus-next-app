@@ -2609,3 +2609,39 @@
 - [x] Update virtual user test script with smart scroll-container-aware stacking detection
 - [x] Virtual user tests: 0 issues across all 4 personas
 - [x] Full test suite: 1578 tests passing across 63 files, 0 regressions
+
+### New Features — Post-Convergence Enhancements
+- [x] Keyboard shortcuts help overlay — already implemented (useKeyboardShortcuts.ts + KeyboardShortcutsDialog.tsx + AppLayout integration)
+- [x] User-saved task templates — DB table, tRPC CRUD, TaskTemplates.tsx, Home page compact row, full management mode
+- [x] Conversation branching/forking — DB table, tRPC procedures, BranchIndicator.tsx, TaskView integration
+
+### Comprehensive Expert-Panel Assessment & Recursive Convergence
+- [ ] Build expert-panel assessment framework (architecture, security, UX, accessibility, performance, data, API design, DevOps, testing)
+- [ ] Assessment Pass 1: Run all expert audits, document findings
+- [ ] Assessment Pass 1: Fix all findings
+- [ ] Assessment Pass 2: Re-run all expert audits
+- [ ] Assessment Pass 2: Fix any new findings
+- [ ] Assessment Pass 3: Convergence check 1
+- [ ] Assessment Pass 4: Convergence check 2 (if needed)
+- [ ] Assessment Pass 5: Convergence check 3 (if needed)
+
+### Ultimate Parity/Assessment Prompt
+- [ ] Create the ultimate parity/assessment prompt from assessment results
+- [ ] Parity prompt recursive convergence pass 1
+- [ ] Parity prompt recursive convergence pass 2
+- [ ] Parity prompt recursive convergence pass 3
+
+### Meta-Process Recursive Convergence
+- [ ] Full process convergence check 1
+- [ ] Full process convergence check 2
+- [ ] Full process convergence check 3
+
+### Deep Manus Alignment Audit
+- [x] Study real Manus interface (manus.im) — captured design language, interaction patterns, product philosophy
+- [x] Audit Home page alignment — greeting matches ("Hello." / "What can I do for you?"), input bar matches
+- [x] Audit TaskView alignment — updated prose-themed, agent name to "Manus", placeholder to "Message Manus..."
+- [x] Audit Sidebar alignment — branding updated from "manus next" to "manus"
+- [x] Audit Settings/Library alignment — all "Manus Next" references updated
+- [x] Audit color palette — changed default theme from dark to light (warm cream #f8f8f7)
+- [x] Audit mobile experience alignment — responsive breakpoints already in place
+- [x] Fix all identified alignment gaps — 50+ files updated, all tests passing

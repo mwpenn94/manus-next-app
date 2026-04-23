@@ -241,7 +241,7 @@ describe("LLM chat — streaming support", () => {
 
     const result = await caller.llm.chat({
       messages: [
-        { role: "system", content: "You are Manus Next, an AI assistant." },
+        { role: "system", content: "You are Manus, an AI assistant." },
         { role: "user", content: "Summarize the bridge architecture." },
       ],
     });
@@ -255,7 +255,7 @@ describe("LLM chat — streaming support", () => {
 
     const result = await caller.llm.chat({
       messages: [
-        { role: "system", content: "You are Manus Next." },
+        { role: "system", content: "You are Manus." },
         { role: "user", content: "Start a research task" },
         { role: "assistant", content: "I'll begin researching..." },
         { role: "user", content: "What did you find?" },

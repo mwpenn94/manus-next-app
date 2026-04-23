@@ -1,7 +1,7 @@
 /**
  * useCrimsonHawk — WebSocket client hook for Crimson-Hawk local browser extension
  *
- * Crimson-Hawk is a browser extension that allows Manus Next to control
+ * Crimson-Hawk is a browser extension that allows Manus to control
  * the user's local browser instead of the cloud browser. This hook manages:
  * - WebSocket connection to the local extension (default: ws://localhost:12700)
  * - Connection state (disconnected → connecting → handshaking → connected)
@@ -88,7 +88,7 @@ export function useCrimsonHawk() {
 
         ws.onopen = () => {
           setStatus("handshaking");
-          // Send handshake to identify as Manus Next
+          // Send handshake to identify as Manus
           ws.send(
             JSON.stringify({
               type: "handshake",

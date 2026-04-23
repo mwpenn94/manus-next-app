@@ -422,6 +422,6 @@ describe("ConfirmationGate Component", () => {
   });
 
   it("shows Manus-style continuation notice", () => {
-    expect(componentContent).toContain("Manus Next will continue after your confirmation");
+    expect(componentContent).toContain("Manus will continue after your confirmation");
   });
 });

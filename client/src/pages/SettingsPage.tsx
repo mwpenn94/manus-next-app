@@ -1059,7 +1059,7 @@ export default function SettingsPage() {
                 Bridge
               </h2>
               <p className="text-sm text-muted-foreground mb-5">
-                Connect to Manus Next backend via <code className="text-[11px] bg-muted px-1 py-0.5 rounded">@manus-next/bridge</code>
+                Connect to Manus backend via <code className="text-[11px] bg-muted px-1 py-0.5 rounded">@manus/bridge</code>
               </p>
 
               <div className="bg-card border border-border rounded-xl p-6 space-y-5">
@@ -1068,8 +1068,8 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3">
                     <Unplug className="w-5 h-5 text-primary" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Manus Next Bridge</p>
-                      <p className="text-xs text-muted-foreground">WebSocket connection to Manus Next Hybrid backend</p>
+                      <p className="text-sm font-medium text-foreground">Manus Bridge</p>
+                      <p className="text-xs text-muted-foreground">WebSocket connection to Manus Hybrid backend</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
