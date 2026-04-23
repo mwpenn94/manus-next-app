@@ -502,6 +502,8 @@ export interface AgentStreamOptions {
   memoryContext?: string;
   /** Optional callback when the stream completes with the final assistant content (for server-side message persistence) */
   onComplete?: (content: string, actions?: Array<{ type: string; label?: string; status: string }>) => void;
+  /** Whether to use telemetry-based auto-tuning for stuck recovery strategies (default: true) */
+  autoTuneStrategies?: boolean;
 }
 
 function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknown>): boolean {
@@ -1048,11 +1050,34 @@ will seamlessly continue you with full context. Write as extensively as the task
             }
 
             // INTELLIGENT STRATEGY ROTATION — each intervention is context-aware
+            // Auto-tuning: query telemetry for the best strategy order for this trigger pattern
+            const currentTrigger = detectTriggerPattern(normalizedText);
+            let preferredOrder: string[] | null = null;
+            if (options.autoTuneStrategies !== false && options.userId) {
+              try {
+                const { getPreferredStrategyOrder } = await import("./db");
+                preferredOrder = await getPreferredStrategyOrder(currentTrigger, options.userId);
+                if (preferredOrder) {
+                  console.log(`[Agent] Auto-tune: preferred strategy order for "${currentTrigger}": ${preferredOrder.join(" → ")}`);
+                }
+              } catch { /* auto-tune is non-critical */ }
+            }
+
             let correctionStrategy: string;
             let strategyLabel: string;
 
-            if (stuckBreakCount === 1) {
-              // First intervention: Diagnose and redirect
+            // Determine which strategy to use:
+            // If auto-tuning has data, use the preferred order (skipping already-tried strategies)
+            // Otherwise, fall back to the default stuckBreakCount-based escalation
+            const defaultOrder = ["diagnose-redirect", "force-action", "last-chance"];
+            const strategyOrder = preferredOrder ?? defaultOrder;
+            // Pick the next untried strategy from the preferred order
+            const nextStrategy = strategyOrder.find(s => !stuckStrategiesUsed.includes(s))
+              ?? defaultOrder.find(s => !stuckStrategiesUsed.includes(s))
+              ?? "last-chance";
+
+            if (nextStrategy === "diagnose-redirect") {
+              // Diagnose and redirect
               strategyLabel = "diagnose-redirect";
               if (wasResearching) {
                 correctionStrategy = `SELF-CORRECTION: You've been repeatedly trying to research/search without making progress. STOP RESEARCHING. Instead:\n1. Use what you already know to answer the question directly\n2. If you found partial results, synthesize them into a useful response\n3. Be upfront about gaps: "Based on what I found so far..."\nProduce a substantive response THIS turn using existing knowledge.`;
@@ -1065,12 +1090,12 @@ will seamlessly continue you with full context. Write as extensively as the task
               } else {
                 correctionStrategy = `SELF-CORRECTION: You're repeating yourself without making progress. CHANGE YOUR APPROACH COMPLETELY:\n1. Re-read the user's original message carefully\n2. Identify the core ask (not what you think they want, what they actually said)\n3. Take the most direct path to answering it\n4. If you've been planning, stop planning and start doing\nDeliver something CONCRETE this turn.`;
               }
-            } else if (stuckBreakCount === 2) {
-              // Second intervention: Force tool use or direct answer
+            } else if (nextStrategy === "force-action") {
+              // Force tool use or direct answer
               strategyLabel = "force-action";
               correctionStrategy = `CRITICAL: Your previous self-correction didn't work — you're STILL repeating yourself. You MUST take a COMPLETELY DIFFERENT action this turn. Previous strategy (${stuckStrategiesUsed[stuckStrategiesUsed.length - 1]}) failed.\n\nCHOOSE ONE of these escape routes:\nA) If you have ANY information: Write your response immediately, starting with the answer (no preamble)\nB) If you need data: Use a DIFFERENT tool than what you've been using (try code_execute to compute, or web_search with different keywords)\nC) If the user sent attachments: Describe exactly what you see in them\nD) If nothing works: Give the user a honest 2-sentence summary of where you're stuck and ask ONE specific question\n\nYou MUST pick A, B, C, or D. No other option.`;
             } else {
-              // Third intervention: Last chance before forced answer
+              // Last chance before forced answer
               strategyLabel = "last-chance";
               correctionStrategy = `LAST CHANCE before I force a final answer. You have ONE more turn. Strategies tried: ${stuckStrategiesUsed.join(" → ")}. All failed.\n\nYour ONLY option now: Write your best possible response using ONLY what's in your conversation history. Do not use any tools. Do not search. Do not ask questions. Just write. Start with the most important information first. If you have nothing useful, say "I wasn't able to complete this task" and explain why in one sentence.`;
             }
@@ -1087,7 +1112,7 @@ will seamlessly continue you with full context. Write as extensively as the task
                   userId: options.userId,
                   stuckCount: stuckBreakCount,
                   strategyLabel,
-                  triggerPattern: detectTriggerPattern(normalizedText),
+                  triggerPattern: currentTrigger,
                   outcome: "pending",
                   turnsBefore: turn,
                 });

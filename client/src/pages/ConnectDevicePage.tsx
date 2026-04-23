@@ -152,7 +152,7 @@ export default function ConnectDevicePage() {
         <Card className="max-w-sm">
           <CardContent className="p-6 text-center">
             <Monitor className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Connect Your Device</h2>
+            <h1 className="text-lg font-semibold mb-2">Connect Your Device</h1>
             <p className="text-muted-foreground mb-4">Sign in to connect and control your devices.</p>
             <Button onClick={() => (window.location.href = getLoginUrl())}>
               <LogIn className="w-4 h-4 mr-2" />

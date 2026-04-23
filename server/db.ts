@@ -2031,3 +2031,74 @@ export async function getPendingTelemetry(taskExternalId: string): Promise<{ id:
     .limit(1);
   return rows[0] ?? null;
 }
+
+/**
+ * Get the preferred strategy order for a given trigger pattern based on historical telemetry.
+ * Returns an ordered array of strategy labels, best-performing first.
+ * Falls back to null if insufficient data (< MIN_SAMPLES per pattern).
+ *
+ * The auto-tuning algorithm:
+ * 1. Query all resolved/escalated/forced_final telemetry for the given trigger pattern
+ * 2. Group by strategyLabel and compute success rate (resolved / total)
+ * 3. Require at least MIN_SAMPLES total observations for the pattern to be tunable
+ * 4. Return strategies sorted by success rate descending
+ * 5. Include an exploration slot: with 20% probability, shuffle the top strategy down
+ *    to prevent feedback loops (always picking the same strategy)
+ */
+const MIN_SAMPLES_FOR_TUNING = 5;
+
+export async function getPreferredStrategyOrder(
+  triggerPattern: string,
+  userId?: number,
+): Promise<string[] | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const conditions = [
+    eq(strategyTelemetry.triggerPattern, triggerPattern),
+    // Only count resolved outcomes (not pending)
+    sql`${strategyTelemetry.outcome} != 'pending'`,
+  ];
+  if (userId) conditions.push(eq(strategyTelemetry.userId, userId));
+
+  const rows = await db
+    .select({
+      strategyLabel: strategyTelemetry.strategyLabel,
+      outcome: strategyTelemetry.outcome,
+    })
+    .from(strategyTelemetry)
+    .where(and(...conditions))
+    .orderBy(desc(strategyTelemetry.createdAt))
+    .limit(500);
+
+  if (rows.length < MIN_SAMPLES_FOR_TUNING) return null; // Insufficient data — use default order
+
+  // Aggregate by strategy
+  const stats = new Map<string, { resolved: number; total: number }>();
+  for (const row of rows) {
+    if (!stats.has(row.strategyLabel)) stats.set(row.strategyLabel, { resolved: 0, total: 0 });
+    const s = stats.get(row.strategyLabel)!;
+    s.total++;
+    if (row.outcome === "resolved") s.resolved++;
+  }
+
+  // Sort by success rate descending, break ties by total uses
+  const ranked = Array.from(stats.entries())
+    .map(([label, s]) => ({
+      label,
+      successRate: s.total > 0 ? s.resolved / s.total : 0,
+      total: s.total,
+    }))
+    .sort((a, b) => b.successRate - a.successRate || b.total - a.total);
+
+  const order = ranked.map((r) => r.label);
+
+  // Exploration: 20% of the time, swap the top strategy with a random other one
+  // This prevents feedback loops where we always pick the same strategy
+  if (order.length > 1 && Math.random() < 0.2) {
+    const swapIdx = 1 + Math.floor(Math.random() * (order.length - 1));
+    [order[0], order[swapIdx]] = [order[swapIdx], order[0]];
+  }
+
+  return order;
+}

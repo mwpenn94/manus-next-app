@@ -92,6 +92,8 @@ export default function MobileBottomNav() {
       {/* More menu panel */}
       {moreOpen && (
         <div
+          role="dialog"
+          aria-label="More navigation options"
           className="md:hidden fixed left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl max-h-[60vh] overflow-y-auto"
           style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))" }}
         >

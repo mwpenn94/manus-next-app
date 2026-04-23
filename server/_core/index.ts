@@ -879,6 +879,19 @@ async function startServer() {
         if (streamUser) streamUserId = streamUser.id;
       } catch { /* ignore */ }
 
+      // Read autoTuneStrategies preference (default: true)
+      let autoTuneStrategies = true;
+      try {
+        if (streamUserId) {
+          const { getUserPreferences: gupAT } = await import("../db");
+          const atPrefs = await gupAT(streamUserId);
+          if (atPrefs?.generalSettings && typeof atPrefs.generalSettings === "object") {
+            const gs = atPrefs.generalSettings as Record<string, unknown>;
+            if (gs.autoTuneStrategies === false) autoTuneStrategies = false;
+          }
+        }
+      } catch { /* default to enabled */ }
+
       // Run the agentic stream
       await runAgentStream({
         messages,
@@ -888,6 +901,7 @@ async function startServer() {
         safeWrite,
         safeEnd,
         mode,
+        autoTuneStrategies,
         memoryContext,
         // Persist the final assistant response server-side so it survives client disconnects
         onComplete: async (content) => {

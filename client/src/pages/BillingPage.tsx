@@ -94,9 +94,9 @@ export default function BillingPage() {
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5">
             <BarChart3 className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-xl font-semibold text-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
             Usage Dashboard
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground mb-6">
             Sign in to view your task usage statistics and activity history.
           </p>

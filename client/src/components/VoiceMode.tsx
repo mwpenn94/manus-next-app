@@ -101,6 +101,9 @@ export default function VoiceMode({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        role="dialog"
+        aria-label="Voice mode"
+        aria-modal="true"
         className={cn(
           "fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center",
           className

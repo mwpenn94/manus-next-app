@@ -316,7 +316,7 @@ export default function ClientInferencePage() {
         <Card className="max-w-sm">
           <CardContent className="p-6 text-center">
             <Cpu className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Client Inference</h2>
+            <h1 className="text-lg font-semibold mb-2">Client Inference</h1>
             <p className="text-muted-foreground mb-4">Sign in to use local AI models.</p>
             <Button onClick={() => (window.location.href = getLoginUrl())}>
               <LogIn className="w-4 h-4 mr-2" /> Sign In

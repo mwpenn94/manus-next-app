@@ -276,6 +276,9 @@ export default function SandboxViewer({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
+        role="dialog"
+        aria-label="Sandbox viewer"
+        aria-modal="true"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 shrink-0">

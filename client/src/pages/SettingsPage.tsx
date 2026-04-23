@@ -38,6 +38,7 @@ import {
   Star,
   Bug,
   Lightbulb,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -94,6 +95,7 @@ interface GeneralSettings {
   selfDiscovery: boolean;
   handsFreeAudio: boolean;
   offlineMode: boolean;
+  autoTuneStrategies: boolean;
   ttsVoice: string;
   ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
@@ -107,6 +109,7 @@ const DEFAULT_GENERAL: GeneralSettings = {
   selfDiscovery: false,
   handsFreeAudio: false,
   offlineMode: false,
+  autoTuneStrategies: true,
   ttsVoice: "en-US-AriaNeural",
   ttsLanguage: "en",
   ttsRate: 1.0,
@@ -494,6 +497,7 @@ export default function SettingsPage() {
                   { key: "selfDiscovery" as const, label: "Self-discovery mode", description: "Agent auto-queries deeper on last topic after inactivity", icon: Sparkles },
                   { key: "handsFreeAudio" as const, label: "Hands-free audio", description: "Read agent responses aloud using text-to-speech", icon: Headphones },
                   { key: "offlineMode" as const, label: "Offline mode", description: "Prefer local models (Kokoro TTS, cached data) over server calls when available", icon: WifiOff },
+                  { key: "autoTuneStrategies" as const, label: "Auto-tune recovery", description: "Use telemetry data to optimize which self-correction strategy the agent tries first when stuck", icon: Zap },
                 ]).map((setting) => (
                   <div key={setting.key} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">

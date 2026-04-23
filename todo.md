@@ -3191,3 +3191,32 @@
 - [x] Write Session 23 tests (convergence-validated) — 23 tests across 3 describe blocks
 - [x] Run full test suite — 2016/2033 pass (1 OOM worker crash, pre-existing)
 - [x] Save checkpoint
+
+## Session 24: Parity Expert Convergence — Accessibility + 2 Manus-Parity Features
+
+### Step 1: Fix axe-core landmark + heading order violations (Landscape → Depth → Adversarial → Convergence)
+- [x] Wrap overlays in role=dialog landmarks (OnboardingTooltips, ImageLightbox, PlusMenu, SandboxViewer, VoiceMode, MobileBottomNav)
+- [x] Fix heading order — h3→h2 in OnboardingTooltips, h2→h1 in 5 unauthenticated pages
+- [x] Depth pass: audited all pages, fixed banners with role=status, WebappPreviewCard conditional dialog
+- [x] Adversarial pass: landmarks are semantic-only, no visual impact; TS compiles cleanly
+
+### Step 2: Strategy Telemetry Auto-Tuning (Landscape → Depth → Adversarial → Convergence)
+- [x] Add getPreferredStrategyOrder() DB helper with success rate ranking + 20% exploration
+- [x] Wire auto-tuning into agentStream: strategy selection uses telemetry-preferred order
+- [x] Fall back to default order when preferredOrder is null (insufficient data)
+- [x] Add "Auto-tune recovery" toggle in Settings General preferences
+- [x] Depth pass: 20% exploration mechanism prevents feedback loops
+- [x] Adversarial pass: cold-start returns null → default order; all telemetry calls in try/catch
+
+### Step 3: Annotation Shape Tools — Rectangle + Circle (Landscape → Depth → Adversarial → Convergence)
+- [x] Add Rectangle tool to ImageLightbox annotation palette (Square icon, R shortcut)
+- [x] Add Circle/Ellipse tool to ImageLightbox annotation palette (Circle icon, C shortcut)
+- [x] Both tools use drag-to-draw with outline stroke (no fill) — same pattern as arrow
+- [x] Support color picker and stroke width for both shapes (default width: 3)
+- [x] Depth pass: shapes scale via scaleX/scaleY in compositing function
+- [x] Adversarial pass: zero-size filtered by points.length check; tool switching safe via null currentStroke
+
+### Testing & Checkpoint
+- [x] Write Session 24 tests (convergence-validated) — 23 tests across 3 describe blocks
+- [x] Run full test suite — 2039/2056 pass (1 OOM worker crash, pre-existing)
+- [x] Save checkpoint

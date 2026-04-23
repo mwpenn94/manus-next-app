@@ -13,13 +13,14 @@ import {
   X, ChevronLeft, ChevronRight, Download, ExternalLink,
   Pen, Highlighter, Type, ArrowUpRight, Eraser,
   Undo2, Redo2, Send, Loader2, Check,
+  Square, Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ──
 interface Point { x: number; y: number }
 
-type StrokeType = "pen" | "highlighter" | "arrow" | "text" | "eraser";
+type StrokeType = "pen" | "highlighter" | "arrow" | "rectangle" | "circle" | "text" | "eraser";
 
 interface Stroke {
   type: StrokeType;
@@ -45,6 +46,8 @@ const TOOLS: { type: StrokeType; icon: typeof Pen; label: string; shortcut: stri
   { type: "pen", icon: Pen, label: "Pen", shortcut: "P" },
   { type: "highlighter", icon: Highlighter, label: "Highlighter", shortcut: "H" },
   { type: "arrow", icon: ArrowUpRight, label: "Arrow", shortcut: "A" },
+  { type: "rectangle", icon: Square, label: "Rectangle", shortcut: "R" },
+  { type: "circle", icon: Circle, label: "Circle", shortcut: "C" },
   { type: "text", icon: Type, label: "Text", shortcut: "T" },
   { type: "eraser", icon: Eraser, label: "Eraser", shortcut: "E" },
 ];
@@ -62,6 +65,8 @@ const DEFAULT_WIDTHS: Record<StrokeType, number> = {
   pen: 3,
   highlighter: 18,
   arrow: 3,
+  rectangle: 3,
+  circle: 3,
   text: 16, // font size
   eraser: 20,
 };
@@ -135,6 +140,12 @@ export default function ImageLightbox({
           break;
         case "a": case "A":
           if (annotating && !e.metaKey && !e.ctrlKey) setActiveTool("arrow");
+          break;
+        case "r": case "R":
+          if (annotating && !e.metaKey && !e.ctrlKey) setActiveTool("rectangle");
+          break;
+        case "c": case "C":
+          if (annotating && !e.metaKey && !e.ctrlKey) setActiveTool("circle");
           break;
         case "t": case "T":
           if (annotating && !e.metaKey && !e.ctrlKey) setActiveTool("text");
@@ -238,6 +249,27 @@ export default function ImageLightbox({
         );
         ctx.closePath();
         ctx.fill();
+      } else if (stroke.type === "rectangle" && stroke.points.length >= 2) {
+        const p0 = stroke.points[0];
+        const p1 = stroke.points[stroke.points.length - 1];
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.width;
+        ctx.lineJoin = "miter";
+        ctx.beginPath();
+        ctx.rect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+        ctx.stroke();
+      } else if (stroke.type === "circle" && stroke.points.length >= 2) {
+        const p0 = stroke.points[0];
+        const p1 = stroke.points[stroke.points.length - 1];
+        const cx = (p0.x + p1.x) / 2;
+        const cy = (p0.y + p1.y) / 2;
+        const rx = Math.abs(p1.x - p0.x) / 2;
+        const ry = Math.abs(p1.y - p0.y) / 2;
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.width;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
       } else if (stroke.type === "text" && stroke.text) {
         ctx.fillStyle = stroke.color;
         ctx.font = `bold ${stroke.width}px system-ui, -apple-system, sans-serif`;
@@ -306,8 +338,8 @@ export default function ImageLightbox({
     const pt = getCanvasPoint(e);
     if (!pt) return;
 
-    if (activeTool === "arrow") {
-      // For arrow, only keep start and current point
+    if (activeTool === "arrow" || activeTool === "rectangle" || activeTool === "circle") {
+      // For arrow/rectangle/circle, only keep start and current point
       setCurrentStroke(prev => prev ? { ...prev, points: [prev.points[0], pt] } : null);
     } else {
       setCurrentStroke(prev => prev ? { ...prev, points: [...prev.points, pt] } : null);
@@ -317,7 +349,7 @@ export default function ImageLightbox({
   const handlePointerUp = () => {
     if (!isDrawing || !currentStroke) return;
     setIsDrawing(false);
-    if (currentStroke.points.length > 1 || currentStroke.type === "arrow") {
+    if (currentStroke.points.length > 1 || currentStroke.type === "arrow" || currentStroke.type === "rectangle" || currentStroke.type === "circle") {
       setStrokes(prev => [...prev, currentStroke]);
       setRedoStack([]);
     }
@@ -435,6 +467,27 @@ export default function ImageLightbox({
           ctx.lineTo(end.x - headLen * Math.cos(angle + Math.PI / 6), end.y - headLen * Math.sin(angle + Math.PI / 6));
           ctx.closePath();
           ctx.fill();
+        } else if (stroke.type === "rectangle" && scaledPoints.length >= 2) {
+          const p0 = scaledPoints[0];
+          const p1 = scaledPoints[scaledPoints.length - 1];
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = scaledWidth;
+          ctx.lineJoin = "miter";
+          ctx.beginPath();
+          ctx.rect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+          ctx.stroke();
+        } else if (stroke.type === "circle" && scaledPoints.length >= 2) {
+          const p0 = scaledPoints[0];
+          const p1 = scaledPoints[scaledPoints.length - 1];
+          const cx = (p0.x + p1.x) / 2;
+          const cy = (p0.y + p1.y) / 2;
+          const rx = Math.abs(p1.x - p0.x) / 2;
+          const ry = Math.abs(p1.y - p0.y) / 2;
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = scaledWidth;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
         } else if (stroke.type === "text" && stroke.text) {
           ctx.fillStyle = stroke.color;
           const fontSize = stroke.width * Math.max(scaleX, scaleY);
@@ -498,6 +551,8 @@ export default function ImageLightbox({
       case "pen": return "cursor-crosshair";
       case "highlighter": return "cursor-crosshair";
       case "arrow": return "cursor-crosshair";
+      case "rectangle": return "cursor-crosshair";
+      case "circle": return "cursor-crosshair";
       case "text": return "cursor-text";
       case "eraser": return "cursor-cell";
       default: return "cursor-crosshair";
@@ -506,6 +561,9 @@ export default function ImageLightbox({
 
   return (
     <div
+      role="dialog"
+      aria-label="Image viewer"
+      aria-modal="true"
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
       onClick={annotating ? undefined : onClose}
     >

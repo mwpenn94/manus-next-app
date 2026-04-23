@@ -111,6 +111,7 @@ export default function WebappPreviewCard({
 
   return (
     <div
+      {...(isExpanded ? { role: "dialog", "aria-label": "Web app preview", "aria-modal": true as any } : {})}
       className={cn(
         "bg-card border border-border rounded-xl overflow-hidden transition-all duration-300",
         isExpanded ? "fixed inset-4 z-50 max-w-none" : "max-w-2xl",

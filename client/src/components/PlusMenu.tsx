@@ -182,6 +182,8 @@ export default function PlusMenu({
             />
             <motion.div
               ref={menuRef}
+              role="dialog"
+              aria-label="Add content"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}

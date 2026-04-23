@@ -114,6 +114,8 @@ export default function OnboardingTooltips() {
           {/* Tooltip card */}
           <motion.div
             key={step.id}
+            role="dialog"
+            aria-label={step.title}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -140,7 +142,7 @@ export default function OnboardingTooltips() {
             </div>
 
             {/* Content */}
-            <h3 className="text-base font-semibold text-foreground mb-1.5">{step.title}</h3>
+            <h2 className="text-base font-semibold text-foreground mb-1.5">{step.title}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">{step.description}</p>
 
             {/* Footer */}
