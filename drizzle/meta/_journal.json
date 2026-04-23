@@ -190,6 +190,20 @@
       "when": 1776975839641,
       "tag": "0026_graceful_shiva",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1776979399423,
+      "tag": "0027_noisy_kulan_gath",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1776979559427,
+      "tag": "0028_keen_king_cobra",
+      "breakpoints": true
     }
   ]
 }

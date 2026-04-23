@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -533,6 +533,22 @@ export async function getUserLibraryFiles(userId: number, opts?: { search?: stri
 
 // ── Memory Entry Queries ──
 
+/**
+ * Compute importance score for a memory entry.
+ * Formula: accessCount * recencyWeight * sourceBonus
+ * - recencyWeight = exp(-daysSinceLastAccess / 14) — 14-day half-life exponential decay
+ * - sourceBonus = 2.0 for user-created, 1.0 for auto-extracted
+ * - Brand-new memories (accessCount=0) get a floor score of 0.5 * recencyWeight * sourceBonus
+ */
+export function computeMemoryImportance(mem: { accessCount: number; lastAccessedAt: Date; source: string }): number {
+  const daysSince = Math.max(0, (Date.now() - mem.lastAccessedAt.getTime()) / (1000 * 60 * 60 * 24));
+  const recencyWeight = Math.exp(-daysSince / 14);
+  const sourceBonus = mem.source === "user" ? 2.0 : 1.0;
+  // Floor: brand-new memories with 0 access still get a base score
+  const effectiveAccess = Math.max(mem.accessCount, 0.5);
+  return effectiveAccess * recencyWeight * sourceBonus;
+}
+
 export async function getUserMemories(userId: number, limit = 50, includeArchived = false) {
   const db = await getDb();
   if (!db) return [];
@@ -540,7 +556,12 @@ export async function getUserMemories(userId: number, limit = 50, includeArchive
   if (!includeArchived) {
     conditions.push(eq(memoryEntries.archived, 0));
   }
-  return db.select().from(memoryEntries).where(and(...conditions)).orderBy(desc(memoryEntries.createdAt)).limit(limit);
+  // Fetch all non-archived memories, then sort by importance score in JS
+  // (MySQL doesn't support EXP-based computed columns efficiently)
+  const allMemories = await db.select().from(memoryEntries).where(and(...conditions)).limit(500);
+  // Sort by importance score descending — most important first
+  allMemories.sort((a, b) => computeMemoryImportance(b) - computeMemoryImportance(a));
+  return allMemories.slice(0, limit);
 }
 
 export async function addMemoryEntry(entry: InsertMemoryEntry) {
@@ -589,29 +610,40 @@ export async function touchMemoryAccess(memoryIds: number[]) {
   const db = await getDb();
   if (!db) return;
   await db.update(memoryEntries)
-    .set({ lastAccessedAt: new Date() })
+    .set({
+      lastAccessedAt: new Date(),
+      accessCount: sql`${memoryEntries.accessCount} + 1`,
+    })
     .where(inArray(memoryEntries.id, memoryIds));
 }
 
 /**
- * Archive memories that haven't been accessed in the given number of days.
+ * Archive memories whose importance score falls below the threshold.
  * Only archives auto-extracted memories (source='auto'); user-created memories are never auto-archived.
+ * Uses composite importance score: accessCount * exp(-daysSince/14) * sourceBonus
+ * Default threshold 0.1 ≈ ~45 days with 0 access, or ~90 days with 1 access.
  * Returns the count of archived memories.
  */
-export async function archiveStaleMemories(staleDays = 30): Promise<number> {
+export async function archiveStaleMemories(importanceThreshold = 0.1): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  const cutoff = new Date(Date.now() - staleDays * 24 * 60 * 60 * 1000);
-  const result = await db.update(memoryEntries)
-    .set({ archived: 1 })
+  // Fetch all non-archived auto memories and compute importance in JS
+  const candidates = await db.select().from(memoryEntries)
     .where(
       and(
         eq(memoryEntries.archived, 0),
-        eq(memoryEntries.source, "auto"),
-        lt(memoryEntries.lastAccessedAt, cutoff)
+        eq(memoryEntries.source, "auto")
       )
-    );
-  return (result as any)[0]?.affectedRows ?? 0;
+    )
+    .limit(1000);
+  const toArchive = candidates.filter(m => computeMemoryImportance(m) < importanceThreshold);
+  if (toArchive.length === 0) return 0;
+  const ids = toArchive.map(m => m.id);
+  await db.update(memoryEntries)
+    .set({ archived: 1 })
+    .where(inArray(memoryEntries.id, ids));
+  console.log(`[MemoryDecay] Archived ${ids.length} memories below importance threshold ${importanceThreshold}`);
+  return ids.length;
 }
 
 /**
@@ -1901,4 +1933,101 @@ export async function getChildBranches(parentTaskId: number) {
     .innerJoin(tasks, eq(taskBranches.childTaskId, tasks.id))
     .where(eq(taskBranches.parentTaskId, parentTaskId))
     .orderBy(desc(taskBranches.createdAt));
+}
+
+
+// ── Strategy Telemetry ──
+
+/**
+ * Record a strategy telemetry entry when stuck detection triggers an intervention.
+ * Returns the inserted row ID for later outcome update.
+ */
+export async function recordStrategyTelemetry(entry: InsertStrategyTelemetry): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(strategyTelemetry).values(entry).$returningId();
+  return result?.id ?? null;
+}
+
+/**
+ * Update the outcome of a strategy telemetry entry after the intervention plays out.
+ * @param id - The telemetry row ID
+ * @param outcome - resolved (unstuck), escalated (stuck again), forced_final (hit max)
+ * @param turnsAfter - How many turns elapsed after intervention
+ */
+export async function updateTelemetryOutcome(
+  id: number,
+  outcome: "resolved" | "escalated" | "forced_final",
+  turnsAfter?: number
+) {
+  const db = await getDb();
+  if (!db) return;
+  const updateSet: Record<string, unknown> = { outcome };
+  if (turnsAfter !== undefined) updateSet.turnsAfter = turnsAfter;
+  await db.update(strategyTelemetry).set(updateSet).where(eq(strategyTelemetry.id, id));
+}
+
+/**
+ * Get aggregate strategy success rates, optionally filtered by userId.
+ * Returns: { strategyLabel, triggerPattern, totalUses, resolvedCount, escalatedCount, forcedFinalCount, successRate }
+ */
+export async function getStrategyStats(userId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = userId ? [eq(strategyTelemetry.userId, userId)] : [];
+  const rows = await db.select({
+    strategyLabel: strategyTelemetry.strategyLabel,
+    triggerPattern: strategyTelemetry.triggerPattern,
+    outcome: strategyTelemetry.outcome,
+  }).from(strategyTelemetry)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(strategyTelemetry.createdAt))
+    .limit(1000);
+
+  // Aggregate in JS for flexibility
+  const agg = new Map<string, { total: number; resolved: number; escalated: number; forced_final: number; pending: number }>();
+  for (const row of rows) {
+    const key = `${row.strategyLabel}||${row.triggerPattern ?? "unknown"}`;
+    if (!agg.has(key)) agg.set(key, { total: 0, resolved: 0, escalated: 0, forced_final: 0, pending: 0 });
+    const entry = agg.get(key)!;
+    entry.total++;
+    if (row.outcome === "resolved") entry.resolved++;
+    else if (row.outcome === "escalated") entry.escalated++;
+    else if (row.outcome === "forced_final") entry.forced_final++;
+    else entry.pending++;
+  }
+
+  return Array.from(agg.entries()).map(([key, stats]) => {
+    const [strategyLabel, triggerPattern] = key.split("||");
+    return {
+      strategyLabel,
+      triggerPattern,
+      totalUses: stats.total,
+      resolvedCount: stats.resolved,
+      escalatedCount: stats.escalated,
+      forcedFinalCount: stats.forced_final,
+      pendingCount: stats.pending,
+      successRate: stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0,
+    };
+  }).sort((a, b) => b.totalUses - a.totalUses);
+}
+
+/**
+ * Get the most recent pending telemetry entry for a task (to update its outcome).
+ */
+export async function getPendingTelemetry(taskExternalId: string): Promise<{ id: number; stuckCount: number; strategyLabel: string } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({
+    id: strategyTelemetry.id,
+    stuckCount: strategyTelemetry.stuckCount,
+    strategyLabel: strategyTelemetry.strategyLabel,
+  }).from(strategyTelemetry)
+    .where(and(
+      eq(strategyTelemetry.taskExternalId, taskExternalId),
+      eq(strategyTelemetry.outcome, "pending")
+    ))
+    .orderBy(desc(strategyTelemetry.createdAt))
+    .limit(1);
+  return rows[0] ?? null;
 }

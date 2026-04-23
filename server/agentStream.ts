@@ -468,9 +468,24 @@ export type AgentMode = "speed" | "quality" | "max" | "limitless";
  * });
  * ```
  */
+
+/**
+ * Classify what the agent was doing when it got stuck.
+ * Returns a short label for telemetry aggregation.
+ */
+function detectTriggerPattern(text: string): string {
+  if (/research|search|look|find|gather|investigat/i.test(text)) return "research_loop";
+  if (/can't|cannot|unable|don't have|no access|not able/i.test(text)) return "capability_claim";
+  if (/could you|please provide|can you|what would|clarif/i.test(text)) return "clarification_loop";
+  if (/sorry|apologize|unfortunately|i'm afraid/i.test(text)) return "apology_loop";
+  if (/let me|i'll|i will|going to|plan to|next step/i.test(text)) return "planning_loop";
+  return "generic_repeat";
+}
+
 export interface AgentStreamOptions {
   messages: Message[];
   taskExternalId?: string;
+  userId?: number;
   resolvedSystemPrompt?: string | null;
   safeWrite: (data: string) => boolean;
   safeEnd: () => void;
@@ -738,6 +753,8 @@ will seamlessly continue you with full context. Write as extensively as the task
     let stuckBreakCount = 0;
     const MAX_STUCK_BREAKS = 4; // 3 self-correction attempts + 1 forced final answer
     const stuckStrategiesUsed: string[] = []; // Track which strategies we've tried
+    let pendingTelemetryId: number | null = null; // Track the current telemetry entry for outcome update
+    let telemetryTurnAtIntervention = 0; // Turn count when intervention was applied
 
     // Register prefix for caching (system prompt + tool definitions)
     const toolsJson = JSON.stringify(AGENT_TOOLS);
@@ -974,9 +991,33 @@ will seamlessly continue you with full context. Write as extensively as the task
             const wasApologizing = /sorry|apologize|unfortunately|i'm afraid/i.test(stuckText);
             const wasRepeatingPlan = /let me|i'll|i will|going to|plan to|next step/i.test(stuckText);
 
+            // Update previous telemetry entry as escalated (stuck again after intervention)
+            if (pendingTelemetryId && options.taskExternalId) {
+              try {
+                const { updateTelemetryOutcome } = await import("./db");
+                await updateTelemetryOutcome(pendingTelemetryId, "escalated", turn - telemetryTurnAtIntervention);
+                pendingTelemetryId = null;
+              } catch { /* telemetry is non-critical */ }
+            }
+
             if (stuckBreakCount >= MAX_STUCK_BREAKS) {
               // Force final answer — agent has exhausted all self-correction attempts
               console.log(`[Agent] STUCK BREAK: Forcing final answer after ${stuckBreakCount} stuck interventions (strategies tried: ${stuckStrategiesUsed.join(", ")})`);
+              // Record forced_final telemetry
+              if (options.taskExternalId && options.userId) {
+                try {
+                  const { recordStrategyTelemetry } = await import("./db");
+                  await recordStrategyTelemetry({
+                    taskExternalId: options.taskExternalId,
+                    userId: options.userId,
+                    stuckCount: stuckBreakCount,
+                    strategyLabel: "forced_final",
+                    triggerPattern: detectTriggerPattern(normalizedText),
+                    outcome: "forced_final",
+                    turnsBefore: turn,
+                  });
+                } catch { /* telemetry is non-critical */ }
+              }
               finalContent = "";
               sendSSE(safeWrite, { delta: "\n\n" });
               conversation.push({ role: "assistant", content: textContent || "" });
@@ -1018,6 +1059,24 @@ will seamlessly continue you with full context. Write as extensively as the task
 
             stuckStrategiesUsed.push(strategyLabel);
             console.log(`[Agent] STUCK INTERVENTION #${stuckBreakCount}: Strategy=${strategyLabel}`);
+
+            // Record telemetry for this intervention
+            if (options.taskExternalId && options.userId) {
+              try {
+                const { recordStrategyTelemetry } = await import("./db");
+                pendingTelemetryId = await recordStrategyTelemetry({
+                  taskExternalId: options.taskExternalId,
+                  userId: options.userId,
+                  stuckCount: stuckBreakCount,
+                  strategyLabel,
+                  triggerPattern: detectTriggerPattern(normalizedText),
+                  outcome: "pending",
+                  turnsBefore: turn,
+                });
+                telemetryTurnAtIntervention = turn;
+              } catch { /* telemetry is non-critical */ }
+            }
+
             finalContent = "";
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({ role: "user", content: correctionStrategy });
@@ -1389,6 +1448,14 @@ Do NOT produce a final answer yet. Research more deeply first.`,
     if (turn >= maxTurns) {
       console.log(`[Agent] Completed after ${turn} turns (limit: ${maxTurns === Infinity ? '\u221e' : maxTurns})`);
       // No user-visible limit message — the agent naturally concludes its work
+    }
+
+    // Resolve any pending telemetry entry as "resolved" (agent produced a non-stuck response)
+    if (pendingTelemetryId && options.taskExternalId) {
+      try {
+        const { updateTelemetryOutcome } = await import("./db");
+        await updateTelemetryOutcome(pendingTelemetryId, "resolved", turn - telemetryTurnAtIntervention);
+      } catch { /* telemetry is non-critical */ }
     }
 
     // Signal completion

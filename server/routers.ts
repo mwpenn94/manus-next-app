@@ -158,6 +158,7 @@ import {
   getParentBranch,
   getChildBranches,
   getTaskThumbnails,
+  getStrategyStats,
 } from "./db";
 import { eq, inArray } from "drizzle-orm";
 import { validateTunnelUrl } from "./urlValidator";
@@ -170,6 +171,7 @@ import {
   skills, slideDecks, meetingSessions, teams, teamMembers, teamSessions,
   connectedDevices, deviceSessions, mobileProjects, appBuilds,
   videoProjects, githubRepos, pageViews, taskBranches,
+  strategyTelemetry,
 } from "../drizzle/schema";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"] as const;
@@ -638,6 +640,7 @@ export const appRouter = router({
       await db.delete(githubRepos).where(eq(githubRepos.userId, userId));
       await db.delete(taskTemplates).where(eq(taskTemplates.userId, userId));
       await db.delete(bridgeConfigs).where(eq(bridgeConfigs.userId, userId));
+      await db.delete(strategyTelemetry).where(eq(strategyTelemetry.userId, userId));
 
       // ── Phase 6: Delete the user record itself ──
       await db.delete(users).where(eq(users.id, userId));
@@ -665,6 +668,10 @@ export const appRouter = router({
     /** Average task duration (completed tasks only) and average messages per task */
     performance: protectedProcedure.query(async ({ ctx }) => {
       return getTaskPerformance(ctx.user.id);
+    }),
+    /** Agent self-correction strategy telemetry — success rates by strategy and trigger pattern */
+    strategyStats: protectedProcedure.query(async ({ ctx }) => {
+      return getStrategyStats(ctx.user.id);
     }),
   }),
 

@@ -14,6 +14,8 @@ import {
   MessageSquare,
   Activity,
   Loader2,
+  Shield,
+  Zap,
 } from "lucide-react";
 import {
   AreaChart,
@@ -107,6 +109,7 @@ export default function AnalyticsPage() {
   const statsQuery = trpc.usage.stats.useQuery();
   const trendsQuery = trpc.usage.taskTrends.useQuery({ days });
   const perfQuery = trpc.usage.performance.useQuery();
+  const strategyQuery = trpc.usage.strategyStats.useQuery();
 
   const isLoading = statsQuery.isLoading || trendsQuery.isLoading || perfQuery.isLoading;
 
@@ -321,6 +324,62 @@ export default function AnalyticsPage() {
             )}
           </div>
         </div>
+
+        {/* Agent Self-Correction Telemetry */}
+        {strategyQuery.data && strategyQuery.data.length > 0 && (
+          <div className="bg-card border border-border rounded-xl p-5 mb-6 md:mb-8">
+            <h2 className="text-sm font-medium text-foreground flex items-center gap-2 mb-4">
+              <Shield className="w-4 h-4 text-primary" />
+              Agent Self-Correction Telemetry
+            </h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              How effectively the agent recovers when stuck in repetitive loops.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">Strategy</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium text-xs">Trigger</th>
+                    <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">Uses</th>
+                    <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">Resolved</th>
+                    <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">Escalated</th>
+                    <th className="text-center py-2 px-3 text-muted-foreground font-medium text-xs">Forced</th>
+                    <th className="text-right py-2 px-3 text-muted-foreground font-medium text-xs">Success Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {strategyQuery.data.map((row, i) => (
+                    <tr key={i} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-3.5 h-3.5 text-primary" />
+                          <span className="font-medium text-foreground">{row.strategyLabel}</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-muted-foreground">{row.triggerPattern}</td>
+                      <td className="py-2.5 px-3 text-center text-foreground">{row.totalUses}</td>
+                      <td className="py-2.5 px-3 text-center" style={{ color: CHART_COLORS.completed }}>{row.resolvedCount}</td>
+                      <td className="py-2.5 px-3 text-center" style={{ color: CHART_COLORS.pending }}>{row.escalatedCount}</td>
+                      <td className="py-2.5 px-3 text-center" style={{ color: CHART_COLORS.error }}>{row.forcedFinalCount}</td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                          style={{
+                            backgroundColor: row.successRate >= 70 ? `${CHART_COLORS.completed}20` : row.successRate >= 40 ? `${CHART_COLORS.pending}20` : `${CHART_COLORS.error}20`,
+                            color: row.successRate >= 70 ? CHART_COLORS.completed : row.successRate >= 40 ? CHART_COLORS.pending : CHART_COLORS.error,
+                          }}
+                        >
+                          {row.successRate}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Daily Breakdown Bar Chart */}
         <div className="bg-card border border-border rounded-xl p-5">

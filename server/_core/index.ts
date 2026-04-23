@@ -883,6 +883,7 @@ async function startServer() {
       await runAgentStream({
         messages,
         taskExternalId,
+        userId: streamUserId ?? undefined,
         resolvedSystemPrompt,
         safeWrite,
         safeEnd,

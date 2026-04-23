@@ -3123,3 +3123,40 @@
 - [x] Write Session 21 tests (27 tests in session21-archived-lightbox-selfcorrect.test.ts)
 - [x] Run full test suite (1,979 tests passing across 83 files)
 - [x] Save checkpoint
+
+## Session 22: Parity Expert Convergence — Memory Scoring, Strategy Telemetry, Image Annotation
+
+### Feature 1: Memory Importance Scoring (Landscape → Depth → Adversarial → Convergence)
+- [x] Add accessCount field to memory_entries schema
+- [x] Increment accessCount in touchMemoryAccess when memories are injected
+- [x] Compute composite importance score: accessCount * recencyWeight * sourceBonus
+- [x] Use importance score to order memories (most important first) when selecting top 20
+- [x] Replace flat 30-day archive with importance threshold (score < 0.1)
+- [x] User-created memories get 2.0x sourceBonus (never auto-archived, but scored higher)
+- [x] Depth pass: stress-test scoring formula with edge cases (new memory, heavily-used memory, old-but-recently-accessed)
+- [x] Adversarial pass: verify no silent regression in existing memory filtering
+
+### Feature 2: Agent Strategy Telemetry (Landscape → Depth → Adversarial → Convergence)
+- [x] Create strategy_telemetry table in schema (taskExternalId, userId, stuckCount, strategyLabel, triggerPattern, outcome, createdAt)
+- [x] Record telemetry entry when stuck detection triggers a strategy intervention
+- [x] Determine outcome: resolved (non-stuck next turn), escalated (stuck again), forced_final (hit max)
+- [x] Add tRPC endpoint for aggregate telemetry query (strategy success rates by trigger pattern)
+- [x] Add telemetry dashboard section in Analytics page
+- [x] Depth pass: validate outcome detection logic handles all edge cases
+- [x] Adversarial pass: ensure telemetry doesn't impact agent stream performance
+
+### Feature 3: Image Annotation in Lightbox (Landscape → Depth → Adversarial → Convergence)
+- [x] Add Canvas overlay layer to ImageLightbox component
+- [x] Implement annotation tools: Pen, Highlighter, Arrow, Text, Eraser
+- [x] Add color picker (6 colors) and per-tool width defaults
+- [x] Implement undo/redo stack for annotation actions (Ctrl+Z / Ctrl+Shift+Z)
+- [x] Add "Send to Agent" button that composites canvas + image into full-resolution PNG
+- [x] Upload composite to S3 via /api/upload and callback to onAnnotationSent
+- [x] Canvas touch-action: none for mobile annotation (pointer events wired)
+- [x] Depth pass: full-resolution compositing scales annotations by naturalWidth/displayWidth ratio
+- [x] Adversarial pass: offscreen canvas created per-send, not persisted; strokes reset on navigate
+
+### Testing & Checkpoint
+- [x] Write Session 22 tests (convergence-validated) — 15 new tests across 4 describe blocks
+- [x] Run full test suite — 1994/2010 pass (16 missing from OOM in unrelated file)
+- [x] Save checkpoint

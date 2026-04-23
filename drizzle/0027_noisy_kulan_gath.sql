@@ -1,0 +1,1 @@
+ALTER TABLE `memory_entries` ADD `accessCount` int DEFAULT 0 NOT NULL;

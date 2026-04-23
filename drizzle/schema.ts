@@ -174,6 +174,8 @@ export const memoryEntries = mysqlTable("memory_entries", {
   taskExternalId: varchar("taskExternalId", { length: 64 }),
   /** Last time this memory was injected into an agent context */
   lastAccessedAt: timestamp("lastAccessedAt").defaultNow().notNull(),
+  /** Number of times this memory was injected into agent context */
+  accessCount: int("accessCount").default(0).notNull(),
   /** Whether this memory has been auto-archived due to inactivity */
   archived: int("archived").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -908,3 +910,29 @@ export const taskBranches = mysqlTable("task_branches", {
 });
 export type TaskBranch = typeof taskBranches.$inferSelect;
 export type InsertTaskBranch = typeof taskBranches.$inferInsert;
+
+// ── Strategy Telemetry (agent self-correction tracking) ──
+export const strategyTelemetry = mysqlTable("strategy_telemetry", {
+  id: int("id").autoincrement().primaryKey(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }).notNull(),
+  userId: int("userId").notNull(),
+  /** Which stuck detection iteration triggered this (1, 2, 3, 4) */
+  stuckCount: int("stuckCount").notNull(),
+  /** The self-correction strategy used: diagnose-redirect, force-action, last-chance, forced_final */
+  strategyLabel: varchar("strategyLabel", { length: 64 }).notNull(),
+  /** What the agent was doing when it got stuck (e.g., "research_loop", "tool_repeat", "empty_response") */
+  triggerPattern: varchar("triggerPattern", { length: 128 }),
+  /** Outcome of the intervention: resolved (unstuck), escalated (stuck again), forced_final (hit max) */
+  outcome: mysqlEnum("outcome", ["resolved", "escalated", "forced_final", "pending"]).default("pending").notNull(),
+  /** Number of agent turns before intervention */
+  turnsBefore: int("turnsBefore"),
+  /** Number of agent turns after intervention until resolution or next stuck */
+  turnsAfter: int("turnsAfter"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  taskIdx: index("strategy_telemetry_task_idx").on(table.taskExternalId),
+  userIdx: index("strategy_telemetry_user_idx").on(table.userId),
+}));
+
+export type StrategyTelemetry = typeof strategyTelemetry.$inferSelect;
+export type InsertStrategyTelemetry = typeof strategyTelemetry.$inferInsert;

@@ -3,7 +3,8 @@ import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
 // Mock the database functions
-vi.mock("./db", () => {
+vi.mock("./db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./db")>();
   const tasks: any[] = [];
   const messages: any[] = [];
   const bridgeConfigs: any[] = [];
@@ -11,6 +12,7 @@ vi.mock("./db", () => {
   let taskIdCounter = 100;
 
   return {
+    ...actual,
     verifyTaskOwnership: vi.fn(async () => ({ id: 1, userId: 50, externalId: "test" })),
     verifyTaskOwnershipById: vi.fn(async () => ({ id: 1, userId: 50, externalId: "test" })),
     verifyKnowledgeOwnership: vi.fn(async () => ({ id: 1, projectId: 1 })),
@@ -302,5 +304,167 @@ describe("task status transitions", () => {
         status: "invalid_status" as any,
       })
     ).rejects.toThrow();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// Session 22 — Feature 1: Memory Importance Scoring
+// ═══════════════════════════════════════════════════════════════════
+
+// Import the pure function directly (not mocked)
+import { computeMemoryImportance } from "./db";
+
+describe("computeMemoryImportance — convergence-validated", () => {
+  const now = Date.now();
+
+  it("returns higher score for recently accessed memories", () => {
+    const recent = computeMemoryImportance({
+      accessCount: 5,
+      lastAccessedAt: new Date(now - 1 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    const old = computeMemoryImportance({
+      accessCount: 5,
+      lastAccessedAt: new Date(now - 30 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    expect(recent).toBeGreaterThan(old);
+  });
+
+  it("returns higher score for more frequently accessed memories", () => {
+    const frequent = computeMemoryImportance({
+      accessCount: 10,
+      lastAccessedAt: new Date(now - 5 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    const rare = computeMemoryImportance({
+      accessCount: 1,
+      lastAccessedAt: new Date(now - 5 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    expect(frequent).toBeGreaterThan(rare);
+  });
+
+  it("gives 2x source bonus to user-created memories", () => {
+    const userMem = computeMemoryImportance({
+      accessCount: 3,
+      lastAccessedAt: new Date(now - 7 * 24 * 60 * 60 * 1000),
+      source: "user",
+    });
+    const autoMem = computeMemoryImportance({
+      accessCount: 3,
+      lastAccessedAt: new Date(now - 7 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    expect(userMem).toBeCloseTo(autoMem * 2, 5);
+  });
+
+  it("gives a floor score of 0.5 for zero-access, just-now memories", () => {
+    const zeroAccess = computeMemoryImportance({
+      accessCount: 0,
+      lastAccessedAt: new Date(now),
+      source: "auto",
+    });
+    expect(zeroAccess).toBeCloseTo(0.5, 1);
+  });
+
+  it("produces very low scores for old, unaccessed memories", () => {
+    const stale = computeMemoryImportance({
+      accessCount: 0,
+      lastAccessedAt: new Date(now - 60 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    expect(stale).toBeLessThan(0.1);
+  });
+
+  it("exponential decay: score halves roughly every 10 days", () => {
+    const day0 = computeMemoryImportance({
+      accessCount: 1,
+      lastAccessedAt: new Date(now),
+      source: "auto",
+    });
+    const day10 = computeMemoryImportance({
+      accessCount: 1,
+      lastAccessedAt: new Date(now - 10 * 24 * 60 * 60 * 1000),
+      source: "auto",
+    });
+    const ratio = day10 / day0;
+    expect(ratio).toBeGreaterThan(0.4);
+    expect(ratio).toBeLessThan(0.6);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// Session 22 — Feature 2: Strategy Telemetry — trigger classification
+// ═══════════════════════════════════════════════════════════════════
+
+describe("detectTriggerPattern classification logic", () => {
+  // Replicate the classification logic for unit testing since
+  // detectTriggerPattern is module-private in agentStream.ts
+  function classifyTrigger(text: string): string {
+    if (/research|search|look|find|gather|investigat/i.test(text)) return "research_loop";
+    if (/can't|cannot|unable|don't have|no access|not able/i.test(text)) return "capability_claim";
+    if (/could you|please provide|can you|what would|clarif/i.test(text)) return "clarification_loop";
+    if (/sorry|apologize|unfortunately|i'm afraid/i.test(text)) return "apology_loop";
+    if (/let me|i'll|i will|going to|plan to|next step/i.test(text)) return "planning_loop";
+    return "generic_repeat";
+  }
+
+  it("classifies research-related text as research_loop", () => {
+    expect(classifyTrigger("let me search for more information")).toBe("research_loop");
+    expect(classifyTrigger("i'll investigate the data further")).toBe("research_loop");
+  });
+
+  it("classifies capability claims as capability_claim", () => {
+    expect(classifyTrigger("i can't access that file directly")).toBe("capability_claim");
+    expect(classifyTrigger("i'm unable to perform that action")).toBe("capability_claim");
+  });
+
+  it("classifies clarification requests as clarification_loop", () => {
+    expect(classifyTrigger("could you please provide more details")).toBe("clarification_loop");
+  });
+
+  it("classifies apologies as apology_loop", () => {
+    expect(classifyTrigger("i'm sorry for the confusion")).toBe("apology_loop");
+  });
+
+  it("classifies planning statements as planning_loop", () => {
+    expect(classifyTrigger("let me outline the next steps")).toBe("planning_loop");
+    expect(classifyTrigger("going to work on the implementation now")).toBe("planning_loop");
+  });
+
+  it("classifies unrecognized patterns as generic_repeat", () => {
+    expect(classifyTrigger("the weather is nice today")).toBe("generic_repeat");
+  });
+
+  it("prioritizes research over planning when both match", () => {
+    expect(classifyTrigger("let me search for that")).toBe("research_loop");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// Session 22 — Feature 2: Strategy Telemetry — schema validation
+// ═══════════════════════════════════════════════════════════════════
+
+describe("strategyTelemetry schema", () => {
+  it("exports the correct table shape from schema", async () => {
+    const { strategyTelemetry } = await import("../drizzle/schema");
+    expect(strategyTelemetry).toBeDefined();
+    expect(strategyTelemetry.taskExternalId).toBeDefined();
+    expect(strategyTelemetry.userId).toBeDefined();
+    expect(strategyTelemetry.stuckCount).toBeDefined();
+    expect(strategyTelemetry.strategyLabel).toBeDefined();
+    expect(strategyTelemetry.triggerPattern).toBeDefined();
+    expect(strategyTelemetry.outcome).toBeDefined();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// Session 22 — Feature 2: Strategy Stats tRPC endpoint
+// ═══════════════════════════════════════════════════════════════════
+
+describe("usage.strategyStats endpoint", () => {
+  it("is registered on the appRouter", () => {
+    expect(appRouter._def.procedures["usage.strategyStats"]).toBeDefined();
   });
 });
