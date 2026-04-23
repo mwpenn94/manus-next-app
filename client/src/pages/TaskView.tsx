@@ -1265,7 +1265,21 @@ function useVoiceRecorder(onTranscription: (text: string) => void) {
             onTranscription(result.text);
           }
         } catch (err: any) {
-          setVoiceError(err.message || "Transcription failed. Please try again.");
+          // F4.1: Provide specific error messages based on error type
+          const msg = err.message || "";
+          if (msg.includes("Upload failed")) {
+            setVoiceError("Failed to upload audio. Please check your connection and try again.");
+          } else if (msg.includes("16MB") || msg.includes("too large") || msg.includes("size")) {
+            setVoiceError("Recording is too large (max 16MB). Try a shorter recording.");
+          } else if (msg.includes("format") || msg.includes("unsupported")) {
+            setVoiceError("Audio format not supported. Supported: webm, mp3, wav, ogg, m4a.");
+          } else if (msg.includes("timeout") || msg.includes("TIMEOUT")) {
+            setVoiceError("Transcription timed out. Try a shorter recording or check your connection.");
+          } else if (msg.includes("rate limit") || msg.includes("429")) {
+            setVoiceError("Too many requests. Please wait a moment and try again.");
+          } else {
+            setVoiceError(msg || "Transcription failed. Please try again.");
+          }
         } finally {
           setTranscribing(false);
         }

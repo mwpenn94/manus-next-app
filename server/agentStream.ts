@@ -715,7 +715,14 @@ will seamlessly continue you with full context. Write as extensively as the task
         const estimatedTokens = estimateConversationTokens(conversation);
         if (estimatedTokens > CONTEXT_COMPRESSION_THRESHOLD) {
           console.log(`[Agent] Context compression triggered: ~${estimatedTokens} tokens, compressing older tool results`);
-          compressConversationContext(conversation);
+          const compressedCount = compressConversationContext(conversation);
+          // Notify the user that context was compressed (F1.1 visibility fix)
+          if (compressedCount > 0) {
+            sendSSE(safeWrite, {
+              type: "context_compressed",
+              detail: `Context optimized: ${compressedCount} older messages were summarized to maintain quality. Recent ${Math.min(20, conversation.length)} messages are preserved in full.`,
+            });
+          }
         }
         
         // Craft a precise continuation prompt that prevents repetition
@@ -1215,14 +1222,15 @@ function estimateConversationTokens(conversation: Message[]): number {
  * This prevents context overflow during long auto-continuation sequences
  * while maintaining enough context for coherent continuation.
  */
-function compressConversationContext(conversation: Message[]): void {
+function compressConversationContext(conversation: Message[]): number {
   const KEEP_RECENT = 20; // Keep last N messages uncompressed
   const TOOL_RESULT_MAX = 200; // Max chars for compressed tool results
   
-  if (conversation.length <= KEEP_RECENT + 1) return; // +1 for system prompt
+  if (conversation.length <= KEEP_RECENT + 1) return 0; // +1 for system prompt
   
   // Find the boundary: everything before (length - KEEP_RECENT) gets compressed
   const compressBoundary = conversation.length - KEEP_RECENT;
+  let compressedCount = 0;
   
   for (let i = 1; i < compressBoundary; i++) { // Skip index 0 (system prompt)
     const msg = conversation[i];
@@ -1230,15 +1238,18 @@ function compressConversationContext(conversation: Message[]): void {
       // Truncate old tool results but keep enough for context
       const truncated = msg.content.slice(0, TOOL_RESULT_MAX) + "\n... [truncated for context efficiency]";
       conversation[i] = { ...msg, content: truncated };
+      compressedCount++;
     }
     // Also compress very long assistant messages that aren't the most recent
     if (msg.role === "assistant" && typeof msg.content === "string" && msg.content.length > 1000) {
       const truncated = msg.content.slice(0, 500) + "\n... [earlier content truncated]\n" + msg.content.slice(-200);
       conversation[i] = { ...msg, content: truncated };
+      compressedCount++;
     }
   }
   
-  console.log(`[Agent] Compressed ${compressBoundary - 1} older messages, keeping ${KEEP_RECENT} recent`);
+  console.log(`[Agent] Compressed ${compressedCount} older messages, keeping ${KEEP_RECENT} recent`);
+  return compressedCount;
 }
 
 /**

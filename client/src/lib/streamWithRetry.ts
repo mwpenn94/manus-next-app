@@ -32,6 +32,7 @@ export interface StreamCallbacks {
    * for bounded tiers (Speed: 5, Quality: 50).
    */
   onContinuation?: (data: { round: number; maxRounds: number; reason: string }) => void;
+  onContextCompressed?: (detail: string) => void;
   onError: (error: string, retryable?: boolean) => void;
   onReconnecting?: (attempt: number, maxRetries: number) => void;
   onReconnected?: () => void;
@@ -90,6 +91,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.convergence && callbacks.onConvergence) callbacks.onConvergence(data.convergence);
     if (data.interactive_output && callbacks.onInteractiveOutput) callbacks.onInteractiveOutput(data.interactive_output);
     if (data.continuation && callbacks.onContinuation) callbacks.onContinuation(data.continuation);
+    if (data.type === "context_compressed" && callbacks.onContextCompressed) callbacks.onContextCompressed(data.detail);
     if (data.error) callbacks.onError(data.error, data.retryable === true);
 
     return true;

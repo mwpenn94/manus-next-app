@@ -73,6 +73,7 @@ export default function SlidesPage() {
                 onChange={(e) => setSlideCount(Number(e.target.value))}
                 className="w-20"
                 title="Number of slides"
+                aria-label="Number of slides"
               />
               <Button onClick={handleGenerate} disabled={!prompt.trim() || generateMutation.isPending}>
                 {generateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}

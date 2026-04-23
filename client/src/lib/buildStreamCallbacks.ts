@@ -209,5 +209,22 @@ export function buildStreamCallbacks(
       // Restore the clean accumulated content (remove reconnecting message)
       setters.setStreamContent(state.accumulated);
     },
+    onContextCompressed: (detail: string) => {
+      // F1.1: Show context compression visibility indicator
+      // Add a subtle system note in the stream so the user knows context was optimized
+      if (setters.addMessage) {
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: detail,
+          cardType: "system_notice" as const,
+          cardData: { type: "context_compressed", detail },
+        });
+      } else {
+        // Fallback: append as italic system note
+        state.accumulated += `\n\n*\u{1F4CB} ${detail}*\n\n`;
+        setters.accumulatedRef.current = state.accumulated;
+        setters.setStreamContent(state.accumulated);
+      }
+    },
   };
 }

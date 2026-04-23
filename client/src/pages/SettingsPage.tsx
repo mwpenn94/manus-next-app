@@ -81,6 +81,7 @@ const CAPABILITY_DEFINITIONS: CapabilityDef[] = [
 ];
 
 interface GeneralSettings {
+  [key: string]: unknown;
   notifications: boolean;
   soundEffects: boolean;
   autoExpandActions: boolean;
@@ -120,7 +121,7 @@ interface TTSLanguageOption {
   voiceCount: number;
 }
 
-function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
+function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onChange: () => void; disabled?: boolean; label?: string }) {
   return (
     <button
       onClick={onChange}
@@ -132,6 +133,7 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
       )}
       role="switch"
       aria-checked={checked}
+      aria-label={label || "Toggle"}
     >
       <motion.div
         className="w-[18px] h-[18px] rounded-full bg-white shadow-sm absolute top-[2px]"
@@ -279,7 +281,7 @@ export default function SettingsPage() {
       if (isAuthenticated) {
         savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
       }
-      toast.success(`${key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase())} ${updated[key] ? "enabled" : "disabled"}`);
+      toast.success(`${String(key).replace(/([A-Z])/g, " $1").replace(/^./, (s: string) => s.toUpperCase())} ${updated[key] ? "enabled" : "disabled"}`);
       return updated;
     });
   }, [isAuthenticated, savePrefsMutation, capabilityToggles]);
@@ -290,7 +292,7 @@ export default function SettingsPage() {
       const current = prev[pkg] ?? CAPABILITY_DEFINITIONS.find(c => c.package === pkg)?.defaultEnabled ?? false;
       const updated = { ...prev, [pkg]: !current };
       if (isAuthenticated) {
-        savePrefsMutation.mutate({ generalSettings, capabilities: updated });
+        savePrefsMutation.mutate({ generalSettings: generalSettings as Record<string, unknown>, capabilities: updated });
       }
       toast.success(`${CAPABILITY_DEFINITIONS.find(c => c.package === pkg)?.name} ${!current ? "enabled" : "disabled"}`);
       return updated;
@@ -495,6 +497,7 @@ export default function SettingsPage() {
                     <Toggle
                       checked={generalSettings[setting.key]}
                       onChange={() => updateGeneralSetting(setting.key)}
+                      label={setting.label}
                     />
                   </div>
                 ))}
@@ -510,6 +513,7 @@ export default function SettingsPage() {
                   Select a language to see available voices. Supports 75+ languages with 400+ neural voices.
                 </p>
                 <select
+                  aria-label="Text-to-speech language"
                   value={generalSettings.ttsLanguage || "en"}
                   onChange={(e) => {
                     const lang = e.target.value;
@@ -593,6 +597,7 @@ export default function SettingsPage() {
                   <span className="text-xs text-muted-foreground w-8">0.5x</span>
                   <input
                     type="range"
+                    aria-label="Text-to-speech speed"
                     min="0.5"
                     max="2.0"
                     step="0.1"
@@ -606,12 +611,12 @@ export default function SettingsPage() {
                     }}
                     onMouseUp={() => {
                       if (isAuthenticated) {
-                        savePrefsMutation.mutate({ generalSettings, capabilities: capabilityToggles });
+                        savePrefsMutation.mutate({ generalSettings: generalSettings as Record<string, unknown>, capabilities: capabilityToggles });
                       }
                     }}
                     onTouchEnd={() => {
                       if (isAuthenticated) {
-                        savePrefsMutation.mutate({ generalSettings, capabilities: capabilityToggles });
+                        savePrefsMutation.mutate({ generalSettings: generalSettings as Record<string, unknown>, capabilities: capabilityToggles });
                       }
                     }}
                     className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
@@ -730,6 +735,7 @@ export default function SettingsPage() {
                     <Toggle
                       checked={setting.defaultOn}
                       onChange={() => toast.info("Notification preferences will be saved when backend support is added")}
+                      label={setting.label}
                     />
                   </div>
                 ))}
@@ -898,6 +904,7 @@ export default function SettingsPage() {
                           toggleCapability(cap.package);
                         }}
                         disabled={cap.status === "planned"}
+                        label={cap.name}
                       />
                     </motion.div>
                   ))

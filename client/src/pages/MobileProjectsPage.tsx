@@ -149,7 +149,7 @@ export default function MobileProjectsPage() {
               Mobile Projects
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Build mobile apps from your web project — PWA, Capacitor, or Expo
+              Configure mobile app packaging for your web project — PWA, Capacitor, or Expo
             </p>
           </div>
           <Button onClick={() => { setView("create"); setSelectedFramework(null); setProjectName(""); }}>
@@ -168,7 +168,7 @@ export default function MobileProjectsPage() {
               <Smartphone className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No mobile projects yet</h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-                Create a mobile project to package your web app for phones and tablets. PWA is the easiest free option.
+                Create a mobile project to generate configuration files for packaging your web app. PWA is the easiest free option.
               </p>
               <Button onClick={() => { setView("create"); setSelectedFramework(null); }}>
                 <Plus className="w-4 h-4 mr-2" />

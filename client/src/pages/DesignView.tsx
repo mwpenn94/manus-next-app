@@ -4,6 +4,7 @@
  * Capability #15: Real canvas for AI-generated visual compositions
  * - Generate images from text prompts via agent
  * - Add text overlays with positioning
+ * - Drag-to-reposition layers on canvas
  * - Layer management (image + text layers)
  * - Export to S3 (real publish, not "coming soon")
  * - Template presets (poster, banner, card, social, mockup, infographic)
@@ -62,6 +63,7 @@ export default function DesignView() {
   const [currentDesignId, setCurrentDesignId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ layerId: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
 
   // Real tRPC queries and mutations
   const designsQuery = trpc.design.list.useQuery(undefined, { enabled: !!user });
@@ -182,6 +184,38 @@ export default function DesignView() {
   const removeLayer = useCallback((id: string) => {
     setLayers((prev) => prev.filter((l) => l.id !== id));
     setSelectedLayer(null);
+  }, []);
+
+  // Drag-to-reposition handlers
+  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent, layerId: string) => {
+    e.stopPropagation();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const layer = layers.find((l) => l.id === layerId);
+    if (!layer) return;
+    dragRef.current = { layerId, startX: clientX, startY: clientY, origX: layer.x, origY: layer.y };
+    setSelectedLayer(layerId);
+  }, [layers]);
+
+  const handleDragMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!dragRef.current || !canvasRef.current) return;
+    e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const scaleX = template.width / rect.width;
+    const scaleY = template.height / rect.height;
+    const dx = (clientX - dragRef.current.startX) * scaleX;
+    const dy = (clientY - dragRef.current.startY) * scaleY;
+    const newX = Math.max(0, Math.min(template.width - 50, dragRef.current.origX + dx));
+    const newY = Math.max(0, Math.min(template.height - 50, dragRef.current.origY + dy));
+    setLayers((prev) =>
+      prev.map((l) => l.id === dragRef.current!.layerId ? { ...l, x: newX, y: newY } : l)
+    );
+  }, [template]);
+
+  const handleDragEnd = useCallback(() => {
+    dragRef.current = null;
   }, []);
 
   const handleSave = useCallback(() => {
@@ -457,12 +491,17 @@ export default function DesignView() {
                 </div>
                 <div
                   ref={canvasRef}
-                  className="relative bg-muted/30 border border-border rounded-lg overflow-hidden mx-auto"
+                  className="relative bg-muted/30 border border-border rounded-lg overflow-hidden mx-auto select-none"
                   style={{
                     width: "100%",
                     maxWidth: Math.min(template.width, 900),
                     aspectRatio: `${template.width} / ${template.height}`,
                   }}
+                  onMouseMove={handleDragMove}
+                  onMouseUp={handleDragEnd}
+                  onMouseLeave={handleDragEnd}
+                  onTouchMove={handleDragMove}
+                  onTouchEnd={handleDragEnd}
                 >
                   {layers.length === 0 ? (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -478,6 +517,8 @@ export default function DesignView() {
                       <div
                         key={layer.id}
                         onClick={() => setSelectedLayer(layer.id)}
+                        onMouseDown={(e) => handleDragStart(e, layer.id)}
+                        onTouchStart={(e) => handleDragStart(e, layer.id)}
                         className={`absolute transition-shadow ${
                           selectedLayer === layer.id ? "ring-2 ring-primary ring-offset-1" : ""
                         }`}
@@ -486,7 +527,7 @@ export default function DesignView() {
                           top: `${(layer.y / template.height) * 100}%`,
                           width: layer.type === "image" ? "100%" : `${(layer.width / template.width) * 100}%`,
                           height: layer.type === "image" ? "100%" : "auto",
-                          cursor: "pointer",
+                          cursor: dragRef.current?.layerId === layer.id ? "grabbing" : "grab",
                         }}
                       >
                         {layer.type === "image" && layer.url ? (

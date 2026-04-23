@@ -277,6 +277,7 @@ export default function Home() {
             multiple
             className="hidden"
             onChange={handleFileSelect}
+            aria-label="Attach files"
             accept="image/*,.pdf,.doc,.docx,.txt,.csv,.json,.md,.py,.js,.ts,.html,.css,audio/*,video/*,.xlsx,.xls,.pptx,.ppt,.zip,.tar,.gz"
           />
           {/* Drag overlay */}

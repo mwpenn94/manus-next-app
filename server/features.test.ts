@@ -119,7 +119,7 @@ describe("bridge event wiring — task lifecycle", () => {
       taskId: task.id,
       role: "assistant",
       content: "Browsing https://example.com",
-      actions: JSON.stringify([{ type: "browsing", url: "https://example.com", status: "done" }]),
+      actions: [{ type: "browsing", url: "https://example.com", status: "done" }],
     });
 
     // Verify messages were added

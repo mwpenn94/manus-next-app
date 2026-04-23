@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -303,9 +304,9 @@ export const appRouter = router({
         taskId: z.number(),
         role: z.enum(["user", "assistant", "system"]),
         content: z.string().max(100000),
-        actions: z.any().optional(),
+        actions: z.array(z.record(z.string(), z.unknown())).optional(),
         cardType: z.string().max(64).optional(),
-        cardData: z.any().optional(),
+        cardData: z.record(z.string(), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await verifyTaskOwnershipById(input.taskId, ctx.user.id);
@@ -408,8 +409,8 @@ export const appRouter = router({
 
     save: protectedProcedure
       .input(z.object({
-        generalSettings: z.any().optional(),
-        capabilities: z.any().optional(),
+        generalSettings: z.record(z.string(), z.unknown()).optional(),
+        capabilities: z.record(z.string(), z.boolean()).optional(),
         systemPrompt: z.string().nullable().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -427,7 +428,7 @@ export const appRouter = router({
     /** Export all user data as a JSON bundle */
     exportData: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await getDb();
-      if (!db) throw new Error("Database unavailable");
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const userId = ctx.user.id;
       // Gather all user data from all tables
       const [userTasks, userPrefs, userMemories, userConnectors, userWebapps, userDesigns, userSchedules] = await Promise.all([
@@ -466,7 +467,7 @@ export const appRouter = router({
     /** Delete all user data (GDPR right to erasure) */
     deleteAllData: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await getDb();
-      if (!db) throw new Error("Database unavailable");
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const userId = ctx.user.id;
       // Delete in dependency order
       const userTaskRows = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.userId, userId));
@@ -576,7 +577,7 @@ export const appRouter = router({
           prompt: input.prompt,
         });
         if ("error" in result) {
-          throw new Error(result.error);
+          throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
         }
         return { text: result.text, language: result.language };
       }),
@@ -931,7 +932,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const updates: Record<string, any> = {};
         if (input.name !== undefined) updates.name = input.name;
         if (input.description !== undefined) updates.description = input.description;
@@ -944,7 +945,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const project = await getProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         await deleteProject(project.id);
         return { success: true };
       }),
@@ -960,7 +961,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (input.projectExternalId) {
           const project = await getProjectByExternalId(input.projectExternalId);
-          if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+          if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
           await assignTaskToProject(input.taskId, project.id);
         } else {
           await assignTaskToProject(input.taskId, null);
@@ -986,7 +987,7 @@ export const appRouter = router({
         }))
         .mutation(async ({ ctx, input }) => {
           const project = await getProjectByExternalId(input.projectExternalId);
-          if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+          if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
           await addProjectKnowledge({
             projectId: project.id,
             type: input.type,
@@ -1050,7 +1051,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const skills = await getUserSkills(ctx.user.id);
         const skill = skills.find(s => s.skillId === input.skillId && s.enabled);
-        if (!skill) throw new Error("Skill not found or not enabled");
+        if (!skill) throw new TRPCError({ code: "NOT_FOUND", message: "Skill not found or not enabled" });
         const { invokeLLM } = await import("./_core/llm");
         const response = await invokeLLM({
           messages: [
@@ -1150,19 +1151,19 @@ export const appRouter = router({
       .input(z.object({
         connectorId: z.string(),
         action: z.string(),
-        payload: z.record(z.string(), z.any()).optional(),
+        payload: z.record(z.string(), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const connectors = await getUserConnectors(ctx.user.id);
         const conn = connectors.find(c => c.connectorId === input.connectorId && c.status === "connected");
-        if (!conn) throw new Error("Connector not found or not connected");
+        if (!conn) throw new TRPCError({ code: "BAD_REQUEST", message: "Connector not found or not connected" });
         const config = (conn.config || {}) as Record<string, string>;
 
         // Route by connector type
         switch (input.connectorId) {
           case "slack": {
             const webhookUrl = config.webhookUrl;
-            if (!webhookUrl) throw new Error("Slack webhook URL not configured");
+            if (!webhookUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Slack webhook URL not configured" });
             const resp = await fetch(webhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1172,7 +1173,7 @@ export const appRouter = router({
           }
           case "zapier": {
             const zapierUrl = config.webhookUrl;
-            if (!zapierUrl) throw new Error("Zapier webhook URL not configured");
+            if (!zapierUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Zapier webhook URL not configured" });
             const resp = await fetch(zapierUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1198,7 +1199,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const connectors = await getUserConnectors(ctx.user.id);
         const conn = connectors.find(c => c.connectorId === input.connectorId);
-        if (!conn) throw new Error("Connector not found");
+        if (!conn) throw new TRPCError({ code: "NOT_FOUND", message: "Connector not found" });
         return { success: true, result: `Connector ${conn.name} is ${conn.status}` };
       }),
     /** Get OAuth authorization URL for a connector */
@@ -1235,7 +1236,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const { getOAuthProvider } = await import("./connectorOAuth");
         const provider = getOAuthProvider(input.connectorId);
-        if (!provider) throw new Error("OAuth not supported for this connector");
+        if (!provider) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "OAuth not supported for this connector" });
         const redirectUri = `${input.origin}/api/connector/oauth/callback`;
         const tokens = await provider.exchangeCode(input.code, redirectUri);
         let userName = provider.name;
@@ -1269,10 +1270,10 @@ export const appRouter = router({
         const { getOAuthProvider } = await import("./connectorOAuth");
         const userConns = await getUserConnectors(ctx.user.id);
         const conn = userConns.find(c => c.connectorId === input.connectorId);
-        if (!conn) throw new Error("Connector not found");
-        if (!conn.refreshToken) throw new Error("No refresh token available");
+        if (!conn) throw new TRPCError({ code: "NOT_FOUND", message: "Connector not found" });
+        if (!conn.refreshToken) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No refresh token available" });
         const provider = getOAuthProvider(input.connectorId);
-        if (!provider?.refreshToken) throw new Error("Provider does not support token refresh");
+        if (!provider?.refreshToken) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Provider does not support token refresh" });
         const tokens = await provider.refreshToken(conn.refreshToken);
         await updateConnectorOAuthTokens(conn.id, {
             accessToken: tokens.accessToken,
@@ -1415,7 +1416,7 @@ export const appRouter = router({
       .input(z.object({ inviteCode: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamByInviteCode(input.inviteCode);
-        if (!team) throw new Error("Invalid invite code");
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid invite code" });
         return joinTeam(team.id, ctx.user.id);
       }),
     removeMember: protectedProcedure
@@ -1478,7 +1479,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const build = await getWebappBuild(input.id);
-        if (!build || !build.generatedHtml) throw new Error("No HTML to publish");
+        if (!build || !build.generatedHtml) throw new TRPCError({ code: "NOT_FOUND", message: "No HTML to publish" });
         const { storagePut } = await import("./storage");
         const { nanoid } = await import("nanoid");
         const key = `webapps/${nanoid(12)}/index.html`;
@@ -1501,7 +1502,7 @@ export const appRouter = router({
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(200),
-        canvasState: z.any().optional(),
+        canvasState: z.record(z.string(), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return createDesign({ userId: ctx.user.id, name: input.name, canvasState: input.canvasState });
@@ -1510,7 +1511,7 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         name: z.string().max(200).optional(),
-        canvasState: z.any().optional(),
+        canvasState: z.record(z.string(), z.unknown()).optional(),
         thumbnailUrl: z.string().max(2000).optional(),
         exportUrl: z.string().max(2000).optional(),
       }))
@@ -1529,7 +1530,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), format: z.enum(["png", "svg"]).optional() }))
       .mutation(async ({ input }) => {
         const design = await getDesign(input.id);
-        if (!design) throw new Error("Design not found");
+        if (!design) throw new TRPCError({ code: "NOT_FOUND", message: "Design not found" });
         const { storagePut } = await import("./storage");
         const { nanoid } = await import("nanoid");
         const key = `designs/${nanoid(12)}.json`;
@@ -1577,7 +1578,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByPairingCode(input.pairingCode);
-        if (!device || device.userId !== ctx.user.id) throw new Error("Invalid pairing code");
+        if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid pairing code" });
         await completeDevicePairing(device.id, input.tunnelUrl, input.osInfo, input.capabilities as any);
         return { success: true, deviceId: device.externalId };
       }),
@@ -1585,7 +1586,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), tunnelUrl: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.externalId);
-        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });
         await updateDeviceConnection(device.id, input.tunnelUrl);
         return { success: true };
       }),
@@ -1593,7 +1594,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), status: z.enum(["online", "offline", "pairing", "error"]), lastError: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.externalId);
-        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });
         await updateDeviceStatus(device.id, input.status, input.lastError);
         return { success: true };
       }),
@@ -1612,8 +1613,8 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.deviceExternalId);
-        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
-        if (device.status !== "online" || !device.tunnelUrl) throw new Error("Device is not connected");
+        if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });
+        if (device.status !== "online" || !device.tunnelUrl) throw new TRPCError({ code: "BAD_REQUEST", message: "Device is not connected" });
         // Relay the command to the device's tunnel endpoint
         try {
           const response = await fetch(`${device.tunnelUrl}/api/execute`, {
@@ -1625,7 +1626,7 @@ export const appRouter = router({
           if (!response.ok) {
             const errText = await response.text().catch(() => "Unknown error");
             await updateDeviceStatus(device.id, "error", errText);
-            throw new Error(`Device command failed: ${errText}`);
+            throw new TRPCError({ code: "BAD_REQUEST", message: `Device command failed: ${errText}` });
           }
           const result = await response.json();
           // Update session stats
@@ -1642,7 +1643,7 @@ export const appRouter = router({
         } catch (err: any) {
           if (err.name === "TimeoutError") {
             await updateDeviceStatus(device.id, "error", "Command timed out");
-            throw new Error("Device command timed out");
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Device command timed out" });
           }
           throw err;
         }
@@ -1652,7 +1653,7 @@ export const appRouter = router({
       .input(z.object({ deviceExternalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.deviceExternalId);
-        if (!device || device.userId !== ctx.user.id) throw new Error("Device not found");
+        if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });
         // End any existing active session
         const existing = await getActiveDeviceSession(device.id);
         if (existing) await endDeviceSession(existing.id);
@@ -2074,7 +2075,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const { createPortalSession } = await import("./stripe");
         if (!ctx.user.stripeCustomerId) {
-          throw new Error("No Stripe customer found. Please make a purchase first.");
+          throw new TRPCError({ code: "NOT_FOUND", message: "No Stripe customer found. Please make a purchase first." });
         }
         return createPortalSession(ctx.user.stripeCustomerId, input.origin);
       }),
@@ -2110,14 +2111,14 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const project = await getVideoProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Not found" });
         return project;
       }),
     delete: protectedProcedure
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const project = await getVideoProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Not found" });
         await deleteVideoProject(project.id, ctx.user.id);
         return { success: true };
       }),
@@ -2134,7 +2135,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         return repo;
       }),
     /** Import/connect a GitHub repo from the user's GitHub account */
@@ -2197,9 +2198,9 @@ export const appRouter = router({
         // Get GitHub token from connector
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected. Please connect GitHub in Connectors first.");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected. Please connect GitHub in Connectors first." });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { createRepo: ghCreateRepo } = await import("./githubApi");
         const ghRepo = await ghCreateRepo(token, {
           name: input.name,
@@ -2233,7 +2234,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         await disconnectGitHubRepo(repo.id, ctx.user.id);
         return { success: true };
       }),
@@ -2242,12 +2243,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { getRepo } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         const ghRepo = await getRepo(token, owner, repoName);
@@ -2283,12 +2284,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), branch: z.string().optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { getRepoTree } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         const tree = await getRepoTree(token, owner, repoName, input.branch || repo.defaultBranch || "main");
@@ -2299,12 +2300,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), path: z.string(), ref: z.string().optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { getFileContent } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return getFileContent(token, owner, repoName, input.path, input.ref);
@@ -2321,12 +2322,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { createOrUpdateFile } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return createOrUpdateFile(token, owner, repoName, input.path, {
@@ -2347,12 +2348,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { deleteFile: ghDeleteFile } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return ghDeleteFile(token, owner, repoName, input.path, {
@@ -2371,12 +2372,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { createIssue: ghCreateIssue } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return ghCreateIssue(token, owner, repoName, { title: input.title, body: input.body, labels: input.labels });
@@ -2390,12 +2391,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { mergePullRequest } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return mergePullRequest(token, owner, repoName, input.pullNumber, { merge_method: input.mergeMethod ?? "merge" });
@@ -2405,12 +2406,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { listBranches } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return listBranches(token, owner, repoName);
@@ -2420,12 +2421,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), branchName: z.string(), fromSha: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { createBranch: ghCreateBranch } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return ghCreateBranch(token, owner, repoName, input.branchName, input.fromSha);
@@ -2435,12 +2436,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), branch: z.string().optional(), perPage: z.number().optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { listCommits } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return listCommits(token, owner, repoName, { sha: input.branch, per_page: input.perPage ?? 20 });
@@ -2450,12 +2451,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), state: z.enum(["open", "closed", "all"]).optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { listPullRequests } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return listPullRequests(token, owner, repoName, input.state ?? "open");
@@ -2471,12 +2472,12 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { createPullRequest } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return createPullRequest(token, owner, repoName, { title: input.title, body: input.body, head: input.head, base: input.base });
@@ -2486,12 +2487,12 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string(), state: z.enum(["open", "closed", "all"]).optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
-        if (!repo || repo.userId !== ctx.user.id) throw new Error("Repo not found");
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
         const connectors = await getUserConnectors(ctx.user.id);
         const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
-        if (!ghConn) throw new Error("GitHub not connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
         const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
-        if (!token) throw new Error("GitHub token not available");
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
         const { listIssues } = await import("./githubApi");
         const [owner, repoName] = repo.fullName.split("/");
         return listIssues(token, owner, repoName, input.state ?? "open");
@@ -2507,7 +2508,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         return project;
       }),
     create: protectedProcedure
@@ -2566,7 +2567,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { externalId, ...updates } = input;
         await updateWebappProject(project.id, updates as any);
         return { success: true };
@@ -2575,7 +2576,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         await deleteWebappProject(project.id, ctx.user.id);
         return { success: true };
       }),
@@ -2589,7 +2590,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         await updateWebappProject(project.id, { deployStatus: "building" });
         const depId = await createWebappDeployment({
           projectId: project.id,
@@ -2629,7 +2630,7 @@ export const appRouter = router({
               ].join("; ");
               await updateWebappDeployment(depId, { status: "failed", errorMessage: `Content safety check failed: ${reasons}` });
               await updateWebappProject(project.id, { deployStatus: "failed" });
-              throw new Error(`Content safety check failed: ${reasons}`);
+              throw new TRPCError({ code: "BAD_REQUEST", message: `Content safety check failed: ${reasons}` });
             }
 
             // Inject analytics tracking pixel
@@ -2679,7 +2680,7 @@ export const appRouter = router({
         } catch (err: any) {
           await updateWebappDeployment(depId, { status: "failed", completedAt: new Date() });
           await updateWebappProject(project.id, { deployStatus: "failed" });
-          throw new Error("Deploy failed: " + (err.message || "Unknown error"));
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Deploy failed: " + (err.message || "Unknown error") });
         }
 
         return { deploymentId: depId, status: publishedUrl ? "live" : "failed", publishedUrl, cdnActive, distributionId };
@@ -2689,7 +2690,7 @@ export const appRouter = router({
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { invokeLLM } = await import("./_core/llm");
         const seoPrompt = `Analyze the following web project for SEO and provide specific, actionable recommendations.
 
@@ -2754,7 +2755,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         return getProjectDeployments(project.id);
       }),
     /** Get real analytics data for a project */
@@ -2762,7 +2763,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { getPageViewStats } = await import("./db");
         return getPageViewStats(project.id, input.days ?? 30);
       }),
@@ -2771,7 +2772,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { getGeoAnalytics } = await import("./db");
         return getGeoAnalytics(project.id, input.days ?? 30);
       }),
@@ -2780,7 +2781,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { getDeviceAnalytics } = await import("./db");
         return getDeviceAnalytics(project.id, input.days ?? 30);
       }),
@@ -2790,7 +2791,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { getAnalyticsWithPeaks } = await import("./db");
         return getAnalyticsWithPeaks(project.id, input.days ?? 30);
       }),
@@ -2799,7 +2800,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const { exportAnalyticsData } = await import("./db");
         return exportAnalyticsData(project.id, input.days ?? 30);
       }),
@@ -2809,7 +2810,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         const domain = project.customDomain || `${project.subdomainPrefix}.manus.space`;
         const baseUrl = `https://${domain}`;
         // Get top paths from analytics
@@ -2830,7 +2831,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string(), domain: z.string().min(1).max(256).regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i, "Invalid domain format") }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
 
         const { requestCertificate, getSslProvider } = await import("./sslProvisioning");
         const result = await requestCertificate(input.domain);
@@ -2855,7 +2856,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
 
         if (!project.sslCertArn) {
           return {
@@ -2893,7 +2894,7 @@ Provide a JSON response with this exact structure:
       .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
-        if (!project || project.userId !== ctx.user.id) throw new Error("Project not found");
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
 
         if (project.sslCertArn) {
           const { deleteCertificate } = await import("./sslProvisioning");
@@ -3020,14 +3021,14 @@ Provide a JSON response with this exact structure:
         /** Messages to copy into the new branch (up to and including the branch point) */
         messagesToCopy: z.array(z.object({
           role: z.enum(["user", "assistant", "system"]),
-          content: z.string(),
-        })),
+          content: z.string().max(100000),
+        })).max(500),
       }))
       .mutation(async ({ ctx, input }) => {
         // 1. Find parent task
         const parentTask = await getTaskByExternalId(input.parentTaskExternalId);
         if (!parentTask || parentTask.userId !== ctx.user.id) {
-          throw new Error("Parent task not found");
+          throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
         }
         // 2. Create new child task
         const childExternalId = nanoid();
@@ -3038,7 +3039,7 @@ Provide a JSON response with this exact structure:
           status: "idle",
           projectId: parentTask.projectId,
         });
-        if (!childTask) throw new Error("Failed to create branch task");
+        if (!childTask) throw new TRPCError({ code: "BAD_REQUEST", message: "Failed to create branch task" });
         // 3. Copy messages into the new task
         for (const msg of input.messagesToCopy) {
           await addTaskMessage({

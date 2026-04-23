@@ -313,7 +313,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             taskId: task.serverId,
             role: message.role,
             content: message.content,
-            actions: message.actions ? JSON.stringify(message.actions) : undefined,
+            actions: message.actions ?? undefined,
             cardType: message.cardType ?? undefined,
             cardData: message.cardData ?? undefined,
           });
@@ -429,7 +429,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   );
 
   const persistBridgeMessage = useCallback(
-    (taskId: string, role: "user" | "assistant" | "system", content: string, actions?: string) => {
+    (taskId: string, role: "user" | "assistant" | "system", content: string, actions?: Array<Record<string, unknown>>) => {
       if (!isAuthenticated) return;
       const task = tasks.find((t) => t.id === taskId);
       if (task?.serverId) {
@@ -531,7 +531,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
                   },
                 ];
                 persistBridgeMessage(e.taskId, "assistant", stepContent,
-                  JSON.stringify([{ type: "executing", command: e.action, status: stepStatus }]));
+                  [{ type: "executing", command: e.action, status: stepStatus }]);
               }
               return updated;
             })
