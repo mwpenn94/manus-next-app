@@ -29,7 +29,11 @@ import {
   CheckCircle,
   XCircle,
   Film,
+  Info,
+  Zap,
+  Crown,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -106,17 +110,40 @@ export default function VideoGeneratorPage() {
           </Button>
         </div>
 
-        {/* Info banner */}
+        {/* Info banner with provider tiers */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
             <Sparkles className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">AI Video Generation</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Create videos from text prompts or source images using the built-in image generation engine.
-                Videos are composed from AI-generated keyframes with smooth transitions.
-                For advanced synthesis, configure external provider API keys in Settings.
-              </p>
+            <div className="space-y-3 w-full">
+              <div>
+                <p className="text-sm font-medium text-foreground mb-1">AI Video Generation</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Create videos from text prompts or source images. Videos are composed from AI-generated keyframes with smooth transitions.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="rounded-md border border-green-500/20 bg-green-500/5 p-2.5">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Film className="w-3 h-3 text-green-500" />
+                    <span className="text-[11px] font-medium text-green-600">FFmpeg Slideshow</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Free &mdash; AI keyframes + crossfade transitions. Active now.</p>
+                </div>
+                <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-2.5 opacity-60">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Zap className="w-3 h-3 text-blue-500" />
+                    <span className="text-[11px] font-medium text-blue-600">Replicate SVD</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Freemium &mdash; Stable Video Diffusion. Configure API key in Settings.</p>
+                </div>
+                <div className="rounded-md border border-purple-500/20 bg-purple-500/5 p-2.5 opacity-60">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Crown className="w-3 h-3 text-purple-500" />
+                    <span className="text-[11px] font-medium text-purple-600">Veo3 Premium</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Premium &mdash; Google Veo3 cinematic AI. Requires API access.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -154,14 +181,30 @@ export default function VideoGeneratorPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* Thumbnail / placeholder */}
-                  <div className="aspect-video bg-muted/30 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                  {/* Thumbnail / placeholder with progress */}
+                  <div className="aspect-video bg-muted/30 rounded-lg mb-3 flex flex-col items-center justify-center overflow-hidden relative">
                     {project.thumbnailUrl ? (
                       <img src={project.thumbnailUrl} alt="" className="w-full h-full object-cover" />
                     ) : project.status === "generating" ? (
-                      <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                        <span className="text-[10px] text-muted-foreground">Generating keyframes...</span>
+                        <div className="w-32">
+                          <Progress value={33} className="h-1" />
+                        </div>
+                      </div>
+                    ) : project.status === "pending" ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <Clock className="w-8 h-8 text-yellow-500" />
+                        <span className="text-[10px] text-muted-foreground">Queued for processing</span>
+                      </div>
                     ) : project.status === "ready" ? (
                       <Play className="w-8 h-8 text-primary/50 group-hover:text-primary transition-colors" />
+                    ) : project.status === "error" ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <XCircle className="w-8 h-8 text-red-500" />
+                        <span className="text-[10px] text-red-400 max-w-[80%] text-center line-clamp-2">{project.errorMessage || "Generation failed"}</span>
+                      </div>
                     ) : (
                       <Film className="w-8 h-8 text-muted-foreground" />
                     )}
@@ -238,6 +281,12 @@ export default function VideoGeneratorPage() {
                 rows={4}
               />
             </div>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <p className="flex items-start gap-1.5">
+              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>Using <strong>FFmpeg slideshow</strong> engine (free). AI generates keyframes from your prompt, then composes them with crossfade transitions. Typical generation time: 30-60 seconds.</span>
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>

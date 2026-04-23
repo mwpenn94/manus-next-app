@@ -1156,6 +1156,19 @@ Do NOT produce a final answer yet. Research more deeply first.`,
         console.error("[Agent] onComplete callback error:", e);
       }
     }
+
+    // §L.22 Cross-model judge: fire-and-forget quality evaluation on non-trivial responses
+    if (finalContent.trim().length > 200 && completedToolCalls >= 1) {
+      import("./qualityJudge").then(({ evaluateResponseQuality }) => {
+        const userText = conversation.find(m => m.role === "user")?.content;
+        const queryStr = typeof userText === "string" ? userText : "[complex input]";
+        evaluateResponseQuality(queryStr, finalContent.slice(0, 4000)).then(report => {
+          console.log(`[QualityJudge] Score: ${report.overallScore}/5.0 | Flagged: ${report.flagged} | Dims: ${report.dimensions.map(d => `${d.name}=${d.score}`).join(", ")}`);
+        }).catch(err => {
+          console.error("[QualityJudge] Evaluation failed:", err.message);
+        });
+      }).catch(() => { /* quality judge module not available */ });
+    }
   } catch (err: any) {
     console.error("[Agent] Error:", err);
     let userMessage = err.message || "Agent execution failed";

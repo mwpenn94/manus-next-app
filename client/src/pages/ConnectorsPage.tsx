@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plug, Search, CheckCircle, XCircle, Loader2, Shield, Key, ExternalLink, RefreshCw, Plus, Globe, Server, Trash2 } from "lucide-react";
+import { Plug, Search, CheckCircle, XCircle, Loader2, Shield, Key, ExternalLink, RefreshCw, Plus, Globe, Server, Trash2, Info } from "lucide-react";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
@@ -471,6 +471,23 @@ export default function ConnectorsPage() {
                     <span>OAuth securely connects your account without sharing passwords or tokens. You'll be redirected to {connectDialog?.name} to authorize access.</span>
                   </p>
                 </div>
+                {connectDialog?.id === "microsoft-365" && (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground space-y-2">
+                    <p className="flex items-start gap-2 font-medium text-amber-600">
+                      <Info className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>Azure AD App Registration Required</span>
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs ml-6">
+                      <li>Go to <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps" target="_blank" rel="noopener noreferrer" className="text-primary underline">Azure Portal &rarr; App Registrations</a></li>
+                      <li>Click &ldquo;New registration&rdquo; &rarr; name it (e.g., &ldquo;Manus Integration&rdquo;)</li>
+                      <li>Set redirect URI to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
+                      <li>Under &ldquo;Certificates &amp; secrets&rdquo;, create a new client secret</li>
+                      <li>Copy the Application (client) ID and secret value</li>
+                      <li>Add them in Settings &rarr; Secrets as MICROSOFT_365_CLIENT_ID and MICROSOFT_365_CLIENT_SECRET</li>
+                    </ol>
+                    <p className="text-xs text-muted-foreground/80 mt-2">Until configured, you can use the API Key tab with a personal access token from <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank" rel="noopener noreferrer" className="text-primary underline">Graph Explorer</a>.</p>
+                  </div>
+                )}
                 <Button className="w-full" onClick={() => handleOAuthConnect(connectDialog!.id)} disabled={oauthUrlMutation.isPending}>
                   {oauthUrlMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
                   {connectDialog?.oauthLabel ?? `Sign in with ${connectDialog?.name}`}

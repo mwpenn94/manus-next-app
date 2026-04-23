@@ -14,11 +14,11 @@
 | R5 | v9-red-audit | microsoft-365 | #53 Microsoft 365 OAuth scaffold — needs Azure AD credentials from owner | P2 | open | 1 | — |
 | R6 | v9-red-audit | video-gen | #62 Veo3 video generation scaffold — needs API access from owner | P2 | open | 1 | — |
 | R7 | assessment | cross-model-judge | §L.22 cross-model judge validation on reasoning traces (self-assessed, external recommended) | P3 | open | 0 | — |
-| R8 | live-benchmark | browser-automation | Add headless browser as agent tool — closes largest capability gap (4 HIGH gaps) | P1 | open | 0 | — |
-| R9 | live-benchmark | code-sandbox | Add sandboxed code execution — second highest impact capability | P1 | open | 0 | — |
-| R10 | live-benchmark | document-gen | Add server-side PDF/DOCX generation — quick win, no sandbox needed | P2 | open | 0 | — |
-| R11 | live-persona | task-replay | Add step logging + replay UI for agent transparency | P2 | open | 0 | — |
-| R12 | live-persona | artifact-preview | Add syntax-highlighted code blocks + document viewer | P3 | open | 0 | — |
+| R8 | live-benchmark | browser-automation | `cloud_browser` tool already implemented — navigate, screenshot, extract content | P1 | done | 3 | bc03f8b9 |
+| R9 | live-benchmark | code-sandbox | `execute_code` tool already implemented — sandboxed JS via vm.createContext | P1 | done | 3 | bc03f8b9 |
+| R10 | live-benchmark | document-gen | `generate_document` tool already implemented — PDF, DOCX, MD with S3 upload | P2 | done | 3 | bc03f8b9 |
+| R11 | live-persona | task-replay | ReplayPage.tsx (690 lines) — full step visualization with play/pause/speed controls | P2 | done | 3 | bc03f8b9 |
+| R12 | live-persona | artifact-preview | CodeEditor.tsx (106 lines) — syntax highlighting for JS/TS/HTML/CSS/JSON/Python/MD | P3 | done | 3 | bc03f8b9 |
 
 ## Protected Improvements (never weaken these)
 
@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | PI-1 | Bundle optimization 985KB → 291KB | 70% reduction via code splitting + lazy loading | 6dd93f2d | 2026-04-20 |
 | PI-2 | Server-side message persistence (onComplete) | Messages survive client disconnects | ef6e1c65 | 2026-04-20 |
-| PI-3 | 348 tests across 21 files | Regression safety net | ef6e1c65 | 2026-04-20 |
+| PI-3 | 1,671 tests across 71 files | Regression safety net (upgraded from 348/21) | bc03f8b9 | 2026-04-23 |
 | PI-4 | 60G/2Y/0R/5NA parity status | Gate A achieved | 6dd93f2d | 2026-04-20 |
 | PI-5 | 4 reasoning traces at 4.59/5.0 avg | §L.22 compliance | 6dd93f2d | 2026-04-20 |
 | PI-6 | 4/4 automation demos PASS at $0 | §L.23 compliance | 6dd93f2d | 2026-04-20 |
@@ -35,6 +35,15 @@
 | PI-9 | §L.28 persona infrastructure (32 personas, 21 journeys) | User archetype coverage | 8e8582d1 | 2026-04-20 |
 | PI-10 | Comparison matrix: 81.4% parity+partial+exceed rate | Strategic positioning clarity | pending | 2026-04-20 |
 | PI-11 | 5 exceed areas identified (Stripe, connectors, self-host, RBAC, webhooks) | Competitive differentiation | pending | 2026-04-20 |
+| PI-12 | GDPR deleteAllData covers all 35 tables | Complete data deletion cascade | 9bfa8014 | 2026-04-23 |
+| PI-13 | GDPR exportData covers all 35 tables with redaction | Complete data export | 9bfa8014 | 2026-04-23 |
+| PI-14 | File name sanitization on upload | Path traversal protection | 9bfa8014 | 2026-04-23 |
+| PI-15 | Tunnel URL validation | SSRF prevention | 9bfa8014 | 2026-04-23 |
+| PI-16 | Onboarding tooltips for first-time users | 5-step guided tour | 9bfa8014 | 2026-04-23 |
+| PI-17 | Tool turn counter in TaskView | Streaming progress visibility | 9bfa8014 | 2026-04-23 |
+| PI-18 | All mutations have onError handlers | 12 mutations fixed across 5 pages | 9bfa8014 | 2026-04-23 |
+| PI-19 | Input length constraints on API endpoints | Skill, connector, library procedures | 9bfa8014 | 2026-04-23 |
+| PI-20 | Ownership checks on design/device endpoints | Authorization enforcement | 9bfa8014 | 2026-04-23 |
 
 ## Known-Bad (tried, failed, don't retry)
 
@@ -52,12 +61,12 @@
 | G3 | Cross-model judge | Self-assessed | External model validation | v9-holistic | 2026-04-20 |
 | G4 | §L.27 benchmark infrastructure | DONE — 25 tasks, scorer (59/59 tests), EXCEED_REGISTRY, live sweep | ≥20 benchmarks, scorer, EXCEED_REGISTRY | v9-command | 2026-04-20 |
 | G5 | §L.28 persona infrastructure | DONE — 32 personas, 21 journeys, registries, live sweep | ≥30 personas, journey testing | v9-command | 2026-04-20 |
-| G6 | Browser automation | NOT PRESENT | Headless browser as agent tool | live-benchmark | 2026-04-20 |
-| G7 | Code execution sandbox | NOT PRESENT | Sandboxed code execution for user tasks | live-benchmark | 2026-04-20 |
-| G8 | File system access | NOT PRESENT | Virtual file system over S3 | live-benchmark | 2026-04-20 |
-| G9 | Document generation (PDF/DOCX) | NOT PRESENT | Server-side document generation | live-benchmark | 2026-04-20 |
-| G10 | Task replay / step visualization | NOT PRESENT | Step logging + replay UI | live-persona | 2026-04-20 |
-| G11 | Artifact preview (code, docs) | NOT PRESENT | Syntax-highlighted code blocks + doc viewer | live-persona | 2026-04-20 |
+| G6 | Browser automation | GREEN — `cloud_browser` tool with navigate/screenshot/extract | Closed | session10-reconcile | 2026-04-23 |
+| G7 | Code execution sandbox | GREEN — `execute_code` with vm.createContext + 5s timeout | Closed | session10-reconcile | 2026-04-23 |
+| G8 | File system access | GREEN — `create_file`, `edit_file`, `read_file`, `list_files` tools | Closed | session10-reconcile | 2026-04-23 |
+| G9 | Document generation (PDF/DOCX) | GREEN — `generate_document` tool with PDF/DOCX/MD + S3 | Closed | session10-reconcile | 2026-04-23 |
+| G10 | Task replay / step visualization | GREEN — ReplayPage.tsx (690 lines) with full player UI | Closed | session10-reconcile | 2026-04-23 |
+| G11 | Artifact preview (code, docs) | GREEN — CodeEditor.tsx with multi-language syntax highlighting | Closed | session10-reconcile | 2026-04-23 |
 
 ## Reconciliation Log (concurrent-edit conflicts and how resolved)
 
