@@ -43,6 +43,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 
 type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge" | "cloud_browser" | "data_controls";
 
@@ -197,6 +198,9 @@ export default function SettingsPage() {
 
   // Theme
   const { preference, theme, setTheme } = useTheme();
+
+  // Browser notifications
+  const browserNotifications = useBrowserNotifications();
 
   // Bridge integration
   const { status: bridgeStatus, connect, disconnect, quality, events } = useBridge();
@@ -743,11 +747,37 @@ export default function SettingsPage() {
 
               <div className="mt-6 bg-card border border-border rounded-xl p-5">
                 <h3 className="text-sm font-medium text-foreground mb-2">Delivery Method</h3>
-                <p className="text-xs text-muted-foreground mb-3">All notifications are delivered in-app only.</p>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/10">
-                  <Bell className="w-4 h-4 text-primary" />
-                  <span className="text-sm text-foreground">In-app notifications</span>
-                  <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">active</span>
+                <p className="text-xs text-muted-foreground mb-3">Choose how you receive notifications.</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/10">
+                    <Bell className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-foreground">In-app notifications</span>
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">active</span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-2 rounded-md border border-border">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <span className="text-sm text-foreground">Browser push notifications</span>
+                        <p className="text-xs text-muted-foreground">Get notified even when the tab is not focused</p>
+                      </div>
+                    </div>
+                    <Toggle
+                      checked={browserNotifications.enabled}
+                      onChange={async () => {
+                        await browserNotifications.toggle();
+                        if (!browserNotifications.supported) {
+                          toast.error("Browser notifications are not supported in this browser");
+                        } else if (browserNotifications.permission === "denied") {
+                          toast.error("Notification permission was denied. Please enable it in your browser settings.");
+                        }
+                      }}
+                      label="Browser push notifications"
+                    />
+                  </div>
+                  {browserNotifications.permission === "denied" && (
+                    <p className="text-xs text-destructive px-3">Browser notifications are blocked. Please update your browser settings to enable them.</p>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -1150,12 +1180,20 @@ export default function SettingsPage() {
                     </button>
                   )}
                   <a
+                    href="/docs/bridge-guide"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Developer Guide <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
                     href="https://github.com/mwpenn94/manus-next-hybrid"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    View docs <ExternalLink className="w-3 h-3" />
+                    GitHub <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
 

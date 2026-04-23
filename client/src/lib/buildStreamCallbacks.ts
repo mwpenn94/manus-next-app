@@ -27,6 +27,7 @@ export interface StreamStateSetters {
   addMessage?: (taskId: string, msg: any) => void;
   setIsReconnecting?: (reconnecting: boolean) => void;
   setLastErrorRetryable?: (retryable: boolean) => void;
+  setPendingGate?: (gate: { action: string; description?: string; category?: string; taskId: string } | null) => void;
 }
 
 export function buildStreamCallbacks(
@@ -161,12 +162,18 @@ export function buildStreamCallbacks(
           },
         });
       }
+      // Wire pendingGate so ActiveToolIndicator shows inline approval at bottom
+      setters.setPendingGate?.({
+        action: gate.action,
+        description: gate.description,
+        category: gate.category,
+        taskId: setters.taskId,
+      });
     },
     onGateResolved: (data: { taskExternalId: string; approved: boolean }) => {
-      // Update the pending confirmation gate card to show approved/rejected status
-      // This is handled by the gate resolution UI in TaskView, not here.
-      // The server sends this event after the user approves/rejects via /api/gate-response.
       console.log(`[Stream] Gate resolved: ${data.approved ? 'approved' : 'rejected'}`);
+      // Clear pendingGate so the inline approval card disappears from ActiveToolIndicator
+      setters.setPendingGate?.(null);
     },
     onConvergence: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => {
       if (setters.addMessage) {

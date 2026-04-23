@@ -1404,6 +1404,12 @@ export default function TaskView() {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const [lastErrorRetryable, setLastErrorRetryable] = useState(false);
+  const [pendingGate, setPendingGate] = useState<{
+    action: string;
+    description?: string;
+    category?: string;
+    taskId: string;
+  } | null>(null);
   const plusButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -1676,7 +1682,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage, setIsReconnecting, setLastErrorRetryable,
+          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
         });
 
         await streamWithRetry({
@@ -1685,6 +1691,7 @@ export default function TaskView() {
         });
 
         accumulated = streamState.accumulated;
+        setPendingGate(null); // Clear gate on stream end
 
         // Mark all remaining active actions as done
         setStepProgress(null);
@@ -1841,7 +1848,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
       });
 
       await streamWithRetry({
@@ -1850,6 +1857,7 @@ export default function TaskView() {
       });
 
       accumulated = streamState.accumulated;
+      setPendingGate(null); // Clear gate on stream end
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
@@ -1912,7 +1920,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
       });
 
       await streamWithRetry({
@@ -1921,6 +1929,7 @@ export default function TaskView() {
       });
 
       accumulated = streamState.accumulated;
+      setPendingGate(null); // Clear gate on stream end
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
@@ -1994,7 +2003,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate,
       });
 
       await streamWithRetry({
@@ -2003,6 +2012,7 @@ export default function TaskView() {
       });
 
       accumulated = streamState.accumulated;
+      setPendingGate(null); // Clear gate on stream end
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
@@ -2516,6 +2526,44 @@ export default function TaskView() {
                   streaming={streaming}
                   hasStreamContent={!!streamContent}
                   isReconnecting={isReconnecting}
+                  pendingGate={pendingGate ? {
+                    action: pendingGate.action,
+                    description: pendingGate.description,
+                    category: pendingGate.category,
+                    onApprove: async () => {
+                      try {
+                        await fetch("/api/gate-response", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({ taskExternalId: pendingGate.taskId, approved: true }),
+                        });
+                        // Update the gate message card in the message list too
+                        const gateMsg = task?.messages.find(m => m.cardType === "confirmation_gate" && m.cardData?.status === "pending");
+                        if (gateMsg && task) updateMessageCard(task.id, gateMsg.id, { status: "approved" });
+                        toast.success("Action approved");
+                      } catch (e) {
+                        console.error("[Gate] Failed to send approval:", e);
+                      }
+                      setPendingGate(null);
+                    },
+                    onReject: async () => {
+                      try {
+                        await fetch("/api/gate-response", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({ taskExternalId: pendingGate.taskId, approved: false }),
+                        });
+                        const gateMsg = task?.messages.find(m => m.cardType === "confirmation_gate" && m.cardData?.status === "pending");
+                        if (gateMsg && task) updateMessageCard(task.id, gateMsg.id, { status: "rejected" });
+                        toast.info("Action rejected \u2014 agent will find an alternative");
+                      } catch (e) {
+                        console.error("[Gate] Failed to send rejection:", e);
+                      }
+                      setPendingGate(null);
+                    },
+                  } : null}
                 />
                 {/* Streaming text content */}
                 {streamContent && (

@@ -160,9 +160,14 @@ import {
 } from "./db";
 import { eq, inArray } from "drizzle-orm";
 import {
-  tasks, taskMessages, memoryEntries, connectors, designs,
+  users, tasks, taskMessages, memoryEntries, connectors, designs,
   scheduledTasks, userPreferences, taskShares,
   webappProjects, webappBuilds, webappDeployments, taskTemplates,
+  taskRatings, bridgeConfigs, taskFiles, workspaceArtifacts,
+  notifications, projects, projectKnowledge, taskEvents,
+  skills, slideDecks, meetingSessions, teams, teamMembers, teamSessions,
+  connectedDevices, deviceSessions, mobileProjects, appBuilds,
+  videoProjects, githubRepos, pageViews, taskBranches,
 } from "../drizzle/schema";
 
 const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx"] as const;
@@ -430,8 +435,12 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const userId = ctx.user.id;
-      // Gather all user data from all tables
-      const [userTasks, userPrefs, userMemories, userConnectors, userWebapps, userDesigns, userSchedules] = await Promise.all([
+
+      // ── Gather ALL user data from ALL user-owned tables ──
+      const [userTasks, userPrefs, userMemories, userConnectors, userWebapps, userDesigns,
+        userSchedules, userProjects, userSkills, userSlides, userMeetings,
+        userDevices, userMobileProjects, userAppBuilds, userVideoProjects,
+        userGitHubRepos, userTemplates, userBridgeConfigs, userNotifications] = await Promise.all([
         db.select().from(tasks).where(eq(tasks.userId, userId)),
         getUserPreferences(userId),
         db.select().from(memoryEntries).where(eq(memoryEntries.userId, userId)),
@@ -439,24 +448,81 @@ export const appRouter = router({
         db.select().from(webappProjects).where(eq(webappProjects.userId, userId)),
         db.select().from(designs).where(eq(designs.userId, userId)),
         db.select().from(scheduledTasks).where(eq(scheduledTasks.userId, userId)),
+        db.select().from(projects).where(eq(projects.userId, userId)),
+        db.select().from(skills).where(eq(skills.userId, userId)),
+        db.select().from(slideDecks).where(eq(slideDecks.userId, userId)),
+        db.select().from(meetingSessions).where(eq(meetingSessions.userId, userId)),
+        db.select().from(connectedDevices).where(eq(connectedDevices.userId, userId)),
+        db.select().from(mobileProjects).where(eq(mobileProjects.userId, userId)),
+        db.select().from(appBuilds).where(eq(appBuilds.userId, userId)),
+        db.select().from(videoProjects).where(eq(videoProjects.userId, userId)),
+        db.select().from(githubRepos).where(eq(githubRepos.userId, userId)),
+        db.select().from(taskTemplates).where(eq(taskTemplates.userId, userId)),
+        db.select().from(bridgeConfigs).where(eq(bridgeConfigs.userId, userId)),
+        db.select().from(notifications).where(eq(notifications.userId, userId)),
       ]);
-      // Get messages for all tasks
+
+      // Get task-dependent data
       const taskIds = userTasks.map(t => t.id);
+      const taskExternalIds = userTasks.map((t: any) => t.externalId).filter(Boolean);
       let allMessages: any[] = [];
+      let allFiles: any[] = [];
+      let allArtifacts: any[] = [];
+      let allRatings: any[] = [];
+      let allBranches: any[] = [];
       if (taskIds.length > 0) {
-        allMessages = await db.select().from(taskMessages).where(inArray(taskMessages.taskId, taskIds));
+        [allMessages, allArtifacts] = await Promise.all([
+          db.select().from(taskMessages).where(inArray(taskMessages.taskId, taskIds)),
+          db.select().from(workspaceArtifacts).where(inArray(workspaceArtifacts.taskId, taskIds)),
+        ]);
       }
+      if (taskExternalIds.length > 0) {
+        [allFiles, allRatings] = await Promise.all([
+          db.select().from(taskFiles).where(inArray(taskFiles.taskExternalId, taskExternalIds)),
+          db.select().from(taskRatings).where(inArray(taskRatings.taskExternalId, taskExternalIds)),
+        ]);
+        allBranches = await db.select().from(taskBranches).where(inArray(taskBranches.childTaskId, taskIds));
+      }
+
+      // Get project-dependent data
+      const projectIds = userProjects.map(p => p.id);
+      let allKnowledge: any[] = [];
+      if (projectIds.length > 0) {
+        allKnowledge = await db.select().from(projectKnowledge).where(inArray(projectKnowledge.projectId, projectIds));
+      }
+
+      // Get team data
+      const userTeams = await db.select().from(teams).where(eq(teams.ownerId, userId));
+
       const exportBundle = {
         exportedAt: new Date().toISOString(),
         user: { id: userId, name: ctx.user.name, email: ctx.user.email, role: ctx.user.role },
         tasks: userTasks,
         messages: allMessages,
+        files: allFiles,
+        artifacts: allArtifacts,
+        ratings: allRatings,
+        branches: allBranches,
         preferences: userPrefs,
         memories: userMemories,
         connectors: userConnectors.map(c => ({ ...c, accessToken: "[REDACTED]", refreshToken: "[REDACTED]" })),
         webappProjects: userWebapps,
         designs: userDesigns,
         scheduledTasks: userSchedules,
+        projects: userProjects,
+        projectKnowledge: allKnowledge,
+        skills: userSkills,
+        slideDecks: userSlides,
+        meetingSessions: userMeetings,
+        connectedDevices: userDevices,
+        mobileProjects: userMobileProjects,
+        appBuilds: userAppBuilds,
+        videoProjects: userVideoProjects,
+        githubRepos: userGitHubRepos.map(r => ({ ...r, accessToken: "[REDACTED]" })),
+        taskTemplates: userTemplates,
+        bridgeConfigs: userBridgeConfigs,
+        notifications: userNotifications,
+        teams: userTeams,
       };
       // Upload to S3 for download
       const { storagePut } = await import("./storage");
@@ -469,29 +535,79 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
       const userId = ctx.user.id;
-      // Delete in dependency order
-      const userTaskRows = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.userId, userId));
+
+      // ── Phase 1: Collect IDs needed for cascading deletes ──
+      const userTaskRows = await db.select({ id: tasks.id, externalId: tasks.externalId }).from(tasks).where(eq(tasks.userId, userId));
       const taskIds = userTaskRows.map(t => t.id);
+      const taskExternalIds = userTaskRows.map(t => t.externalId).filter(Boolean);
+
+      const projectRows = await db.select({ id: projects.id }).from(projects).where(eq(projects.userId, userId));
+      const projectIds = projectRows.map(p => p.id);
+
+      const webappProjectRows = await db.select({ id: webappProjects.id }).from(webappProjects).where(eq(webappProjects.userId, userId));
+      const webappProjectIds = webappProjectRows.map(p => p.id);
+
+      const teamRows = await db.select({ id: teams.id }).from(teams).where(eq(teams.ownerId, userId));
+      const teamIds = teamRows.map(t => t.id);
+
+      // ── Phase 2: Delete task-dependent tables ──
       if (taskIds.length > 0) {
         await db.delete(taskMessages).where(inArray(taskMessages.taskId, taskIds));
-        // taskShares uses taskExternalId, get external IDs first
-        const taskExternalIds = userTaskRows.map((t: any) => t.externalId).filter(Boolean);
-        if (taskExternalIds.length > 0) {
-          await db.delete(taskShares).where(inArray(taskShares.taskExternalId, taskExternalIds));
-        }
+        await db.delete(taskFiles).where(inArray(taskFiles.taskExternalId, taskExternalIds));
+        await db.delete(workspaceArtifacts).where(inArray(workspaceArtifacts.taskId, taskIds));
+        await db.delete(taskEvents).where(inArray(taskEvents.taskId, taskIds));
+        await db.delete(taskBranches).where(inArray(taskBranches.childTaskId, taskIds));
+        await db.delete(taskBranches).where(inArray(taskBranches.parentTaskId, taskIds));
       }
+      if (taskExternalIds.length > 0) {
+        await db.delete(taskShares).where(inArray(taskShares.taskExternalId, taskExternalIds));
+        await db.delete(taskRatings).where(inArray(taskRatings.taskExternalId, taskExternalIds));
+      }
+
+      // ── Phase 3: Delete project-dependent tables ──
+      if (projectIds.length > 0) {
+        await db.delete(projectKnowledge).where(inArray(projectKnowledge.projectId, projectIds));
+      }
+      if (webappProjectIds.length > 0) {
+        await db.delete(webappDeployments).where(inArray(webappDeployments.projectId, webappProjectIds));
+        await db.delete(pageViews).where(inArray(pageViews.projectId, webappProjectIds));
+      }
+
+      // ── Phase 4: Delete team-dependent tables ──
+      if (teamIds.length > 0) {
+        await db.delete(teamSessions).where(inArray(teamSessions.teamId, teamIds));
+        await db.delete(teamMembers).where(inArray(teamMembers.teamId, teamIds));
+      }
+      // Also remove user from teams they're a member of (not owner)
+      await db.delete(teamMembers).where(eq(teamMembers.userId, userId));
+
+      // ── Phase 5: Delete all direct user-owned tables ──
       await db.delete(tasks).where(eq(tasks.userId, userId));
       await db.delete(memoryEntries).where(eq(memoryEntries.userId, userId));
       await db.delete(connectors).where(eq(connectors.userId, userId));
       await db.delete(webappBuilds).where(eq(webappBuilds.userId, userId));
-      const projectRows = await db.select({ id: webappProjects.id }).from(webappProjects).where(eq(webappProjects.userId, userId));
-      if (projectRows.length > 0) {
-        await db.delete(webappDeployments).where(inArray(webappDeployments.projectId, projectRows.map(p => p.id)));
-      }
       await db.delete(webappProjects).where(eq(webappProjects.userId, userId));
       await db.delete(designs).where(eq(designs.userId, userId));
       await db.delete(scheduledTasks).where(eq(scheduledTasks.userId, userId));
       await db.delete(userPreferences).where(eq(userPreferences.userId, userId));
+      await db.delete(notifications).where(eq(notifications.userId, userId));
+      await db.delete(projects).where(eq(projects.userId, userId));
+      await db.delete(skills).where(eq(skills.userId, userId));
+      await db.delete(slideDecks).where(eq(slideDecks.userId, userId));
+      await db.delete(meetingSessions).where(eq(meetingSessions.userId, userId));
+      await db.delete(teams).where(eq(teams.ownerId, userId));
+      await db.delete(connectedDevices).where(eq(connectedDevices.userId, userId));
+      await db.delete(deviceSessions).where(eq(deviceSessions.userId, userId));
+      await db.delete(mobileProjects).where(eq(mobileProjects.userId, userId));
+      await db.delete(appBuilds).where(eq(appBuilds.userId, userId));
+      await db.delete(videoProjects).where(eq(videoProjects.userId, userId));
+      await db.delete(githubRepos).where(eq(githubRepos.userId, userId));
+      await db.delete(taskTemplates).where(eq(taskTemplates.userId, userId));
+      await db.delete(bridgeConfigs).where(eq(bridgeConfigs.userId, userId));
+
+      // ── Phase 6: Delete the user record itself ──
+      await db.delete(users).where(eq(users.id, userId));
+
       // Notify owner
       try {
         const { notifyOwner } = await import("./_core/notification");
@@ -1014,10 +1130,10 @@ export const appRouter = router({
     }),
     install: protectedProcedure
       .input(z.object({
-        skillId: z.string(),
-        name: z.string(),
-        description: z.string().optional(),
-        category: z.string().optional(),
+        skillId: z.string().min(1).max(128),
+        name: z.string().min(1).max(256),
+        description: z.string().max(2000).optional(),
+        category: z.string().max(128).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await installSkill({
@@ -1125,9 +1241,9 @@ export const appRouter = router({
     }),
     connect: protectedProcedure
       .input(z.object({
-        connectorId: z.string(),
-        name: z.string(),
-        config: z.record(z.string(), z.string()).optional(),
+        connectorId: z.string().min(1).max(128),
+        name: z.string().min(1).max(256),
+        config: z.record(z.string().max(128), z.string().max(4096)).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const configVal = (input.config ?? {}) as Record<string, string>;
@@ -1141,7 +1257,7 @@ export const appRouter = router({
         return { id, success: true };
       }),
     disconnect: protectedProcedure
-      .input(z.object({ connectorId: z.string() }))
+      .input(z.object({ connectorId: z.string().min(1).max(128) }))
       .mutation(async ({ ctx, input }) => {
         await disconnectConnector(ctx.user.id, input.connectorId);
         return { success: true };
@@ -1149,9 +1265,9 @@ export const appRouter = router({
     /** Execute a connector action (send message, trigger webhook, etc.) */
     execute: protectedProcedure
       .input(z.object({
-        connectorId: z.string(),
-        action: z.string(),
-        payload: z.record(z.string(), z.unknown()).optional(),
+        connectorId: z.string().min(1).max(128),
+        action: z.string().min(1).max(256),
+        payload: z.record(z.string().max(128), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const connectors = await getUserConnectors(ctx.user.id);
@@ -1195,7 +1311,7 @@ export const appRouter = router({
       }),
     /** Test a connector's configuration */
     test: protectedProcedure
-      .input(z.object({ connectorId: z.string() }))
+      .input(z.object({ connectorId: z.string().min(1).max(128) }))
       .mutation(async ({ ctx, input }) => {
         const connectors = await getUserConnectors(ctx.user.id);
         const conn = connectors.find(c => c.connectorId === input.connectorId);
@@ -1496,8 +1612,10 @@ export const appRouter = router({
     }),
     get: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        return getDesign(input.id);
+      .query(async ({ ctx, input }) => {
+        const design = await getDesign(input.id);
+        if (!design || design.userId !== ctx.user.id) return null;
+        return design;
       }),
     create: protectedProcedure
       .input(z.object({
@@ -1515,7 +1633,9 @@ export const appRouter = router({
         thumbnailUrl: z.string().max(2000).optional(),
         exportUrl: z.string().max(2000).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        const design = await getDesign(input.id);
+        if (!design || design.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized to update this design" });
         const { id, ...updates } = input;
         await updateDesign(id, updates);
         return { success: true };
@@ -1528,9 +1648,9 @@ export const appRouter = router({
       }),
     export: protectedProcedure
       .input(z.object({ id: z.number(), format: z.enum(["png", "svg"]).optional() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const design = await getDesign(input.id);
-        if (!design) throw new TRPCError({ code: "NOT_FOUND", message: "Design not found" });
+        if (!design || design.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized to export this design" });
         const { storagePut } = await import("./storage");
         const { nanoid } = await import("nanoid");
         const key = `designs/${nanoid(12)}.json`;
@@ -1665,7 +1785,11 @@ export const appRouter = router({
       }),
     endSession: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        // Verify session belongs to user
+        const sessions = await getUserDeviceSessions(ctx.user.id);
+        const session = sessions.find(s => s.id === input.sessionId);
+        if (!session) throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized to end this session" });
         await endDeviceSession(input.sessionId);
         return { success: true };
       }),
@@ -2923,8 +3047,8 @@ Provide a JSON response with this exact structure:
   library: router({
     artifacts: protectedProcedure
       .input(z.object({
-        type: z.string().optional(),
-        search: z.string().optional(),
+        type: z.string().max(64).optional(),
+        search: z.string().max(256).optional(),
         limit: z.number().min(1).max(100).optional(),
         offset: z.number().min(0).optional(),
       }))
@@ -2935,7 +3059,7 @@ Provide a JSON response with this exact structure:
 
     files: protectedProcedure
       .input(z.object({
-        search: z.string().optional(),
+        search: z.string().max(256).optional(),
         limit: z.number().min(1).max(100).optional(),
         offset: z.number().min(0).optional(),
       }))
@@ -2957,8 +3081,8 @@ Provide a JSON response with this exact structure:
     /** Extract text from an uploaded PDF (base64 encoded) */
     extractPdfFromUpload: protectedProcedure
       .input(z.object({
-        base64: z.string(),
-        fileName: z.string().optional(),
+        base64: z.string().max(41_943_040), // ~31MB file (base64 overhead)
+        fileName: z.string().max(512).optional(),
       }))
       .mutation(async ({ input }) => {
         const { extractTextFromPdfBuffer } = await import("./pdfExtraction");
