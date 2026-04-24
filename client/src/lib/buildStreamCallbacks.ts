@@ -261,5 +261,25 @@ export function buildStreamCallbacks(
     onKnowledgeRecalled: (data: { count: number; keys: string[] }) => {
       setters.setKnowledgeRecalled?.(data);
     },
+    onWebappDeployed: (deployment: { name: string; url: string; projectExternalId?: string; versionLabel?: string }) => {
+      if (setters.addMessage) {
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: `\u{1F680} **${deployment.name}** has been deployed! [Visit Live Site](${deployment.url})${deployment.versionLabel ? ` (${deployment.versionLabel})` : ""}`,
+          cardType: "webapp_deployed" as const,
+          cardData: {
+            appName: deployment.name,
+            deployedUrl: deployment.url,
+            projectExternalId: deployment.projectExternalId,
+            versionLabel: deployment.versionLabel,
+            status: "live",
+          },
+        });
+      } else {
+        state.accumulated += `\n\n\u{1F680} **${deployment.name}** deployed! [Visit Live Site](${deployment.url})\n\n`;
+        setters.accumulatedRef.current = state.accumulated;
+        setters.setStreamContent(state.accumulated);
+      }
+    },
   };
 }

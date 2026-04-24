@@ -2795,24 +2795,7 @@ async function executeDeployWebapp(args: {
         };
       }
       htmlContent = fs.readFileSync(indexPath, "utf-8");
-
-      // Inline CSS and JS assets for single-file deployment
-      const assetDir = path.join(buildDir, "assets");
-      if (fs.existsSync(assetDir)) {
-        const assets = fs.readdirSync(assetDir);
-        for (const asset of assets) {
-          const assetPath = path.join(assetDir, asset);
-          if (asset.endsWith(".css")) {
-            const css = fs.readFileSync(assetPath, "utf-8");
-            const linkTag = new RegExp(`<link[^>]*href=["']/assets/${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`, "g");
-            htmlContent = htmlContent.replace(linkTag, `<style>${css}</style>`);
-          } else if (asset.endsWith(".js")) {
-            const js = fs.readFileSync(assetPath, "utf-8");
-            const scriptTag = new RegExp(`<script[^>]*src=["']/assets/${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*></script>`, "g");
-            htmlContent = htmlContent.replace(scriptTag, `<script type="module">${js}</script>`);
-          }
-        }
-      }
+      // Note: CSS/JS assets are uploaded separately to S3 and paths are rewritten below
     } else {
       // Static HTML project — read index.html directly
       const indexPath = path.join(activeProjectDir, "index.html");
@@ -2823,25 +2806,87 @@ async function executeDeployWebapp(args: {
         };
       }
       htmlContent = fs.readFileSync(indexPath, "utf-8");
-
-      // Inline CSS and JS
-      const cssPath = path.join(activeProjectDir, "styles.css");
-      if (fs.existsSync(cssPath)) {
-        const css = fs.readFileSync(cssPath, "utf-8");
-        htmlContent = htmlContent.replace(/<link[^>]*href=["']styles\.css["'][^>]*>/g, `<style>${css}</style>`);
-      }
-      const jsPath = path.join(activeProjectDir, "main.js");
-      if (fs.existsSync(jsPath)) {
-        const js = fs.readFileSync(jsPath, "utf-8");
-        htmlContent = htmlContent.replace(/<script[^>]*src=["']main\.js["'][^>]*><\/script>/g, `<script>${js}</script>`);
-      }
+      // Note: CSS/JS/images are uploaded separately to S3 and paths are rewritten below
     }
 
-    // Upload to S3 via storagePut
+    // Upload ALL build files to S3 for proper multi-file deployment
     const { storagePut } = await import("./storage");
     const timestamp = Date.now();
-    const fileKey = `webapp-deploys/${projectName}-${timestamp}/index.html`;
-    const { url: publishedUrl } = await storagePut(fileKey, htmlContent, "text/html");
+    const deployPrefix = `webapp-deploys/${projectName}-${timestamp}`;
+
+    // Recursively collect all files from the build directory
+    const collectFiles = (dir: string, base: string): { relPath: string; absPath: string }[] => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      const files: { relPath: string; absPath: string }[] = [];
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relPath = path.relative(base, fullPath);
+        if (entry.isDirectory()) {
+          files.push(...collectFiles(fullPath, base));
+        } else {
+          files.push({ relPath, absPath: fullPath });
+        }
+      }
+      return files;
+    };
+
+    const allFiles = collectFiles(buildDir, buildDir);
+    const mimeTypes: Record<string, string> = {
+      ".html": "text/html",
+      ".css": "text/css",
+      ".js": "application/javascript",
+      ".mjs": "application/javascript",
+      ".json": "application/json",
+      ".svg": "image/svg+xml",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+      ".ico": "image/x-icon",
+      ".woff": "font/woff",
+      ".woff2": "font/woff2",
+      ".ttf": "font/ttf",
+      ".eot": "application/vnd.ms-fontobject",
+      ".map": "application/json",
+      ".txt": "text/plain",
+      ".xml": "application/xml",
+    };
+
+    // Upload all files, rewriting asset paths in HTML to use S3 URLs
+    const assetUrlMap = new Map<string, string>();
+
+    // Upload non-HTML files first to get their URLs
+    for (const file of allFiles) {
+      if (file.relPath === "index.html") continue;
+      const ext = path.extname(file.absPath).toLowerCase();
+      const mime = mimeTypes[ext] || "application/octet-stream";
+      const fileData = fs.readFileSync(file.absPath);
+      const fileKey = `${deployPrefix}/${file.relPath}`;
+      const { url } = await storagePut(fileKey, fileData, mime);
+      assetUrlMap.set(file.relPath, url);
+    }
+
+    // Rewrite asset references in index.html to use absolute S3 URLs
+    for (const [relPath, s3Url] of Array.from(assetUrlMap.entries())) {
+      // Replace both /assets/... and ./assets/... and assets/... patterns
+      const escapedPath = relPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      htmlContent = htmlContent.replace(
+        new RegExp(`(["'])(/?${escapedPath})(["'])`, 'g'),
+        `$1${s3Url}$3`
+      );
+      // Also handle bare /path references
+      htmlContent = htmlContent.replace(
+        new RegExp(`(["'])/${escapedPath}(["'])`, 'g'),
+        `$1${s3Url}$2`
+      );
+    }
+
+    // Upload the rewritten index.html
+    const indexKey = `${deployPrefix}/index.html`;
+    const { url: publishedUrl } = await storagePut(indexKey, htmlContent, "text/html");
+
+    console.log(`[deploy_webapp] Deployed ${allFiles.length} files to ${deployPrefix}/`);
 
     // Update the DB project record if we have context
     if (context?.userId) {
@@ -2863,7 +2908,7 @@ async function executeDeployWebapp(args: {
             status: "live",
             completedAt: new Date(),
             bundleUrl: publishedUrl,
-            bundleKey: fileKey,
+            bundleKey: indexKey,
           });
         }
       } catch (dbErr) {
@@ -2871,12 +2916,24 @@ async function executeDeployWebapp(args: {
       }
     }
 
+    // Find the projectExternalId for the SSE event
+    let projectExternalId: string | undefined;
+    if (context?.userId) {
+      try {
+        const { getUserWebappProjects } = await import("./db");
+        const projects = await getUserWebappProjects(context.userId);
+        const project = projects.find((p: any) => p.name === projectName);
+        if (project) projectExternalId = project.externalId;
+      } catch { /* ignore */ }
+    }
+
     return {
       success: true,
       result: `Successfully deployed "${projectName}"!\n\nLive URL: ${publishedUrl}\n\nThe app is now publicly accessible. Share this URL with anyone to view the app.`,
       url: publishedUrl,
       artifactType: "webapp_preview",
-      artifactLabel: `${projectName} (deployed)`,
+      artifactLabel: projectName,
+      projectExternalId,
     };
   } catch (err: any) {
     return {

@@ -3460,3 +3460,12 @@
 
 ## Bug: First PDF Generation Produces AccessDenied S3 URL
 - [x] Fix first PDF generation producing AccessDenied S3 URL — added URL verification with retry in storagePut, HEAD request confirms accessibility before returning URL
+
+## Session 27: Parity Expert Convergence — App Dev/Management/Publishing E2E
+- [x] GAP 1+3: Emit webapp_deployed SSE event from agentStream + create DeploymentCard component
+- [x] GAP 2+8: Wire WebappPreviewCard Publish button to deploy flow + Settings to project page
+- [x] GAP 6: Add auto-deploy instruction to system prompt APP BUILDING WORKFLOW
+- [x] GAP 9: Multi-file asset deployment in deploy_webapp (upload full dist/ to S3)
+- [x] GAP 5: Open webapp preview in new tab with working URL (proxy URL opens in new tab)
+- [x] Convergence validation pass on all changes
+- [x] Write tests for new features (17 tests in deploy.test.ts — all pass)

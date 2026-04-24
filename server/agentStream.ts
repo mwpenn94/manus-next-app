@@ -314,6 +314,7 @@ When the user asks you to build a website, web app, landing page, dashboard, or 
 7. **NEVER just paste code** — always use the app-building tools to create real, running applications
 8. **NEVER stop after scaffolding** — continue building until the app is complete and functional
 9. **Show the preview URL** after each significant change so the user can see the live result
+10. **AUTO-DEPLOY when complete**: Once the app is fully built and working in preview, AUTOMATICALLY call deploy_webapp to deploy it to a public URL. Do NOT wait for the user to ask — deployment is the final step of every app-building task. Include a descriptive version_label.
 
 For React projects, create components in src/components/ and pages in src/pages/. Use Tailwind CSS for styling.
 For HTML projects, create files in the project root. Use modern CSS and vanilla JS.
@@ -1505,6 +1506,18 @@ If the user hasn't specified content details, ASK them what content they want. D
               url: result.url,
               description: parsedArgs.description || "",
               projectExternalId: result.projectExternalId,
+            },
+          });
+        }
+
+        // If it's a deployment, send a webapp_deployed event
+        if (result.url && toolName === "deploy_webapp" && result.success) {
+          sendSSE(safeWrite, {
+            webapp_deployed: {
+              name: result.artifactLabel || "webapp",
+              url: result.url,
+              projectExternalId: result.projectExternalId,
+              versionLabel: parsedArgs.version_label || undefined,
             },
           });
         }

@@ -46,7 +46,9 @@ export type CardType =
   | "task_completed"
   | "confirmation_gate"
   | "convergence"
-  | "interactive_output";
+  | "interactive_output"
+  | "webapp_deployed"
+  | "system_notice";
 
 export interface Message {
   id: string;

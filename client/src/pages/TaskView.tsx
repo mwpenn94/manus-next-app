@@ -107,6 +107,7 @@ import BrowserAuthCard from "@/components/BrowserAuthCard";
 import TaskPauseCard from "@/components/TaskPauseCard";
 import TakeControlCard from "@/components/TakeControlCard";
 import WebappPreviewCard from "@/components/WebappPreviewCard";
+import DeploymentCard from "@/components/DeploymentCard";
 import CheckpointCard from "@/components/CheckpointCard";
 import TaskCompletedCard from "@/components/TaskCompletedCard";
 import ConfirmationGate from "@/components/ConfirmationGate";
@@ -705,14 +706,34 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             status={(message.cardData?.status as any) ?? "not_published"}
             screenshotUrl={message.cardData?.screenshotUrl as string}
             previewUrl={message.cardData?.previewUrl as string}
-            onSettings={() => toast.info("Opening settings...")}
-            onPublish={() => toast.info("Publishing...")}
+            onSettings={() => {
+              const eid = message.cardData?.projectExternalId as string;
+              if (eid) window.location.href = `/projects/webapp/${eid}`;
+              else toast.info("Project settings not available yet.");
+            }}
+            onPublish={() => {
+              const eid = message.cardData?.projectExternalId as string;
+              if (eid) {
+                toast.info("To deploy, ask the agent: 'Deploy my webapp to production'");
+              } else {
+                toast.info("Build the app first before publishing.");
+              }
+            }}
             onVisit={() => {
-              const url = message.cardData?.previewUrl as string;
-              if (url) window.open(url, "_blank");
+              // Open the proxy preview URL in a new tab
+              const proxyUrl = `/api/webapp-preview/`;
+              window.open(proxyUrl, "_blank");
             }}
             hasUnpublishedChanges={!!message.cardData?.hasUnpublishedChanges}
             projectExternalId={message.cardData?.projectExternalId as string}
+          />
+        ) : message.cardType === "webapp_deployed" ? (
+          <DeploymentCard
+            appName={(message.cardData?.appName as string) ?? "App"}
+            deployedUrl={(message.cardData?.deployedUrl as string) ?? ""}
+            projectExternalId={message.cardData?.projectExternalId as string}
+            versionLabel={message.cardData?.versionLabel as string}
+            status={(message.cardData?.status as any) ?? "live"}
           />
         ) : message.cardType === "checkpoint" ? (
           <CheckpointCard
@@ -3500,7 +3521,7 @@ export default function TaskView() {
               (convergence, system_notice, context_compressed) to prevent scattered
               progress indicators. They stay in the message list for history. */}
           {(streaming
-            ? task.messages.filter(m => !m.cardType || ["webapp_preview", "confirmation_gate", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output"].includes(m.cardType))
+            ? task.messages.filter(m => !m.cardType || ["webapp_preview", "webapp_deployed", "confirmation_gate", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output", "system_notice"].includes(m.cardType))
             : task.messages
           ).map((msg, i) => (
             <MessageBubble
