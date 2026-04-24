@@ -81,23 +81,69 @@ export async function storagePut(
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
   const { baseUrl, apiKey } = getStorageConfig();
-  const key = appendHashSuffix(normalizeKey(relKey));
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
-  });
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
+  // Retry upload up to 3 times to handle transient failures
+  const MAX_RETRIES = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      // Generate a fresh key each attempt to avoid stale/conflicting keys
+      const key = appendHashSuffix(normalizeKey(relKey));
+      const uploadUrl = buildUploadUrl(baseUrl, key);
+      const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: buildAuthHeaders(apiKey),
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const message = await response.text().catch(() => response.statusText);
+        lastError = new Error(
+          `Storage upload failed (${response.status} ${response.statusText}): ${message}`
+        );
+        // Wait before retry
+        if (attempt < MAX_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
+        continue;
+      }
+
+      const url = (await response.json()).url;
+
+      // Verify the URL is accessible with a HEAD request
+      // Wait a moment for CDN propagation
+      await new Promise((r) => setTimeout(r, 500));
+      try {
+        const headResp = await fetch(url, { method: "HEAD" });
+        if (headResp.ok) {
+          return { key, url };
+        }
+        // If HEAD fails, wait longer and retry verification
+        await new Promise((r) => setTimeout(r, 2000));
+        const headResp2 = await fetch(url, { method: "HEAD" });
+        if (headResp2.ok) {
+          return { key, url };
+        }
+        // URL not accessible — retry the entire upload with a new key
+        console.warn(`[storagePut] URL verification failed for ${url} (status: ${headResp2.status}), retrying upload...`);
+        lastError = new Error(`URL verification failed: ${headResp2.status}`);
+      } catch (verifyErr) {
+        // Verification request itself failed — still return the URL
+        // (might be a CORS issue with HEAD requests from server)
+        console.warn(`[storagePut] URL verification request failed, returning URL anyway:`, verifyErr);
+        return { key, url };
+      }
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
   }
-  const url = (await response.json()).url;
-  return { key, url };
+
+  throw lastError || new Error("Storage upload failed after retries");
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {

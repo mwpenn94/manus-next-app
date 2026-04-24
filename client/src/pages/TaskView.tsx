@@ -346,6 +346,154 @@ function ActionLabel({ action }: { action: AgentAction }) {
   }
 }
 
+// ── Action Grouping Logic ──
+// Groups consecutive actions of similar types into collapsible groups (Manus parity)
+
+type ActionGroup = {
+  type: "single";
+  action: AgentAction;
+  index: number;
+} | {
+  type: "group";
+  label: string;
+  groupType: string;
+  actions: AgentAction[];
+  startIndex: number;
+};
+
+function groupActions(actions: AgentAction[]): ActionGroup[] {
+  if (actions.length === 0) return [];
+  const groups: ActionGroup[] = [];
+  let i = 0;
+  
+  // Define which action types can be grouped together
+  const groupableTypes: Record<string, string> = {
+    editing: "file_ops",
+    creating: "file_ops",
+    reading: "file_ops",
+    writing: "file_ops",
+    browsing: "browsing",
+    scrolling: "browsing",
+    clicking: "browsing",
+    executing: "terminal",
+    installing: "terminal",
+    searching: "research",
+    researching: "research",
+  };
+  
+  const groupLabels: Record<string, string> = {
+    file_ops: "File operations",
+    browsing: "Browser actions",
+    terminal: "Terminal commands",
+    research: "Research & search",
+  };
+  
+  while (i < actions.length) {
+    const action = actions[i];
+    const groupKey = groupableTypes[action.type];
+    
+    if (groupKey) {
+      // Look ahead for consecutive actions of the same group
+      let j = i + 1;
+      while (j < actions.length && groupableTypes[actions[j].type] === groupKey) {
+        j++;
+      }
+      const count = j - i;
+      if (count >= 3) {
+        // Group 3+ consecutive similar actions
+        groups.push({
+          type: "group",
+          label: groupLabels[groupKey] || groupKey,
+          groupType: groupKey,
+          actions: actions.slice(i, j),
+          startIndex: i,
+        });
+        i = j;
+        continue;
+      }
+    }
+    groups.push({ type: "single", action, index: i });
+    i++;
+  }
+  return groups;
+}
+
+function ActionGroupHeader({ group }: { group: Extract<ActionGroup, { type: "group" }> }) {
+  const [expanded, setExpanded] = useState(false);
+  const doneCount = group.actions.filter(a => a.status === "done").length;
+  const totalCount = group.actions.length;
+  const allDone = doneCount === totalCount;
+  const hasActive = group.actions.some(a => a.status === "active");
+  
+  // Pick icon based on group type
+  const groupIcons: Record<string, typeof Globe> = {
+    file_ops: FileText,
+    browsing: Globe,
+    terminal: Terminal,
+    research: Search,
+  };
+  const Icon = groupIcons[group.groupType] || Brain;
+  
+  return (
+    <div className="py-1 px-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 w-full text-left group hover:bg-accent/30 rounded-md px-1 py-1 -mx-1 transition-colors"
+      >
+        <div className={cn(
+          "w-5 h-5 rounded-full flex items-center justify-center shrink-0",
+          hasActive ? "bg-primary/20" : allDone ? "bg-muted" : "bg-muted/50"
+        )}>
+          {hasActive ? (
+            <Loader2 className="w-3 h-3 text-primary animate-spin" />
+          ) : allDone ? (
+            <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+          ) : (
+            <Icon className="w-3 h-3 text-muted-foreground" />
+          )}
+        </div>
+        <span className="text-xs text-foreground flex-1">
+          {group.label}
+        </span>
+        <span className="text-[10px] text-muted-foreground font-mono">
+          {doneCount}/{totalCount}
+        </span>
+        {expanded ? <ChevronUp className="w-3 h-3 text-muted-foreground" /> : <ChevronDown className="w-3 h-3 text-muted-foreground" />}
+      </button>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden ml-2 border-l border-border/50 pl-1"
+          >
+            {group.actions.map((action, i) => (
+              <ActionStep key={i} action={action} index={i} total={group.actions.length} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function GroupedActionsList({ actions }: { actions: AgentAction[] }) {
+  const groups = groupActions(actions);
+  return (
+    <>
+      {groups.map((group, i) => (
+        group.type === "group" ? (
+          <ActionGroupHeader key={`group-${i}`} group={group} />
+        ) : (
+          <ActionStep key={`single-${i}`} action={group.action} index={group.index} total={actions.length} />
+        )
+      ))}
+    </>
+  );
+}
+
 function ActionStep({ action, index, total }: { action: AgentAction; index: number; total: number }) {
   const isActive = action.status === "active";
   const isDone = action.status === "done";
@@ -564,6 +712,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
               if (url) window.open(url, "_blank");
             }}
             hasUnpublishedChanges={!!message.cardData?.hasUnpublishedChanges}
+            projectExternalId={message.cardData?.projectExternalId as string}
           />
         ) : message.cardType === "checkpoint" ? (
           <CheckpointCard
@@ -734,9 +883,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                   transition={{ duration: 0.15 }}
                   className="overflow-hidden bg-card/50 rounded-lg border border-border/50 py-1"
                 >
-                  {message.actions!.map((action, i) => (
-                    <ActionStep key={i} action={action} index={i} total={totalCount} />
-                  ))}
+                  <GroupedActionsList actions={message.actions!} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1837,6 +1984,7 @@ export default function TaskView() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [stepProgress, setStepProgress] = useState<{ completed: number; total: number; turn: number } | null>(null);
   const [tokenUsage, setTokenUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null>(null);
+  const [knowledgeRecalled, setKnowledgeRecalled] = useState<{ count: number; keys: string[] } | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -2161,6 +2309,7 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setTokenUsage(null);
+      setKnowledgeRecalled(null);
       setLastErrorRetryable(false);
       setStreamImages([]);
       streamingTaskIdRef.current = task.id;
@@ -2183,7 +2332,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
+          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         });
 
         await streamWithRetry({
@@ -2362,7 +2511,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
       });
 
       await streamWithRetry({
@@ -2396,6 +2545,7 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setTokenUsage(null);
+      setKnowledgeRecalled(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -2436,7 +2586,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
       });
 
       await streamWithRetry({
@@ -2472,6 +2622,7 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setTokenUsage(null);
+      setKnowledgeRecalled(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -2521,7 +2672,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
       });
 
       await streamWithRetry({
@@ -2550,6 +2701,7 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setTokenUsage(null);
+      setKnowledgeRecalled(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -2595,7 +2747,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
       });
       await streamWithRetry({
         messages: conversationMessages, taskExternalId: task.id, mode: agentMode,
@@ -2622,6 +2774,7 @@ export default function TaskView() {
       setStreamContent("");
       setAgentActions([]);
       setTokenUsage(null);
+      setKnowledgeRecalled(null);
       setStreamImages([]);
       setStepProgress(null);
     }
@@ -3421,9 +3574,7 @@ export default function TaskView() {
                 {/* Agent action steps */}
                 {agentActions.length > 0 && (
                   <div className="mb-2 bg-card/50 rounded-lg border border-border/50 py-1">
-                    {agentActions.map((action, i) => (
-                      <ActionStep key={i} action={action} index={i} total={agentActions.length} />
-                    ))}
+                    <GroupedActionsList actions={agentActions} />
                   </div>
                 )}
                 {/* Agent Presence Indicator — Unified state system */}
@@ -3432,6 +3583,7 @@ export default function TaskView() {
                   streaming={streaming}
                   hasStreamContent={!!streamContent}
                   isReconnecting={isReconnecting}
+                  knowledgeRecalled={knowledgeRecalled}
                   pendingGate={pendingGate ? {
                     action: pendingGate.action,
                     description: pendingGate.description,

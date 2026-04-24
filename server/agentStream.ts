@@ -145,7 +145,7 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 - **generate_image(prompt)**: Create images from text descriptions.
 - **analyze_data(data, analysis_type)**: Analyze structured data and produce insights.
 - **execute_code(code)**: Run JavaScript for calculations, data processing, or structured output.
-- **generate_document(title, content, format?, output_format?)**: Create structured documents as downloadable files. Supports output_format: "markdown" (default), "pdf", "docx", "csv", "xlsx". Use this when asked to write, draft, or produce any long-form content, report, spreadsheet, or data export. ALWAYS set output_format to match what the user requests (e.g., "pdf" for PDF, "xlsx" for Excel). For CSV/XLSX, structure content with markdown tables. IMPORTANT: Call generate_document ONCE per document — never call it multiple times with the same content.
+- **generate_document(title, content, format?, output_format?)**: Create structured documents as downloadable files. Supports output_format: "markdown" (default), "pdf", "docx", "csv", "xlsx", "json". Use this when asked to write, draft, or produce any long-form content, report, spreadsheet, data export, or structured data. ALWAYS set output_format to match what the user requests (e.g., "pdf" for PDF, "xlsx" for Excel, "json" for JSON). For CSV/XLSX, structure content with markdown tables. For JSON, pass valid JSON as the content field. IMPORTANT: Call generate_document ONCE per document — never call it multiple times with the same content.
 - **browse_web(url, action)**: Navigate to a URL and extract structured content including metadata, headings, links, images, and full text. More thorough than read_webpage — use for deep page analysis.
 - **wide_research(queries, synthesis_prompt)**: Run 2-5 web searches IN PARALLEL and synthesize results. Use this for comprehensive research, multi-topic comparisons, or when you need to cover multiple angles simultaneously. Much faster than sequential searches.
 - **create_webapp(name, description, template?)**: Create a new web application project. Scaffolds React+Vite+Tailwind or plain HTML, installs dependencies, and starts a dev server with live preview. Use when asked to build a website, web app, landing page, or any browser-based project.
@@ -156,6 +156,7 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 - **install_deps(packages)**: Install npm packages in the active webapp project. Use to add libraries like axios, lodash, chart.js, etc.
 - **run_command(command)**: Run a shell command in the active webapp project directory. Use for build commands, linting, testing, or any CLI operation.
 - **git_operation(operation, args?)**: Perform git operations (init, add, commit, push, status, log, clone, remote_add) in the active webapp project. Use to version control the project and push to GitHub.
+- **deploy_webapp(version_label?)**: Build and deploy the active webapp project to the cloud. Bundles the project, uploads to cloud storage, and returns a live public URL. Use after the app is ready to share.
 
 ## CRITICAL SAFETY RULE — SELF-EDIT GUARD
 You are running INSIDE a host application (Manus Next). You MUST NEVER attempt to edit, modify, or overwrite the host application's own codebase. Your file tools (create_file, edit_file, etc.) operate within an **isolated project sandbox** — NOT the host app.
@@ -200,6 +201,14 @@ When building any web application:
 4. Build iteratively — create core structure first, then refine styling and features
 5. The preview URL is proxied and accessible from any device — share it with the user
 6. Use cloud_browser to take screenshots of reference sites for visual alignment
+7. When the app is complete and ready to share, use **deploy_webapp** to build and deploy it to a public URL
+8. After deployment, share the live URL with the user and offer to make further changes
+
+### Deployment best practices:
+- Always deploy AFTER verifying the preview looks correct
+- Include a version_label for tracking (e.g., "v1.0 - initial release")
+- If the build fails, fix the errors and try again
+- The deployed URL is permanent and publicly accessible
 
 ## SITE ACCESS FALLBACK STRATEGY
 When browse_web or read_webpage returns 403, blocked, or robots.txt errors, you MUST try multiple alternative approaches before reporting failure:
@@ -286,7 +295,7 @@ You are **Manus**, an autonomous AI agent platform. Here is what you know about 
 - **Developer**: Manus is an independent project. It is NOT built by Google, OpenAI, Anthropic, or Meta. Do NOT claim any of these companies built you.
 - **Built as**: An autonomous, self-hosted AI agent platform that gives users full control over their data and capabilities
 - **Architecture**: React 19 + Express + tRPC full-stack app with real-time SSE streaming, powered by an LLM backbone
-- **Your capabilities**: Web search, image generation, code execution, data analysis, document generation (Markdown, PDF, DOCX, CSV, XLSX), **full app building** (scaffold, code, preview, deploy), git operations, wide research, and multi-turn autonomous reasoning with tool use
+- **Your capabilities**: Web search, image generation, code execution, data analysis, document generation (Markdown, PDF, DOCX, CSV, XLSX, JSON), **full app building** (scaffold, code, preview, deploy), git operations, wide research, and multi-turn autonomous reasoning with tool use
 - **How you work**: You receive a user request, plan your approach, call tools autonomously in a loop (up to 30+ turns), and synthesize results into a comprehensive response. For app building, you scaffold projects, write code, install dependencies, and provide live previews.
 - **Key differentiator**: You are self-hosted and autonomous — users own their data, their apps, and can extend your capabilities. You can build and deploy full web applications.
 - **Memory**: You can recall information from previous conversations if the user has enabled cross-session memory. Use this context to personalize responses.
@@ -543,7 +552,7 @@ async function invokeLLMWithRetry(
  * @returns Promise that resolves when the stream is complete
  */
 export async function runAgentStream(options: AgentStreamOptions): Promise<void> {
-  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext } = options;
+  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, userId, taskExternalId } = options;
 
   try {
     const { invokeLLM } = await import("./_core/llm");
@@ -618,7 +627,7 @@ ${memoryContext}
           ? (lastUserMsg.content as any[]).filter((p: any) => p.type === "text").map((p: any) => p.text).join(" ")
           : "")
       : "";
-    const isShortGenerationRequest = /\b(generate|create|make|build|draft)\s+(me\s+)?a?\s*(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|website|webapp|video|audio|song|music)\b/i.test(lastUserText);
+    const isShortGenerationRequest = /\b(generate|create|make|build|draft|write|design|set\s*up|scaffold)\s+(me\s+)?(a\s+|an\s+|the\s+|my\s+|some\s+)?(demo\s+|simple\s+|basic\s+|sample\s+|quick\s+|new\s+|small\s+)?(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|application|website|webapp|web\s*app|web\s*site|page|landing\s*page|dashboard|tool|video|audio|song|music|portfolio|blog|store|game|calculator|todo|chart|graph|diagram|poster|flyer|resume|cv|letter|email|newsletter|brochure)\b/i.test(lastUserText) || /\bjust\s+(create|make|build|generate|do|start)\b/i.test(lastUserText);
     if (lastUserText.length > 0 && lastUserText.length < 80 && !hasAttachments) {
       if (isShortGenerationRequest) {
         // Generation requests are short by nature ("Generate a pdf for me") — don't treat as vague.
@@ -912,8 +921,9 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
             recentToolCallKeys.set(dedupKey, turn);
 
             sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
-            const result: ToolResult = await executeTool(tn, ta);
-            sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: result.result.slice(0, 500), url: result.url } });
+            const toolCtx = { userId, taskExternalId };
+            const result: ToolResult = await executeTool(tn, ta, toolCtx);
+            sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: result.result.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
             completedToolCalls++;
             sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
             conversation.push({ role: "tool", content: result.result, tool_call_id: toolCall.id, name: tn } as any);
@@ -1199,7 +1209,7 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
         // MAX/LIMITLESS MODE ANTI-SHALLOW-COMPLETION: In max or limitless mode, if agent tries to conclude within first 5 turns with fewer than 3 tool calls, force continuation
         // EXCEPTION: If the user asked for generative output (generate/create/make/build/write/draft), 
         // do NOT force research — force TOOL USE for production instead.
-        const isGenerationRequest = /\b(generate|create|make|build|draft)\s+(me\s+)?a?\s*(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|website|webapp|video|audio|song|music)\b/i.test(userText);
+        const isGenerationRequest = /\b(generate|create|make|build|draft|write|design|set\s*up|scaffold)\s+(me\s+)?(a\s+|an\s+|the\s+|my\s+|some\s+)?(demo\s+|simple\s+|basic\s+|sample\s+|quick\s+|new\s+|small\s+)?(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|application|website|webapp|web\s*app|web\s*site|page|landing\s*page|dashboard|tool|video|audio|song|music|portfolio|blog|store|game|calculator|todo|chart|graph|diagram|poster|flyer|resume|cv|letter|email|newsletter|brochure)\b/i.test(userText) || /\bjust\s+(create|make|build|generate|do|start)\b/i.test(userText);
         if ((mode === "max" || mode === "limitless") && turn <= 5 && completedToolCalls < 3 && (maxTurns === Infinity || turn < maxTurns - 2) && !isGenerationRequest) {
           const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
           console.log(`[Agent] ${modeName} mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
@@ -1468,7 +1478,7 @@ If the user hasn't specified content details, ASK them what content they want. D
         console.log(`[Agent] Executing tool: ${toolName}`, parsedArgs);
         if (toolName === "web_search") usedWebSearch = true;
         if (toolName === "read_webpage" || toolName === "browse_web") usedReadWebpage = true;
-        const result: ToolResult = await executeTool(toolName, toolArgs);
+        const result: ToolResult = await executeTool(toolName, toolArgs, { userId, taskExternalId });
 
         // Send tool_result event
         sendSSE(safeWrite, {
@@ -1478,6 +1488,7 @@ If the user hasn't specified content details, ASK them what content they want. D
             success: result.success,
             preview: result.result.slice(0, 500),
             url: result.url,
+            projectExternalId: result.projectExternalId,
           },
         });
 
@@ -1493,6 +1504,7 @@ If the user hasn't specified content details, ASK them what content they want. D
               name: parsedArgs.name || "webapp",
               url: result.url,
               description: parsedArgs.description || "",
+              projectExternalId: result.projectExternalId,
             },
           });
         }

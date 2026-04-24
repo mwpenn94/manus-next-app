@@ -126,7 +126,7 @@ describe("Step 3: Task Favorites Filter in Sidebar", () => {
 
   it("statusFilters array includes a Favorites tab with star icon", () => {
     expect(appLayoutSrc).toContain('id: "favorites"');
-    expect(appLayoutSrc).toContain('label: "★"');
+    expect(appLayoutSrc).toContain('label: "Favorites"');
   });
 
   it("displayedTasks filters by favorite when statusFilter is 'favorites'", () => {

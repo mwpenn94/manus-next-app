@@ -137,6 +137,53 @@ describe("generateDOCX", () => {
   });
 });
 
+describe("generateCSV", () => {
+  it("extracts table data from markdown into CSV format", async () => {
+    const { generateCSV } = await import("./documentGeneration");
+    const buf = generateCSV("Test Data", SAMPLE_MARKDOWN);
+    expect(buf).toBeInstanceOf(Buffer);
+    const csv = buf.toString("utf-8");
+    expect(csv).toContain("Name");
+    expect(csv).toContain("Value");
+    expect(csv).toContain("Alpha");
+    expect(csv).toContain("100");
+  });
+
+  it("handles content without tables by treating lines as rows", async () => {
+    const { generateCSV } = await import("./documentGeneration");
+    const buf = generateCSV("No Tables", "Line one\nLine two\nLine three");
+    expect(buf).toBeInstanceOf(Buffer);
+    const csv = buf.toString("utf-8");
+    expect(csv).toContain("Line one");
+  });
+
+  it("handles comma-delimited content", async () => {
+    const { generateCSV } = await import("./documentGeneration");
+    const buf = generateCSV("CSV Data", "name,age,city\nAlice,30,NYC\nBob,25,LA");
+    expect(buf).toBeInstanceOf(Buffer);
+    const csv = buf.toString("utf-8");
+    expect(csv).toContain("name,age,city");
+  });
+});
+
+describe("generateXLSX", () => {
+  it("produces a valid XLSX buffer from markdown with tables", async () => {
+    const { generateXLSX } = await import("./documentGeneration");
+    const buf = await generateXLSX("Test Data", SAMPLE_MARKDOWN);
+    expect(buf).toBeInstanceOf(Buffer);
+    expect(buf.length).toBeGreaterThan(0);
+    // XLSX files are ZIP archives starting with PK
+    expect(buf.subarray(0, 2).toString("ascii")).toBe("PK");
+  });
+
+  it("handles content without tables", async () => {
+    const { generateXLSX } = await import("./documentGeneration");
+    const buf = await generateXLSX("No Tables", "Just some text\nAnother line");
+    expect(buf).toBeInstanceOf(Buffer);
+    expect(buf.length).toBeGreaterThan(0);
+  });
+});
+
 describe("ARTIFACT_TYPES consistency", () => {
   it("routers ARTIFACT_TYPES includes document_pdf and document_docx", async () => {
     // This test validates that the ARTIFACT_TYPES constant in routers.ts

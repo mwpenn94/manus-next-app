@@ -40,6 +40,8 @@ export interface StreamCallbacks {
   onReconnected?: () => void;
   /** Pass 5 Step 3: Agent thinking/reasoning content emitted between tool calls */
   onAgentThinking?: (data: { content: string; turn: number }) => void;
+  /** Knowledge recalled badge — emitted when cross-session memory is injected */
+  onKnowledgeRecalled?: (data: { count: number; keys: string[] }) => void;
 }
 
 export interface StreamOptions {
@@ -98,6 +100,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.token_usage && callbacks.onTokenUsage) callbacks.onTokenUsage(data.token_usage);
     if (data.type === "context_compressed" && callbacks.onContextCompressed) callbacks.onContextCompressed(data.detail);
     if (data.agent_thinking && callbacks.onAgentThinking) callbacks.onAgentThinking(data.agent_thinking);
+    if (data.knowledge_recalled && callbacks.onKnowledgeRecalled) callbacks.onKnowledgeRecalled(data.knowledge_recalled);
     if (data.error) {
       // Detect credit exhaustion errors and dispatch global event for the banner
       const errMsg = (data.error || "").toLowerCase();

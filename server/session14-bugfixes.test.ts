@@ -36,7 +36,7 @@ describe("Webapp preview proxy", () => {
   it("proxy returns 502 when dev server not reachable", async () => {
     const fs = await import("fs");
     const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
-    expect(indexContent).toContain("Webapp dev server not reachable");
+    expect(indexContent).toContain("Webapp dev server on port");
     expect(indexContent).toContain("502");
   });
 });

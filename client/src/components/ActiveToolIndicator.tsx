@@ -50,6 +50,8 @@ interface PresenceProps {
     onApprove: () => void;
     onReject: () => void;
   } | null;
+  /** Knowledge recalled badge — shows count of cross-session memories injected */
+  knowledgeRecalled?: { count: number; keys: string[] } | null;
 }
 
 function deriveState(props: PresenceProps): AgentPresenceState {
@@ -191,7 +193,7 @@ function LivePulseDot({ color }: { color: string }) {
 
 // ── Thinking State ──
 
-function ThinkingPresence() {
+function ThinkingPresence({ knowledgeRecalled }: { knowledgeRecalled?: { count: number; keys: string[] } | null }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
@@ -213,6 +215,11 @@ function ThinkingPresence() {
         </span>
         <LivePulseDot color="bg-purple-400" />
         <ElapsedTimer />
+        {knowledgeRecalled && knowledgeRecalled.count > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium" title={knowledgeRecalled.keys.join(", ")}>
+            Knowledge recalled({knowledgeRecalled.count})
+          </span>
+        )}
       </div>
     </motion.div>
   );
@@ -384,6 +391,7 @@ export default function ActiveToolIndicator({
   hasStreamContent = false,
   isReconnecting = false,
   pendingGate = null,
+  knowledgeRecalled = null,
 }: PresenceProps) {
   const state = deriveState({ actions, streaming, hasStreamContent, isReconnecting, pendingGate });
   const activeAction = actions.find((a) => a.status === "active");
@@ -395,7 +403,7 @@ export default function ActiveToolIndicator({
       {state === "gate_waiting" && pendingGate && (
         <GateWaitingPresence key="gate" gate={pendingGate} />
       )}
-      {state === "thinking" && <ThinkingPresence key="thinking" />}
+      {state === "thinking" && <ThinkingPresence key="thinking" knowledgeRecalled={knowledgeRecalled} />}
       {state === "tool_active" && activeAction && (
         <ToolActivePresence key={`tool-${activeAction.type}`} action={activeAction} />
       )}

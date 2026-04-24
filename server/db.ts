@@ -262,25 +262,77 @@ export async function searchTasks(userId: number, query: string, opts?: { dateFr
   const titleMatches = await db.select().from(tasks).where(
     and(...baseConds, like(tasks.title, pattern))
   ).orderBy(desc(tasks.updatedAt)).limit(50);
+
   // Search in message content
   const allUserTasks = await db.select().from(tasks).where(
     and(...baseConds)
   ).limit(200);
   const taskIds = allUserTasks.map(t => t.id);
-  if (taskIds.length === 0) return titleMatches;
-  // Batch query: find all taskIds with matching messages in a single query (fixes N+1)
+  if (taskIds.length === 0) {
+    return titleMatches.map(t => ({ ...t, matchType: "title" as const, matchSnippet: null }));
+  }
+
+  // Batch query: find all taskIds with matching messages + extract snippet
   const titleMatchIds = new Set(titleMatches.map(t => t.id));
   const candidateIds = taskIds.filter(id => !titleMatchIds.has(id));
-  if (candidateIds.length === 0) return titleMatches;
-  const matchingMsgRows = await db.selectDistinct({ taskId: taskMessages.taskId })
-    .from(taskMessages)
-    .where(and(
-      inArray(taskMessages.taskId, candidateIds),
+
+  // Also check if title-matched tasks have message matches (for richer display)
+  const allSearchIds = taskIds.length > 0 ? taskIds : [];
+  let messageSnippets: Map<number, string> = new Map();
+
+  if (allSearchIds.length > 0) {
+    // Get one matching message per task for snippet display
+    const msgRows = await db.select({
+      taskId: taskMessages.taskId,
+      content: taskMessages.content,
+      role: taskMessages.role,
+    }).from(taskMessages).where(and(
+      inArray(taskMessages.taskId, allSearchIds),
       like(taskMessages.content, pattern)
-    ));
-  const matchingTaskIds = new Set(matchingMsgRows.map(r => r.taskId));
-  const messageMatches = allUserTasks.filter(t => matchingTaskIds.has(t.id));
-  return [...titleMatches, ...messageMatches];
+    )).limit(100);
+
+    // Build snippet map (first match per task)
+    for (const row of msgRows) {
+      if (!messageSnippets.has(row.taskId) && row.content) {
+        // Extract a snippet around the match
+        const lowerContent = row.content.toLowerCase();
+        const lowerQuery = query.toLowerCase();
+        const matchIdx = lowerContent.indexOf(lowerQuery);
+        if (matchIdx >= 0) {
+          const start = Math.max(0, matchIdx - 40);
+          const end = Math.min(row.content.length, matchIdx + query.length + 60);
+          let snippet = row.content.slice(start, end).replace(/\n/g, " ").trim();
+          if (start > 0) snippet = "..." + snippet;
+          if (end < row.content.length) snippet = snippet + "...";
+          messageSnippets.set(row.taskId, snippet);
+        }
+      }
+    }
+  }
+
+  // Build results with match metadata
+  const titleResults = titleMatches.map(t => ({
+    ...t,
+    matchType: "title" as const,
+    matchSnippet: messageSnippets.get(t.id) ?? null,
+  }));
+
+  if (candidateIds.length === 0) return titleResults;
+
+  const matchingTaskIds = new Set<number>();
+  messageSnippets.forEach((_snippet, taskId) => {
+    if (!titleMatchIds.has(taskId)) matchingTaskIds.add(taskId);
+  });
+
+  const messageMatches = allUserTasks
+    .filter(t => matchingTaskIds.has(t.id))
+    .map(t => ({
+      ...t,
+      matchType: "message" as const,
+      matchSnippet: messageSnippets.get(t.id) ?? null,
+    }));
+
+  return [...titleResults, ...messageMatches];
 }
 
 // ── Task Rating Queries ──

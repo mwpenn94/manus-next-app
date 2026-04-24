@@ -32,6 +32,8 @@ export interface StreamStateSetters {
   setGenerationIncomplete?: (incomplete: boolean) => void;
   /** Session 23: Token usage state setter */
   setTokenUsage?: (usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null) => void;
+  /** Knowledge recalled badge state setter */
+  setKnowledgeRecalled?: (data: { count: number; keys: string[] } | null) => void;
 }
 
 export function buildStreamCallbacks(
@@ -130,7 +132,7 @@ export function buildStreamCallbacks(
         state.accumulated + `\n\n*Reconnecting... (attempt ${attempt}/${maxRetries})*`
       );
     },
-    onWebappPreview: (preview: { name: string; url: string; description?: string }) => {
+    onWebappPreview: (preview: { name: string; url: string; description?: string; projectExternalId?: string }) => {
       // Create a webapp preview card message in the chat — but only once per app name.
       // The server may fire multiple webapp_preview events for the same project; dedup here.
       if (setters.addMessage) {
@@ -149,6 +151,7 @@ export function buildStreamCallbacks(
             previewUrl: preview.url,
             status: "running",
             hasUnpublishedChanges: true,
+            projectExternalId: preview.projectExternalId,
           },
         });
       } else {
@@ -254,6 +257,9 @@ export function buildStreamCallbacks(
       state.actions.push(thinkingAction);
       setters.actionsRef.current = [...state.actions];
       setters.setAgentActions([...state.actions]);
+    },
+    onKnowledgeRecalled: (data: { count: number; keys: string[] }) => {
+      setters.setKnowledgeRecalled?.(data);
     },
   };
 }

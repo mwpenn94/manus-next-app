@@ -861,6 +861,11 @@ async function startServer() {
               
               if (relevantMemories.length > 0) {
                 memoryContext = relevantMemories.map((m: any) => `- **${m.key}**: ${m.value}`).join("\n");
+                // Emit knowledge_recalled event so the client can show the badge
+                try {
+                  const knowledgeEvent = JSON.stringify({ knowledge_recalled: { count: relevantMemories.length, keys: relevantMemories.map((m: any) => m.key).slice(0, 5) } });
+                  res.write(`data: ${knowledgeEvent}\n\n`);
+                } catch { /* non-critical */ }
                 // Touch lastAccessedAt for injected memories (memory decay/TTL)
                 try {
                   const { touchMemoryAccess } = await import("../db");
@@ -1005,26 +1010,65 @@ async function startServer() {
   });
 
   // Webapp preview proxy — forwards /api/webapp-preview/* to the agent's dev server
+  // Includes retry logic for when the dev server is still starting up
   app.use("/api/webapp-preview", async (req, res) => {
     try {
       const { getActiveProject } = await import("../agentTools");
       const { port } = getActiveProject();
       if (!port) {
-        return res.status(503).json({ error: "No active webapp project" });
+        return res.status(503).json({ error: "No active webapp project. The agent hasn't created a webapp yet." });
       }
-      const targetUrl = `http://127.0.0.1:${port}${req.url}`;
+
       const http = await import("http");
-      const proxyReq = http.request(targetUrl, { method: req.method, headers: { ...req.headers, host: `127.0.0.1:${port}` } }, (proxyRes) => {
-        res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
-        proxyRes.pipe(res, { end: true });
-      });
-      proxyReq.on("error", () => {
-        if (!res.headersSent) res.status(502).json({ error: "Webapp dev server not reachable" });
-      });
-      if (req.method !== "GET" && req.method !== "HEAD") {
-        req.pipe(proxyReq, { end: true });
-      } else {
-        proxyReq.end();
+      const maxRetries = 3;
+      let lastError = "";
+
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const success = await new Promise<boolean>((resolve) => {
+          const targetUrl = `http://127.0.0.1:${port}${req.url}`;
+          const proxyReq = http.request(
+            targetUrl,
+            {
+              method: req.method,
+              headers: { ...req.headers, host: `127.0.0.1:${port}` },
+              timeout: 5000,
+            },
+            (proxyRes) => {
+              res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+              proxyRes.pipe(res, { end: true });
+              resolve(true);
+            }
+          );
+          proxyReq.on("error", (err) => {
+            lastError = err.message;
+            resolve(false);
+          });
+          proxyReq.on("timeout", () => {
+            proxyReq.destroy();
+            lastError = "Connection timed out";
+            resolve(false);
+          });
+          if (req.method !== "GET" && req.method !== "HEAD") {
+            req.pipe(proxyReq, { end: true });
+          } else {
+            proxyReq.end();
+          }
+        });
+
+        if (success) return;
+
+        // Wait before retry (only if not last attempt)
+        if (attempt < maxRetries - 1) {
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+
+      // All retries failed
+      if (!res.headersSent) {
+        res.status(502).json({
+          error: `Webapp dev server on port ${port} is not reachable after ${maxRetries} attempts. ${lastError}`,
+          hint: "The dev server may still be starting. Try refreshing in a few seconds.",
+        });
       }
     } catch (err: any) {
       if (!res.headersSent) res.status(500).json({ error: err.message });

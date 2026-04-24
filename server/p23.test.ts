@@ -207,7 +207,7 @@ describe("P23-4: TaskView uses streamWithRetry", () => {
   it("uses streamWithRetry in all streaming paths", () => {
     const matches = taskViewSrc.match(/await streamWithRetry\(/g);
     expect(matches).toBeTruthy();
-    expect(matches!.length).toBe(4); // auto-stream, handleSend, hands-free, regenerate
+    expect(matches!.length).toBe(5); // auto-stream, handleSend, hands-free, regenerate, edit-regenerate
   });
 
   it("uses getStreamErrorMessage in all catch blocks", () => {
@@ -219,7 +219,7 @@ describe("P23-4: TaskView uses streamWithRetry", () => {
   it("creates StreamState for each streaming block", () => {
     const matches = taskViewSrc.match(/const streamState: StreamState/g);
     expect(matches).toBeTruthy();
-    expect(matches!.length).toBe(4);
+    expect(matches!.length).toBe(5);
   });
 });
 

@@ -152,8 +152,8 @@ export const AGENT_TOOLS: Tool[] = [
           },
           output_format: {
             type: "string",
-            enum: ["markdown", "pdf", "docx", "csv", "xlsx"],
-            description: "The file format to output. Use 'pdf' for PDF, 'docx' for Word, 'csv' for CSV data, 'xlsx' for Excel spreadsheets, 'markdown' for default. Always match the user's requested format.",
+            enum: ["markdown", "pdf", "docx", "csv", "xlsx", "json"],
+            description: "The file format to output. Use 'pdf' for PDF, 'docx' for Word, 'csv' for CSV data, 'xlsx' for Excel spreadsheets, 'json' for JSON data, 'markdown' for default. Always match the user's requested format.",
           },
         },
         required: ["title", "content"],
@@ -576,6 +576,25 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "deploy_webapp",
+      description:
+        "Build and deploy the current webapp project. This bundles the project (runs npm run build for React projects), uploads the built output to cloud storage, and makes it publicly accessible. Returns the live URL.",
+      parameters: {
+        type: "object",
+        properties: {
+          version_label: {
+            type: "string",
+            description: "Version label for this deployment (e.g. 'v1.0.0', 'initial release')",
+          },
+        },
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -586,9 +605,11 @@ export interface ToolResult {
   /** Optional URL for images or browser artifacts */
   url?: string;
   /** Optional artifact type for workspace persistence */
-  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx";
+  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx" | "slides" | "webapp_preview";
   /** Optional label for the artifact */
   artifactLabel?: string;
+  /** Optional project external ID for webapp projects (links to WebAppProjectPage) */
+  projectExternalId?: string;
 }
 
 // ── Web Search: Multi-Source Pipeline ──
@@ -1593,6 +1614,28 @@ async function executeGenerateDocument(args: {
         artifactType = "document" as any;
         break;
       }
+      case "json": {
+        // For JSON output, try to extract structured data from the markdown content
+        // If the content is already valid JSON, use it directly
+        let jsonContent: string;
+        try {
+          JSON.parse(args.content);
+          jsonContent = args.content;
+        } catch {
+          // Convert markdown to a structured JSON document
+          jsonContent = JSON.stringify({
+            title: args.title,
+            format: args.format || "document",
+            content: args.content,
+            generatedAt: new Date().toISOString(),
+          }, null, 2);
+        }
+        buffer = Buffer.from(jsonContent, "utf-8");
+        fileName = `${safeTitle}-${nanoid(6)}.json`;
+        contentType = "application/json";
+        artifactType = "document" as any;
+        break;
+      }
       default: {
         buffer = Buffer.from(docContent, "utf-8");
         fileName = `${safeTitle}-${nanoid(6)}.md`;
@@ -1610,6 +1653,7 @@ async function executeGenerateDocument(args: {
       docx: "Word Document",
       csv: "CSV Spreadsheet",
       xlsx: "Excel Spreadsheet",
+      json: "JSON",
       markdown: "Markdown",
     };
     const formatLabel = formatLabels[outputFormat] || "Markdown";
@@ -2098,9 +2142,15 @@ async function executeScreenshotVerify(args: {
  * // result.artifactType === "browser_url"
  * ```
  */
+export interface ToolContext {
+  userId?: number;
+  taskExternalId?: string;
+}
+
 export async function executeTool(
   name: string,
-  argsJson: string
+  argsJson: string,
+  context?: ToolContext
 ): Promise<ToolResult> {
   let args: any;
   try {
@@ -2139,7 +2189,7 @@ export async function executeTool(
     case "screenshot_verify":
       return executeScreenshotVerify(args);
     case "create_webapp":
-      return executeCreateWebapp(args);
+      return executeCreateWebapp(args, context);
     case "create_file":
       return executeCreateFile(args);
     case "edit_file":
@@ -2154,6 +2204,8 @@ export async function executeTool(
       return executeRunCommand(args);
     case "git_operation":
       return executeGitOperation(args);
+    case "deploy_webapp":
+      return executeDeployWebapp(args, context);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }
@@ -2167,12 +2219,47 @@ export function getActiveProject() {
   return { dir: activeProjectDir, port: activeProjectPort };
 }
 
+/** Find an available port starting from `start`, checking up to 50 ports */
+async function findWebappPort(start: number): Promise<number> {
+  const net = await import("net");
+  for (let p = start; p < start + 50; p++) {
+    const available = await new Promise<boolean>((resolve) => {
+      const srv = net.createServer();
+      srv.listen(p, () => srv.close(() => resolve(true)));
+      srv.on("error", () => resolve(false));
+    });
+    if (available) return p;
+  }
+  // Fallback: random port in range
+  return start + Math.floor(Math.random() * 900);
+}
+
+/** Poll a port until it responds to HTTP or timeout is reached */
+async function waitForPort(port: number, timeoutMs: number = 12000): Promise<boolean> {
+  const http = await import("http");
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const ok = await new Promise<boolean>((resolve) => {
+      const req = http.request({ hostname: "127.0.0.1", port, path: "/", method: "GET", timeout: 2000 }, (res) => {
+        res.resume();
+        resolve(true);
+      });
+      req.on("error", () => resolve(false));
+      req.on("timeout", () => { req.destroy(); resolve(false); });
+      req.end();
+    });
+    if (ok) return true;
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  return false;
+}
+
 // ── create_webapp ──
 async function executeCreateWebapp(args: {
   name: string;
   description: string;
   template?: string;
-}): Promise<ToolResult> {
+}, context?: ToolContext): Promise<ToolResult> {
   const fs = await import("fs");
   const path = await import("path");
   const { execSync } = await import("child_process");
@@ -2208,29 +2295,59 @@ async function executeCreateWebapp(args: {
       fs.writeFileSync(path.join(projectDir, "styles.css"), `* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2rem; font-weight: 600; }`);
       fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
 
-      // Serve with a simple HTTP server
-      const port = 4100 + Math.floor(Math.random() * 900);
+      // Find available port dynamically
+      const port = await findWebappPort(4100);
       try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
       execSync(`cd ${projectDir} && nohup npx -y serve -l ${port} -s . > /dev/null 2>&1 &`, { timeout: 15000 });
+
+      // Wait for server to be reachable
+      const ready = await waitForPort(port, 8000);
 
       activeProjectDir = projectDir;
       activeProjectPort = port;
 
+      // Persist to DB so WebAppProjectPage can manage it
+      let projectExternalId: string | undefined;
+      if (context?.userId) {
+        try {
+          const { createWebappProject } = await import("./db");
+          const { nanoid } = await import("nanoid");
+          projectExternalId = nanoid();
+          await createWebappProject({
+            externalId: projectExternalId,
+            userId: context.userId,
+            name: projectName,
+            description: args.description,
+            framework: "static",
+            buildCommand: "",
+            outputDir: ".",
+            installCommand: "",
+            deployStatus: "live",
+          });
+        } catch (dbErr) {
+          console.warn("[create_webapp] Failed to persist project to DB:", dbErr);
+        }
+      }
+
       return {
         success: true,
-        result: `Created HTML project "${projectName}" at ${projectDir}. Dev server running on port ${port}.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
+        result: `Created HTML project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting"} on port ${port}.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
         url: `http://localhost:${port}`,
-        artifactType: "browser_url",
+        artifactType: "webapp_preview",
         artifactLabel: projectName,
+        projectExternalId,
       };
     } else {
       // React + Vite + Tailwind scaffold
+      // Find available port dynamically (avoid hardcoded 4200 which may conflict)
+      const port = await findWebappPort(4200);
+
       const packageJson = {
         name: projectName,
         private: true,
         version: "0.0.1",
         type: "module",
-        scripts: { dev: "vite --host --port 4200", build: "vite build", preview: "vite preview" },
+        scripts: { dev: `vite --host --port ${port}`, build: "vite build", preview: "vite preview" },
         dependencies: { react: "^19.0.0", "react-dom": "^19.0.0" },
         devDependencies: {
           "@vitejs/plugin-react": "^4.3.0",
@@ -2250,25 +2367,74 @@ async function executeCreateWebapp(args: {
       fs.writeFileSync(path.join(projectDir, "src", "main.jsx"), `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\nReactDOM.createRoot(document.getElementById('root')).render(<App />);`);
       fs.writeFileSync(path.join(projectDir, "src", "App.jsx"), `export default function App() {\n  return (\n    <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">\n      <div className="text-center space-y-4">\n        <h1 className="text-4xl font-bold">${projectName}</h1>\n        <p className="text-neutral-400">${args.description}</p>\n      </div>\n    </div>\n  );\n}`);
 
-      // Install deps and start dev server
-      execSync(`cd ${projectDir} && npm install --prefer-offline 2>&1 | tail -3`, { timeout: 60000 });
+      // Install deps with error handling
+      try {
+        execSync(`cd ${projectDir} && npm install --prefer-offline 2>&1 | tail -5`, { timeout: 90000 });
+      } catch (installErr: any) {
+        // Try again without --prefer-offline
+        console.warn(`[create_webapp] npm install --prefer-offline failed, retrying: ${installErr.message}`);
+        execSync(`cd ${projectDir} && npm install 2>&1 | tail -5`, { timeout: 120000 });
+      }
 
-      const port = 4200;
+      // Verify node_modules exists
+      if (!fs.existsSync(path.join(projectDir, "node_modules"))) {
+        return {
+          success: false,
+          result: `Failed to install dependencies for "${projectName}". node_modules directory not found after npm install.`,
+        };
+      }
+
+      // Kill any process on the target port
       try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
+
+      // Start dev server
       execSync(`cd ${projectDir} && nohup npm run dev > /tmp/${projectName}-dev.log 2>&1 &`, { timeout: 10000 });
 
-      // Wait briefly for server to start
-      await new Promise(r => setTimeout(r, 3000));
+      // Health-check polling loop — wait up to 15s for Vite to be ready
+      const ready = await waitForPort(port, 15000);
+
+      if (!ready) {
+        // Check the dev log for errors
+        let logTail = "";
+        try {
+          logTail = execSync(`tail -10 /tmp/${projectName}-dev.log 2>/dev/null || echo 'no log'`).toString();
+        } catch {}
+        console.warn(`[create_webapp] Vite dev server may not be ready on port ${port}. Log: ${logTail}`);
+      }
 
       activeProjectDir = projectDir;
       activeProjectPort = port;
 
+      // Persist to DB so WebAppProjectPage can manage it
+      let projectExternalId: string | undefined;
+      if (context?.userId) {
+        try {
+          const { createWebappProject } = await import("./db");
+          const { nanoid } = await import("nanoid");
+          projectExternalId = nanoid();
+          await createWebappProject({
+            externalId: projectExternalId,
+            userId: context.userId,
+            name: projectName,
+            description: args.description,
+            framework: "react",
+            buildCommand: "npm run build",
+            outputDir: "dist",
+            installCommand: "npm install",
+            deployStatus: "live",
+          });
+        } catch (dbErr) {
+          console.warn("[create_webapp] Failed to persist project to DB:", dbErr);
+        }
+      }
+
       return {
         success: true,
-        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Dev server running on port ${port}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
+        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting (may take a moment)"} on port ${port}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
         url: `http://localhost:${port}`,
-        artifactType: "browser_url",
+        artifactType: "webapp_preview",
         artifactLabel: projectName,
+        projectExternalId,
       };
     }
   } catch (err: any) {
@@ -2571,5 +2737,151 @@ async function executeGitOperation(args: {
     };
   } catch (err: any) {
     return { success: false, result: `Git ${args.operation} failed: ${err.message}` };
+  }
+}
+
+
+// ── deploy_webapp ──
+async function executeDeployWebapp(args: {
+  version_label?: string;
+}, context?: ToolContext): Promise<ToolResult> {
+  const fs = await import("fs");
+  const path = await import("path");
+  const { execSync } = await import("child_process");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first." };
+  }
+
+  const projectName = path.basename(activeProjectDir);
+
+  try {
+    // Determine if this is a React/Vite project or static HTML
+    const hasPackageJson = fs.existsSync(path.join(activeProjectDir, "package.json"));
+    let buildDir = activeProjectDir;
+    let htmlContent: string;
+
+    if (hasPackageJson) {
+      // React/Vite project — run build
+      try {
+        execSync(`cd ${activeProjectDir} && npm run build 2>&1`, { timeout: 120000 });
+      } catch (buildErr: any) {
+        return {
+          success: false,
+          result: `Build failed: ${buildErr.message}\n\nCheck for errors in your code and try again.`,
+        };
+      }
+
+      // Find the build output directory
+      const distDir = path.join(activeProjectDir, "dist");
+      const buildDirAlt = path.join(activeProjectDir, "build");
+      if (fs.existsSync(distDir)) {
+        buildDir = distDir;
+      } else if (fs.existsSync(buildDirAlt)) {
+        buildDir = buildDirAlt;
+      } else {
+        return {
+          success: false,
+          result: "Build completed but no dist/ or build/ directory found. Check your build configuration.",
+        };
+      }
+
+      // Read the built index.html
+      const indexPath = path.join(buildDir, "index.html");
+      if (!fs.existsSync(indexPath)) {
+        return {
+          success: false,
+          result: "Build output missing index.html. Check your build configuration.",
+        };
+      }
+      htmlContent = fs.readFileSync(indexPath, "utf-8");
+
+      // Inline CSS and JS assets for single-file deployment
+      const assetDir = path.join(buildDir, "assets");
+      if (fs.existsSync(assetDir)) {
+        const assets = fs.readdirSync(assetDir);
+        for (const asset of assets) {
+          const assetPath = path.join(assetDir, asset);
+          if (asset.endsWith(".css")) {
+            const css = fs.readFileSync(assetPath, "utf-8");
+            const linkTag = new RegExp(`<link[^>]*href=["']/assets/${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*>`, "g");
+            htmlContent = htmlContent.replace(linkTag, `<style>${css}</style>`);
+          } else if (asset.endsWith(".js")) {
+            const js = fs.readFileSync(assetPath, "utf-8");
+            const scriptTag = new RegExp(`<script[^>]*src=["']/assets/${asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*></script>`, "g");
+            htmlContent = htmlContent.replace(scriptTag, `<script type="module">${js}</script>`);
+          }
+        }
+      }
+    } else {
+      // Static HTML project — read index.html directly
+      const indexPath = path.join(activeProjectDir, "index.html");
+      if (!fs.existsSync(indexPath)) {
+        return {
+          success: false,
+          result: "No index.html found in project directory.",
+        };
+      }
+      htmlContent = fs.readFileSync(indexPath, "utf-8");
+
+      // Inline CSS and JS
+      const cssPath = path.join(activeProjectDir, "styles.css");
+      if (fs.existsSync(cssPath)) {
+        const css = fs.readFileSync(cssPath, "utf-8");
+        htmlContent = htmlContent.replace(/<link[^>]*href=["']styles\.css["'][^>]*>/g, `<style>${css}</style>`);
+      }
+      const jsPath = path.join(activeProjectDir, "main.js");
+      if (fs.existsSync(jsPath)) {
+        const js = fs.readFileSync(jsPath, "utf-8");
+        htmlContent = htmlContent.replace(/<script[^>]*src=["']main\.js["'][^>]*><\/script>/g, `<script>${js}</script>`);
+      }
+    }
+
+    // Upload to S3 via storagePut
+    const { storagePut } = await import("./storage");
+    const timestamp = Date.now();
+    const fileKey = `webapp-deploys/${projectName}-${timestamp}/index.html`;
+    const { url: publishedUrl } = await storagePut(fileKey, htmlContent, "text/html");
+
+    // Update the DB project record if we have context
+    if (context?.userId) {
+      try {
+        const { getWebappProjectByExternalId, updateWebappProject, getUserWebappProjects, createWebappDeployment } = await import("./db");
+        // Find the project by name (since we may not have the externalId here)
+        const projects = await getUserWebappProjects(context.userId);
+        const project = projects.find((p: any) => p.name === projectName);
+        if (project) {
+          await updateWebappProject(project.id, {
+            deployStatus: "live",
+            publishedUrl,
+            lastDeployedAt: new Date(),
+          });
+          await createWebappDeployment({
+            projectId: project.id,
+            userId: context.userId,
+            versionLabel: args.version_label ?? `Deploy ${new Date().toISOString().slice(0, 16)}`,
+            status: "live",
+            completedAt: new Date(),
+            bundleUrl: publishedUrl,
+            bundleKey: fileKey,
+          });
+        }
+      } catch (dbErr) {
+        console.warn("[deploy_webapp] Failed to update DB:", dbErr);
+      }
+    }
+
+    return {
+      success: true,
+      result: `Successfully deployed "${projectName}"!\n\nLive URL: ${publishedUrl}\n\nThe app is now publicly accessible. Share this URL with anyone to view the app.`,
+      url: publishedUrl,
+      artifactType: "webapp_preview",
+      artifactLabel: `${projectName} (deployed)`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      result: `Deploy failed: ${err.message}`,
+    };
   }
 }

@@ -127,7 +127,7 @@ describe("P19-3: Task history search and filtering", () => {
   it("AppLayout has status filter tabs", () => {
     expect(appLayout).toContain("statusFilter");
     expect(appLayout).toContain("Running");
-    expect(appLayout).toContain("Done");
+    expect(appLayout).toContain("Completed");
     expect(appLayout).toContain("Error");
   });
 

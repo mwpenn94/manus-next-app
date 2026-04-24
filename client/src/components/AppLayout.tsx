@@ -260,6 +260,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         status: st.status,
         updatedAt: new Date(st.updatedAt),
         favorite: st.favorite,
+        matchType: st.matchType || "title",
+        matchSnippet: st.matchSnippet || null,
         source: "server" as const,
       }));
       if (statusFilter === "favorites") {
@@ -634,6 +636,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                             loading="lazy"
                           />
                         </div>
+                      )}
+                      {/* Search match snippet */}
+                      {searchQuery && (task as any).matchSnippet && (
+                        <p className="text-[10px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-relaxed">
+                          <span className="text-[9px] px-1 py-px rounded bg-primary/15 text-primary/80 font-medium mr-1">
+                            {(task as any).matchType === "message" ? "in messages" : "in title"}
+                          </span>
+                          {(task as any).matchSnippet}
+                        </p>
                       )}
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] text-muted-foreground">
@@ -1194,6 +1205,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         {/* Status banners — wrapped in landmark for a11y */}
         <div role="status" aria-label="System notifications" aria-live="polite">
           <NetworkBanner />
+          {/* Credit exhaustion warning banner */}
           <CreditWarningBanner />
         </div>
 

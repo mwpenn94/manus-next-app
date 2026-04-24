@@ -183,45 +183,22 @@ describe("TaskView.tsx — agentMode localStorage initialization", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // §5 — TaskView.tsx: ModeToggle ↔ localStorage Sync
 // ═══════════════════════════════════════════════════════════════════════════════
-describe("TaskView.tsx — ModeToggle localStorage persistence", () => {
+describe("TaskView.tsx — ModelSelector localStorage persistence", () => {
   const src = read("client/src/pages/TaskView.tsx");
 
-  it("renders ModeToggle component", () => {
-    expect(src).toContain("<ModeToggle");
+  it("renders ModelSelector component", () => {
+    expect(src).toContain("<ModelSelector");
   });
-
-  it("ModeToggle receives agentMode as prop", () => {
-    expect(src).toContain("mode={agentMode}");
+  it("ModelSelector receives selectedModelId based on agentMode", () => {
+    expect(src).toContain("MODE_TO_MODEL[agentMode]");
   });
-
-  it("ModeToggle onChange updates agentMode state", () => {
-    // The onChange handler should call setAgentMode
-    expect(src).toMatch(/onChange=\{.*setAgentMode/s);
+  it("ModelSelector onChange updates agentMode state", () => {
+    expect(src).toContain("setAgentMode(newMode)");
   });
-
-  it("ModeToggle onChange persists mode to localStorage", () => {
-    // Check that the ModeToggle onChange handler writes to localStorage
-    expect(src).toContain('localStorage.setItem("manus-agent-mode", mode)');
+  it("ModelSelector onChange persists mode to localStorage", () => {
+    expect(src).toContain('localStorage.setItem("manus-agent-mode"');
   });
 });
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// §6 — ModeToggle: 4-Tier Configuration
-// ═══════════════════════════════════════════════════════════════════════════════
-describe("ModeToggle — 4 tiers with Limitless", () => {
-  const src = read("client/src/components/ModeToggle.tsx");
-
-  it("exports AgentMode type with all 4 modes", () => {
-    expect(src).toContain('"speed"');
-    expect(src).toContain('"quality"');
-    expect(src).toContain('"max"');
-    expect(src).toContain('"limitless"');
-  });
-
-  it("Limitless mode has Infinity icon", () => {
-    expect(src).toContain("Infinity");
-    expect(src).toMatch(/import\s*\{[^}]*Infinity[^}]*\}\s*from\s*["']lucide-react["']/);
-  });
 
   it("Limitless mode has amber styling", () => {
     expect(src).toContain("bg-amber-500/20");
@@ -343,33 +320,20 @@ describe("Shared types — AgentMode type includes limitless", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // §10 — Bidirectional Sync: ModelSelector ↔ ModeToggle via localStorage
 // ═══════════════════════════════════════════════════════════════════════════════
-describe("Bidirectional sync — ModelSelector ↔ ModeToggle", () => {
+describe("Bidirectional sync — ModelSelector ↔ agentMode", () => {
   const taskView = read("client/src/pages/TaskView.tsx");
-
-  it("TaskView renders both ModelSelector and ModeToggle", () => {
+  it("TaskView renders ModelSelector", () => {
     expect(taskView).toContain("<ModelSelector");
-    expect(taskView).toContain("<ModeToggle");
   });
-
-  it("both components share the same agentMode state", () => {
-    // ModelSelector writes to agentMode via setAgentMode
+  it("ModelSelector shares agentMode state via setAgentMode", () => {
     expect(taskView).toContain("setAgentMode");
-    // ModeToggle reads from agentMode
-    expect(taskView).toContain("mode={agentMode}");
+    expect(taskView).toContain("MODE_TO_MODEL[agentMode]");
   });
-
   it("ModelSelector writes both model and mode to localStorage", () => {
     expect(taskView).toContain('localStorage.setItem("manus-selected-model"');
     expect(taskView).toContain('localStorage.setItem("manus-agent-mode"');
   });
-
-  it("ModeToggle writes mode to localStorage", () => {
-    // The ModeToggle onChange handler persists to localStorage
-    expect(taskView).toContain('localStorage.setItem("manus-agent-mode", mode)');
-  });
-
   it("agentMode is used in streaming calls", () => {
-    // The mode is passed to the streaming endpoint
     expect(taskView).toContain("mode: agentMode");
   });
 });

@@ -8,7 +8,7 @@
  * - Full-width preview area with responsive controls
  * - Settings/Publish buttons at bottom
  */
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Globe,
   Settings,
@@ -48,6 +48,7 @@ interface WebappPreviewCardProps {
   projectFiles?: { name: string; path: string; type: "file" | "dir" }[];
   gitStatus?: string;
   port?: number;
+  projectExternalId?: string;
 }
 
 export default function WebappPreviewCard({
@@ -65,6 +66,7 @@ export default function WebappPreviewCard({
   projectFiles,
   gitStatus,
   port,
+  projectExternalId,
 }: WebappPreviewCardProps) {
   const [activeTab, setActiveTab] = useState<ManagementTab>("preview");
   const [deviceView, setDeviceView] = useState<DeviceView>("desktop");
@@ -73,7 +75,41 @@ export default function WebappPreviewCard({
   const proxyUrl = previewUrl?.startsWith("http://localhost") ? `/api/webapp-preview/` : previewUrl;
   const [iframeSrc, setIframeSrc] = useState(proxyUrl || "");
   const [copied, setCopied] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(true);
+  const [iframeError, setIframeError] = useState(false);
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Auto-retry iframe loading when dev server may still be starting
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, []);
+
+  const handleIframeLoad = useCallback(() => {
+    setIframeLoading(false);
+    setIframeError(false);
+    retryCountRef.current = 0;
+  }, []);
+
+  const handleIframeError = useCallback(() => {
+    setIframeError(true);
+    setIframeLoading(false);
+    // Auto-retry up to 5 times with increasing delay
+    if (retryCountRef.current < 5) {
+      const delay = Math.min(2000 * (retryCountRef.current + 1), 8000);
+      retryCountRef.current++;
+      retryTimerRef.current = setTimeout(() => {
+        setIframeLoading(true);
+        setIframeError(false);
+        if (iframeRef.current) {
+          iframeRef.current.src = iframeSrc || proxyUrl || "";
+        }
+      }, delay);
+    }
+  }, [iframeSrc, proxyUrl]);
 
   const statusText =
     status === "published"
@@ -255,19 +291,53 @@ export default function WebappPreviewCard({
             )}
           >
             {(proxyUrl || previewUrl) ? (
-              <iframe
-                ref={iframeRef}
-                src={iframeSrc || proxyUrl || ""}
-                className="bg-white transition-all duration-300"
-                style={{
-                  width: deviceWidths[deviceView],
-                  height: "100%",
-                  maxWidth: "100%",
-                  border: "none",
-                }}
-                title={`${appName} preview`}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              />
+              <div className="relative" style={{ width: deviceWidths[deviceView], height: "100%", maxWidth: "100%" }}>
+                {iframeLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/80 z-10">
+                    <div className="text-center">
+                      <RefreshCw className="w-5 h-5 text-primary animate-spin mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">
+                        {retryCountRef.current > 0 ? `Waiting for dev server... (attempt ${retryCountRef.current + 1})` : "Loading preview..."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {iframeError && !iframeLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/80 z-10">
+                    <div className="text-center">
+                      <Globe className="w-5 h-5 text-amber-400 mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Dev server not ready yet
+                      </p>
+                      <button
+                        onClick={() => {
+                          retryCountRef.current = 0;
+                          setIframeLoading(true);
+                          setIframeError(false);
+                          if (iframeRef.current) iframeRef.current.src = iframeSrc || proxyUrl || "";
+                        }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Retry now
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <iframe
+                  ref={iframeRef}
+                  src={iframeSrc || proxyUrl || ""}
+                  className="bg-white transition-all duration-300"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    border: "none",
+                  }}
+                  title={`${appName} preview`}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
+                />
+              </div>
             ) : screenshotUrl ? (
               <img
                 src={screenshotUrl}
@@ -416,13 +486,23 @@ export default function WebappPreviewCard({
 
       {/* Action buttons: Settings / Publish */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border">
-        <button
-          onClick={onSettings}
-          className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 transition-colors"
-        >
-          <Settings className="w-3.5 h-3.5" />
-          Settings
-        </button>
+        {projectExternalId ? (
+          <a
+            href={`/app/${projectExternalId}`}
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Manage Project
+          </a>
+        ) : (
+          <button
+            onClick={onSettings}
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 transition-colors"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Settings
+          </button>
+        )}
         <div className="relative flex-1">
           <button
             onClick={onPublish}

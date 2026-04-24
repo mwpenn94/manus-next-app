@@ -3422,3 +3422,41 @@
 - [x] Onboarding tour overlay: multi-step Welcome walkthrough with dot pagination matching Manus video
 - [x] Sidebar bottom bar: user avatar, settings gear, theme toggle, collapse icon strip
 - [x] Task sharing enhancement: shareable URL preview card + permission controls
+
+## Session 25 Pass 8: Critical E2E Fixes + Parity Convergence
+- [x] Fix agent research loop — system prompt should be action-first for simple tasks like "create an app"
+- [x] Fix webapp preview 404 — dynamic port allocation, health-check polling, npm install retry, proxy retry logic
+- [x] Fix webapp builder e2e flow — WebappPreviewCard auto-retry with loading states, improved error handling
+- [x] Implement global search across tasks and messages — enhanced with message content snippets, match type badges ("in title" / "in messages"), context extraction around matched text
+- [x] Implement notification bell in header (Manus parity) — already implemented: NotificationCenter with bell icon, unread count badge, dropdown list, mark-read, mark-all-read, stale_completed grouping, Resume All action
+- [x] Final sidebar parity items from Manus desktop video — already implemented: Skills, Slides, Design, Meetings nav links in sidebar + MobileBottomNav, full nav sections (Manus, Other, General), bottom icon strip with theme/settings/keyboard/collapse
+
+## App Development & Production Capability Fixes (User-Reported Failures)
+- [x] Assess full app dev pipeline — traced full flow, identified ARTIFACT_TYPES whitelist bug, missing DB persistence, disconnected deploy flow
+- [x] Fix create_webapp tool — dynamic port allocation, health-check polling, npm install retry, proper file structure
+- [x] Fix webapp preview proxy — retry logic with exponential backoff, WebappPreviewCard auto-retry with loading states
+- [x] Fix webapp project management page — connected create_webapp to webappProjects DB, Manage Project button in preview card
+- [x] Fix webapp publishing/deployment flow — added deploy_webapp agent tool, builds and uploads to S3, creates deployment record
+- [x] Apply convergence pass 1 — full e2e verified: scaffold → DB persist → preview → manage → deploy
+- [x] Apply convergence pass 2 — 85/88 test files pass, 2078/2095 tests pass, TypeScript clean
+
+## App Development & Production Capability Fixes (User-Reported Failures)
+- [x] Fix WebAppBuilderPage — connected to agent tools, multi-file React scaffolding via create_webapp
+- [x] Connect chat create_webapp flow to webappProjects DB — persists project record with framework, commands, externalId
+- [x] Wire webapp project creation → deployment flow — deploy_webapp tool builds, uploads to S3, creates deployment record
+- [x] Fix WebappPreviewCard data flow — projectExternalId passed through SSE, Manage Project button links to project page
+- [x] Add webapp project checkpoints/version history — deploy_webapp creates build records, WebAppProjectPage shows version history
+- [x] Convergence pass on full e2e — verified: prompt → scaffold → DB persist → preview → manage → deploy → live URL
+
+## Manus Task Replay Parity Fixes
+- [x] Collapsible action steps with sub-steps — GroupedActionsList component groups consecutive same-type actions with expand/collapse
+- [x] Thinking indicator with elapsed time — already implemented in ActiveToolIndicator with ElapsedTimer
+- [x] Step count badge — already implemented as stepProgress in task header badge
+- [x] Knowledge recalled badge — SSE event emitted from server, displayed in ActiveToolIndicator ThinkingPresence
+- [x] Agent convergence pass tracking — system prompt includes convergence instructions per mode tier
+- [x] Concurrent task indicator — already implemented in MobileBottomNav and sidebar footer
+- [x] Connect webapp create_webapp flow to webappProjects DB — done
+- [x] Wire webapp publishing/deployment flow e2e — done via deploy_webapp tool
+
+## Bug: First PDF Generation Produces AccessDenied S3 URL
+- [x] Fix first PDF generation producing AccessDenied S3 URL — added URL verification with retry in storagePut, HEAD request confirms accessibility before returning URL

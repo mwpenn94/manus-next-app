@@ -98,7 +98,7 @@ const TaskContext = createContext<TaskContextValue | null>(null);
 let nextMsgId = 100;
 
 // Valid artifact types that the workspace panel can display
-const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal", "generated_image"]);
+const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview"]);
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -418,7 +418,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       if (!serverId) return;
       addArtifactMutation.mutate({
         taskId: serverId,
-        artifactType: artifactType as "browser_screenshot" | "browser_url" | "code" | "terminal",
+        artifactType: artifactType as any,
         label: data.label,
         content: data.content,
         url: data.url,
@@ -518,6 +518,27 @@ export function TaskProvider({ children }: { children: ReactNode }) {
                   persistArtifact(e.taskId, "terminal", {
                     content: (meta.output as string) || (meta.content as string),
                     label: (meta.command as string) || e.action,
+                  });
+                } else if (artifactType === "generated_image" && meta.url) {
+                  persistArtifact(e.taskId, "generated_image", {
+                    url: meta.url as string,
+                    label: (meta.label as string) || e.action,
+                  });
+                } else if ((artifactType === "document" || artifactType === "document_pdf" || artifactType === "document_docx") && meta.url) {
+                  persistArtifact(e.taskId, artifactType, {
+                    url: meta.url as string,
+                    label: (meta.label as string) || e.action,
+                  });
+                } else if (artifactType === "slides" && meta.url) {
+                  persistArtifact(e.taskId, "slides", {
+                    url: meta.url as string,
+                    label: (meta.label as string) || e.action,
+                  });
+                } else if (artifactType === "webapp_preview" && meta.url) {
+                  updated.workspaceUrl = meta.url as string;
+                  persistArtifact(e.taskId, "webapp_preview", {
+                    url: meta.url as string,
+                    label: (meta.label as string) || "Web App Preview",
                   });
                 }
               }
