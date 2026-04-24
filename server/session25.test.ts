@@ -645,3 +645,191 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
     expect(source).toContain("allMessages.slice(0, messageIndex + 1)");
   });
 });
+
+
+// ── Convergence Pass 4: Scope Creep Fix ──
+describe("Session 25 — Pass 4: Scope creep prevention", () => {
+  it("DEMONSTRATE EACH section is behind conditional gate, not in DEFAULT_SYSTEM_PROMPT", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./agentStream.ts"),
+      "utf-8"
+    );
+    // SCOPE DISCIPLINE should replace the always-present DEMONSTRATE EACH
+    expect(source).toContain("SCOPE DISCIPLINE");
+    expect(source).toContain("MUST produce ONLY what the user asked for");
+    // DEMONSTRATE EACH should be conditionally injected, not in the base prompt
+    expect(source).toContain("wantsDemonstration");
+  });
+
+  it("LIMITLESS mode items 5 and 7 are tightened to prevent scope creep", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./agentStream.ts"),
+      "utf-8"
+    );
+    // Item 5 should emphasize depth on what was asked, not breadth
+    expect(source).toContain("depth on what was asked");
+    // Item 7 should clarify artifacts must be what user asked for
+    expect(source).toContain("Generate artifacts the user requested");
+    expect(source).toContain("Do NOT generate additional artifacts the user did not request");
+  });
+
+  it("wantsContinuous regex requires explicit demonstration phrases", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./agentStream.ts"),
+      "utf-8"
+    );
+    // Should require multi-word phrases, not just "each" or "all"
+    expect(source).toContain("demonstrate\\s+");
+    expect(source).toContain("show\\s+(me\\s+)?");
+    expect(source).toContain("do them all");
+    // Should be a complex regex with explicit phrases
+    expect(source).toMatch(/demonstrate\\s\+\(each\|all\|every\)/);
+  });
+
+  it("Server-side scope-creep detection breaks loop on 'Next, I will' patterns", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./agentStream.ts"),
+      "utf-8"
+    );
+    // Should detect scope creep patterns
+    expect(source).toContain("SCOPE-CREEP DETECTED");
+    expect(source).toContain("scopeCreepSignals");
+    expect(source).toContain("next[,.]?\\s+I\\s+will");
+    expect(source).toContain("now\\s+I\\s+will\\s+(also|demonstrate|proceed)");
+    // Should break the loop when detected
+    expect(source).toMatch(/scopeCreepSignals[\s\S]*?break/s);
+  });
+});
+
+// ── Convergence Pass 4: Context Menu on Messages ──
+describe("Session 25 — Pass 4: Right-click context menu on messages", () => {
+  it("TaskView imports ContextMenu components", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("ContextMenu");
+    expect(source).toContain("ContextMenuTrigger");
+    expect(source).toContain("ContextMenuContent");
+    expect(source).toContain("ContextMenuItem");
+    expect(source).toContain("ContextMenuSeparator");
+  });
+
+  it("MessageBubble is wrapped in ContextMenu with trigger", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // Should have ContextMenu wrapping the motion.div
+    expect(source).toContain("<ContextMenu>");
+    expect(source).toContain("<ContextMenuTrigger asChild>");
+    expect(source).toContain("</ContextMenuTrigger>");
+    expect(source).toContain("</ContextMenu>");
+  });
+
+  it("Context menu has Copy, Read Aloud, and Fork from Here options", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("Copy Message");
+    expect(source).toContain("Read Aloud");
+    expect(source).toContain("Fork from Here");
+  });
+
+  it("Fork from Here triggers BranchButton via data-branch-msg-idx", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("data-branch-msg-idx");
+    // BranchIndicator should have the data attribute
+    const branchSource = (await import("fs")).readFileSync(
+      path.resolve(__dirname, "../client/src/components/BranchIndicator.tsx"),
+      "utf-8"
+    );
+    expect(branchSource).toContain("data-branch-msg-idx={messageIndex}");
+  });
+});
+
+// ── Convergence Pass 4: Export Format Auto-Detection ──
+describe("Session 25 — Pass 4: Export format auto-detection", () => {
+  it("More menu shows recommended export format based on task content", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("Export format auto-detection");
+    expect(source).toContain("Recommended:");
+    expect(source).toContain("hasCode");
+    expect(source).toContain("hasImages");
+    expect(source).toContain("hasStructuredData");
+  });
+
+  it("Recommends JSON for code-heavy or structured-data tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // When hasCode or hasStructuredData, should recommend JSON
+    expect(source).toContain('recommended = "JSON"');
+    expect(source).toContain("contains code blocks");
+    expect(source).toContain("has structured tool actions");
+  });
+
+  it("Recommends HTML for image-heavy or artifact-heavy tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // When hasImages or hasUrls, should recommend HTML
+    expect(source).toContain('recommended = "HTML"');
+    expect(source).toContain("contains images");
+    expect(source).toContain("has downloadable artifacts");
+  });
+
+  it("Defaults to Markdown for plain text conversations", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // Default should be Markdown
+    expect(source).toContain('let recommended = "Markdown"');
+    expect(source).toContain("text-based conversation");
+  });
+
+  it("Auto-detection returns null for empty tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // Should return null when no messages
+    expect(source).toContain("task.messages.length === 0) return null");
+  });
+});

@@ -334,48 +334,17 @@ Example comparison format:
 | Key Capabilities | Web search, image gen, code exec | [from research] |
 | ... | ... | ... |
 
-## CONTINUOUS EXECUTION
+## SCOPE DISCIPLINE (CRITICAL)
 
-When the user asks you to demonstrate, show, or perform multiple tasks:
-- **DO NOT stop after 1-2 demonstrations to ask what to do next**
-- **DO NOT say "What tool would you like me to demonstrate next?"**
-- Instead, proceed through ALL requested items sequentially without pausing
-- After completing one demonstration, immediately move to the next
-- Only stop when ALL requested items are complete
-- If the user says "demonstrate each", "show all", "go until done", or similar, this means: execute every tool/capability one after another without waiting for further input
-
-## DEMONSTRATE EACH — MANUS PARITY PROTOCOL
-
-When asked "What can you do? Demonstrate each" or similar, you MUST demonstrate ALL of the following capability groups. Each demonstration must produce **presentation-quality output** — not just a trivial example. Group related tools together as a single capability:
-
-1. **Web Search & Research** — Search for a real, current topic and present structured findings with sources. Use web_search + read_webpage together.
-2. **Code Execution** — Write and execute a non-trivial code snippet (algorithm, data processing, or calculation). Show the actual code AND its output.
-3. **Image Generation** — Generate a creative, detailed image. Describe what you're creating and display the result inline.
-4. **Data Analysis** — Analyze a real or generated dataset. Produce insights with specific numbers, patterns, or trends.
-5. **Document Generation** — Create a professional document with proper structure. Demonstrate at least two output formats (e.g., one PDF and one XLSX). NEVER generate the same document more than once.
-6. **Web Browsing** — Navigate to a real URL and extract structured content. Present the findings in a formatted summary.
-7. **Wide Research** — Run parallel multi-query research on a complex topic. Synthesize findings from multiple angles into a unified analysis.
-8. **Slide Generation** — Create a presentation on a topic with multiple slides, proper structure, and visual design.
-9. **Email** — Compose and send a professional email demonstrating formatting and clear communication.
-10. **App Building** — Scaffold a web application, create files, and show the live preview. Use create_webapp + create_file together.
-
-CRITICAL RULES FOR DEMONSTRATE EACH:
-- You MUST complete ALL 10 capability groups — completing 9/10 is a FAILURE
-- Each demonstration must produce REAL output (actual search results, actual generated image, actual code output)
-- Do NOT just describe what you could do — ACTUALLY DO IT
-- Do NOT ask for permission between demonstrations — proceed automatically
-- Number each demonstration clearly: "## 1. Web Search & Research", "## 2. Code Execution", etc.
-- After completing all 10, provide a summary table showing what was demonstrated
-- If any tool fails, note the failure and move to the next — do NOT stop the entire sequence
-
-## ANTI-AUTO-DEMONSTRATION (CRITICAL)
-
-Do NOT autonomously run through tools to "demonstrate" or "showcase" capabilities unless the user EXPLICITLY asks you to demonstrate tools. Specifically:
-- **NEVER** auto-run web_search, analyze_data, generate_document, browse_web, or wide_research just to show they work
-- **NEVER** say "Now I will proceed to the next tool in the list" — there is no list to work through
-- **NEVER** generate outputs the user did not ask for (e.g., generating a data analysis table when the user only asked for an image)
-- If the user asks for ONE thing (e.g., "generate a map"), produce ONLY that one thing, then wait for the next instruction
-- If the user asks for MULTIPLE things, produce them in the EXACT ORDER the user specified — do not reorder or skip ahead
+You MUST produce ONLY what the user asked for, then STOP. Specifically:
+- If the user asks for ONE thing (e.g., "generate a PDF"), produce ONLY that one thing, then present it and wait for the next instruction.
+- **NEVER** autonomously decide to demonstrate additional capabilities after completing the requested task.
+- **NEVER** say "Next, I will demonstrate..." or "Now I will also..." unless the user explicitly asked for multiple things.
+- **NEVER** generate outputs the user did not ask for (e.g., generating an Excel spreadsheet when the user only asked for a PDF).
+- **NEVER** auto-run web_search, analyze_data, generate_document, browse_web, or wide_research just to show they work.
+- If the user asks for MULTIPLE things, produce them in the EXACT ORDER the user specified — do not add extras.
+- After completing the requested deliverable, your job is DONE. Present the result and stop.
+- The only exception is when the user EXPLICITLY asks you to "demonstrate each", "show all capabilities", "go until done", or similar — only then should you cycle through multiple capability groups.
 
 ## SESSION PREFERENCES
 
@@ -660,6 +629,27 @@ ${memoryContext}
       }
     }
 
+    // Conditionally inject DEMONSTRATE EACH protocol — ONLY when user explicitly asks to demonstrate
+    const wantsDemonstration = /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|what\s+can\s+you\s+do.*(demonstrate|show)|go\s+until\s+done|do\s+them\s+all|show\s+me\s+all)\b/i.test(lastUserText);
+    if (wantsDemonstration) {
+      systemPrompt += `\n\n## DEMONSTRATE EACH \u2014 MANUS PARITY PROTOCOL
+
+The user has EXPLICITLY asked you to demonstrate your capabilities. You MUST demonstrate ALL of the following 10 capability groups sequentially. Each demonstration must produce **presentation-quality output**:
+
+1. **Web Search & Research** \u2014 Search for a real, current topic and present structured findings with sources.
+2. **Code Execution** \u2014 Write and execute a non-trivial code snippet. Show the actual code AND its output.
+3. **Image Generation** \u2014 Generate a creative, detailed image.
+4. **Data Analysis** \u2014 Analyze a real or generated dataset with specific insights.
+5. **Document Generation** \u2014 Create a professional document (e.g., one PDF and one XLSX).
+6. **Web Browsing** \u2014 Navigate to a real URL and extract structured content.
+7. **Wide Research** \u2014 Run parallel multi-query research on a complex topic.
+8. **Slide Generation** \u2014 Create a presentation with multiple slides.
+9. **Email** \u2014 Compose and send a professional email.
+10. **App Building** \u2014 Scaffold a web application and show the live preview.
+
+CRITICAL: Complete ALL 10 groups. Do NOT ask for permission between demonstrations. Number each clearly. If any tool fails, note it and move to the next.`;
+    }
+
     // Mode-specific instructions — deeply aligned with Manus tiers
     if (mode === "speed") {
       // Aligned with Manus 1.6 Lite: fast, concise, bounded
@@ -734,9 +724,9 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
 2. **Research depth scales with task type**: For research/analysis tasks, use exhaustive multi-source research. For generation tasks, research only the SUBJECT MATTER if needed, then produce the deliverable.
 3. **Cross-reference everything**: Never rely on a single source. Verify facts across multiple sources.
 4. **Strategic decomposition**: Break complex tasks into subtasks and execute them methodically.
-5. **Never conclude prematurely**: If you sense there is more depth to add, add it. The user chose Limitless mode because they want maximum thoroughness.
+5. **Never conclude prematurely ON THE REQUESTED TASK**: If the requested deliverable can be improved, improve it. But do NOT expand scope to produce unrequested outputs. "Maximum thoroughness" means depth on what was asked, not breadth into unrelated capabilities.
 6. **Produce the most comprehensive deliverables possible**: Include tables, comparisons, step-by-step breakdowns, citations, actionable specifics, counterarguments, edge cases, and alternative perspectives.
-7. **Generate all relevant artifacts**: Use generate_document, analyze_data, generate_image, generate_slides, and any other tools that add value. For generation tasks, the ARTIFACT IS THE DELIVERABLE.
+7. **Generate artifacts the user requested**: Use the appropriate tools for what the user asked. For generation tasks, the ARTIFACT IS THE DELIVERABLE. Do NOT generate additional artifacts the user did not request — if they asked for a PDF, produce a PDF, not a PDF plus an Excel plus a presentation.
 8. **Honor user termination conditions**: If the user specified when to stop (e.g., "until convergence," "3 passes," "cover all 10 items"), follow those conditions exactly.
 9. **Self-monitoring**: Track your own progress. Note what you've covered and what remains.
 10. **Asynchronous deep work**: The user may not be watching. Deliver complete, self-contained, publication-quality results.`;
@@ -1150,7 +1140,10 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
         const userMessages = messages.filter(m => m.role === "user");
         const lastUserMsg = userMessages[userMessages.length - 1];
         const userText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content.toLowerCase() : "";
-        const wantsContinuous = /\b(each|all|every|demonstrate|keep going|go until|don't stop|continue|do them all|show me all|one by one)\b/i.test(userText);
+        // TIGHTENED: Only match explicit demonstration/continuous-work requests, NOT casual uses of "each", "all", "every"
+        // "generate an example of each" should NOT trigger continuous mode
+        // "demonstrate each capability" SHOULD trigger continuous mode
+        const wantsContinuous = /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|keep going|go until\s+(done|finished)|don't stop|do them all|show me all\s+(your|the)\s+(capabilities|tools)|one by one.*(capabilities|tools|features))\b/i.test(userText);
         
         // Detect if the user asked for creative/generative output
         const wantsCreativeOutput = /\b(generate|create|write|make|draft|build|design|plan|guide|step.?by.?step|outline|script|story|tutorial|curriculum|template|proposal|report)\b/i.test(userText);
@@ -1259,6 +1252,27 @@ If the user hasn't specified content details, ASK them what content they want. D
           continue;
         }
         
+        // SCOPE-CREEP DETECTION: If the user asked for a single deliverable and the agent already
+        // produced it (via tool call), but the LLM text says "Next, I will..." or "Now I will also...",
+        // inject a STOP signal to prevent unrequested outputs.
+        if (!wantsContinuous && completedToolCalls >= 1) {
+          const scopeCreepSignals = /\b(next[,.]?\s+I\s+will|now\s+I\s+will\s+(also|demonstrate|proceed)|I\s+will\s+(also|additionally|furthermore)\s+(generate|create|demonstrate|show|produce|build)|let\s+me\s+(also|additionally)\s+(generate|create|demonstrate)|proceed\s+to\s+(the\s+next|demonstrate|generate))\b/i.test(textContent);
+          if (scopeCreepSignals) {
+            console.log(`[Agent] SCOPE-CREEP DETECTED: Agent trying to produce unrequested outputs after completing ${completedToolCalls} tool calls. Injecting STOP.`);
+            // Don't continue the loop — let it break naturally
+            // But override the text to remove the scope-creep portion
+            const scopeCreepMatch = textContent.match(/\n\n(?:Next|Now|Additionally|Furthermore|I will also|Let me also|Proceed)[\s\S]*/i);
+            if (scopeCreepMatch) {
+              const cleanedText = textContent.slice(0, scopeCreepMatch.index || textContent.length).trim();
+              if (cleanedText.length > 50) {
+                finalContent = cleanedText;
+                console.log(`[Agent] Trimmed scope-creep text. Kept ${cleanedText.length} chars, removed ${textContent.length - cleanedText.length} chars.`);
+              }
+            }
+            break;
+          }
+        }
+
         // Auto-continue if: user wants continuous work AND capability groups remain undemonstrated
         if (wantsContinuous && turn < maxTurns - 2) {
           // Track which tools have been used so far

@@ -155,6 +155,7 @@ export function BranchButton({
   return (
     <>
       <button
+        data-branch-msg-idx={messageIndex}
         onClick={() => {
           setBranchTitle(`Branch: ${message.content.slice(0, 40)}${message.content.length > 40 ? "..." : ""}`);
           setDialogOpen(true);

@@ -3345,3 +3345,30 @@
 - [x] Write/expand convergence tests for all 3 steps (48 tests total)
 - [x] Run full test suite — 48/48 passing
 - [x] Save checkpoint
+
+## Session 25 Convergence Pass 4: Scope Creep Bug + Next 3 Steps
+
+### Critical Bug: Agent Over-Executes After Completing Requested Task (Scope Creep)
+- [x] Audit: identified DEMONSTRATE EACH always in prompt + LIMITLESS items 5/7 encouraging over-execution
+- [x] Fix: added SCOPE DISCIPLINE section replacing always-present DEMONSTRATE EACH
+- [x] Fix: system prompt now says "MUST produce ONLY what the user asked for, then STOP"
+- [x] Fix: added server-side scope-creep detection ("Next, I will..." pattern → break loop)
+- [x] Depth: DEMONSTRATE EACH moved behind wantsDemonstration conditional gate
+- [x] Adversarial: wantsContinuous regex tightened to require explicit multi-word phrases
+
+### Step 2: Fork from Message Context Menu
+- [x] Added right-click ContextMenu on all MessageBubble components
+- [x] Context menu has Copy Message, Read Aloud (assistant only), Fork from Here
+- [x] Fork from Here triggers BranchButton via data-branch-msg-idx attribute
+- [x] BranchIndicator.tsx updated with data-branch-msg-idx for programmatic triggering
+
+### Step 3: Export Format Auto-Detection
+- [x] Added content analysis (hasCode, hasImages, hasStructuredData, hasUrls)
+- [x] Recommends JSON for code/structured data, HTML for images/artifacts, Markdown for text
+- [x] Shows "Recommended: {format} (reason)" label above export buttons in More menu
+- [x] Returns null for empty tasks (no recommendation shown)
+
+### Pass 4 Testing & Checkpoint
+- [x] Write/expand convergence tests — 61 total tests
+- [x] Run full test suite — 61/61 passing
+- [x] Save checkpoint

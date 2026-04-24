@@ -87,6 +87,13 @@ import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
 import ShareDialog from "@/components/ShareDialog";
 import TaskProgressCard from "@/components/TaskProgressCard";
 import { BranchBanner, ChildBranches, BranchButton } from "@/components/BranchIndicator";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import ActiveToolIndicator from "@/components/ActiveToolIndicator";
 import SandboxViewer from "@/components/SandboxViewer";
 import ModelSelector, { MODE_TO_MODEL } from "@/components/ModelSelector";
@@ -475,6 +482,8 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
   const totalCount = message.actions?.length ?? 0;
 
   return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -742,6 +751,51 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
         )}
       </div>
     </motion.div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-52">
+        {/* Copy message text */}
+        <ContextMenuItem
+          onClick={() => {
+            navigator.clipboard.writeText(message.content);
+            toast.success("Copied to clipboard");
+          }}
+        >
+          <Copy className="w-4 h-4 mr-2" />
+          Copy Message
+        </ContextMenuItem>
+        {/* Read aloud */}
+        {!isUser && (
+          <ContextMenuItem
+            onClick={() => {
+              if (tts.isSpeaking) {
+                tts.stop();
+              } else {
+                tts.speak(message.content, { voice: userTTSVoice, rate: ttsRateStr });
+              }
+            }}
+          >
+            <Volume2 className="w-4 h-4 mr-2" />
+            {tts.isSpeaking ? "Stop Reading" : "Read Aloud"}
+          </ContextMenuItem>
+        )}
+        {/* Fork from here */}
+        {taskExternalId && messageIndex !== undefined && allMessages && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onClick={() => {
+                // Programmatically trigger the BranchButton dialog by finding and clicking it
+                const branchBtn = document.querySelector(`[data-branch-msg-idx="${messageIndex}"]`) as HTMLButtonElement;
+                if (branchBtn) branchBtn.click();
+              }}
+            >
+              <GitBranch className="w-4 h-4 mr-2" />
+              Fork from Here
+            </ContextMenuItem>
+          </>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -2548,6 +2602,30 @@ export default function TaskView() {
                       <Settings2 className="w-3.5 h-3.5" />
                       System Prompt
                     </button>
+                    {/* Export format auto-detection */}
+                    {(() => {
+                      if (!task || task.messages.length === 0) return null;
+                      const allContent = task.messages.map(m => m.content).join(" ");
+                      const hasCode = /```[\s\S]*?```/.test(allContent);
+                      const hasImages = /\.(png|jpe?g|gif|webp|svg)/i.test(allContent);
+                      const hasUrls = /https?:\/\/[^\s)]+\.(pdf|docx?|xlsx?|csv|zip)/i.test(allContent);
+                      const hasStructuredData = task.messages.some(m => m.actions && m.actions.length > 3);
+                      let recommended = "Markdown";
+                      let reason = "text-based conversation";
+                      if (hasStructuredData || hasCode) {
+                        recommended = "JSON";
+                        reason = hasCode ? "contains code blocks" : "has structured tool actions";
+                      } else if (hasImages || hasUrls) {
+                        recommended = "HTML";
+                        reason = hasImages ? "contains images" : "has downloadable artifacts";
+                      }
+                      return (
+                        <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-b border-border mb-0.5">
+                          Recommended: <span className="text-foreground font-medium">{recommended}</span>
+                          <span className="ml-1 opacity-60">({reason})</span>
+                        </div>
+                      );
+                    })()}
                     <button
                       onClick={() => {
                         if (!task) return;
