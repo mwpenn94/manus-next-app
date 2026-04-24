@@ -217,6 +217,15 @@
   background: oklch(0.4 0 0);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* Typewriter animation for agent messages */
 @keyframes typewriter-cursor {
   0%, 100% { opacity: 1; }

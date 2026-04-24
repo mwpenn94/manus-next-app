@@ -46,6 +46,8 @@ import {
   ArrowDown,
   PanelBottomOpen,
   PanelBottomClose,
+  PanelRightOpen,
+  PanelRightClose,
   Square,
   Mic,
   Plus,
@@ -2038,6 +2040,16 @@ export default function TaskView() {
   const [tokenUsage, setTokenUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null>(null);
   const [knowledgeRecalled, setKnowledgeRecalled] = useState<{ count: number; keys: string[] } | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
+  const [desktopWorkspaceOpen, setDesktopWorkspaceOpen] = useState(() => {
+    try { return localStorage.getItem("manus-workspace-panel") !== "closed"; } catch { return true; }
+  });
+  const toggleDesktopWorkspace = useCallback(() => {
+    setDesktopWorkspaceOpen(prev => {
+      const next = !prev;
+      try { localStorage.setItem("manus-workspace-panel", next ? "open" : "closed"); } catch {}
+      return next;
+    });
+  }, []);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
@@ -3063,6 +3075,19 @@ export default function TaskView() {
               )}
             </button>
 
+            {/* Desktop workspace panel toggle */}
+            <button
+              onClick={toggleDesktopWorkspace}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+              title={desktopWorkspaceOpen ? "Hide workspace" : "Show workspace"}
+              aria-label={desktopWorkspaceOpen ? "Hide workspace" : "Show workspace"}
+            >
+              {desktopWorkspaceOpen ? (
+                <PanelRightClose className="w-3.5 h-3.5" />
+              ) : (
+                <PanelRightOpen className="w-3.5 h-3.5" />
+              )}
+            </button>
             {/* Sandbox Viewer toggle — NS19 */}
             <button
               onClick={() => setSandboxOpen(true)}
@@ -3756,7 +3781,7 @@ export default function TaskView() {
               <TaskRating taskId={task.id} />
             </div>
             {/* Suggested follow-ups — override with generation_incomplete when server signals it */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
               {(generationIncomplete
                 ? FOLLOW_UP_SUGGESTIONS.generation_incomplete
                 : getFollowUpSuggestions(task?.messages ?? [])
@@ -3764,7 +3789,7 @@ export default function TaskView() {
                 <button
                   key={i}
                   onClick={() => setInput(suggestion)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all"
+                  className="text-xs px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary/30 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all whitespace-nowrap shrink-0"
                 >
                   {suggestion}
                 </button>
@@ -4046,9 +4071,20 @@ export default function TaskView() {
       </div>
 
       {/* ── WORKSPACE PANEL (Desktop) ── */}
-      <div className="hidden md:block">
-        <WorkspacePanel task={task} bridgeStatus={bridgeStatus} />
-      </div>
+      <AnimatePresence initial={false}>
+        {desktopWorkspaceOpen && (
+          <motion.div
+            className="hidden md:block"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "auto", opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <WorkspacePanel task={task} bridgeStatus={bridgeStatus} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── WORKSPACE PANEL (Mobile) ── */}
       <AnimatePresence>

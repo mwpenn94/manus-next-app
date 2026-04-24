@@ -191,6 +191,28 @@ export default function DeploymentCard({
           </button>
         )}
       </div>
+
+      {/* Mobile-style action strip (Manus parity) */}
+      <div className="flex items-center gap-2 px-4 pb-3 md:hidden">
+        {projectExternalId && (
+          <button
+            onClick={() => navigate(`/projects/webapp/${projectExternalId}`)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Settings className="w-3 h-3" />
+            Manage Project
+          </button>
+        )}
+        {status === "live" && deployedUrl && (
+          <button
+            onClick={() => window.open(deployedUrl, "_blank")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            <CheckCircle className="w-3 h-3" />
+            Published
+          </button>
+        )}
+      </div>
     </div>
   );
 }

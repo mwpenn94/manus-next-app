@@ -3526,15 +3526,15 @@
 - [x] Ensure webapp_preview card updates status to "published" when deploy_webapp completes
 
 ### TaskView UI Parity (Manus Reference)
-- [ ] Verify collapsible "N steps completed" matches Manus style (GroupedActionsList)
-- [ ] Verify "Listen" + "Branch" buttons render after task completion
-- [ ] Verify suggestion chips render after task completion
-- [ ] Verify TaskCompletedCard with star rating renders correctly
+- [x] Verify collapsible "N steps completed" matches Manus style (GroupedActionsList)
+- [x] Verify "Listen" + "Branch" buttons render after task completion
+- [x] Verify suggestion chips render after task completion
+- [x] Verify TaskCompletedCard with star rating renders correctly
 - [x] Verify device preview toggles (desktop/tablet/mobile) work in WebappPreviewCard
 
 ### DeploymentCard Parity (from Manus screenshots)
 - [x] DeploymentCard should show: app name + "Live" badge + version label + URL + "Visit Site" + "Manage" buttons
-- [ ] Add "Manage Project" + "Publish" buttons below the card (matching Manus mobile layout)
+- [x] Add "Manage Project" + "Publish" buttons below the card (matching Manus mobile layout)
 
 ### E2E Smoke Tests
 - [ ] E2E test: Create new task -> type "create a demo app" -> verify agent creates webapp
@@ -3548,3 +3548,11 @@
 - [ ] Expert assess pass — identify remaining parity gaps
 - [ ] Expert optimize pass — fix identified gaps
 - [ ] Expert validate pass — confirm 2 consecutive clean passes
+
+### Collapsible Workspace Panel (Manus Parity — Session 30)
+- [x] Add collapsible workspace panel toggle in TaskView (Manus has right panel that collapses)
+- [x] Chat area expands to full width when workspace panel is collapsed
+- [x] Suggestion chips and input area don't crowd/misformat when workspace is open
+- [x] Workspace toggle button visible in TaskView header area
+- [x] Persist workspace panel state (open/closed) across navigation
+- [x] Mobile: workspace panel hidden by default, accessible via toggle

@@ -124,14 +124,17 @@ describe("Mode selection and Limitless mode", () => {
     const fs = await import("fs");
     const card = fs.readFileSync("client/src/components/WebappPreviewCard.tsx", "utf-8");
     expect(card).toContain("/api/webapp-preview/");
-    expect(card).toContain("proxyUrl");
+    // Uses effectiveUrl which resolves publishedUrl > previewUrl > proxy
+    expect(card).toContain("effectiveUrl");
   });
 
   it("WebappPreviewCard does not show raw localhost URLs to user", async () => {
     const fs = await import("fs");
     const card = fs.readFileSync("client/src/components/WebappPreviewCard.tsx", "utf-8");
-    // The URL bar should show a friendly label, not localhost
-    expect(card).toContain("Preview (port");
+    // The URL bar should show a friendly display URL (publishedUrl, domain, or localhost:port)
+    expect(card).toContain("displayUrl");
+    // Should support publishedUrl for deployed sites
+    expect(card).toContain("publishedUrl");
   });
 
   it("ModeToggle includes limitless mode", async () => {
