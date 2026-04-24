@@ -90,6 +90,7 @@ interface TaskContextValue {
   markAutoStreamed: (taskId: string) => void;
   updateMessageCard: (taskId: string, messageId: string, cardData: Record<string, unknown>) => void;
   updateTaskFavorite: (taskId: string, favorite: number) => void;
+  editMessageAndTruncate: (taskId: string, messageId: string, newContent: string) => void;
 }
 
 const TaskContext = createContext<TaskContextValue | null>(null);
@@ -651,6 +652,28 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, favorite } : t));
   }, []);
 
+  /**
+   * Edit a user message and truncate all messages after it.
+   * Used for "edit & re-send" — modifies the message content and removes
+   * everything that came after it so the agent can re-process.
+   */
+  const editMessageAndTruncate = useCallback(
+    (taskId: string, messageId: string, newContent: string) => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId) return t;
+          const msgIndex = t.messages.findIndex((m) => m.id === messageId);
+          if (msgIndex === -1) return t;
+          const updatedMessages = t.messages.slice(0, msgIndex + 1).map((m, i) =>
+            i === msgIndex ? { ...m, content: newContent } : m
+          );
+          return { ...t, messages: updatedMessages, updatedAt: new Date() };
+        })
+      );
+    },
+    []
+  );
+
   return (
     <TaskContext.Provider
       value={{
@@ -666,6 +689,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         markAutoStreamed,
         updateMessageCard,
         updateTaskFavorite,
+        editMessageAndTruncate,
       }}
     >
       {children}

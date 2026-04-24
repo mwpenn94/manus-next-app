@@ -879,6 +879,10 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
         // If there were tool calls, execute them (and reset continuation counter since progress was made)
         if (toolCalls && toolCalls.length > 0) {
           continuationRounds = 0; // Reset — tool execution = real progress
+          // Pass 5 Step 3: Emit agent_thinking when there's reasoning text alongside tool calls
+          if (textContent && textContent.trim().length > 10) {
+            sendSSE(safeWrite, { agent_thinking: { content: textContent.trim(), turn } });
+          }
           conversation.push({
             role: "assistant",
             content: textContent || "",
@@ -1343,6 +1347,10 @@ If the user hasn't specified content details, ASK them what content they want. D
         break;
       }
 
+      // Pass 5 Step 3: Emit agent_thinking when there's reasoning text alongside tool calls
+      if (textContent && textContent.trim().length > 10) {
+        sendSSE(safeWrite, { agent_thinking: { content: textContent.trim(), turn } });
+      }
       // Add assistant message with tool_calls to conversation
       conversation.push({
         role: "assistant",

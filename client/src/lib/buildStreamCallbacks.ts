@@ -246,5 +246,14 @@ export function buildStreamCallbacks(
         setters.setStreamContent(state.accumulated);
       }
     },
+    onAgentThinking: (data: { content: string; turn: number }) => {
+      // Pass 5 Step 3: Surface agent reasoning as a collapsible thinking action
+      // This creates a "thinking" action with the reasoning content as preview
+      const thinkingAction = setters.mapToolToAction("thinking", "Reasoning", {}, "done");
+      thinkingAction.preview = data.content.slice(0, 500);
+      state.actions.push(thinkingAction);
+      setters.actionsRef.current = [...state.actions];
+      setters.setAgentActions([...state.actions]);
+    },
   };
 }

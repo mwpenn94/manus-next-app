@@ -3372,3 +3372,32 @@
 - [x] Write/expand convergence tests — 61 total tests
 - [x] Run full test suite — 61/61 passing
 - [x] Save checkpoint
+
+## Session 25 Convergence Pass 5: TRUE Parity Gaps
+### Step 1: In-Conversation Message Search (Cmd+F within TaskView)
+- [x] Add floating search bar overlay in TaskView (Cmd+F / Ctrl+F trigger)
+- [x] Search through all message content (user + assistant) with case-insensitive matching
+- [x] Highlight matching text in messages with scroll-to-match
+- [x] Prev/Next navigation between matches with match count display
+- [x] Escape key to close search bar, clear highlights
+- [x] Depth: handle long messages, code blocks, tool action content
+- [x] Adversarial: empty query, no matches, special characters in search
+### Step 2: User Message Edit & Re-send
+- [x] Add Edit button on user message bubbles (pencil icon on hover)
+- [x] Inline edit mode: replace message text with editable textarea
+- [x] On save: truncate conversation from that point, re-send edited message
+- [x] Cancel edit returns to original message
+- [x] Context menu: add "Edit Message" option for user messages
+- [x] Depth: handle messages with attachments, multiline content
+- [x] Adversarial: empty edit, edit while agent is running, edit first message
+### Step 3: Collapsible Agent Thinking Summary
+- [x] Extract agent reasoning text between tool calls (non-tool-call assistant text)
+- [x] Display as collapsible "Thinking..." block before tool action groups
+- [x] Expand/collapse with smooth animation
+- [x] Show brief preview (first line) when collapsed
+- [x] Depth: handle multiple thinking blocks per message, long reasoning
+- [x] Adversarial: empty thinking, thinking-only messages (no tool calls)
+### Pass 5 Testing & Checkpoint
+- [x] Write convergence tests for all 3 steps
+- [x] Run full test suite — all passing
+- [x] Save checkpoint

@@ -119,6 +119,7 @@ import { useEdgeTTS, splitSentences } from "@/hooks/useEdgeTTS";
 import { Headphones } from "lucide-react";
 import { streamWithRetry, getStreamErrorMessage } from "@/lib/streamWithRetry";
 import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
+import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -473,7 +474,7 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, onGateApprove, onGateReject, taskExternalId, messageIndex, allMessages }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; onGateApprove?: () => void; onGateReject?: () => void; taskExternalId?: string; messageIndex?: number; allMessages?: Message[] }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, onGateApprove, onGateReject, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; onGateApprove?: () => void; onGateReject?: () => void; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
   const isUser = message.role === "user";
@@ -608,6 +609,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
         ) : (
           /* Standard text message rendering */
           <div
+            data-message-content
             className={cn(
               "rounded-xl text-sm leading-relaxed",
               isUser
@@ -617,7 +619,55 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           >
             {isUser ? (
               <>
-                <p className="whitespace-pre-wrap">{message.content.replace(/\[Screen share:.*?\]|\[Video recording:.*?\]|\[Video uploaded:.*?\]/g, "").trim()}</p>
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editDraft ?? ""}
+                      onChange={(e) => onEditDraftChange?.(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSaveEdit?.(); }
+                        if (e.key === "Escape") { onCancelEdit?.(); }
+                      }}
+                      className="w-full bg-background border border-primary/30 rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none min-h-[60px]"
+                      autoFocus
+                      rows={Math.min(6, (editDraft ?? "").split("\n").length + 1)}
+                    />
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={onCancelEdit}
+                        className="px-2.5 py-1 text-xs rounded-md text-muted-foreground hover:bg-accent transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={onSaveEdit}
+                        disabled={!editDraft?.trim()}
+                        className={cn(
+                          "px-2.5 py-1 text-xs rounded-md transition-colors font-medium",
+                          editDraft?.trim()
+                            ? "bg-primary text-primary-foreground hover:opacity-90"
+                            : "bg-muted text-muted-foreground cursor-not-allowed"
+                        )}
+                      >
+                        Save & Resend
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="group/edit relative">
+                    <p className="whitespace-pre-wrap">{message.content.replace(/\[Screen share:.*?\]|\[Video recording:.*?\]|\[Video uploaded:.*?\]/g, "").trim()}</p>
+                    {onStartEdit && (
+                      <button
+                        onClick={onStartEdit}
+                        className="absolute -top-1 -right-1 p-1 rounded-md bg-card border border-border shadow-sm text-muted-foreground hover:text-foreground opacity-0 group-hover/edit:opacity-100 transition-opacity"
+                        title="Edit message"
+                        aria-label="Edit message"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
                 {/* Media context indicators */}
                 {/\[Screen share:/.test(message.content) && (
                   <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] w-fit">
@@ -777,6 +827,16 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             <Volume2 className="w-4 h-4 mr-2" />
             {tts.isSpeaking ? "Stop Reading" : "Read Aloud"}
           </ContextMenuItem>
+        )}
+        {/* Edit user message (Pass 5 Step 2) */}
+        {isUser && onStartEdit && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={onStartEdit}>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Message
+            </ContextMenuItem>
+          </>
         )}
         {/* Fork from here */}
         {taskExternalId && messageIndex !== undefined && allMessages && (
@@ -1606,7 +1666,7 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite, editMessageAndTruncate } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -1649,6 +1709,11 @@ export default function TaskView() {
     category?: string;
     taskId: string;
   } | null>(null);
+  // In-conversation search (Pass 5 Step 1)
+  const { searchOpen, closeSearch } = useConversationSearch();
+  // User message edit & re-send (Pass 5 Step 2)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
   const plusButtonRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -2310,6 +2375,78 @@ export default function TaskView() {
       setStepProgress(null);
     }
   }, [task, streaming, removeLastMessage, addMessage, agentMode, updateTaskStatus]);
+
+  /**
+   * Edit & Re-send: modify a user message, truncate everything after it,
+   * then re-stream the agent response with the updated conversation.
+   * Pass 5 Step 2 — Manus parity: edit any user message inline.
+   */
+  const handleEditAndResend = useCallback(async (messageId: string, newContent: string) => {
+    if (!task || streaming || !newContent.trim()) return;
+    // 1. Edit the message and truncate everything after it
+    editMessageAndTruncate(task.id, messageId, newContent);
+    setEditingMessageId(null);
+    setEditDraft("");
+    // 2. Re-stream with the updated conversation
+    setStreaming(true);
+    setGenerationIncomplete(false);
+    setStreamContent("");
+    setAgentActions([]);
+    setLastErrorRetryable(false);
+    setStreamImages([]);
+    streamingTaskIdRef.current = task.id;
+    accumulatedRef.current = "";
+    actionsRef.current = [];
+    let accumulated = "";
+    const actions: AgentAction[] = [];
+    const images: string[] = [];
+    try {
+      // Build conversation from the truncated messages (need to wait for state update)
+      // Since editMessageAndTruncate is synchronous on the state, we can build from current + edit
+      const msgIndex = task.messages.findIndex(m => m.id === messageId);
+      const truncatedMessages = task.messages.slice(0, msgIndex + 1).map((m, i) =>
+        i === msgIndex ? { ...m, content: newContent } : m
+      );
+      const conversationMessages = truncatedMessages
+        .slice(-10)
+        .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const streamState: StreamState = { accumulated: "", actions, images };
+      const callbacks = buildStreamCallbacks(streamState, {
+        setStreamContent, setAgentActions, setStreamImages, setStepProgress,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
+      });
+      await streamWithRetry({
+        messages: conversationMessages, taskExternalId: task.id, mode: agentMode,
+        signal: controller.signal, callbacks,
+      });
+      accumulated = streamState.accumulated;
+      setPendingGate(null);
+      setStepProgress(null);
+      const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+      toast.success("Message edited and re-sent");
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+      } else {
+        addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
+      }
+    } finally {
+      abortControllerRef.current = null;
+      streamingTaskIdRef.current = null;
+      accumulatedRef.current = "";
+      actionsRef.current = [];
+      setStreaming(false);
+      setStreamContent("");
+      setAgentActions([]);
+      setTokenUsage(null);
+      setStreamImages([]);
+      setStepProgress(null);
+    }
+  }, [task, streaming, editMessageAndTruncate, addMessage, agentMode, updateTaskStatus]);
 
   // ── Drag-and-drop handlers ──
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -3022,6 +3159,14 @@ export default function TaskView() {
         <BranchBanner taskExternalId={task.id} />
         <ChildBranches taskExternalId={task.id} />
 
+        {/* In-Conversation Search Overlay (Pass 5 Step 1) */}
+        <div className="relative flex-1 flex flex-col min-h-0">
+        <InConversationSearch
+          open={searchOpen}
+          onClose={closeSearch}
+          messages={task.messages}
+          scrollRef={scrollRef}
+        />
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain">
           {/* During streaming, hide card-type messages that were added mid-stream
@@ -3042,6 +3187,12 @@ export default function TaskView() {
               taskExternalId={task.id}
               messageIndex={i}
               allMessages={task.messages}
+              isEditing={editingMessageId === msg.id}
+              editDraft={editingMessageId === msg.id ? editDraft : undefined}
+              onStartEdit={msg.role === "user" && !streaming ? () => { setEditingMessageId(msg.id); setEditDraft(msg.content); } : undefined}
+              onCancelEdit={() => { setEditingMessageId(null); setEditDraft(""); }}
+              onSaveEdit={() => handleEditAndResend(msg.id, editDraft)}
+              onEditDraftChange={(val) => setEditDraft(val)}
               onGateApprove={msg.cardType === "confirmation_gate" ? async () => {
                 updateMessageCard(task.id, msg.id, { status: "approved" });
                 toast.success("Action approved");
@@ -3156,6 +3307,7 @@ export default function TaskView() {
             </motion.div>
           )}
         </div>
+        </div>{/* close search wrapper */}
 
         {/* Task Completion Badge + Rating + Follow-ups — Gaps 3, 4, 5 */}
         {task?.status === "completed" && !streaming && (
