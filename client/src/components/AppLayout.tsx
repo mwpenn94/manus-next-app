@@ -32,7 +32,6 @@ import {
   Search,
   Plus,
   Settings,
-  CreditCard,
   PanelLeftClose,
   PanelLeft,
   Loader2,
@@ -463,7 +462,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="px-3 pb-1 shrink-0">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-            {statusFilter === "all" ? "Tasks" : statusFilters.find(f => f.id === statusFilter)?.label || "Tasks"}
+            Tasks
           </span>
           <div className="relative" ref={filterDropdownRef}>
             <button
@@ -670,19 +669,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* Bridge Status */}
       <BridgeStatusBadge />
 
-      {/* Sidebar Footer — Nav links (scrollable) */}
+      {/* Sidebar Footer — Manus section nav (compact, fixed) */}
       <nav
-        className="border-t border-sidebar-border p-2 space-y-0.5 overflow-y-auto max-h-[40vh] min-h-0"
+        className="border-t border-sidebar-border p-2 space-y-0.5 shrink-0"
         aria-label="Sidebar navigation"
       >
         {/* Section: Manus */}
-        <div className="px-3 pt-2 pb-1">
+        <div className="px-3 pt-1.5 pb-0.5">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus">Manus</span>
         </div>
         <Link
           href="/analytics"
           className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
             location === "/analytics"
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -694,7 +693,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Link
           href="/memory"
           className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
             location === "/memory"
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -706,7 +705,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Link
           href="/projects"
           className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
             location === "/projects" || location.startsWith("/project/")
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -718,7 +717,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Link
           href="/library"
           className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
             location === "/library"
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -730,7 +729,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Link
           href="/schedule"
           className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
+            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
             location === "/schedule"
               ? "bg-sidebar-accent text-sidebar-accent-foreground"
               : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
@@ -738,31 +737,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <ClockIcon className="w-4 h-4" />
           Schedules
-        </Link>
-        {/* Billing & Settings at bottom of nav */}
-        <Link
-          href="/billing"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/billing"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <CreditCard className="w-4 h-4" />
-          Usage & Billing
-        </Link>
-        <Link
-          href="/settings"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/settings"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Settings className="w-4 h-4" />
-          Settings
         </Link>
       </nav>
 

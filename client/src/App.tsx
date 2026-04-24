@@ -27,8 +27,7 @@ const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
-const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
-const MailManusPage = lazy(() => import("./pages/MailManusPage"));
+// DataControlsPage and MailManusPage removed — not in Manus navigation
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 function PageLoader() {
@@ -120,16 +119,7 @@ function Router() {
           <SharedTaskView />
         </Suspense>
       </Route>
-      <Route path="/data-controls">
-        <Suspense fallback={<PageLoader />}>
-          <DataControlsPage />
-        </Suspense>
-      </Route>
-      <Route path="/mail">
-        <Suspense fallback={<PageLoader />}>
-          <MailManusPage />
-        </Suspense>
-      </Route>
+      {/* /data-controls and /mail removed — not in Manus navigation */}
       <Route path="/profile">
         <Suspense fallback={<PageLoader />}>
           <ProfilePage />

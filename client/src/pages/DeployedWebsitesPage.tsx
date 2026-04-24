@@ -107,8 +107,8 @@ export default function DeployedWebsitesPage() {
                   <Globe className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-muted-foreground">No web projects yet.</p>
                   <p className="text-sm text-muted-foreground mt-1">Create a project in the App Builder to get started.</p>
-                  <Button variant="outline" className="mt-4" onClick={() => navigate("/webapp-builder")}>
-                    Go to App Builder
+                  <Button variant="outline" className="mt-4" onClick={() => navigate("/projects")}>
+                    Go to Projects
                   </Button>
                 </CardContent>
               </Card>

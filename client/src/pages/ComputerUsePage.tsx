@@ -222,7 +222,7 @@ export default function ComputerUsePage() {
             <Camera className="w-3.5 h-3.5 mr-1.5" />
             Screenshot
           </Button>
-          <Link href="/connect-device">
+          <Link href="/settings">
             <Button variant="outline" size="sm" className="text-xs">
               <Wifi className="w-3.5 h-3.5 mr-1.5" />
               Connect Device

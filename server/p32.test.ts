@@ -228,18 +228,16 @@ describe("P32: DeployedWebsitesPage", () => {
 
 // ── P32: Routes & Navigation ──
 describe("P32: Routes & Navigation", () => {
-  it("App.tsx has routes for data-controls and mail (Manus alignment)", () => {
+  // Session 29b/29c: data-controls and mail routes removed for Manus alignment
+  it("App.tsx has core Manus-aligned routes", () => {
     const content = fs.readFileSync("client/src/App.tsx", "utf-8");
-    expect(content).toContain('path="/data-controls"');
-    expect(content).toContain('path="/mail"');
-    // /deployments removed from routes for Manus alignment
-  });
-
-  it("App.tsx lazy-imports Manus-aligned pages", () => {
-    const content = fs.readFileSync("client/src/App.tsx", "utf-8");
-    expect(content).toContain("DataControlsPage");
-    expect(content).toContain("MailManusPage");
-    // DeployedWebsitesPage removed from imports for Manus alignment
+    expect(content).toContain('path="/analytics"');
+    expect(content).toContain('path="/memory"');
+    expect(content).toContain('path="/projects"');
+    expect(content).toContain('path="/library"');
+    expect(content).toContain('path="/schedule"');
+    expect(content).toContain('path="/billing"');
+    expect(content).toContain('path="/settings"');
   });
 
   it("AppLayout sidebar has Manus-aligned nav items", () => {

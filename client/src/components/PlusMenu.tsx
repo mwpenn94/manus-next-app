@@ -57,19 +57,19 @@ const MENU_ITEMS: PlusMenuItem[] = [
   { id: "record-video", label: "Record video", icon: Camera, implemented: true, section: "media" },
   { id: "upload-video", label: "Upload video", icon: Video, implemented: true, section: "media" },
   // Create
-  { id: "build-website", label: "Build website", icon: Globe, implemented: true, route: "/webapp-builder", section: "create" },
+  { id: "build-website", label: "Build website", icon: Globe, implemented: true, prompt: "Build a website for ", section: "create" },
   { id: "create-slides", label: "Create slides", icon: Presentation, badge: "Pro", implemented: true, prompt: "Create a slide deck about ", section: "create" },
   { id: "create-image", label: "Create image", icon: ImageIcon, implemented: true, prompt: "Generate an image of ", section: "create" },
   { id: "edit-image", label: "Edit image", icon: Paintbrush, implemented: true, prompt: "Edit this image: ", section: "create" },
   { id: "create-spreadsheet", label: "Create spreadsheet", icon: Table2, implemented: true, prompt: "Create a spreadsheet for ", section: "create" },
-  { id: "create-video", label: "Create video", icon: Video, implemented: true, route: "/video", section: "create" },
-  { id: "generate-audio", label: "Generate audio", icon: AudioLines, implemented: true, route: "/client-inference", section: "create" },
+  { id: "create-video", label: "Create video", icon: Video, implemented: true, prompt: "Create a video about ", section: "create" },
+  { id: "generate-audio", label: "Generate audio", icon: AudioLines, implemented: true, prompt: "Generate audio for ", section: "create" },
   // Tools
   { id: "wide-research", label: "Wide Research", icon: Search, implemented: true, prompt: "Do wide research on ", section: "tools" },
   { id: "scheduled-tasks", label: "Scheduled tasks", icon: CalendarClock, implemented: true, route: "/schedule", section: "tools" },
-  { id: "add-skills", label: "Add Skills", icon: Puzzle, implemented: true, route: "/skills", section: "tools" },
+  { id: "add-skills", label: "Add Skills", icon: Puzzle, implemented: true, prompt: "Add a skill for ", section: "tools" },
   { id: "playbook", label: "Playbook", icon: BookOpen, implemented: true, route: "/library", section: "tools" },
-  { id: "connect-computer", label: "Connect My Computer", icon: Monitor, implemented: true, route: "/connect-device", section: "tools" },
+  { id: "connect-computer", label: "Connect My Computer", icon: Monitor, implemented: true, prompt: "Connect my computer to ", section: "tools" },
 ];
 
 const SECTIONS = [
@@ -227,7 +227,7 @@ export default function PlusMenu({
                   connectors={connectedList}
                   onItemClick={handleItemClick}
                   onConnectorClick={(c: any) => {
-                    navigate("/connectors");
+                    navigate("/settings");
                     onClose();
                   }}
                 />
@@ -259,7 +259,7 @@ export default function PlusMenu({
               connectors={connectedList}
               onItemClick={handleItemClick}
               onConnectorClick={(c: any) => {
-                navigate("/connectors");
+                navigate("/settings");
                 onClose();
               }}
             />

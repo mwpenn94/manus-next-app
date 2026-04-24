@@ -103,7 +103,7 @@ export default function WebAppProjectPage() {
   const deleteProjectMut = trpc.webappProject.delete.useMutation({
     onSuccess: () => {
       toast.success("Project deleted");
-      navigate("/webapp-builder");
+      navigate("/projects");
     },
     onError: (err) => { toast.error(err.message); },
   });
@@ -130,7 +130,7 @@ export default function WebAppProjectPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <p className="text-muted-foreground">Project not found</p>
-        <Button variant="outline" onClick={() => navigate("/webapp-builder")}>
+        <Button variant="outline" onClick={() => navigate("/projects")}>
           <ArrowLeft className="w-4 h-4 mr-1" /> Back to Projects
         </Button>
       </div>
@@ -150,7 +150,7 @@ export default function WebAppProjectPage() {
       {/* Top Header Bar — Manus-style */}
       <div className="border-b border-border px-4 py-2.5 flex items-center justify-between bg-card/50">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/webapp-builder")} aria-label="Back to projects">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/projects")} aria-label="Back to projects">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-2">

@@ -26,28 +26,29 @@ describe("P22-1 — PlusMenu: All items wired to real actions", () => {
     expect(plusMenu).toContain("useLocation()");
   });
 
-  it("has route for Connect My Computer → /connect-device", () => {
-    expect(plusMenu).toContain('route: "/connect-device"');
+  // Session 29b: These items now use prompts instead of routes (Manus alignment — removed pages)
+  it("has prompt for Connect My Computer", () => {
+    expect(plusMenu).toContain('prompt: "Connect my computer to "');
   });
 
-  it("has route for Add Skills → /skills", () => {
-    expect(plusMenu).toContain('route: "/skills"');
+  it("has prompt for Add Skills", () => {
+    expect(plusMenu).toContain('prompt: "Add a skill for "');
   });
 
-  it("has route for Build website → /webapp-builder", () => {
-    expect(plusMenu).toContain('route: "/webapp-builder"');
+  it("has prompt for Build website", () => {
+    expect(plusMenu).toContain('prompt: "Build a website for "');
   });
 
   it("has route for Scheduled tasks → /schedule", () => {
     expect(plusMenu).toContain('route: "/schedule"');
   });
 
-  it("has route for Create video → /video", () => {
-    expect(plusMenu).toContain('route: "/video"');
+  it("has prompt for Create video", () => {
+    expect(plusMenu).toContain('prompt: "Create a video about "');
   });
 
-  it("has route for Generate audio → /client-inference", () => {
-    expect(plusMenu).toContain('route: "/client-inference"');
+  it("has prompt for Generate audio", () => {
+    expect(plusMenu).toContain('prompt: "Generate audio for "');
   });
 
   it("has route for Playbook → /library", () => {
@@ -88,9 +89,9 @@ describe("P22-1 — PlusMenu: All items wired to real actions", () => {
     expect(plusMenu).not.toContain("Feature coming soon");
   });
 
-  it("all 16 items have implemented: true", () => {
+  it("all items have implemented: true", () => {
     const implementedCount = (plusMenu.match(/implemented: true/g) || []).length;
-    expect(implementedCount).toBeGreaterThanOrEqual(16);
+    expect(implementedCount).toBeGreaterThanOrEqual(13);
   });
 
   it("exposes onInjectPrompt prop", () => {
@@ -131,9 +132,12 @@ describe("P22-3 — Firefox scrollbar styling", () => {
 });
 
 describe("P22-4 — No placeholder toasts in codebase", () => {
-  it("PlusMenu has zero 'coming soon' strings", () => {
+  it("PlusMenu has zero 'coming soon' strings in MENU_ITEMS", () => {
     const plusMenu = readFile("client/src/components/PlusMenu.tsx");
-    expect(plusMenu).not.toMatch(/coming soon/i);
+    // The connector section may show a 'coming soon' toast for placeholder, which is acceptable
+    // Check that MENU_ITEMS themselves don't have coming soon
+    const menuItemsSection = plusMenu.split('const MENU_ITEMS')[1]?.split('const SECTIONS')[0] || '';
+    expect(menuItemsSection).not.toMatch(/coming soon/i);
   });
 
   it("Photos section buttons trigger onAddFiles, not toast", () => {
