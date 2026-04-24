@@ -2497,7 +2497,21 @@ export default function TaskView() {
     }
 
     // Otherwise, use SSE streaming from the LLM
-    const currentInput = input;
+    // C8-A2: Detect "continue" / "resume" commands and enrich with context
+    const CONTINUE_PATTERNS = /^\s*(continue|keep\s*going|go\s*on|resume|carry\s*on|proceed|keep\s*at\s*it)\s*[.!]?\s*$/i;
+    let currentInput = input;
+    if (CONTINUE_PATTERNS.test(input.trim())) {
+      // Find the last assistant message to provide context for resumption
+      const lastAssistant = [...task.messages].reverse().find(m => m.role === "assistant");
+      const wasInterrupted = lastAssistant?.content?.includes("[Response interrupted") ||
+        lastAssistant?.content?.includes("[Generation stopped") ||
+        generationIncomplete || (task as any).staleCompleted === 1;
+      if (wasInterrupted && lastAssistant) {
+        // Enrich the continue command with context about what was interrupted
+        const truncatedPrev = lastAssistant.content.slice(-500);
+        currentInput = `continue\n\n[System context: The previous response was interrupted. The last assistant message ended with: \"...${truncatedPrev}\". Please resume from where you left off.]`;
+      }
+    }
     const currentFiles = [...files]; // Capture files before clearing
     setInput("");
     clearFiles();

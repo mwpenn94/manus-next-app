@@ -77,6 +77,7 @@ import {
   Cpu,
   Laptop,
   Upload,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -162,6 +163,8 @@ interface SidebarNavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   matchPaths?: string[];
+  /** If set, only users with one of these roles can see this item. Omit for all users. */
+  roles?: ("admin" | "user")[];
 }
 
 interface SidebarNavSection {
@@ -192,6 +195,7 @@ const SIDEBAR_SECTIONS: SidebarNavSection[] = [
       { href: "/slides", label: "Slides", icon: Presentation },
       { href: "/video", label: "Video", icon: Video },
       { href: "/computer-use", label: "Computer Use", icon: MonitorPlay },
+      { href: "/qa-testing", label: "QA Testing", icon: FlaskConical },
       { href: "/discover", label: "Discover", icon: Compass },
     ],
   },
@@ -201,14 +205,14 @@ const SIDEBAR_SECTIONS: SidebarNavSection[] = [
     items: [
       { href: "/team", label: "Team", icon: Users },
       { href: "/meetings", label: "Meetings", icon: MessageSquare },
-      { href: "/webhooks", label: "Webhooks", icon: Webhook },
+      { href: "/webhooks", label: "Webhooks", icon: Webhook, roles: ["admin"] },
       { href: "/deployed-websites", label: "Websites", icon: Upload },
       { href: "/desktop", label: "Desktop", icon: Laptop },
       { href: "/connect-device", label: "Devices", icon: Smartphone },
       { href: "/mobile-projects", label: "Mobile", icon: Smartphone },
-      { href: "/client-inference", label: "Inference", icon: Cpu },
+      { href: "/client-inference", label: "Inference", icon: Cpu, roles: ["admin"] },
       { href: "/mail", label: "Mail", icon: Mail },
-      { href: "/data-controls", label: "Data Controls", icon: Shield },
+      { href: "/data-controls", label: "Data Controls", icon: Shield, roles: ["admin"] },
     ],
   },
 ];
@@ -232,9 +236,21 @@ function SidebarNavLink({ item, location }: { item: SidebarNavItem; location: st
 }
 
 function SidebarNav({ location }: { location: string }) {
+  // C8-F2: Role-based sidebar filtering
+  const { user } = useAuth();
+  const userRole = user?.role || "user";
+  
+  // Filter sections and items based on user role
+  const filteredSections = useMemo(() => {
+    return SIDEBAR_SECTIONS.map(section => ({
+      ...section,
+      items: section.items.filter(item => !item.roles || item.roles.includes(userRole as "admin" | "user")),
+    })).filter(section => section.items.length > 0);
+  }, [userRole]);
+
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
     const expanded: Record<string, boolean> = {};
-    for (const section of SIDEBAR_SECTIONS) {
+    for (const section of filteredSections) {
       if (section.collapsible) {
         const hasActiveItem = section.items.some(
           item => location === item.href || item.matchPaths?.some(p => location.startsWith(p))
@@ -254,7 +270,7 @@ function SidebarNav({ location }: { location: string }) {
       className="border-t border-sidebar-border p-2 space-y-0.5 shrink-0 overflow-y-auto max-h-[40vh]"
       aria-label="Sidebar navigation"
     >
-      {SIDEBAR_SECTIONS.map((section) => (
+      {filteredSections.map((section) => (
         <div key={section.label}>
           {section.collapsible ? (
             <button

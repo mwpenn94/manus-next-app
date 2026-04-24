@@ -7,6 +7,7 @@ import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { TaskProvider } from "./contexts/TaskContext";
 import { BridgeProvider } from "./contexts/BridgeContext";
 import { lazy, Suspense } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import OnboardingTooltips from "./components/OnboardingTooltips";
 
@@ -51,6 +52,7 @@ const FigmaImportPage = lazy(() => import("./pages/FigmaImportPage"));
 const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
 const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
 const MailManusPage = lazy(() => import("./pages/MailManusPage"));
+const QATestingPage = lazy(() => import("./pages/QATestingPage"));
 
 function PageLoader() {
   return (
@@ -62,6 +64,31 @@ function PageLoader() {
 
 function SuspenseRoute({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
+
+/** C8-F3/F4: Admin-only route wrapper — shows "No permission" for non-admin users */
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAdminAuth();
+  if (loading) return <PageLoader />;
+  if (!user || user.role !== "admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <svg className="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold text-foreground">Admin Access Required</h2>
+        <p className="text-muted-foreground text-center max-w-md">This page requires administrator privileges. Contact your admin for access.</p>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+/** Hook wrapper for AdminRoute */
+function useAdminAuth() {
+  return useAuth();
 }
 
 function Router() {
@@ -142,7 +169,7 @@ function Router() {
         <SuspenseRoute><VideoGeneratorPage /></SuspenseRoute>
       </Route>
       <Route path="/webhooks">
-        <SuspenseRoute><WebhooksPage /></SuspenseRoute>
+        <SuspenseRoute><AdminRoute><WebhooksPage /></AdminRoute></SuspenseRoute>
       </Route>
       <Route path="/meetings">
         <SuspenseRoute><MeetingsPage /></SuspenseRoute>
@@ -160,7 +187,7 @@ function Router() {
         <SuspenseRoute><AppPublishPage /></SuspenseRoute>
       </Route>
       <Route path="/client-inference">
-        <SuspenseRoute><ClientInferencePage /></SuspenseRoute>
+        <SuspenseRoute><AdminRoute><ClientInferencePage /></AdminRoute></SuspenseRoute>
       </Route>
       <Route path="/computer-use">
         <SuspenseRoute><ComputerUsePage /></SuspenseRoute>
@@ -181,10 +208,13 @@ function Router() {
         <SuspenseRoute><MessagingAgentPage /></SuspenseRoute>
       </Route>
       <Route path="/data-controls">
-        <SuspenseRoute><DataControlsPage /></SuspenseRoute>
+        <SuspenseRoute><AdminRoute><DataControlsPage /></AdminRoute></SuspenseRoute>
       </Route>
       <Route path="/mail">
         <SuspenseRoute><MailManusPage /></SuspenseRoute>
+      </Route>
+      <Route path="/qa-testing">
+        <SuspenseRoute><QATestingPage /></SuspenseRoute>
       </Route>
 
       <Route path="/404" component={NotFound} />

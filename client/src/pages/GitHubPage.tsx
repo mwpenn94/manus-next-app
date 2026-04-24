@@ -27,7 +27,8 @@ import {
   GitBranch, GitPullRequest, GitCommit, FileCode, FolderOpen, Plus,
   RefreshCw, ExternalLink, Star, GitFork, AlertCircle, Search,
   ChevronRight, File, Folder, Lock, Globe, ArrowLeft, Download,
-  Loader2, Trash2, Unplug, Eye, Code, Clock, MessageSquare
+  Loader2, Trash2, Unplug, Eye, Code, Clock, MessageSquare,
+  Rocket, Play, CheckCircle2, XCircle, ExternalLink as LinkIcon
 } from "lucide-react";
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { useRoute, useLocation } from "wouter";
@@ -36,7 +37,7 @@ import { cn } from "@/lib/utils";
 
 const CodeEditor = lazy(() => import("@/components/CodeEditor"));
 
-type RepoTab = "files" | "branches" | "commits" | "prs" | "issues";
+type RepoTab = "files" | "branches" | "commits" | "prs" | "issues" | "deploy";
 
 export default function GitHubPage() {
   const { user } = useAuth();
@@ -325,6 +326,9 @@ export default function GitHubPage() {
               </TabsTrigger>
               <TabsTrigger value="issues" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
                 <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Issues
+              </TabsTrigger>
+              <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
+                <Rocket className="w-3.5 h-3.5 mr-1.5" /> Deploy
               </TabsTrigger>
             </TabsList>
           </div>
@@ -684,6 +688,11 @@ export default function GitHubPage() {
                 <div className="text-center py-12 text-sm text-muted-foreground">No open issues</div>
               )}
             </div>
+          </TabsContent>
+
+          {/* Deploy Tab */}
+          <TabsContent value="deploy" className="flex-1 overflow-auto m-0 p-6">
+            <DeployTab repoId={selectedRepoId!} repoFullName={selectedRepo?.fullName || ""} />
           </TabsContent>
         </Tabs>
 
@@ -1094,6 +1103,229 @@ export default function GitHubPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Deploy Tab — Build, deploy, and preview from GitHub repo */
+function DeployTab({ repoId, repoFullName }: { repoId: string; repoFullName: string }) {
+  const [deploying, setDeploying] = useState(false);
+  const [buildLog, setBuildLog] = useState<string[]>([]);
+  const [deployResult, setDeployResult] = useState<{ status: string; publishedUrl?: string; previewUrl?: string } | null>(null);
+
+  // Check if there's already a webapp project linked to this repo
+  const projectsQuery = trpc.webappProject.list.useQuery();
+  const linkedProject = useMemo(() => {
+    return projectsQuery.data?.find(p => p.githubRepoId?.toString() === repoId || p.name === repoFullName.split("/").pop());
+  }, [projectsQuery.data, repoId, repoFullName]);
+
+  const createProjectMut = trpc.webappProject.create.useMutation({
+    onSuccess: () => { projectsQuery.refetch(); toast.success("Project created and linked to repo"); },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  const deployMut = trpc.webappProject.deployFromGitHub.useMutation({
+    onMutate: () => { setDeploying(true); setBuildLog(["Starting deploy..."]); setDeployResult(null); },
+    onSuccess: (data) => {
+      setDeploying(false);
+      setDeployResult({ status: data.status, publishedUrl: data.publishedUrl || undefined });
+      setBuildLog(prev => [...prev, `Deploy ${data.status}${data.publishedUrl ? ` — ${data.publishedUrl}` : ""}`]);
+      if (data.status === "live") toast.success("Deployed successfully!");
+      else toast.error("Deploy failed");
+    },
+    onError: (err) => {
+      setDeploying(false);
+      setBuildLog(prev => [...prev, `Error: ${err.message}`]);
+      toast.error(err.message);
+    },
+  });
+
+  const handleDeploy = () => {
+    if (!linkedProject) {
+      toast.error("Create a project first to deploy");
+      return;
+    }
+    deployMut.mutate({
+      externalId: linkedProject.externalId,
+      branch: "main",
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Project Link Section */}
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Deployment Project</CardTitle>
+          <CardDescription>Link this repo to a webapp project for building and deploying</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {linkedProject ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Rocket className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{linkedProject.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Status: <Badge variant={linkedProject.deployStatus === "live" ? "default" : "secondary"} className="text-[10px] ml-1">{linkedProject.deployStatus || "not deployed"}</Badge>
+                  </p>
+                </div>
+              </div>
+              {linkedProject.publishedUrl && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={linkedProject.publishedUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-3 h-3 mr-1" /> View Live
+                  </a>
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">No project linked yet</p>
+              <Button
+                size="sm"
+                onClick={() => createProjectMut.mutate({
+                  name: repoFullName.split("/").pop() || "my-app",
+                  description: `Deployed from ${repoFullName}`,
+                  framework: "react",
+                })}
+                disabled={createProjectMut.isPending}
+              >
+                {createProjectMut.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+                Create Project
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Deploy Action */}
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Deploy from GitHub</CardTitle>
+          <CardDescription>Build and deploy the latest code from the main branch</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleDeploy}
+              disabled={deploying || !linkedProject}
+              className="gap-2"
+            >
+              {deploying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {deploying ? "Deploying..." : "Deploy Now"}
+            </Button>
+            {deployResult && (
+              <div className="flex items-center gap-2">
+                {deployResult.status === "live" ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-red-500" />
+                )}
+                <span className="text-sm">{deployResult.status === "live" ? "Deployed successfully" : "Deploy failed"}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Build Log */}
+          {buildLog.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-3 max-h-48 overflow-y-auto font-mono text-xs space-y-0.5">
+              {buildLog.map((line, i) => (
+                <div key={i} className="text-muted-foreground">{line}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Preview / Live URL */}
+          {deployResult?.publishedUrl && (
+            <div className="flex items-center gap-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+              <Globe className="w-4 h-4 text-green-500 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-green-600">Live URL</p>
+                <a href={deployResult.publishedUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-green-500 hover:underline truncate block">
+                  {deployResult.publishedUrl}
+                </a>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <a href={deployResult.publishedUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </Button>
+            </div>
+          )}
+          {deployResult?.previewUrl && deployResult.previewUrl !== deployResult.publishedUrl && (
+            <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+              <Eye className="w-4 h-4 text-blue-500 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-blue-600">Preview URL</p>
+                <a href={deployResult.previewUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline truncate block">
+                  {deployResult.previewUrl}
+                </a>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <a href={deployResult.previewUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Deployment History */}
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Deployment History</CardTitle>
+          <CardDescription>Recent deployments from this repository</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!linkedProject ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Link a project to see deployment history</p>
+          ) : (
+            <DeploymentHistory projectExternalId={linkedProject.externalId} />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/** Deployment History sub-component */
+function DeploymentHistory({ projectExternalId }: { projectExternalId: string }) {
+  const deploymentsQuery = trpc.webappProject.deployments.useQuery({ externalId: projectExternalId });
+
+  if (deploymentsQuery.isLoading) return <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" /></div>;
+  if (!deploymentsQuery.data?.length) return <p className="text-sm text-muted-foreground text-center py-6">No deployments yet</p>;
+
+  return (
+    <div className="space-y-2">
+      {deploymentsQuery.data.map((dep: any) => (
+        <div key={dep.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+          {dep.status === "live" ? (
+            <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+          ) : dep.status === "building" ? (
+            <Loader2 className="w-4 h-4 text-yellow-500 animate-spin shrink-0" />
+          ) : (
+            <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{dep.commitMessage || `Deploy #${dep.id}`}</p>
+            <p className="text-xs text-muted-foreground">
+              {new Date(dep.createdAt).toLocaleString()} · {dep.status}
+              {dep.branch ? ` · ${dep.branch}` : ""}
+            </p>
+          </div>
+          {dep.publishedUrl && (
+            <Button variant="ghost" size="sm" asChild>
+              <a href={dep.publishedUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </Button>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

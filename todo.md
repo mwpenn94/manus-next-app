@@ -3949,3 +3949,56 @@
 ### Phase C: E2E Tests + Convergence
 - [x] C7-C1: Write comprehensive E2E tests for all new routes + sidebar navigation (139 tests)
 - [x] C7-C2: 3 consecutive fresh/novel convergence passes (Pass 1-3: all 139 tests CLEAN, 0 TS errors)
+
+## Cycle 8: Chat Issues Fix + GitHub Integration + Browser Automation + Role-Based Sidebar
+
+### Phase A: Chat Resilience Fixes (from user chat log)
+- [x] C8-A1: Handle interrupted responses — show "Response interrupted" banner with Retry/Resume buttons (already existed: generation_incomplete banner)
+- [x] C8-A2: "Continue" command recognition — detect "continue" input and auto-resume last incomplete task (enhanced: system prompt + client-side detection)
+- [x] C8-A3: Loop detection — detect repetitive failures (3+ similar errors) and break cycle with alternative approach or user escalation (already existed: stuck detection in agentStream)
+- [x] C8-A4: Add retry/resume mutation in task router that re-queues interrupted tasks (already existed: resumeStale procedure)
+
+### Phase B: Document Delivery + Progress + URL Filtering
+- [x] C8-B1: Document/artifact generation with reliable download links and inline preview (already existed: generate_document tool + PDF generation)
+- [x] C8-B2: Progress accuracy — task progress reflects actual completion state, not optimistic count (enhanced: system prompt rules for format compliance)
+- [x] C8-B3: URL filtering — skip ad/redirect URLs during web research steps (added: isAdOrRedirectUrl filter in ddgHtmlSearch + read_webpage)
+- [x] C8-B4: Show artifact cards in chat with download button and preview thumbnail (already existed: ArtifactCard component in TaskView)
+
+### Phase C: Branch and Listen Features
+- [x] C8-C1: Conversation branching — fork a conversation at any message to explore alternatives (already implemented: BranchIndicator + duplicate procedure)
+- [x] C8-C2: Branch UI — show branch indicator, switch between branches, merge back (already implemented: BranchBanner + ChildBranches + BranchButton)
+- [x] C8-C3: Listen/TTS — text-to-speech playback for AI responses with play/pause controls (already implemented: useTTS + useEdgeTTS + Volume2 button)
+- [x] C8-C4: TTS voice selection (Edge TTS optional voices if available) (already implemented: voice selection in settings)
+
+### Phase D: GitHub Integration Enhancement
+- [x] C8-D1: GitHub OAuth flow — connect repos using user's browser session (already implemented via Connectors)
+- [x] C8-D2: Repository file browser — browse file tree, open/view files (already implemented)
+- [x] C8-D3: In-app code editor — edit files with syntax highlighting (Monaco-based, already implemented)
+- [x] C8-D4: Commit and push — commit changes from editor back to repo (already implemented)
+- [x] C8-D5: Build and preview — trigger build from repo, show live preview URL (added Deploy tab)
+- [x] C8-D6: Publish from GitHub — deploy built app to production (added Deploy tab with deployFromGitHub)
+
+### Phase E: Browser/Device Automation UI
+- [x] C8-E1: Visual testing dashboard page — define test scenarios with steps
+- [x] C8-E2: Virtual user simulation — headless browser sessions executing test flows
+- [x] C8-E3: Test results display — pass/fail, screenshots, timing, DOM snapshots
+- [x] C8-E4: Multi-step flow support — sign up, create, verify, delete sequences
+- [x] C8-E5: CDP/Playwright integration — wire up existing backend procedures to UI
+
+### Phase F: Role-Based Sidebar Visibility
+- [x] C8-F1: Add roles field to SIDEBAR_SECTIONS items
+- [x] C8-F2: Filter sidebar items based on useAuth().user?.role
+- [x] C8-F3: Admin-only route protection — show "No permission" for unauthorized access
+- [x] C8-F4: Graceful degradation — redirect non-admin users attempting admin URLs
+
+### Phase G: E2E Tests + Convergence
+- [x] C8-G1: Write comprehensive E2E tests for all Cycle 8 features (39 tests)
+- [x] C8-G2: 3 consecutive fresh/novel convergence passes (Pass 1: 39, Pass 2: 178, Pass 3: 179 — all CLEAN, 0 TS errors)
+
+### Phase H: Agent Behavior Issues (from Tales of Tribute Chat Log)
+- [x] C8-H1: Agent apologizes repeatedly instead of acting ("My apologies for the oversight", "You are absolutely right to call me out") — add anti-apology rule to system prompt
+- [x] C8-H2: Agent asks for clarification on clear requests ("Could you please clarify what specific information you would like me to research") when user intent is obvious — strengthen auto-proceed rules
+- [x] C8-H3: "Continue" triggers re-explanation and apology instead of seamless resume — ensure continue detection works in all modes
+- [x] C8-H4: Document generation ignores output_format request (user asks for PDF, agent doesn't produce PDF) — enforce output_format from user request
+- [x] C8-H5: Wide research results not synthesized into final document — add post-research synthesis step that auto-generates the deliverable
+- [x] C8-H6: Agent says "I fell short of expectations" and self-flagellates instead of just doing the work — ban self-deprecating language

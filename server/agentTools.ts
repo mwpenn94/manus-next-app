@@ -844,6 +844,41 @@ async function fetchPageContent(url: string, maxChars = 8000): Promise<string> {
 }
 
 /**
+ * C8-B3: URL filtering — skip ad/redirect/tracking URLs during web research.
+ * These domains are ad networks, tracking redirects, or low-quality content farms
+ * that waste agent turns and produce unreliable results.
+ */
+const AD_REDIRECT_DOMAINS = [
+  "duckduckgo.com/y.js", "duckduckgo.com/l/", // DDG ad redirects
+  "ad.doubleclick.net", "googleadservices.com", "googlesyndication.com",
+  "facebook.com/l.php", "t.co", "bit.ly", "tinyurl.com", "goo.gl",
+  "clickserve", "clicktrack", "adclick", "adsrv",
+  "track.adform.net", "serving-sys.com", "adnxs.com",
+  "taboola.com", "outbrain.com", "revcontent.com",
+  "smartadserver.com", "criteo.com", "bidswitch.net",
+];
+const AD_URL_PATTERNS = [
+  /\/ad[s]?\/click/i, /\/redirect\?/i, /utm_source=ad/i,
+  /\/sponsored\//i, /\/promo\//i, /click\.php/i,
+  /\/aclk\?/i, /\/pagead\//i, /\/track\?/i,
+];
+function isAdOrRedirectUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const fullUrl = parsed.href.toLowerCase();
+    // Check domain-based blocklist
+    if (AD_REDIRECT_DOMAINS.some(d => fullUrl.includes(d))) return true;
+    // Check pattern-based blocklist
+    if (AD_URL_PATTERNS.some(p => p.test(fullUrl))) return true;
+    // Skip URLs that are just tracking redirects (no real path)
+    if (parsed.pathname === "/" && parsed.search.length > 100) return true;
+    return false;
+  } catch {
+    return false; // If URL can't be parsed, let it through
+  }
+}
+
+/**
  * DuckDuckGo HTML Search — scrape actual search results from DDG's HTML endpoint.
  * Returns titles, URLs, and snippets for real web pages.
  * More reliable than Instant Answer API for broad/current queries.
@@ -888,11 +923,11 @@ async function ddgHtmlSearch(query: string): Promise<Array<{ title: string; url:
       );
     }
 
-    return titles.slice(0, 10).map((t, i) => ({
-      title: t.title,
-      url: t.url,
-      snippet: snippets[i] || "",
-    }));
+    // C8-B3: Filter out ad/redirect/tracking URLs
+    const filteredResults = titles
+      .map((t, i) => ({ title: t.title, url: t.url, snippet: snippets[i] || "" }))
+      .filter(r => !isAdOrRedirectUrl(r.url));
+    return filteredResults.slice(0, 10);
   } catch {
     return [];
   }
@@ -1188,6 +1223,13 @@ async function executeWebSearchFallback(args: { query: string }): Promise<ToolRe
  */
 async function executeReadWebpage(args: { url: string }): Promise<ToolResult> {
   try {
+    // C8-B3: Skip ad/redirect URLs
+    if (isAdOrRedirectUrl(args.url)) {
+      return {
+        success: false,
+        result: `Skipped URL (detected as ad/redirect/tracking link): ${args.url}\n\nPlease use a direct content URL instead. Try web_search to find the actual page.`,
+      };
+    }
     // CHAT-004: Real PDF text extraction from URLs
     const urlLower = args.url.toLowerCase();
     if (urlLower.endsWith(".pdf") || urlLower.includes("/pdf/") || urlLower.includes("type=pdf")) {
@@ -1806,7 +1848,7 @@ async function executeWideResearch(args: {
         ? synthesisResponse.choices[0].message.content
         : "Synthesis could not be completed.";
 
-    const finalResult = `## Wide Research Synthesis\n\n**Queries researched:** ${queries.map(q => `"${q}"`).join(", ")}\n**Successful searches:** ${successCount}/${queries.length}\n\n${synthesis}\n\n---\n\n## Raw Research Data\n\n${combinedResearch}`;
+    const finalResult = `## Wide Research Synthesis\n\n**Queries researched:** ${queries.map(q => `"${q}"`).join(", ")}\n**Successful searches:** ${successCount}/${queries.length}\n\n${synthesis}\n\n---\n\n**IMPORTANT: This research synthesis is complete. If the user originally requested a deliverable (guide, document, report, PDF, etc.), you MUST now produce it using generate_document with the appropriate output_format. Do NOT present this raw synthesis as the final answer.**`;
 
     return {
       success: true,
