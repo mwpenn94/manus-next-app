@@ -47,6 +47,11 @@ export default function WebAppProjectPage() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [deployConfirmOpen, setDeployConfirmOpen] = useState(false);
   const [deployStatusMessage, setDeployStatusMessage] = useState("");
+  const [deployVersionLabel, setDeployVersionLabel] = useState("");
+  const [envVarDialogOpen, setEnvVarDialogOpen] = useState(false);
+  const [envVarKey, setEnvVarKey] = useState("");
+  const [envVarValue, setEnvVarValue] = useState("");
+  const [editingEnvKey, setEditingEnvKey] = useState<string | null>(null);
 
   // Queries
   const projectQuery = trpc.webappProject.get.useQuery(
@@ -125,10 +130,39 @@ export default function WebAppProjectPage() {
     onError: (err) => { toast.error(err.message); },
   });
 
+  const rollbackMut = trpc.webappProject.rollbackDeployment.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Rolled back to ${data.rolledBackTo}`);
+      deploymentsQuery.refetch();
+      projectQuery.refetch();
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  const addEnvVarMut = trpc.webappProject.addEnvVar.useMutation({
+    onSuccess: () => {
+      toast.success("Environment variable saved");
+      projectQuery.refetch();
+      setEnvVarDialogOpen(false);
+      setEnvVarKey("");
+      setEnvVarValue("");
+      setEditingEnvKey(null);
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  const deleteEnvVarMut = trpc.webappProject.deleteEnvVar.useMutation({
+    onSuccess: () => {
+      toast.success("Environment variable deleted");
+      projectQuery.refetch();
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
   const duplicateProjectMut = trpc.webappProject.create.useMutation({
     onSuccess: (result) => {
       toast.success("Project duplicated! Redirecting...");
-      navigate(`/webapp-project/${result.externalId}`);
+      navigate(`/projects/webapp/${result.externalId}`);
     },
     onError: () => { toast.error("Failed to duplicate project"); },
   });
@@ -275,10 +309,23 @@ export default function WebAppProjectPage() {
           <div className="p-6 max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Project Code</h2>
-              <Button variant="outline" size="sm" onClick={() => {
+              <Button variant="outline" size="sm" onClick={async () => {
                 if (project.publishedUrl) {
-                  window.open(project.publishedUrl, "_blank");
-                  toast.success("Opening published app — right-click to save as HTML");
+                  try {
+                    const resp = await fetch(project.publishedUrl);
+                    const html = await resp.text();
+                    const blob = new Blob([html], { type: "text/html" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${project.name.replace(/[^a-z0-9-]/gi, "-").toLowerCase()}.html`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast.success("Downloaded project HTML");
+                  } catch {
+                    window.open(project.publishedUrl, "_blank");
+                    toast.info("Opened in new tab — right-click to save");
+                  }
                 } else {
                   toast.info("No published build to download. Deploy first.");
                 }
@@ -314,25 +361,7 @@ export default function WebAppProjectPage() {
 
             {/* Clone command — only show when a real GitHub repo is connected */}
             {project.githubRepoId ? (
-              <Card className="border-border mt-4">
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm">Clone Command</CardTitle>
-                </CardHeader>
-                <CardContent className="py-2">
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-muted rounded px-3 py-2 text-xs font-mono text-muted-foreground">
-                    git clone https://github.com/{project.githubRepoId || project.name}.git                  </code>
-                    {project.githubRepoId && (
-                      <Button variant="ghost" size="sm" onClick={() => {
-                        navigator.clipboard.writeText(`git clone https://github.com/${project.name}.git`);
-                        toast.success("Copied to clipboard");
-                      }}>
-                        <Copy className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <CloneCommandCard githubRepoId={project.githubRepoId} />
             ) : null}
           </div>
         )}
@@ -674,12 +703,29 @@ export default function WebAppProjectPage() {
                         {dep.buildDurationSec && <span>{dep.buildDurationSec}s</span>}
                       </div>
                     </div>
-                    <Badge variant={
-                      dep.status === "live" ? "default" :
-                      dep.status === "failed" ? "destructive" : "secondary"
-                    } className="text-[10px]">
-                      {dep.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        dep.status === "live" ? "default" :
+                        dep.status === "failed" ? "destructive" : "secondary"
+                      } className="text-[10px]">
+                        {dep.status}
+                      </Badge>
+                      {dep.status === "live" && i > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-6 px-2"
+                          onClick={() => {
+                            if (confirm(`Rollback to ${dep.versionLabel || `Deployment #${deploymentsQuery.data!.length - i}`}?`)) {
+                              rollbackMut.mutate({ externalId: project.externalId, deploymentId: dep.id });
+                            }
+                          }}
+                          disabled={rollbackMut.isPending}
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" /> Rollback
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -922,7 +968,12 @@ export default function WebAppProjectPage() {
                 <div className="max-w-lg space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Environment Variables</h3>
-                    <Button size="sm" variant="outline" onClick={() => toast.info("Add secrets via the Secrets panel in Settings")}>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      setEditingEnvKey(null);
+                      setEnvVarKey("");
+                      setEnvVarValue("");
+                      setEnvVarDialogOpen(true);
+                    }}>
                       <Plus className="w-3.5 h-3.5 mr-1" /> Add Variable
                     </Button>
                   </div>
@@ -931,11 +982,28 @@ export default function WebAppProjectPage() {
                       {project.envVars && Object.keys(project.envVars).length > 0 ? (
                         <div className="space-y-2">
                           {Object.entries(project.envVars).map(([key, value]) => (
-                            <div key={key} className="flex items-center gap-2 p-2 rounded bg-muted/50">
+                            <div key={key} className="flex items-center gap-2 p-2 rounded bg-muted/50 group">
                               <Key className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                               <code className="text-xs font-mono font-medium">{key}</code>
                               <span className="text-xs text-muted-foreground">=</span>
-                              <code className="text-xs font-mono text-muted-foreground truncate flex-1">{"•".repeat(Math.min(value.length, 20))}</code>
+                              <code className="text-xs font-mono text-muted-foreground truncate flex-1">{"\u2022".repeat(Math.min(value.length, 20))}</code>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                                  setEditingEnvKey(key);
+                                  setEnvVarKey(key);
+                                  setEnvVarValue(value);
+                                  setEnvVarDialogOpen(true);
+                                }}>
+                                  <Settings className="w-3 h-3" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-destructive" onClick={() => {
+                                  if (confirm(`Delete ${key}?`)) {
+                                    deleteEnvVarMut.mutate({ externalId: project.externalId, key });
+                                  }
+                                }}>
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -943,6 +1011,7 @@ export default function WebAppProjectPage() {
                         <div className="text-center py-6">
                           <Shield className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm text-muted-foreground">No environment variables configured</p>
+                          <p className="text-xs text-muted-foreground mt-1">Click "Add Variable" to create your first env var</p>
                         </div>
                       )}
                     </CardContent>
@@ -1136,6 +1205,15 @@ export default function WebAppProjectPage() {
             <DialogDescription>This will create a new deployment for {project.name}</DialogDescription>
           </DialogHeader>
           <div className="py-2 space-y-3">
+            <div>
+              <Label className="text-xs">Version Label (optional)</Label>
+              <Input
+                placeholder="e.g. v1.2.0, hotfix-login, feature-dashboard"
+                value={deployVersionLabel}
+                onChange={(e) => setDeployVersionLabel(e.target.value)}
+                className="mt-1 text-sm"
+              />
+            </div>
             <div className="flex items-center gap-2 text-sm">
               <Globe className="w-4 h-4 text-muted-foreground" />
               <span>URL: <strong>{project.publishedUrl || "Will be generated after deploy"}</strong></span>
@@ -1154,21 +1232,98 @@ export default function WebAppProjectPage() {
             {project.githubRepoId && (
               <Button
                 variant="secondary"
-                onClick={() => deployFromGitHubMut.mutate({ externalId: project.externalId })}
+                onClick={() => deployFromGitHubMut.mutate({ externalId: project.externalId, versionLabel: deployVersionLabel || undefined })}
                 disabled={deployFromGitHubMut.isPending || deployMut.isPending}
               >
                 {deployFromGitHubMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <GitBranch className="w-4 h-4 mr-1" />}
                 Deploy from GitHub
               </Button>
             )}
-            <Button onClick={() => deployMut.mutate({ externalId: project.externalId })} disabled={deployMut.isPending || deployFromGitHubMut.isPending}>
+            <Button onClick={() => deployMut.mutate({ externalId: project.externalId, versionLabel: deployVersionLabel || undefined })} disabled={deployMut.isPending || deployFromGitHubMut.isPending}>
               {deployMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Rocket className="w-4 h-4 mr-1" />}
               Deploy Now
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Env Var Add/Edit Dialog */}
+      <Dialog open={envVarDialogOpen} onOpenChange={(open) => { if (!open) { setEnvVarDialogOpen(false); setEditingEnvKey(null); } else { setEnvVarDialogOpen(true); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingEnvKey ? `Edit ${editingEnvKey}` : "Add Environment Variable"}</DialogTitle>
+            <DialogDescription>Environment variables are encrypted and available at build and runtime.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Key</Label>
+              <Input
+                placeholder="MY_API_KEY"
+                value={envVarKey}
+                onChange={(e) => setEnvVarKey(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_"))}
+                disabled={!!editingEnvKey}
+                className="mt-1 font-mono text-sm"
+              />
+            </div>
+            <div>
+              <Label>Value</Label>
+              <Textarea
+                placeholder="Enter value..."
+                value={envVarValue}
+                onChange={(e) => setEnvVarValue(e.target.value)}
+                className="mt-1 font-mono text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEnvVarDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (!envVarKey.trim()) { toast.error("Key is required"); return; }
+                addEnvVarMut.mutate({ externalId: project.externalId, key: envVarKey.trim(), value: envVarValue });
+              }}
+              disabled={addEnvVarMut.isPending || !envVarKey.trim()}
+            >
+              {addEnvVarMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              {editingEnvKey ? "Update" : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+/** Clone command card that fetches actual repo URL */
+function CloneCommandCard({ githubRepoId }: { githubRepoId: number }) {
+  const reposQuery = trpc.github.repos.useQuery();
+  const repo = reposQuery.data?.find((r: any) => r.id === githubRepoId);
+  const cloneUrl = repo?.cloneUrl || repo?.htmlUrl ? `${repo.htmlUrl}.git` : null;
+
+  return (
+    <Card className="border-border mt-4">
+      <CardHeader className="py-3">
+        <CardTitle className="text-sm">Clone Command</CardTitle>
+      </CardHeader>
+      <CardContent className="py-2">
+        {cloneUrl ? (
+          <div className="flex items-center gap-2">
+            <code className="flex-1 bg-muted rounded px-3 py-2 text-xs font-mono text-muted-foreground">
+              git clone {cloneUrl}
+            </code>
+            <Button variant="ghost" size="sm" onClick={() => {
+              navigator.clipboard.writeText(`git clone ${cloneUrl}`);
+              toast.success("Copied to clipboard");
+            }}>
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Loading repo info...</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

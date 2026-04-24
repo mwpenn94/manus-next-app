@@ -3349,6 +3349,60 @@ Provide a JSON response with this exact structure:
 
         return { success: true };
       }),
+    /** Rollback to a previous deployment */
+    rollbackDeployment: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        deploymentId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        const deployments = await getProjectDeployments(project.id);
+        const target = deployments.find((d: any) => d.id === input.deploymentId);
+        if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Deployment not found" });
+        if (target.status !== "live") throw new TRPCError({ code: "BAD_REQUEST", message: "Can only rollback to a previously successful deployment" });
+        // Mark all other deployments as superseded, mark target as current
+        for (const dep of deployments) {
+          if (dep.id !== input.deploymentId && dep.status === "live") {
+            await updateWebappDeployment(dep.id, { status: "superseded" as any });
+          }
+        }
+        await updateWebappProject(project.id, {
+          deployStatus: "live",
+          lastDeployedAt: new Date(),
+        });
+        return { success: true, rolledBackTo: target.versionLabel || `Deployment #${target.id}` };
+      }),
+    /** Add or update environment variables */
+    addEnvVar: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        key: z.string().min(1).max(256).regex(/^[A-Z_][A-Z0-9_]*$/i, "Invalid env var name"),
+        value: z.string().max(10000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        const currentVars = (project.envVars as Record<string, string>) || {};
+        currentVars[input.key] = input.value;
+        await updateWebappProject(project.id, { envVars: currentVars });
+        return { success: true };
+      }),
+    /** Delete an environment variable */
+    deleteEnvVar: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        key: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        const currentVars = { ...((project.envVars as Record<string, string>) || {}) };
+        delete currentVars[input.key];
+        await updateWebappProject(project.id, { envVars: currentVars });
+        return { success: true };
+      }),
   }),
 
   /** Prompt cache metrics — observability for LLM caching */
