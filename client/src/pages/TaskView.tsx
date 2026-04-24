@@ -2545,8 +2545,29 @@ export default function TaskView() {
           } else if (pdfExts.includes(ext)) {
             content.push({ type: "file_url", file_url: { url: f.url, mime_type: "application/pdf" } });
           } else {
-            // For other file types, add as text reference with URL
-            content.push({ type: "text", text: `\n[Attached file: ${f.fileName}](${f.url})` });
+            // For text-based files, fetch content and inline it so the LLM can read it
+            const textExts = ["txt", "md", "html", "htm", "css", "js", "ts", "tsx", "jsx", "json", "csv", "tsv", "xml", "yaml", "yml", "toml", "ini", "cfg", "conf", "log", "sh", "bash", "py", "rb", "go", "rs", "java", "c", "cpp", "h", "hpp", "sql", "graphql", "env", "gitignore", "dockerfile", "makefile"];
+            if (textExts.includes(ext) || ext === "") {
+              try {
+                const textResp = await fetch(f.url);
+                if (textResp.ok) {
+                  const textBody = await textResp.text();
+                  // Truncate very large files to avoid token limits (max ~50KB of text)
+                  const maxChars = 50000;
+                  const truncated = textBody.length > maxChars
+                    ? textBody.slice(0, maxChars) + `\n\n... [File truncated at ${maxChars} characters. Total: ${textBody.length} characters]`
+                    : textBody;
+                  content.push({ type: "text", text: `\n--- Attached file: ${f.fileName} ---\n${truncated}\n--- End of ${f.fileName} ---` });
+                } else {
+                  content.push({ type: "text", text: `\n[Attached file: ${f.fileName}](${f.url}) (could not fetch content)` });
+                }
+              } catch {
+                content.push({ type: "text", text: `\n[Attached file: ${f.fileName}](${f.url})` });
+              }
+            } else {
+              // Binary files — just add a reference
+              content.push({ type: "text", text: `\n[Attached file: ${f.fileName}](${f.url})` });
+            }
           }
         }
         // Inject media attachments (screen share frames, video recordings, video uploads)

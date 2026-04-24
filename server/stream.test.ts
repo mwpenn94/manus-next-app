@@ -414,7 +414,7 @@ describe("Manus-parity auto-continuation system", () => {
     // Reset on tool execution (real progress)
     expect(content).toContain("continuationRounds = 0; // Reset");
     // Reset on successful stop
-    expect(content).toContain('if (choice.finish_reason === "stop")');
+    expect(content).toContain('if (effectiveChoice.finish_reason === "stop")');
   });
 
   it("agentStream.ts has context compression logic", async () => {

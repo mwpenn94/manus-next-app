@@ -1,0 +1,34 @@
+Issues identified from user's pasted chat transcript:
+
+1. LIMITLESS MODE NOT WORKING PROPERLY:
+   - User selected "Limitless" mode (the most expensive/powerful mode)
+   - Agent kept asking for user input instead of proceeding autonomously
+   - Agent should have used the examples in the prompt as defaults and proceeded
+   - Agent asked 3 times for the same input before finally using tools
+   - This is a UX/agent behavior issue — the agent should be more proactive in Limitless mode
+
+2. AGENT FAILED TO PROCESS ATTACHED FILE PROPERLY:
+   - User attached an HTML file (sw-dnd-campaign_4.html)
+   - Agent did eventually extract the campaign concept from it
+   - But the flow was clunky — multiple "Conducting deeper research..." messages
+
+3. "NO RESPONSE FROM LLM" ERROR:
+   - After "continue Recursion until convergence" message
+   - Agent showed "⚠️ No response from LLM" error
+   - User had to use "Regenerate" button
+   - This is a critical error that needs better handling
+
+4. COST DISPLAY:
+   - Shows "~$2.00+" and "limitless" — the cost/mode display should be clearer
+
+5. RECURSIVE CONVERGENCE NOT IMPLEMENTED:
+   - User asked for "Recursion until convergence" 
+   - Agent failed to continue the recursive process
+   - The recursive optimization framework should be built into the agent's behavior
+
+Key issues to fix in the app:
+- [ ] Limitless mode should make the agent more autonomous (less asking, more doing)
+- [ ] Better error handling for "No response from LLM" — auto-retry
+- [ ] File attachment processing should be smoother
+- [ ] Recursive convergence should be a first-class feature
+- [ ] Agent should use provided examples as defaults when user doesn't fill in placeholders

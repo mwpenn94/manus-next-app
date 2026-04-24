@@ -186,7 +186,7 @@ describe("browse_web tool", () => {
     const mod = await import("./agentTools");
     // 14 tools: web_search, read_webpage, generate_image, analyze_data, execute_code, generate_document, browse_web, wide_research, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify
     // 17 tools: web_search, read_webpage, generate_image, analyze_data, execute_code, generate_document, browse_web, wide_research, generate_slides, send_email, take_meeting_notes, design_canvas, cloud_browser, screenshot_verify, create_webapp, create_file, edit_file
-    expect(mod.AGENT_TOOLS.length).toBe(23);
+    expect(mod.AGENT_TOOLS.length).toBe(24);
   });
 
   it("executeTool handles browse_web", async () => {

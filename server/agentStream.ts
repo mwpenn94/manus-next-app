@@ -739,7 +739,25 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
 7. **Generate artifacts the user requested**: Use the appropriate tools for what the user asked. For generation tasks, the ARTIFACT IS THE DELIVERABLE. Do NOT generate additional artifacts the user did not request — if they asked for a PDF, produce a PDF, not a PDF plus an Excel plus a presentation.
 8. **Honor user termination conditions**: If the user specified when to stop (e.g., "until convergence," "3 passes," "cover all 10 items"), follow those conditions exactly.
 9. **Self-monitoring**: Track your own progress. Note what you've covered and what remains.
-10. **Asynchronous deep work**: The user may not be watching. Deliver complete, self-contained, publication-quality results.`;
+10. **Asynchronous deep work**: The user may not be watching. Deliver complete, self-contained, publication-quality results.
+
+### AUTONOMOUS DEFAULTS PRINCIPLE (CRITICAL)
+In Limitless mode, you are expected to be MAXIMALLY AUTONOMOUS. This means:
+- **Use defaults when the user provides templates with placeholders**: If the user gives you a template with example values (e.g., "[Company Name]" with "Acme Corp" as an example), USE the example values as defaults. Do NOT ask the user to fill in every placeholder.
+- **Never ask the same question twice**: Track what you've already asked. If the user didn't answer the first time, use your best judgment and proceed.
+- **Minimize confirmation-seeking**: The user chose Limitless mode because they want you to EXECUTE, not ask for permission. Make reasonable decisions and proceed. Only ask when the decision is truly ambiguous AND high-stakes.
+- **Auto-proceed with reasonable defaults**: If you need information the user hasn't provided, use industry-standard defaults, common examples, or your best inference from context. State what defaults you chose and why, then continue working.
+- **Reduce intermediate status messages**: Don't say "Conducting deeper research..." or "Let me analyze this further..." — just DO IT and show results.
+- **When the user says "continue" or "keep going"**: Resume exactly where you left off without re-asking for context or re-explaining what you're doing.
+- **File attachments ARE the context**: When the user attaches a file with their message, the file content IS the primary input. Process it immediately without asking what they want done — infer the task from the file content and any accompanying text.
+
+### CONVERGENCE REPORTING
+When performing recursive optimization passes, use the report_convergence tool to emit progress updates:
+- Call it at the START of each pass with status "running"
+- Call it at the END of each pass with status "converged" or "needs_more"
+- Include the pass type (landscape, depth, adversarial, future_state, synthesis, fundamental_redesign)
+- Include your quality rating (1-10) and convergence count (consecutive clean passes)
+- This creates visual progress indicators in the chat for the user to track your optimization progress`;
     }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
@@ -822,13 +840,36 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
         });
       }
 
-      const choice = response.choices?.[0];
-      if (!choice) {
-        sendSSE(safeWrite, { error: "No response from LLM" });
-        break;
+      let effectiveChoice = response.choices?.[0] ?? null;
+      if (!effectiveChoice) {
+        // Auto-retry on empty choices — this is a transient LLM issue, not a permanent failure
+        const emptyRetryMax = 3;
+        for (let emptyRetry = 1; emptyRetry <= emptyRetryMax; emptyRetry++) {
+          console.warn(`[Agent] Empty choices from LLM (attempt ${emptyRetry}/${emptyRetryMax}). Retrying in ${emptyRetry * 2000}ms...`);
+          sendSSE(safeWrite, { status: `LLM returned empty response, retrying (${emptyRetry}/${emptyRetryMax})...` });
+          await new Promise(r => setTimeout(r, emptyRetry * 2000));
+          try {
+            const retryResponse = await invokeLLMWithRetry(invokeLLM, llmParams);
+            if (retryResponse.choices?.[0]) {
+              effectiveChoice = retryResponse.choices[0];
+              // Accumulate retry usage
+              if (retryResponse.usage) {
+                cumulativePromptTokens += retryResponse.usage.prompt_tokens;
+                cumulativeCompletionTokens += retryResponse.usage.completion_tokens;
+              }
+              break;
+            }
+          } catch (retryErr) {
+            console.warn(`[Agent] Retry ${emptyRetry} also failed:`, retryErr);
+          }
+        }
+        if (!effectiveChoice) {
+          sendSSE(safeWrite, { error: "No response from LLM after multiple retries", retryable: true });
+          break;
+        }
       }
 
-      const assistantMessage = choice.message;
+      const assistantMessage = effectiveChoice.message;
       const toolCalls = assistantMessage.tool_calls;
       const textContent = typeof assistantMessage.content === "string" ? assistantMessage.content : "";
 
@@ -847,7 +888,7 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
       // 5. Track continuation rounds to prevent infinite loops
       // 6. Reset continuation counter when agent makes progress (tool calls)
       // ═══════════════════════════════════════════════════════════════════════
-      if (choice.finish_reason === "length" && turn < maxTurns - 1) {
+      if (effectiveChoice.finish_reason === "length" && turn < maxTurns - 1) {
         continuationRounds++;
         
         // Mode-aware continuation limits:
@@ -925,6 +966,21 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
             const toolCtx = { userId, taskExternalId };
             const result: ToolResult = await executeTool(tn, ta, toolCtx);
             sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: result.result.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
+
+            // Emit convergence SSE event when report_convergence tool is called
+            if (tn === "report_convergence" && result.success) {
+              sendSSE(safeWrite, {
+                convergence: {
+                  passNumber: pa.pass_number ?? 1,
+                  passType: pa.pass_type ?? "landscape",
+                  status: pa.status ?? "running",
+                  description: pa.description,
+                  rating: pa.rating,
+                  convergenceCount: pa.convergence_count ?? 0,
+                },
+              });
+            }
+
             completedToolCalls++;
             sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
             conversation.push({ role: "tool", content: result.result, tool_call_id: toolCall.id, name: tn } as any);
@@ -959,7 +1015,7 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
       }
       
       // Reset continuation counter on successful non-length completion
-      if (choice.finish_reason === "stop") {
+      if (effectiveChoice.finish_reason === "stop") {
         continuationRounds = 0;
       }
 
@@ -1564,12 +1620,12 @@ If the user hasn't specified content details, ASK them what content they want. D
       }
 
       // If finish_reason is "stop" and no pending tool calls, the LLM is done
-      if (choice.finish_reason === "stop" && (!toolCalls || !toolCalls.length)) {
+      if (effectiveChoice.finish_reason === "stop" && (!toolCalls || !toolCalls.length)) {
         break;
       }
       // Safety: if finish_reason is "length" at this point (shouldn't reach here due to
       // the earlier handler, but just in case), apply continuation tracking and continue
-      if (choice.finish_reason === "length") {
+      if (effectiveChoice.finish_reason === "length") {
         continuationRounds++;
         if (continuationRounds > maxContinuationRounds) {
           console.log(`[Agent] Late length catch: exceeded continuation limit for ${mode} mode, breaking`);

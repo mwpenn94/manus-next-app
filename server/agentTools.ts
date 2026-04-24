@@ -608,6 +608,48 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── Convergence Reporting Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "report_convergence",
+      description:
+        "Report the progress of a recursive optimization/convergence pass. Call at the START of each pass with status 'running' and at the END with 'converged' or 'needs_more'. This creates visual progress indicators in the chat for the user.",
+      parameters: {
+        type: "object",
+        properties: {
+          pass_number: {
+            type: "number",
+            description: "Current pass number (1-indexed)",
+          },
+          pass_type: {
+            type: "string",
+            enum: ["landscape", "depth", "adversarial", "future_state", "synthesis", "fundamental_redesign"],
+            description: "Type of analysis pass being performed",
+          },
+          status: {
+            type: "string",
+            enum: ["running", "converged", "needs_more"],
+            description: "Current status of this pass",
+          },
+          description: {
+            type: "string",
+            description: "Brief description of what this pass is doing or found",
+          },
+          rating: {
+            type: "number",
+            description: "Quality rating 1-10 for the current state",
+          },
+          convergence_count: {
+            type: "number",
+            description: "Number of consecutive clean passes (need 3 for full convergence)",
+          },
+        },
+        required: ["pass_number", "pass_type", "status"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -2279,6 +2321,13 @@ export async function executeTool(
       return executeGitOperation(args);
     case "deploy_webapp":
       return executeDeployWebapp(args, context);
+    case "report_convergence":
+      // This is a signal tool — the actual SSE emission happens in agentStream.ts
+      // We just return success so the agent loop continues
+      return {
+        success: true,
+        result: `Convergence pass ${args.pass_number} (${args.pass_type}): ${args.status}${args.description ? " — " + args.description : ""}${args.rating ? " [" + args.rating + "/10]" : ""}`,
+      };
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }

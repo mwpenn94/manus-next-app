@@ -3652,3 +3652,35 @@
 - [x] Pass 5: User journey walkthrough, micro-interactions, polish (CLEAN — 0 issues)
 
 **CONVERGENCE ACHIEVED** — 3 consecutive clean passes (Passes 3, 4, 5)
+
+## Session 32: Issues from User Chat Transcript
+
+### Limitless Mode Autonomy
+- [x] Limitless mode system prompt should instruct agent to be more autonomous — use defaults when user doesn't fill placeholders
+- [x] Limitless mode should auto-proceed with examples/defaults rather than repeatedly asking for input
+- [x] Add "autonomous mode" flag to Limitless that reduces confirmation-seeking behavior
+
+### LLM Error Handling
+- [x] Auto-retry on "No response from LLM" error — implement retry with exponential backoff (3 retries, 2s/4s/8s)
+- [x] Show user-friendly error message with auto-retry countdown instead of just "⚠️ No response from LLM"
+- [x] Add "Regenerate" button that's more prominent when LLM errors occur (retryable flag)
+
+### File Attachment Processing
+- [x] Improve file attachment extraction — parse HTML files for content automatically (client-side fetch + inline for text-based files)
+- [x] Show file content preview/summary immediately after attachment upload (inlined into message content)
+- [x] Reduce "Conducting deeper research..." intermediate messages — be more direct (Limitless prompt updated)
+
+### Recursive Convergence as First-Class Feature
+- [x] Add recursive convergence tracking to task metadata (pass count, convergence status) — report_convergence tool emits SSE events
+- [x] Show convergence progress indicator in task view (e.g., "Pass 3/3 clean") — ConvergenceIndicator renders from SSE events
+- [x] Auto-continue recursive passes when user says "continue recursion until convergence" — Limitless prompt instructs agent
+- [x] Reset convergence counter automatically when fixes are applied — Limitless prompt instructs agent
+
+### Agent Default Behavior
+- [x] When user provides a template with placeholders, agent should use the example values as defaults (Limitless prompt updated)
+- [x] Agent should not ask the same question more than once — track what's been asked (Limitless prompt: "never re-ask")
+
+### Tests & Convergence
+- [x] Write tests for all Session 32 fixes (25 tests — all passing)
+- [x] Fix 4 pre-existing test failures caused by new report_convergence tool (tool count 23→24)
+- [x] Run 3 consecutive clean convergence passes — ACHIEVED
