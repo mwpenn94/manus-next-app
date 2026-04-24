@@ -28,6 +28,7 @@ const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const BrowserPage = lazy(() => import("./pages/BrowserPage"));
+const WebAppBuilderPage = lazy(() => import("./pages/WebAppBuilderPage"));
 // DataControlsPage and MailManusPage removed — not in Manus navigation
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
@@ -123,6 +124,11 @@ function Router() {
       <Route path="/browser">
         <Suspense fallback={<PageLoader />}>
           <BrowserPage />
+        </Suspense>
+      </Route>
+      <Route path="/webapp-builder">
+        <Suspense fallback={<PageLoader />}>
+          <WebAppBuilderPage />
         </Suspense>
       </Route>
       {/* /data-controls and /mail removed — not in Manus navigation */}

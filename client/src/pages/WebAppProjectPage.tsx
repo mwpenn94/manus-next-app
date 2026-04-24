@@ -49,6 +49,8 @@ export default function WebAppProjectPage() {
   const [deployStatusMessage, setDeployStatusMessage] = useState("");
   const [deployVersionLabel, setDeployVersionLabel] = useState("");
   const [deployBranch, setDeployBranch] = useState("");
+  const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false);
+  const [rollbackTarget, setRollbackTarget] = useState<{ id: number; label: string } | null>(null);
   const [envVarDialogOpen, setEnvVarDialogOpen] = useState(false);
   const [envVarKey, setEnvVarKey] = useState("");
   const [envVarValue, setEnvVarValue] = useState("");
@@ -230,11 +232,21 @@ export default function WebAppProjectPage() {
         </div>
         <div className="flex items-center gap-2">
           {project.publishedUrl && (
-            <Button variant="outline" size="sm" asChild>
-              <a href={project.publishedUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="w-3.5 h-3.5 mr-1" /> Visit
-              </a>
-            </Button>
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <a href={project.publishedUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-3.5 h-3.5 mr-1" /> Visit
+                </a>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/browser?url=${encodeURIComponent(project.publishedUrl!)}`)}
+                title="Run QA tests on the deployed app using Browser Automation"
+              >
+                <Search className="w-3.5 h-3.5 mr-1" /> Run QA
+              </Button>
+            </>
           )}
           <Button
             size="sm"
@@ -800,9 +812,8 @@ export default function WebAppProjectPage() {
                           size="sm"
                           className="text-xs h-6 px-2"
                           onClick={() => {
-                            if (confirm(`Rollback to ${dep.versionLabel || `Deployment #${deploymentsQuery.data!.length - i}`}?`)) {
-                              rollbackMut.mutate({ externalId: project.externalId, deploymentId: dep.id });
-                            }
+                            setRollbackTarget({ id: dep.id, label: dep.versionLabel || `Deployment #${deploymentsQuery.data!.length - i}` });
+                            setRollbackConfirmOpen(true);
                           }}
                           disabled={rollbackMut.isPending}
                         >
@@ -1360,6 +1371,35 @@ export default function WebAppProjectPage() {
             <Button onClick={() => deployMut.mutate({ externalId: project.externalId, versionLabel: deployVersionLabel || undefined })} disabled={deployMut.isPending || deployFromGitHubMut.isPending}>
               {deployMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Rocket className="w-4 h-4 mr-1" />}
               Deploy Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rollback Confirmation Dialog */}
+      <Dialog open={rollbackConfirmOpen} onOpenChange={setRollbackConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Rollback</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to rollback to <strong>{rollbackTarget?.label}</strong>? This will replace the current live deployment.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRollbackConfirmOpen(false); setRollbackTarget(null); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (rollbackTarget) {
+                  rollbackMut.mutate({ externalId: project.externalId, deploymentId: rollbackTarget.id });
+                }
+                setRollbackConfirmOpen(false);
+                setRollbackTarget(null);
+              }}
+              disabled={rollbackMut.isPending}
+            >
+              {rollbackMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+              Confirm Rollback
             </Button>
           </DialogFooter>
         </DialogContent>

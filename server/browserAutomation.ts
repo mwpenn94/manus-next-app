@@ -106,8 +106,11 @@ function startCleanup() {
   }, 60_000);
 }
 
-/** Get or create a browser session */
-export async function getOrCreateSession(sessionId?: string): Promise<BrowserSession> {
+/** Supported browser types for multi-browser testing */
+export type BrowserType = "chromium" | "firefox" | "webkit";
+
+/** Get or create a browser session with optional browser type */
+export async function getOrCreateSession(sessionId?: string, browserType: BrowserType = "chromium"): Promise<BrowserSession> {
   // Try to reuse existing session
   if (sessionId && sessions.has(sessionId)) {
     const session = sessions.get(sessionId)!;
@@ -130,8 +133,8 @@ export async function getOrCreateSession(sessionId?: string): Promise<BrowserSes
     }
   }
 
-  // Launch new browser with fallback to system Chromium
-  const { chromium } = await import("playwright");
+  // Launch new browser with multi-browser support
+  const pw = await import("playwright");
   const launchArgs = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -141,20 +144,30 @@ export async function getOrCreateSession(sessionId?: string): Promise<BrowserSes
     "--disable-features=VizDisplayCompositor",
   ];
   let browser: Browser;
+
+  // Select browser engine based on type
+  const browserEngine = browserType === "firefox" ? pw.firefox : browserType === "webkit" ? pw.webkit : pw.chromium;
+  const engineName = browserType === "firefox" ? "Firefox" : browserType === "webkit" ? "WebKit" : "Chromium";
+  console.log(`[BrowserAutomation] Launching ${engineName} browser...`);
   
   // Strategy: try multiple approaches to find a working browser
   const launchStrategies: Array<{ name: string; fn: () => Promise<Browser> }> = [
     {
-      name: "Playwright bundled Chromium",
-      fn: () => chromium.launch({ headless: true, args: launchArgs }),
+      name: `Playwright bundled ${engineName}`,
+      fn: () => browserEngine.launch({ headless: true, args: browserType === "chromium" ? launchArgs : [] }),
     },
+  ];
+
+  // Chromium-specific fallbacks
+  if (browserType === "chromium") {
+    launchStrategies.push(
     {
       name: "System Chromium (fallback)",
       fn: async () => {
         const systemChromium = resolveChromiumPath();
         if (!systemChromium) throw new Error("No system Chromium found");
         console.log(`[BrowserAutomation] Using system Chromium: ${systemChromium}`);
-        return chromium.launch({ headless: true, executablePath: systemChromium, args: launchArgs });
+        return pw.chromium.launch({ headless: true, executablePath: systemChromium, args: launchArgs });
       },
     },
     {
@@ -173,10 +186,26 @@ export async function getOrCreateSession(sessionId?: string): Promise<BrowserSes
             throw new Error(`Auto-install failed: ${installErr.message}`);
           }
         }
-        return chromium.launch({ headless: true, args: launchArgs });
+        return pw.chromium.launch({ headless: true, args: launchArgs });
       },
-    },
-  ];
+    });
+  }
+
+  // For non-chromium browsers, add auto-install fallback
+  if (browserType !== "chromium") {
+    launchStrategies.push({
+      name: `Auto-install Playwright ${engineName}`,
+      fn: async () => {
+        console.log(`[BrowserAutomation] Attempting to auto-install Playwright ${engineName}...`);
+        try {
+          execSync(`npx playwright install ${browserType} 2>&1`, { timeout: 120000, cwd: process.cwd() });
+        } catch {
+          execSync(`npx playwright install --with-deps ${browserType} 2>&1`, { timeout: 180000, cwd: process.cwd() });
+        }
+        return browserEngine.launch({ headless: true });
+      },
+    });
+  }
 
   let lastError: Error | null = null;
   for (const strategy of launchStrategies) {
@@ -377,9 +406,9 @@ async function extractPageContent(page: Page, maxLength = 4000): Promise<string>
 export async function navigate(
   sessionId: string | undefined,
   url: string,
-  options?: { waitUntil?: "load" | "domcontentloaded" | "networkidle"; timeout?: number }
+  options?: { waitUntil?: "load" | "domcontentloaded" | "networkidle"; timeout?: number; browserType?: BrowserType }
 ): Promise<BrowserActionResult> {
-  const session = await getOrCreateSession(sessionId);
+  const session = await getOrCreateSession(sessionId, options?.browserType);
   try {
     await session.page.goto(url, {
       waitUntil: options?.waitUntil || "domcontentloaded",

@@ -1608,6 +1608,19 @@ export async function getGitHubRepoByFullName(userId: number, fullName: string) 
   return repo ?? null;
 }
 
+export async function getGitHubRepoByFullNameOnly(fullName: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [repo] = await db.select().from(githubRepos).where(eq(githubRepos.fullName, fullName));
+  return repo ?? null;
+}
+
+export async function getWebappProjectsByGithubRepoId(repoId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(webappProjects).where(eq(webappProjects.githubRepoId, repoId));
+}
+
 // ── Webapp Projects ──
 export async function createWebappProject(data: InsertWebappProject) {
   const db = await getDb();

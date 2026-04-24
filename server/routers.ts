@@ -3622,10 +3622,11 @@ Provide a JSON response with this exact structure:
         sessionId: z.string().optional(),
         url: z.string().url(),
         waitUntil: z.enum(["load", "domcontentloaded", "networkidle"]).optional(),
+        browserType: z.enum(["chromium", "firefox", "webkit"]).optional(),
       }))
       .mutation(async ({ input }) => {
         const { navigate } = await import("./browserAutomation");
-        return navigate(input.sessionId, input.url, { waitUntil: input.waitUntil });
+        return navigate(input.sessionId, input.url, { waitUntil: input.waitUntil, browserType: input.browserType });
       }),
 
     /** Click on an element */

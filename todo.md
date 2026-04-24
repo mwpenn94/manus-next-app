@@ -3869,3 +3869,32 @@
 - [x] C3-8: Convergence pass 1 — TypeScript clean, 138 E2E tests pass across 4 key files
 - [x] C3-9: Convergence pass 2 — 434 tests pass across 18 broader test files, no regressions
 - [x] C3-10: Convergence pass 3 — Final clean pass, 434 tests pass, TypeScript clean, 0 failures
+
+## Cycle 4: Expert Assess/Optimize/Validate — Manus Parity+ Convergence
+
+### Phase A: GitHub Webhooks + Multi-Browser + Remaining Items
+- [x] C4-A1: Add /api/github/webhook endpoint with HMAC signature verification + auto-deploy on push
+- [x] C4-A2: Add multi-browser support (Firefox/WebKit) to browserAutomation.ts + browser selector UI
+- [x] C4-A3: Route WebAppBuilderPage in App.tsx (currently unreachable)
+- [x] C4-A4: Write E2E tests for webhook + multi-browser + builder route (41 tests)
+- [x] C4-A5: Phase A convergence pass 1 — 153 tests, TS clean
+- [x] C4-A6: Phase A convergence pass 2 — 153 tests, TS clean
+- [x] C4-A7: Phase A convergence pass 3 — 153 tests, TS clean, CONVERGED
+
+### Phase B: Chat + App Dev/Management/Publishing E2E Parity+
+- [x] C4-B1: Verify chat→create_webapp→project→preview→deploy→live URL full pipeline E2E
+- [x] C4-B2: Add "Run QA" button on WebAppProjectPage linking to Browser page with deployed URL
+- [x] C4-B3: Add rollback confirmation dialog in WebAppProjectPage (replaced confirm() with Dialog)
+- [x] C4-B4: Write E2E tests for full app dev pipeline + QA integration (84 tests)
+- [x] C4-B5: Phase B convergence pass 1 — 237 tests, TS clean
+- [x] C4-B6: Phase B convergence pass 2 — 237 tests, TS clean
+- [x] C4-B7: Phase B convergence pass 3 — 237 tests, TS clean, CONVERGED
+
+### Phase C: GitHub CRUD→Preview→Publish + Browser/CDP QA with Virtual Users
+- [x] C4-C1: Full E2E test: GitHub connect→CRUD files→deploy→browser QA→a11y→perf (128 tests)
+- [x] C4-C2: Add post-deploy QA automation trigger from project page (Run QA button + BrowserPage ?url= auto-navigate)
+- [x] C4-C3: Virtual user smoke tests covering login, navigation, responsive, error states
+- [x] C4-C4: Write comprehensive E2E tests for full pipeline (128 tests in cycle4-phase-c.test.ts)
+- [x] C4-C5: Phase C convergence pass 1 — 365 tests, TS clean
+- [x] C4-C6: Phase C convergence pass 2 — 365 tests, TS clean
+- [x] C4-C7: Phase C convergence pass 3 — 365 tests, TS clean, CONVERGED

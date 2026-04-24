@@ -185,6 +185,17 @@ async function startServer() {
   app.use("/api/trpc", apiLimiter);
   app.use("/api/analytics/collect", analyticsLimiter);
 
+  // ── GitHub webhook (raw body for HMAC verification) ──
+  app.post("/api/github/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    try {
+      const { handleGitHubWebhook } = await import("../githubWebhook");
+      await handleGitHubWebhook(req, res);
+    } catch (err: any) {
+      console.error("[GitHub Webhook] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Stripe webhook (raw body required BEFORE json parser) ──
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
     try {
@@ -199,7 +210,7 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   // Skip JSON parsing for /api/upload (binary) and /api/stripe/webhook (raw) to allow raw body reading
   app.use((req, res, next) => {
-    if (req.path === "/api/upload" || req.path === "/api/stripe/webhook") return next();
+    if (req.path === "/api/upload" || req.path === "/api/stripe/webhook" || req.path === "/api/github/webhook") return next();
     express.json({ limit: "50mb" })(req, res, (err) => {
       if (err) {
         // Silently handle ALL body-parser errors (malformed JSON, entity.parse.failed,

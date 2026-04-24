@@ -149,9 +149,16 @@ const statusColor = (status?: number) => {
 export default function BrowserPage() {
   const { user, isAuthenticated } = useAuth();
 
+  // ── Read URL from query params (e.g., /browser?url=https://...) ──
+  const queryUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search);
+    return params.get("url") || "";
+  }, []);
+
   // ── State ──
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [urlInput, setUrlInput] = useState("");
+  const [urlInput, setUrlInput] = useState(queryUrl);
   const [currentUrl, setCurrentUrl] = useState("");
   const [currentTitle, setCurrentTitle] = useState("");
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
@@ -273,6 +280,17 @@ export default function BrowserPage() {
       setIsLoading(false);
     }
   }, [urlInput, activeSessionId, navigateMut, updateAfterAction, sessionsQuery]);
+
+  // Auto-navigate when ?url= query param is present
+  const autoNavigatedRef = useRef(false);
+  useEffect(() => {
+    if (queryUrl && !autoNavigatedRef.current && isAuthenticated) {
+      autoNavigatedRef.current = true;
+      // Small delay to let tRPC client initialize
+      const timer = setTimeout(() => handleNavigate(queryUrl), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [queryUrl, isAuthenticated, handleNavigate]);
 
   const handleGoBack = useCallback(async () => {
     setIsLoading(true);
