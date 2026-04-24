@@ -272,15 +272,29 @@ export function buildStreamCallbacks(
       // GAP B: Update the existing webapp_preview card to show "published" status
       if (setters.updateMessageCard && setters.getTaskMessages) {
         const messages = setters.getTaskMessages();
-        const previewMsg = messages.find(
-          (m) => m.cardType === "webapp_preview" && m.cardData?.projectExternalId === deployment.projectExternalId
-        );
+        // Try matching by projectExternalId first, then fall back to matching by app name
+        let previewMsg = deployment.projectExternalId
+          ? messages.find(
+              (m) => m.cardType === "webapp_preview" && m.cardData?.projectExternalId === deployment.projectExternalId
+            )
+          : undefined;
+        // Fallback: match by app name if projectExternalId didn't match
+        if (!previewMsg) {
+          previewMsg = messages.find(
+            (m) => m.cardType === "webapp_preview" && m.cardData?.appName === deployment.name
+          );
+        }
+        // Last resort: match any webapp_preview card (there's usually only one per task)
+        if (!previewMsg) {
+          previewMsg = messages.find((m) => m.cardType === "webapp_preview");
+        }
         if (previewMsg) {
           setters.updateMessageCard(setters.taskId, previewMsg.id, {
             status: "published",
             domain: deployment.url.replace(/^https?:\/\//, ""),
             publishedUrl: deployment.url,
             hasUnpublishedChanges: false,
+            projectExternalId: deployment.projectExternalId || previewMsg.cardData?.projectExternalId,
           });
         }
       }

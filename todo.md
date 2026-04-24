@@ -3516,3 +3516,35 @@
 - [x] Mobile bottom nav: Home, Tasks, Billing, More (...) — already matches Manus exactly
 - [x] Remove any remaining non-Manus sidebar elements [Billing/Settings removed from MANUS nav section]
 - [x] Convergence validation pass (2 consecutive clean passes) — Pass 1: no dead nav links; Pass 2: no broken imports, 23 orphaned page files noted (unreachable, harmless dead code)
+
+## Session 30 — Webapp E2E Parity+ with Manus
+
+### Pipeline Fixes (Critical)
+- [x] Fix preview URL persistence — dev server stops after task completion causing 404. Need fallback to deployed URL or cached preview.
+- [x] Fix WebappPreviewCard "Visit Site" button — should use publishedUrl when available, fallback to proxy preview
+- [x] Fix DeploymentCard "Visit Site" — should open the deployed URL in new tab reliably
+- [x] Ensure webapp_preview card updates status to "published" when deploy_webapp completes
+
+### TaskView UI Parity (Manus Reference)
+- [ ] Verify collapsible "N steps completed" matches Manus style (GroupedActionsList)
+- [ ] Verify "Listen" + "Branch" buttons render after task completion
+- [ ] Verify suggestion chips render after task completion
+- [ ] Verify TaskCompletedCard with star rating renders correctly
+- [x] Verify device preview toggles (desktop/tablet/mobile) work in WebappPreviewCard
+
+### DeploymentCard Parity (from Manus screenshots)
+- [x] DeploymentCard should show: app name + "Live" badge + version label + URL + "Visit Site" + "Manage" buttons
+- [ ] Add "Manage Project" + "Publish" buttons below the card (matching Manus mobile layout)
+
+### E2E Smoke Tests
+- [ ] E2E test: Create new task -> type "create a demo app" -> verify agent creates webapp
+- [ ] E2E test: Verify WebappPreviewCard appears with live iframe
+- [ ] E2E test: Verify deploy creates DeploymentCard with working URL
+- [ ] E2E test: Verify "Visit Site" opens working page (not 404)
+- [ ] E2E test: Verify task completion shows TaskCompletedCard + rating + suggestion chips
+- [ ] E2E test: Verify sidebar task list shows the new task with correct status
+
+### Convergence Passes
+- [ ] Expert assess pass — identify remaining parity gaps
+- [ ] Expert optimize pass — fix identified gaps
+- [ ] Expert validate pass — confirm 2 consecutive clean passes

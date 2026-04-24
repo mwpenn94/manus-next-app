@@ -2,11 +2,11 @@
  * DeploymentCard — Manus-style card shown in chat when a webapp is deployed.
  *
  * Features:
- * - Live URL with visit button
+ * - Live URL with visit button (guards against empty URL)
  * - Deployment status badge (live/deploying/failed)
  * - Version label
  * - Manage Project link
- * - Copy URL button
+ * - Copy URL button with visual feedback
  */
 import { useState, useCallback } from "react";
 import {
@@ -44,6 +44,7 @@ export default function DeploymentCard({
   const [, navigate] = useLocation();
 
   const handleCopy = useCallback(() => {
+    if (!deployedUrl) return;
     navigator.clipboard.writeText(deployedUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -76,6 +77,9 @@ export default function DeploymentCard({
   const config = statusConfig[status];
   const StatusIcon = config.icon;
 
+  // Clean display URL — strip protocol for display
+  const displayUrl = deployedUrl ? deployedUrl.replace(/^https?:\/\//, "") : "";
+
   return (
     <div
       className={cn(
@@ -85,8 +89,14 @@ export default function DeploymentCard({
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-        <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-          <Rocket className="w-4.5 h-4.5 text-emerald-400" />
+        <div className={cn(
+          "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+          status === "failed" ? "bg-red-500/10" : "bg-emerald-500/10"
+        )}>
+          <Rocket className={cn(
+            "w-4.5 h-4.5",
+            status === "failed" ? "text-red-400" : "text-emerald-400"
+          )} />
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-foreground truncate">
@@ -123,39 +133,54 @@ export default function DeploymentCard({
       <div className="px-4 py-2.5">
         <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2 border border-border/50">
           <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <a
-            href={deployedUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline truncate flex-1 font-mono"
-          >
-            {deployedUrl.replace(/^https?:\/\//, "")}
-          </a>
-          <button
-            onClick={handleCopy}
-            className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-            title="Copy URL"
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-          </button>
+          {displayUrl ? (
+            <a
+              href={deployedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline truncate flex-1 font-mono"
+            >
+              {displayUrl}
+            </a>
+          ) : (
+            <span className="text-xs text-muted-foreground truncate flex-1 font-mono italic">
+              {status === "deploying" ? "Deploying..." : "URL not available"}
+            </span>
+          )}
+          {displayUrl && (
+            <button
+              onClick={handleCopy}
+              className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              title="Copy URL"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Action buttons */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border">
-        <a
-          href={deployedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          Visit Site
-        </a>
+        {deployedUrl ? (
+          <a
+            href={deployedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Visit Site
+          </a>
+        ) : (
+          <div className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-muted text-muted-foreground text-sm font-medium cursor-not-allowed">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            {status === "deploying" ? "Deploying..." : "URL Pending"}
+          </div>
+        )}
         {projectExternalId && (
           <button
             onClick={() => navigate(`/projects/webapp/${projectExternalId}`)}

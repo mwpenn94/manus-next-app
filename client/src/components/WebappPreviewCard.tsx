@@ -2,13 +2,17 @@
  * WebappPreviewCard — Manus-style inline card with live iframe preview and management panel
  *
  * Features:
- * - Live iframe preview of the running dev server
+ * - Live iframe preview of the running dev server OR deployed URL
+ * - When publishedUrl is available (post-deploy), uses it as iframe src (no proxy dependency)
+ * - Falls back to /api/webapp-preview/ proxy for localhost dev server URLs
  * - Management tabs: Preview, Code, Dashboard, Settings
  * - Globe icon, app name, publish status + timestamp
- * - Full-width preview area with responsive controls
+ * - Full-width preview area with responsive device toggles
  * - Settings/Publish buttons at bottom
+ * - Auto-retry with exponential backoff for dev server startup
+ * - Auto-refresh on file changes via refreshKey prop
  */
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Globe,
   Settings,
@@ -27,6 +31,7 @@ import {
   GitBranch,
   Terminal,
   X,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +44,8 @@ interface WebappPreviewCardProps {
   status: "published" | "not_published" | "deploying" | "running";
   lastUpdated?: string;
   previewUrl?: string;
+  /** The live deployed URL (S3/CloudFront). When set, iframe uses this instead of proxy. */
+  publishedUrl?: string;
   screenshotUrl?: string;
   onSettings?: () => void;
   onPublish?: () => void;
@@ -58,6 +65,7 @@ export default function WebappPreviewCard({
   status,
   lastUpdated,
   previewUrl,
+  publishedUrl,
   screenshotUrl,
   onSettings,
   onPublish,
@@ -73,17 +81,61 @@ export default function WebappPreviewCard({
   const [activeTab, setActiveTab] = useState<ManagementTab>("preview");
   const [deviceView, setDeviceView] = useState<DeviceView>("desktop");
   const [isExpanded, setIsExpanded] = useState(false);
-  // Use the webapp preview proxy for live preview instead of localhost
-  const proxyUrl = previewUrl?.startsWith("http://localhost") ? `/api/webapp-preview/` : previewUrl;
-  const [iframeSrc, setIframeSrc] = useState(proxyUrl || "");
+
+  // Determine the best URL for the iframe:
+  // 1. If publishedUrl is available (post-deploy), use it directly — no proxy needed
+  // 2. If previewUrl is a localhost URL, use the proxy endpoint
+  // 3. Otherwise use previewUrl as-is
+  const effectiveUrl = useMemo(() => {
+    if (publishedUrl) return publishedUrl;
+    if (previewUrl?.startsWith("http://localhost")) return `/api/webapp-preview/`;
+    return previewUrl || "";
+  }, [publishedUrl, previewUrl]);
+
+  // The display URL shown in the URL bar
+  const displayUrl = useMemo(() => {
+    if (publishedUrl) {
+      // Show clean domain without protocol
+      return publishedUrl.replace(/^https?:\/\//, "");
+    }
+    if (domain) return domain;
+    if (previewUrl?.startsWith("http://localhost")) {
+      return `localhost:${port || 4200}`;
+    }
+    return previewUrl || `localhost:${port || 4200}`;
+  }, [publishedUrl, domain, previewUrl, port]);
+
+  // The URL to copy when user clicks the copy button
+  const copyableUrl = useMemo(() => {
+    if (publishedUrl) return publishedUrl;
+    if (domain) return domain.startsWith("http") ? domain : `https://${domain}`;
+    return previewUrl || "";
+  }, [publishedUrl, domain, previewUrl]);
+
+  const [iframeSrc, setIframeSrc] = useState(effectiveUrl);
   const [copied, setCopied] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(true);
   const [iframeError, setIframeError] = useState(false);
+  const [proxyFailed, setProxyFailed] = useState(false);
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Auto-retry iframe loading when dev server may still be starting
+  // Update iframe src when effectiveUrl changes (e.g., publishedUrl becomes available)
+  useEffect(() => {
+    if (effectiveUrl && effectiveUrl !== iframeSrc) {
+      setIframeSrc(effectiveUrl);
+      setIframeLoading(true);
+      setIframeError(false);
+      setProxyFailed(false);
+      retryCountRef.current = 0;
+      if (iframeRef.current) {
+        iframeRef.current.src = effectiveUrl;
+      }
+    }
+  }, [effectiveUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup retry timers
   useEffect(() => {
     return () => {
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
@@ -106,12 +158,21 @@ export default function WebappPreviewCard({
   const handleIframeLoad = useCallback(() => {
     setIframeLoading(false);
     setIframeError(false);
+    setProxyFailed(false);
     retryCountRef.current = 0;
   }, []);
 
   const handleIframeError = useCallback(() => {
     setIframeError(true);
     setIframeLoading(false);
+
+    // If we're using the proxy and it failed after max retries, mark proxy as failed
+    // so we can show a helpful message about the dev server being stopped
+    if (retryCountRef.current >= 5 && !publishedUrl) {
+      setProxyFailed(true);
+      return;
+    }
+
     // Auto-retry up to 5 times with increasing delay
     if (retryCountRef.current < 5) {
       const delay = Math.min(2000 * (retryCountRef.current + 1), 8000);
@@ -120,34 +181,39 @@ export default function WebappPreviewCard({
         setIframeLoading(true);
         setIframeError(false);
         if (iframeRef.current) {
-          iframeRef.current.src = iframeSrc || proxyUrl || "";
+          iframeRef.current.src = effectiveUrl;
         }
       }, delay);
     }
-  }, [iframeSrc, proxyUrl]);
+  }, [effectiveUrl, publishedUrl]);
 
-  const statusText =
-    status === "published"
-      ? "Published"
-      : status === "deploying"
-        ? "Deploying..."
-        : status === "running"
-          ? "Running"
-          : "Not published";
+  const isPublished = status === "published" || !!publishedUrl;
+
+  const statusText = isPublished
+    ? "Published"
+    : status === "deploying"
+      ? "Deploying..."
+      : status === "running"
+        ? "Running"
+        : "Not published";
 
   const handleRefresh = useCallback(() => {
+    setIframeLoading(true);
+    setIframeError(false);
+    setProxyFailed(false);
+    retryCountRef.current = 0;
     if (iframeRef.current) {
-      iframeRef.current.src = iframeSrc;
+      iframeRef.current.src = effectiveUrl;
     }
-  }, [iframeSrc]);
+  }, [effectiveUrl]);
 
   const handleCopyUrl = useCallback(() => {
-    if (previewUrl) {
-      navigator.clipboard.writeText(previewUrl);
+    if (copyableUrl) {
+      navigator.clipboard.writeText(copyableUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [previewUrl]);
+  }, [copyableUrl]);
 
   const deviceWidths: Record<DeviceView, string> = {
     desktop: "100%",
@@ -181,8 +247,15 @@ export default function WebappPreviewCard({
 
       {/* Header: Globe icon, app name, status, tabs */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border">
-        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-          <Globe className="w-4 h-4 text-muted-foreground" />
+        <div className={cn(
+          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+          isPublished ? "bg-emerald-500/10" : "bg-white/5"
+        )}>
+          {isPublished ? (
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
+          ) : (
+            <Globe className="w-4 h-4 text-muted-foreground" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-semibold text-foreground truncate">
@@ -227,7 +300,7 @@ export default function WebappPreviewCard({
               <Maximize2 className="w-3.5 h-3.5" />
             )}
           </button>
-          {previewUrl && (
+          {(previewUrl || publishedUrl) && (
             <button
               onClick={onVisit}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -276,16 +349,25 @@ export default function WebappPreviewCard({
               ))}
             </div>
             <div className="flex-1 flex items-center gap-1.5 bg-muted/50 rounded-md px-2 py-1">
-              <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
-              <span className="text-[11px] text-muted-foreground truncate flex-1">
-                {previewUrl?.startsWith("http://localhost") ? `Preview (port ${port || 4200})` : previewUrl || `Preview (port ${port || 4200})`}
+              {isPublished && (
+                <CheckCircle className="w-3 h-3 text-emerald-400 shrink-0" />
+              )}
+              {!isPublished && (
+                <Globe className="w-3 h-3 text-muted-foreground shrink-0" />
+              )}
+              <span className={cn(
+                "text-[11px] truncate flex-1",
+                isPublished ? "text-emerald-400 font-mono" : "text-muted-foreground"
+              )}>
+                {displayUrl}
               </span>
               <button
                 onClick={handleCopyUrl}
                 className="p-0.5 text-muted-foreground hover:text-foreground"
+                title="Copy URL"
               >
                 {copied ? (
-                  <Check className="w-3 h-3" />
+                  <Check className="w-3 h-3 text-emerald-400" />
                 ) : (
                   <Copy className="w-3 h-3" />
                 )}
@@ -307,7 +389,7 @@ export default function WebappPreviewCard({
               isExpanded ? "flex-1" : "aspect-[16/10]"
             )}
           >
-            {(proxyUrl || previewUrl) ? (
+            {effectiveUrl ? (
               <div className="relative" style={{ width: deviceWidths[deviceView], height: "100%", maxWidth: "100%" }}>
                 {iframeLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/80 z-10">
@@ -324,25 +406,40 @@ export default function WebappPreviewCard({
                     <div className="text-center">
                       <Globe className="w-5 h-5 text-amber-400 mx-auto mb-2" />
                       <p className="text-xs text-muted-foreground mb-2">
-                        Dev server not ready yet
+                        {proxyFailed
+                          ? "Dev server has stopped. Deploy to get a permanent URL."
+                          : "Dev server not ready yet"}
                       </p>
-                      <button
-                        onClick={() => {
-                          retryCountRef.current = 0;
-                          setIframeLoading(true);
-                          setIframeError(false);
-                          if (iframeRef.current) iframeRef.current.src = iframeSrc || proxyUrl || "";
-                        }}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Retry now
-                      </button>
+                      <div className="flex items-center gap-3 justify-center">
+                        <button
+                          onClick={() => {
+                            retryCountRef.current = 0;
+                            setIframeLoading(true);
+                            setIframeError(false);
+                            setProxyFailed(false);
+                            if (iframeRef.current) iframeRef.current.src = effectiveUrl;
+                          }}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Retry now
+                        </button>
+                        {proxyFailed && publishedUrl && (
+                          <a
+                            href={publishedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-emerald-400 hover:underline"
+                          >
+                            Visit deployed site
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
                 <iframe
                   ref={iframeRef}
-                  src={iframeSrc || proxyUrl || ""}
+                  src={iframeSrc || effectiveUrl}
                   className="bg-white transition-all duration-300"
                   style={{
                     width: "100%",
@@ -448,6 +545,23 @@ export default function WebappPreviewCard({
             ))}
           </div>
 
+          {/* Deployed URL in dashboard */}
+          {publishedUrl && (
+            <div className="mb-4 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+              <p className="text-[10px] text-emerald-400 uppercase tracking-wider mb-1">
+                Live URL
+              </p>
+              <a
+                href={publishedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-emerald-400 hover:underline font-mono break-all"
+              >
+                {publishedUrl}
+              </a>
+            </div>
+          )}
+
           {/* Git status */}
           <div className="flex items-center gap-2 mb-2">
             <GitBranch className="w-4 h-4 text-muted-foreground" />
@@ -484,7 +598,13 @@ export default function WebappPreviewCard({
               Domain
             </label>
             <div className="bg-muted/30 rounded-lg px-3 py-2 text-sm text-foreground border border-border/50">
-              {domain || "Not configured"}
+              {publishedUrl ? (
+                <a href={publishedUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono text-xs">
+                  {publishedUrl.replace(/^https?:\/\//, "")}
+                </a>
+              ) : (
+                domain || "Not configured"
+              )}
             </div>
           </div>
           <div>
@@ -501,7 +621,7 @@ export default function WebappPreviewCard({
         </div>
       )}
 
-      {/* Action buttons: Settings / Publish */}
+      {/* Action buttons: Manage Project / Publish */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border">
         {projectExternalId ? (
           <a
@@ -523,11 +643,23 @@ export default function WebappPreviewCard({
         <div className="relative flex-1">
           <button
             onClick={onPublish}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg border border-border bg-card text-foreground text-sm font-medium hover:bg-accent transition-colors"
+            className={cn(
+              "w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-colors",
+              isPublished
+                ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20"
+                : "border border-border bg-card text-foreground hover:bg-accent"
+            )}
           >
-            Publish
+            {isPublished ? (
+              <>
+                <CheckCircle className="w-3.5 h-3.5" />
+                Published
+              </>
+            ) : (
+              "Publish"
+            )}
           </button>
-          {hasUnpublishedChanges && (
+          {hasUnpublishedChanges && !isPublished && (
             <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-white border-2 border-card" />
           )}
         </div>

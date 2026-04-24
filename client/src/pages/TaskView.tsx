@@ -722,6 +722,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             status={(message.cardData?.status as any) ?? "not_published"}
             screenshotUrl={message.cardData?.screenshotUrl as string}
             previewUrl={message.cardData?.previewUrl as string}
+            publishedUrl={message.cardData?.publishedUrl as string}
             onSettings={() => {
               const eid = message.cardData?.projectExternalId as string;
               if (eid) window.location.href = `/projects/webapp/${eid}`;
