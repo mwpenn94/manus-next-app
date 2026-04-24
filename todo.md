@@ -3224,32 +3224,32 @@
 ## Session 25: Parity Expert Convergence — Memory Tuning UI + Task Export + Task Duplicate
 
 ### Step 1: Memory Importance Tuning UI (Landscape → Depth → Adversarial → Convergence)
-- [ ] Add memoryDecayHalfLife and memoryArchiveThreshold to GeneralSettings in SettingsPage
-- [ ] Add visual sliders with labels showing current values (half-life in days, threshold 0-1)
-- [ ] Wire settings to server via user preferences (store in localStorage + pass to scheduler)
-- [ ] Update archiveStaleMemories and computeMemoryImportance to accept configurable parameters
-- [ ] Depth pass: validate slider ranges prevent dangerous values (e.g., threshold=1.0 archives everything)
-- [ ] Adversarial pass: handle settings migration for existing users (default to current hardcoded values)
+- [x] Add memoryDecayHalfLife and memoryArchiveThreshold to GeneralSettings in SettingsPage
+- [x] Add visual sliders with labels showing current values (half-life in days, threshold 0-1)
+- [x] Wire settings to server via user preferences (store in localStorage + pass to scheduler)
+- [x] Update archiveStaleMemories and computeMemoryImportance to accept configurable parameters
+- [x] Depth pass: validate slider ranges prevent dangerous values (e.g., threshold=1.0 archives everything)
+- [x] Adversarial pass: handle settings migration for existing users (default to current hardcoded values)
 
 ### Step 2: Task Export to Markdown (Landscape → Depth → Adversarial → Convergence)
-- [ ] Add tRPC endpoint to serialize a task's conversation into Markdown format
-- [ ] Include task title, timestamps, user messages, agent responses, and tool calls
-- [ ] Add "Export" button in TaskView header (Download icon)
-- [ ] Trigger browser download of the .md file
-- [ ] Depth pass: handle images (include URLs), code blocks, and nested content
-- [ ] Adversarial pass: handle very long conversations, empty tasks, and special characters
+- [x] Add tRPC endpoint to serialize a task's conversation into Markdown format
+- [x] Include task title, timestamps, user messages, agent responses, and tool calls
+- [x] Add "Export" button in TaskView header (Download icon)
+- [x] Trigger browser download of the .md file
+- [x] Depth pass: handle images (include URLs), code blocks, and nested content
+- [x] Adversarial pass: handle very long conversations, empty tasks, and special characters
 
 ### Step 3: Task Duplicate/Fork (Landscape → Depth → Adversarial → Convergence)
-- [ ] Add duplicateTask tRPC endpoint that creates a new task with the same initial prompt
-- [ ] Add "Duplicate" option in TaskView header menu or context menu
-- [ ] Navigate to the new task after duplication
-- [ ] Depth pass: decide what to copy (just prompt? first message? all messages?)
-- [ ] Adversarial pass: handle edge cases (deleted tasks, tasks with no messages)
+- [x] Add duplicateTask tRPC endpoint that creates a new task with the same initial prompt
+- [x] Add "Duplicate" option in TaskView header menu or context menu
+- [x] Navigate to the new task after duplication
+- [x] Depth pass: decide what to copy (just prompt? first message? all messages?)
+- [x] Adversarial pass: handle edge cases (deleted tasks, tasks with no messages)
 
 ### Testing & Checkpoint
-- [ ] Write Session 25 tests (convergence-validated)
-- [ ] Run full test suite
-- [ ] Save checkpoint
+- [x] Write Session 25 tests (convergence-validated)
+- [x] Run full test suite
+- [x] Save checkpoint
 
 ## Session 25 Bug Fixes (User-Reported from Screenshots)
 
