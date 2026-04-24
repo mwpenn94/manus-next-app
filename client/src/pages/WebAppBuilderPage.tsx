@@ -170,8 +170,22 @@ Generate the complete HTML code now.`,
       });
 
       setBuildSteps((prev) => prev.map((s) => ({ ...s, status: "done" })));
-      setActiveTab("preview");
-      toast.success("Web app generated and saved!");
+
+      // Step 4: Auto-create a managed project linked to this build
+      try {
+        const project = await createProjectMut.mutateAsync({
+          name: appName || "My App",
+          framework: "html",
+          webappBuildId: build.id,
+        });
+        toast.success(`App generated! Project created — you can deploy from the project page.`);
+        // Navigate to the project page for full lifecycle management
+        navigate(`/projects/webapp/${project.externalId}`);
+      } catch {
+        // Project creation failed but build succeeded — still show preview
+        setActiveTab("preview");
+        toast.success("Web app generated and saved!");
+      }
     } catch (err: any) {
       toast.error("Build failed: " + err.message);
       setBuildSteps((prev) =>
@@ -183,7 +197,7 @@ Generate the complete HTML code now.`,
     } finally {
       setIsBuilding(false);
     }
-  }, [prompt, appName, createBuild, updateBuild, currentBuildId]);
+  }, [prompt, appName, createBuild, updateBuild, currentBuildId, createProjectMut, navigate]);
 
   const handlePublish = useCallback(() => {
     if (!currentBuildId) {
@@ -192,6 +206,21 @@ Generate the complete HTML code now.`,
     }
     publishBuild.mutate({ id: currentBuildId });
   }, [currentBuildId, publishBuild]);
+
+  // Convert an existing build to a managed project
+  const convertBuildToProject = useCallback(async (build: any) => {
+    try {
+      const project = await createProjectMut.mutateAsync({
+        name: build.title || "My App",
+        framework: "html",
+        webappBuildId: build.id,
+      });
+      toast.success("Project created from build!");
+      navigate(`/projects/webapp/${project.externalId}`);
+    } catch (err: any) {
+      toast.error("Failed to create project: " + err.message);
+    }
+  }, [createProjectMut, navigate]);
 
   const loadBuild = useCallback((build: any) => {
     setCurrentBuildId(build.id);
@@ -564,6 +593,18 @@ Generate the complete HTML code now.`,
                           <p className="text-xs text-muted-foreground truncate">{build.prompt?.slice(0, 80)}</p>
                         </div>
                         <div className="flex items-center gap-2 ml-3">
+                          {build.generatedHtml && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={(e) => { e.stopPropagation(); convertBuildToProject(build); }}
+                              disabled={createProjectMut.isPending}
+                            >
+                              <FolderKanban className="w-3 h-3 mr-1" />
+                              Project
+                            </Button>
+                          )}
                           <Badge variant={build.status === "published" ? "default" : build.status === "ready" ? "secondary" : "outline"}>
                             {build.status}
                           </Badge>

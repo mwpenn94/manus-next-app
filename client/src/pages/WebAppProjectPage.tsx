@@ -80,6 +80,14 @@ export default function WebAppProjectPage() {
     { enabled: !!projectId && activePanel === "dashboard" }
   );
 
+  // Fetch linked build HTML for dev preview (when no published URL yet)
+  const project = projectQuery.data;
+  const linkedBuildQuery = trpc.webapp.get.useQuery(
+    { id: project?.webappBuildId ?? 0 },
+    { enabled: !!project?.webappBuildId && !project?.publishedUrl }
+  );
+  const linkedBuildHtml = linkedBuildQuery.data?.generatedHtml ?? null;
+
   // Mutations
   const updateProjectMut = trpc.webappProject.update.useMutation({
     onSuccess: () => {
@@ -167,8 +175,6 @@ export default function WebAppProjectPage() {
     },
     onError: () => { toast.error("Failed to duplicate project"); },
   });
-
-  const project = projectQuery.data;
 
   if (projectQuery.isLoading) {
     return (
@@ -291,7 +297,7 @@ export default function WebAppProjectPage() {
                 <iframe
                   src={project.publishedUrl}
                   className="w-full h-full border-0"
-                  title="Preview"
+                  title="Live Preview"
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 />
               ) : project.deployStatus === "building" || project.deployStatus === "deploying" ? (
@@ -299,6 +305,27 @@ export default function WebAppProjectPage() {
                   <Loader2 className="w-12 h-12 text-primary mx-auto mb-3 animate-spin" />
                   <p className="text-sm text-foreground font-medium">Building your app…</p>
                   <p className="text-xs text-muted-foreground mt-1">Preview will appear here once the build completes</p>
+                  <BuildLogPanel externalId={project.externalId} />
+                </div>
+              ) : linkedBuildHtml ? (
+                <div className="w-full h-full flex flex-col">
+                  <div className="bg-amber-500/10 border-b border-amber-500/20 px-3 py-1.5 flex items-center justify-between">
+                    <span className="text-xs text-amber-600 font-medium">Dev Preview (not deployed)</span>
+                    <Button
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() => setDeployConfirmOpen(true)}
+                    >
+                      <Rocket className="w-3 h-3 mr-1" />
+                      Deploy Live
+                    </Button>
+                  </div>
+                  <iframe
+                    srcDoc={linkedBuildHtml}
+                    className="w-full flex-1 border-0"
+                    title="Dev Preview"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
                 </div>
               ) : (
                 <div className="text-center max-w-md">
