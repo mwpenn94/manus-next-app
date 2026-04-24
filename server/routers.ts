@@ -2870,7 +2870,14 @@ export const appRouter = router({
         let publishedUrl = project.publishedUrl ?? null;
         let cdnActive = false;
         let distributionId: string | undefined;
+        const buildLogLines: string[] = [`[${new Date().toISOString()}] Deploy started for ${project.name}`];
+        const appendLog = async (line: string) => {
+          buildLogLines.push(`[${new Date().toISOString()}] ${line}`);
+          // Persist incrementally so frontend can poll
+          try { await updateWebappDeployment(depId, { buildLog: buildLogLines.join("\n") }); } catch {}
+        };
         try {
+          await appendLog("Resolving build artifacts...");
           // Resolve HTML content from linked build
           let htmlContent: string | null = null;
           if (project.webappBuildId) {
@@ -2884,6 +2891,8 @@ export const appRouter = router({
           }
 
           if (htmlContent) {
+            await appendLog(`Found HTML content (${(htmlContent.length / 1024).toFixed(1)} KB)`);
+            await appendLog("Running content safety check...");
             // V-005: Content safety check before publishing
             const { checkContentSafety } = await import("./contentSafety");
             const safetyVerdict = await checkContentSafety(htmlContent);
@@ -2906,6 +2915,8 @@ export const appRouter = router({
               finalHtml += `\n${trackingScript}`;
             }
 
+            await appendLog("Content safety check passed");
+            await appendLog("Uploading to CDN...");
             // Deploy via CloudFront provisioning pipeline (S3 + optional CDN)
             const { provisionDistribution } = await import("./cloudfront");
             const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
@@ -2930,11 +2941,13 @@ export const appRouter = router({
             publishedUrl = null;
           }
 
+          await appendLog(publishedUrl ? `Deploy complete! URL: ${publishedUrl}` : "Deploy failed: no publishable content");
           const buildDuration = Math.round((Date.now() - startTime) / 1000);
           await updateWebappDeployment(depId, {
             status: publishedUrl ? "live" : "failed",
             completedAt: new Date(),
             buildDurationSec: buildDuration,
+            buildLog: buildLogLines.join("\n"),
           });
           await updateWebappProject(project.id, {
             deployStatus: publishedUrl ? "live" : "failed",
@@ -2986,8 +2999,14 @@ export const appRouter = router({
         let publishedUrl = project.publishedUrl ?? null;
         let cdnActive = false;
         let distributionId: string | undefined;
+        const buildLogLines: string[] = [`[${new Date().toISOString()}] GitHub deploy started for ${repo.fullName}`];
+        const appendLog = async (line: string) => {
+          buildLogLines.push(`[${new Date().toISOString()}] ${line}`);
+          try { await updateWebappDeployment(depId, { buildLog: buildLogLines.join("\n") }); } catch {}
+        };
 
         try {
+          await appendLog(`Fetching repo tree from branch: ${input.branch || repo.defaultBranch || "main"}`);
           const { getFileContent, getRepoTree } = await import("./githubApi");
           const branch = input.branch || repo.defaultBranch || "main";
           const [owner, repoName] = repo.fullName.split("/");
@@ -3014,11 +3033,14 @@ export const appRouter = router({
           }
 
           if (!indexHtml) {
-            await updateWebappDeployment(depId, { status: "failed", errorMessage: "No index.html found in repo root, public/, dist/, build/, or docs/" });
+            await appendLog("ERROR: No index.html found in repo root, public/, dist/, build/, or docs/");
+            await updateWebappDeployment(depId, { status: "failed", errorMessage: "No index.html found in repo root, public/, dist/, build/, or docs/", buildLog: buildLogLines.join("\n") });
             await updateWebappProject(project.id, { deployStatus: "failed" });
             throw new TRPCError({ code: "BAD_REQUEST", message: "No index.html found in the repository. Deploy requires an index.html in root, public/, dist/, build/, or docs/." });
           }
 
+          await appendLog(`Found index.html in ${basePath || "root"} (${(indexHtml.length / 1024).toFixed(1)} KB)`);
+          await appendLog(`Uploading assets to CDN...`);
           // Upload all assets from the same directory to S3
           const { storagePut } = await import("./storage");
           const assetFiles = files.filter((f: any) =>
@@ -3062,6 +3084,8 @@ export const appRouter = router({
             );
           }
 
+          await appendLog(`Uploaded ${Object.keys(assetUrlMap).length} assets to CDN`);
+          await appendLog("Running content safety check...");
           // Content safety check
           const { checkContentSafety } = await import("./contentSafety");
           const safetyVerdict = await checkContentSafety(finalHtml);
@@ -3083,6 +3107,8 @@ export const appRouter = router({
             finalHtml += `\n${trackingScript}`;
           }
 
+          await appendLog("Content safety check passed");
+          await appendLog("Provisioning CDN distribution...");
           // Deploy via CloudFront
           const { provisionDistribution } = await import("./cloudfront");
           const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
@@ -3100,15 +3126,16 @@ export const appRouter = router({
             finalHtml
           );
 
-          publishedUrl = result.publicUrl;
+           publishedUrl = result.publicUrl;
           cdnActive = result.cdnActive;
           distributionId = result.distributionId;
-
+          await appendLog(publishedUrl ? `Deploy complete! URL: ${publishedUrl}` : "Deploy failed");
           const buildDuration = Math.round((Date.now() - startTime) / 1000);
           await updateWebappDeployment(depId, {
             status: publishedUrl ? "live" : "failed",
             completedAt: new Date(),
             buildDurationSec: buildDuration,
+            buildLog: buildLogLines.join("\n"),
             commitMessage: `Deploy from GitHub: ${repo.fullName}@${branch}`,
           });
           await updateWebappProject(project.id, {
@@ -3197,6 +3224,17 @@ Provide a JSON response with this exact structure:
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         return getProjectDeployments(project.id);
+      }),
+    /** Poll latest deployment build log for real-time streaming */
+    deployBuildLog: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        const deployments = await getProjectDeployments(project.id);
+        const latest = deployments[0];
+        if (!latest) return { log: null, status: null };
+        return { log: latest.buildLog || null, status: latest.status };
       }),
     /** Get real analytics data for a project */
     analytics: protectedProcedure
@@ -3756,10 +3794,11 @@ Provide a JSON response with this exact structure:
         sessionId: z.string().optional(),
         width: z.number().min(320).max(3840),
         height: z.number().min(480).max(2160),
+        deviceName: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { setViewport } = await import("./browserAutomation");
-        return setViewport(input.sessionId, input.width, input.height);
+        return setViewport(input.sessionId, input.width, input.height, input.deviceName);
       }),
     /** Run a QA test suite server-side */
     runQA: protectedProcedure
@@ -3780,6 +3819,77 @@ Provide a JSON response with this exact structure:
     viewportPresets: protectedProcedure.query(async () => {
       const { VIEWPORT_PRESETS } = await import("./browserAutomation");
       return VIEWPORT_PRESETS;
+    }),
+    /** Get performance metrics via CDP */
+    performanceMetrics: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .query(async ({ input }) => {
+        const { getPerformanceMetrics } = await import("./browserAutomation");
+        return getPerformanceMetrics(input.sessionId);
+      }),
+    /** Run accessibility audit */
+    accessibilityAudit: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { runAccessibilityAudit } = await import("./browserAutomation");
+        return runAccessibilityAudit(input.sessionId);
+      }),
+    /** Screenshot diff / visual regression */
+    screenshotDiff: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        baselineUrl: z.string().url(),
+        threshold: z.number().min(0).max(1).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { screenshotDiff } = await import("./browserAutomation");
+        return screenshotDiff(input.sessionId, input.baselineUrl, input.threshold);
+      }),
+    /** Add network route interception */
+    interceptRoute: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        urlPattern: z.string(),
+        action: z.enum(["block", "modify", "log"]),
+        modifyOptions: z.object({
+          status: z.number().optional(),
+          body: z.string().optional(),
+          contentType: z.string().optional(),
+        }).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { interceptRoute } = await import("./browserAutomation");
+        return interceptRoute(input.sessionId, input.urlPattern, input.action, input.modifyOptions);
+      }),
+    /** Clear all network interceptions */
+    clearInterceptions: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { clearInterceptions } = await import("./browserAutomation");
+        return clearInterceptions(input.sessionId);
+      }),
+    /** Start code coverage collection */
+    startCoverage: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { startCoverage } = await import("./browserAutomation");
+        return startCoverage(input.sessionId);
+      }),
+    /** Stop code coverage and return results */
+    stopCoverage: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { stopCoverage } = await import("./browserAutomation");
+        return stopCoverage(input.sessionId);
+      }),
+    /** Get device user-agent presets */
+    devicePresets: protectedProcedure.query(async () => {
+      const { DEVICE_USER_AGENTS, VIEWPORT_PRESETS } = await import("./browserAutomation");
+      return Object.entries(VIEWPORT_PRESETS).map(([name, viewport]) => ({
+        name,
+        ...viewport,
+        userAgent: DEVICE_USER_AGENTS[name] || "default",
+      }));
     }),
   }),
 });

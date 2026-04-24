@@ -30,7 +30,7 @@ import {
   Maximize2, Minimize2, AlertCircle, CheckCircle2, Clock,
   Trash2, RefreshCw, Code, Crosshair, Hand, Keyboard,
   ArrowUpDown, Layers, FileText, Wifi, WifiOff, Minus,
-  Smartphone, Tablet,
+  Smartphone, Tablet, BarChart3,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -162,11 +162,15 @@ export default function BrowserPage() {
   const [clickSelector, setClickSelector] = useState("");
   const [evalCode, setEvalCode] = useState("");
   const [evalResult, setEvalResult] = useState<string | null>(null);
-  const [bottomPanel, setBottomPanel] = useState<"console" | "network" | "elements" | "qa">("console");
+  const [bottomPanel, setBottomPanel] = useState<"console" | "network" | "elements" | "qa" | "a11y" | "perf" | "coverage">("console");
   const [bottomPanelOpen, setBottomPanelOpen] = useState(true);
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLogEntry[]>([]);
   const [networkRequests, setNetworkRequests] = useState<NetworkRequestEntry[]>([]);
   const [scannedElements, setScannedElements] = useState<Array<{ tag: string; text: string; selector: string }>>([]);
+  const [a11yResults, setA11yResults] = useState<{ violations: any[]; passes: number; score: number } | null>(null);
+  const [perfMetrics, setPerfMetrics] = useState<Record<string, number | undefined> | null>(null);
+  const [coverageData, setCoverageData] = useState<{ js: any[]; css: any[] } | null>(null);
+  const [coverageRunning, setCoverageRunning] = useState(false);
   const [sessions, setSessions] = useState<BrowserSessionInfo[]>([]);
   const [showSessionDialog, setShowSessionDialog] = useState(false);
   const [currentViewport, setCurrentViewport] = useState<{ name: string; width: number; height: number } | null>(null);
@@ -1002,7 +1006,7 @@ export default function BrowserPage() {
             {bottomPanelOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
           </button>
           <div className="flex items-center gap-0.5">
-            {(["console", "network", "elements", "qa"] as const).map(tab => (
+            {(["console", "network", "elements", "qa", "a11y", "perf", "coverage"] as const).map(tab => (
               <button
                 key={tab}
                 className={cn(
@@ -1013,7 +1017,7 @@ export default function BrowserPage() {
                 )}
                 onClick={e => { e.stopPropagation(); setBottomPanel(tab); setBottomPanelOpen(true); }}
               >
-                {tab === "qa" ? "QA Tests" : tab}
+                {tab === "qa" ? "QA Tests" : tab === "a11y" ? "A11y" : tab === "perf" ? "Perf" : tab}
               </button>
             ))}
           </div>
@@ -1294,6 +1298,243 @@ export default function BrowserPage() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* ── A11y Audit Panel ── */}
+            {bottomPanel === "a11y" && (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+                  <span className="text-xs font-medium">Accessibility Audit</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={async () => {
+                      try {
+                        const resp = await fetch(`/api/trpc/browser.accessibilityAudit`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ json: { sessionId: activeSessionId } }),
+                          credentials: "include",
+                        }).then(r => r.json());
+                        if (resp?.result?.data?.json) {
+                          const data = resp.result.data.json;
+                          setA11yResults({ violations: data.violations || [], passes: data.passes || 0, score: data.score || 0 });
+                        }
+                      } catch (err) {
+                        console.error("A11y audit failed:", err);
+                      }
+                    }}
+                  >
+                    Run Audit
+                  </Button>
+                </div>
+                <ScrollArea className="flex-1">
+                  {!a11yResults ? (
+                    <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
+                      <div className="text-center space-y-2">
+                        <Eye className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <p>Click "Run Audit" to check accessibility.</p>
+                        <p className="text-[10px]">Checks WCAG rules: alt text, labels, headings, ARIA, contrast, skip links.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-2">
+                      <div className="flex items-center gap-3 px-2 py-1">
+                        <div className={cn(
+                          "text-2xl font-bold",
+                          a11yResults.score >= 90 ? "text-emerald-500" : a11yResults.score >= 70 ? "text-yellow-500" : "text-red-500"
+                        )}>
+                          {a11yResults.score}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <p>{a11yResults.violations.length} violation{a11yResults.violations.length !== 1 ? "s" : ""}</p>
+                          <p>{a11yResults.passes} checks passed</p>
+                        </div>
+                      </div>
+                      {a11yResults.violations.map((v: any, i: number) => (
+                        <div key={i} className="border border-border rounded px-2 py-1.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={v.impact === "critical" ? "destructive" : "outline"} className="text-[9px]">
+                              {v.impact}
+                            </Badge>
+                            <span className="font-medium">{v.rule}</span>
+                          </div>
+                          <p className="text-muted-foreground mt-0.5">{v.description}</p>
+                          <code className="text-[10px] text-muted-foreground block mt-0.5 truncate">{v.selector}</code>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* ── Performance Metrics Panel ── */}
+            {bottomPanel === "perf" && (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+                  <span className="text-xs font-medium">Performance Metrics (CDP)</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={async () => {
+                      try {
+                        const resp = await fetch(`/api/trpc/browser.performanceMetrics?input=${encodeURIComponent(JSON.stringify({ json: { sessionId: activeSessionId } }))}`).then(r => r.json());
+                        if (resp?.result?.data?.json?.metrics) {
+                          setPerfMetrics(resp.result.data.json.metrics);
+                        }
+                      } catch (err) {
+                        console.error("Perf metrics failed:", err);
+                      }
+                    }}
+                  >
+                    Measure
+                  </Button>
+                </div>
+                <ScrollArea className="flex-1">
+                  {!perfMetrics ? (
+                    <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
+                      <div className="text-center space-y-2">
+                        <BarChart3 className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <p>Click "Measure" to capture Core Web Vitals.</p>
+                        <p className="text-[10px]">LCP, CLS, FCP, TTFB, JS heap, layout counts via CDP.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: "LCP", value: perfMetrics.lcp, unit: "ms", good: 2500 },
+                          { label: "CLS", value: perfMetrics.cls, unit: "", good: 0.1 },
+                          { label: "FCP", value: perfMetrics.fcp, unit: "ms", good: 1800 },
+                          { label: "TTFB", value: perfMetrics.ttfb, unit: "ms", good: 800 },
+                          { label: "DOM Loaded", value: perfMetrics.domContentLoaded, unit: "ms", good: 3000 },
+                          { label: "Load", value: perfMetrics.loadComplete, unit: "ms", good: 5000 },
+                          { label: "JS Heap", value: perfMetrics.jsHeapUsedSize ? Math.round(perfMetrics.jsHeapUsedSize / 1024 / 1024) : undefined, unit: "MB", good: 50 },
+                          { label: "Layouts", value: perfMetrics.layoutCount, unit: "", good: 100 },
+                          { label: "Script Time", value: perfMetrics.scriptDuration ? Math.round(perfMetrics.scriptDuration * 1000) : undefined, unit: "ms", good: 2000 },
+                        ].map(m => (
+                          <div key={m.label} className="border border-border rounded p-2 text-center">
+                            <div className="text-[10px] text-muted-foreground">{m.label}</div>
+                            <div className={cn(
+                              "text-sm font-mono font-bold",
+                              m.value === undefined ? "text-muted-foreground" :
+                              (typeof m.value === "number" && m.value <= m.good) ? "text-emerald-500" : "text-yellow-500"
+                            )}>
+                              {m.value !== undefined ? `${typeof m.value === "number" ? m.value.toFixed(m.unit === "" ? 3 : 0) : m.value}${m.unit}` : "—"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* ── Code Coverage Panel ── */}
+            {bottomPanel === "coverage" && (
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+                  <span className="text-xs font-medium">Code Coverage (CDP)</span>
+                  <div className="flex items-center gap-1">
+                    {!coverageRunning ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs"
+                        onClick={async () => {
+                          try {
+                            await fetch(`/api/trpc/browser.startCoverage`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ json: { sessionId: activeSessionId } }),
+                              credentials: "include",
+                            });
+                            setCoverageRunning(true);
+                          } catch (err) {
+                            console.error("Start coverage failed:", err);
+                          }
+                        }}
+                      >
+                        Start Recording
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="h-6 text-xs"
+                        onClick={async () => {
+                          try {
+                            const resp = await fetch(`/api/trpc/browser.stopCoverage`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ json: { sessionId: activeSessionId } }),
+                              credentials: "include",
+                            }).then(r => r.json());
+                            if (resp?.result?.data?.json) {
+                              const data = resp.result.data.json;
+                              setCoverageData({ js: data.jsCoverage || [], css: data.cssCoverage || [] });
+                            }
+                            setCoverageRunning(false);
+                          } catch (err) {
+                            console.error("Stop coverage failed:", err);
+                            setCoverageRunning(false);
+                          }
+                        }}
+                      >
+                        <Loader2 className="w-3 h-3 animate-spin mr-1" /> Stop & Analyze
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
+                  {!coverageData ? (
+                    <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
+                      <div className="text-center space-y-2">
+                        <Code className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <p>{coverageRunning ? "Recording coverage... navigate and interact, then click Stop." : "Click \"Start Recording\" to begin coverage collection."}</p>
+                        <p className="text-[10px]">Tracks JS and CSS usage via CDP Profiler.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-2 space-y-3">
+                      <div>
+                        <div className="text-xs font-medium mb-1">JavaScript ({coverageData.js.length} files)</div>
+                        {coverageData.js.slice(0, 20).map((file: any, i: number) => (
+                          <div key={i} className="flex items-center gap-2 text-[10px] py-0.5">
+                            <div className="w-10 text-right font-mono font-bold" style={{ color: file.usedPercent >= 70 ? "#22c55e" : file.usedPercent >= 40 ? "#eab308" : "#ef4444" }}>
+                              {file.usedPercent}%
+                            </div>
+                            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${file.usedPercent}%`, backgroundColor: file.usedPercent >= 70 ? "#22c55e" : file.usedPercent >= 40 ? "#eab308" : "#ef4444" }} />
+                            </div>
+                            <span className="text-muted-foreground truncate max-w-[200px]">{file.url.split("/").pop() || file.url}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {coverageData.css.length > 0 && (
+                        <div>
+                          <div className="text-xs font-medium mb-1">CSS ({coverageData.css.length} sheets)</div>
+                          {coverageData.css.slice(0, 10).map((file: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 text-[10px] py-0.5">
+                              <div className="w-10 text-right font-mono font-bold" style={{ color: file.usedPercent >= 70 ? "#22c55e" : "#eab308" }}>
+                                {file.usedPercent}%
+                              </div>
+                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${file.usedPercent}%`, backgroundColor: file.usedPercent >= 70 ? "#22c55e" : "#eab308" }} />
+                              </div>
+                              <span className="text-muted-foreground truncate max-w-[200px]">{file.url}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </ScrollArea>

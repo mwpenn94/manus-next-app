@@ -1314,21 +1314,9 @@ export default function WebAppProjectPage() {
               <span>Build: <code className="text-xs">{project.buildCommand}</code></span>
             </div>
           </div>
-          {/* Build Log Streaming */}
+          {/* Build Log Streaming — polls real build output */}
           {(deployMut.isPending || deployFromGitHubMut.isPending) && (
-            <div className="border border-border rounded-lg bg-black/90 p-3 max-h-40 overflow-y-auto">
-              <div className="flex items-center gap-2 mb-2">
-                <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                <span className="text-[10px] uppercase tracking-wider text-primary font-medium">Build Output</span>
-              </div>
-              <div className="font-mono text-[11px] text-green-400 space-y-0.5 leading-relaxed">
-                <p className="text-muted-foreground">$ {project.installCommand || 'npm install'}</p>
-                <p>Installing dependencies...</p>
-                <p className="text-muted-foreground">$ {project.buildCommand || 'npm run build'}</p>
-                <p>Building for production...</p>
-                <p className="animate-pulse">Bundling assets...</p>
-              </div>
-            </div>
+            <BuildLogPanel externalId={project.externalId} />
           )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setDeployConfirmOpen(false)}>Cancel</Button>
@@ -1394,6 +1382,43 @@ export default function WebAppProjectPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/** Build log panel that polls real-time build output from the server */
+function BuildLogPanel({ externalId }: { externalId: string }) {
+  const logQuery = trpc.webappProject.deployBuildLog.useQuery(
+    { externalId },
+    { refetchInterval: 1500 }
+  );
+  const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [logQuery.data?.log]);
+
+  const lines = logQuery.data?.log?.split("\n") || [];
+
+  return (
+    <div ref={logRef} className="border border-border rounded-lg bg-black/90 p-3 max-h-40 overflow-y-auto">
+      <div className="flex items-center gap-2 mb-2">
+        <Loader2 className="w-3 h-3 animate-spin text-primary" />
+        <span className="text-[10px] uppercase tracking-wider text-primary font-medium">Build Output</span>
+      </div>
+      <div className="font-mono text-[11px] text-green-400 space-y-0.5 leading-relaxed">
+        {lines.length > 0 ? (
+          lines.map((line: string, i: number) => (
+            <p key={i} className={line.startsWith("[") ? "text-muted-foreground" : ""}>
+              {line}
+            </p>
+          ))
+        ) : (
+          <p className="animate-pulse">Initializing build...</p>
+        )}
+      </div>
     </div>
   );
 }

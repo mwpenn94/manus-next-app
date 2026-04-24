@@ -3825,3 +3825,47 @@
 - [x] Browser: Assessed — already comprehensive with 4 panels + QA mode (no critical gaps)
 - [x] TypeScript: 0 errors after all changes
 - [x] GitHub tests: 65/65 pass
+
+## Session 35: Three Convergence Mega-Cycles — E2E Parity+ with Manus
+
+### Critical Bug Fix (from user screenshots)
+- [ ] CRITICAL: Playwright binary not found in production — browserType.launch fails with "Executable doesn't exist at /home/ubuntu/.cache/ms-playwright/chromium_headless_shell-1217"
+- [ ] CRITICAL: Scheduled Tasks page also crashes with same Playwright error on "Go back" navigation
+- [ ] Fix: Add fallback to system Chromium (/usr/bin/chromium) when Playwright cache binary missing
+
+### Cycle 1: Fix All Remaining Gaps from Audit
+- [x] C1-1: Fix Playwright launch — use executablePath fallback to system chromium + graceful error handling + auto-install
+- [x] C1-2: Add CDP session integration for performance profiling + getCDPSession + getPerformanceMetrics + getCoverage
+- [x] C1-3: Add enhanced accessibility audit — alt text, labels, headings, contrast, landmarks, ARIA checks
+- [x] C1-4: Add per-device userAgent switching — DEVICE_USER_AGENTS map + setViewport now changes UA
+- [x] C1-5: Server-side npm run build already existed in deploy_webapp — verified
+- [x] C1-6: Add real build log streaming — appendLog to DB + deployBuildLog polling endpoint + BuildLogPanel UI
+- [x] C1-7: Add screenshot diff — compareScreenshots function with pngjs + pixel comparison + threshold
+- [x] C1-8: Add network interception — enableNetworkInterception + getInterceptedRequests via CDP
+- [x] C1-9: Write E2E smoke tests — 30 tests covering all Cycle 1 features, all pass
+- [x] C1-10: Convergence pass 1 — TypeScript clean, 69 targeted tests pass, all features verified
+- [ ] C1-11: Convergence pass 2
+- [ ] C1-12: Convergence pass 3
+
+### Cycle 2: Chat + App Dev/Publish E2E at Manus Parity+
+- [ ] C2-1: Assess chat-driven app creation flow E2E capability
+- [ ] C2-2: Ensure agent can create, edit, preview, build, deploy apps E2E
+- [ ] C2-3: Ensure deploy produces a real accessible URL
+- [ ] C2-4: Ensure app management (list, delete, redeploy) works E2E
+- [ ] C2-5: Ensure publishing pipeline with content safety works E2E
+- [ ] C2-6: Write comprehensive E2E tests for full app lifecycle
+- [ ] C2-7: Convergence pass 1
+- [ ] C2-8: Convergence pass 2
+- [ ] C2-9: Convergence pass 3
+
+### Cycle 3: GitHub CRUD+Deploy + Browser/CDP Automation E2E
+- [ ] C3-1: GitHub CRUD E2E — connect repo, list, create, browse files, create branch, create PR
+- [ ] C3-2: GitHub deploy E2E — deploy from repo branch to live URL
+- [ ] C3-3: Browser automation E2E — navigate, click, type, screenshot with real Playwright
+- [ ] C3-4: CDP automation E2E — performance profiling, network interception, coverage
+- [ ] C3-5: Virtual user QA E2E — run QA scenarios against deployed apps
+- [ ] C3-6: Device automation E2E — viewport + UA switching, responsive testing
+- [ ] C3-7: Write comprehensive E2E tests for all above
+- [ ] C3-8: Convergence pass 1
+- [ ] C3-9: Convergence pass 2
+- [ ] C3-10: Convergence pass 3
