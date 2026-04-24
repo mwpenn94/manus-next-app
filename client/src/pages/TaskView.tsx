@@ -2536,47 +2536,107 @@ export default function TaskView() {
                     <button
                       onClick={() => {
                         if (!task) return;
+                        // Adversarial: guard empty task
+                        const exportableMessages = task.messages.filter(m => m.role !== "system");
+                        if (exportableMessages.length === 0) {
+                          toast.error("Nothing to export — this task has no messages");
+                          setShowMoreMenu(false);
+                          return;
+                        }
                         const lines: string[] = [];
                         lines.push(`# ${task.title}\n`);
                         lines.push(`> **Created:** ${task.createdAt.toLocaleString()}  `);
                         lines.push(`> **Status:** ${task.status}  `);
-                        lines.push(`> **Messages:** ${task.messages.length}  `);
+                        lines.push(`> **Messages:** ${exportableMessages.length}  `);
                         lines.push(`> **Mode:** ${(task as any).mode || "quality"}\n`);
                         lines.push(`---\n`);
                         
-                        for (const msg of task.messages) {
-                          // Skip system messages from export (internal only)
-                          if (msg.role === "system") continue;
-                          
+                        for (const msg of exportableMessages) {
                           const label = msg.role === "user" ? "👤 You" : "🤖 Assistant";
                           const time = msg.timestamp ? msg.timestamp.toLocaleString() : "";
-                          lines.push(`## ${label}${time ? ` — ${time}` : ""}\n`);
+                          lines.push(`## ${label}${time ? ` \u2014 ${time}` : ""}\n`);
                           
-                          // Clean up content: remove internal tool markers, preserve markdown
-                          let content = msg.content;
-                          // Extract and format any artifact URLs
-                          const artifactUrls = content.match(/https?:\/\/\S+\.(pdf|png|jpg|jpeg|gif|svg|docx|xlsx|pptx|mp3|mp4)/gi);
-                          if (artifactUrls && artifactUrls.length > 0) {
-                            lines.push(content + "\n");
-                            lines.push(`\n**Artifacts:**\n`);
-                            for (const url of artifactUrls) {
-                              const ext = url.split(".").pop()?.toUpperCase() || "FILE";
-                              lines.push(`- [📎 ${ext} File](${url})`);
+                          let content = msg.content || "";
+                          
+                          // Depth: Include tool actions as a summary block
+                          if (msg.actions && msg.actions.length > 0) {
+                            const actionSummary = msg.actions
+                              .filter((a: any) => a.status === "done")
+                              .map((a: any) => {
+                                switch (a.type) {
+                                  case "browsing": return `Browsed: ${a.url || "page"}`;
+                                  case "searching": return `Searched: ${a.query || "web"}`;
+                                  case "executing": return `Executed: \`${(a.command || "").slice(0, 60)}\``;
+                                  case "creating": return `Created: ${a.file || "file"}`;
+                                  case "generating": return `Generated: ${a.description || "content"}`;
+                                  case "editing": return `Edited: ${a.file || a.label || "file"}`;
+                                  case "reading": return `Read: ${a.file || a.label || "file"}`;
+                                  case "installing": return `Installed: ${a.packages || a.label || "packages"}`;
+                                  case "researching": return `Researched: ${a.label || "topic"}`;
+                                  case "building": return `Built: ${a.label || "component"}`;
+                                  case "analyzing": return `Analyzed: ${a.label || "data"}`;
+                                  case "designing": return `Designed: ${a.label || "layout"}`;
+                                  default: return `${a.type}: ${a.label || a.preview || ""}`;
+                                }
+                              })
+                              .filter(Boolean);
+                            if (actionSummary.length > 0) {
+                              lines.push(`<details>\n<summary>\ud83d\udee0 Actions (${actionSummary.length})</summary>\n`);
+                              for (const s of actionSummary) {
+                                lines.push(`- ${s}`);
+                              }
+                              lines.push(`\n</details>\n`);
                             }
-                            lines.push("");
-                          } else {
+                          }
+                          
+                          // Depth: Extract artifact URLs (images, docs, media)
+                          const artifactUrls = content.match(/https?:\/\/\S+\.(pdf|png|jpg|jpeg|gif|svg|webp|docx|xlsx|pptx|mp3|mp4|wav)/gi);
+                          const imageUrls = content.match(/https?:\/\/\S+\.(png|jpg|jpeg|gif|svg|webp)/gi);
+                          
+                          // Write content
+                          if (content.trim()) {
                             lines.push(content + "\n");
+                          }
+                          
+                          // Depth: Embed images as markdown images, other artifacts as links
+                          if (artifactUrls && artifactUrls.length > 0) {
+                            const imageSet = new Set(imageUrls || []);
+                            const nonImageArtifacts = artifactUrls.filter(u => !imageSet.has(u));
+                            
+                            if (imageSet.size > 0) {
+                              lines.push(`\n**Images:**\n`);
+                              Array.from(imageSet).forEach(imgUrl => {
+                                lines.push(`![Generated Image](${imgUrl})\n`);
+                              });
+                            }
+                            if (nonImageArtifacts.length > 0) {
+                              lines.push(`\n**Artifacts:**\n`);
+                              for (const url of nonImageArtifacts) {
+                                const ext = url.split(".").pop()?.toUpperCase() || "FILE";
+                                lines.push(`- [\ud83d\udcce ${ext} File](${url})`);
+                              }
+                              lines.push("");
+                            }
                           }
                           lines.push(`---\n`);
                         }
                         
                         lines.push(`\n*Exported from Sovereign AI on ${new Date().toLocaleString()}*\n`);
                         
-                        const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+                        const mdContent = lines.join("\n");
+                        
+                        // Adversarial: warn for very large exports (> 500KB)
+                        if (mdContent.length > 500_000) {
+                          toast.info(`Large export (${(mdContent.length / 1024).toFixed(0)}KB) — download may take a moment`);
+                        }
+                        
+                        const blob = new Blob([mdContent], { type: "text/markdown" });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = `${task.title.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 40).trim()}.md`;
+                        // Adversarial: safe filename — strip all non-alphanumeric except spaces/hyphens, fallback to "task-export"
+                        const safeName = task.title.replace(/[^a-zA-Z0-9 \-]/g, "").trim().slice(0, 50) || "task-export";
+                        a.download = `${safeName}.md`;
                         a.click();
                         URL.revokeObjectURL(url);
                         toast.success("Task exported as Markdown");
@@ -2648,8 +2708,21 @@ export default function TaskView() {
                       Save as Template
                     </button>
                     <button
+                      disabled={duplicateTaskMutation.isPending}
                       onClick={async () => {
                         if (!task) return;
+                        // Adversarial: guard empty task
+                        const userMessages = task.messages.filter(m => m.role === "user");
+                        if (userMessages.length === 0) {
+                          toast.error("Cannot duplicate — this task has no messages");
+                          setShowMoreMenu(false);
+                          return;
+                        }
+                        // Depth: confirm for large tasks (> 50 messages)
+                        if (task.messages.length > 50) {
+                          const ok = window.confirm(`This task has ${task.messages.length} messages. Duplicate all of them?`);
+                          if (!ok) return;
+                        }
                         try {
                           const result = await duplicateTaskMutation.mutateAsync({
                             sourceExternalId: task.id,
@@ -2661,10 +2734,14 @@ export default function TaskView() {
                           toast.error(err.message || "Failed to duplicate task");
                         }
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Copy className="w-3.5 h-3.5" />
-                      Duplicate Task
+                      {duplicateTaskMutation.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                      {duplicateTaskMutation.isPending ? "Duplicating..." : "Duplicate Task"}
                     </button>
                     <div className="h-px bg-border my-1" />
                     {showDeleteConfirm ? (

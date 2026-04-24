@@ -3288,3 +3288,31 @@
 ### Session 25 Tests
 - [x] Write session25.test.ts with 21 convergence tests covering all 6 items
 - [x] All 21 tests passing
+
+## Session 25 Convergence Pass 2: Depth + Adversarial Hardening
+
+### Step 1: Memory Importance Tuning — Depth + Adversarial
+- [x] Fix threshold slider max to 0.5 (matching server cap, was 1.0)
+- [x] Add amber warning for aggressive threshold (> 0.3)
+- [x] Add amber warning for aggressive decay half-life (<= 5 days)
+- [x] Make archiveStaleMemories user-scoped (accepts userId parameter)
+- [x] Scheduler passes userId to archiveStaleMemories for per-user archiving
+
+### Step 2: Task Export — Depth + Adversarial
+- [x] Export tool actions as collapsible summary blocks (<details>)
+- [x] Embed images as markdown image syntax (![...])
+- [x] Support webp format in artifact URL detection
+- [x] Guard against empty tasks (0 exportable messages)
+- [x] Safe filename with fallback to "task-export"
+- [x] Large export warning (> 500KB)
+
+### Step 3: Task Duplicate — Depth + Adversarial
+- [x] Server-side guard: reject empty tasks (0 messages)
+- [x] Client-side guard: reject empty tasks before API call
+- [x] Loading state with disabled button during duplication (double-click guard)
+- [x] Confirmation dialog for large tasks (> 50 messages)
+- [x] Clamp upToMessageIndex to sourceMessages.length (bounds safety)
+
+### Convergence Pass 2 Tests
+- [x] Expanded session25.test.ts from 21 to 35 tests
+- [x] All 35 tests passing — convergence confirmed

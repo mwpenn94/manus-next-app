@@ -99,7 +99,7 @@ interface GeneralSettings {
   offlineMode: boolean;
   autoTuneStrategies: boolean;
   memoryDecayHalfLife: number; // days, controls how fast memory importance decays (1-90)
-  memoryArchiveThreshold: number; // 0.01-1.0, memories below this score get archived
+  memoryArchiveThreshold: number; // 0.01-0.5, memories below this score get archived
   ttsVoice: string;
   ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
@@ -565,6 +565,9 @@ export default function SettingsPage() {
                       <span>3 days (aggressive)</span>
                       <span>90 days (conservative)</span>
                     </div>
+                    {generalSettings.memoryDecayHalfLife <= 5 && (
+                      <p className="text-[10px] text-amber-400 mt-1">⚠ Very fast decay — memories will lose importance quickly</p>
+                    )}
                   </div>
 
                   {/* Archive Threshold Slider */}
@@ -580,9 +583,9 @@ export default function SettingsPage() {
                     <input
                       type="range"
                       min={0.01}
-                      max={1.0}
+                      max={0.5}
                       step={0.01}
-                      value={generalSettings.memoryArchiveThreshold}
+                      value={Math.min(generalSettings.memoryArchiveThreshold, 0.5)}
                       onChange={(e) => {
                         const val = Number(e.target.value);
                         setGeneralSettings((prev) => {
@@ -598,8 +601,11 @@ export default function SettingsPage() {
                     />
                     <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
                       <span>0.01 (keep almost everything)</span>
-                      <span>1.00 (archive aggressively)</span>
+                      <span>0.50 (archive aggressively)</span>
                     </div>
+                    {generalSettings.memoryArchiveThreshold > 0.3 && (
+                      <p className="text-[10px] text-amber-400 mt-1">⚠ High threshold — many memories will be auto-archived</p>
+                    )}
                   </div>
                 </div>
               </div>

@@ -392,8 +392,11 @@ export const appRouter = router({
         }
         // 2. Fetch source messages
         const sourceMessages = await getTaskMessages(sourceTask.id);
+        if (sourceMessages.length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot duplicate a task with no messages" });
+        }
         const messagesToCopy = input.upToMessageIndex !== undefined
-          ? sourceMessages.slice(0, input.upToMessageIndex + 1)
+          ? sourceMessages.slice(0, Math.min(input.upToMessageIndex + 1, sourceMessages.length))
           : sourceMessages;
         // 3. Create new task
         const newExternalId = nanoid(12);

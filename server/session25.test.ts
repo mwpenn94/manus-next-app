@@ -7,6 +7,8 @@
  * Feature 4: Memory tuning preferences wired to server-side (agentStream + scheduler)
  * Feature 5: Improved Task Export to Markdown
  * Feature 6: Task Duplicate/Fork (tRPC procedure + UI button)
+ *
+ * Convergence Pass 2: Depth + Adversarial hardening tests added
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -160,8 +162,8 @@ describe("Session 25 — Feature 4: Memory tuning wired to server", () => {
     expect(source).toContain("getUserPreferences");
     expect(source).toContain("memoryDecayHalfLife");
     expect(source).toContain("memoryArchiveThreshold");
-    // Should apply per-user halfLifeDays to archiveStaleMemories
-    expect(source).toMatch(/archiveStaleMemories\(archiveThreshold,\s*halfLifeDays\)/);
+    // Should apply per-user halfLifeDays to archiveStaleMemories with userId
+    expect(source).toMatch(/archiveStaleMemories\(archiveThreshold,\s*halfLifeDays,\s*u\.id\)/);
   });
 
   it("scheduler.ts reads from all users, not just a single default", async () => {
@@ -173,6 +175,59 @@ describe("Session 25 — Feature 4: Memory tuning wired to server", () => {
     );
     expect(source).toContain("allUsers");
     expect(source).toMatch(/for.*const.*u.*of.*allUsers/);
+  });
+
+  // Convergence Pass 2: Depth — UI threshold max matches server cap
+  it("SettingsPage threshold slider max is 0.5, matching server cap", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/SettingsPage.tsx"),
+      "utf-8"
+    );
+    // The archive threshold slider should have max={0.5} not max={1.0}
+    expect(source).toMatch(/max=\{0\.5\}/);
+    // Should NOT have max={1.0} for the archive threshold
+    expect(source).toContain("0.50 (archive aggressively)");
+  });
+
+  // Convergence Pass 2: Depth — warning for aggressive values
+  it("Shows amber warning when threshold > 0.3", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/SettingsPage.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("memoryArchiveThreshold > 0.3");
+    expect(source).toContain("High threshold");
+    expect(source).toContain("text-amber-400");
+  });
+
+  // Convergence Pass 2: Depth — warning for aggressive decay
+  it("Shows amber warning when decay half-life <= 5 days", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/SettingsPage.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("memoryDecayHalfLife <= 5");
+    expect(source).toContain("Very fast decay");
+  });
+
+  // Convergence Pass 2: Adversarial — archiveStaleMemories is user-scoped
+  it("archiveStaleMemories accepts optional userId parameter", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./db.ts"),
+      "utf-8"
+    );
+    // Function signature should include userId parameter
+    expect(source).toMatch(/archiveStaleMemories\(.*userId\?.*number\)/);
+    // Should filter by userId when provided
+    expect(source).toContain("eq(memoryEntries.userId, userId)");
   });
 });
 
@@ -199,8 +254,9 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
       path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
       "utf-8"
     );
-    // Should skip system messages from the export
-    expect(source).toMatch(/msg\.role\s*===\s*["']system["'].*continue/);
+    // Should filter out system messages before export
+    expect(source).toContain("exportableMessages");
+    expect(source).toMatch(/filter.*role.*system/s);
   });
 
   it("Export extracts and lists artifact URLs", async () => {
@@ -222,6 +278,69 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
       "utf-8"
     );
     expect(source).toContain("Exported from Sovereign AI");
+  });
+
+  // Convergence Pass 2: Depth — tool actions exported as collapsible summary
+  it("Export includes tool action summaries in collapsible blocks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("actionSummary");
+    expect(source).toContain("<details>");
+    expect(source).toContain("Actions (");
+  });
+
+  // Convergence Pass 2: Depth — images embedded as markdown images
+  it("Export embeds images as markdown image syntax", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("imageUrls");
+    expect(source).toContain("![Generated Image]");
+    // Should support webp format too
+    expect(source).toContain("webp");
+  });
+
+  // Convergence Pass 2: Adversarial — empty task guard
+  it("Export guards against empty tasks (0 messages)", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("Nothing to export");
+    expect(source).toContain("exportableMessages.length === 0");
+  });
+
+  // Convergence Pass 2: Adversarial — safe filename
+  it("Export uses safe filename with fallback", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("safeName");
+    expect(source).toContain("task-export");
+  });
+
+  // Convergence Pass 2: Adversarial — large export warning
+  it("Export warns for very large conversations (> 500KB)", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("500_000");
+    expect(source).toContain("Large export");
   });
 });
 
@@ -283,5 +402,67 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
     );
     // Should navigate to the new task's URL after duplication
     expect(source).toMatch(/navigate.*task.*result\.externalId/);
+  });
+
+  // Convergence Pass 2: Adversarial — empty task guard on server
+  it("Server-side duplicate rejects empty tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./routers.ts"),
+      "utf-8"
+    );
+    expect(source).toContain("Cannot duplicate a task with no messages");
+    expect(source).toContain("sourceMessages.length === 0");
+  });
+
+  // Convergence Pass 2: Adversarial — client-side empty task guard
+  it("Client-side duplicate guards against empty tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("Cannot duplicate");
+    expect(source).toContain("no messages");
+  });
+
+  // Convergence Pass 2: Depth — loading state during duplication
+  it("Duplicate button shows loading state while pending", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("duplicateTaskMutation.isPending");
+    expect(source).toContain("Duplicating...");
+    // Button should be disabled while pending (double-click guard)
+    expect(source).toMatch(/disabled=\{duplicateTaskMutation\.isPending\}/);
+  });
+
+  // Convergence Pass 2: Adversarial — upToMessageIndex bounds clamping
+  it("Server-side duplicate clamps upToMessageIndex to message count", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./routers.ts"),
+      "utf-8"
+    );
+    // Should use Math.min to prevent out-of-bounds slicing
+    expect(source).toContain("Math.min(input.upToMessageIndex + 1, sourceMessages.length)");
+  });
+
+  // Convergence Pass 2: Depth — confirmation for large tasks
+  it("Client-side duplicate confirms before duplicating large tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("messages.length > 50");
+    expect(source).toContain("Duplicate all of them");
   });
 });

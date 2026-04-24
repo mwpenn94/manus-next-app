@@ -624,17 +624,19 @@ export async function touchMemoryAccess(memoryIds: number[]) {
  * Default threshold 0.1 ≈ ~45 days with 0 access, or ~90 days with 1 access.
  * Returns the count of archived memories.
  */
-export async function archiveStaleMemories(importanceThreshold = 0.1, halfLifeDays = 14): Promise<number> {
+export async function archiveStaleMemories(importanceThreshold = 0.1, halfLifeDays = 14, userId?: number): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  // Fetch all non-archived auto memories and compute importance in JS
+  // Fetch non-archived auto memories, scoped to user if provided
+  const conditions = [
+    eq(memoryEntries.archived, 0),
+    eq(memoryEntries.source, "auto"),
+  ];
+  if (userId !== undefined) {
+    conditions.push(eq(memoryEntries.userId, userId));
+  }
   const candidates = await db.select().from(memoryEntries)
-    .where(
-      and(
-        eq(memoryEntries.archived, 0),
-        eq(memoryEntries.source, "auto")
-      )
-    )
+    .where(and(...conditions))
     .limit(1000);
   const toArchive = candidates.filter(m => computeMemoryImportance(m, halfLifeDays) < importanceThreshold);
   if (toArchive.length === 0) return 0;

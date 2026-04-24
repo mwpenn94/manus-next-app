@@ -324,7 +324,7 @@ export function startScheduler(): void {
             }
           }
         } catch { /* use defaults */ }
-        const archived = await archiveStaleMemories(archiveThreshold, halfLifeDays);
+        const archived = await archiveStaleMemories(archiveThreshold, halfLifeDays, u.id);
         totalArchived += archived;
       }
       if (totalArchived > 0) {
