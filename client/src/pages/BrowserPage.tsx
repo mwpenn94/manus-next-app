@@ -30,6 +30,7 @@ import {
   Maximize2, Minimize2, AlertCircle, CheckCircle2, Clock,
   Trash2, RefreshCw, Code, Crosshair, Hand, Keyboard,
   ArrowUpDown, Layers, FileText, Wifi, WifiOff, Minus,
+  Smartphone, Tablet,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -168,6 +169,7 @@ export default function BrowserPage() {
   const [scannedElements, setScannedElements] = useState<Array<{ tag: string; text: string; selector: string }>>([]);
   const [sessions, setSessions] = useState<BrowserSessionInfo[]>([]);
   const [showSessionDialog, setShowSessionDialog] = useState(false);
+  const [currentViewport, setCurrentViewport] = useState<{ name: string; width: number; height: number } | null>(null);
   const screenshotRef = useRef<HTMLDivElement>(null);
 
   // ── QA State ──
@@ -193,11 +195,15 @@ export default function BrowserPage() {
   const goForwardMut = trpc.browser.goForward.useMutation();
   const reloadMut = trpc.browser.reload.useMutation();
   const closeMut = trpc.browser.close.useMutation();
+  const setViewportMut = trpc.browser.setViewport.useMutation();
 
   // ── tRPC queries ──
   const sessionsQuery = trpc.browser.sessions.useQuery(undefined, {
     enabled: !!user,
     refetchInterval: 10000,
+  });
+  const viewportPresetsQuery = trpc.browser.viewportPresets.useQuery(undefined, {
+    enabled: !!user,
   });
 
   // Sync sessions from query
@@ -770,6 +776,75 @@ export default function BrowserPage() {
           >
             <Eye className="w-4 h-4" />
           </Button>
+
+          {/* Viewport / Device Preset Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Device viewport">
+                {currentViewport && currentViewport.width <= 430 ? (
+                  <Smartphone className="w-4 h-4" />
+                ) : currentViewport && currentViewport.width <= 820 ? (
+                  <Tablet className="w-4 h-4" />
+                ) : (
+                  <Monitor className="w-4 h-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Device Presets</div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={async () => {
+                  setCurrentViewport(null);
+                  if (activeSessionId) {
+                    try {
+                      await setViewportMut.mutateAsync({ sessionId: activeSessionId, width: 1280, height: 800 });
+                      await handleScreenshot();
+                    } catch { /* ignore */ }
+                  }
+                }}
+              >
+                <Monitor className="w-3.5 h-3.5 mr-2" />
+                <span className="flex-1">Desktop (default)</span>
+                <span className="text-[10px] text-muted-foreground">1280×800</span>
+              </DropdownMenuItem>
+              {viewportPresetsQuery.data && Object.entries(viewportPresetsQuery.data).map(([name, dims]) => {
+                const { width, height } = dims as { width: number; height: number };
+                return (
+                  <DropdownMenuItem
+                    key={name}
+                    onClick={async () => {
+                      setCurrentViewport({ name, width, height });
+                      if (activeSessionId) {
+                        try {
+                          await setViewportMut.mutateAsync({ sessionId: activeSessionId, width, height });
+                          await handleScreenshot();
+                        } catch { /* ignore */ }
+                      }
+                    }}
+                  >
+                    {width <= 430 ? (
+                      <Smartphone className="w-3.5 h-3.5 mr-2" />
+                    ) : width <= 820 ? (
+                      <Tablet className="w-3.5 h-3.5 mr-2" />
+                    ) : (
+                      <Monitor className="w-3.5 h-3.5 mr-2" />
+                    )}
+                    <span className="flex-1">{name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                    <span className="text-[10px] text-muted-foreground">{width}×{height}</span>
+                  </DropdownMenuItem>
+                );
+              })}
+              {currentViewport && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1 text-[10px] text-muted-foreground">
+                    Current: {currentViewport.name} ({currentViewport.width}×{currentViewport.height})
+                  </div>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

@@ -293,11 +293,30 @@ export default function WebAppProjectPage() {
                   title="Preview"
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                 />
-              ) : (
+              ) : project.deployStatus === "building" || project.deployStatus === "deploying" ? (
                 <div className="text-center">
+                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-3 animate-spin" />
+                  <p className="text-sm text-foreground font-medium">Building your app…</p>
+                  <p className="text-xs text-muted-foreground mt-1">Preview will appear here once the build completes</p>
+                </div>
+              ) : (
+                <div className="text-center max-w-md">
                   <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No preview available</p>
-                  <p className="text-xs text-muted-foreground mt-1">Deploy your project to see a live preview</p>
+                  <p className="text-sm text-foreground font-medium">No preview available yet</p>
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                    Deploy your project to see a live preview. You can deploy from the
+                    <Button variant="link" className="h-auto p-0 text-xs" onClick={() => setActivePanel("deployments")}> Deployments</Button> panel
+                    {project.githubRepoId ? " or push to your connected GitHub repo." : "."}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => setDeployConfirmOpen(true)}
+                  >
+                    <Rocket className="w-3.5 h-3.5 mr-1.5" />
+                    Deploy Now
+                  </Button>
                 </div>
               )}
             </div>
