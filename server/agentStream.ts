@@ -19,7 +19,7 @@
  * - data: { error: string }         — Error occurred
  */
 import type { Message, Tool, ToolCall, InvokeResult } from "./_core/llm";
-import { AGENT_TOOLS, executeTool, type ToolResult } from "./agentTools";
+import { AGENT_TOOLS, executeTool, type ToolResult, getActiveProject } from "./agentTools";
 import { registerPrefix, getCacheMetrics } from "./promptCache";
 import type { Response } from "express";
 
@@ -1498,6 +1498,11 @@ If the user hasn't specified content details, ASK them what content they want. D
           sendSSE(safeWrite, { image: result.url });
         }
 
+        // GAP A: Send preview_refresh after file-modifying tools so the iframe auto-refreshes
+        if (getActiveProject().dir && (toolName === "edit_file" || toolName === "create_file" || toolName === "run_command" || toolName === "install_deps") && result.success) {
+          sendSSE(safeWrite, { preview_refresh: { timestamp: Date.now() } });
+        }
+
         // If it's a webapp, send a webapp_preview event
         if (result.url && toolName === "create_webapp") {
           sendSSE(safeWrite, {
@@ -1870,6 +1875,8 @@ function getToolDisplayInfo(
       return { type: "executing", label: `Running: ${(args.command || "").slice(0, 60)}` };
     case "git_operation":
       return { type: "versioning", label: `Git ${args.operation || "operation"}${args.message ? `: ${args.message.slice(0, 40)}` : ""}` };
+    case "deploy_webapp":
+      return { type: "deploying", label: `Deploying webapp${args.version_label ? `: ${args.version_label.slice(0, 40)}` : " to production"}` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

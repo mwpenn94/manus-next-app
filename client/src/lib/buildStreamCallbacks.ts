@@ -12,6 +12,7 @@ export interface StreamState {
   actions: any[];
   images: string[];
   _webappPreviewsSeen?: Set<string>;
+  _previewRefreshCounter?: number;
 }
 
 export interface StreamStateSetters {
@@ -34,6 +35,12 @@ export interface StreamStateSetters {
   setTokenUsage?: (usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null) => void;
   /** Knowledge recalled badge state setter */
   setKnowledgeRecalled?: (data: { count: number; keys: string[] } | null) => void;
+  /** Update an existing message's cardData (e.g., to mark preview as published after deploy) */
+  updateMessageCard?: (taskId: string, messageId: string, cardData: Record<string, unknown>) => void;
+  /** Get current task messages for cross-card updates */
+  getTaskMessages?: () => Array<{ id: string; cardType?: string; cardData?: Record<string, unknown> }>;
+  /** GAP A: Callback to trigger iframe refresh in WebappPreviewCard */
+  onPreviewRefreshSignal?: () => void;
 }
 
 export function buildStreamCallbacks(
@@ -262,6 +269,21 @@ export function buildStreamCallbacks(
       setters.setKnowledgeRecalled?.(data);
     },
     onWebappDeployed: (deployment: { name: string; url: string; projectExternalId?: string; versionLabel?: string }) => {
+      // GAP B: Update the existing webapp_preview card to show "published" status
+      if (setters.updateMessageCard && setters.getTaskMessages) {
+        const messages = setters.getTaskMessages();
+        const previewMsg = messages.find(
+          (m) => m.cardType === "webapp_preview" && m.cardData?.projectExternalId === deployment.projectExternalId
+        );
+        if (previewMsg) {
+          setters.updateMessageCard(setters.taskId, previewMsg.id, {
+            status: "published",
+            domain: deployment.url.replace(/^https?:\/\//, ""),
+            hasUnpublishedChanges: false,
+          });
+        }
+      }
+
       if (setters.addMessage) {
         setters.addMessage(setters.taskId, {
           role: "assistant",
@@ -279,6 +301,15 @@ export function buildStreamCallbacks(
         state.accumulated += `\n\n\u{1F680} **${deployment.name}** deployed! [Visit Live Site](${deployment.url})\n\n`;
         setters.accumulatedRef.current = state.accumulated;
         setters.setStreamContent(state.accumulated);
+      }
+    },
+    onPreviewRefresh: () => {
+      // GAP A: Debounce preview refresh — only trigger every 2 seconds max
+      const now = Date.now();
+      const lastRefresh = state._previewRefreshCounter || 0;
+      if (now - lastRefresh > 2000) {
+        state._previewRefreshCounter = now;
+        setters.onPreviewRefreshSignal?.();
       }
     },
   };

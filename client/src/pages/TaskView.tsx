@@ -319,6 +319,7 @@ function ActionIcon({ type }: { type: AgentAction["type"] }) {
     case "analyzing": return <BarChart3 className={cn(iconClass, "text-yellow-400")} />;
     case "designing": return <Palette className={cn(iconClass, "text-rose-400")} />;
     case "sending": return <Mail className={cn(iconClass, "text-blue-300")} />;
+    case "deploying": return <Upload className={cn(iconClass, "text-emerald-400")} />;
   }
 }
 
@@ -344,6 +345,7 @@ function ActionLabel({ action }: { action: AgentAction }) {
     case "analyzing": return <span>{action.label || "Analyzing data"}</span>;
     case "designing": return <span>{action.label || "Creating design"}</span>;
     case "sending": return <span>{action.label || "Sending message"}</span>;
+    case "deploying": return <span>{action.label || "Deploying webapp"}</span>;
   }
 }
 
@@ -380,6 +382,9 @@ function groupActions(actions: AgentAction[]): ActionGroup[] {
     installing: "terminal",
     searching: "research",
     researching: "research",
+    building: "app_building",
+    deploying: "app_building",
+    versioning: "app_building",
   };
   
   const groupLabels: Record<string, string> = {
@@ -387,6 +392,7 @@ function groupActions(actions: AgentAction[]): ActionGroup[] {
     browsing: "Browser actions",
     terminal: "Terminal commands",
     research: "Research & search",
+    app_building: "App building",
   };
   
   while (i < actions.length) {
@@ -455,6 +461,16 @@ function ActionGroupHeader({ group }: { group: Extract<ActionGroup, { type: "gro
         </div>
         <span className="text-xs text-foreground flex-1">
           {group.label}
+          {group.groupType === "file_ops" && !expanded && (
+            <span className="text-[10px] text-muted-foreground ml-1.5 font-mono">
+              {group.actions.slice(0, 3).map(a => {
+                const file = (a as any).file || (a as any).label || "";
+                const name = file.split("/").pop() || file;
+                return name;
+              }).filter(Boolean).join(", ")}
+              {group.actions.length > 3 && ` +${group.actions.length - 3}`}
+            </span>
+          )}
         </span>
         <span className="text-[10px] text-muted-foreground font-mono">
           {doneCount}/{totalCount}
@@ -637,7 +653,7 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, onGateApprove, onGateReject, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; onGateApprove?: () => void; onGateReject?: () => void; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, onGateApprove, onGateReject, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; onGateApprove?: () => void; onGateReject?: () => void; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
   const isUser = message.role === "user";
@@ -726,6 +742,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             }}
             hasUnpublishedChanges={!!message.cardData?.hasUnpublishedChanges}
             projectExternalId={message.cardData?.projectExternalId as string}
+            refreshKey={previewRefreshKey}
           />
         ) : message.cardType === "webapp_deployed" ? (
           <DeploymentCard
@@ -1983,6 +2000,8 @@ function mapToolToAction(
       return { type: "designing", label, status };
     case "sending":
       return { type: "sending", label, status };
+    case "deploying":
+      return { type: "deploying", label, status };
     case "thinking":
     default:
       return { type: "thinking", status };
@@ -2012,6 +2031,7 @@ export default function TaskView() {
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [systemPromptDraft, setSystemPromptDraft] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>(() => {
     try {
@@ -2354,6 +2374,9 @@ export default function TaskView() {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+          updateMessageCard,
+          getTaskMessages: () => task?.messages || [],
+          onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         });
 
         await streamWithRetry({
@@ -2533,6 +2556,9 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        updateMessageCard,
+        getTaskMessages: () => task?.messages || [],
+        onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
 
       await streamWithRetry({
@@ -2608,6 +2634,9 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        updateMessageCard,
+        getTaskMessages: () => task?.messages || [],
+        onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
 
       await streamWithRetry({
@@ -2694,6 +2723,9 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        updateMessageCard,
+        getTaskMessages: () => task?.messages || [],
+        onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
 
       await streamWithRetry({
@@ -2769,6 +2801,9 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        updateMessageCard,
+        getTaskMessages: () => task?.messages || [],
+        onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
       await streamWithRetry({
         messages: conversationMessages, taskExternalId: task.id, mode: agentMode,
@@ -3154,6 +3189,7 @@ export default function TaskView() {
                                   case "building": return `Built: ${a.label || "component"}`;
                                   case "analyzing": return `Analyzed: ${a.label || "data"}`;
                                   case "designing": return `Designed: ${a.label || "layout"}`;
+                                  case "deploying": return `Deployed: ${a.label || "webapp"}`;
                                   default: return `${a.type}: ${a.label || a.preview || ""}`;
                                 }
                               })
@@ -3541,6 +3577,7 @@ export default function TaskView() {
               onCancelEdit={() => { setEditingMessageId(null); setEditDraft(""); }}
               onSaveEdit={() => handleEditAndResend(msg.id, editDraft)}
               onEditDraftChange={(val) => setEditDraft(val)}
+              previewRefreshKey={previewRefreshKey}
               onGateApprove={msg.cardType === "confirmation_gate" ? async () => {
                 updateMessageCard(task.id, msg.id, { status: "approved" });
                 toast.success("Action approved");

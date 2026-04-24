@@ -3469,3 +3469,13 @@
 - [x] GAP 5: Open webapp preview in new tab with working URL (proxy URL opens in new tab)
 - [x] Convergence validation pass on all changes
 - [x] Write tests for new features (17 tests in deploy.test.ts — all pass)
+
+## Session 28: Parity Expert Convergence Pass 2 — App Dev E2E Pipeline
+- [x] GAP B (CRITICAL): Update WebappPreviewCard status after deployment — onWebappDeployed updates card via updateMessageCard
+- [x] GAP G (CRITICAL): Add build/deploy progress indicator — deploy_webapp mapped to "deploying" action type with spinner
+- [x] GAP A (HIGH): Preview iframe auto-refresh on file changes — SSE preview_refresh event + iframe reload via refreshKey
+- [x] GAP F (HIGH): Structured build error card — parseBuildErrors extracts file:line:col + error message
+- [x] GAP K (HIGH): Show file paths clearly in action groups — collapsed groups show file names in mono font
+- [x] GAP E (MEDIUM): "Rebuilding..." status indicator — action group spinner shows active during file edits
+- [x] GAP H (MEDIUM): WebAppProjectPage deployment history timeline (already implemented and verified)
+- [x] GAP I (MEDIUM): Re-deploy button on WebAppProjectPage (already implemented and verified)

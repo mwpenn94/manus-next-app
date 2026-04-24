@@ -49,6 +49,7 @@ interface WebappPreviewCardProps {
   gitStatus?: string;
   port?: number;
   projectExternalId?: string;
+  refreshKey?: number;
 }
 
 export default function WebappPreviewCard({
@@ -67,6 +68,7 @@ export default function WebappPreviewCard({
   gitStatus,
   port,
   projectExternalId,
+  refreshKey,
 }: WebappPreviewCardProps) {
   const [activeTab, setActiveTab] = useState<ManagementTab>("preview");
   const [deviceView, setDeviceView] = useState<DeviceView>("desktop");
@@ -87,6 +89,19 @@ export default function WebappPreviewCard({
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
   }, []);
+
+  // GAP A: Auto-refresh iframe when agent edits files
+  useEffect(() => {
+    if (refreshKey && refreshKey > 0 && iframeRef.current && activeTab === "preview") {
+      // Small delay to let Vite HMR process the change
+      const timer = setTimeout(() => {
+        if (iframeRef.current) {
+          iframeRef.current.src = iframeRef.current.src;
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshKey, activeTab]);
 
   const handleIframeLoad = useCallback(() => {
     setIframeLoading(false);

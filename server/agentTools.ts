@@ -2766,9 +2766,15 @@ async function executeDeployWebapp(args: {
       try {
         execSync(`cd ${activeProjectDir} && npm run build 2>&1`, { timeout: 120000 });
       } catch (buildErr: any) {
+        // GAP F: Extract structured build errors for better agent/user feedback
+        const rawOutput = buildErr.stdout?.toString() || buildErr.stderr?.toString() || buildErr.message || "";
+        const lines = rawOutput.split("\n");
+        const errorLines = lines.filter((l: string) => /error|Error|TS\d{4}|SyntaxError|Cannot find|Module not found/i.test(l)).slice(0, 15);
+        const structuredErrors = errorLines.length > 0 ? errorLines.join("\n") : rawOutput.slice(-2000);
         return {
           success: false,
-          result: `Build failed: ${buildErr.message}\n\nCheck for errors in your code and try again.`,
+          result: `Build failed with ${errorLines.length} error(s):\n\n\`\`\`\n${structuredErrors}\n\`\`\`\n\nFix the errors above and try deploying again.`,
+          artifactLabel: "Build errors",
         };
       }
 

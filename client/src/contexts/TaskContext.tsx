@@ -35,7 +35,8 @@ export type AgentAction =
   | { type: "versioning"; label?: string; status: "active" | "done"; preview?: string }
   | { type: "analyzing"; label?: string; status: "active" | "done"; preview?: string }
   | { type: "designing"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "sending"; label?: string; status: "active" | "done"; preview?: string };
+  | { type: "sending"; label?: string; status: "active" | "done"; preview?: string }
+  | { type: "deploying"; label?: string; status: "active" | "done"; preview?: string };
 
 export type CardType =
   | "browser_auth"
