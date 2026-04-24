@@ -290,6 +290,43 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /** Auto-generate a concise task title from the conversation */
+    generateTitle: protectedProcedure
+      .input(z.object({
+        externalId: z.string().max(50),
+        userMessage: z.string().max(2000),
+        assistantMessage: z.string().max(2000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await verifyTaskOwnership(input.externalId, ctx.user.id);
+        try {
+          const { invokeLLM } = await import("./_core/llm");
+          const result = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: "Generate a concise task title (3-8 words, no quotes) that captures the essence of this conversation. Return ONLY the title text, nothing else.",
+              },
+              {
+                role: "user",
+                content: `User asked: ${input.userMessage.slice(0, 500)}\n\nAssistant responded: ${input.assistantMessage.slice(0, 500)}`,
+              },
+            ],
+          });
+          const rawContent = result?.choices?.[0]?.message?.content;
+          const contentStr = typeof rawContent === "string" ? rawContent : "";
+          const title = contentStr.trim().replace(/^["']|["']$/g, "").slice(0, 100);
+          if (title && title.length > 2) {
+            await renameTask(input.externalId, ctx.user.id, title);
+            return { title };
+          }
+          return { title: null };
+        } catch (err) {
+          console.error("[AutoTitle] Failed to generate title:", err);
+          return { title: null };
+        }
+      }),
+
     /** Manually sweep stale tasks — marks tasks stuck in running/paused for >2h as completed */
     sweepStale: protectedProcedure
       .mutation(async () => {

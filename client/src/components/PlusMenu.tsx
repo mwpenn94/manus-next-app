@@ -5,7 +5,7 @@
  * from the chat input bar. On mobile, renders as a bottom drawer;
  * on desktop, renders as an anchored popover above the + button.
  *
- * All items are wired to real navigation or actions.
+ * Organized into sections: Media, Create, Tools, Connectors
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -24,13 +24,18 @@ import {
   Video,
   AudioLines,
   BookOpen,
-  Sparkles,
   X,
   Image as ImageLucide,
+  GitBranch,
+  Plug,
+  Workflow,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // ── Menu item definition ──
 
@@ -42,25 +47,36 @@ interface PlusMenuItem {
   implemented?: boolean;
   route?: string;
   prompt?: string;
+  section: "media" | "create" | "tools" | "connectors";
 }
 
 const MENU_ITEMS: PlusMenuItem[] = [
-  { id: "add-files", label: "Add files", icon: FileUp, implemented: true },
-  { id: "share-screen", label: "Share screen", icon: Monitor, implemented: true },
-  { id: "record-video", label: "Record video", icon: Camera, implemented: true },
-  { id: "upload-video", label: "Upload video", icon: Video, implemented: true },
-  { id: "connect-computer", label: "Connect My Computer", icon: Monitor, implemented: true, route: "/connect-device" },
-  { id: "add-skills", label: "Add Skills", icon: Puzzle, implemented: true, route: "/skills" },
-  { id: "build-website", label: "Build website", icon: Globe, implemented: true, route: "/webapp-builder" },
-  { id: "create-slides", label: "Create slides", icon: Presentation, badge: "Pro", implemented: true, prompt: "Create a slide deck about " },
-  { id: "create-image", label: "Create image", icon: ImageIcon, implemented: true, prompt: "Generate an image of " },
-  { id: "edit-image", label: "Edit image", icon: Paintbrush, implemented: true, prompt: "Edit this image: " },
-  { id: "wide-research", label: "Wide Research", icon: Search, implemented: true, prompt: "Do wide research on " },
-  { id: "scheduled-tasks", label: "Scheduled tasks", icon: CalendarClock, implemented: true, route: "/schedule" },
-  { id: "create-spreadsheet", label: "Create spreadsheet", icon: Table2, implemented: true, prompt: "Create a spreadsheet for " },
-  { id: "create-video", label: "Create video", icon: Video, implemented: true, route: "/video" },
-  { id: "generate-audio", label: "Generate audio", icon: AudioLines, implemented: true, route: "/client-inference" },
-  { id: "playbook", label: "Playbook", icon: BookOpen, implemented: true, route: "/library" },
+  // Media
+  { id: "add-files", label: "Add files", icon: FileUp, implemented: true, section: "media" },
+  { id: "share-screen", label: "Share screen", icon: Monitor, implemented: true, section: "media" },
+  { id: "record-video", label: "Record video", icon: Camera, implemented: true, section: "media" },
+  { id: "upload-video", label: "Upload video", icon: Video, implemented: true, section: "media" },
+  // Create
+  { id: "build-website", label: "Build website", icon: Globe, implemented: true, route: "/webapp-builder", section: "create" },
+  { id: "create-slides", label: "Create slides", icon: Presentation, badge: "Pro", implemented: true, prompt: "Create a slide deck about ", section: "create" },
+  { id: "create-image", label: "Create image", icon: ImageIcon, implemented: true, prompt: "Generate an image of ", section: "create" },
+  { id: "edit-image", label: "Edit image", icon: Paintbrush, implemented: true, prompt: "Edit this image: ", section: "create" },
+  { id: "create-spreadsheet", label: "Create spreadsheet", icon: Table2, implemented: true, prompt: "Create a spreadsheet for ", section: "create" },
+  { id: "create-video", label: "Create video", icon: Video, implemented: true, route: "/video", section: "create" },
+  { id: "generate-audio", label: "Generate audio", icon: AudioLines, implemented: true, route: "/client-inference", section: "create" },
+  // Tools
+  { id: "wide-research", label: "Wide Research", icon: Search, implemented: true, prompt: "Do wide research on ", section: "tools" },
+  { id: "scheduled-tasks", label: "Scheduled tasks", icon: CalendarClock, implemented: true, route: "/schedule", section: "tools" },
+  { id: "add-skills", label: "Add Skills", icon: Puzzle, implemented: true, route: "/skills", section: "tools" },
+  { id: "playbook", label: "Playbook", icon: BookOpen, implemented: true, route: "/library", section: "tools" },
+  { id: "connect-computer", label: "Connect My Computer", icon: Monitor, implemented: true, route: "/connect-device", section: "tools" },
+];
+
+const SECTIONS = [
+  { id: "media" as const, label: "Media" },
+  { id: "create" as const, label: "Create" },
+  { id: "tools" as const, label: "Tools" },
+  { id: "connectors" as const, label: "Connectors" },
 ];
 
 // ── Component ──
@@ -91,6 +107,13 @@ export default function PlusMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
+
+  // Fetch connectors to show in the Connectors section
+  const connectors = trpc.connector.list.useQuery(undefined, {
+    enabled: isAuthenticated && open,
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -165,6 +188,8 @@ export default function PlusMenu({
     [onAddFiles, onShareScreen, onRecordVideo, onUploadVideo, onInjectPrompt, onClose, navigate]
   );
 
+  const connectedList = (connectors.data || []).filter((c: any) => c.status === "connected");
+
   if (!open) return null;
 
   if (isMobile) {
@@ -196,9 +221,16 @@ export default function PlusMenu({
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
               </div>
-              <PhotosSection onAddFiles={onAddFiles} onClose={onClose} />
               <div className="overflow-y-auto max-h-[60vh] pb-safe">
-                <FeatureList items={MENU_ITEMS} onItemClick={handleItemClick} />
+                <CategorizedFeatureList
+                  items={MENU_ITEMS}
+                  connectors={connectedList}
+                  onItemClick={handleItemClick}
+                  onConnectorClick={(c: any) => {
+                    navigate("/connectors");
+                    onClose();
+                  }}
+                />
               </div>
             </motion.div>
           </>
@@ -221,9 +253,16 @@ export default function PlusMenu({
             className
           )}
         >
-          <PhotosSection compact onAddFiles={onAddFiles} onClose={onClose} />
           <div className="max-h-[50vh] overflow-y-auto">
-            <FeatureList items={MENU_ITEMS} onItemClick={handleItemClick} />
+            <CategorizedFeatureList
+              items={MENU_ITEMS}
+              connectors={connectedList}
+              onItemClick={handleItemClick}
+              onConnectorClick={(c: any) => {
+                navigate("/connectors");
+                onClose();
+              }}
+            />
           </div>
         </motion.div>
       )}
@@ -231,84 +270,96 @@ export default function PlusMenu({
   );
 }
 
-// ── Photos Section ──
+// ── Categorized Feature List ──
 
-function PhotosSection({
-  compact = false,
-  onAddFiles,
-  onClose,
-}: {
-  compact?: boolean;
-  onAddFiles: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className={cn("px-4", compact ? "py-2" : "py-3")}>
-      <div className="flex items-center gap-2 mb-2">
-        <Camera className="w-4 h-4 text-muted-foreground" />
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Photos
-        </span>
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={() => { onAddFiles(); onClose(); }}
-          className={cn(
-            "rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center transition-colors hover:bg-muted hover:border-border",
-            compact ? "w-12 h-12" : "w-14 h-14"
-          )}
-          aria-label="Take photo or upload image"
-        >
-          <Camera className="w-4 h-4 text-muted-foreground" />
-        </button>
-        {[1, 2, 3].map((i) => (
-          <button
-            key={i}
-            onClick={() => { onAddFiles(); onClose(); }}
-            className={cn(
-              "rounded-lg bg-muted/50 border border-border/50 flex items-center justify-center transition-colors hover:bg-muted hover:border-border",
-              compact ? "w-12 h-12" : "w-14 h-14"
-            )}
-            aria-label="Add image from library"
-          >
-            <ImageLucide className="w-4 h-4 text-muted-foreground" />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Feature List ──
-
-function FeatureList({
+function CategorizedFeatureList({
   items,
+  connectors,
   onItemClick,
+  onConnectorClick,
 }: {
   items: PlusMenuItem[];
+  connectors: any[];
   onItemClick: (item: PlusMenuItem) => void;
+  onConnectorClick: (connector: any) => void;
 }) {
   return (
     <div className="py-1">
-      <div className="mx-4 border-t border-border/50 mb-1" />
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <button
-            key={item.id}
-            onClick={() => onItemClick(item)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
-          >
-            <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
-              <Icon className="w-4 h-4 text-muted-foreground" />
+      {SECTIONS.map((section) => {
+        if (section.id === "connectors") {
+          return (
+            <div key={section.id}>
+              <div className="px-4 pt-2 pb-1">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  {section.label}
+                </span>
+              </div>
+              {connectors.length > 0 ? (
+                connectors.map((c: any) => (
+                  <button
+                    key={c.id || c.type}
+                    onClick={() => onConnectorClick(c)}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+                      {c.type === "github" ? (
+                        <GitBranch className="w-3.5 h-3.5 text-muted-foreground" />
+                      ) : (
+                        <Plug className="w-3.5 h-3.5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className="text-sm text-foreground flex-1">{c.name || c.type}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-medium">
+                      Connected
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <button
+                  onClick={() => onConnectorClick(null)}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+                    <Workflow className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                  <span className="text-sm text-muted-foreground flex-1">Manage connectors</span>
+                </button>
+              )}
             </div>
-            <span className="text-sm text-foreground flex-1">{item.label}</span>
-            {item.badge && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">
-                {item.badge}
+          );
+        }
+
+        const sectionItems = items.filter((i) => i.section === section.id);
+        if (sectionItems.length === 0) return null;
+
+        return (
+          <div key={section.id}>
+            <div className="px-4 pt-2 pb-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                {section.label}
               </span>
-            )}
-          </button>
+            </div>
+            {sectionItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onItemClick(item)}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-accent/50 active:bg-accent/70"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                  <span className="text-sm text-foreground flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium border border-primary/20">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         );
       })}
     </div>

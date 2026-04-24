@@ -25,7 +25,28 @@ if (import.meta.env.DEV) {
   });
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry if the server returned HTML instead of JSON
+        // (proxy/CDN fallback, server restart, etc.)
+        if (error instanceof TRPCClientError && error.message?.includes('is not valid JSON')) {
+          return false;
+        }
+        // Don't retry auth errors
+        if (error instanceof TRPCClientError && error.message === UNAUTHED_ERR_MSG) {
+          return false;
+        }
+        return failureCount < 2; // Max 2 retries for other errors
+      },
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 
 /**
  * Smart auth redirect: only redirect to login if the user was previously
@@ -87,11 +108,21 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
-      fetch(input, init) {
-        return globalThis.fetch(input, {
+      async fetch(input, init) {
+        const response = await globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
         });
+        // Guard against proxy/CDN returning HTML (SPA fallback) instead of JSON.
+        // This happens when the server restarts, the proxy times out, or the
+        // CDN edge serves a cached HTML page for an API route.
+        const contentType = response.headers.get('content-type') || '';
+        if (response.ok && !contentType.includes('application/json')) {
+          throw new Error(
+            `Expected JSON response from ${typeof input === 'string' ? input : input.toString()}, got ${contentType || 'unknown content-type'}. The server may be restarting.`
+          );
+        }
+        return response;
       },
     }),
   ],

@@ -151,7 +151,7 @@ function BridgeStatusBadge() {
   );
 }
 
-type StatusFilter = "all" | "running" | "completed" | "error" | "favorites";
+type StatusFilter = "all" | "running" | "completed" | "error" | "favorites" | "scheduled" | "shared";
 
 // ── Sidebar status badges ──
 
@@ -358,13 +358,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   };
 
   const favoritesCount = tasks.filter(t => t.favorite === 1).length;
-  const statusFilters: { id: StatusFilter; label: string; count?: number; icon?: string }[] = [
-    { id: "all", label: "All", count: tasks.length },
+  const scheduledCount = 0; // Placeholder — scheduled tasks tracked server-side
+  const sharedCount = 0; // Placeholder — shared tasks tracked server-side
+  const statusFilters: { id: StatusFilter; label: string; count?: number }[] = [
+    { id: "all", label: "All tasks", count: tasks.length },
     { id: "running", label: "Running", count: tasks.filter(t => t.status === "running").length },
-    { id: "completed", label: "Done", count: tasks.filter(t => t.status === "completed").length },
+    { id: "completed", label: "Completed", count: tasks.filter(t => t.status === "completed").length },
     { id: "error", label: "Error", count: tasks.filter(t => t.status === "error").length },
-    { id: "favorites", label: "★", count: favoritesCount },
+    { id: "favorites", label: "Favorites", count: favoritesCount },
+    { id: "scheduled", label: "Scheduled", count: scheduledCount },
+    { id: "shared", label: "Shared", count: sharedCount },
   ];
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showFilterDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target as Node)) setShowFilterDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showFilterDropdown]);
 
   const sidebarContent = (
     <>
@@ -478,26 +492,45 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         )}
       </div>
 
-      {/* Status Filter Tabs */}
-      <div className="px-3 pb-2 shrink-0">
-        <div className="flex gap-0.5 bg-sidebar-accent/50 rounded-md p-0.5">
-          {statusFilters.map((f) => (
+      {/* Task List Header with Filter Dropdown — Manus parity */}
+      <div className="px-3 pb-1 shrink-0">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+            {statusFilter === "all" ? "Tasks" : statusFilters.find(f => f.id === statusFilter)?.label || "Tasks"}
+          </span>
+          <div className="relative" ref={filterDropdownRef}>
             <button
-              key={f.id}
-              onClick={() => setStatusFilter(f.id)}
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               className={cn(
-                "flex-1 text-[10px] py-2 md:py-1.5 rounded transition-colors font-medium min-h-[36px] flex items-center justify-center",
-                statusFilter === f.id
-                  ? "bg-sidebar-accent text-sidebar-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-sidebar-foreground"
+                "p-1.5 rounded-md transition-colors",
+                statusFilter !== "all"
+                  ? "text-primary bg-primary/10 hover:bg-primary/15"
+                  : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
               )}
+              title="Filter tasks"
+              aria-label="Filter tasks"
             >
-              {f.label}
-              {f.count !== undefined && f.count > 0 && statusFilter !== f.id && (
-                <span className="ml-0.5 text-muted-foreground">{f.count}</span>
-              )}
+              <Filter className="w-3.5 h-3.5" />
             </button>
-          ))}
+            {showFilterDropdown && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-lg border border-border bg-popover text-popover-foreground shadow-xl shadow-black/20 overflow-hidden py-1">
+                {statusFilters.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => { setStatusFilter(f.id); setShowFilterDropdown(false); }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 text-xs transition-colors",
+                      "hover:bg-accent/50",
+                      statusFilter === f.id && "bg-accent/30 text-foreground font-medium"
+                    )}
+                  >
+                    <span>{f.label}</span>
+                    <span className="text-muted-foreground tabular-nums">{f.count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1136,16 +1169,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               manus
             </span>
           </Link>
-          {/* ModelSelector — show on desktop Home route so users can switch models */}
-          {location === "/" && (
-            <div className="ml-4">
-              <ModelSelector
-                compact
-                selectedModelId={(() => { try { const m = localStorage.getItem("manus-agent-mode"); if (m && MODE_TO_MODEL[m]) return MODE_TO_MODEL[m]; } catch {} return "manus-next-max"; })()}
-                onModelChange={(modelId) => { try { localStorage.setItem("manus-selected-model", modelId); localStorage.setItem("manus-agent-mode", MODEL_TO_MODE[modelId] || "quality"); } catch {} }}
-              />
-            </div>
-          )}
+          {/* ModelSelector — always visible, matching Manus top-left placement */}
+          <div className="ml-3">
+            <ModelSelector
+              compact
+              selectedModelId={(() => { try { const m = localStorage.getItem("manus-agent-mode"); if (m && MODE_TO_MODEL[m]) return MODE_TO_MODEL[m]; } catch {} return "manus-next-max"; })()}
+              onModelChange={(modelId) => { try { localStorage.setItem("manus-selected-model", modelId); localStorage.setItem("manus-agent-mode", MODEL_TO_MODE[modelId] || "quality"); } catch {} }}
+            />
+          </div>
           <div className="ml-auto flex items-center gap-1">
             <button
               onClick={cycleTheme}

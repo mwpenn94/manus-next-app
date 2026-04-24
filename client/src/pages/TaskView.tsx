@@ -77,6 +77,8 @@ import {
   BookmarkPlus,
   Grid2x2,
   Maximize,
+  FolderOpen,
+  Link2 as LinkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ImageLightbox from "@/components/ImageLightbox";
@@ -96,7 +98,7 @@ import {
 } from "@/components/ui/context-menu";
 import ActiveToolIndicator from "@/components/ActiveToolIndicator";
 import SandboxViewer from "@/components/SandboxViewer";
-import ModelSelector, { MODE_TO_MODEL } from "@/components/ModelSelector";
+import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
 import GitHubBadge from "@/components/GitHubBadge";
 import VoiceRecordingUI, { VoiceWaveStyles } from "@/components/VoiceRecordingUI";
@@ -378,6 +380,18 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
             </button>
           )}
         </div>
+        {/* Inline screenshot for browsing actions */}
+        {(action.type as string === "browsing") && action.preview?.startsWith("http") && (
+          <div className="mt-1.5 rounded-md overflow-hidden border border-border/50 max-w-[280px]">
+            <img
+              src={action.preview}
+              alt="Browser screenshot"
+              className="w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => window.open(action.preview!, "_blank")}
+              loading="lazy"
+            />
+          </div>
+        )}
         {previewExpanded && action.preview && (
           <div className="mt-1.5 rounded bg-muted/50 border border-border/50 text-[11px] text-muted-foreground leading-relaxed max-h-40 overflow-y-auto">
             {action.type === "searching" && action.preview.includes("http") ? (
@@ -861,7 +875,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
 
 // ── Workspace Panel with real artifacts ──
 
-type WorkspaceTab = "browser" | "code" | "terminal" | "images" | "documents";
+type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links";
 
 function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -950,12 +964,35 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [documentArtifacts.data, documentPdfArtifacts.data, documentDocxArtifacts.data]);
 
+  // Collect links from messages (URLs in assistant responses)
+  const extractedLinks = useMemo(() => {
+    if (!task?.messages) return [];
+    const urlRegex = /https?:\/\/[^\s<>"'\)\]]+/g;
+    const links: Array<{ url: string; label: string; timestamp: Date }> = [];
+    const seen = new Set<string>();
+    for (const msg of task.messages) {
+      if (msg.role !== "assistant" || !msg.content) continue;
+      const matches = msg.content.match(urlRegex) || [];
+      for (const url of matches) {
+        const clean = url.replace(/[.,;:!?]+$/, "");
+        if (!seen.has(clean)) {
+          seen.add(clean);
+          links.push({ url: clean, label: clean.replace(/^https?:\/\//, "").slice(0, 60), timestamp: msg.timestamp || new Date() });
+        }
+      }
+    }
+    return links;
+  }, [task?.messages]);
+
+  const totalArtifactCount = (codeArtifacts.data?.length || 0) + (terminalArtifacts.data?.length || 0) + ((imageArtifacts.data?.length || 0) + (userFiles.data?.filter((f: any) => f.mimeType?.startsWith("image/")).length || 0)) + allDocuments.length + extractedLinks.length;
+
   const tabs: { id: WorkspaceTab; label: string; icon: typeof Globe; count?: number }[] = [
     { id: "browser", label: "Browser", icon: Globe },
-    { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
-    { id: "terminal", label: "Terminal", icon: Terminal, count: terminalArtifacts.data?.length },
-    { id: "images", label: "Images", icon: ImageIcon, count: (imageArtifacts.data?.length || 0) + (userFiles.data?.filter((f: any) => f.mimeType?.startsWith("image/")).length || 0) || undefined },
+    { id: "all", label: "All", icon: FolderOpen, count: totalArtifactCount || undefined },
     { id: "documents", label: "Docs", icon: FileText, count: allDocuments.length || undefined },
+    { id: "images", label: "Images", icon: ImageIcon, count: (imageArtifacts.data?.length || 0) + (userFiles.data?.filter((f: any) => f.mimeType?.startsWith("image/")).length || 0) || undefined },
+    { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
+    { id: "links", label: "Links", icon: LinkIcon, count: extractedLinks.length || undefined },
   ];
 
   return (
@@ -1476,6 +1513,129 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
             )}
           </div>
         )}
+
+        {/* All Files Tab — Manus parity */}
+        {activeTab === "all" && (
+          <div className="h-full overflow-auto p-3">
+            {totalArtifactCount > 0 ? (
+              <div className="space-y-3">
+                {allDocuments.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Documents</h4>
+                    <div className="space-y-1">
+                      {allDocuments.map((doc, i) => (
+                        <button
+                          key={doc.id || i}
+                          onClick={() => { setActiveTab("documents"); setSelectedDocIdx(i); }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-accent/50 transition-colors text-left"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-foreground truncate">{doc.label || `Document ${i + 1}`}</span>
+                          <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{doc.docType.toUpperCase()}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(imageArtifacts.data?.length || 0) > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Images</h4>
+                    <div className="space-y-1">
+                      {imageArtifacts.data?.map((img: any, i: number) => (
+                        <button
+                          key={img.id || i}
+                          onClick={() => { setActiveTab("images"); setSelectedImageIdx(i); }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-accent/50 transition-colors text-left"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-foreground truncate">{img.label || `Image ${i + 1}`}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(codeArtifacts.data?.length || 0) > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Code</h4>
+                    <div className="space-y-1">
+                      {codeArtifacts.data?.map((code: any, i: number) => (
+                        <button
+                          key={code.id || i}
+                          onClick={() => { setActiveTab("code"); setSelectedCodeIdx(i); }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-accent/50 transition-colors text-left"
+                        >
+                          <Code className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-foreground truncate">{code.label || `Code ${i + 1}`}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {extractedLinks.length > 0 && (
+                  <div>
+                    <h4 className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5">Links</h4>
+                    <div className="space-y-1">
+                      {extractedLinks.slice(0, 10).map((link, i) => (
+                        <a
+                          key={i}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-accent/50 transition-colors text-left"
+                        >
+                          <LinkIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-foreground truncate">{link.label}</span>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div>
+                  <FolderOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-xs">No files yet</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">Documents, images, code, and links will appear here</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Links Tab — Manus parity */}
+        {activeTab === "links" && (
+          <div className="h-full overflow-auto p-3">
+            {extractedLinks.length > 0 ? (
+              <div className="space-y-1">
+                {extractedLinks.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-md hover:bg-accent/50 transition-colors group"
+                  >
+                    <LinkIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-foreground truncate group-hover:text-primary transition-colors">{link.label}</p>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div>
+                  <LinkIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-xs">No links yet</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">URLs from agent responses will appear here</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Timeline / Progress */}
@@ -1783,6 +1943,13 @@ export default function TaskView() {
     },
     onError: () => { toast.error("Failed to duplicate task"); },
   });
+  const generateTitleMut = trpc.task.generateTitle.useMutation({
+    onSuccess: (data) => {
+      if (data.title && task) {
+        renameTaskFn(task.id, data.title);
+      }
+    },
+  });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },
     { enabled: !!taskExternalId && isAuthenticated }
@@ -2031,6 +2198,18 @@ export default function TaskView() {
         setStepProgress(null);
         const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
         addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+
+        // Auto-generate title after first agent response (only if title looks like user's raw input)
+        if (task.messages.length <= 2 && accumulated.trim() && isAuthenticated) {
+          const userMsg = task.messages.find(m => m.role === "user");
+          if (userMsg && task.title === userMsg.content.slice(0, 50) + (userMsg.content.length > 50 ? "..." : "") || task.title === userMsg?.content.slice(0, 50)) {
+            generateTitleMut.mutate({
+              externalId: task.id,
+              userMessage: userMsg?.content || "",
+              assistantMessage: accumulated.slice(0, 2000),
+            });
+          }
+        }
       } catch (err: any) {
         if (err.name === "AbortError") {
           if (accumulated.trim()) {
@@ -2630,6 +2809,23 @@ export default function TaskView() {
                 )}
               </span>
             )}
+            {/* ModelSelector — Manus-style left-aligned in header */}
+            <ModelSelector
+              compact
+              className="hidden md:flex ml-1"
+              selectedModelId={MODE_TO_MODEL[agentMode] || "manus-next-max"}
+              onModelChange={(modelId) => {
+                const modeMap: Record<string, AgentMode> = {
+                  "manus-next-limitless": "limitless",
+                  "manus-next-max": "max",
+                  "manus-next-standard": "quality",
+                  "manus-next-lite": "speed",
+                };
+                const newMode = modeMap[modelId];
+                if (newMode) setAgentMode(newMode);
+                try { localStorage.setItem("manus-selected-model", modelId); localStorage.setItem("manus-agent-mode", newMode || "quality"); } catch {}
+              }}
+            />
           </div>
           <div className="flex items-center gap-0.5 shrink-0">
             {/* Mobile workspace toggle */}
@@ -2645,29 +2841,7 @@ export default function TaskView() {
                 <PanelBottomOpen className="w-4 h-4" />
               )}
             </button>
-            {/* Model Selector — NS19 */}
-            <ModelSelector
-              compact
-              className="hidden md:flex"
-              selectedModelId={MODE_TO_MODEL[agentMode] || "manus-next-max"}
-              onModelChange={(modelId) => {
-                // Sync model tier selection → agent execution mode
-                const modeMap: Record<string, AgentMode> = {
-                  "manus-next-limitless": "limitless",
-                  "manus-next-max": "max",
-                  "manus-next-standard": "quality",
-                  "manus-next-lite": "speed",
-                };
-                const newMode = modeMap[modelId];
-                if (newMode) setAgentMode(newMode);
-                try { localStorage.setItem("manus-selected-model", modelId); localStorage.setItem("manus-agent-mode", newMode || "quality"); } catch {}
-              }}
-            />
-            {/* Mode Toggle */}
-            <ModeToggle mode={agentMode} onChange={(mode) => {
-              setAgentMode(mode);
-              try { localStorage.setItem("manus-agent-mode", mode); } catch {}
-            }} className="hidden md:flex mr-1" />
+
             {/* Sandbox Viewer toggle — NS19 */}
             <button
               onClick={() => setSandboxOpen(true)}

@@ -3401,3 +3401,19 @@
 - [x] Write convergence tests for all 3 steps
 - [x] Run full test suite — all passing
 - [x] Save checkpoint
+
+## Bug Fix: tRPC HTML-instead-of-JSON error
+- [x] Fix: tRPC queries on /task/ pages return HTML (<!doctype) instead of JSON — server routing issue
+
+## Session 26: Manus Parity Convergence (Desktop Video Analysis)
+- [x] Realign mode toggle to match Manus header placement
+- [x] Analyze desktop video for remaining parity gaps
+- [x] Implement top 3 parity gaps from video analysis
+- [x] Improve chat and app dev/management/publishing features for e2e parity+
+
+## Session 25 Pass 6: Desktop Video Parity + Mode Toggle + E2E Chat/App Features
+- [x] Move mode toggle to top-left of main content area (matching Manus placement)
+- [x] Add sidebar task filters dropdown (All, Favorites, Unread, Scheduled, Shared)
+- [x] Improve workspace file panel tabs (All, Documents, Images, Code, Links)
+- [x] Improve chat input with rich attachment menu (+ icon with files, skills, connectors)
+- [x] E2E chat improvements: agent work display, file management, publishing flow
