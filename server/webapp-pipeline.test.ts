@@ -18,20 +18,20 @@ describe("WebappPreviewCard URL resolution", () => {
   function resolveEffectiveUrl(publishedUrl?: string, previewUrl?: string): string {
     if (publishedUrl) return publishedUrl;
     if (previewUrl?.startsWith("http://localhost")) return `/api/webapp-preview/`;
-    return previewUrl || "";
+    if (previewUrl?.startsWith("/api/webapp-preview")) return previewUrl;
+    return previewUrl || `/api/webapp-preview/`;
   }
 
-  function resolveDisplayUrl(publishedUrl?: string, domain?: string, previewUrl?: string, port?: number): string {
+  function resolveDisplayUrl(publishedUrl?: string, domain?: string, appName?: string): string {
     if (publishedUrl) return publishedUrl.replace(/^https?:\/\//, "");
     if (domain) return domain;
-    if (previewUrl?.startsWith("http://localhost")) return `localhost:${port || 4200}`;
-    return previewUrl || `localhost:${port || 4200}`;
+    return `${appName || "app"} \u00b7 Dev Preview`;
   }
 
-  function resolveCopyableUrl(publishedUrl?: string, domain?: string, previewUrl?: string): string {
+  function resolveCopyableUrl(publishedUrl?: string, domain?: string): string {
     if (publishedUrl) return publishedUrl;
     if (domain) return domain.startsWith("http") ? domain : `https://${domain}`;
-    return previewUrl || "";
+    return `http://localhost:3000/api/webapp-preview/`; // In real code: window.location.origin
   }
 
   describe("effectiveUrl", () => {
@@ -50,8 +50,12 @@ describe("WebappPreviewCard URL resolution", () => {
         .toBe("https://some-preview.example.com");
     });
 
-    it("returns empty string when no URLs available", () => {
-      expect(resolveEffectiveUrl(undefined, undefined)).toBe("");
+    it("falls back to proxy when no URLs available", () => {
+      expect(resolveEffectiveUrl(undefined, undefined)).toBe("/api/webapp-preview/");
+    });
+
+    it("passes through proxy URLs directly", () => {
+      expect(resolveEffectiveUrl(undefined, "/api/webapp-preview/")).toBe("/api/webapp-preview/");
     });
 
     it("publishedUrl takes priority even when previewUrl is a non-localhost URL", () => {
@@ -71,19 +75,14 @@ describe("WebappPreviewCard URL resolution", () => {
         .toBe("myapp.manus.space");
     });
 
-    it("shows localhost with port for dev server", () => {
-      expect(resolveDisplayUrl(undefined, undefined, "http://localhost:4200", 4200))
-        .toBe("localhost:4200");
+    it("shows app name with Dev Preview for dev server", () => {
+      expect(resolveDisplayUrl(undefined, undefined, "My App"))
+        .toBe("My App \u00b7 Dev Preview");
     });
 
-    it("defaults to port 4200 when port not specified", () => {
-      expect(resolveDisplayUrl(undefined, undefined, "http://localhost:4200"))
-        .toBe("localhost:4200");
-    });
-
-    it("shows previewUrl directly for non-localhost URLs", () => {
-      expect(resolveDisplayUrl(undefined, undefined, "https://preview.example.com"))
-        .toBe("https://preview.example.com");
+    it("defaults to 'app' when no app name", () => {
+      expect(resolveDisplayUrl(undefined, undefined, undefined))
+        .toBe("app \u00b7 Dev Preview");
     });
   });
 
@@ -103,13 +102,9 @@ describe("WebappPreviewCard URL resolution", () => {
         .toBe("https://myapp.manus.space");
     });
 
-    it("copies previewUrl when no publishedUrl or domain", () => {
-      expect(resolveCopyableUrl(undefined, undefined, "http://localhost:4200"))
-        .toBe("http://localhost:4200");
-    });
-
-    it("returns empty string when nothing available", () => {
-      expect(resolveCopyableUrl(undefined, undefined, undefined)).toBe("");
+    it("returns proxy URL when no publishedUrl or domain", () => {
+      expect(resolveCopyableUrl(undefined, undefined))
+        .toContain("/api/webapp-preview/");
     });
   });
 });

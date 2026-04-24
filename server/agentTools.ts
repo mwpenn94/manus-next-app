@@ -2453,8 +2453,8 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created HTML project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting"} on port ${port}.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
-        url: `http://localhost:${port}`,
+        result: `Created HTML project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting"} on port ${port}.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
+        url: `/api/webapp-preview/`,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
         projectExternalId,
@@ -2552,8 +2552,8 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting (may take a moment)"} on port ${port}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available at http://localhost:${port}`,
-        url: `http://localhost:${port}`,
+        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting (may take a moment)"} on port ${port}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
+        url: `/api/webapp-preview/`,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
         projectExternalId,

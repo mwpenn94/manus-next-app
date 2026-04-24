@@ -84,33 +84,33 @@ export default function WebappPreviewCard({
 
   // Determine the best URL for the iframe:
   // 1. If publishedUrl is available (post-deploy), use it directly — no proxy needed
-  // 2. If previewUrl is a localhost URL, use the proxy endpoint
-  // 3. Otherwise use previewUrl as-is
+  // 2. If previewUrl is a localhost URL or relative proxy path, use the proxy endpoint
+  // 3. Otherwise use previewUrl as-is (fallback to proxy)
   const effectiveUrl = useMemo(() => {
     if (publishedUrl) return publishedUrl;
     if (previewUrl?.startsWith("http://localhost")) return `/api/webapp-preview/`;
-    return previewUrl || "";
+    if (previewUrl?.startsWith("/api/webapp-preview")) return previewUrl;
+    return previewUrl || `/api/webapp-preview/`;
   }, [publishedUrl, previewUrl]);
 
-  // The display URL shown in the URL bar
+  // The display URL shown in the URL bar — NEVER show localhost to the user
   const displayUrl = useMemo(() => {
     if (publishedUrl) {
       // Show clean domain without protocol
       return publishedUrl.replace(/^https?:\/\//, "");
     }
     if (domain) return domain;
-    if (previewUrl?.startsWith("http://localhost")) {
-      return `localhost:${port || 4200}`;
-    }
-    return previewUrl || `localhost:${port || 4200}`;
-  }, [publishedUrl, domain, previewUrl, port]);
+    // For dev preview, show the app name instead of localhost
+    return `${appName || "app"} \u00b7 Dev Preview`;
+  }, [publishedUrl, domain, appName]);
 
   // The URL to copy when user clicks the copy button
+  // For dev preview, construct the full proxy URL using current origin
   const copyableUrl = useMemo(() => {
     if (publishedUrl) return publishedUrl;
     if (domain) return domain.startsWith("http") ? domain : `https://${domain}`;
-    return previewUrl || "";
-  }, [publishedUrl, domain, previewUrl]);
+    return `${window.location.origin}/api/webapp-preview/`;
+  }, [publishedUrl, domain]);
 
   const [iframeSrc, setIframeSrc] = useState(effectiveUrl);
   const [copied, setCopied] = useState(false);

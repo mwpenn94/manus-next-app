@@ -68,7 +68,7 @@ describe("P35 — Agent App-Building Tools", () => {
     // Verify it writes an index.html
     expect(tools).toContain("index.html");
     // Verify it returns a URL
-    expect(tools).toContain("preview is available at");
+    expect(tools).toContain("preview is available via");
   });
 
   it("git_operation supports init, add, commit, push, status, log, clone, remote_add", () => {

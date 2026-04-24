@@ -3803,3 +3803,15 @@
 - [ ] Preview during dev — show dev server preview URL when available
 - [x] Download as ZIP — trigger actual file download via project files (blob download)
 - [ ] File browser without GitHub — show project files in Code panel even without GitHub
+
+## Session 34: Critical Bug Fixes + Phase 3 Convergence
+
+### Critical Bug Fixes (from user screenshots)
+- [x] BUG: Agent tool returns http://localhost:${port} in result text — fixed to say "embedded preview panel"
+- [x] BUG: Agent tool returns http://localhost:${port} in url field — fixed to /api/webapp-preview/
+- [x] BUG: WebappPreviewCard displayUrl shows localhost:4200 — fixed to show "${appName} · Dev Preview"
+- [x] BUG: WebappPreviewCard copyableUrl uses localhost — fixed to use window.location.origin + /api/webapp-preview/
+- [x] BUG: Route ordering — /projects/webapp/:projectId now BEFORE /projects in App.tsx
+- [x] BUG: /github/:repoId now BEFORE /github in App.tsx
+- [x] Updated p35.test.ts assertion to match new result text
+- [x] Updated webapp-pipeline.test.ts URL resolution tests to match new logic

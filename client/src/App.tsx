@@ -85,6 +85,11 @@ function Router() {
           <ReplayPage />
         </Suspense>
       </Route>
+      <Route path="/projects/webapp/:projectId">
+        <Suspense fallback={<PageLoader />}>
+          <WebAppProjectPage />
+        </Suspense>
+      </Route>
       <Route path="/projects">
         <Suspense fallback={<PageLoader />}>
           <ProjectsPage />
@@ -100,19 +105,14 @@ function Router() {
           <Library />
         </Suspense>
       </Route>
-      <Route path="/github">
-        <Suspense fallback={<PageLoader />}>
-          <GitHubPage />
-        </Suspense>
-      </Route>
       <Route path="/github/:repoId">
         <Suspense fallback={<PageLoader />}>
           <GitHubPage />
         </Suspense>
       </Route>
-      <Route path="/projects/webapp/:projectId">
+      <Route path="/github">
         <Suspense fallback={<PageLoader />}>
-          <WebAppProjectPage />
+          <GitHubPage />
         </Suspense>
       </Route>
       <Route path="/shared/:token">
