@@ -3898,3 +3898,20 @@
 - [x] C4-C5: Phase C convergence pass 1 — 365 tests, TS clean
 - [x] C4-C6: Phase C convergence pass 2 — 365 tests, TS clean
 - [x] C4-C7: Phase C convergence pass 3 — 365 tests, TS clean, CONVERGED
+
+## Cycle 5: Expert Assess/Optimize/Validate — Deploy Pipeline + QA Deepening
+
+### Phase A: Deploy Pipeline Deepening
+- [x] C5-A1: Inject project.envVars into deployed HTML as window.__ENV__ in both deploy and deployFromGitHub
+- [x] C5-A2: Add deployment log streaming (getDeploymentLog procedure + DeploymentLogViewer UI)
+- [x] C5-A3: Add post-deploy health check (auto-trigger after deploy + manual Health Check button)
+- [x] C5-A4: Add cross-browser QA comparison (crossBrowserQA procedure)
+
+### Phase B: QA Pipeline Deepening
+- [x] C5-B1: Add structured QA report storage (saveQAReport procedure)
+- [x] C5-B2: Add browser type selector to QA panel (Chromium/Firefox/WebKit)
+- [x] C5-B3: Pass browserType through QA navigate calls
+
+### Phase C: E2E Tests + Convergence
+- [x] C5-C1: Write comprehensive E2E tests for all new features (64 tests in cycle5-e2e.test.ts)
+- [x] C5-C2: 10 consecutive fresh/novel convergence passes COMPLETE — 2,754 tests across 102 files, 0 failures, TypeScript clean, 10/10 consecutive clean passes with no counter resets
