@@ -690,3 +690,190 @@ export async function getInteractiveElements(
     return { success: false, error: `Get interactive elements failed: ${err.message}` };
   }
 }
+
+/** Set the browser viewport size for responsive testing */
+export async function setViewport(
+  sessionId: string | undefined,
+  width: number,
+  height: number
+): Promise<BrowserActionResult> {
+  const session = await getOrCreateSession(sessionId);
+  try {
+    await session.page.setViewportSize({ width, height });
+    const screenshotUrl = await captureScreenshot(session);
+    session.lastActivityAt = Date.now();
+    return {
+      success: true,
+      url: session.page.url(),
+      title: await session.page.title(),
+      screenshotUrl,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      url: session.page.url(),
+      title: await session.page.title().catch(() => "(error)"),
+      error: `Set viewport failed: ${err.message}`,
+    };
+  }
+}
+
+/** Run a QA test suite server-side and return results */
+export interface QAStep {
+  action: "navigate" | "click" | "type" | "screenshot" | "assert" | "wait" | "scroll" | "evaluate" | "pressKey" | "setViewport";
+  selector?: string;
+  value?: string;
+  description: string;
+}
+
+export interface QAStepResult {
+  action: string;
+  description: string;
+  status: "passed" | "failed" | "skipped";
+  duration: number;
+  error?: string;
+  screenshotUrl?: string;
+}
+
+export async function runQATestSuite(
+  baseUrl: string,
+  steps: QAStep[]
+): Promise<{ results: QAStepResult[]; summary: { total: number; passed: number; failed: number; skipped: number; duration: number } }> {
+  const results: QAStepResult[] = [];
+  let sessionId: string | undefined;
+  let hasFailed = false;
+  const suiteStart = Date.now();
+
+  for (const step of steps) {
+    if (hasFailed) {
+      results.push({
+        action: step.action,
+        description: step.description,
+        status: "skipped",
+        duration: 0,
+      });
+      continue;
+    }
+
+    const stepStart = Date.now();
+    try {
+      let result: BrowserActionResult & { evalResult?: string };
+
+      switch (step.action) {
+        case "navigate": {
+          const url = step.value?.startsWith("http") ? step.value : `${baseUrl}${step.value || "/"}`;
+          result = await navigate(sessionId, url);
+          if (!sessionId) {
+            // Capture the session ID from the first navigation
+            const sessions = listSessions();
+            if (sessions.length > 0) {
+              sessionId = sessions[sessions.length - 1]?.id ?? sessionId;
+            }
+          }
+          break;
+        }
+        case "click":
+          result = await click(sessionId, step.selector || "body");
+          break;
+        case "type":
+          result = await type(sessionId, step.selector || "input", step.value || "");
+          break;
+        case "screenshot":
+          result = await screenshot(sessionId);
+          break;
+        case "assert": {
+          const session = await getOrCreateSession(sessionId);
+          const found = await session.page.$(step.selector || "body");
+          result = {
+            success: !!found,
+            url: session.page.url(),
+            title: await session.page.title(),
+            error: found ? undefined : `Element not found: ${step.selector}`,
+          };
+          if (found) {
+            const screenshotUrl = await captureScreenshot(session);
+            result.screenshotUrl = screenshotUrl;
+          }
+          break;
+        }
+        case "wait":
+          result = await waitForSelector(sessionId, step.selector || "body", { timeout: 5000 });
+          break;
+        case "scroll":
+          result = await scroll(sessionId, (step.value as "up" | "down") || "down");
+          break;
+        case "evaluate":
+          result = await evaluate(sessionId, step.value || "document.title");
+          break;
+        case "pressKey":
+          result = await pressKey(sessionId, step.value || "Enter");
+          break;
+        case "setViewport": {
+          const [w, h] = (step.value || "375x812").split("x").map(Number);
+          result = await setViewport(sessionId, w || 375, h || 812);
+          break;
+        }
+        default:
+          result = { success: false, url: "", title: "", error: `Unknown action: ${step.action}` };
+      }
+
+      const duration = Date.now() - stepStart;
+      if (result.success) {
+        results.push({
+          action: step.action,
+          description: step.description,
+          status: "passed",
+          duration,
+          screenshotUrl: result.screenshotUrl || undefined,
+        });
+      } else {
+        hasFailed = true;
+        results.push({
+          action: step.action,
+          description: step.description,
+          status: "failed",
+          duration,
+          error: result.error || "Action failed",
+          screenshotUrl: result.screenshotUrl || undefined,
+        });
+      }
+    } catch (err: any) {
+      hasFailed = true;
+      results.push({
+        action: step.action,
+        description: step.description,
+        status: "failed",
+        duration: Date.now() - stepStart,
+        error: err.message,
+      });
+    }
+  }
+
+  const summary = {
+    total: results.length,
+    passed: results.filter(r => r.status === "passed").length,
+    failed: results.filter(r => r.status === "failed").length,
+    skipped: results.filter(r => r.status === "skipped").length,
+    duration: Date.now() - suiteStart,
+  };
+
+  // Clean up the session after the test suite
+  if (sessionId) {
+    try { await closeSession(sessionId); } catch {}
+  }
+
+  return { results, summary };
+}
+
+/** Predefined mobile viewport presets */
+export const VIEWPORT_PRESETS = {
+  "iphone-se": { width: 375, height: 667 },
+  "iphone-14": { width: 390, height: 844 },
+  "iphone-14-pro-max": { width: 430, height: 932 },
+  "ipad-mini": { width: 768, height: 1024 },
+  "ipad-pro": { width: 1024, height: 1366 },
+  "pixel-7": { width: 412, height: 915 },
+  "samsung-s23": { width: 360, height: 780 },
+  "desktop-hd": { width: 1920, height: 1080 },
+  "desktop-4k": { width: 3840, height: 2160 },
+} as const;

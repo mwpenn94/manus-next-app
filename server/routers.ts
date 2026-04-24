@@ -3696,6 +3696,37 @@ Provide a JSON response with this exact structure:
         const { getAccessibilityTree } = await import("./browserAutomation");
         return getAccessibilityTree(input.sessionId);
       }),
+    /** Set viewport size for responsive testing */
+    setViewport: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        width: z.number().min(320).max(3840),
+        height: z.number().min(480).max(2160),
+      }))
+      .mutation(async ({ input }) => {
+        const { setViewport } = await import("./browserAutomation");
+        return setViewport(input.sessionId, input.width, input.height);
+      }),
+    /** Run a QA test suite server-side */
+    runQA: protectedProcedure
+      .input(z.object({
+        baseUrl: z.string().url(),
+        steps: z.array(z.object({
+          action: z.enum(["navigate", "click", "type", "screenshot", "assert", "wait", "scroll", "evaluate", "pressKey", "setViewport"]),
+          selector: z.string().optional(),
+          value: z.string().optional(),
+          description: z.string(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        const { runQATestSuite } = await import("./browserAutomation");
+        return runQATestSuite(input.baseUrl, input.steps);
+      }),
+    /** Get viewport presets */
+    viewportPresets: protectedProcedure.query(async () => {
+      const { VIEWPORT_PRESETS } = await import("./browserAutomation");
+      return VIEWPORT_PRESETS;
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;

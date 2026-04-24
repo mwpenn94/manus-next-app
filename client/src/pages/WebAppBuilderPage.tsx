@@ -590,7 +590,9 @@ function ImportFromGitHubButton({ onImport, isPending }: { onImport: (repoId: nu
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const remoteReposQuery = trpc.github.listRemoteRepos.useQuery({}, { enabled: open });
-  const connectRepoMut = trpc.github.connectRepo.useMutation();
+  const connectRepoMut = trpc.github.connectRepo.useMutation({
+    onError: (err) => { toast.error(err.message || "Failed to connect repository"); },
+  });
 
   const filteredRepos = useMemo(() => {
     if (!remoteReposQuery.data?.repos) return [];

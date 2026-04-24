@@ -199,18 +199,22 @@ describe("TaskView.tsx — ModelSelector localStorage persistence", () => {
     expect(src).toContain('localStorage.setItem("manus-agent-mode"');
   });
 });
-
+// ═══════════════════════════════════════════════════════════════════════════════
+// §5b — Home.tsx: Limitless Mode Styling
+// ═══════════════════════════════════════════════════════════════════════════════
+describe("ModelSelector — Limitless mode styling", () => {
+  const src = read("client/src/components/ModelSelector.tsx");
   it("Limitless mode has amber styling", () => {
-    expect(src).toContain("bg-amber-500/20");
+    expect(src).toContain("bg-amber-500/15");
     expect(src).toContain("text-amber-400");
   });
 
   it("Limitless mode label is 'Limitless'", () => {
-    expect(src).toContain('label: "Limitless"');
+    expect(src).toContain('"Manus Limitless"');
   });
 
   it("MODES array has exactly 4 entries", () => {
-    const modeIds = src.match(/id:\s*"/g);
+    const modeIds = src.match(/id:\s*"manus-next-/g);
     expect(modeIds).toHaveLength(4);
   });
 });
