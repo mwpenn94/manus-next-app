@@ -710,6 +710,16 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                 Regenerate
               </button>
             )}
+            {/* Fork from Here — creates a new task with messages up to this point */}
+            {taskExternalId && messageIndex !== undefined && allMessages && (
+              <BranchButton
+                taskExternalId={taskExternalId}
+                message={message}
+                messageIndex={messageIndex}
+                allMessages={allMessages}
+                className="text-[11px]"
+              />
+            )}
           </div>
         )}
 
@@ -1578,6 +1588,7 @@ export default function TaskView() {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const [lastErrorRetryable, setLastErrorRetryable] = useState(false);
+  const [generationIncomplete, setGenerationIncomplete] = useState(false);
   const [pendingGate, setPendingGate] = useState<{
     action: string;
     description?: string;
@@ -1860,6 +1871,7 @@ export default function TaskView() {
       }
 
       setStreaming(true);
+      setGenerationIncomplete(false);
       setStreamContent("");
       setAgentActions([]);
       setTokenUsage(null);
@@ -1885,7 +1897,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
+          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
         });
 
         await streamWithRetry({
@@ -1976,6 +1988,7 @@ export default function TaskView() {
     clearFiles();
     inputRef.current?.focus();
     setStreaming(true);
+    setGenerationIncomplete(false);
     setStreamContent("");
     setAgentActions([]);
     setLastErrorRetryable(false);
@@ -2051,7 +2064,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
       });
 
       await streamWithRetry({
@@ -2095,6 +2108,7 @@ export default function TaskView() {
     if (!task) return;
     handsFree.notifyProcessing();
     setStreaming(true);
+    setGenerationIncomplete(false);
     setStreamContent("");
     setAgentActions([]);
     setLastErrorRetryable(false);
@@ -2124,7 +2138,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
       });
 
       await streamWithRetry({
@@ -2183,6 +2197,7 @@ export default function TaskView() {
 
     // Re-send the conversation (minus the removed assistant message)
     setStreaming(true);
+    setGenerationIncomplete(false);
     setStreamContent("");
     setAgentActions([]);
     setLastErrorRetryable(false);
@@ -2208,7 +2223,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete,
       });
 
       await streamWithRetry({
@@ -2650,17 +2665,69 @@ export default function TaskView() {
                     <button
                       onClick={() => {
                         if (!task) return;
-                        const lines = [`<html><head><meta charset="utf-8"><title>${task.title}</title><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#e0e0e0;background:#111;}h1{color:#d4a574;border-bottom:2px solid #333;padding-bottom:12px;}hr{border:none;border-top:1px solid #333;margin:24px 0;}.msg{margin:16px 0;padding:16px;border-radius:8px;}.user{background:#1a1a2e;border-left:3px solid #d4a574;}.assistant{background:#1a2e1a;border-left:3px solid #74d4a5;}.meta{font-size:12px;color:#888;margin-bottom:8px;}pre{background:#0a0a0a;padding:12px;border-radius:6px;overflow-x:auto;}code{font-family:monospace;}</style></head><body>`];
-                        lines.push(`<h1>${task.title}</h1>`);
-                        lines.push(`<p style="color:#888">Created: ${task.createdAt.toLocaleString()} | Status: ${task.status}</p><hr>`);
-                        for (const msg of task.messages) {
-                          const label = msg.role === "user" ? "You" : msg.role === "assistant" ? "Assistant" : "System";
-                          const cls = msg.role === "user" ? "user" : "assistant";
-                          const content = msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
-                          lines.push(`<div class="msg ${cls}"><div class="meta">${label} — ${msg.timestamp.toLocaleString()}</div>${content}</div>`);
+                        if (task.messages.length === 0) {
+                          toast.error("Nothing to export — this task has no messages");
+                          setShowMoreMenu(false);
+                          return;
                         }
+                        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        const lines = [`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(task.title)}</title><style>
+                          body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#e0e0e0;background:#111;line-height:1.6;}
+                          h1{color:#d4a574;border-bottom:2px solid #333;padding-bottom:12px;}
+                          .meta-block{font-size:12px;color:#888;margin-bottom:24px;}
+                          hr{border:none;border-top:1px solid #333;margin:24px 0;}
+                          .msg{margin:16px 0;padding:16px;border-radius:8px;}
+                          .user{background:#1a1a2e;border-left:3px solid #d4a574;}
+                          .assistant{background:#1a2e1a;border-left:3px solid #74d4a5;}
+                          .role-label{font-size:12px;color:#888;margin-bottom:8px;font-weight:600;}
+                          .actions-block{margin-top:8px;padding:8px 12px;background:#0a0a0a;border-radius:6px;font-size:11px;color:#aaa;}
+                          .actions-block summary{cursor:pointer;color:#888;font-weight:600;}
+                          .artifact-link{display:inline-block;margin:4px 8px 4px 0;padding:4px 10px;background:#222;border-radius:4px;color:#74d4a5;text-decoration:none;font-size:12px;}
+                          .artifact-link:hover{background:#333;}
+                          img.embedded{max-width:100%;border-radius:6px;margin:8px 0;}
+                          pre{background:#0a0a0a;padding:12px;border-radius:6px;overflow-x:auto;}
+                          code{font-family:'SF Mono',Consolas,monospace;}
+                          .footer{margin-top:40px;padding-top:16px;border-top:1px solid #333;font-size:11px;color:#555;text-align:center;}
+                        </style></head><body>`];
+                        lines.push(`<h1>${esc(task.title)}</h1>`);
+                        lines.push(`<div class="meta-block">Created: ${task.createdAt.toLocaleString()} | Status: ${task.status} | Messages: ${task.messages.length}</div><hr>`);
+                        for (const msg of task.messages) {
+                          if (msg.role === "system") continue;
+                          const label = msg.role === "user" ? "👤 You" : "🤖 Assistant";
+                          const cls = msg.role === "user" ? "user" : "assistant";
+                          // Convert markdown code blocks to HTML pre/code
+                          let content = esc(msg.content)
+                            .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="$1">$2</code></pre>')
+                            .replace(/\n/g, "<br>");
+                          // Embed images inline
+                          content = content.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, '<br><img class="embedded" src="$2" alt="$1"><br>');
+                          lines.push(`<div class="msg ${cls}"><div class="role-label">${label} — ${msg.timestamp.toLocaleString()}</div>${content}`);
+                          // Tool actions
+                          if (msg.actions && msg.actions.length > 0) {
+                            lines.push(`<div class="actions-block"><details><summary>🛠️ ${msg.actions.length} tool action${msg.actions.length > 1 ? "s" : ""}</summary>`);
+                            for (const action of msg.actions) {
+                              const actionDetail = 'url' in action ? action.url : 'command' in action ? action.command : 'file' in action ? action.file : 'query' in action ? action.query : 'description' in action ? action.description : 'element' in action ? action.element : ('label' in action ? (action.label || '') : '');
+                              lines.push(`<div style="margin:4px 0;">• <strong>${esc(action.type || "action")}</strong>: ${esc(actionDetail || "")}</div>`);
+                            }
+                            lines.push(`</details></div>`);
+                          }
+                          // Extract artifact URLs
+                          const urlMatches = msg.content.match(/https?:\/\/[^\s)]+\.(pdf|docx?|xlsx?|pptx?|csv|zip|png|jpe?g|gif|webp|svg|mp[34]|wav)/gi);
+                          if (urlMatches && urlMatches.length > 0) {
+                            const uniqueUrls = Array.from(new Set(urlMatches));
+                            lines.push(`<div style="margin-top:8px;">`);
+                            for (const u of uniqueUrls) {
+                              const ext = u.split(".").pop()?.toUpperCase() || "FILE";
+                              lines.push(`<a class="artifact-link" href="${u}" target="_blank">📎 ${ext}</a>`);
+                            }
+                            lines.push(`</div>`);
+                          }
+                          lines.push(`</div>`);
+                        }
+                        lines.push(`<div class="footer">Exported from Sovereign AI on ${new Date().toLocaleString()}</div>`);
                         lines.push(`</body></html>`);
-                        const blob = new Blob([lines.join("")], { type: "text/html" });
+                        const htmlContent = lines.join("");
+                        const blob = new Blob([htmlContent], { type: "text/html" });
                         const url = URL.createObjectURL(blob);
                         const printWin = window.open(url, "_blank");
                         if (printWin) {
@@ -2673,6 +2740,57 @@ export default function TaskView() {
                     >
                       <FileText className="w-3.5 h-3.5" />
                       Export as PDF (Print)
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!task) return;
+                        if (task.messages.length === 0) {
+                          toast.error("Nothing to export — this task has no messages");
+                          setShowMoreMenu(false);
+                          return;
+                        }
+                        const jsonData = {
+                          title: task.title,
+                          id: task.id,
+                          status: task.status,
+                          createdAt: task.createdAt.toISOString(),
+                          exportedAt: new Date().toISOString(),
+                          messageCount: task.messages.length,
+                          messages: task.messages
+                            .filter(m => m.role !== "system")
+                            .map(m => ({
+                              role: m.role,
+                              content: m.content,
+                              timestamp: m.timestamp.toISOString(),
+                              ...(m.actions && m.actions.length > 0 ? {
+                                actions: m.actions.map(a => ({
+                                  type: a.type,
+                                  detail: 'url' in a ? a.url : 'command' in a ? a.command : 'file' in a ? a.file : 'query' in a ? a.query : 'description' in a ? a.description : ('label' in a ? a.label : undefined),
+                                  status: a.status,
+                                }))
+                              } : {}),
+                              ...(m.cardType ? { cardType: m.cardType } : {}),
+                            })),
+                        };
+                        const jsonStr = JSON.stringify(jsonData, null, 2);
+                        if (jsonStr.length > 500_000) {
+                          toast.info(`Large export (${(jsonStr.length / 1024).toFixed(0)}KB) — download may take a moment`);
+                        }
+                        const blob = new Blob([jsonStr], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        const safeName = task.title.replace(/[^a-zA-Z0-9 \-]/g, "").trim().slice(0, 50) || "task-export";
+                        a.download = `${safeName}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("Task exported as JSON");
+                        setShowMoreMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Export as JSON
                     </button>
                     <button
                       onClick={handleShareDialog}
@@ -2969,19 +3087,23 @@ export default function TaskView() {
               <div className="flex items-center gap-2">
                 <div className={cn(
                   "flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
-                  (task as any).staleCompleted === 1
+                  (generationIncomplete || (task as any).staleCompleted === 1)
                     ? "bg-amber-500/10 border-amber-500/30"
                     : "bg-muted border-border"
                 )}>
                   <CheckCircle2 className={cn(
                     "w-3.5 h-3.5",
-                    (task as any).staleCompleted === 1 ? "text-amber-400" : "text-muted-foreground"
+                    (generationIncomplete || (task as any).staleCompleted === 1) ? "text-amber-400" : "text-muted-foreground"
                   )} />
                   <span className={cn(
                     "text-xs font-medium",
-                    (task as any).staleCompleted === 1 ? "text-amber-400" : "text-muted-foreground"
+                    (generationIncomplete || (task as any).staleCompleted === 1) ? "text-amber-400" : "text-muted-foreground"
                   )}>
-                    {(task as any).staleCompleted === 1 ? "Auto-completed (inactive)" : "Task completed"}
+                    {generationIncomplete
+                    ? "Generation incomplete — no artifact produced"
+                    : (task as any).staleCompleted === 1
+                      ? "Auto-completed (inactive)"
+                      : "Task completed"}
                   </span>
                 </div>
                 {(task as any).staleCompleted === 1 && (
@@ -3007,9 +3129,12 @@ export default function TaskView() {
               </div>
               <TaskRating taskId={task.id} />
             </div>
-            {/* Suggested follow-ups */}
+            {/* Suggested follow-ups — override with generation_incomplete when server signals it */}
             <div className="flex flex-wrap gap-2">
-              {getFollowUpSuggestions(task?.messages ?? []).map((suggestion, i) => (
+              {(generationIncomplete
+                ? FOLLOW_UP_SUGGESTIONS.generation_incomplete
+                : getFollowUpSuggestions(task?.messages ?? [])
+              ).map((suggestion, i) => (
                 <button
                   key={i}
                   onClick={() => setInput(suggestion)}

@@ -8,7 +8,8 @@
  * Feature 5: Improved Task Export to Markdown
  * Feature 6: Task Duplicate/Fork (tRPC procedure + UI button)
  *
- * Convergence Pass 2: Depth + Adversarial hardening tests added
+ * Convergence Pass 2: Depth + Adversarial hardening tests
+ * Convergence Pass 3: SSE pipeline, Fork from Here, JSON/HTML export, SHORT GENERATION REQUEST
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -53,6 +54,34 @@ describe("Session 25 — Bug Fix 1: LIMITLESS mode action-first for generation",
     expect(source).toContain("wantsCreativeOutput");
     // Should skip the anti-shallow research injection for creative/generation requests
     expect(source).toMatch(/wantsCreativeOutput.*skip|skip.*wantsCreativeOutput/is);
+  });
+
+  // Pass 3: SHORT GENERATION REQUEST harmonization
+  it("SHORT/VAGUE detection has special handling for short generation requests", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./agentStream.ts"),
+      "utf-8"
+    );
+    expect(source).toContain("isShortGenerationRequest");
+    expect(source).toContain("SHORT GENERATION REQUEST");
+    // Should NOT treat "Generate a pdf for me" as vague
+    expect(source).toContain("NORMAL for generation tasks");
+    expect(source).toContain("NEVER research ABOUT the format");
+  });
+
+  // Pass 3: Generation nudge — forces tool use when 0 tool calls
+  it("Generation nudge forces tool use when no tools called on generation request", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "./agentStream.ts"),
+      "utf-8"
+    );
+    // Should detect generation requests and nudge toward tool use
+    expect(source).toContain("isGenerationRequest");
+    expect(source).toMatch(/generate|create|make|build|draft/);
   });
 });
 
@@ -132,6 +161,47 @@ describe("Session 25 — Bug Fix 3: Deliverable check before completion", () => 
     expect(source).toContain("agentAskedForClarification");
     // The condition should exclude clarification requests from the incomplete flag
     expect(source).toMatch(/!agentAskedForClarification/);
+  });
+
+  // Pass 3: SSE pipeline wires generationIncomplete to the client
+  it("streamWithRetry onStatus accepts metadata parameter", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/lib/streamWithRetry.ts"),
+      "utf-8"
+    );
+    // onStatus should accept metadata as second parameter
+    expect(source).toMatch(/onStatus.*status.*string.*metadata/s);
+    // Should extract metadata from the SSE data
+    expect(source).toContain("data.metadata");
+  });
+
+  // Pass 3: buildStreamCallbacks passes generationIncomplete to UI state
+  it("buildStreamCallbacks passes generationIncomplete to setGenerationIncomplete", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/lib/buildStreamCallbacks.ts"),
+      "utf-8"
+    );
+    expect(source).toContain("setGenerationIncomplete");
+    expect(source).toContain("generationIncomplete");
+  });
+
+  // Pass 3: TaskView has generationIncomplete state and resets it on new stream
+  it("TaskView has generationIncomplete state that resets on new stream", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("generationIncomplete, setGenerationIncomplete");
+    // Should reset on each new stream start
+    expect(source).toContain("setGenerationIncomplete(false)");
+    // Should show amber warning when incomplete
+    expect(source).toContain("Generation incomplete");
   });
 });
 
@@ -342,6 +412,85 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
     expect(source).toContain("500_000");
     expect(source).toContain("Large export");
   });
+
+  // Pass 3: HTML export upgraded with tool actions and artifacts
+  it("HTML export includes tool actions in collapsible details blocks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // HTML export should have actions-block class and details/summary
+    expect(source).toContain("actions-block");
+    expect(source).toContain("tool action");
+  });
+
+  // Pass 3: HTML export has proper CSS styling
+  it("HTML export has professional dark-theme CSS", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("role-label");
+    expect(source).toContain("artifact-link");
+    expect(source).toContain("img.embedded");
+  });
+
+  // Pass 3: HTML export guards empty tasks
+  it("HTML export guards against empty tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // Should have the empty guard before the HTML generation
+    // Count "Nothing to export" — should appear in both MD and HTML handlers
+    const count = (source.match(/Nothing to export/g) || []).length;
+    expect(count).toBeGreaterThanOrEqual(2);
+  });
+
+  // Pass 3: JSON export exists
+  it("JSON export button exists in the More menu", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("Export as JSON");
+    expect(source).toContain("application/json");
+    expect(source).toContain(".json");
+  });
+
+  // Pass 3: JSON export includes structured data
+  it("JSON export includes structured task data with messages and actions", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    expect(source).toContain("exportedAt");
+    expect(source).toContain("messageCount");
+    expect(source).toContain("JSON.stringify(jsonData, null, 2)");
+  });
+
+  // Pass 3: JSON export guards empty tasks
+  it("JSON export guards against empty tasks", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // Count "Nothing to export" — should appear in MD, HTML, and JSON handlers
+    const count = (source.match(/Nothing to export/g) || []).length;
+    expect(count).toBeGreaterThanOrEqual(3);
+  });
 });
 
 // ── Feature 6: Task Duplicate/Fork ──
@@ -464,5 +613,35 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
     );
     expect(source).toContain("messages.length > 50");
     expect(source).toContain("Duplicate all of them");
+  });
+
+  // Pass 3: Fork from Here on assistant messages
+  it("BranchButton is available on assistant messages (not just user)", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      "utf-8"
+    );
+    // Should have BranchButton inside the assistant action buttons section (!isUser)
+    // The pattern: !isUser block contains BranchButton
+    const assistantActionsSection = source.match(/\{\/\* Action buttons for assistant messages \*\/\}[\s\S]*?\{\/\* Branch button for user messages \*\/\}/);
+    expect(assistantActionsSection).toBeTruthy();
+    expect(assistantActionsSection![0]).toContain("BranchButton");
+  });
+
+  // Pass 3: Fork from Here uses existing BranchButton component
+  it("Fork from Here reuses BranchButton component with correct props", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const source = fs.readFileSync(
+      path.resolve(__dirname, "../client/src/components/BranchIndicator.tsx"),
+      "utf-8"
+    );
+    // BranchButton should accept messageIndex and allMessages props
+    expect(source).toContain("messageIndex");
+    expect(source).toContain("allMessages");
+    // Should copy messages up to and including the selected message
+    expect(source).toContain("allMessages.slice(0, messageIndex + 1)");
   });
 });

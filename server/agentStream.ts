@@ -649,8 +649,15 @@ ${memoryContext}
           ? (lastUserMsg.content as any[]).filter((p: any) => p.type === "text").map((p: any) => p.text).join(" ")
           : "")
       : "";
+    const isShortGenerationRequest = /\b(generate|create|make|build|draft)\s+(me\s+)?a?\s*(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|website|webapp|video|audio|song|music)\b/i.test(lastUserText);
     if (lastUserText.length > 0 && lastUserText.length < 80 && !hasAttachments) {
-      systemPrompt += `\n\n## SHORT/VAGUE QUERY DETECTED\nThe user's message is brief. Do NOT assume specific details from memory or previous conversations. If the request is ambiguous, ask clarifying questions before proceeding. For example, if they say "help refine this build" without specifying which build, ask them to provide details rather than assuming from stored memories.`;
+      if (isShortGenerationRequest) {
+        // Generation requests are short by nature ("Generate a pdf for me") — don't treat as vague.
+        // Instead, nudge the agent to ask WHAT CONTENT they want, not to research the format.
+        systemPrompt += `\n\n## SHORT GENERATION REQUEST\nThe user's message is a brief generation request. This is NORMAL for generation tasks — they are inherently short. Do NOT research the format or tool. Instead: if the user hasn't specified content details, ASK what content they want in the document/image/etc. If they said "just make one" or similar, create a useful sample with placeholder content. NEVER research ABOUT the format — USE THE TOOL.`;
+      } else {
+        systemPrompt += `\n\n## SHORT/VAGUE QUERY DETECTED\nThe user's message is brief. Do NOT assume specific details from memory or previous conversations. If the request is ambiguous, ask clarifying questions before proceeding. For example, if they say "help refine this build" without specifying which build, ask them to provide details rather than assuming from stored memories.`;
+      }
     }
 
     // Mode-specific instructions — deeply aligned with Manus tiers

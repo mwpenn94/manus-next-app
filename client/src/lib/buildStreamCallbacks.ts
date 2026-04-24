@@ -28,6 +28,8 @@ export interface StreamStateSetters {
   setIsReconnecting?: (reconnecting: boolean) => void;
   setLastErrorRetryable?: (retryable: boolean) => void;
   setPendingGate?: (gate: { action: string; description?: string; category?: string; taskId: string } | null) => void;
+  /** Session 25 Pass 3: Signal that a generation request completed without producing an artifact */
+  setGenerationIncomplete?: (incomplete: boolean) => void;
   /** Session 23: Token usage state setter */
   setTokenUsage?: (usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null) => void;
 }
@@ -94,9 +96,15 @@ export function buildStreamCallbacks(
         setters.accumulatedRef.current = state.accumulated;
       }
     },
-    onStatus: (status: string) => {
+    onStatus: (status: string, metadata?: Record<string, any>) => {
       if (status === "running") setters.updateTaskStatus(setters.taskId, "running");
-      if (status === "completed") setters.updateTaskStatus(setters.taskId, "completed");
+      if (status === "completed") {
+        setters.updateTaskStatus(setters.taskId, "completed");
+        // Surface generationIncomplete flag so the UI can show appropriate follow-ups
+        if (metadata?.generationIncomplete && setters.setGenerationIncomplete) {
+          setters.setGenerationIncomplete(true);
+        }
+      }
     },
     onStepProgress: (progress: any) => {
       setters.setStepProgress(progress);

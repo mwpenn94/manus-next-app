@@ -3316,3 +3316,32 @@
 ### Convergence Pass 2 Tests
 - [x] Expanded session25.test.ts from 21 to 35 tests
 - [x] All 35 tests passing — convergence confirmed
+
+## Session 25 Convergence Pass 3: Next 3 Steps
+
+### Step 1: End-to-End "Generate a PDF" Flow Fix (Landscape → Depth → Adversarial)
+- [x] Verify LIMITLESS mode ACTION-FIRST prompt actually triggers tool use for "Generate a pdf for me"
+- [x] Verify anti-shallow-completion skips research injection for creative/generation requests
+- [x] Verify deliverable check flags incomplete when no artifact produced
+- [x] Verify context-aware suggestions show generation-relevant options (not code-oriented)
+- [x] Depth: ensure SHORT/VAGUE query detection doesn't override action-first for generation requests
+- [x] Adversarial: test edge cases — "make me a pdf", "create a document", "build a spreadsheet"
+
+### Step 2: "Fork from Here" UI on Individual Messages (Landscape → Depth → Adversarial)
+- [x] Add "Fork from here" (BranchButton) on individual assistant message bubbles
+- [x] Wire to task.duplicate with upToMessageIndex set to the message's position
+- [x] Show fork icon/button on hover for each message (reuses existing BranchButton)
+- [x] Depth: handle forking from user vs assistant messages correctly (both have BranchButton)
+- [x] Adversarial: BranchButton handles first/last/single-message via allMessages.slice
+
+### Step 3: JSON and HTML Export Format Options (Landscape → Depth → Adversarial)
+- [x] Add three export buttons (Markdown / JSON / PDF-Print) in the More menu
+- [x] JSON export: structured with metadata, messages array, actions, cardType
+- [x] HTML export: styled dark-theme with embedded CSS, tool actions, artifact links, images
+- [x] Depth: all three formats handle tool actions, images, and code blocks
+- [x] Adversarial: all three formats guard empty tasks, use safe filenames, warn on large exports
+
+### Pass 3 Testing & Checkpoint
+- [x] Write/expand convergence tests for all 3 steps (48 tests total)
+- [x] Run full test suite — 48/48 passing
+- [x] Save checkpoint

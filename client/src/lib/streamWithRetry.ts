@@ -19,7 +19,7 @@ export interface StreamCallbacks {
   onImage: (imageUrl: string) => void;
   onDocument: (doc: { title: string; url: string; format?: string }) => void;
   onDone: (content: string) => void;
-  onStatus: (status: string) => void;
+  onStatus: (status: string, metadata?: Record<string, any>) => void;
   onStepProgress: (progress: any) => void;
   onWebappPreview: (preview: { name: string; url: string; description?: string }) => void;
   onConfirmationGate?: (gate: { action: string; description?: string; category?: string }) => void;
@@ -85,7 +85,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.image) callbacks.onImage(data.image);
     if (data.document) callbacks.onDocument(data.document);
     if (data.done) callbacks.onDone(data.content || "");
-    if (data.status) callbacks.onStatus(data.status);
+    if (data.status) callbacks.onStatus(data.status, data.metadata);
     if (data.step_progress) callbacks.onStepProgress(data.step_progress);
     if (data.webapp_preview) callbacks.onWebappPreview(data.webapp_preview);
     if (data.confirmation_gate && callbacks.onConfirmationGate) callbacks.onConfirmationGate(data.confirmation_gate);
