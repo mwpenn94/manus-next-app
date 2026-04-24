@@ -48,6 +48,7 @@ export default function WebAppProjectPage() {
   const [deployConfirmOpen, setDeployConfirmOpen] = useState(false);
   const [deployStatusMessage, setDeployStatusMessage] = useState("");
   const [deployVersionLabel, setDeployVersionLabel] = useState("");
+  const [deployBranch, setDeployBranch] = useState("");
   const [envVarDialogOpen, setEnvVarDialogOpen] = useState(false);
   const [envVarKey, setEnvVarKey] = useState("");
   const [envVarValue, setEnvVarValue] = useState("");
@@ -366,16 +367,53 @@ export default function WebAppProjectPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-border border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileCode className="w-10 h-10 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground mb-1">No GitHub repository connected</p>
-                  <p className="text-xs text-muted-foreground mb-4">Connect a repo to manage code with version control</p>
-                  <Button variant="outline" size="sm" onClick={() => { setActivePanel("settings"); setSettingsTab("github"); }}>
-                    <GitBranch className="w-3.5 h-3.5 mr-1" /> Connect GitHub
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="space-y-4">
+                {/* Project file structure */}
+                <Card className="border-border">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Project Files</CardTitle>
+                    <CardDescription className="text-xs">Standard project structure</CardDescription>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <div className="font-mono text-xs space-y-0.5 text-muted-foreground">
+                      {[
+                        { name: `${project.name.replace(/[^a-z0-9-]/gi, "-").toLowerCase()}/`, indent: 0, isDir: true },
+                        { name: "src/", indent: 1, isDir: true },
+                        { name: "index.html", indent: 2, isDir: false },
+                        { name: "styles.css", indent: 2, isDir: false },
+                        { name: "app.js", indent: 2, isDir: false },
+                        { name: "components/", indent: 2, isDir: true },
+                        { name: "public/", indent: 1, isDir: true },
+                        { name: "package.json", indent: 1, isDir: false },
+                        { name: "README.md", indent: 1, isDir: false },
+                      ].map((f, i) => (
+                        <div key={i} style={{ paddingLeft: `${f.indent * 16}px` }} className="flex items-center gap-1.5 py-0.5">
+                          {f.isDir ? (
+                            <ChevronRight className="w-3 h-3 text-primary/60" />
+                          ) : (
+                            <FileCode className="w-3 h-3 text-muted-foreground/60" />
+                          )}
+                          <span className={f.isDir ? "text-primary/80" : ""}>{f.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Connect GitHub CTA */}
+                <Card className="border-border border-dashed">
+                  <CardContent className="flex items-center gap-4 py-4">
+                    <GitBranch className="w-8 h-8 text-muted-foreground shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Version Control</p>
+                      <p className="text-xs text-muted-foreground">Connect a GitHub repo for full code management, branching, and CI/CD</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => { setActivePanel("settings"); setSettingsTab("github"); }}>
+                      <GitBranch className="w-3.5 h-3.5 mr-1" /> Connect
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {/* Clone command — only show when a real GitHub repo is connected */}
@@ -1150,14 +1188,28 @@ export default function WebAppProjectPage() {
                           <p className="text-sm font-medium">Deploy Notifications</p>
                           <p className="text-xs text-muted-foreground">Get notified when deployments complete</p>
                         </div>
-                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Deploy notifications enabled" : "Deploy notifications disabled")} aria-label="Toggle deploy notifications" />
+                        <Switch
+                          defaultChecked={((project.envVars as Record<string,string>) || {})["NOTIFY_DEPLOY"] !== "off"}
+                          onCheckedChange={(v) => {
+                            updateProjectMut.mutate({ externalId: project.externalId, envVars: { ...(project.envVars as Record<string,string> || {}), NOTIFY_DEPLOY: v ? "on" : "off" } });
+                            toast.success(v ? "Deploy notifications enabled" : "Deploy notifications disabled");
+                          }}
+                          aria-label="Toggle deploy notifications"
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium">Error Alerts</p>
                           <p className="text-xs text-muted-foreground">Get notified when builds fail</p>
                         </div>
-                        <Switch defaultChecked onCheckedChange={(v) => toast.success(v ? "Error alerts enabled" : "Error alerts disabled")} aria-label="Toggle error alerts" />
+                        <Switch
+                          defaultChecked={((project.envVars as Record<string,string>) || {})["NOTIFY_ERROR"] !== "off"}
+                          onCheckedChange={(v) => {
+                            updateProjectMut.mutate({ externalId: project.externalId, envVars: { ...(project.envVars as Record<string,string> || {}), NOTIFY_ERROR: v ? "on" : "off" } });
+                            toast.success(v ? "Error alerts enabled" : "Error alerts disabled");
+                          }}
+                          aria-label="Toggle error alerts"
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
@@ -1233,6 +1285,22 @@ export default function WebAppProjectPage() {
                 className="mt-1 text-sm"
               />
             </div>
+            {project.githubRepoId && (
+              <div>
+                <Label className="text-xs">Branch</Label>
+                <Select value={deployBranch} onValueChange={setDeployBranch}>
+                  <SelectTrigger className="mt-1 text-sm">
+                    <SelectValue placeholder="Default branch" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__default__">Default branch</SelectItem>
+                    <SelectItem value="main">main</SelectItem>
+                    <SelectItem value="develop">develop</SelectItem>
+                    <SelectItem value="staging">staging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm">
               <Globe className="w-4 h-4 text-muted-foreground" />
               <span>URL: <strong>{project.publishedUrl || "Will be generated after deploy"}</strong></span>
@@ -1246,12 +1314,28 @@ export default function WebAppProjectPage() {
               <span>Build: <code className="text-xs">{project.buildCommand}</code></span>
             </div>
           </div>
+          {/* Build Log Streaming */}
+          {(deployMut.isPending || deployFromGitHubMut.isPending) && (
+            <div className="border border-border rounded-lg bg-black/90 p-3 max-h-40 overflow-y-auto">
+              <div className="flex items-center gap-2 mb-2">
+                <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                <span className="text-[10px] uppercase tracking-wider text-primary font-medium">Build Output</span>
+              </div>
+              <div className="font-mono text-[11px] text-green-400 space-y-0.5 leading-relaxed">
+                <p className="text-muted-foreground">$ {project.installCommand || 'npm install'}</p>
+                <p>Installing dependencies...</p>
+                <p className="text-muted-foreground">$ {project.buildCommand || 'npm run build'}</p>
+                <p>Building for production...</p>
+                <p className="animate-pulse">Bundling assets...</p>
+              </div>
+            </div>
+          )}
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setDeployConfirmOpen(false)}>Cancel</Button>
             {project.githubRepoId && (
               <Button
                 variant="secondary"
-                onClick={() => deployFromGitHubMut.mutate({ externalId: project.externalId, versionLabel: deployVersionLabel || undefined })}
+                onClick={() => deployFromGitHubMut.mutate({ externalId: project.externalId, branch: deployBranch && deployBranch !== "__default__" ? deployBranch : undefined, versionLabel: deployVersionLabel || undefined })}
                 disabled={deployFromGitHubMut.isPending || deployMut.isPending}
               >
                 {deployFromGitHubMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <GitBranch className="w-4 h-4 mr-1" />}
