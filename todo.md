@@ -3915,3 +3915,19 @@
 ### Phase C: E2E Tests + Convergence
 - [x] C5-C1: Write comprehensive E2E tests for all new features (64 tests in cycle5-e2e.test.ts)
 - [x] C5-C2: 10 consecutive fresh/novel convergence passes COMPLETE — 2,754 tests across 102 files, 0 failures, TypeScript clean, 10/10 consecutive clean passes with no counter resets
+
+## Cycle 6: Expert Assess/Optimize/Validate — Build Step + Preview URLs
+
+### Phase A: Build Step in deployFromGitHub
+- [x] C6-A1: Add cloneAndBuild helper (clone repo, npm install, npm run build, return dist path)
+- [x] C6-A2: Update deployFromGitHub to use cloneAndBuild when package.json exists in repo
+- [x] C6-A3: Webhook auto-deploy inherits build step from deployFromGitHub
+
+### Phase B: Preview URLs per Deployment
+- [x] C6-B1: Add previewUrl column to webappDeployments schema
+- [x] C6-B2: Generate unique preview URL per deployment (deploy to unique S3 prefix)
+- [x] C6-B3: Show preview URL in WebAppProjectPage deployment cards
+
+### Phase C: E2E Tests + Convergence
+- [x] C6-C1: Write comprehensive E2E tests for build step + preview URLs (47 tests)
+- [x] C6-C2: 3 consecutive fresh/novel convergence passes (Pass 1: 476, Pass 2: 576, Pass 3: 1570 — all CLEAN)

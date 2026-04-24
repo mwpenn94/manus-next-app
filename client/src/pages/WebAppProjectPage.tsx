@@ -806,6 +806,16 @@ export default function WebAppProjectPage() {
                       } className="text-[10px]">
                         {dep.status}
                       </Badge>
+                      {dep.previewUrl && dep.status === "live" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-6 px-2"
+                          onClick={() => window.open(dep.previewUrl!, "_blank")}
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" /> Preview
+                        </Button>
+                      )}
                       {dep.status === "live" && i > 0 && (
                         <Button
                           variant="ghost"

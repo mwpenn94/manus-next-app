@@ -840,6 +840,8 @@ export const webappDeployments = mysqlTable("webapp_deployments", {
   buildLog: text("buildLog"),
   /** Error message if failed */
   errorMessage: text("errorMessage"),
+  /** Unique preview URL for this specific deployment (allows comparing versions) */
+  previewUrl: text("previewUrl"),
   /** Screenshot URL for preview */
   screenshotUrl: text("screenshotUrl"),
   /** Build duration in seconds */

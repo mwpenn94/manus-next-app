@@ -1,0 +1,1 @@
+ALTER TABLE `webapp_deployments` ADD `previewUrl` text;

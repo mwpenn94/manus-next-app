@@ -218,6 +218,13 @@
       "when": 1777014832820,
       "tag": "0030_yellow_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1777066432039,
+      "tag": "0031_sloppy_vertigo",
+      "breakpoints": true
     }
   ]
 }
