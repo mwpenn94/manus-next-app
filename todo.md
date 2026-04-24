@@ -3931,3 +3931,21 @@
 ### Phase C: E2E Tests + Convergence
 - [x] C6-C1: Write comprehensive E2E tests for build step + preview URLs (47 tests)
 - [x] C6-C2: 3 consecutive fresh/novel convergence passes (Pass 1: 476, Pass 2: 576, Pass 3: 1570 — all CLEAN)
+
+## Cycle 7: Expert Assess/Optimize/Validate — Route All Pages + Sidebar Navigation
+
+### Phase A: Route All Unrouted Pages in App.tsx
+- [x] C7-A1: Add routes for ConnectorsPage, SkillsPage, SlidesPage, TeamPage
+- [x] C7-A2: Add routes for VideoGeneratorPage, WebhooksPage, MeetingsPage, DesktopAppPage
+- [x] C7-A3: Add routes for ConnectDevicePage, MobileProjectsPage, AppPublishPage, ClientInferencePage
+- [x] C7-A4: Add routes for ComputerUsePage, DeployedWebsitesPage, DesignView, DiscoverPage
+- [x] C7-A5: Add routes for FigmaImportPage, MessagingAgentPage, DataControlsPage, MailManusPage
+
+### Phase B: Sidebar Navigation Enhancement
+- [x] C7-B1: Add grouped sidebar sections (Manus, Tools, More) with collapsible UI
+- [x] C7-B2: Add sidebar entries for all major features (23 items across 3 sections)
+- [x] C7-B3: Add collapsible sections with auto-expand on active route
+
+### Phase C: E2E Tests + Convergence
+- [x] C7-C1: Write comprehensive E2E tests for all new routes + sidebar navigation (139 tests)
+- [x] C7-C2: 3 consecutive fresh/novel convergence passes (Pass 1-3: all 139 tests CLEAN, 0 TS errors)

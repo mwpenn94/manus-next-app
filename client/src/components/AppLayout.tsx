@@ -60,6 +60,23 @@ import {
   Moon,
   Keyboard,
   Globe,
+  GitBranch,
+  Plug,
+  Zap,
+  Presentation,
+  Video,
+  Webhook,
+  ChevronDown,
+  ChevronRight,
+  Compass,
+  Smartphone,
+  MonitorPlay,
+  Mail,
+  Shield,
+  MessageSquare,
+  Cpu,
+  Laptop,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -136,6 +153,140 @@ function BridgeStatusBadge() {
           : "error"}
       </span>
     </div>
+  );
+}
+
+// Sidebar navigation types and data
+interface SidebarNavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  matchPaths?: string[];
+}
+
+interface SidebarNavSection {
+  label: string;
+  items: SidebarNavItem[];
+  collapsible?: boolean;
+}
+
+const SIDEBAR_SECTIONS: SidebarNavSection[] = [
+  {
+    label: "Manus",
+    items: [
+      { href: "/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/memory", label: "Memory", icon: Brain },
+      { href: "/projects", label: "Projects", icon: FolderOpen, matchPaths: ["/project/", "/projects/webapp/"] },
+      { href: "/library", label: "Library", icon: BookOpen },
+      { href: "/schedule", label: "Schedules", icon: ClockIcon },
+      { href: "/browser", label: "Browser", icon: Globe },
+    ],
+  },
+  {
+    label: "Tools",
+    collapsible: true,
+    items: [
+      { href: "/github", label: "GitHub", icon: GitBranch, matchPaths: ["/github/"] },
+      { href: "/connectors", label: "Connectors", icon: Plug },
+      { href: "/skills", label: "Skills", icon: Zap },
+      { href: "/slides", label: "Slides", icon: Presentation },
+      { href: "/video", label: "Video", icon: Video },
+      { href: "/computer-use", label: "Computer Use", icon: MonitorPlay },
+      { href: "/discover", label: "Discover", icon: Compass },
+    ],
+  },
+  {
+    label: "More",
+    collapsible: true,
+    items: [
+      { href: "/team", label: "Team", icon: Users },
+      { href: "/meetings", label: "Meetings", icon: MessageSquare },
+      { href: "/webhooks", label: "Webhooks", icon: Webhook },
+      { href: "/deployed-websites", label: "Websites", icon: Upload },
+      { href: "/desktop", label: "Desktop", icon: Laptop },
+      { href: "/connect-device", label: "Devices", icon: Smartphone },
+      { href: "/mobile-projects", label: "Mobile", icon: Smartphone },
+      { href: "/client-inference", label: "Inference", icon: Cpu },
+      { href: "/mail", label: "Mail", icon: Mail },
+      { href: "/data-controls", label: "Data Controls", icon: Shield },
+    ],
+  },
+];
+
+function SidebarNavLink({ item, location }: { item: SidebarNavItem; location: string }) {
+  const isActive = location === item.href || item.matchPaths?.some(p => location.startsWith(p));
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
+        isActive
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+      )}
+    >
+      <item.icon className="w-4 h-4" />
+      {item.label}
+    </Link>
+  );
+}
+
+function SidebarNav({ location }: { location: string }) {
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
+    const expanded: Record<string, boolean> = {};
+    for (const section of SIDEBAR_SECTIONS) {
+      if (section.collapsible) {
+        const hasActiveItem = section.items.some(
+          item => location === item.href || item.matchPaths?.some(p => location.startsWith(p))
+        );
+        expanded[section.label] = hasActiveItem;
+      }
+    }
+    return expanded;
+  });
+
+  const toggleSection = (label: string) => {
+    setExpandedSections(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  return (
+    <nav
+      className="border-t border-sidebar-border p-2 space-y-0.5 shrink-0 overflow-y-auto max-h-[40vh]"
+      aria-label="Sidebar navigation"
+    >
+      {SIDEBAR_SECTIONS.map((section) => (
+        <div key={section.label}>
+          {section.collapsible ? (
+            <button
+              onClick={() => toggleSection(section.label)}
+              className="flex items-center justify-between w-full px-3 pt-1.5 pb-0.5 group"
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {section.label}
+              </span>
+              {expandedSections[section.label] ? (
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+              )}
+            </button>
+          ) : (
+            <div className="px-3 pt-1.5 pb-0.5">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {section.label}
+              </span>
+            </div>
+          )}
+          {(!section.collapsible || expandedSections[section.label]) && (
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <SidebarNavLink key={item.href} item={item} location={location} />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </nav>
   );
 }
 
@@ -670,88 +821,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* Bridge Status */}
       <BridgeStatusBadge />
 
-      {/* Sidebar Footer — Manus section nav (compact, fixed) */}
-      <nav
-        className="border-t border-sidebar-border p-2 space-y-0.5 shrink-0"
-        aria-label="Sidebar navigation"
-      >
-        {/* Section: Manus */}
-        <div className="px-3 pt-1.5 pb-0.5">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Manus">Manus</span>
-        </div>
-        <Link
-          href="/analytics"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/analytics"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <BarChart3 className="w-4 h-4" />
-          Analytics
-        </Link>
-        <Link
-          href="/memory"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/memory"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Brain className="w-4 h-4" />
-          Memory
-        </Link>
-        <Link
-          href="/projects"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/projects" || location.startsWith("/project/")
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <FolderOpen className="w-4 h-4" />
-          Projects
-        </Link>
-        <Link
-          href="/library"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/library"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <BookOpen className="w-4 h-4" />
-          Library
-        </Link>
-        <Link
-          href="/schedule"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/schedule"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <ClockIcon className="w-4 h-4" />
-          Schedules
-        </Link>
-        <Link
-          href="/browser"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/browser"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Globe className="w-4 h-4" />
-          Browser
-        </Link>
-      </nav>
+      {/* Sidebar Footer — Grouped section nav */}
+      <SidebarNav location={location} />
 
       {/* Referral/Invite Banner — Manus parity */}
       {isAuthenticated && (
