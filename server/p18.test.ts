@@ -153,6 +153,6 @@ describe("P18: No regressions", () => {
     const app = read("client/src/App.tsx");
     expect(app).toMatch(/\/settings/);
     expect(app).toMatch(/\/library/);
-    expect(app).toMatch(/\/client-inference/);
+    // /client-inference removed from routes for Manus alignment
   });
 });

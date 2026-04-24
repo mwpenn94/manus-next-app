@@ -147,7 +147,7 @@ export const workspaceArtifacts = mysqlTable("workspace_artifacts", {
   id: int("id").autoincrement().primaryKey(),
   taskId: int("taskId").notNull(),
   /** Artifact type: browser_screenshot, browser_url, code, terminal */
-  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview"]).notNull(),
+  artifactType: mysqlEnum("artifactType", ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview", "webapp_deployed"]).notNull(),
   /** For code: filename. For terminal: command. For browser: page title. */
   label: varchar("label", { length: 500 }),
   /** Text content (code source, terminal output). Null for screenshots. */

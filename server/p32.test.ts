@@ -228,28 +228,28 @@ describe("P32: DeployedWebsitesPage", () => {
 
 // ── P32: Routes & Navigation ──
 describe("P32: Routes & Navigation", () => {
-  it("App.tsx has routes for data-controls, mail, deployments", () => {
+  it("App.tsx has routes for data-controls and mail (Manus alignment)", () => {
     const content = fs.readFileSync("client/src/App.tsx", "utf-8");
     expect(content).toContain('path="/data-controls"');
     expect(content).toContain('path="/mail"');
-    expect(content).toContain('path="/deployments"');
+    // /deployments removed from routes for Manus alignment
   });
 
-  it("App.tsx lazy-imports the new pages", () => {
+  it("App.tsx lazy-imports Manus-aligned pages", () => {
     const content = fs.readFileSync("client/src/App.tsx", "utf-8");
     expect(content).toContain("DataControlsPage");
     expect(content).toContain("MailManusPage");
-    expect(content).toContain("DeployedWebsitesPage");
+    // DeployedWebsitesPage removed from imports for Manus alignment
   });
 
-  it("AppLayout sidebar has links for new pages", () => {
+  it("AppLayout sidebar has Manus-aligned nav items", () => {
     const content = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
-    expect(content).toContain('href="/data-controls"');
-    expect(content).toContain('href="/mail"');
-    expect(content).toContain('href="/deployments"');
-    expect(content).toContain("Data Controls");
-    expect(content).toContain("Mail Manus");
-    expect(content).toContain("Deployed Websites");
+    expect(content).toContain('href="/analytics"');
+    expect(content).toContain('href="/memory"');
+    expect(content).toContain('href="/projects"');
+    expect(content).toContain('href="/library"');
+    expect(content).toContain('href="/schedule"');
+    // Extraneous sidebar items (Deployed Websites, Mail Manus, Data Controls) removed for Manus alignment
   });
 });
 

@@ -211,6 +211,13 @@
       "when": 1777004174508,
       "tag": "0029_lean_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1777014832820,
+      "tag": "0030_yellow_killmonger",
+      "breakpoints": true
     }
   ]
 }

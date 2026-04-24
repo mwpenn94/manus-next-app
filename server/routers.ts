@@ -174,7 +174,7 @@ import {
   strategyTelemetry,
 } from "../drizzle/schema";
 
-const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview"] as const;
+const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview", "webapp_deployed"] as const;
 
 export const appRouter = router({
   system: systemRouter,

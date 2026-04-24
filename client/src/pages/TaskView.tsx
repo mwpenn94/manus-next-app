@@ -729,16 +729,27 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             }}
             onPublish={() => {
               const eid = message.cardData?.projectExternalId as string;
-              if (eid) {
+              const currentStatus = message.cardData?.status as string;
+              if (currentStatus === "published") {
+                toast.info("Already published! Use 'Re-deploy' to update.");
+              } else if (eid) {
                 toast.info("To deploy, ask the agent: 'Deploy my webapp to production'");
               } else {
                 toast.info("Build the app first before publishing.");
               }
             }}
             onVisit={() => {
-              // Open the proxy preview URL in a new tab
-              const proxyUrl = `/api/webapp-preview/`;
-              window.open(proxyUrl, "_blank");
+              // If published, open the published URL; otherwise open the proxy preview
+              const publishedUrl = message.cardData?.publishedUrl as string;
+              const domain = message.cardData?.domain as string;
+              if (publishedUrl) {
+                window.open(publishedUrl, "_blank");
+              } else if (domain) {
+                window.open(domain.startsWith("http") ? domain : `https://${domain}`, "_blank");
+              } else {
+                const proxyUrl = `/api/webapp-preview/`;
+                window.open(proxyUrl, "_blank");
+              }
             }}
             hasUnpublishedChanges={!!message.cardData?.hasUnpublishedChanges}
             projectExternalId={message.cardData?.projectExternalId as string}

@@ -14,7 +14,7 @@ import OnboardingTooltips from "./components/OnboardingTooltips";
 // Eagerly loaded
 import Home from "./pages/Home";
 
-// Lazy-loaded pages
+// Lazy-loaded pages — Manus-aligned only
 const TaskView = lazy(() => import("./pages/TaskView"));
 const BillingPage = lazy(() => import("./pages/BillingPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -23,32 +23,13 @@ const MemoryPage = lazy(() => import("./pages/MemoryPage"));
 const SchedulePage = lazy(() => import("./pages/SchedulePage"));
 const ReplayPage = lazy(() => import("./pages/ReplayPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
-const DesignView = lazy(() => import("./pages/DesignView"));
-const SkillsPage = lazy(() => import("./pages/SkillsPage"));
-const SlidesPage = lazy(() => import("./pages/SlidesPage"));
-const ConnectorsPage = lazy(() => import("./pages/ConnectorsPage"));
-const MeetingsPage = lazy(() => import("./pages/MeetingsPage"));
-const WebAppBuilderPage = lazy(() => import("./pages/WebAppBuilderPage"));
-const TeamPage = lazy(() => import("./pages/TeamPage"));
-const ComputerUsePage = lazy(() => import("./pages/ComputerUsePage"));
-const FigmaImportPage = lazy(() => import("./pages/FigmaImportPage"));
-const DesktopAppPage = lazy(() => import("./pages/DesktopAppPage"));
-const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
-const ConnectDevicePage = lazy(() => import("./pages/ConnectDevicePage"));
-const MobileProjectsPage = lazy(() => import("./pages/MobileProjectsPage"));
-const AppPublishPage = lazy(() => import("./pages/AppPublishPage"));
-const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
 const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
-const ClientInferencePage = lazy(() => import("./pages/ClientInferencePage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
 const MailManusPage = lazy(() => import("./pages/MailManusPage"));
-const DeployedWebsitesPage = lazy(() => import("./pages/DeployedWebsitesPage"));
-const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const WebhooksPage = lazy(() => import("./pages/WebhooksPage"));
 
 function PageLoader() {
   return (
@@ -114,89 +95,9 @@ function Router() {
           <ProjectsPage />
         </Suspense>
       </Route>
-      <Route path="/design">
-        <Suspense fallback={<PageLoader />}>
-          <DesignView />
-        </Suspense>
-      </Route>
-      <Route path="/skills">
-        <Suspense fallback={<PageLoader />}>
-          <SkillsPage />
-        </Suspense>
-      </Route>
-      <Route path="/slides">
-        <Suspense fallback={<PageLoader />}>
-          <SlidesPage />
-        </Suspense>
-      </Route>
-      <Route path="/connectors">
-        <Suspense fallback={<PageLoader />}>
-          <ConnectorsPage />
-        </Suspense>
-      </Route>
-      <Route path="/meetings">
-        <Suspense fallback={<PageLoader />}>
-          <MeetingsPage />
-        </Suspense>
-      </Route>
-      <Route path="/webapp-builder">
-        <Suspense fallback={<PageLoader />}>
-          <WebAppBuilderPage />
-        </Suspense>
-      </Route>
-      <Route path="/team">
-        <Suspense fallback={<PageLoader />}>
-          <TeamPage />
-        </Suspense>
-      </Route>
-      <Route path="/computer">
-        <Suspense fallback={<PageLoader />}>
-          <ComputerUsePage />
-        </Suspense>
-      </Route>
-      <Route path="/figma-import">
-        <Suspense fallback={<PageLoader />}>
-          <FigmaImportPage />
-        </Suspense>
-      </Route>
-      <Route path="/desktop-app">
-        <Suspense fallback={<PageLoader />}>
-          <DesktopAppPage />
-        </Suspense>
-      </Route>
-      <Route path="/messaging">
-        <Suspense fallback={<PageLoader />}>
-          <MessagingAgentPage />
-        </Suspense>
-      </Route>
-      <Route path="/connect-device">
-        <Suspense fallback={<PageLoader />}>
-          <ConnectDevicePage />
-        </Suspense>
-      </Route>
-      <Route path="/mobile-projects">
-        <Suspense fallback={<PageLoader />}>
-          <MobileProjectsPage />
-        </Suspense>
-      </Route>
-      <Route path="/app-publish">
-        <Suspense fallback={<PageLoader />}>
-          <AppPublishPage />
-        </Suspense>
-      </Route>
-      <Route path="/video">
-        <Suspense fallback={<PageLoader />}>
-          <VideoGeneratorPage />
-        </Suspense>
-      </Route>
       <Route path="/library">
         <Suspense fallback={<PageLoader />}>
           <Library />
-        </Suspense>
-      </Route>
-      <Route path="/client-inference">
-        <Suspense fallback={<PageLoader />}>
-          <ClientInferencePage />
         </Suspense>
       </Route>
       <Route path="/github">
@@ -229,29 +130,9 @@ function Router() {
           <MailManusPage />
         </Suspense>
       </Route>
-      <Route path="/deployments">
-        <Suspense fallback={<PageLoader />}>
-          <DeployedWebsitesPage />
-        </Suspense>
-      </Route>
-      <Route path="/deployed-websites">
-        <Suspense fallback={<PageLoader />}>
-          <DeployedWebsitesPage />
-        </Suspense>
-      </Route>
-      <Route path="/discover">
-        <Suspense fallback={<PageLoader />}>
-          <DiscoverPage />
-        </Suspense>
-      </Route>
       <Route path="/profile">
         <Suspense fallback={<PageLoader />}>
           <ProfilePage />
-        </Suspense>
-      </Route>
-      <Route path="/webhooks">
-        <Suspense fallback={<PageLoader />}>
-          <WebhooksPage />
         </Suspense>
       </Route>
       <Route path="/404" component={NotFound} />

@@ -23,36 +23,35 @@ describe("P33: New Page Files Exist", () => {
   });
 });
 
-// ── P33: Route Registration ──
+// ── P33: Route Registration (Manus alignment — discover/webhooks removed from routes) ──
 describe("P33: Routes registered in App.tsx", () => {
   const appContent = fs.readFileSync("client/src/App.tsx", "utf-8");
 
-  const routes = ["/discover", "/profile", "/webhooks"];
-
-  routes.forEach((route) => {
-    it(`route ${route} is registered`, () => {
-      expect(appContent).toContain(`path="${route}"`);
-    });
+  // Only /profile remains as a route; /discover and /webhooks removed for Manus alignment
+  it(`route /profile is registered`, () => {
+    expect(appContent).toContain('path="/profile"');
   });
 
-  const lazyImports = ["DiscoverPage", "ProfilePage", "WebhooksPage"];
-  lazyImports.forEach((name) => {
-    it(`lazy import for ${name} exists`, () => {
-      expect(appContent).toContain(name);
-    });
+  it(`lazy import for ProfilePage exists`, () => {
+    expect(appContent).toContain("ProfilePage");
   });
 });
 
-// ── P33: Sidebar Navigation ──
+// ── P33: Sidebar Navigation (Manus alignment — extraneous items removed) ──
 describe("P33: Sidebar navigation entries", () => {
   const layoutContent = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
 
-  it("has Discover link", () => {
-    expect(layoutContent).toContain('href="/discover"');
+  it("has Manus-aligned nav items (Analytics, Memory, Projects, Library, Schedules)", () => {
+    expect(layoutContent).toContain('href="/analytics"');
+    expect(layoutContent).toContain('href="/memory"');
+    expect(layoutContent).toContain('href="/projects"');
+    expect(layoutContent).toContain('href="/library"');
+    expect(layoutContent).toContain('href="/schedule"');
   });
 
-  it("has Integrations/Webhooks link", () => {
-    expect(layoutContent).toContain('href="/webhooks"');
+  it("does NOT have extraneous nav items (Discover, Webhooks)", () => {
+    expect(layoutContent).not.toContain('href="/discover"');
+    expect(layoutContent).not.toContain('href="/webhooks"');
   });
 
   it("user avatar links to profile", () => {

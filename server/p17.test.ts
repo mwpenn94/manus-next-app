@@ -64,11 +64,10 @@ describe("P17 — Package Enablement & Client Inference", () => {
       expect(exists).toBe(true);
     });
 
-    it("should have route registered in App.tsx", async () => {
+    it("client inference page exists as standalone file (removed from nav for Manus alignment)", async () => {
       const fs = await import("fs");
-      const content = fs.readFileSync("client/src/App.tsx", "utf-8");
-      expect(content).toContain("/client-inference");
-      expect(content).toContain("ClientInferencePage");
+      const content = fs.readFileSync("client/src/pages/ClientInferencePage.tsx", "utf-8");
+      expect(content).toContain("ClientInference");
     });
 
     it("should include WebGPU detection logic", async () => {

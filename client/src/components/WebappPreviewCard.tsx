@@ -36,7 +36,7 @@ type DeviceView = "desktop" | "tablet" | "mobile";
 interface WebappPreviewCardProps {
   appName: string;
   domain?: string;
-  status: "published" | "not_published" | "deploying";
+  status: "published" | "not_published" | "deploying" | "running";
   lastUpdated?: string;
   previewUrl?: string;
   screenshotUrl?: string;
@@ -131,7 +131,9 @@ export default function WebappPreviewCard({
       ? "Published"
       : status === "deploying"
         ? "Deploying..."
-        : "Not published";
+        : status === "running"
+          ? "Running"
+          : "Not published";
 
   const handleRefresh = useCallback(() => {
     if (iframeRef.current) {

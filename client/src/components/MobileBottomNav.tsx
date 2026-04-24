@@ -1,7 +1,7 @@
 /**
  * MobileBottomNav — Fixed bottom navigation bar for mobile devices.
  * Shows on screens < md breakpoint. Provides quick access to Home, Tasks, Billing,
- * and a "More" menu that exposes all sidebar destinations including Analytics.
+ * and a "More" menu that exposes Manus-aligned sidebar destinations.
  *
  * Uses env(safe-area-inset-bottom) for iOS notch/home-indicator devices.
  * Touch targets are minimum 44px for accessibility.
@@ -10,10 +10,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Home, ListTodo, CreditCard, MoreHorizontal, X,
-  Brain, FolderOpen, Clock, Film, Puzzle, Presentation,
-  Paintbrush, FileText, Plug, Wrench, Users, Monitor,
-  MessageSquare, Video, BookOpen, Settings, BarChart3,
-  GitBranch,
+  Brain, FolderOpen, Clock, BookOpen, Settings, BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -37,18 +34,6 @@ const MORE_ITEMS: NavItem[] = [
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/library", label: "Library", icon: BookOpen },
   { path: "/schedule", label: "Schedules", icon: Clock },
-  { path: "/replay", label: "Replay", icon: Film },
-  { path: "/skills", label: "Skills", icon: Puzzle },
-  { path: "/slides", label: "Slides", icon: Presentation },
-  { path: "/design", label: "Design", icon: Paintbrush },
-  { path: "/meetings", label: "Meetings", icon: FileText },
-  { path: "/connectors", label: "Connectors", icon: Plug },
-  { path: "/github", label: "GitHub", icon: GitBranch },
-  { path: "/webapp-builder", label: "App Builder", icon: Wrench },
-  { path: "/team", label: "Team", icon: Users },
-  { path: "/computer", label: "Computer", icon: Monitor },
-  { path: "/messaging", label: "Messaging", icon: MessageSquare },
-  { path: "/video", label: "Video", icon: Video },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -107,7 +92,7 @@ export default function MobileBottomNav() {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-4 gap-1 p-3">
+          <div className="grid grid-cols-3 gap-1 p-3">
             {MORE_ITEMS.map((item) => {
               const active = location === item.path;
               return (

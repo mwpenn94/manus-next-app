@@ -50,27 +50,15 @@ import {
   Filter,
   Brain,
   Clock as ClockIcon,
-  Film,
-  Video,
   FolderOpen,
-  Paintbrush,
-  Presentation,
-  Puzzle,
-  FileText,
-  Plug,
-  Wrench,
   Users,
   Monitor,
-  MessageSquare,
   Sparkles,
   Coins,
-  GitBranch,
   BookOpen,
   BarChart3,
   Sun,
   Moon,
-  Globe,
-  Shield,
   Keyboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -153,29 +141,6 @@ function BridgeStatusBadge() {
 
 type StatusFilter = "all" | "running" | "completed" | "error" | "favorites" | "scheduled" | "shared";
 
-// ── Sidebar status badges ──
-
-function ConnectorStatusBadge() {
-  const connectors = trpc.connector.list.useQuery(undefined, { staleTime: 60_000 });
-  const connected = connectors.data?.filter((c: any) => c.status === "connected").length ?? 0;
-  if (!connected) return null;
-  return (
-    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-foreground font-medium">
-      {connected}
-    </span>
-  );
-}
-
-function GitHubStatusBadge() {
-  const repos = trpc.github.repos.useQuery(undefined, { staleTime: 60_000 });
-  const count = repos.data?.length ?? 0;
-  if (!count) return null;
-  return (
-    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-foreground font-medium">
-      {count}
-    </span>
-  );
-}
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   useSWUpdate();
@@ -774,244 +739,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <ClockIcon className="w-4 h-4" />
           Schedules
         </Link>
-        <Link
-          href="/replay"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/replay"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Film className="w-4 h-4" />
-          Replay
-        </Link>
-        <Link
-          href="/skills"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/skills"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Puzzle className="w-4 h-4" />
-          Skills
-        </Link>
-        <Link
-          href="/slides"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/slides"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Presentation className="w-4 h-4" />
-          Slides
-        </Link>
-        <Link
-          href="/design"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/design"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Paintbrush className="w-4 h-4" />
-          Design
-        </Link>
-        <Link
-          href="/meetings"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/meetings"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <FileText className="w-4 h-4" />
-          Meetings
-        </Link>
-        <Link
-          href="/connectors"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/connectors"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Plug className="w-4 h-4" />
-          <span className="flex-1">Connectors</span>
-          <ConnectorStatusBadge />
-        </Link>
-        <Link
-          href="/github"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location.startsWith("/github")
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <GitBranch className="w-4 h-4" />
-          <span className="flex-1">GitHub</span>
-          <GitHubStatusBadge />
-        </Link>
-        <Link
-          href="/webapp-builder"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/webapp-builder"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Wrench className="w-4 h-4" />
-          App Builder
-        </Link>
-        <Link
-          href="/team"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/team"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Users className="w-4 h-4" />
-          Team
-        </Link>
-        <Link
-          href="/computer"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/computer"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Monitor className="w-4 h-4" />
-          Computer
-        </Link>
-        <Link
-          href="/figma-import"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/figma-import"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Paintbrush className="w-4 h-4" />
-          Figma Import
-        </Link>
-        <Link
-          href="/desktop-app"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/desktop-app"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Wrench className="w-4 h-4" />
-          Desktop App
-        </Link>
-        {/* Section: Other */}
-        <div className="px-3 pt-3 pb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: Other">Other</span>
-        </div>
-        <Link
-          href="/messaging"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/messaging"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Messaging
-        </Link>
-        <Link
-          href="/mail"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/mail"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <MessageSquare className="w-4 h-4" />
-          Mail Manus
-        </Link>
-        <Link
-          href="/deployments"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/deployments"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Globe className="w-4 h-4" />
-          Deployed Websites
-        </Link>
-        <Link
-          href="/data-controls"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/data-controls"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Shield className="w-4 h-4" />
-          Data Controls
-        </Link>
-        <Link
-          href="/video"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/video"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Video className="w-4 h-4" />
-          Video
-        </Link>
-        {/* Section: General */}
-        <div className="px-3 pt-3 pb-1">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground" aria-label="Section: General">General</span>
-        </div>
-        <Link
-          href="/discover"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/discover"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Sparkles className="w-4 h-4" />
-          Discover
-        </Link>
-        <Link
-          href="/webhooks"
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2.5 md:py-2 rounded-md text-sm transition-colors active:scale-[0.98]",
-            location === "/webhooks"
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          )}
-        >
-          <Plug className="w-4 h-4" />
-          Integrations
-        </Link>
+        {/* Billing & Settings at bottom of nav */}
         <Link
           href="/billing"
           className={cn(

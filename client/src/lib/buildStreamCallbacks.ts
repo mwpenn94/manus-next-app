@@ -279,6 +279,7 @@ export function buildStreamCallbacks(
           setters.updateMessageCard(setters.taskId, previewMsg.id, {
             status: "published",
             domain: deployment.url.replace(/^https?:\/\//, ""),
+            publishedUrl: deployment.url,
             hasUnpublishedChanges: false,
           });
         }

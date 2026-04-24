@@ -605,7 +605,7 @@ export interface ToolResult {
   /** Optional URL for images or browser artifacts */
   url?: string;
   /** Optional artifact type for workspace persistence */
-  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx" | "slides" | "webapp_preview";
+  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx" | "slides" | "webapp_preview" | "webapp_deployed";
   /** Optional label for the artifact */
   artifactLabel?: string;
   /** Optional project external ID for webapp projects (links to WebAppProjectPage) */
@@ -2937,7 +2937,7 @@ async function executeDeployWebapp(args: {
       success: true,
       result: `Successfully deployed "${projectName}"!\n\nLive URL: ${publishedUrl}\n\nThe app is now publicly accessible. Share this URL with anyone to view the app.`,
       url: publishedUrl,
-      artifactType: "webapp_preview",
+      artifactType: "webapp_deployed",
       artifactLabel: projectName,
       projectExternalId,
     };

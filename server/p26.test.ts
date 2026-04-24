@@ -42,9 +42,9 @@ describe("P26 — Mobile Responsive Polish", () => {
       expect(nav).toContain("BarChart3");
     });
 
-    it("includes GitHub in MORE_ITEMS", () => {
-      expect(nav).toContain('path: "/github"');
-      expect(nav).toContain("GitBranch");
+    it("includes Settings in MORE_ITEMS (Manus alignment)", () => {
+      expect(nav).toContain('path: "/settings"');
+      expect(nav).toContain("Settings");
     });
 
     it("uses safe-area-inset-bottom for bottom nav padding", () => {
@@ -72,8 +72,8 @@ describe("P26 — Mobile Responsive Polish", () => {
       expect(nav).toContain("backdrop-blur-md");
     });
 
-    it("has 4-column grid for More menu items", () => {
-      expect(nav).toContain("grid-cols-4");
+    it("has 3-column grid for More menu items (Manus alignment)", () => {
+      expect(nav).toContain("grid-cols-3");
     });
 
     it("positions More panel above the bottom nav using safe-area calc", () => {
