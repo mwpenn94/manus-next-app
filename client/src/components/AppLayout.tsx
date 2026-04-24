@@ -1041,55 +1041,56 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Auth Section — pinned at bottom, never scrolls away */}
-      <div className="border-t border-sidebar-border p-2 shrink-0 relative z-10 bg-sidebar">
+      <div className="border-t border-sidebar-border shrink-0 relative z-10 bg-sidebar">
         {authLoading ? (
-          <div className="flex items-center gap-2.5 px-3 py-2">
+          <div className="flex items-center justify-center px-3 py-2.5">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Loading...</span>
           </div>
         ) : isAuthenticated && user ? (
-          <div className="flex items-center gap-2.5 px-3 py-2.5 md:py-2">
-            <button onClick={() => navigate("/profile")} className="shrink-0 hover:opacity-80 transition-opacity" title="View profile">
+          <>
+            {/* User name row */}
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 hover:bg-sidebar-accent/50 transition-colors"
+              title="View profile"
+            >
               <UserInitials name={user.name} />
+              <span className="text-sm text-sidebar-foreground truncate flex-1 text-left">
+                {(user.name || user.email || "User").split(" ")[0]}
+              </span>
             </button>
-            <button onClick={() => navigate("/profile")} className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity" title="View profile">
-              <p className="text-sm text-sidebar-foreground truncate">
-                {user.name || user.email || "User"}
-              </p>
-            </button>
-            <button
-              onClick={cycleTheme}
-              className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-              title={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}`}
-              aria-label={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}. Click to cycle.`}
-            >
-              {preference === 'system' ? <Monitor className="w-3.5 h-3.5" /> : preference === 'light' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              onClick={() => navigate("/settings")}
-              className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-              title="Settings"
-              aria-label="Settings"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setShowHelp(true)}
-              className="p-2.5 md:p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-              title="Keyboard shortcuts (?)"
-              aria-label="Keyboard shortcuts"
-            >
-              <Keyboard className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-sidebar-accent transition-colors"
-              title="Sign out"
-              aria-label="Sign out"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            {/* Bottom icon strip — matches Manus exactly */}
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <button
+                onClick={cycleTheme}
+                className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                title={`Theme: ${preference === 'system' ? 'System' : preference === 'light' ? 'Light' : 'Dark'}`}
+              >
+                {preference === 'system' ? <Monitor className="w-4 h-4" /> : preference === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => navigate("/settings")}
+                className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowHelp(true)}
+                className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                title="Keyboard shortcuts (?)"
+              >
+                <Keyboard className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => { setSidebarOpen(false); setMobileDrawerOpen(false); }}
+                className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors hidden md:flex items-center justify-center"
+                title="Collapse sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            </div>
+          </>
         ) : (
           <button
             onClick={handleLogin}

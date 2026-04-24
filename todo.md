@@ -3417,3 +3417,8 @@
 - [x] Improve workspace file panel tabs (All, Documents, Images, Code, Links)
 - [x] Improve chat input with rich attachment menu (+ icon with files, skills, connectors)
 - [x] E2E chat improvements: agent work display, file management, publishing flow
+
+## Session 25 Pass 7: Manus Parity Convergence (Onboarding + Sidebar + Sharing)
+- [x] Onboarding tour overlay: multi-step Welcome walkthrough with dot pagination matching Manus video
+- [x] Sidebar bottom bar: user avatar, settings gear, theme toggle, collapse icon strip
+- [x] Task sharing enhancement: shareable URL preview card + permission controls

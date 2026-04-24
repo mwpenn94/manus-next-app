@@ -1,15 +1,17 @@
 /**
- * OnboardingTooltips — Lightweight first-time user onboarding
+ * OnboardingTooltips — Manus-style multi-step welcome walkthrough
  *
- * Shows a sequence of floating tooltip-style hints that highlight key features.
- * Persists completion to localStorage so it only shows once.
- * Dismissible at any point. Non-blocking — user can interact with the app while tips show.
- *
- * VU-03 fix: Addresses the "no formal onboarding" finding from Virtual User Assessment.
+ * Matches the Manus desktop video exactly:
+ * - Centered modal with sparkle icon
+ * - "Welcome to Manus" title with description
+ * - Dot pagination at bottom-left
+ * - Skip / Next → buttons at bottom-right
+ * - 6 steps covering key features
+ * - Persists completion to localStorage
  */
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, Sparkles, MessageSquare, Zap, Brain, Layers } from "lucide-react";
+import { X, ArrowRight, Sparkles, MessageSquare, Zap, Brain, Layers, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ONBOARDING_KEY = "manus-onboarding-complete";
@@ -19,7 +21,6 @@ interface OnboardingStep {
   title: string;
   description: string;
   icon: typeof Sparkles;
-  position: "center" | "bottom-center";
 }
 
 const STEPS: OnboardingStep[] = [
@@ -28,35 +29,36 @@ const STEPS: OnboardingStep[] = [
     title: "Welcome to Manus",
     description: "Your autonomous AI agent that can research, build, design, and automate — all from a single prompt.",
     icon: Sparkles,
-    position: "center",
   },
   {
     id: "prompt",
     title: "Start with a Task",
-    description: "Type any task in the input below. Try \"Research the latest AI trends\" or \"Build me a landing page.\"",
+    description: "Type any task in the input box. Try \"Research the latest AI trends\" or \"Build me a landing page\" — the agent handles the rest.",
     icon: MessageSquare,
-    position: "bottom-center",
   },
   {
     id: "modes",
     title: "Choose Your Mode",
-    description: "Speed for quick answers, Quality for thorough work, Max for complex projects, Limitless for recursive optimization until convergence.",
+    description: "Speed for quick answers, Quality for thorough work, Max for complex multi-step projects, Limitless for recursive optimization until convergence.",
     icon: Zap,
-    position: "center",
   },
   {
     id: "tools",
-    title: "The Agent Uses Tools",
-    description: "Watch as the agent searches the web, generates images, writes code, and creates documents — all autonomously.",
+    title: "Watch the Agent Work",
+    description: "The agent searches the web, generates images, writes code, creates documents, and builds apps — all autonomously. You'll see each step in real time.",
     icon: Brain,
-    position: "center",
   },
   {
     id: "sidebar",
     title: "Explore the Sidebar",
-    description: "Projects, Memory, Skills, Connectors, Analytics, and more. Each section extends what the agent can do for you.",
+    description: "Projects, Memory, Skills, Connectors, Analytics, Schedules, and more. Each section extends what the agent can do for you.",
     icon: Layers,
-    position: "center",
+  },
+  {
+    id: "build",
+    title: "Build & Publish Apps",
+    description: "Use the Web App Builder to create full-stack applications. Preview live, manage settings, and publish to your own domain — all from within Manus.",
+    icon: Globe,
   },
 ];
 
@@ -68,8 +70,7 @@ export default function OnboardingTooltips() {
     try {
       const completed = localStorage.getItem(ONBOARDING_KEY);
       if (!completed) {
-        // Small delay so the page renders first
-        const timer = setTimeout(() => setVisible(true), 800);
+        const timer = setTimeout(() => setVisible(true), 600);
         return () => clearTimeout(timer);
       }
     } catch {
@@ -102,78 +103,84 @@ export default function OnboardingTooltips() {
     <AnimatePresence>
       {visible && (
         <>
-          {/* Subtle backdrop — click to dismiss */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-[1px]"
+            className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px]"
             onClick={dismiss}
           />
 
-          {/* Tooltip card */}
+          {/* Modal card — matches Manus video exactly */}
           <motion.div
             key={step.id}
             role="dialog"
             aria-label={step.title}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className={cn(
-              "fixed z-[101] w-[340px] max-w-[90vw] bg-card border border-border rounded-xl shadow-2xl shadow-black/30 p-5",
-              step.position === "center" && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-              step.position === "bottom-center" && "bottom-32 left-1/2 -translate-x-1/2"
-            )}
+            exit={{ opacity: 0, y: -12, scale: 0.96 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed z-[101] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] max-w-[92vw] bg-card border border-border rounded-2xl shadow-2xl shadow-black/40 p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
+            {/* Close */}
             <button
               onClick={dismiss}
-              className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              aria-label="Dismiss onboarding"
+              className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* Icon */}
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-              <Icon className="w-5 h-5 text-primary" />
+            {/* Icon — sparkle in rounded square, matching Manus */}
+            <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+              <Icon className="w-5.5 h-5.5 text-primary" />
             </div>
 
-            {/* Content */}
-            <h2 className="text-base font-semibold text-foreground mb-1.5">{step.title}</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">{step.description}</p>
+            {/* Title */}
+            <h2 className="text-lg font-semibold text-foreground mb-2 tracking-tight">
+              {step.title}
+            </h2>
 
-            {/* Footer */}
+            {/* Description */}
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              {step.description}
+            </p>
+
+            {/* Footer: dots left, buttons right */}
             <div className="flex items-center justify-between">
-              {/* Step dots */}
-              <div className="flex items-center gap-1.5">
+              {/* Dot pagination */}
+              <div className="flex items-center gap-2">
                 {STEPS.map((_, i) => (
-                  <div
+                  <button
                     key={i}
+                    onClick={() => setCurrentStep(i)}
                     className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-colors",
-                      i === currentStep ? "bg-primary" : "bg-muted-foreground/30"
+                      "w-2 h-2 rounded-full transition-all duration-200",
+                      i === currentStep
+                        ? "bg-foreground scale-110"
+                        : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
                     )}
+                    aria-label={`Go to step ${i + 1}`}
                   />
                 ))}
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2">
+              {/* Skip / Next */}
+              <div className="flex items-center gap-3">
                 <button
                   onClick={dismiss}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Skip
                 </button>
                 <button
                   onClick={next}
-                  className="flex items-center gap-1.5 text-xs font-medium bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
+                  className="flex items-center gap-1.5 text-sm font-medium bg-foreground text-background px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
                 >
                   {isLast ? "Get Started" : "Next"}
-                  {!isLast && <ArrowRight className="w-3 h-3" />}
+                  {!isLast && <ArrowRight className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
