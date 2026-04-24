@@ -6,7 +6,7 @@
  * - Live iframe preview with hot reload
  * - Real publishing pipeline (upload to S3 → public URL)
  */
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
@@ -20,8 +20,11 @@ import {
   Code, Eye, Rocket, ArrowLeft, Loader2, RefreshCw,
   ExternalLink, Copy, CheckCircle2, Globe, Paintbrush, History,
   Smartphone, Package, FolderKanban, Settings, GitBranch, Plus,
-  BarChart3, Activity,
+  BarChart3, Activity, Github, Search, Lock,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -475,12 +478,20 @@ Generate the complete HTML code now.`,
           <TabsContent value="projects" className="mt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Managed Projects</h3>
-              <Button size="sm" onClick={() => {
-                createProjectMut.mutate({ name: appName || "New Project", framework: "react" });
-              }} disabled={createProjectMut.isPending}>
-                {createProjectMut.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
-                New Project
-              </Button>
+              <div className="flex items-center gap-2">
+                <ImportFromGitHubButton
+                  onImport={(repoId, repoName) => {
+                    createProjectMut.mutate({ name: repoName, framework: "react", githubRepoId: repoId });
+                  }}
+                  isPending={createProjectMut.isPending}
+                />
+                <Button size="sm" onClick={() => {
+                  createProjectMut.mutate({ name: appName || "New Project", framework: "react" });
+                }} disabled={createProjectMut.isPending}>
+                  {createProjectMut.isPending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+                  New Project
+                </Button>
+              </div>
             </div>
             {projectsQuery.isLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
@@ -570,5 +581,108 @@ Generate the complete HTML code now.`,
         </Tabs>
       </div>
     </div>
+  );
+}
+
+
+/** Import from GitHub — lists user's remote repos and creates a project linked to the selected repo */
+function ImportFromGitHubButton({ onImport, isPending }: { onImport: (repoId: number, repoName: string) => void; isPending: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const remoteReposQuery = trpc.github.listRemoteRepos.useQuery({}, { enabled: open });
+  const connectRepoMut = trpc.github.connectRepo.useMutation();
+
+  const filteredRepos = useMemo(() => {
+    if (!remoteReposQuery.data?.repos) return [];
+    const q = search.toLowerCase();
+    return remoteReposQuery.data.repos.filter((r: any) =>
+      r.full_name?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q)
+    );
+  }, [remoteReposQuery.data, search]);
+
+  const handleSelect = async (repo: any) => {
+    try {
+      // First connect the repo to our DB, then create a project linked to it
+      const result = await connectRepoMut.mutateAsync({
+        name: repo.name,
+        fullName: repo.full_name,
+        defaultBranch: repo.default_branch || "main",
+        isPrivate: repo.private || false,
+        htmlUrl: repo.html_url,
+        description: repo.description || "",
+        language: repo.language || undefined,
+        starCount: repo.stargazers_count || undefined,
+        forkCount: repo.forks_count || undefined,
+      });
+      onImport(result.id, repo.name);
+      setOpen(false);
+      toast.success(`Imported ${repo.full_name} as a project`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to import repo");
+    }
+  };
+
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+        <Github className="w-4 h-4 mr-1" /> Import from GitHub
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Import from GitHub</DialogTitle>
+            <DialogDescription>Select a repository to create a managed project</DialogDescription>
+          </DialogHeader>
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search repositories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-1 min-h-0 max-h-[50vh]">
+            {remoteReposQuery.isLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+            ) : !remoteReposQuery.data?.connected ? (
+              <div className="text-center py-8">
+                <Github className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">GitHub not connected. Connect GitHub in Connectors first.</p>
+              </div>
+            ) : filteredRepos.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No repositories found</p>
+              </div>
+            ) : (
+              filteredRepos.slice(0, 30).map((repo: any) => (
+                <button
+                  key={repo.id}
+                  onClick={() => handleSelect(repo)}
+                  disabled={connectRepoMut.isPending || isPending}
+                  className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors flex items-center gap-3 group"
+                >
+                  <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                    {repo.private ? <Lock className="w-4 h-4 text-muted-foreground" /> : <Globe className="w-4 h-4 text-muted-foreground" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate group-hover:text-primary">{repo.full_name}</p>
+                    {repo.description && <p className="text-xs text-muted-foreground truncate">{repo.description}</p>}
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                      {repo.language && <span>{repo.language}</span>}
+                      <span>{repo.default_branch || "main"}</span>
+                      {repo.private && <span className="text-amber-500">Private</span>}
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

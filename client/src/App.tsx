@@ -27,6 +27,7 @@ const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const BrowserPage = lazy(() => import("./pages/BrowserPage"));
 // DataControlsPage and MailManusPage removed — not in Manus navigation
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
@@ -117,6 +118,11 @@ function Router() {
       <Route path="/shared/:token">
         <Suspense fallback={<PageLoader />}>
           <SharedTaskView />
+        </Suspense>
+      </Route>
+      <Route path="/browser">
+        <Suspense fallback={<PageLoader />}>
+          <BrowserPage />
         </Suspense>
       </Route>
       {/* /data-controls and /mail removed — not in Manus navigation */}

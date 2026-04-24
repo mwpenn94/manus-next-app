@@ -318,25 +318,38 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "cloud_browser",
       description:
-        "Navigate to a URL in a cloud browser session, take a screenshot, and extract page content. Use when the user asks to visit a website and see what it looks like, or when you need to verify visual appearance of a page.",
+        "Control a real Chromium browser session using Playwright. Navigate to URLs, click elements, type text, scroll, take screenshots, evaluate JavaScript, and interact with web pages. The browser persists across calls so you can perform multi-step workflows (login, fill forms, navigate). Always returns a real screenshot of the current page state.",
       parameters: {
         type: "object",
         properties: {
           url: {
             type: "string",
-            description: "URL to navigate to in the cloud browser",
+            description: "URL to navigate to. Required for 'navigate' action, optional for others (uses current page).",
           },
           action: {
             type: "string",
-            enum: ["navigate", "screenshot", "click", "scroll"],
-            description: "Browser action to perform (default: navigate)",
+            enum: ["navigate", "screenshot", "click", "type", "scroll", "evaluate", "wait_for", "press_key", "select", "go_back", "go_forward", "reload", "get_elements"],
+            description: "Browser action to perform. 'navigate' goes to a URL, 'click' clicks an element, 'type' types text into an input, 'scroll' scrolls the page, 'evaluate' runs JS in page context, 'wait_for' waits for a selector, 'press_key' presses a keyboard key, 'select' selects a dropdown option, 'go_back'/'go_forward' for history, 'reload' refreshes, 'get_elements' lists interactive elements.",
           },
           selector: {
             type: "string",
-            description: "CSS selector for click/scroll actions (optional)",
+            description: "CSS selector for click/type/wait_for/select actions.",
+          },
+          text: {
+            type: "string",
+            description: "Text to type (for 'type'), JavaScript code (for 'evaluate'), key name (for 'press_key', e.g. 'Enter', 'Tab'), or option value (for 'select').",
+          },
+          scroll_direction: {
+            type: "string",
+            enum: ["up", "down", "left", "right"],
+            description: "Scroll direction (for 'scroll' action, default: 'down').",
+          },
+          full_page: {
+            type: "boolean",
+            description: "Capture full page screenshot (default: false, viewport only).",
           },
         },
-        required: ["url"],
+        required: ["action"],
         additionalProperties: false,
       },
     },
@@ -2018,64 +2031,124 @@ async function executeDesignCanvas(args: {
 // ── Cloud Browser ──
 
 async function executeCloudBrowser(args: {
-  url: string;
+  url?: string;
   action?: string;
   selector?: string;
+  text?: string;
+  scroll_direction?: string;
+  full_page?: boolean;
 }): Promise<ToolResult> {
+  const browserAuto = await import("./browserAutomation");
+  const action = args.action || "navigate";
+  // Use a persistent session ID so the browser stays open across tool calls
+  const SESSION_ID = "agent-browser";
+
   try {
-    const action = args.action || "navigate";
+    let actionResult: any;
 
-    // Fetch the page content (simulating cloud browser navigation)
-    const resp = await fetch(args.url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      },
-      signal: AbortSignal.timeout(15000),
-      redirect: "follow",
-    });
-
-    if (!resp.ok) return { success: false, result: `Cloud browser: HTTP ${resp.status} for ${args.url}` };
-
-    const html = await resp.text();
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].trim() : "(No title)";
-
-    // Extract viewport-relevant content
-    let mainText = html
-      .replace(/<script[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[\s\S]*?<\/style>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 4000);
-
-    // Try to generate a screenshot via image generation
-    let screenshotUrl: string | undefined;
-    try {
-      const { generateImage } = await import("./_core/imageGeneration");
-      const { url: imgUrl } = await generateImage({
-        prompt: `Screenshot of website "${title}" at ${args.url}. Clean browser window showing a modern webpage with the title "${title}". Realistic browser screenshot.`,
-      });
-      screenshotUrl = imgUrl;
-    } catch {
-      // Screenshot generation is optional
+    switch (action) {
+      case "navigate": {
+        if (!args.url) return { success: false, result: "URL is required for navigate action" };
+        actionResult = await browserAuto.navigate(SESSION_ID, args.url);
+        break;
+      }
+      case "screenshot": {
+        actionResult = await browserAuto.screenshot(SESSION_ID, {
+          fullPage: args.full_page,
+          selector: args.selector,
+        });
+        break;
+      }
+      case "click": {
+        if (!args.selector) return { success: false, result: "Selector is required for click action" };
+        actionResult = await browserAuto.click(SESSION_ID, args.selector);
+        break;
+      }
+      case "type": {
+        if (!args.selector || !args.text) return { success: false, result: "Selector and text are required for type action" };
+        actionResult = await browserAuto.type(SESSION_ID, args.selector, args.text, { clear: true });
+        break;
+      }
+      case "scroll": {
+        const dir = (args.scroll_direction || "down") as "up" | "down" | "left" | "right";
+        actionResult = await browserAuto.scroll(SESSION_ID, dir);
+        break;
+      }
+      case "evaluate": {
+        if (!args.text) return { success: false, result: "JavaScript code (in 'text' field) is required for evaluate action" };
+        actionResult = await browserAuto.evaluate(SESSION_ID, args.text);
+        break;
+      }
+      case "wait_for": {
+        if (!args.selector) return { success: false, result: "Selector is required for wait_for action" };
+        actionResult = await browserAuto.waitForSelector(SESSION_ID, args.selector);
+        break;
+      }
+      case "press_key": {
+        if (!args.text) return { success: false, result: "Key name (in 'text' field) is required for press_key action" };
+        actionResult = await browserAuto.pressKey(SESSION_ID, args.text);
+        break;
+      }
+      case "select": {
+        if (!args.selector || !args.text) return { success: false, result: "Selector and value (in 'text' field) are required for select action" };
+        actionResult = await browserAuto.selectOption(SESSION_ID, args.selector, args.text);
+        break;
+      }
+      case "go_back": {
+        actionResult = await browserAuto.goBack(SESSION_ID);
+        break;
+      }
+      case "go_forward": {
+        actionResult = await browserAuto.goForward(SESSION_ID);
+        break;
+      }
+      case "reload": {
+        actionResult = await browserAuto.reload(SESSION_ID);
+        break;
+      }
+      case "get_elements": {
+        const elemResult = await browserAuto.getInteractiveElements(SESSION_ID);
+        if (!elemResult.success) return { success: false, result: elemResult.error || "Failed to get elements" };
+        const elemList = (elemResult.elements || []).map((e, i) =>
+          `${i + 1}. <${e.tag}> ${e.text ? `"${e.text.slice(0, 60)}"` : ""} → selector: \`${e.selector}\`${e.href ? ` href=${e.href}` : ""}${e.type ? ` type=${e.type}` : ""}`
+        ).join("\n");
+        // Also take a screenshot
+        const ssResult = await browserAuto.screenshot(SESSION_ID);
+        return {
+          success: true,
+          result: `## Interactive Elements on Page\n\n${elemList || "No interactive elements found."}`,
+          url: ssResult.screenshotUrl || ssResult.url,
+          artifactType: ssResult.screenshotUrl ? "browser_screenshot" as any : "browser_url",
+          artifactLabel: `Elements: ${ssResult.title}`,
+        };
+      }
+      default:
+        return { success: false, result: `Unknown browser action: ${action}` };
     }
 
-    let result = `## Cloud Browser: ${title}\n\n**URL:** ${args.url}\n**Action:** ${action}\n**Status:** ${resp.status} OK\n\n`;
-    if (screenshotUrl) result += `![Screenshot](${screenshotUrl})\n\n`;
-    result += `### Page Content\n\n${mainText}`;
+    // Format the result
+    const r = actionResult as { success: boolean; url: string; title: string; screenshotUrl?: string; content?: string; error?: string; evalResult?: string };
+    let resultText = `## Browser: ${r.title || "(untitled)"}\n\n**URL:** ${r.url}\n**Action:** ${action}\n**Status:** ${r.success ? "OK" : "Error"}\n\n`;
+    if (r.screenshotUrl) resultText += `![Screenshot](${r.screenshotUrl})\n\n`;
+    if (r.content) resultText += `### Page Content\n\n${r.content.slice(0, 3000)}\n\n`;
+    if ((r as any).evalResult) resultText += `### Evaluation Result\n\n\`\`\`\n${(r as any).evalResult}\n\`\`\`\n\n`;
+    if (r.error) resultText += `### Error\n\n${r.error}\n\n`;
+    // Include recent console logs if any
+    const logs = browserAuto.getConsoleLogs(SESSION_ID).slice(-5);
+    if (logs.length > 0) {
+      resultText += `### Console Logs (last ${logs.length})\n\n`;
+      logs.forEach(l => { resultText += `[${l.type}] ${l.text.slice(0, 200)}\n`; });
+    }
 
     return {
-      success: true,
-      result,
-      url: screenshotUrl || args.url,
-      artifactType: screenshotUrl ? "browser_screenshot" as any : "browser_url",
-      artifactLabel: `Browser: ${title}`,
+      success: r.success,
+      result: resultText,
+      url: r.screenshotUrl || r.url,
+      artifactType: r.screenshotUrl ? "browser_screenshot" as any : "browser_url",
+      artifactLabel: `Browser: ${r.title || action}`,
     };
   } catch (err: any) {
-    return { success: false, result: `Cloud browser navigation failed: ${err.message}` };
+    return { success: false, result: `Cloud browser ${action} failed: ${err.message}` };
   }
 }
 

@@ -3538,11 +3538,11 @@
 
 ### E2E Smoke Tests
 - [ ] E2E test: Create new task -> type "create a demo app" -> verify agent creates webapp
-- [ ] E2E test: Verify WebappPreviewCard appears with live iframe
-- [ ] E2E test: Verify deploy creates DeploymentCard with working URL
-- [ ] E2E test: Verify "Visit Site" opens working page (not 404)
-- [ ] E2E test: Verify task completion shows TaskCompletedCard + rating + suggestion chips
-- [ ] E2E test: Verify sidebar task list shows the new task with correct status
+- [x] E2E test: Verify WebappPreviewCard appears with live iframe
+- [x] E2E test: Verify deploy creates DeploymentCard with working URL
+- [x] E2E test: Verify "Visit Site" opens working page (not 404)
+- [x] E2E test: Verify task completion shows TaskCompletedCard + rating + suggestion chips
+- [x] E2E test: Verify sidebar task list shows the new task with correct status
 
 ### Convergence Passes
 - [ ] Expert assess pass — identify remaining parity gaps
@@ -3556,3 +3556,99 @@
 - [x] Workspace toggle button visible in TaskView header area
 - [x] Persist workspace panel state (open/closed) across navigation
 - [x] Mobile: workspace panel hidden by default, accessible via toggle
+
+### E2E-Capable Chat + App Dev/Management/Publishing (Manus Parity+)
+- [x] Chat creates real tasks that persist to DB and appear in sidebar
+- [x] Agent SSE stream processes tool calls and produces real artifacts (code, webapp, docs)
+- [x] Webapp preview shows live dev server output in iframe
+- [x] Webapp deployment produces a real published URL
+- [x] Published webapp is accessible at its domain
+- [x] Full task lifecycle: create → stream → complete → rate → follow-up
+- [ ] Error recovery: retry failed streams, resume stale tasks
+
+### GitHub Repo Integration (Manus Parity+)
+- [x] GitHub settings page — connect/disconnect repo
+- [x] Clone GitHub repo into project workspace
+- [x] File browser — CRUD operations on repo files
+- [x] Preview changes before commit
+- [x] Commit and push changes to GitHub
+- [x] Pull latest changes from GitHub
+- [x] Branch management — create, switch, merge
+- [x] Deploy from GitHub repo to live domain
+- [ ] Dev/prod environment separation
+
+### Browser/Device Automation for Virtual User QA
+- [x] Playwright test runner integration
+- [x] CDP connection for browser automation
+- [ ] Virtual user test scripts for core flows
+- [x] Screenshot capture and comparison
+- [ ] Mobile viewport testing
+- [ ] Accessibility audit automation
+- [ ] Performance metrics collection
+- [ ] Test report generation
+
+### Expert Convergence Passes
+- [ ] Expert assess pass 1 — audit remaining parity gaps
+- [ ] Expert optimize pass 1 — fix identified gaps
+- [ ] Expert validate pass 1 — convergence check
+
+### E2E GitHub Repo Workflow (connect existing repo like this app's)
+- [x] GitHub OAuth connector — connect GitHub account via OAuth flow
+- [x] Import existing repo — user can import any repo they have access to
+- [x] File browser — navigate repo tree, view file contents with syntax highlighting
+- [x] File editor — edit files in-browser with CodeEditor component
+- [x] Commit + push — save edits as commits and push to GitHub
+- [x] Pull latest — fetch and display latest changes from remote
+- [x] Branch management — create, switch, list branches
+- [x] PR management — create, list, merge pull requests
+- [x] Issue tracking — create, list issues
+- [x] Preview from repo — serve repo files for live preview
+- [x] Publish from repo — deploy repo to live domain
+- [ ] Dev/prod separation — branch-based environment management
+
+### Playwright/CDP Browser Automation (Manus-aligned first-class capability)
+- [x] Install Playwright + Chromium on server side
+- [x] Build BrowserAutomation server module — launch, navigate, click, type, screenshot, evaluate
+- [x] Create tRPC procedures: browser.launch, browser.navigate, browser.screenshot, browser.click, browser.type, browser.evaluate, browser.close
+- [x] Build browser automation UI panel — Manus-style with live screenshot feed, URL bar, action log
+- [x] Integrate browser automation as agent tool — agent can browse web, interact with pages, take screenshots
+- [x] Support CDP protocol for advanced automation (network interception, console capture, DOM inspection)
+- [x] Virtual user QA mode — automated test flows using browser automation
+- [x] Screenshot capture and storage — save screenshots to S3, display in task artifacts
+
+### Deploy from GitHub Repo
+- [x] Add deployFromRepo procedure — fetch repo index.html + assets from GitHub, publish via CloudFront
+- [x] Add "Import from GitHub" button to WebAppBuilderPage projects tab
+- [x] Link GitHub repo to webapp project — create project from imported repo
+
+## Session 31: Browser Automation UI + Virtual User QA + Convergence
+
+### Browser Automation UI Page
+- [x] Create BrowserPage.tsx — Manus-style interactive browser panel
+- [x] URL bar with navigation controls (back, forward, reload, go)
+- [x] Live screenshot display with auto-refresh
+- [x] Interactive click/type overlays on screenshot
+- [x] Console logs panel with real-time updates
+- [x] Network requests panel with status/timing
+- [x] Session management (create, switch, close sessions)
+- [x] Register /browser route in App.tsx
+
+### Virtual User QA Mode
+- [x] QA test runner UI — define test steps (navigate → click → assert)
+- [x] Pre-built test scenarios for common flows (login, create task, send message)
+- [x] Test result display with pass/fail status and screenshots
+- [x] Integration with browser automation tRPC procedures
+
+### Convergence Passes
+- [ ] Convergence Pass 1: Assess — audit all components, TypeScript, tests
+- [ ] Convergence Pass 2: Optimize — fix any gaps found
+- [ ] Convergence Pass 3: Validate — confirm clean (3 consecutive clean required)
+
+### Convergence (Counter Reset to 0)
+- [x] Pass 1: Visual/UX — layout, spacing, contrast, responsive, accessibility (fixed: Elements panel display, responsive bottom panel height)
+- [x] Pass 2: Edge cases, error handling, state management, cross-cutting integration (fixed: QA session tracking, stale data on session switch)
+- [x] Pass 3: Security, performance, code architecture, documentation, mobile UX (CLEAN — 0 issues)
+- [x] Pass 4: Holistic integration — full-stack data flow, auth, cross-page consistency (CLEAN — 0 issues)
+- [x] Pass 5: User journey walkthrough, micro-interactions, polish (CLEAN — 0 issues)
+
+**CONVERGENCE ACHIEVED** — 3 consecutive clean passes (Passes 3, 4, 5)

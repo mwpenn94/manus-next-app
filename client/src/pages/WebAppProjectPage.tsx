@@ -100,6 +100,23 @@ export default function WebAppProjectPage() {
     },
   });
 
+  const deployFromGitHubMut = trpc.webappProject.deployFromGitHub.useMutation({
+    onMutate: () => {
+      setDeployStatusMessage("Deploying from GitHub...");
+    },
+    onSuccess: () => {
+      toast.success("GitHub deployment successful");
+      setDeployStatusMessage("GitHub deployment successful — your app is live.");
+      projectQuery.refetch();
+      deploymentsQuery.refetch();
+      setDeployConfirmOpen(false);
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setDeployStatusMessage(`GitHub deployment failed: ${err.message}`);
+    },
+  });
+
   const deleteProjectMut = trpc.webappProject.delete.useMutation({
     onSuccess: () => {
       toast.success("Project deleted");
@@ -1132,9 +1149,19 @@ export default function WebAppProjectPage() {
               <span>Build: <code className="text-xs">{project.buildCommand}</code></span>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setDeployConfirmOpen(false)}>Cancel</Button>
-            <Button onClick={() => deployMut.mutate({ externalId: project.externalId })} disabled={deployMut.isPending}>
+            {project.githubRepoId && (
+              <Button
+                variant="secondary"
+                onClick={() => deployFromGitHubMut.mutate({ externalId: project.externalId })}
+                disabled={deployFromGitHubMut.isPending || deployMut.isPending}
+              >
+                {deployFromGitHubMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <GitBranch className="w-4 h-4 mr-1" />}
+                Deploy from GitHub
+              </Button>
+            )}
+            <Button onClick={() => deployMut.mutate({ externalId: project.externalId })} disabled={deployMut.isPending || deployFromGitHubMut.isPending}>
               {deployMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Rocket className="w-4 h-4 mr-1" />}
               Deploy Now
             </Button>

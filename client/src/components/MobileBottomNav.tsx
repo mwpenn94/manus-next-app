@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Home, ListTodo, CreditCard, MoreHorizontal, X,
-  Brain, FolderOpen, Clock, BookOpen, Settings, BarChart3,
+  Brain, FolderOpen, Clock, BookOpen, Settings, BarChart3, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -34,6 +34,7 @@ const MORE_ITEMS: NavItem[] = [
   { path: "/projects", label: "Projects", icon: FolderOpen },
   { path: "/library", label: "Library", icon: BookOpen },
   { path: "/schedule", label: "Schedules", icon: Clock },
+  { path: "/browser", label: "Browser", icon: Globe },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 

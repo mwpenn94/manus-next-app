@@ -2949,6 +2949,182 @@ export const appRouter = router({
 
         return { deploymentId: depId, status: publishedUrl ? "live" : "failed", publishedUrl, cdnActive, distributionId };
       }),
+    /** Deploy a project from its linked GitHub repo (fetches index.html + assets from repo) */
+    deployFromGitHub: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        branch: z.string().optional(),
+        versionLabel: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        if (!project.githubRepoId) throw new TRPCError({ code: "BAD_REQUEST", message: "Project has no linked GitHub repo" });
+
+        // Get GitHub token from connector
+        const connectors = await getUserConnectors(ctx.user.id);
+        const ghConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected. Please connect GitHub in Connectors first." });
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
+
+        // Get repo info
+        const repo = await getGitHubRepoById(project.githubRepoId);
+        if (!repo) throw new TRPCError({ code: "NOT_FOUND", message: "GitHub repo not found" });
+
+        await updateWebappProject(project.id, { deployStatus: "building" });
+        const depId = await createWebappDeployment({
+          projectId: project.id,
+          userId: ctx.user.id,
+          versionLabel: input.versionLabel ?? `GitHub: ${input.branch || repo.defaultBranch || "main"}`,
+          commitSha: null,
+          commitMessage: `Deploy from GitHub repo ${repo.fullName}`,
+          status: "building",
+        });
+
+        const startTime = Date.now();
+        let publishedUrl = project.publishedUrl ?? null;
+        let cdnActive = false;
+        let distributionId: string | undefined;
+
+        try {
+          const { getFileContent, getRepoTree } = await import("./githubApi");
+          const branch = input.branch || repo.defaultBranch || "main";
+          const [owner, repoName] = repo.fullName.split("/");
+
+          // Fetch the repo tree to find deployable files
+          const tree = await getRepoTree(token, owner, repoName, branch, true);
+          const files = tree.tree.filter((f: any) => f.type === "blob");
+
+          // Strategy: look for index.html in root, docs/, public/, dist/, build/
+          const searchPaths = ["", "public/", "dist/", "build/", "docs/"];
+          let indexHtml: string | null = null;
+          let basePath = "";
+
+          for (const prefix of searchPaths) {
+            const indexFile = files.find((f: any) => f.path === `${prefix}index.html`);
+            if (indexFile) {
+              const content = await getFileContent(token, owner, repoName, indexFile.path, branch);
+              if (content.content) {
+                indexHtml = Buffer.from(content.content, "base64").toString("utf-8");
+                basePath = prefix;
+                break;
+              }
+            }
+          }
+
+          if (!indexHtml) {
+            await updateWebappDeployment(depId, { status: "failed", errorMessage: "No index.html found in repo root, public/, dist/, build/, or docs/" });
+            await updateWebappProject(project.id, { deployStatus: "failed" });
+            throw new TRPCError({ code: "BAD_REQUEST", message: "No index.html found in the repository. Deploy requires an index.html in root, public/, dist/, build/, or docs/." });
+          }
+
+          // Upload all assets from the same directory to S3
+          const { storagePut } = await import("./storage");
+          const assetFiles = files.filter((f: any) =>
+            f.path.startsWith(basePath) &&
+            f.path !== `${basePath}index.html` &&
+            /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|json|map)$/i.test(f.path)
+          ).slice(0, 50); // Limit to 50 assets
+
+          const assetUrlMap: Record<string, string> = {};
+          for (const asset of assetFiles) {
+            try {
+              const content = await getFileContent(token, owner, repoName, asset.path, branch);
+              if (content.content) {
+                const buf = Buffer.from(content.content, "base64");
+                const relativePath = asset.path.slice(basePath.length);
+                const key = `github-deploy/${project.externalId}/${relativePath}`;
+                const ext = relativePath.split(".").pop()?.toLowerCase() || "";
+                const mimeMap: Record<string, string> = {
+                  css: "text/css", js: "application/javascript", png: "image/png",
+                  jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
+                  svg: "image/svg+xml", ico: "image/x-icon", webp: "image/webp",
+                  woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf",
+                  json: "application/json", map: "application/json",
+                };
+                const { url } = await storagePut(key, buf, mimeMap[ext] || "application/octet-stream");
+                assetUrlMap[relativePath] = url;
+              }
+            } catch {
+              // Skip failed assets
+            }
+          }
+
+          // Rewrite asset references in HTML to point to S3 URLs
+          let finalHtml = indexHtml;
+          for (const [relativePath, cdnUrl] of Object.entries(assetUrlMap)) {
+            // Replace relative references like ./style.css, style.css, /style.css
+            const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            finalHtml = finalHtml.replace(
+              new RegExp(`(src|href|url)\\s*=\\s*["']\\s*(\\.?\\/?)${escapedPath}\\s*["']`, "gi"),
+              (match, attr) => `${attr}="${cdnUrl}"`
+            );
+          }
+
+          // Content safety check
+          const { checkContentSafety } = await import("./contentSafety");
+          const safetyVerdict = await checkContentSafety(finalHtml);
+          if (!safetyVerdict.safe) {
+            const reasons = [
+              ...safetyVerdict.tier1Flags.map((f: any) => `[${f.severity}] ${f.category}: ${f.detail}`),
+              ...(safetyVerdict.tier2Verdict?.categories || []),
+            ].join("; ");
+            await updateWebappDeployment(depId, { status: "failed", errorMessage: `Content safety check failed: ${reasons}` });
+            await updateWebappProject(project.id, { deployStatus: "failed" });
+            throw new TRPCError({ code: "BAD_REQUEST", message: `Content safety check failed: ${reasons}` });
+          }
+
+          // Inject analytics
+          const trackingScript = `<script src="/api/analytics/pixel.js?pid=${project.externalId}" defer></script>`;
+          if (finalHtml.includes("</body>")) {
+            finalHtml = finalHtml.replace("</body>", `${trackingScript}\n</body>`);
+          } else {
+            finalHtml += `\n${trackingScript}`;
+          }
+
+          // Deploy via CloudFront
+          const { provisionDistribution } = await import("./cloudfront");
+          const subdomain = project.subdomainPrefix || project.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+          if (!project.subdomainPrefix) {
+            await updateWebappProject(project.id, { subdomainPrefix: subdomain });
+          }
+
+          const result = await provisionDistribution(
+            {
+              projectId: project.id,
+              projectName: project.name,
+              subdomainPrefix: subdomain,
+              customDomain: project.customDomain,
+            },
+            finalHtml
+          );
+
+          publishedUrl = result.publicUrl;
+          cdnActive = result.cdnActive;
+          distributionId = result.distributionId;
+
+          const buildDuration = Math.round((Date.now() - startTime) / 1000);
+          await updateWebappDeployment(depId, {
+            status: publishedUrl ? "live" : "failed",
+            completedAt: new Date(),
+            buildDurationSec: buildDuration,
+            commitMessage: `Deploy from GitHub: ${repo.fullName}@${branch}`,
+          });
+          await updateWebappProject(project.id, {
+            deployStatus: publishedUrl ? "live" : "failed",
+            lastDeployedAt: new Date(),
+            ...(publishedUrl ? { publishedUrl } : {}),
+          });
+        } catch (err: any) {
+          if (err instanceof TRPCError) throw err;
+          await updateWebappDeployment(depId, { status: "failed", completedAt: new Date() });
+          await updateWebappProject(project.id, { deployStatus: "failed" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "GitHub deploy failed: " + (err.message || "Unknown error") });
+        }
+
+        return { deploymentId: depId, status: publishedUrl ? "live" : "failed", publishedUrl, cdnActive, distributionId };
+      }),
     /** Analyze SEO for a project using LLM */
     analyzeSeo: protectedProcedure
       .input(z.object({ externalId: z.string() }))
@@ -3343,6 +3519,182 @@ Provide a JSON response with this exact structure:
         if (!db) return null;
         const [parentTask] = await db.select({ externalId: tasks.externalId, title: tasks.title }).from(tasks).where(eq(tasks.id, branch.parentTaskId)).limit(1);
         return { ...branch, parentTask };
+      }),
+  }),
+
+  /** Browser Automation — Playwright-based browser control */
+  browser: router({
+    /** Launch/navigate to a URL */
+    navigate: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        url: z.string().url(),
+        waitUntil: z.enum(["load", "domcontentloaded", "networkidle"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { navigate } = await import("./browserAutomation");
+        return navigate(input.sessionId, input.url, { waitUntil: input.waitUntil });
+      }),
+
+    /** Click on an element */
+    click: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        selector: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { click } = await import("./browserAutomation");
+        return click(input.sessionId, input.selector);
+      }),
+
+    /** Type text into an element */
+    type: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        selector: z.string(),
+        text: z.string(),
+        clear: z.boolean().optional(),
+        pressEnter: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { type } = await import("./browserAutomation");
+        return type(input.sessionId, input.selector, input.text, {
+          clear: input.clear,
+          pressEnter: input.pressEnter,
+        });
+      }),
+
+    /** Take a screenshot */
+    screenshot: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        fullPage: z.boolean().optional(),
+        selector: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { screenshot } = await import("./browserAutomation");
+        return screenshot(input.sessionId, { fullPage: input.fullPage, selector: input.selector });
+      }),
+
+    /** Scroll the page */
+    scroll: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        direction: z.enum(["up", "down", "left", "right"]),
+        amount: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { scroll } = await import("./browserAutomation");
+        return scroll(input.sessionId, input.direction, input.amount);
+      }),
+
+    /** Evaluate JavaScript in the page */
+    evaluate: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        code: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { evaluate } = await import("./browserAutomation");
+        return evaluate(input.sessionId, input.code);
+      }),
+
+    /** Wait for a selector */
+    waitForSelector: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        selector: z.string(),
+        state: z.enum(["attached", "detached", "visible", "hidden"]).optional(),
+        timeout: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { waitForSelector } = await import("./browserAutomation");
+        return waitForSelector(input.sessionId, input.selector, {
+          state: input.state,
+          timeout: input.timeout,
+        });
+      }),
+
+    /** Press a keyboard key */
+    pressKey: protectedProcedure
+      .input(z.object({
+        sessionId: z.string().optional(),
+        key: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { pressKey } = await import("./browserAutomation");
+        return pressKey(input.sessionId, input.key);
+      }),
+
+    /** Get interactive elements on the page */
+    getElements: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .query(async ({ input }) => {
+        const { getInteractiveElements } = await import("./browserAutomation");
+        return getInteractiveElements(input.sessionId);
+      }),
+
+    /** Get console logs from the session */
+    consoleLogs: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .query(async ({ input }) => {
+        const { getConsoleLogs } = await import("./browserAutomation");
+        return getConsoleLogs(input.sessionId);
+      }),
+
+    /** Get network requests from the session */
+    networkRequests: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .query(async ({ input }) => {
+        const { getNetworkRequests } = await import("./browserAutomation");
+        return getNetworkRequests(input.sessionId);
+      }),
+
+    /** List all active sessions */
+    sessions: protectedProcedure.query(async () => {
+      const { listSessions } = await import("./browserAutomation");
+      return listSessions();
+    }),
+
+    /** Close a session */
+    close: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .mutation(async ({ input }) => {
+        const { closeSession } = await import("./browserAutomation");
+        await closeSession(input.sessionId);
+        return { success: true };
+      }),
+
+    /** Go back in browser history */
+    goBack: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { goBack } = await import("./browserAutomation");
+        return goBack(input.sessionId);
+      }),
+
+    /** Go forward in browser history */
+    goForward: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { goForward } = await import("./browserAutomation");
+        return goForward(input.sessionId);
+      }),
+
+    /** Reload the current page */
+    reload: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { reload } = await import("./browserAutomation");
+        return reload(input.sessionId);
+      }),
+
+    /** Get accessibility tree */
+    accessibilityTree: protectedProcedure
+      .input(z.object({ sessionId: z.string().optional() }))
+      .query(async ({ input }) => {
+        const { getAccessibilityTree } = await import("./browserAutomation");
+        return getAccessibilityTree(input.sessionId);
       }),
   }),
 });

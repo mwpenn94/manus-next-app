@@ -59,6 +59,7 @@ import {
   Sun,
   Moon,
   Keyboard,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -737,6 +738,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           <ClockIcon className="w-4 h-4" />
           Schedules
+        </Link>
+        <Link
+          href="/browser"
+          className={cn(
+            "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
+            location === "/browser"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          )}
+        >
+          <Globe className="w-4 h-4" />
+          Browser
         </Link>
       </nav>
 
