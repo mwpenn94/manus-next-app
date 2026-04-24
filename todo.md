@@ -3815,3 +3815,13 @@
 - [x] BUG: /github/:repoId now BEFORE /github in App.tsx
 - [x] Updated p35.test.ts assertion to match new result text
 - [x] Updated webapp-pipeline.test.ts URL resolution tests to match new logic
+
+### Phase 3 Convergence Pass 1 — Expert Assess + Optimize
+- [x] GitHub: Added branch selector dropdown in Code tab (Select component with branch list)
+- [x] GitHub: Added "New Branch" button + Create Branch dialog in Branches tab
+- [x] GitHub: Added "New PR" button + Create PR dialog in PRs tab (with head/base branch selectors)
+- [x] GitHub: Added "Browse" button on branch cards to switch to Code tab for that branch
+- [x] GitHub: Changed branchesQuery to always fetch when repo selected (needed for branch selector)
+- [x] Browser: Assessed — already comprehensive with 4 panels + QA mode (no critical gaps)
+- [x] TypeScript: 0 errors after all changes
+- [x] GitHub tests: 65/65 pass

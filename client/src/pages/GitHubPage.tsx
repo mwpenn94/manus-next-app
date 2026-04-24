@@ -62,13 +62,20 @@ export default function GitHubPage() {
   const [editContent, setEditContent] = useState("");
   const [commitMsg, setCommitMsg] = useState("");
 
-  // New file / create issue dialogs
+  // New file / create issue / create branch / create PR dialogs
   const [newFileOpen, setNewFileOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [newFileContent, setNewFileContent] = useState("");
   const [createIssueOpen, setCreateIssueOpen] = useState(false);
   const [issueTitle, setIssueTitle] = useState("");
   const [issueBody, setIssueBody] = useState("");
+  const [createBranchOpen, setCreateBranchOpen] = useState(false);
+  const [newBranchName, setNewBranchName] = useState("");
+  const [createPROpen, setCreatePROpen] = useState(false);
+  const [prTitle, setPrTitle] = useState("");
+  const [prBody, setPrBody] = useState("");
+  const [prHead, setPrHead] = useState("");
+  const [prBase, setPrBase] = useState("");
 
   // Queries
   const reposQuery = trpc.github.repos.useQuery(undefined, { enabled: !!user });
@@ -89,7 +96,7 @@ export default function GitHubPage() {
 
   const branchesQuery = trpc.github.branches.useQuery(
     { externalId: selectedRepoId! },
-    { enabled: !!selectedRepoId && repoTab === "branches" }
+    { enabled: !!selectedRepoId }
   );
 
   const commitsQuery = trpc.github.commits.useQuery(
@@ -187,6 +194,27 @@ export default function GitHubPage() {
   const mergePRMut = trpc.github.mergePR.useMutation({
     onSuccess: () => {
       toast.success("Pull request merged");
+      prsQuery.refetch();
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  const createBranchMut = trpc.github.createBranch.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Branch "${data.ref.replace("refs/heads/", "")}" created`);
+      setCreateBranchOpen(false);
+      setNewBranchName("");
+      branchesQuery.refetch();
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  const createPRMut = trpc.github.createPR.useMutation({
+    onSuccess: (data) => {
+      toast.success(`PR #${data.number} created`);
+      setCreatePROpen(false);
+      setPrTitle("");
+      setPrBody("");
       prsQuery.refetch();
     },
     onError: (err) => { toast.error(err.message); },
@@ -303,8 +331,22 @@ export default function GitHubPage() {
 
           {/* Files Tab */}
           <TabsContent value="files" className="flex-1 overflow-auto m-0 p-6">
-            {/* Breadcrumb + New File */}
-            <div className="flex items-center gap-1 mb-4 text-sm">
+            {/* Branch selector + Breadcrumb + New File */}
+            <div className="flex items-center gap-2 mb-4 text-sm">
+              <Select value={selectedBranch || selectedRepo.defaultBranch || "main"} onValueChange={(v) => { setSelectedBranch(v); setFilePath([]); }}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <GitBranch className="w-3 h-3 mr-1" />
+                  <SelectValue placeholder="Branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {branchesQuery.data?.map((b) => (
+                    <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                  )) || (
+                    <SelectItem value={selectedRepo.defaultBranch || "main"}>{selectedRepo.defaultBranch || "main"}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground">/</span>
               <button onClick={() => setFilePath([])} className="text-primary hover:underline font-medium">
                 {selectedRepo.name}
               </button>
@@ -484,6 +526,12 @@ export default function GitHubPage() {
 
           {/* Branches Tab */}
           <TabsContent value="branches" className="flex-1 overflow-auto m-0 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Branches</h3>
+              <Button variant="outline" size="sm" onClick={() => { setCreateBranchOpen(true); setNewBranchName(""); }}>
+                <Plus className="w-3 h-3 mr-1" /> New Branch
+              </Button>
+            </div>
             <div className="space-y-2">
               {branchesQuery.isLoading && (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" /></div>
@@ -500,6 +548,9 @@ export default function GitHubPage() {
                       <Badge variant="outline" className="text-[10px]"><Lock className="w-2.5 h-2.5 mr-0.5" /> protected</Badge>
                     )}
                     <code className="ml-auto text-[10px] text-muted-foreground font-mono">{branch.commit.sha.slice(0, 7)}</code>
+                    <Button variant="ghost" size="sm" onClick={() => { setSelectedBranch(branch.name); setRepoTab("files"); setFilePath([]); }}>
+                      <Eye className="w-3 h-3 mr-1" /> Browse
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -539,6 +590,12 @@ export default function GitHubPage() {
 
           {/* Pull Requests Tab */}
           <TabsContent value="prs" className="flex-1 overflow-auto m-0 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Pull Requests</h3>
+              <Button variant="outline" size="sm" onClick={() => { setCreatePROpen(true); setPrTitle(""); setPrBody(""); setPrHead(""); setPrBase(selectedRepo.defaultBranch || "main"); }}>
+                <Plus className="w-3 h-3 mr-1" /> New PR
+              </Button>
+            </div>
             <div className="space-y-2">
               {prsQuery.isLoading && (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" /></div>
@@ -677,6 +734,122 @@ export default function GitHubPage() {
               >
                 {commitFileMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
                 Create File
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Branch Dialog */}
+        <Dialog open={createBranchOpen} onOpenChange={setCreateBranchOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Branch</DialogTitle>
+              <DialogDescription>Create a new branch from the latest commit on {selectedBranch || selectedRepo.defaultBranch}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Branch name</Label>
+                <Input
+                  placeholder="feature/my-new-feature"
+                  value={newBranchName}
+                  onChange={(e) => setNewBranchName(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCreateBranchOpen(false)}>Cancel</Button>
+              <Button
+                disabled={!newBranchName.trim() || createBranchMut.isPending}
+                onClick={() => {
+                  const sourceBranch = branchesQuery.data?.find(b => b.name === (selectedBranch || selectedRepo.defaultBranch));
+                  if (sourceBranch) {
+                    createBranchMut.mutate({
+                      externalId: selectedRepoId!,
+                      branchName: newBranchName,
+                      fromSha: sourceBranch.commit.sha,
+                    });
+                  } else {
+                    toast.error("Could not find source branch SHA. Try switching to the Branches tab first.");
+                  }
+                }}
+              >
+                {createBranchMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <GitBranch className="w-3.5 h-3.5 mr-1" />}
+                Create Branch
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create PR Dialog */}
+        <Dialog open={createPROpen} onOpenChange={setCreatePROpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Pull Request</DialogTitle>
+              <DialogDescription>Open a new pull request on {selectedRepo.fullName}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Title</Label>
+                <Input
+                  placeholder="PR title"
+                  value={prTitle}
+                  onChange={(e) => setPrTitle(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Head branch (source)</Label>
+                  <Select value={prHead} onValueChange={setPrHead}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branchesQuery.data?.filter(b => b.name !== prBase).map(b => (
+                        <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Base branch (target)</Label>
+                  <Select value={prBase} onValueChange={setPrBase}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branchesQuery.data?.filter(b => b.name !== prHead).map(b => (
+                        <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Textarea
+                  placeholder="Describe the changes..."
+                  value={prBody}
+                  onChange={(e) => setPrBody(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCreatePROpen(false)}>Cancel</Button>
+              <Button
+                disabled={!prTitle.trim() || !prHead || !prBase || createPRMut.isPending}
+                onClick={() => {
+                  createPRMut.mutate({
+                    externalId: selectedRepoId!,
+                    title: prTitle,
+                    body: prBody || undefined,
+                    head: prHead,
+                    base: prBase,
+                  });
+                }}
+              >
+                {createPRMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <GitPullRequest className="w-3.5 h-3.5 mr-1" />}
+                Create PR
               </Button>
             </DialogFooter>
           </DialogContent>
