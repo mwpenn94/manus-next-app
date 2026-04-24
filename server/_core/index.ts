@@ -766,7 +766,19 @@ async function startServer() {
           try {
             if (!memoryEnabled) throw new Error("skip"); // Skip to catch block
             const { getUserMemories } = await import("../db");
-            const memories = await getUserMemories(user.id, 20);
+            // Read per-user memory tuning preferences (halfLifeDays)
+            let userHalfLifeDays = 14; // default
+            try {
+              const { getUserPreferences: gupMem } = await import("../db");
+              const memTunePrefs = await gupMem(user.id);
+              if (memTunePrefs?.generalSettings && typeof memTunePrefs.generalSettings === "object") {
+                const gs = memTunePrefs.generalSettings as Record<string, unknown>;
+                if (typeof gs.memoryDecayHalfLife === "number" && gs.memoryDecayHalfLife >= 3 && gs.memoryDecayHalfLife <= 90) {
+                  userHalfLifeDays = gs.memoryDecayHalfLife;
+                }
+              }
+            } catch { /* use default */ }
+            const memories = await getUserMemories(user.id, 20, false, userHalfLifeDays);
             if (memories.length > 0) {
               // Extract the first user message to determine current task topic
               const firstUserMsg = messages.find((m: any) => m.role === "user");

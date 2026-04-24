@@ -134,6 +134,24 @@ const FOLLOW_UP_SUGGESTIONS: Record<string, string[]> = {
     "Adjust the tone to be more formal",
     "Translate to another language",
   ],
+  generation_incomplete: [
+    "Please generate it now",
+    "Here's the content I want: ",
+    "Try again with a simpler approach",
+    "What information do you need from me?",
+  ],
+  generation_done: [
+    "Refine and improve this",
+    "Create a different version",
+    "Export in another format",
+    "Add more detail to this",
+  ],
+  image: [
+    "Create a variation of this",
+    "Adjust the style",
+    "Generate a different concept",
+    "Make it more professional",
+  ],
   general: [
     "Tell me more about this",
     "Create a visual summary",
@@ -143,12 +161,55 @@ const FOLLOW_UP_SUGGESTIONS: Record<string, string[]> = {
 };
 
 function getFollowUpSuggestions(messages: Message[]): string[] {
+  const lastUser = [...messages].reverse().find(m => m.role === "user");
   const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
   if (!lastAssistant) return FOLLOW_UP_SUGGESTIONS.general;
-  const content = lastAssistant.content.toLowerCase();
-  if (content.includes("```") || content.includes("function") || content.includes("import")) return FOLLOW_UP_SUGGESTIONS.code;
-  if (content.includes("research") || content.includes("study") || content.includes("analysis")) return FOLLOW_UP_SUGGESTIONS.research;
-  if (content.length > 500) return FOLLOW_UP_SUGGESTIONS.writing;
+
+  const userContent = (typeof lastUser?.content === "string" ? lastUser.content : "").toLowerCase();
+  const assistantContent = lastAssistant.content.toLowerCase();
+
+  // Check if user asked for generation but agent didn't produce an artifact
+  const userWantedGeneration = /\b(generate|create|make|build|draft)\s+(me\s+)?a?\s*(pdf|document|image|picture|slide|presentation|spreadsheet|report|file|app|website|video|audio)\b/i.test(userContent);
+  const hasArtifact = /\[.*?\]\(https?:\/\/.*?\)|generated.*?(document|image|pdf|slide)|here.*?(is|are).*?(your|the).*?(document|pdf|image|file|slide)/i.test(assistantContent);
+  const agentAskedForInput = /what.*?(content|would you|should|like me|topic|details|information|include)|please.*?(provide|specify|tell me|share)/i.test(assistantContent);
+
+  // Priority 1: User wanted generation but nothing was produced
+  if (userWantedGeneration && !hasArtifact) {
+    if (agentAskedForInput) {
+      // Agent is asking for clarification — suggest providing content
+      return [
+        "Here's what I want: ",
+        "Just make a sample PDF with placeholder content",
+        "Use any relevant content you think works",
+        "Let me describe what I need...",
+      ];
+    }
+    return FOLLOW_UP_SUGGESTIONS.generation_incomplete;
+  }
+
+  // Priority 2: Generation was completed — suggest refinement
+  if (userWantedGeneration && hasArtifact) {
+    return FOLLOW_UP_SUGGESTIONS.generation_done;
+  }
+
+  // Priority 3: Image-related content
+  if (/generated.*?image|image.*?generated|\!\[.*?\]\(.*?\)/i.test(assistantContent)) {
+    return FOLLOW_UP_SUGGESTIONS.image;
+  }
+
+  // Priority 4: Code-related content
+  if (assistantContent.includes("```") || /\b(function|import|export|const|class|def )\b/.test(assistantContent)) {
+    return FOLLOW_UP_SUGGESTIONS.code;
+  }
+
+  // Priority 5: Research-related content
+  if (/\b(research|study|analysis|findings|sources|according to|evidence)\b/.test(assistantContent)) {
+    return FOLLOW_UP_SUGGESTIONS.research;
+  }
+
+  // Priority 6: Long-form writing
+  if (assistantContent.length > 500) return FOLLOW_UP_SUGGESTIONS.writing;
+
   return FOLLOW_UP_SUGGESTIONS.general;
 }
 
@@ -1586,6 +1647,12 @@ export default function TaskView() {
     },
     onError: () => { toast.error("Failed to resume task"); },
   });
+  const duplicateTaskMutation = trpc.task.duplicate.useMutation({
+    onSuccess: () => {
+      utils.task.list.invalidate();
+    },
+    onError: () => { toast.error("Failed to duplicate task"); },
+  });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },
     { enabled: !!taskExternalId && isAuthenticated }
@@ -2469,11 +2536,42 @@ export default function TaskView() {
                     <button
                       onClick={() => {
                         if (!task) return;
-                        const lines = [`# ${task.title}\n`, `Created: ${task.createdAt.toLocaleString()}\n`, `Status: ${task.status}\n`, `---\n`];
+                        const lines: string[] = [];
+                        lines.push(`# ${task.title}\n`);
+                        lines.push(`> **Created:** ${task.createdAt.toLocaleString()}  `);
+                        lines.push(`> **Status:** ${task.status}  `);
+                        lines.push(`> **Messages:** ${task.messages.length}  `);
+                        lines.push(`> **Mode:** ${(task as any).mode || "quality"}\n`);
+                        lines.push(`---\n`);
+                        
                         for (const msg of task.messages) {
-                          const label = msg.role === "user" ? "**You**" : msg.role === "assistant" ? "**Assistant**" : "**System**";
-                          lines.push(`${label} (${msg.timestamp.toLocaleString()})\n\n${msg.content}\n\n---\n`);
+                          // Skip system messages from export (internal only)
+                          if (msg.role === "system") continue;
+                          
+                          const label = msg.role === "user" ? "👤 You" : "🤖 Assistant";
+                          const time = msg.timestamp ? msg.timestamp.toLocaleString() : "";
+                          lines.push(`## ${label}${time ? ` — ${time}` : ""}\n`);
+                          
+                          // Clean up content: remove internal tool markers, preserve markdown
+                          let content = msg.content;
+                          // Extract and format any artifact URLs
+                          const artifactUrls = content.match(/https?:\/\/\S+\.(pdf|png|jpg|jpeg|gif|svg|docx|xlsx|pptx|mp3|mp4)/gi);
+                          if (artifactUrls && artifactUrls.length > 0) {
+                            lines.push(content + "\n");
+                            lines.push(`\n**Artifacts:**\n`);
+                            for (const url of artifactUrls) {
+                              const ext = url.split(".").pop()?.toUpperCase() || "FILE";
+                              lines.push(`- [📎 ${ext} File](${url})`);
+                            }
+                            lines.push("");
+                          } else {
+                            lines.push(content + "\n");
+                          }
+                          lines.push(`---\n`);
                         }
+                        
+                        lines.push(`\n*Exported from Sovereign AI on ${new Date().toLocaleString()}*\n`);
+                        
                         const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
@@ -2481,6 +2579,7 @@ export default function TaskView() {
                         a.download = `${task.title.replace(/[^a-zA-Z0-9 ]/g, "").slice(0, 40).trim()}.md`;
                         a.click();
                         URL.revokeObjectURL(url);
+                        toast.success("Task exported as Markdown");
                         setShowMoreMenu(false);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
@@ -2547,6 +2646,25 @@ export default function TaskView() {
                     >
                       <BookmarkPlus className="w-3.5 h-3.5" />
                       Save as Template
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!task) return;
+                        try {
+                          const result = await duplicateTaskMutation.mutateAsync({
+                            sourceExternalId: task.id,
+                          });
+                          toast.success(`Duplicated as "${result.title}"`);
+                          setShowMoreMenu(false);
+                          navigate(`/task/${result.externalId}`);
+                        } catch (err: any) {
+                          toast.error(err.message || "Failed to duplicate task");
+                        }
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Duplicate Task
                     </button>
                     <div className="h-px bg-border my-1" />
                     {showDeleteConfirm ? (

@@ -374,6 +374,49 @@ export const appRouter = router({
         await verifyTaskOwnership(input.taskExternalId, ctx.user.id);
         return getTaskRating(input.taskExternalId);
       }),
+
+    /** Duplicate a task: creates a new task with the same messages (fork from any point) */
+    duplicate: protectedProcedure
+      .input(z.object({
+        sourceExternalId: z.string().min(1).max(64),
+        /** If provided, only copy messages up to this index (0-based). Otherwise copy all. */
+        upToMessageIndex: z.number().int().min(0).optional(),
+        /** Optional new title. Defaults to "Copy of <original title>" */
+        newTitle: z.string().min(1).max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 1. Verify ownership of source task
+        const sourceTask = await getTaskByExternalId(input.sourceExternalId);
+        if (!sourceTask || sourceTask.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Source task not found" });
+        }
+        // 2. Fetch source messages
+        const sourceMessages = await getTaskMessages(sourceTask.id);
+        const messagesToCopy = input.upToMessageIndex !== undefined
+          ? sourceMessages.slice(0, input.upToMessageIndex + 1)
+          : sourceMessages;
+        // 3. Create new task
+        const newExternalId = nanoid(12);
+        const title = input.newTitle || `Copy of ${sourceTask.title}`;
+        const newTask = await createTask({
+          externalId: newExternalId,
+          userId: ctx.user.id,
+          title,
+          status: "idle",
+          projectId: sourceTask.projectId,
+        });
+        if (!newTask) throw new TRPCError({ code: "BAD_REQUEST", message: "Failed to create duplicate task" });
+        // 4. Copy messages into the new task
+        for (const msg of messagesToCopy) {
+          await addTaskMessage({
+            taskId: newTask.id,
+            externalId: nanoid(),
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content,
+          });
+        }
+        return { externalId: newExternalId, title, messagesCopied: messagesToCopy.length };
+      }),
   }),
 
   file: router({

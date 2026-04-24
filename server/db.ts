@@ -540,16 +540,16 @@ export async function getUserLibraryFiles(userId: number, opts?: { search?: stri
  * - sourceBonus = 2.0 for user-created, 1.0 for auto-extracted
  * - Brand-new memories (accessCount=0) get a floor score of 0.5 * recencyWeight * sourceBonus
  */
-export function computeMemoryImportance(mem: { accessCount: number; lastAccessedAt: Date; source: string }): number {
+export function computeMemoryImportance(mem: { accessCount: number; lastAccessedAt: Date; source: string }, halfLifeDays = 14): number {
   const daysSince = Math.max(0, (Date.now() - mem.lastAccessedAt.getTime()) / (1000 * 60 * 60 * 24));
-  const recencyWeight = Math.exp(-daysSince / 14);
+  const recencyWeight = Math.exp(-daysSince / halfLifeDays);
   const sourceBonus = mem.source === "user" ? 2.0 : 1.0;
   // Floor: brand-new memories with 0 access still get a base score
   const effectiveAccess = Math.max(mem.accessCount, 0.5);
   return effectiveAccess * recencyWeight * sourceBonus;
 }
 
-export async function getUserMemories(userId: number, limit = 50, includeArchived = false) {
+export async function getUserMemories(userId: number, limit = 50, includeArchived = false, halfLifeDays = 14) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [eq(memoryEntries.userId, userId)];
@@ -560,7 +560,7 @@ export async function getUserMemories(userId: number, limit = 50, includeArchive
   // (MySQL doesn't support EXP-based computed columns efficiently)
   const allMemories = await db.select().from(memoryEntries).where(and(...conditions)).limit(500);
   // Sort by importance score descending — most important first
-  allMemories.sort((a, b) => computeMemoryImportance(b) - computeMemoryImportance(a));
+  allMemories.sort((a, b) => computeMemoryImportance(b, halfLifeDays) - computeMemoryImportance(a, halfLifeDays));
   return allMemories.slice(0, limit);
 }
 
@@ -624,7 +624,7 @@ export async function touchMemoryAccess(memoryIds: number[]) {
  * Default threshold 0.1 ≈ ~45 days with 0 access, or ~90 days with 1 access.
  * Returns the count of archived memories.
  */
-export async function archiveStaleMemories(importanceThreshold = 0.1): Promise<number> {
+export async function archiveStaleMemories(importanceThreshold = 0.1, halfLifeDays = 14): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
   // Fetch all non-archived auto memories and compute importance in JS
@@ -636,7 +636,7 @@ export async function archiveStaleMemories(importanceThreshold = 0.1): Promise<n
       )
     )
     .limit(1000);
-  const toArchive = candidates.filter(m => computeMemoryImportance(m) < importanceThreshold);
+  const toArchive = candidates.filter(m => computeMemoryImportance(m, halfLifeDays) < importanceThreshold);
   if (toArchive.length === 0) return 0;
   const ids = toArchive.map(m => m.id);
   await db.update(memoryEntries)

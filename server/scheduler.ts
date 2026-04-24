@@ -293,32 +293,54 @@ export function startScheduler(): void {
   console.log(`[Scheduler] Stale task sweep scheduled — every ${STALE_SWEEP_INTERVAL_MS / 60000}min (timeout: ${STALE_TASK_TIMEOUT_MS / 3600000}h)`);
 
   // Memory decay sweep — runs daily, archives auto-extracted memories below importance threshold
+  // Now reads per-user preferences for halfLifeDays and archiveThreshold
   const MEMORY_DECAY_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
-  const MEMORY_IMPORTANCE_THRESHOLD = 0.1; // score < 0.1 → archive
-  // Run first sweep 10 minutes after startup, then daily
-  setTimeout(async () => {
+  const DEFAULT_IMPORTANCE_THRESHOLD = 0.1; // score < 0.1 → archive
+  const DEFAULT_HALF_LIFE_DAYS = 14;
+
+  async function runMemoryDecaySweep() {
     try {
-      const { archiveStaleMemories } = await import("./db");
-      const archived = await archiveStaleMemories(MEMORY_IMPORTANCE_THRESHOLD);
-      if (archived > 0) {
-        console.log(`[Scheduler] Memory decay: ${archived} memor${archived === 1 ? 'y' : 'ies'} archived (importance < ${MEMORY_IMPORTANCE_THRESHOLD})`);
+      const { archiveStaleMemories, getUserPreferences, getDb } = await import("./db");
+      const { users } = await import("../drizzle/schema");
+      const db = await getDb();
+      if (!db) return;
+
+      // Get all user IDs to apply per-user preferences
+      const allUsers = await db.select({ id: users.id }).from(users).limit(1000);
+      let totalArchived = 0;
+
+      for (const u of allUsers) {
+        let halfLifeDays = DEFAULT_HALF_LIFE_DAYS;
+        let archiveThreshold = DEFAULT_IMPORTANCE_THRESHOLD;
+        try {
+          const prefs = await getUserPreferences(u.id);
+          if (prefs?.generalSettings && typeof prefs.generalSettings === "object") {
+            const gs = prefs.generalSettings as Record<string, unknown>;
+            if (typeof gs.memoryDecayHalfLife === "number" && gs.memoryDecayHalfLife >= 3 && gs.memoryDecayHalfLife <= 90) {
+              halfLifeDays = gs.memoryDecayHalfLife;
+            }
+            if (typeof gs.memoryArchiveThreshold === "number" && gs.memoryArchiveThreshold >= 0.01 && gs.memoryArchiveThreshold <= 0.5) {
+              archiveThreshold = gs.memoryArchiveThreshold;
+            }
+          }
+        } catch { /* use defaults */ }
+        const archived = await archiveStaleMemories(archiveThreshold, halfLifeDays);
+        totalArchived += archived;
+      }
+      if (totalArchived > 0) {
+        console.log(`[Scheduler] Memory decay: ${totalArchived} memor${totalArchived === 1 ? 'y' : 'ies'} archived across ${allUsers.length} users`);
       }
     } catch (err: any) {
       console.error("[Scheduler] Memory decay error:", err.message?.slice(0, 200));
     }
-    setInterval(async () => {
-      try {
-        const { archiveStaleMemories } = await import("./db");
-        const archived = await archiveStaleMemories(MEMORY_IMPORTANCE_THRESHOLD);
-        if (archived > 0) {
-          console.log(`[Scheduler] Memory decay: ${archived} memor${archived === 1 ? 'y' : 'ies'} archived (importance < ${MEMORY_IMPORTANCE_THRESHOLD})`);
-        }
-      } catch (err: any) {
-        console.error("[Scheduler] Memory decay error:", err.message?.slice(0, 200));
-      }
-    }, MEMORY_DECAY_INTERVAL_MS);
+  }
+
+  // Run first sweep 10 minutes after startup, then daily
+  setTimeout(async () => {
+    await runMemoryDecaySweep();
+    setInterval(runMemoryDecaySweep, MEMORY_DECAY_INTERVAL_MS);
   }, 10 * 60 * 1000); // 10 min after startup
-  console.log(`[Scheduler] Memory decay sweep scheduled — daily (importance threshold: ${MEMORY_IMPORTANCE_THRESHOLD})`);
+  console.log(`[Scheduler] Memory decay sweep scheduled — daily (per-user preferences applied)`);
 
   // Data retention job — runs daily at 02:00 UTC
   const scheduleRetentionJob = () => {

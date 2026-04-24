@@ -3220,3 +3220,71 @@
 - [x] Write Session 24 tests (convergence-validated) — 23 tests across 3 describe blocks
 - [x] Run full test suite — 2039/2056 pass (1 OOM worker crash, pre-existing)
 - [x] Save checkpoint
+
+## Session 25: Parity Expert Convergence — Memory Tuning UI + Task Export + Task Duplicate
+
+### Step 1: Memory Importance Tuning UI (Landscape → Depth → Adversarial → Convergence)
+- [ ] Add memoryDecayHalfLife and memoryArchiveThreshold to GeneralSettings in SettingsPage
+- [ ] Add visual sliders with labels showing current values (half-life in days, threshold 0-1)
+- [ ] Wire settings to server via user preferences (store in localStorage + pass to scheduler)
+- [ ] Update archiveStaleMemories and computeMemoryImportance to accept configurable parameters
+- [ ] Depth pass: validate slider ranges prevent dangerous values (e.g., threshold=1.0 archives everything)
+- [ ] Adversarial pass: handle settings migration for existing users (default to current hardcoded values)
+
+### Step 2: Task Export to Markdown (Landscape → Depth → Adversarial → Convergence)
+- [ ] Add tRPC endpoint to serialize a task's conversation into Markdown format
+- [ ] Include task title, timestamps, user messages, agent responses, and tool calls
+- [ ] Add "Export" button in TaskView header (Download icon)
+- [ ] Trigger browser download of the .md file
+- [ ] Depth pass: handle images (include URLs), code blocks, and nested content
+- [ ] Adversarial pass: handle very long conversations, empty tasks, and special characters
+
+### Step 3: Task Duplicate/Fork (Landscape → Depth → Adversarial → Convergence)
+- [ ] Add duplicateTask tRPC endpoint that creates a new task with the same initial prompt
+- [ ] Add "Duplicate" option in TaskView header menu or context menu
+- [ ] Navigate to the new task after duplication
+- [ ] Depth pass: decide what to copy (just prompt? first message? all messages?)
+- [ ] Adversarial pass: handle edge cases (deleted tasks, tasks with no messages)
+
+### Testing & Checkpoint
+- [ ] Write Session 25 tests (convergence-validated)
+- [ ] Run full test suite
+- [ ] Save checkpoint
+
+## Session 25 Bug Fixes (User-Reported from Screenshots)
+
+### Bug 1: LIMITLESS mode over-researches instead of acting
+- [x] Fix system prompt for LIMITLESS mode: prioritize tool use and action over research
+- [x] Add instruction: when user asks to "generate/create/make" something, USE TOOLS first
+- [x] Add clarification behavior: if request is ambiguous, ask user for specifics before researching
+
+### Bug 2: Quick action suggestions are static/code-oriented
+- [x] Replace hardcoded code-oriented quick actions with context-aware suggestions
+- [x] Generate suggestions based on task content (e.g., PDF task → "Provide content", "Try again")
+- [x] Ensure suggestions are relevant to the task type (research, generation, analysis, etc.)
+
+### Bug 3: Task auto-completes without deliverable
+- [x] Add logic to detect generation requests that produce no artifact
+- [x] Show "waiting for content" state instead of auto-completing when no deliverable produced
+- [x] Add smart completion detection: text-only response to generation request = incomplete
+
+### Feature 4: Memory Tuning Preferences Wired to Server
+- [x] Wire memoryDecayHalfLife from user preferences into getUserMemories in index.ts
+- [x] Wire per-user memory tuning preferences to scheduler.ts archiveStaleMemories
+- [x] Scheduler iterates all users and applies their individual preferences
+
+### Feature 5: Improved Task Export to Markdown
+- [x] Add metadata block (Created, Status, Messages, Mode) to export
+- [x] Skip system messages in export
+- [x] Extract and list artifact URLs in export
+- [x] Add Sovereign AI branding footer
+
+### Feature 6: Task Duplicate/Fork
+- [x] Add task.duplicate tRPC procedure with sourceExternalId, upToMessageIndex, newTitle
+- [x] Duplicate copies messages from source task (full or partial)
+- [x] Add Duplicate Task button to More menu in TaskView
+- [x] Navigate to new task after duplication
+
+### Session 25 Tests
+- [x] Write session25.test.ts with 21 convergence tests covering all 6 items
+- [x] All 21 tests passing

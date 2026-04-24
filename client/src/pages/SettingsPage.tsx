@@ -39,6 +39,8 @@ import {
   Bug,
   Lightbulb,
   Zap,
+  Timer,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -96,6 +98,8 @@ interface GeneralSettings {
   handsFreeAudio: boolean;
   offlineMode: boolean;
   autoTuneStrategies: boolean;
+  memoryDecayHalfLife: number; // days, controls how fast memory importance decays (1-90)
+  memoryArchiveThreshold: number; // 0.01-1.0, memories below this score get archived
   ttsVoice: string;
   ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
@@ -110,6 +114,8 @@ const DEFAULT_GENERAL: GeneralSettings = {
   handsFreeAudio: false,
   offlineMode: false,
   autoTuneStrategies: true,
+  memoryDecayHalfLife: 14,
+  memoryArchiveThreshold: 0.1,
   ttsVoice: "en-US-AriaNeural",
   ttsLanguage: "en",
   ttsRate: 1.0,
@@ -514,6 +520,88 @@ export default function SettingsPage() {
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* ── Memory Tuning ── */}
+              <div className="mt-4">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-muted-foreground" />
+                  Memory Tuning
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Control how quickly memories decay and when they get auto-archived.
+                </p>
+                <div className="space-y-4">
+                  {/* Decay Half-Life Slider */}
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Timer className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-sm text-foreground">Decay half-life</span>
+                      </div>
+                      <span className="text-sm font-mono text-primary">{generalSettings.memoryDecayHalfLife}d</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">How many days until a memory's importance halves. Lower = faster forgetting.</p>
+                    <input
+                      type="range"
+                      min={3}
+                      max={90}
+                      step={1}
+                      value={generalSettings.memoryDecayHalfLife}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setGeneralSettings((prev) => {
+                          const updated = { ...prev, memoryDecayHalfLife: val };
+                          if (isAuthenticated) {
+                            savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                          }
+                          return updated;
+                        });
+                      }}
+                      className="w-full accent-primary cursor-pointer"
+                      aria-label="Memory decay half-life in days"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                      <span>3 days (aggressive)</span>
+                      <span>90 days (conservative)</span>
+                    </div>
+                  </div>
+
+                  {/* Archive Threshold Slider */}
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-sm text-foreground">Archive threshold</span>
+                      </div>
+                      <span className="text-sm font-mono text-primary">{generalSettings.memoryArchiveThreshold.toFixed(2)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">Memories with importance score below this value get auto-archived. Higher = more aggressive archiving.</p>
+                    <input
+                      type="range"
+                      min={0.01}
+                      max={1.0}
+                      step={0.01}
+                      value={generalSettings.memoryArchiveThreshold}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setGeneralSettings((prev) => {
+                          const updated = { ...prev, memoryArchiveThreshold: val };
+                          if (isAuthenticated) {
+                            savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                          }
+                          return updated;
+                        });
+                      }}
+                      className="w-full accent-primary cursor-pointer"
+                      aria-label="Memory archive threshold"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                      <span>0.01 (keep almost everything)</span>
+                      <span>1.00 (archive aggressively)</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* ── TTS Language & Voice Selection ── */}

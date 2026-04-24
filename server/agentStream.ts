@@ -695,7 +695,10 @@ The system will seamlessly continue you if your response hits the token limit.
 7. **Generate artifacts**: Use generate_document for long-form deliverables, analyze_data for structured insights, generate_image for visualizations.
 8. **Autonomous execution**: The user may not be watching. Deliver complete, self-contained results.
 9. **Leave no stone unturned**: Search for counterarguments, edge cases, alternative perspectives, and expert opinions.
-10. **Asynchronous mindset**: Work independently, report comprehensively.`;
+10. **Asynchronous mindset**: Work independently, report comprehensively.
+
+### ACTION-FIRST PRINCIPLE
+When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT something, ACT FIRST using the appropriate tool (generate_document, generate_image, execute_code, etc.). Research is for informational tasks. Generation tasks need tools, not web searches about the format.`;
     } else if (mode === "limitless") {
       // Beyond Manus: truly unlimited, recursive optimization until convergence
       systemPrompt += `\n\n## MODE: LIMITLESS (Recursive Optimization Until Convergence)
@@ -711,13 +714,22 @@ specified criteria for "done," honor those. Otherwise, apply your own convergenc
 Your output will NEVER be truncated. If your response hits the token limit, the system
 will seamlessly continue you with full context. Write as extensively as the task demands.
 
+### ACTION-FIRST PRINCIPLE (CRITICAL)
+When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT something:
+- **ACT FIRST, research only if needed.** Use the appropriate tool (generate_document, generate_image, execute_code, create_webapp, etc.) IMMEDIATELY.
+- If the request is clear enough to act on (e.g., "generate a PDF for me"), use the tool right away. If the user hasn't specified content, ask them what content they want — do NOT research ABOUT the format.
+- Research is for INFORMATIONAL tasks ("what is X?", "compare X and Y", "analyze X"). Generation tasks need TOOLS, not web searches.
+- "Generate a PDF" means call generate_document with output_format: "pdf". It does NOT mean research PDF best practices.
+- "Create an image" means call generate_image. It does NOT mean research image design principles.
+- The user chose Limitless mode for depth of EXECUTION, not depth of meta-research about the task format.
+
 1. **Recursive convergence**: After producing an initial result, review it critically. If any aspect can be improved, improve it. Continue until three consecutive review passes confirm no further improvements.
-2. **Exhaustive research**: Use as many tool calls as needed. There is no minimum or maximum. Search from every relevant angle.
+2. **Research depth scales with task type**: For research/analysis tasks, use exhaustive multi-source research. For generation tasks, research only the SUBJECT MATTER if needed, then produce the deliverable.
 3. **Cross-reference everything**: Never rely on a single source. Verify facts across multiple sources.
 4. **Strategic decomposition**: Break complex tasks into subtasks and execute them methodically.
 5. **Never conclude prematurely**: If you sense there is more depth to add, add it. The user chose Limitless mode because they want maximum thoroughness.
 6. **Produce the most comprehensive deliverables possible**: Include tables, comparisons, step-by-step breakdowns, citations, actionable specifics, counterarguments, edge cases, and alternative perspectives.
-7. **Generate all relevant artifacts**: Use generate_document, analyze_data, generate_image, generate_slides, and any other tools that add value.
+7. **Generate all relevant artifacts**: Use generate_document, analyze_data, generate_image, generate_slides, and any other tools that add value. For generation tasks, the ARTIFACT IS THE DELIVERABLE.
 8. **Honor user termination conditions**: If the user specified when to stop (e.g., "until convergence," "3 passes," "cover all 10 items"), follow those conditions exactly.
 9. **Self-monitoring**: Track your own progress. Note what you've covered and what remains.
 10. **Asynchronous deep work**: The user may not be watching. Deliver complete, self-contained, publication-quality results.`;
@@ -1181,7 +1193,10 @@ will seamlessly continue you with full context. Write as extensively as the task
         }
         
         // MAX/LIMITLESS MODE ANTI-SHALLOW-COMPLETION: In max or limitless mode, if agent tries to conclude within first 5 turns with fewer than 3 tool calls, force continuation
-        if ((mode === "max" || mode === "limitless") && turn <= 5 && completedToolCalls < 3 && (maxTurns === Infinity || turn < maxTurns - 2)) {
+        // EXCEPTION: If the user asked for generative output (generate/create/make/build/write/draft), 
+        // do NOT force research — force TOOL USE for production instead.
+        const isGenerationRequest = /\b(generate|create|make|build|draft)\s+(me\s+)?a?\s*(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|website|webapp|video|audio|song|music)\b/i.test(userText);
+        if ((mode === "max" || mode === "limitless") && turn <= 5 && completedToolCalls < 3 && (maxTurns === Infinity || turn < maxTurns - 2) && !isGenerationRequest) {
           const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
           console.log(`[Agent] ${modeName} mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
           finalContent = "";
@@ -1196,6 +1211,26 @@ will seamlessly continue you with full context. Write as extensively as the task
 4. Only THEN produce your comprehensive response
 
 Do NOT produce a final answer yet. Research more deeply first.`,
+          });
+          continue;
+        }
+        // For generation requests in MAX/LIMITLESS with no tool calls yet, nudge to USE TOOLS not research
+        if ((mode === "max" || mode === "limitless") && turn <= 3 && completedToolCalls === 0 && isGenerationRequest && (maxTurns === Infinity || turn < maxTurns - 2)) {
+          const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
+          console.log(`[Agent] ${modeName} mode: generation request with 0 tool calls — nudging to use production tools`);
+          finalContent = "";
+          sendSSE(safeWrite, { delta: "\n\n*Producing the requested output...*\n\n" });
+          conversation.push({ role: "assistant", content: textContent || "" });
+          conversation.push({
+            role: "user",
+            content: `STOP. The user asked you to GENERATE/CREATE something specific: "${userText.slice(0, 200)}". You are in ${modeName} mode. This is a GENERATION task, not a research task. You MUST use the appropriate tool NOW:
+- For documents/PDFs: use generate_document with the appropriate output_format
+- For images: use generate_image
+- For slides: use generate_slides
+- For apps/websites: use create_webapp
+- For code: use execute_code
+
+If the user hasn't specified content details, ASK them what content they want. Do NOT research ABOUT the format. ACT NOW.`,
           });
           continue;
         }
@@ -1501,11 +1536,28 @@ Do NOT produce a final answer yet. Research more deeply first.`,
       } catch { /* telemetry is non-critical */ }
     }
 
-    // Signal completion
-    sendSSE(safeWrite, { status: "completed" });
+    // Signal completion — but check if generation requests actually produced a deliverable
+    const originalUserMsg = messages.find(m => m.role === "user");
+    const originalUserText = typeof originalUserMsg?.content === "string" ? originalUserMsg.content : "";
+    const wasGenerationRequest = /\b(generate|create|make|build|draft)\s+(me\s+)?a?\s*(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|website|webapp|video|audio|song|music)\b/i.test(originalUserText);
+    const producedArtifact = completedToolCalls > 0 && conversation.some(m =>
+      m.role === "tool" && typeof m.content === "string" &&
+      (/https?:\/\/\S+\.(pdf|png|jpg|jpeg|gif|svg|docx|xlsx|pptx|mp3|mp4|wav|webm)/i.test(m.content) ||
+       /"url"\s*:\s*"https?:\/\//i.test(m.content) ||
+       /successfully|generated|created|completed/i.test(m.content))
+    );
+    const agentAskedForClarification = /what.*?(content|would you|should|like me|topic|details|information|include)|please.*?(provide|specify|tell me|share)/i.test(finalContent);
+
+    if (wasGenerationRequest && !producedArtifact && !agentAskedForClarification) {
+      // The agent researched ABOUT the format but never produced the artifact
+      console.log(`[Agent] Generation request detected but no artifact produced — marking as incomplete`);
+      sendSSE(safeWrite, { status: "completed", metadata: { generationIncomplete: true } });
+    } else {
+      sendSSE(safeWrite, { status: "completed" });
+    }
     sendSSE(safeWrite, { done: true, content: finalContent });
     safeEnd();
-    console.log("[Agent] Stream complete after", turn, "turns,", completedToolCalls, "tool calls");
+    console.log("[Agent] Stream complete after", turn, "turns,", completedToolCalls, "tool calls", wasGenerationRequest ? `(generation: artifact=${producedArtifact})` : "");
 
     // Persist the final assistant message server-side (fire-and-forget)
     if (options.onComplete && finalContent.trim()) {
