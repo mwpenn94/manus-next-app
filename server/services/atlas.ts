@@ -13,6 +13,7 @@
 import * as db from "../db";
 import { invokeLLM } from "../_core/llm";
 import { runPreFlight, runPostFlight } from "./aegis";
+import { routeRequest } from "./sovereign";
 
 // ── Types ──
 
@@ -87,55 +88,89 @@ Return a JSON object with a "tasks" array. Each task has:
 
 Return ONLY the JSON object, no markdown or explanation.`;
 
-    const response = await invokeLLM({
-      messages: [
-        { role: "system", content: "You are a precise task decomposition engine. Return only valid JSON." },
-        { role: "user", content: decompositionPrompt },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "task_decomposition",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              tasks: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    description: { type: "string" },
-                    taskType: { type: "string" },
-                    executionOrder: { type: "integer" },
-                    dependsOn: { type: "array", items: { type: "integer" } },
-                    estimatedTokens: { type: "integer" },
+    // Route through Sovereign for provider failover + AEGIS caching (G-008)
+    try {
+      const routingResult = await routeRequest({
+        messages: [
+          { role: "system", content: "You are a precise task decomposition engine. Return only valid JSON." },
+          { role: "user", content: decompositionPrompt },
+        ],
+        userId,
+        taskType: "planning",
+      });
+      const parsed = JSON.parse(routingResult.output);
+      tasks = (parsed.tasks || []).slice(0, maxTasks).map((t: any, i: number) => ({
+        description: t.description,
+        taskType: t.taskType || "conversation",
+        executionOrder: t.executionOrder || i + 1,
+        dependsOn: t.dependsOn || [],
+        estimatedTokens: t.estimatedTokens || 500,
+        status: "pending" as const,
+      }));
+    } catch {
+      // Fallback to direct LLM with structured response_format
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "You are a precise task decomposition engine. Return only valid JSON." },
+            { role: "user", content: decompositionPrompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "task_decomposition",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  tasks: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        description: { type: "string" },
+                        taskType: { type: "string" },
+                        executionOrder: { type: "integer" },
+                        dependsOn: { type: "array", items: { type: "integer" } },
+                        estimatedTokens: { type: "integer" },
+                      },
+                      required: ["description", "taskType", "executionOrder", "dependsOn", "estimatedTokens"],
+                      additionalProperties: false,
+                    },
                   },
-                  required: ["description", "taskType", "executionOrder", "dependsOn", "estimatedTokens"],
-                  additionalProperties: false,
                 },
+                required: ["tasks"],
+                additionalProperties: false,
               },
             },
-            required: ["tasks"],
-            additionalProperties: false,
           },
-        },
-      },
-    });
-
-    const content = response.choices[0].message.content;
-    const parsed = JSON.parse(typeof content === "string" ? content : "{}");
-    tasks = (parsed.tasks || []).slice(0, maxTasks).map((t: any, i: number) => ({
-      description: t.description,
-      taskType: t.taskType || "conversation",
-      executionOrder: t.executionOrder || i + 1,
-      dependsOn: t.dependsOn || [],
-      estimatedTokens: t.estimatedTokens || 500,
-      status: "pending" as const,
-    }));
-  } catch (err) {
-    // Fallback: single-task plan
-    console.warn("[ATLAS] LLM decomposition failed, using single-task fallback:", err);
+        });
+        const content = response.choices[0].message.content;
+        const parsed = JSON.parse(typeof content === "string" ? content : "{}");
+        tasks = (parsed.tasks || []).slice(0, maxTasks).map((t: any, i: number) => ({
+          description: t.description,
+          taskType: t.taskType || "conversation",
+          executionOrder: t.executionOrder || i + 1,
+          dependsOn: t.dependsOn || [],
+          estimatedTokens: t.estimatedTokens || 500,
+          status: "pending" as const,
+        }));
+      } catch (err) {
+        // Final fallback: single-task plan
+        console.warn("[ATLAS] LLM decomposition failed, using single-task fallback:", err);
+        tasks = [{
+          description: input.description,
+          taskType: "conversation",
+          executionOrder: 1,
+          dependsOn: [],
+          estimatedTokens: 1000,
+          status: "pending",
+        }];
+      }
+    }
+  } catch (outerErr) {
+    // Should not reach here since inner catches handle everything, but safety net
+    console.warn("[ATLAS] Unexpected decomposition error:", outerErr);
     tasks = [{
       description: input.description,
       taskType: "conversation",
@@ -218,15 +253,28 @@ async function executeTask(
       output = preFlight.response;
       cost = 0;
     } else {
-      // Execute via LLM
-      const response = await invokeLLM({
-        messages: [
-          { role: "system", content: "You are executing a sub-task as part of a larger goal. Be thorough and specific." },
-          { role: "user", content: preFlight.optimizedPrompt ?? taskPrompt },
-        ],
-      });
-      const content = response.choices[0].message.content;
-      output = typeof content === "string" ? content : JSON.stringify(content);
+      // Execute via Sovereign routing for failover + AEGIS caching (G-008)
+      try {
+        const routingResult = await routeRequest({
+          messages: [
+            { role: "system", content: "You are executing a sub-task as part of a larger goal. Be thorough and specific." },
+            { role: "user", content: preFlight.optimizedPrompt ?? taskPrompt },
+          ],
+          userId,
+          taskType: task.taskType ?? "conversation",
+        });
+        output = routingResult.output;
+      } catch {
+        // Fallback to direct LLM if Sovereign routing fails
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "You are executing a sub-task as part of a larger goal. Be thorough and specific." },
+            { role: "user", content: preFlight.optimizedPrompt ?? taskPrompt },
+          ],
+        });
+        const content = response.choices[0].message.content;
+        output = typeof content === "string" ? content : JSON.stringify(content);
+      }
     }
 
     // Run AEGIS post-flight
@@ -383,21 +431,40 @@ async function reflect(
 ): Promise<string> {
   const summary = outputs.map((o) => `- ${o.taskDescription.slice(0, 80)}: ${o.status}`).join("\n");
 
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: "You are a self-improvement engine. Analyze the execution results and provide a brief reflection (2-3 sentences) on what went well, what could be improved, and any patterns to remember.",
-      },
-      {
-        role: "user",
-        content: `Goal: ${goalDescription}\nTotal cost: ${totalCost} credits\nResults:\n${summary}`,
-      },
-    ],
-  });
-
-  const content = response.choices[0].message.content;
-  return typeof content === "string" ? content : "";
+  // Route reflection through Sovereign for failover + caching (G-008)
+  try {
+    const routingResult = await routeRequest({
+      messages: [
+        {
+          role: "system",
+          content: "You are a self-improvement engine. Analyze the execution results and provide a brief reflection (2-3 sentences) on what went well, what could be improved, and any patterns to remember.",
+        },
+        {
+          role: "user",
+          content: `Goal: ${goalDescription}\nTotal cost: ${totalCost} credits\nResults:\n${summary}`,
+        },
+      ],
+      userId: 0, // System-level reflection
+      taskType: "planning",
+    });
+    return routingResult.output;
+  } catch {
+    // Fallback to direct LLM
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: "You are a self-improvement engine. Analyze the execution results and provide a brief reflection (2-3 sentences) on what went well, what could be improved, and any patterns to remember.",
+        },
+        {
+          role: "user",
+          content: `Goal: ${goalDescription}\nTotal cost: ${totalCost} credits\nResults:\n${summary}`,
+        },
+      ],
+    });
+    const content = response.choices[0].message.content;
+    return typeof content === "string" ? content : "";
+  }
 }
 
 // ── Goal Status ──

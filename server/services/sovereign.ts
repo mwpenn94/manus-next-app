@@ -13,6 +13,7 @@
 
 import * as db from "../db";
 import { invokeLLM } from "../_core/llm";
+import { checkCache, writeCache, estimateCost, classifyTask } from "./aegis";
 
 // ── Types ──
 
@@ -278,13 +279,34 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
     if (attempts > 1) fallbackUsed = true;
 
     try {
-      // Execute via the built-in LLM (all providers route through the same invokeLLM for now)
-      const response = await invokeLLM({
-        messages: request.messages as any,
-      });
+      // ── AEGIS Cache Check (G-003) ──
+      const cacheResult = await checkCache(inputContent);
+      let output: string;
+      let response: any;
 
-      const content = response.choices[0].message.content;
-      const output = typeof content === "string" ? content : JSON.stringify(content);
+      if (cacheResult.hit && cacheResult.response) {
+        // Cache hit — zero-cost response
+        output = cacheResult.response;
+        response = { choices: [{ message: { content: output } }] };
+        console.log(`[Sovereign] AEGIS cache hit for provider ${provider.name}, saved ${cacheResult.costSaved ?? 0} credits`);
+      } else {
+        // Cache miss — call LLM and store result
+        response = await invokeLLM({
+          messages: request.messages as any,
+        });
+
+        const content = response.choices[0].message.content;
+        output = typeof content === "string" ? content : JSON.stringify(content);
+
+        // Write to AEGIS cache for future hits
+        try {
+          const costEst = estimateCost({ taskType: request.taskType ?? "chat", complexity: "moderate", novelty: "routine", confidence: 0.8, estimatedTokens: Math.ceil(inputContent.split(/\s+/).length * 1.3), estimatedCost: 0 });
+          await writeCache(inputContent, output, request.taskType ?? "chat", costEst);
+        } catch (cacheErr) {
+          // Cache write failure is non-fatal
+          console.warn("[Sovereign] AEGIS cache write failed:", (cacheErr as Error).message?.slice(0, 100));
+        }
+      }
 
       // Output guardrails
       const outputValidation = validateOutput(output);

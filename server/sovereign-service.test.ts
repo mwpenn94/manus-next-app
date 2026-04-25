@@ -27,6 +27,21 @@ vi.mock("./_core/llm", () => ({
   }),
 }));
 
+// Mock AEGIS module (used by Sovereign for cache check/write)
+vi.mock("./services/aegis", () => ({
+  checkCache: vi.fn().mockResolvedValue({ hit: false, response: null, costSaved: 0 }),
+  writeCache: vi.fn().mockResolvedValue(undefined),
+  estimateCost: vi.fn().mockReturnValue(5),
+  classifyTask: vi.fn().mockReturnValue({
+    taskType: "chat",
+    complexity: "moderate",
+    novelty: "routine",
+    confidence: 0.8,
+    estimatedTokens: 500,
+    estimatedCost: 5,
+  }),
+}));
+
 // Mock db module with correct function names matching the actual implementation
 vi.mock("./db", () => ({
   getActiveProviders: vi.fn().mockResolvedValue([

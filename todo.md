@@ -4306,3 +4306,24 @@
 - [x] Updated OPTIMIZATION_LEDGER.md with Pass 004 results
 - [x] Updated GAP_ANALYSIS.md — G-001, G-006, G-010 marked RESOLVED (3/10 gaps closed)
 - [x] Phase B: Required artifacts (CLAUDE.md, COMPREHENSIVE_GUIDE.md, OPTIMIZATION_LEDGER.md, Dockerfile, ecosystem.config.cjs) — all exist and updated
+
+## Recursive Optimization Passes 006-011 (Expert Assess → Optimize → Validate)
+
+### Pass 006 — HIGH Priority Gaps
+- [x] G-002: Write dedicated ATLAS test suite (atlas-deep.test.ts) — 18 deep tests for goal decomposition, sub-goal planning, execution flows
+- [x] G-002: Write dedicated Sovereign test suite (sovereign-deep.test.ts) — 32 deep tests for circuit breaker state transitions, provider failover, routing decisions
+- [x] G-003: Wire AEGIS semantic cache into Sovereign routeRequest — pre-flight cache check, post-flight cache store
+
+### Pass 007 — MEDIUM Priority Gaps (Batch 1)
+- [ ] G-004: Persist Sovereign circuit breaker state to database — survive server restarts
+- [ ] G-005: Add rate limiting to public endpoints — Stripe webhook + public tRPC procedures
+- [x] G-008: Route ATLAS (decomposition, execution, reflection) through Sovereign routing layer — provider diversity, failover, AEGIS caching
+
+### Pass 008 — MEDIUM/LOW Priority Gaps (Batch 2)
+- [ ] G-007: Add observability integration — structured logging + OTel spans for Sovereign routing decisions
+- [ ] G-009: Add more frequent automated health check — every 6 hours lightweight ping
+
+### Convergence Verification
+- [ ] Pass 009: Fresh comprehensive scan — no new issues found
+- [ ] Pass 010: Second clean pass — no new issues found
+- [ ] Pass 011: Third clean pass — convergence confirmed
