@@ -230,6 +230,17 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
+  // ── Scheduled Task: VU Monitor ──
+  app.post("/api/scheduled/vu-monitor", async (req, res) => {
+    try {
+      const { handleVuMonitor } = await import("../scheduledVuMonitor");
+      await handleVuMonitor(req, res);
+    } catch (err: any) {
+      console.error("[VU Monitor] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Dev-only: Test Login for E2E (Playwright) ──
   // Creates a valid session cookie for the owner user without OAuth redirect.
   // Only available in development (NODE_ENV !== 'production').
