@@ -96,7 +96,7 @@ export default function TeamPage() {
   const selectedTeam = teams.find((t: any) => t.id === selectedTeamId);
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto pb-mobile-nav">
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">

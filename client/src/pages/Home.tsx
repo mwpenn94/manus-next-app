@@ -5,6 +5,7 @@
  * pill input with "Assign a task or ask anything", horizontal scroll cards.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
+import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
@@ -18,6 +19,7 @@ import {
   Rocket,
   Star,
   Mic,
+  MicOff,
   Code,
   Presentation,
   FileText,
@@ -60,6 +62,80 @@ const PACKAGES = [
   "share", "replay", "scheduled", "webapp-builder",
   "client-inference", "desktop", "sync", "bridge",
 ];
+
+/** In-place voice recording mic button — records audio, transcribes via Whisper, returns text */
+function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: boolean; onTranscript: (text: string) => void }) {
+  const [isListening, setIsListening] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const transcribeMutation = trpc.voice.transcribe.useMutation({
+    onSuccess: (data: { text?: string }) => {
+      if (data?.text) onTranscript(data.text);
+      setIsTranscribing(false);
+    },
+    onError: () => setIsTranscribing(false),
+  });
+
+  const toggleRecording = useCallback(async () => {
+    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+    if (isListening) {
+      mediaRecorderRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
+      chunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+        if (blob.size < 100) return;
+        setIsTranscribing(true);
+        try {
+          // Upload audio blob to S3 via /api/upload
+          const ext = recorder.mimeType.includes('webm') ? 'webm' : 'm4a';
+          const resp = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': recorder.mimeType, 'X-File-Name': `voice-${Date.now()}.${ext}` },
+            credentials: 'include',
+            body: blob,
+          });
+          const result = await resp.json();
+          if (result.url) {
+            transcribeMutation.mutate({ audioUrl: result.url });
+          } else {
+            setIsTranscribing(false);
+          }
+        } catch {
+          setIsTranscribing(false);
+        }
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsListening(true);
+    } catch {
+      console.error('Microphone access denied');
+    }
+  }, [isAuthenticated, isListening, transcribeMutation]);
+
+  return (
+    <button
+      onClick={toggleRecording}
+      disabled={isTranscribing}
+      className={cn(
+        "p-2 rounded-full transition-colors",
+        isListening ? "text-red-400 bg-red-500/10 animate-pulse" : isTranscribing ? "text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
+      )}
+      title={isListening ? "Stop recording" : "Voice input"}
+      aria-label={isListening ? "Stop recording" : "Voice input"}
+    >
+      {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+    </button>
+  );
+}
 
 export default function Home() {
   let { user, loading: _loading, error: _error, isAuthenticated } = useAuth();
@@ -195,7 +271,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="h-full overflow-y-auto relative bg-background" aria-label="Home" tabIndex={-1}>
+    <main className="h-full overflow-y-auto relative bg-background pb-mobile-nav" aria-label="Home" tabIndex={-1}>
       {/* Top header bar — hamburger + ModelSelector left, Credits right (mobile only; desktop uses AppLayout header) */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-background/80 backdrop-blur-sm md:hidden">
         <div className="flex items-center gap-2">
@@ -374,18 +450,10 @@ export default function Home() {
             </div>
             {/* Right side: mic + send */}
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
-                  const id = createTask("Voice task", "Voice task — use the microphone button to record.");
-                  navigate(`/task/${id}`);
-                }}
-                className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                title="Voice input"
-                aria-label="Voice input"
-              >
-                <Mic className="w-4 h-4" />
-              </button>
+              <VoiceMicButton
+                isAuthenticated={isAuthenticated}
+                onTranscript={(text) => setInput(prev => prev ? prev + " " + text : text)}
+              />
               <button
                 onClick={handleSubmit}
                 disabled={!input.trim() && pendingFiles.length === 0}

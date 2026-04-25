@@ -37,7 +37,7 @@ export default function DeployedWebsitesPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="h-full overflow-y-auto pb-mobile-nav p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <Globe className="w-6 h-6 text-primary" />

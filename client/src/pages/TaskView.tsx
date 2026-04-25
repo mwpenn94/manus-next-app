@@ -4050,31 +4050,7 @@ export default function TaskView() {
                 </div>
                 {/* GitHub integration badge */}
                 <GitHubBadge onClick={() => window.open('/github', '_self')} />
-                {/* Mobile mode selector — compact pill that cycles through modes */}
-                <button
-                  onClick={() => {
-                    const modeOrder: AgentMode[] = ["max", "limitless", "quality", "speed"];
-                    const currentIdx = modeOrder.indexOf(agentMode);
-                    const nextMode = modeOrder[(currentIdx + 1) % modeOrder.length];
-                    setAgentMode(nextMode);
-                    try { localStorage.setItem("manus-agent-mode", nextMode); } catch {}
-                  }}
-                  className={cn(
-                    "flex md:hidden items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium border transition-all active:scale-95",
-                    agentMode === "limitless" ? "border-amber-500/40 bg-amber-500/15 text-amber-400" :
-                    agentMode === "max" ? "border-violet-500/40 bg-violet-500/15 text-violet-400" :
-                    agentMode === "quality" ? "border-primary/40 bg-primary/15 text-primary" :
-                    "border-border bg-muted/50 text-muted-foreground"
-                  )}
-                  title={`Current mode: ${agentMode}. Tap to cycle.`}
-                  aria-label={`Agent mode: ${agentMode}. Tap to change mode.`}
-                >
-                  {agentMode === "limitless" ? <Infinity className="w-3 h-3" /> :
-                   agentMode === "max" ? <Crown className="w-3 h-3" /> :
-                   agentMode === "quality" ? <Sparkles className="w-3 h-3" /> :
-                   <Zap className="w-3 h-3" />}
-                  <span className="capitalize">{agentMode}</span>
-                </button>
+                {/* Mobile mode selector removed — mode is controlled via ModelSelector in header */}
                 {/* Attachment count badge */}
                 {files.length > 0 && (
                   <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-muted/50 border border-border text-xs text-muted-foreground">

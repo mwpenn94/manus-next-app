@@ -693,7 +693,7 @@ export default function Library() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 pb-mobile-nav">
         {isLoading ? (
           <div className="flex items-center justify-center h-48">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

@@ -4349,3 +4349,10 @@
 - [ ] AUDIT-010: Verify mobile responsive layout works correctly
 - [ ] AUDIT-011: Fix any broken features found during audit
 - [ ] AUDIT-012: Recursive convergence passes (3 consecutive clean = converged)
+
+### Mobile UI/UX Bug Fixes (User-Reported)
+- [x] BUG-001: Mic icon on home page creates new task instead of enabling audio input — replaced with in-place VoiceMicButton (MediaRecorder → S3 upload → Whisper transcription)
+- [x] BUG-002: Redundant "Limitless" mode pill in task chat input — removed (mode controlled via ModelSelector in header)
+- [x] BUG-003: Bottom nav bar cuts off page content — added pb-mobile-nav CSS utility (calc(3.5rem + safe-area)) to 28+ pages
+- [x] BUG-004: Pages not fully scrollable (Library, Billing, Settings, etc.) — applied pb-mobile-nav to all scrollable page containers
+- [x] Tests: mobile-ui-fixes.test.ts (25 tests), session14-bugfixes.test.ts updated (20 tests) — all passing

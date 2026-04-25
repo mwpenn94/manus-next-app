@@ -326,3 +326,11 @@ button:active:not(:disabled), a:active, [role="button"]:active {
     animation: none !important;
   }
 }
+
+/* Mobile bottom nav spacer — adds padding so content isn't hidden behind fixed bottom nav */
+/* Height: 3.5rem (nav) + safe-area-inset-bottom */
+@media (max-width: 767px) {
+  .pb-mobile-nav {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}

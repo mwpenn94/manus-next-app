@@ -161,11 +161,16 @@ describe("Mobile FAB overlap fix", () => {
     expect(app).not.toMatch(/<FeedbackWidget\s*\/>/);
   });
 
-  it("AppLayout main content has mobile bottom padding for MobileBottomNav", async () => {
+  it("Pages use pb-mobile-nav CSS utility for MobileBottomNav spacing", async () => {
     const fs = await import("fs");
-    const appLayout = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
-    // The main content area should have padding-bottom for the MobileBottomNav height
-    expect(appLayout).toContain("pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]");
-    expect(appLayout).toContain("md:pb-0");
+    // The CSS utility should be defined in index.css
+    const css = fs.readFileSync("client/src/index.css", "utf-8");
+    expect(css).toContain("pb-mobile-nav");
+    expect(css).toContain("calc(3.5rem");
+    // Key pages should use the utility
+    const billing = fs.readFileSync("client/src/pages/BillingPage.tsx", "utf-8");
+    expect(billing).toContain("pb-mobile-nav");
+    const settings = fs.readFileSync("client/src/pages/SettingsPage.tsx", "utf-8");
+    expect(settings).toContain("pb-mobile-nav");
   });
 });

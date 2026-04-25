@@ -283,7 +283,7 @@ export default function MemoryPage() {
   const displayMemories = searchQuery.length > 0 && activeTab === "active" ? searchResults || [] : memories;
 
   return (
-    <div className="h-full overflow-y-auto relative" onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
+    <div className="h-full overflow-y-auto pb-mobile-nav relative" onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}>
       {dragOver && (
         <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-xl flex items-center justify-center backdrop-blur-sm">
           <div className="text-center">

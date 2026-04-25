@@ -328,7 +328,7 @@ export default function ClientInferencePage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto pb-mobile-nav">
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
