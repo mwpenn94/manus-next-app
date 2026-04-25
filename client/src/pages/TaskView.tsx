@@ -4048,8 +4048,8 @@ export default function TaskView() {
                     anchorRef={plusButtonRef}
                   />
                 </div>
-                {/* GitHub integration badge */}
-                <GitHubBadge onClick={() => window.open('/github', '_self')} />
+                {/* GitHub integration badge — hidden on mobile to reduce toolbar crowding */}
+                <GitHubBadge onClick={() => window.open('/github', '_self')} className="hidden md:flex" />
                 {/* Mobile mode selector removed — mode is controlled via ModelSelector in header */}
                 {/* Attachment count badge */}
                 {files.length > 0 && (
@@ -4067,11 +4067,11 @@ export default function TaskView() {
                 >
                   <Mic className="w-4 h-4" />
                 </button>
-                {/* Hands-free mode button (P15) */}
+                {/* Hands-free mode button (P15) — hidden on mobile to reduce toolbar crowding */}
                 <button
                   onClick={() => handsFree.isActive ? handsFree.deactivate() : handsFree.activate()}
                   className={cn(
-                    "p-2 md:p-1.5 rounded-md transition-colors active:scale-95",
+                    "hidden md:flex p-2 md:p-1.5 rounded-md transition-colors active:scale-95",
                     handsFree.isActive
                       ? "text-primary bg-primary/10 hover:bg-primary/20"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"

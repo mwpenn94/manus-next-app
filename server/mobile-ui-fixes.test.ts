@@ -87,7 +87,43 @@ describe("Home.tsx mic button uses in-place voice recording", () => {
   });
 });
 
-// ── 4. Redundant mode pill removed from TaskView ──
+// ── 4. Mobile toolbar decluttered — GitHubBadge and Headphones hidden on mobile ──
+describe("TaskView mobile toolbar decluttered", () => {
+  const taskView = fs.readFileSync("client/src/pages/TaskView.tsx", "utf-8");
+
+  it("GitHubBadge has hidden md:flex to hide on mobile", () => {
+    expect(taskView).toContain('className="hidden md:flex"');
+    // The GitHubBadge line should have the hidden class
+    const lines = taskView.split("\n");
+    const badgeLine = lines.find(l => l.includes("GitHubBadge") && l.includes("hidden md:flex"));
+    expect(badgeLine).toBeTruthy();
+  });
+
+  it("Headphones button has hidden md:flex to hide on mobile", () => {
+    // The hands-free button should have hidden md:flex
+    const lines = taskView.split("\n");
+    const headphonesButtonIdx = lines.findIndex(l => l.includes("Headphones") && l.includes("w-4 h-4"));
+    expect(headphonesButtonIdx).toBeGreaterThan(-1);
+    // Check the button's className contains hidden md:flex
+    const surroundingLines = lines.slice(Math.max(0, headphonesButtonIdx - 10), headphonesButtonIdx).join("\n");
+    expect(surroundingLines).toContain("hidden md:flex");
+  });
+
+  it("mobile toolbar keeps only essential controls: +, mic, send", () => {
+    // The + button should NOT have hidden md:flex
+    const lines = taskView.split("\n");
+    const plusLine = lines.find(l => l.includes("Open action menu"));
+    expect(plusLine).toBeTruthy();
+    expect(plusLine).not.toContain("hidden");
+    
+    // Mic button should NOT have hidden md:flex
+    const micLine = lines.find(l => l.includes('aria-label="Voice input"'));
+    expect(micLine).toBeTruthy();
+    expect(micLine).not.toContain("hidden");
+  });
+});
+
+// ── 5. Redundant mode pill removed from TaskView ──
 describe("TaskView mobile mode selector pill removed", () => {
   const taskView = fs.readFileSync("client/src/pages/TaskView.tsx", "utf-8");
 

@@ -4356,3 +4356,7 @@
 - [x] BUG-003: Bottom nav bar cuts off page content — added pb-mobile-nav CSS utility (calc(3.5rem + safe-area)) to 28+ pages
 - [x] BUG-004: Pages not fully scrollable (Library, Billing, Settings, etc.) — applied pb-mobile-nav to all scrollable page containers
 - [x] Tests: mobile-ui-fixes.test.ts (25 tests), session14-bugfixes.test.ts updated (20 tests) — all passing
+
+### Critical: TaskView Mobile Chat Input Bar
+- [x] BUG-005: TaskView mobile chat input bar is cramped/unusable — mic, headphones, +, submit all squished in tiny space, making core chat experience broken on mobile
+- [x] Redesign mobile input bar layout for proper spacing and touch targets
