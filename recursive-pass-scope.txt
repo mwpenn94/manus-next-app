@@ -1,0 +1,13 @@
+SCOPE: The work being optimized is the entire Manus Next mobile and desktop UI/UX — every page, every interaction, every component — ensuring production-quality responsiveness, usability, and visual polish across all viewports.
+
+PASS METHODOLOGY:
+- Each pass: fresh, novel, wide, deep, comprehensive
+- Continue until 2 consecutive passes confirm no actions needed
+- If a fix is made, convergence counter resets
+- Priority: Landscape > Depth > Adversarial > Future-State
+
+SIGNAL ASSESSMENT BEFORE EACH PASS:
+1. State which pass type executing
+2. One sentence per pass type confirming signals present/absent
+3. Execute highest-priority pass whose signals are present
+4. Rate work 1-10 after each pass

@@ -3037,7 +3037,17 @@ export default function TaskView() {
       <div
         className="flex-1 flex flex-col min-w-0 min-h-0"
         style={desktopWorkspaceOpen ? { flex: `0 0 ${workspaceRatio * 100}%`, maxWidth: `${workspaceRatio * 100}%` } : undefined}
+        data-workspace-constrained={desktopWorkspaceOpen ? "true" : undefined}
       >
+        {/* Mobile override: workspace ratio must not constrain conversation on small screens */}
+        <style>{`
+          @media (max-width: 767px) {
+            [data-workspace-constrained] {
+              flex: 1 1 auto !important;
+              max-width: 100% !important;
+            }
+          }
+        `}</style>
         {/* Task Header */}
         <div className="h-12 flex items-center justify-between px-3 md:px-5 border-b border-border shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -4045,6 +4055,7 @@ export default function TaskView() {
                     onRecordVideo={() => { setMediaPanelMode("camera"); setMediaPanelOpen(true); }}
                     onUploadVideo={() => { setMediaPanelMode("upload"); setMediaPanelOpen(true); }}
                     onInjectPrompt={(prompt) => { setInput(prompt); setTimeout(() => { const ta = document.querySelector('textarea'); if (ta) ta.focus(); }, 100); }}
+                    onToggleHandsFree={() => handsFree.isActive ? handsFree.deactivate() : handsFree.activate()}
                     anchorRef={plusButtonRef}
                   />
                 </div>

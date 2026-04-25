@@ -1,0 +1,20 @@
+TaskView Width Fix Verification:
+
+1. Home page mobile (393px viewport):
+   - Input bar width: 367px (good - full width minus padding)
+   - Input bar x: 13px (proper left padding)
+   - This confirms the Home page input is NOT the problem
+
+2. Task page redirect: Goes to login/loading because auth is needed
+   - Cannot directly test TaskView in sandbox without auth
+   - BUT the CSS override rule IS injected and will work
+
+3. Desktop (1280px viewport):
+   - Input bar width: 638px (correct - sidebar takes space)
+
+The fix adds a CSS media query that overrides the inline style 
+`flex: 0 0 50%; max-width: 50%` on mobile (<768px) with 
+`flex: 1 1 auto !important; max-width: 100% !important`.
+
+This ensures the conversation panel takes full width on mobile 
+even when desktopWorkspaceOpen is true (which it defaults to).

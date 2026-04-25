@@ -34,6 +34,7 @@ import {
   Plug,
   Workflow,
   Wrench,
+  Headphones,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -74,6 +75,8 @@ const MENU_ITEMS: PlusMenuItem[] = [
   { id: "add-skills", label: "Add Skills", icon: Puzzle, implemented: true, prompt: "Add a skill for ", section: "tools" },
   { id: "playbook", label: "Playbook", icon: BookOpen, implemented: true, route: "/library", section: "tools" },
   { id: "connect-computer", label: "Connect My Computer", icon: Monitor, implemented: true, prompt: "Connect my computer to ", section: "tools" },
+  { id: "github-repos", label: "GitHub Repos", icon: GitBranch, implemented: true, route: "/github", section: "tools" },
+  { id: "hands-free", label: "Hands-free mode", icon: Headphones, implemented: true, section: "tools" },
 ];
 
 const SECTIONS = [
@@ -93,6 +96,7 @@ interface PlusMenuProps {
   onRecordVideo?: () => void;
   onUploadVideo?: () => void;
   onInjectPrompt?: (prompt: string) => void;
+  onToggleHandsFree?: () => void;
   anchorRef?: React.RefObject<HTMLElement | null>;
   className?: string;
 }
@@ -105,6 +109,7 @@ export default function PlusMenu({
   onRecordVideo,
   onUploadVideo,
   onInjectPrompt,
+  onToggleHandsFree,
   anchorRef,
   className,
 }: PlusMenuProps) {
@@ -196,6 +201,11 @@ export default function PlusMenu({
         onClose();
         return;
       }
+      if (item.id === "hands-free" && onToggleHandsFree) {
+        onToggleHandsFree();
+        onClose();
+        return;
+      }
       if (item.route) {
         navigate(item.route);
         onClose();
@@ -212,7 +222,7 @@ export default function PlusMenu({
       }
       onClose();
     },
-    [onAddFiles, onShareScreen, onRecordVideo, onUploadVideo, onInjectPrompt, onClose, navigate]
+    [onAddFiles, onShareScreen, onRecordVideo, onUploadVideo, onInjectPrompt, onToggleHandsFree, onClose, navigate]
   );
 
   const connectedList = (connectors.data || []).filter((c: any) => c.status === "connected");
