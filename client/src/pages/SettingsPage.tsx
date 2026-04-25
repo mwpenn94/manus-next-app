@@ -368,9 +368,9 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="h-full flex flex-col md:flex-row">
+    <div className="h-full flex flex-col md:flex-row min-h-0">
       {/* Settings Sidebar — hidden on mobile, shown on desktop */}
-      <div className="hidden md:block w-[200px] border-r border-border bg-card p-3 space-y-0.5 shrink-0">
+      <div className="hidden md:flex md:flex-col w-[200px] border-r border-border bg-card p-3 space-y-0.5 shrink-0 overflow-y-auto">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider px-3 py-2 font-medium">
           Settings
         </p>
@@ -413,7 +413,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
         <div className="max-w-2xl">
           {/* ── Account ── */}
           {activeTab === "account" && (

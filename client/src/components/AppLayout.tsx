@@ -278,7 +278,7 @@ function SidebarNav({ location }: { location: string }) {
 
   return (
     <nav
-      className="border-t border-sidebar-border p-2 space-y-0.5 shrink-0 overflow-y-auto max-h-[40vh]"
+      className="border-t border-sidebar-border p-2 space-y-0.5"
       aria-label="Sidebar navigation"
     >
       {filteredSections.map((section) => (
@@ -706,9 +706,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </Button>
       </div>
 
+      {/* ── Scrollable Middle Section ── */}
+      <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+
       {/* Task List */}
       <div
-        className="flex-1 overflow-y-auto px-2 py-1 overscroll-contain"
+        className="px-2 py-1"
         tabIndex={0}
         role="region"
         aria-label="Task list"
@@ -861,7 +864,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Referral/Invite Banner — Manus parity */}
       {isAuthenticated && (
-        <div className="mx-2 mb-1 p-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border cursor-pointer hover:bg-sidebar-accent transition-colors relative z-10"
+        <div
+          className="mx-2 mb-1 p-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border cursor-pointer hover:bg-sidebar-accent transition-colors"
           onClick={() => { navigator.clipboard.writeText(window.location.origin); toast.success("Invite link copied!"); }}
         >
           <div className="flex items-center gap-2">
@@ -871,6 +875,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <p className="text-[10px] text-muted-foreground mt-0.5 ml-5.5">Get 500 credits each</p>
         </div>
       )}
+
+      </div>{/* End scrollable middle section */}
 
       {/* Auth Section — pinned at bottom, never scrolls away */}
       <div className="border-t border-sidebar-border shrink-0 relative z-10 bg-sidebar">
@@ -951,7 +957,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         aria-label="Main navigation"
         className={cn(
           "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200",
-          sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden opacity-0"
+          sidebarOpen ? "w-[260px]" : "w-0 overflow-hidden opacity-0"
         )}
       >
         {sidebarContent}
@@ -964,12 +970,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           "fixed inset-y-0 left-0 z-50 flex flex-col w-[300px] max-w-[85vw] bg-sidebar border-r border-sidebar-border transition-transform duration-200 ease-out md:hidden",
           mobileDrawerOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {sidebarContent}
       </nav>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Top bar — always visible on mobile, desktop only when sidebar closed */}
         {/* On Home route on mobile, hide this header since Home has its own header */}
         <header
@@ -1031,7 +1038,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-hidden min-h-0 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">{children}</main>
       </div>
 
       {/* Mobile Bottom Navigation */}

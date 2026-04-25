@@ -3032,7 +3032,7 @@ export default function TaskView() {
       {/* ── CONVERSATION PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Task Header */}
-        <div className="h-12 flex items-center justify-between px-4 md:px-6 border-b border-border shrink-0">
+        <div className="h-12 flex items-center justify-between px-3 md:px-5 border-b border-border shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-sm font-medium text-foreground truncate max-w-[40vw]" style={{ fontFamily: "var(--font-heading)" }}>
               {task.title}
@@ -3185,7 +3185,7 @@ export default function TaskView() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
                     transition={{ duration: 0.1 }}
-                    className="absolute right-0 top-full mt-1 w-56 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-50 py-1"
+                    className="absolute right-0 top-full mt-1 w-56 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg z-[60] py-1 max-h-[calc(100vh-6rem)] overflow-y-auto"
                   >
                     <button
                       onClick={() => {

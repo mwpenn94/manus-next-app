@@ -4124,3 +4124,23 @@
 - [x] Write Cycle 11 COMPLIANCE assessment
 - [x] Write Cycle 11 ADVERSARY assessment
 - [x] Write Cycle 11 STRATEGIST scoring
+
+## Cycle 12: UI Component & Layout Parity Fixes
+### Sidebar Layout
+- [x] Fix sidebar bottom area cutoff — wrap task list through referral in scrollable middle section
+- [x] Reduce sidebar width from 280px to 260px for real Manus proportions
+- [x] Remove SidebarNav max-h-[40vh] constraint (now inside scrollable container)
+- [x] Pin auth section at bottom with shrink-0 and bg-sidebar
+### TaskView Header
+- [x] Fix TaskView header — reduce padding, add gap-2 for proper action spacing
+- [x] Fix More menu dropdown z-index to z-[60] with max-height and overflow-y-auto
+### Settings Page
+- [x] Fix Settings page scrollability — add min-h-0 to flex containers
+- [x] Make settings sidebar scrollable with overflow-y-auto
+### Main Content Area
+- [x] Add min-h-0 to main content flex container for proper overflow
+- [x] Add min-h-0 to main element for proper flex overflow behavior
+### Mobile
+- [x] Add safe-area-inset padding to mobile drawer for notched devices
+### Tests
+- [x] Write and pass Cycle 12 layout vitest (12 tests, all passing)
