@@ -6,14 +6,12 @@
  * - "Manus is using [Tool]" header with live pulse
  * - Smooth state transitions between Thinking → Tool Use → Generating
  * - Contextual descriptions for each tool action
- * - Gate Waiting state: shows inline approval card at bottom (never buried)
  *
  * States represented:
  * 1. Thinking (no tool active, no text streaming) — brain pulse animation
  * 2. Tool Execution (tool_start received) — tool-specific icon + label + context
  * 3. Generating (delta streaming, no active tool) — pen animation
  * 4. Reconnecting — connection retry indicator
- * 5. Gate Waiting — inline confirmation card at bottom, never hidden
  */
 import { useState, useEffect, useRef } from "react";
 import {
@@ -21,7 +19,6 @@ import {
   FileCode, Image, Brain, MousePointerClick,
   Package, Hammer, BookOpen, GitBranch,
   BarChart3, Palette, Send, WifiOff, Loader2,
-  ShieldAlert, Check, X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -34,7 +31,6 @@ type AgentPresenceState =
   | "tool_active"
   | "generating"
   | "reconnecting"
-  | "gate_waiting"
   | "idle";
 
 interface PresenceProps {
@@ -42,14 +38,6 @@ interface PresenceProps {
   streaming: boolean;
   hasStreamContent?: boolean;
   isReconnecting?: boolean;
-  /** When a confirmation gate is pending, show inline approval instead of "thinking" */
-  pendingGate?: {
-    action: string;
-    description?: string;
-    category?: string;
-    onApprove: () => void;
-    onReject: () => void;
-  } | null;
   /** Knowledge recalled badge — shows count of cross-session memories injected */
   knowledgeRecalled?: { count: number; keys: string[] } | null;
 }
@@ -57,8 +45,6 @@ interface PresenceProps {
 function deriveState(props: PresenceProps): AgentPresenceState {
   if (!props.streaming) return "idle";
   if (props.isReconnecting) return "reconnecting";
-  // Gate waiting takes priority over thinking — never show "thinking" when a gate is pending
-  if (props.pendingGate) return "gate_waiting";
 
   const activeAction = props.actions.find((a) => a.status === "active");
   if (activeAction) return "tool_active";
@@ -200,7 +186,7 @@ function ThinkingPresence({ knowledgeRecalled }: { knowledgeRecalled?: { count: 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-3 px-4 py-2.5"
+      className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(
         "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
@@ -234,7 +220,7 @@ function GeneratingPresence() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-3 px-4 py-2.5"
+      className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(
         "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
@@ -267,7 +253,7 @@ function ToolActivePresence({ action }: { action: AgentAction }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-3 px-4 py-2.5"
+      className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(
         "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
@@ -302,7 +288,7 @@ function ReconnectingPresence() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-3 px-4 py-2.5"
+      className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(
         "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
@@ -321,68 +307,6 @@ function ReconnectingPresence() {
   );
 }
 
-// ── Gate Waiting State — Inline approval card at bottom, Manus-aligned ──
-
-function GateWaitingPresence({ gate }: { gate: NonNullable<PresenceProps["pendingGate"]> }) {
-  const [processing, setProcessing] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
-      className="rounded-xl border border-orange-500/30 overflow-hidden"
-    >
-      {/* Header — matches Manus orange "SENSITIVE OPERATION" pattern */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-orange-500/10">
-        <div className="w-6 h-6 rounded-md bg-orange-500/20 flex items-center justify-center shrink-0">
-          <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
-        </div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-orange-400">
-          Sensitive Operation
-        </span>
-        <LivePulseDot color="bg-orange-400" />
-      </div>
-
-      {/* Body */}
-      <div className="px-4 py-3 bg-card/50">
-        <p className="text-sm font-medium text-foreground">{gate.action}</p>
-        {gate.description && (
-          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{gate.description}</p>
-        )}
-        <p className="text-[11px] text-muted-foreground mt-2 italic">
-          Manus will continue after your confirmation.
-        </p>
-
-        {/* Approve / Reject — always visible at bottom of chat */}
-        <div className="flex items-center gap-2 mt-3">
-          <button
-            onClick={() => { setProcessing(true); gate.onApprove(); }}
-            disabled={processing}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-foreground text-background text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {processing ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <Check className="w-3.5 h-3.5" />
-            )}
-            {processing ? "Processing..." : "Approve"}
-          </button>
-          <button
-            onClick={() => { setProcessing(true); gate.onReject(); }}
-            disabled={processing}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-muted/60 text-muted-foreground text-xs font-medium hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
-          >
-            <X className="w-3.5 h-3.5" />
-            Reject
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 // ── Main Exported Component ──
 
 export default function ActiveToolIndicator({
@@ -390,19 +314,15 @@ export default function ActiveToolIndicator({
   streaming,
   hasStreamContent = false,
   isReconnecting = false,
-  pendingGate = null,
   knowledgeRecalled = null,
 }: PresenceProps) {
-  const state = deriveState({ actions, streaming, hasStreamContent, isReconnecting, pendingGate });
+  const state = deriveState({ actions, streaming, hasStreamContent, isReconnecting });
   const activeAction = actions.find((a) => a.status === "active");
 
   if (state === "idle") return null;
 
   return (
     <AnimatePresence mode="wait">
-      {state === "gate_waiting" && pendingGate && (
-        <GateWaitingPresence key="gate" gate={pendingGate} />
-      )}
       {state === "thinking" && <ThinkingPresence key="thinking" knowledgeRecalled={knowledgeRecalled} />}
       {state === "tool_active" && activeAction && (
         <ToolActivePresence key={`tool-${activeAction.type}`} action={activeAction} />

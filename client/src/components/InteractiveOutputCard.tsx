@@ -98,6 +98,23 @@ export default function InteractiveOutputCard({
   const config = TYPE_CONFIG[type];
   const Icon = config.icon;
 
+  // File types that can't be rendered inline in a browser — force download instead
+  const NON_RENDERABLE_TYPES = new Set(["spreadsheet", "presentation", "code"]);
+  const NON_RENDERABLE_EXTENSIONS = /\.(xlsx|xls|csv|tsv|pptx|ppt|docx|doc|zip|gz|tar|rar|7z)$/i;
+  const shouldForceDownload = NON_RENDERABLE_TYPES.has(type) ||
+    (openUrl && NON_RENDERABLE_EXTENSIONS.test(openUrl)) ||
+    (downloadUrl && NON_RENDERABLE_EXTENSIONS.test(downloadUrl));
+
+  const triggerDownload = (url: string) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = title || "download";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -162,8 +179,15 @@ export default function InteractiveOutputCard({
           {(onOpen || openUrl) && (
             <button
               onClick={() => {
-                if (onOpen) onOpen();
-                else if (openUrl) window.open(openUrl, "_blank");
+                if (onOpen) {
+                  onOpen();
+                } else if (openUrl) {
+                  if (shouldForceDownload) {
+                    triggerDownload(openUrl);
+                  } else {
+                    window.open(openUrl, "_blank");
+                  }
+                }
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity"
             >
@@ -183,8 +207,11 @@ export default function InteractiveOutputCard({
           {(onDownload || downloadUrl) && (
             <button
               onClick={() => {
-                if (onDownload) onDownload();
-                else if (downloadUrl) window.open(downloadUrl, "_blank");
+                if (onDownload) {
+                  onDownload();
+                } else if (downloadUrl) {
+                  triggerDownload(downloadUrl);
+                }
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/60 text-foreground text-xs font-medium hover:bg-muted transition-colors"
             >

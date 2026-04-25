@@ -28,7 +28,6 @@ export interface StreamStateSetters {
   addMessage?: (taskId: string, msg: any) => void;
   setIsReconnecting?: (reconnecting: boolean) => void;
   setLastErrorRetryable?: (retryable: boolean) => void;
-  setPendingGate?: (gate: { action: string; description?: string; category?: string; taskId: string } | null) => void;
   /** Session 25 Pass 3: Signal that a generation request completed without producing an artifact */
   setGenerationIncomplete?: (incomplete: boolean) => void;
   /** Session 23: Token usage state setter */
@@ -193,32 +192,11 @@ export function buildStreamCallbacks(
         setters.setStreamContent(state.accumulated);
       }
     },
-    onConfirmationGate: (gate: { action: string; description?: string; category?: string }) => {
-      if (setters.addMessage) {
-        setters.addMessage(setters.taskId, {
-          role: "assistant",
-          content: gate.action,
-          cardType: "confirmation_gate" as const,
-          cardData: {
-            action: gate.action,
-            description: gate.description,
-            category: gate.category || "general",
-            status: "pending",
-          },
-        });
-      }
-      // Wire pendingGate so ActiveToolIndicator shows inline approval at bottom
-      setters.setPendingGate?.({
-        action: gate.action,
-        description: gate.description,
-        category: gate.category,
-        taskId: setters.taskId,
-      });
+    onConfirmationGate: () => {
+      // Gate system removed — tools execute autonomously
     },
-    onGateResolved: (data: { taskExternalId: string; approved: boolean }) => {
-      console.log(`[Stream] Gate resolved: ${data.approved ? 'approved' : 'rejected'}`);
-      // Clear pendingGate so the inline approval card disappears from ActiveToolIndicator
-      setters.setPendingGate?.(null);
+    onGateResolved: () => {
+      // Gate system removed — no-op
     },
     onConvergence: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => {
       if (setters.addMessage) {

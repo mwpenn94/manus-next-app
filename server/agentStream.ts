@@ -1541,67 +1541,7 @@ If the user hasn't specified content details, ASK them what content they want. D
           }
         }
 
-        // Emit confirmation gate for destructive/sensitive operations
-        const CONFIRMATION_TOOLS: Record<string, { category: string; description: string }> = {
-          delete_file: { category: "destructive", description: "This will permanently delete the file." },
-          execute_code: { category: "sensitive", description: "The agent wants to execute code on your system." },
-          send_email: { category: "external", description: "This will send an email on your behalf." },
-          make_payment: { category: "payment", description: "This will initiate a payment transaction." },
-          publish_website: { category: "publish", description: "This will publish the website to production." },
-        };
-
-        let gateRejected = false;
-        if (CONFIRMATION_TOOLS[toolName]) {
-          const gateConfig = CONFIRMATION_TOOLS[toolName];
-          const taskId = options.taskExternalId || `anon-${Date.now().toString(36)}`;
-          const gateId = `${taskId}:${toolCall.id}`;
-          sendSSE(safeWrite, {
-            confirmation_gate: {
-              gateId,
-              action: `${toolName}: ${parsedArgs.path || parsedArgs.url || parsedArgs.name || ""}`.trim(),
-              description: gateConfig.description,
-              category: gateConfig.category,
-            },
-          });
-
-          // Pause the stream and wait for user approval/rejection
-          console.log(`[Agent] Waiting for gate approval: ${gateId} (tool: ${toolName})`);
-          const { awaitGateApproval } = await import("./confirmationGate");
-          const decision = await awaitGateApproval(gateId, toolName);
-
-          if (!decision.approved) {
-            gateRejected = true;
-            console.log(`[Agent] Gate REJECTED for ${toolName}: ${decision.reason || "user rejected"}`);
-            sendSSE(safeWrite, {
-              gate_resolved: { gateId, approved: false, reason: decision.reason },
-            });
-            // Skip tool execution — feed rejection back to LLM
-            sendSSE(safeWrite, {
-              tool_result: {
-                id: toolCall.id,
-                name: toolName,
-                success: false,
-                preview: `[USER REJECTED] The user declined to allow ${toolName}. ${decision.reason || "Find an alternative approach that doesn't require this action."}`,
-              },
-            });
-            conversation.push({
-              role: "tool",
-              content: `[USER REJECTED] The user declined to allow ${toolName}. ${decision.reason || "Please find an alternative approach that doesn't require this sensitive action. Continue with the task using other available tools."}`,
-              tool_call_id: toolCall.id,
-              name: toolName,
-            });
-            completedToolCalls++;
-            sendSSE(safeWrite, {
-              step_progress: { completed: completedToolCalls, total: totalToolCalls, turn },
-            });
-            continue; // Skip to next tool call
-          } else {
-            console.log(`[Agent] Gate APPROVED for ${toolName}`);
-            sendSSE(safeWrite, {
-              gate_resolved: { gateId, approved: true },
-            });
-          }
-        }
+        // All tools execute autonomously — no confirmation gate
 
         // Send tool_start event
         sendSSE(safeWrite, {

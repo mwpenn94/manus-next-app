@@ -4374,3 +4374,15 @@
 - [x] Recursive Pass 1: Exhaustive virtual user audit of every page at mobile (393x852) and desktop (1280x800) viewports — 0 actionable bugs found
 - [x] Recursive Pass 2: Deep accessibility/interaction/contrast audit — 0 actionable bugs found
 - [x] Recursive Pass 3: Static code analysis (React patterns, CSS, imports, components) — 0 actionable bugs, 3 consecutive clean passes CONFIRMED
+### Remove SENSITIVE OPERATION Approval Gate & Fix Card Alignment
+- [x] Remove SENSITIVE OPERATION approval gate — tools execute autonomously without blocking
+- [x] Delete ConfirmationGate.tsx component and confirmationGate.ts server files
+- [x] Remove pendingGate state, setPendingGate, onGateApprove, onGateReject from TaskView
+- [x] Remove gate_waiting state and GateWaitingPresence from ActiveToolIndicator
+- [x] Remove /api/gate-response endpoint from server/_core/index.ts
+- [x] Remove CONFIRMATION_TOOLS block from agentStream.ts
+- [x] Gut buildStreamCallbacks gate callbacks to no-ops
+- [x] Tighten ActiveToolIndicator padding for compact inline feel (px-3 py-2)
+- [x] Remove card-like bg/border from completed actions accordion
+- [x] Fix InteractiveOutputCard Open action — xlsx/csv files force download instead of opening blank tab in Safari
+- [x] 21 tests passing in gate-removal-and-card-fixes.test.ts

@@ -671,39 +671,6 @@ async function startServer() {
     }
   });
 
-  // ── Confirmation Gate Response Endpoint ──
-  // Receives user approval/rejection for sensitive tool calls.
-  // The agentStream pauses at a gate and resumes when this endpoint is called.
-  app.post("/api/gate-response", async (req, res) => {
-    try {
-      const { taskExternalId, gateId, approved, reason } = req.body || {};
-      if (typeof approved !== "boolean") {
-        res.status(400).json({ error: "approved (boolean) is required" });
-        return;
-      }
-      const { resolveGate, resolveByTaskId } = await import("../confirmationGate");
-      let resolved = false;
-      if (gateId) {
-        // Direct gate ID resolution (if client knows the specific gate)
-        resolved = resolveGate(gateId, { approved, reason });
-      } else if (taskExternalId) {
-        // Resolve by task ID (client only knows the task, not the specific gate)
-        resolved = resolveByTaskId(taskExternalId, { approved, reason });
-      } else {
-        res.status(400).json({ error: "Either taskExternalId or gateId is required" });
-        return;
-      }
-      if (!resolved) {
-        res.status(404).json({ error: "Gate not found or already resolved" });
-        return;
-      }
-      res.json({ ok: true, taskExternalId, gateId, approved });
-    } catch (e: any) {
-      console.error("[gate-response] Error:", e);
-      res.status(500).json({ error: e.message });
-    }
-  });
-
   // ── SSE streaming endpoint for LLM (Agentic) ──
   // Multi-turn agentic loop: LLM calls tools (search, image gen, code exec),
   // server executes them, streams progress, feeds results back until done.

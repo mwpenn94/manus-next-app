@@ -116,7 +116,6 @@ import WebappPreviewCard from "@/components/WebappPreviewCard";
 import DeploymentCard from "@/components/DeploymentCard";
 import CheckpointCard from "@/components/CheckpointCard";
 import TaskCompletedCard from "@/components/TaskCompletedCard";
-import ConfirmationGate from "@/components/ConfirmationGate";
 import ConvergenceIndicator from "@/components/ConvergenceIndicator";
 import InteractiveOutputCard from "@/components/InteractiveOutputCard";
 import PublishSheet from "@/components/PublishSheet";
@@ -659,7 +658,7 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, onGateApprove, onGateReject, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; onGateApprove?: () => void; onGateReject?: () => void; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
   const isUser = message.role === "user";
@@ -782,15 +781,6 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           <TaskCompletedCard
             taskId={(message.cardData?.taskId as string) ?? ""}
             onRate={(id, rating) => toast.success(`Rated ${rating} stars`)}
-          />
-        ) : message.cardType === "confirmation_gate" ? (
-          <ConfirmationGate
-            action={(message.cardData?.action as string) ?? message.content}
-            description={message.cardData?.description as string}
-            category={(message.cardData?.category as any) ?? "general"}
-            status={(message.cardData?.status as any) ?? "pending"}
-            onApprove={onGateApprove}
-            onReject={onGateReject}
           />
         ) : message.cardType === "convergence" ? (
           <ConvergenceIndicator
@@ -937,7 +927,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="overflow-hidden bg-card/50 rounded-lg border border-border/50 py-1"
+                  className="overflow-hidden py-1"
                 >
                   <GroupedActionsList actions={message.actions!} />
                 </motion.div>
@@ -2092,12 +2082,7 @@ export default function TaskView() {
   const [renameDraft, setRenameDraft] = useState("");
   const [lastErrorRetryable, setLastErrorRetryable] = useState(false);
   const [generationIncomplete, setGenerationIncomplete] = useState(false);
-  const [pendingGate, setPendingGate] = useState<{
-    action: string;
-    description?: string;
-    category?: string;
-    taskId: string;
-  } | null>(null);
+
   // In-conversation search (Pass 5 Step 1)
   const { searchOpen, closeSearch } = useConversationSearch();
   // User message edit & re-send (Pass 5 Step 2)
@@ -2413,7 +2398,7 @@ export default function TaskView() {
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-          addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+          addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard,
           getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -2425,7 +2410,6 @@ export default function TaskView() {
         });
 
         accumulated = streamState.accumulated;
-        setPendingGate(null); // Clear gate on stream end
 
         // Mark all remaining active actions as done
         setStepProgress(null);
@@ -2630,7 +2614,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -2642,7 +2626,6 @@ export default function TaskView() {
       });
 
       accumulated = streamState.accumulated;
-      setPendingGate(null); // Clear gate on stream end
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
@@ -2708,7 +2691,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -2720,7 +2703,6 @@ export default function TaskView() {
       });
 
       accumulated = streamState.accumulated;
-      setPendingGate(null); // Clear gate on stream end
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
@@ -2797,7 +2779,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -2809,7 +2791,6 @@ export default function TaskView() {
       });
 
       accumulated = streamState.accumulated;
-      setPendingGate(null); // Clear gate on stream end
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
@@ -2875,7 +2856,7 @@ export default function TaskView() {
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
-        addMessage, setIsReconnecting, setLastErrorRetryable, setPendingGate, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+        addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -2885,7 +2866,6 @@ export default function TaskView() {
         signal: controller.signal, callbacks,
       });
       accumulated = streamState.accumulated;
-      setPendingGate(null);
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
@@ -3674,7 +3654,7 @@ export default function TaskView() {
               (convergence, system_notice, context_compressed) to prevent scattered
               progress indicators. They stay in the message list for history. */}
           {(streaming
-            ? task.messages.filter(m => !m.cardType || ["webapp_preview", "webapp_deployed", "confirmation_gate", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output", "system_notice"].includes(m.cardType))
+            ? task.messages.filter(m => !m.cardType || ["webapp_preview", "webapp_deployed", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output", "system_notice"].includes(m.cardType))
             : task.messages
           ).map((msg, i) => (
             <motion.div
@@ -3701,34 +3681,6 @@ export default function TaskView() {
               onSaveEdit={() => handleEditAndResend(msg.id, editDraft)}
               onEditDraftChange={(val) => setEditDraft(val)}
               previewRefreshKey={previewRefreshKey}
-              onGateApprove={msg.cardType === "confirmation_gate" ? async () => {
-                updateMessageCard(task.id, msg.id, { status: "approved" });
-                toast.success("Action approved");
-                try {
-                  await fetch("/api/gate-response", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ taskExternalId: task.id, approved: true }),
-                  });
-                } catch (e) {
-                  console.error("[ConfirmationGate] Failed to send approval:", e);
-                }
-              } : undefined}
-              onGateReject={msg.cardType === "confirmation_gate" ? async () => {
-                updateMessageCard(task.id, msg.id, { status: "rejected" });
-                toast.info("Action rejected \u2014 agent will find an alternative");
-                try {
-                  await fetch("/api/gate-response", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ taskExternalId: task.id, approved: false }),
-                  });
-                } catch (e) {
-                  console.error("[ConfirmationGate] Failed to send rejection:", e);
-                }
-              } : undefined}
             />
             </motion.div>
           ))}
@@ -3766,44 +3718,6 @@ export default function TaskView() {
                   hasStreamContent={!!streamContent}
                   isReconnecting={isReconnecting}
                   knowledgeRecalled={knowledgeRecalled}
-                  pendingGate={pendingGate ? {
-                    action: pendingGate.action,
-                    description: pendingGate.description,
-                    category: pendingGate.category,
-                    onApprove: async () => {
-                      try {
-                        await fetch("/api/gate-response", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          credentials: "include",
-                          body: JSON.stringify({ taskExternalId: pendingGate.taskId, approved: true }),
-                        });
-                        // Update the gate message card in the message list too
-                        const gateMsg = task?.messages.find(m => m.cardType === "confirmation_gate" && m.cardData?.status === "pending");
-                        if (gateMsg && task) updateMessageCard(task.id, gateMsg.id, { status: "approved" });
-                        toast.success("Action approved");
-                      } catch (e) {
-                        console.error("[Gate] Failed to send approval:", e);
-                      }
-                      setPendingGate(null);
-                    },
-                    onReject: async () => {
-                      try {
-                        await fetch("/api/gate-response", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          credentials: "include",
-                          body: JSON.stringify({ taskExternalId: pendingGate.taskId, approved: false }),
-                        });
-                        const gateMsg = task?.messages.find(m => m.cardType === "confirmation_gate" && m.cardData?.status === "pending");
-                        if (gateMsg && task) updateMessageCard(task.id, gateMsg.id, { status: "rejected" });
-                        toast.info("Action rejected \u2014 agent will find an alternative");
-                      } catch (e) {
-                        console.error("[Gate] Failed to send rejection:", e);
-                      }
-                      setPendingGate(null);
-                    },
-                  } : null}
                 />
                 {/* Streaming text content */}
                 {streamContent && (
