@@ -11,14 +11,12 @@
 import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
+import { readRouterSource } from "./test-utils/readRouterSource";
 
 // ── Category A: Stub Audit ──
 
 describe("§L.29 Category A: Stub Audit", () => {
-  const routersContent = fs.readFileSync(
-    path.join(process.cwd(), "server/routers.ts"),
-    "utf-8"
-  );
+  const routersContent = readRouterSource();
 
   it("should have no mock/MOCK references in routers.ts", () => {
     const mockLines = routersContent
@@ -73,10 +71,7 @@ describe("§L.29 Category A: Stub Audit", () => {
 // ── Category B: Side-Effect Verification ──
 
 describe("§L.29 Category B: Side-Effect Verification", () => {
-  const routersContent = fs.readFileSync(
-    path.join(process.cwd(), "server/routers.ts"),
-    "utf-8"
-  );
+  const routersContent = readRouterSource();
 
   it("every mutation returning success:true should have an await call or cookie operation before it", () => {
     const lines = routersContent.split("\n");
@@ -168,10 +163,7 @@ describe("§L.29 Category D: Status Drift", () => {
   });
 
   it("all tRPC router groups should have test coverage", () => {
-    const routersContent = fs.readFileSync(
-      path.join(process.cwd(), "server/routers.ts"),
-      "utf-8"
-    );
+    const routersContent = readRouterSource();
     
     // Extract router group names
     const routerGroups = [...routersContent.matchAll(/(\w+):\s*router\(\{/g)].map((m) => m[1]);

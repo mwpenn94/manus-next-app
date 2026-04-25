@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Session 8 — Tests for CloudFront Provisioning, aria-live Regions, and Geographic/Device Analytics
  */
@@ -104,7 +105,7 @@ describe("CloudFront Distribution Provisioning", () => {
   });
 
   describe("deploy procedure integration", () => {
-    const routersFile = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+    const routersFile = readRouterSource();
 
     it("deploy procedure imports provisionDistribution from cloudfront", () => {
       expect(routersFile).toContain('import("./cloudfront")');
@@ -240,7 +241,7 @@ describe("Geographic and Device Analytics", () => {
   });
 
   describe("tRPC procedures", () => {
-    const routersFile = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+    const routersFile = readRouterSource();
 
     it("has geoAnalytics procedure", () => {
       expect(routersFile).toContain("geoAnalytics: protectedProcedure");

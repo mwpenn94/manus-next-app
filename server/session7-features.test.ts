@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Session 7 — Tests for Analytics, Custom Domain Hosting, and ARIA Accessibility
  */
@@ -80,7 +81,7 @@ describe("Analytics Collection", () => {
   });
 
   describe("analytics tRPC procedure", () => {
-    const routersFile = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+    const routersFile = readRouterSource();
 
     it("has webappProject.analytics procedure", () => {
       const wpSection = routersFile.slice(routersFile.indexOf("webappProject:"));
@@ -142,7 +143,7 @@ describe("Custom Domain Hosting", () => {
   });
 
   describe("deploy procedure injects tracking pixel", () => {
-    const routersFile = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+    const routersFile = readRouterSource();
 
     it("deploy procedure references analytics tracking", () => {
       const deploySection = routersFile.slice(routersFile.indexOf("deploy: protectedProcedure"));

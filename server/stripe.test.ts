@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Stripe SDK
@@ -335,7 +336,7 @@ describe("Stripe Integration", () => {
   describe("Payment Router", () => {
     it("payment router exists in routers.ts", async () => {
       const fs = await import("fs");
-      const routersContent = fs.readFileSync("server/routers.ts", "utf-8");
+      const routersContent = readRouterSource();
       
       expect(routersContent).toContain("payment: router(");
       expect(routersContent).toContain("products: publicProcedure");
@@ -344,7 +345,7 @@ describe("Stripe Integration", () => {
 
     it("checkout requires authentication", async () => {
       const fs = await import("fs");
-      const routersContent = fs.readFileSync("server/routers.ts", "utf-8");
+      const routersContent = readRouterSource();
       
       // createCheckout should use protectedProcedure
       expect(routersContent).toContain("createCheckout: protectedProcedure");

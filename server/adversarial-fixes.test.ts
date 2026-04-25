@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Adversarial Fixes — Vitest Tests
  *
@@ -29,7 +30,7 @@ describe("ADV-01: File Name Sanitization", () => {
 
 describe("ADV-02: Tunnel URL Validation", () => {
   it("completePairing validates tunnel URL format", () => {
-    const source = fs.readFileSync("server/routers.ts", "utf-8");
+    const source = readRouterSource();
     // Should have URL validation on completePairing
     const completePairingSection = source.slice(
       source.indexOf("completePairing:"),
@@ -40,7 +41,7 @@ describe("ADV-02: Tunnel URL Validation", () => {
   });
 
   it("updateConnection validates tunnel URL format", () => {
-    const source = fs.readFileSync("server/routers.ts", "utf-8");
+    const source = readRouterSource();
     // Should have URL validation on updateConnection
     const updateConnectionSection = source.slice(
       source.indexOf("updateConnection:"),
@@ -51,7 +52,7 @@ describe("ADV-02: Tunnel URL Validation", () => {
   });
 
   it("tunnel URL rejects non-http protocols", () => {
-    const source = fs.readFileSync("server/routers.ts", "utf-8");
+    const source = readRouterSource();
     // The refine should enforce http/https only
     expect(source).toContain('Tunnel URL must use http:// or https://');
   });

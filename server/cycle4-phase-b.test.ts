@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Cycle 4 Phase B — Chat + App Dev/Management/Publishing E2E Parity+
  *
@@ -313,26 +314,26 @@ describe("Deploy Pipeline", () => {
 
     it("deploy procedure runs content safety check", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("checkContentSafety");
     });
 
     it("deploy procedure injects analytics tracking", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("trackingScript");
       expect(source).toContain("analytics/pixel.js");
     });
 
     it("deploy procedure provisions CDN distribution", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("provisionDistribution");
     });
 
     it("deploy procedure updates project status to live", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain('deployStatus: publishedUrl ? "live"');
     });
   });
@@ -345,13 +346,13 @@ describe("Deploy Pipeline", () => {
 
     it("deployFromGitHub fetches repo tree", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("getRepoTree");
     });
 
     it("deployFromGitHub searches multiple paths for index.html", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain('searchPaths');
       expect(source).toContain('"public/"');
       expect(source).toContain('"dist/"');
@@ -360,13 +361,13 @@ describe("Deploy Pipeline", () => {
 
     it("deployFromGitHub uploads assets to S3", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("storagePut");
     });
 
     it("deployFromGitHub rewrites asset URLs in HTML", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("assetUrlMap");
     });
   });
@@ -478,25 +479,25 @@ describe("Virtual User Smoke Tests — Full Pipeline", () => {
   describe("Deployment flow completeness", () => {
     it("deploy procedure returns publishedUrl", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("publishedUrl");
     });
 
     it("deploy procedure returns cdnActive flag", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("cdnActive");
     });
 
     it("deploy procedure returns distributionId", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("distributionId");
     });
 
     it("deploy procedure streams build logs", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("buildLogLines");
       expect(source).toContain("appendLog");
     });
@@ -548,13 +549,13 @@ describe("Virtual User Smoke Tests — Full Pipeline", () => {
 
     it("deployFromGitHub handles missing GitHub connection", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("GitHub not connected");
     });
 
     it("content safety check blocks unsafe content", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("Content safety check failed");
     });
   });

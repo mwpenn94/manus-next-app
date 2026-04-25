@@ -942,3 +942,308 @@ export const strategyTelemetry = mysqlTable("strategy_telemetry", {
 
 export type StrategyTelemetry = typeof strategyTelemetry.$inferSelect;
 export type InsertStrategyTelemetry = typeof strategyTelemetry.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════
+// AEGIS Layer — Pre/Post-Flight Pipeline, Quality Scoring, Semantic Cache
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── AEGIS Sessions (one per LLM invocation through the pipeline) ──
+export const aegisSessions = mysqlTable("aegis_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }),
+  /** Task classification from pre-flight */
+  taskType: varchar("taskType", { length: 64 }).notNull(),
+  complexity: varchar("complexity", { length: 32 }),
+  /** Pre-flight: was the response served from cache? */
+  cacheHit: int("cacheHit").default(0).notNull(),
+  /** Cost in credits (estimated or actual) */
+  costCredits: int("costCredits").default(0).notNull(),
+  /** Latency in milliseconds */
+  latencyMs: int("latencyMs").default(0).notNull(),
+  /** Token counts */
+  inputTokens: int("inputTokens").default(0),
+  outputTokens: int("outputTokens").default(0),
+  /** Provider used (from routing decision) */
+  provider: varchar("provider", { length: 64 }),
+  /** Model used */
+  model: varchar("model", { length: 128 }),
+  /** Session status */
+  status: mysqlEnum("status", ["pending", "completed", "failed", "cached"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("aegis_sessions_user_idx").on(table.userId),
+  taskIdx: index("aegis_sessions_task_idx").on(table.taskExternalId),
+}));
+export type AegisSession = typeof aegisSessions.$inferSelect;
+export type InsertAegisSession = typeof aegisSessions.$inferInsert;
+
+// ── AEGIS Quality Scores (post-flight quality assessment) ──
+export const aegisQualityScores = mysqlTable("aegis_quality_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  completeness: int("completeness").notNull(),
+  accuracy: int("accuracy").notNull(),
+  relevance: int("relevance").notNull(),
+  clarity: int("clarity").notNull(),
+  efficiency: int("efficiency").notNull(),
+  overallScore: int("overallScore").notNull(),
+  validationPassed: int("validationPassed").default(1).notNull(),
+  validationErrors: json("validationErrors").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AegisQualityScore = typeof aegisQualityScores.$inferSelect;
+export type InsertAegisQualityScore = typeof aegisQualityScores.$inferInsert;
+
+// ── AEGIS Semantic Cache (prompt → response cache with TTL) ──
+export const aegisCache = mysqlTable("aegis_cache", {
+  id: int("id").autoincrement().primaryKey(),
+  /** SHA-256 hash of normalized prompt */
+  promptHash: varchar("promptHash", { length: 64 }).notNull().unique(),
+  /** The original prompt (for debugging/inspection) */
+  prompt: text("prompt").notNull(),
+  /** Cached response */
+  response: text("response").notNull(),
+  /** Task type classification */
+  taskType: varchar("taskType", { length: 64 }),
+  /** Number of cache hits */
+  hitCount: int("hitCount").default(0).notNull(),
+  /** Cost saved per hit (in credits) */
+  costSavedPerHit: int("costSavedPerHit").default(0).notNull(),
+  /** TTL expiration */
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastHitAt: timestamp("lastHitAt"),
+}, (table) => ({
+  hashIdx: index("aegis_cache_hash_idx").on(table.promptHash),
+}));
+export type AegisCache = typeof aegisCache.$inferSelect;
+export type InsertAegisCache = typeof aegisCache.$inferInsert;
+
+// ── AEGIS Fragments (reusable output fragments for context assembly) ──
+export const aegisFragments = mysqlTable("aegis_fragments", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId"),
+  fragmentType: varchar("fragmentType", { length: 64 }).notNull(),
+  content: text("content").notNull(),
+  contentHash: varchar("contentHash", { length: 64 }).notNull(),
+  /** Which task types this fragment is relevant for */
+  taskTypes: json("taskTypes").$type<string[]>(),
+  /** Quality score of the source output */
+  qualityScore: int("qualityScore"),
+  /** Number of times this fragment was used in context assembly */
+  useCount: int("useCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AegisFragment = typeof aegisFragments.$inferSelect;
+export type InsertAegisFragment = typeof aegisFragments.$inferInsert;
+
+// ── AEGIS Lessons (extracted insights from completed sessions) ──
+export const aegisLessons = mysqlTable("aegis_lessons", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId"),
+  lessonType: varchar("lessonType", { length: 64 }).notNull(),
+  taskType: varchar("taskType", { length: 64 }).notNull(),
+  description: text("description").notNull(),
+  /** Impact level: low, medium, high */
+  impact: varchar("impact", { length: 16 }).default("medium").notNull(),
+  /** Whether this lesson has been applied to improve patterns */
+  applied: int("applied").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AegisLesson = typeof aegisLessons.$inferSelect;
+export type InsertAegisLesson = typeof aegisLessons.$inferInsert;
+
+// ── AEGIS Patterns (discovered optimization patterns) ──
+export const aegisPatterns = mysqlTable("aegis_patterns", {
+  id: int("id").autoincrement().primaryKey(),
+  patternType: mysqlEnum("patternType", ["prompt", "decomposition", "quality", "anti_pattern", "cost", "caching"]).notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description").notNull(),
+  /** Pattern content (e.g., optimized prompt template, decomposition strategy) */
+  content: text("content"),
+  /** Task types this pattern applies to */
+  taskTypes: json("taskTypes").$type<string[]>(),
+  /** Effectiveness score (0-100) */
+  effectiveness: int("effectiveness").default(50).notNull(),
+  /** Number of times this pattern was applied */
+  applyCount: int("applyCount").default(0).notNull(),
+  /** Whether this pattern is active */
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AegisPattern = typeof aegisPatterns.$inferSelect;
+export type InsertAegisPattern = typeof aegisPatterns.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════
+// ATLAS Layer — Goal Decomposition, Planning, Execution, Budgets
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── ATLAS Goals (top-level objectives that get decomposed) ──
+export const atlasGoals = mysqlTable("atlas_goals", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }),
+  /** Goal description */
+  description: text("description").notNull(),
+  /** Decomposition strategy used */
+  strategy: varchar("strategy", { length: 64 }),
+  /** Goal status */
+  status: mysqlEnum("status", ["pending", "planning", "executing", "completed", "failed", "cancelled"]).default("pending").notNull(),
+  /** Progress percentage (0-100) */
+  progress: int("progress").default(0).notNull(),
+  /** Total cost in credits */
+  totalCost: int("totalCost").default(0).notNull(),
+  /** Average quality score across sub-tasks */
+  avgQuality: int("avgQuality"),
+  /** Budget limits */
+  maxSteps: int("maxSteps").default(20),
+  maxCostCredits: int("maxCostCredits").default(1000),
+  maxDurationMs: bigint("maxDurationMs", { mode: "number" }).default(300000),
+  /** Reflection/retrospective notes */
+  reflection: text("reflection"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+}, (table) => ({
+  userIdx: index("atlas_goals_user_idx").on(table.userId),
+  taskIdx: index("atlas_goals_task_idx").on(table.taskExternalId),
+}));
+export type AtlasGoal = typeof atlasGoals.$inferSelect;
+export type InsertAtlasGoal = typeof atlasGoals.$inferInsert;
+
+// ── ATLAS Plans (DAG of tasks for a goal) ──
+export const atlasPlans = mysqlTable("atlas_plans", {
+  id: int("id").autoincrement().primaryKey(),
+  goalId: int("goalId").notNull(),
+  /** Plan as JSON DAG: { nodes: [{id, taskId, dependsOn: []}], edges: [] } */
+  dag: json("dag").$type<{
+    nodes: Array<{ id: string; taskId: number; dependsOn: string[] }>;
+  }>().notNull(),
+  /** Plan status */
+  status: mysqlEnum("status", ["draft", "active", "completed", "failed"]).default("draft").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AtlasPlan = typeof atlasPlans.$inferSelect;
+export type InsertAtlasPlan = typeof atlasPlans.$inferInsert;
+
+// ── ATLAS Goal Tasks (individual sub-tasks within a goal) ──
+export const atlasGoalTasks = mysqlTable("atlas_goal_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  goalId: int("goalId").notNull(),
+  planId: int("planId"),
+  /** Task description */
+  description: text("description").notNull(),
+  /** Task type (from AEGIS classification) */
+  taskType: varchar("taskType", { length: 64 }),
+  /** Execution order within the plan */
+  executionOrder: int("executionOrder").default(0).notNull(),
+  /** Dependencies (IDs of other goal_tasks that must complete first) */
+  dependsOn: json("dependsOn").$type<number[]>(),
+  /** Task status */
+  status: mysqlEnum("status", ["pending", "running", "completed", "failed", "skipped"]).default("pending").notNull(),
+  /** LLM output */
+  output: text("output"),
+  /** Cost in credits */
+  costCredits: int("costCredits").default(0),
+  /** Quality score */
+  qualityScore: int("qualityScore"),
+  /** Provider used */
+  provider: varchar("provider", { length: 64 }),
+  /** AEGIS session ID (links to aegis_sessions) */
+  aegisSessionId: int("aegisSessionId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+}, (table) => ({
+  goalIdx: index("atlas_goal_tasks_goal_idx").on(table.goalId),
+}));
+export type AtlasGoalTask = typeof atlasGoalTasks.$inferSelect;
+export type InsertAtlasGoalTask = typeof atlasGoalTasks.$inferInsert;
+
+// ═══════════════════════════════════════════════════════════════════════
+// Sovereign Layer — Multi-Provider Routing, Circuit Breakers, Guardrails
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Sovereign Providers (registered LLM providers) ──
+export const sovereignProviders = mysqlTable("sovereign_providers", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull().unique(),
+  /** Provider type: openai, anthropic, google, local, custom */
+  providerType: varchar("providerType", { length: 64 }).notNull(),
+  /** Base URL for API calls */
+  baseUrl: text("baseUrl"),
+  /** Model identifier */
+  model: varchar("model", { length: 128 }).notNull(),
+  /** Cost per 1K input tokens (in millicredits) */
+  costPer1kInput: int("costPer1kInput").default(10).notNull(),
+  /** Cost per 1K output tokens (in millicredits) */
+  costPer1kOutput: int("costPer1kOutput").default(30).notNull(),
+  /** Max context window tokens */
+  maxContextTokens: int("maxContextTokens").default(128000),
+  /** Capabilities as JSON array */
+  capabilities: json("capabilities").$type<string[]>(),
+  /** Whether this provider is active */
+  isActive: int("isActive").default(1).notNull(),
+  /** Circuit breaker state */
+  circuitState: mysqlEnum("circuitState", ["closed", "open", "half_open"]).default("closed").notNull(),
+  /** Consecutive failure count */
+  consecutiveFailures: int("consecutiveFailures").default(0).notNull(),
+  /** When the circuit was last opened */
+  circuitOpenedAt: timestamp("circuitOpenedAt"),
+  /** Historical success rate (0-100) */
+  successRate: int("successRate").default(100).notNull(),
+  /** Average latency in ms */
+  avgLatencyMs: int("avgLatencyMs").default(1000),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SovereignProvider = typeof sovereignProviders.$inferSelect;
+export type InsertSovereignProvider = typeof sovereignProviders.$inferInsert;
+
+// ── Sovereign Routing Decisions (audit trail of routing choices) ──
+export const sovereignRoutingDecisions = mysqlTable("sovereign_routing_decisions", {
+  id: int("id").autoincrement().primaryKey(),
+  aegisSessionId: int("aegisSessionId"),
+  /** Task type that was routed */
+  taskType: varchar("taskType", { length: 64 }).notNull(),
+  /** Routing strategy used */
+  strategy: mysqlEnum("strategy", ["cheapest_viable", "balanced", "quality_maximized"]).default("balanced").notNull(),
+  /** Provider chosen */
+  chosenProvider: varchar("chosenProvider", { length: 128 }).notNull(),
+  /** Score that won the routing */
+  chosenScore: int("chosenScore"),
+  /** All candidates considered as JSON */
+  candidates: json("candidates").$type<Array<{ provider: string; score: number; reason: string }>>(),
+  /** Whether the routing was successful */
+  success: int("success").default(1).notNull(),
+  /** Fallback used? */
+  fallbackUsed: int("fallbackUsed").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SovereignRoutingDecision = typeof sovereignRoutingDecisions.$inferSelect;
+export type InsertSovereignRoutingDecision = typeof sovereignRoutingDecisions.$inferInsert;
+
+// ── Sovereign Provider Usage Logs (per-request metrics) ──
+export const sovereignUsageLogs = mysqlTable("sovereign_usage_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  providerId: int("providerId").notNull(),
+  aegisSessionId: int("aegisSessionId"),
+  /** Input tokens consumed */
+  inputTokens: int("inputTokens").default(0).notNull(),
+  /** Output tokens produced */
+  outputTokens: int("outputTokens").default(0).notNull(),
+  /** Cost in millicredits */
+  costMillicredits: int("costMillicredits").default(0).notNull(),
+  /** Latency in ms */
+  latencyMs: int("latencyMs").default(0).notNull(),
+  /** Whether the request succeeded */
+  success: int("success").default(1).notNull(),
+  /** Error message if failed */
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  providerIdx: index("sovereign_usage_provider_idx").on(table.providerId),
+}));
+export type SovereignUsageLog = typeof sovereignUsageLogs.$inferSelect;
+export type InsertSovereignUsageLog = typeof sovereignUsageLogs.$inferInsert;

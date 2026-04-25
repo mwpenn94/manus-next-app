@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 import { describe, expect, it } from "vitest";
 import * as fs from "fs";
 
@@ -7,7 +8,7 @@ import * as fs from "fs";
  */
 
 describe("Panel 13: Input length constraints", () => {
-  const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+  const routerCode = readRouterSource();
 
   it("skill.install has max length on all string inputs", () => {
     const installStart = routerCode.indexOf("install: protectedProcedure");
@@ -56,7 +57,7 @@ describe("Panel 13: Input length constraints", () => {
 });
 
 describe("Panel 13: Ownership checks (IDOR prevention)", () => {
-  const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+  const routerCode = readRouterSource();
 
   it("design.get checks userId ownership", () => {
     const getStart = routerCode.indexOf("design: router");

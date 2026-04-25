@@ -55,6 +55,7 @@ const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
 const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
 const MailManusPage = lazy(() => import("./pages/MailManusPage"));
 const QATestingPage = lazy(() => import("./pages/QATestingPage"));
+const SovereignDashboard = lazy(() => import("./pages/SovereignDashboard"));
 
 function PageLoader() {
   return (
@@ -217,6 +218,9 @@ function Router() {
       </Route>
       <Route path="/qa-testing">
         <SuspenseRoute><QATestingPage /></SuspenseRoute>
+      </Route>
+      <Route path="/sovereign">
+        <SuspenseRoute><SovereignDashboard /></SuspenseRoute>
       </Route>
 
       <Route path="/404" component={NotFound} />

@@ -1,0 +1,522 @@
+/**
+ * AEGIS Service — Pre/Post-Flight Pipeline
+ *
+ * Implements the full AEGIS middleware layer:
+ * - Task classification (heuristic + LLM-enhanced)
+ * - Semantic cache (SHA-256 prompt hashing)
+ * - Pre-flight: classify → cache check → pattern/fragment retrieval → prompt optimization → cost estimation
+ * - Post-flight: output validation → quality scoring → fragment extraction → lesson extraction
+ *
+ * Ported from atlas-hybrid/server/services/aegis.ts with adaptations for manus-next-app.
+ */
+
+import { createHash } from "crypto";
+import * as db from "../db";
+
+// ── Types ──
+
+export interface TaskClassification {
+  taskType: string;
+  complexity: "trivial" | "simple" | "moderate" | "complex" | "expert";
+  novelty: "routine" | "familiar" | "novel" | "unprecedented";
+  confidence: number;
+  estimatedTokens: number;
+  estimatedCost: number;
+}
+
+export interface PreFlightResult {
+  cached: boolean;
+  response?: string;
+  costSaved?: number;
+  classification: TaskClassification;
+  optimizedPrompt?: string;
+  improvements?: string[];
+  costEstimate?: number;
+  tokensUsed?: number;
+  sourcesIncluded?: number;
+  sessionId?: number;
+}
+
+export interface PostFlightResult {
+  validation: { isValid: boolean; issues: string[] };
+  quality: QualityScores;
+  fragments: number;
+  lessons: number;
+}
+
+export interface QualityScores {
+  completeness: number;
+  accuracy: number;
+  relevance: number;
+  clarity: number;
+  efficiency: number;
+  overall: number;
+}
+
+// ── Task Classification ──
+
+const TASK_TYPE_KEYWORDS: Record<string, string[]> = {
+  code: ["code", "function", "implement", "debug", "refactor", "typescript", "javascript", "python", "api", "endpoint", "class", "method"],
+  research: ["research", "analyze", "compare", "investigate", "study", "review", "survey", "literature", "paper"],
+  writing: ["write", "draft", "compose", "essay", "article", "blog", "report", "document", "summary"],
+  data: ["data", "csv", "json", "parse", "transform", "aggregate", "statistics", "chart", "visualization"],
+  design: ["design", "ui", "ux", "layout", "wireframe", "mockup", "prototype", "css", "style"],
+  planning: ["plan", "roadmap", "strategy", "timeline", "milestone", "schedule", "project"],
+  conversation: ["chat", "help", "explain", "what", "how", "why", "tell me"],
+};
+
+const COMPLEXITY_THRESHOLDS = {
+  trivial: 50,
+  simple: 150,
+  moderate: 500,
+  complex: 1500,
+  expert: Infinity,
+};
+
+export function classifyTask(prompt: string): TaskClassification {
+  const lower = prompt.toLowerCase();
+  const words = lower.split(/\s+/);
+  const wordCount = words.length;
+
+  // Determine task type by keyword matching
+  let bestType = "conversation";
+  let bestScore = 0;
+  for (const [type, keywords] of Object.entries(TASK_TYPE_KEYWORDS)) {
+    const score = keywords.reduce((acc, kw) => acc + (lower.includes(kw) ? 1 : 0), 0);
+    if (score > bestScore) {
+      bestScore = score;
+      bestType = type;
+    }
+  }
+
+  // Determine complexity by word count and keyword density
+  let complexity: TaskClassification["complexity"] = "trivial";
+  for (const [level, threshold] of Object.entries(COMPLEXITY_THRESHOLDS)) {
+    if (wordCount <= threshold) {
+      complexity = level as TaskClassification["complexity"];
+      break;
+    }
+  }
+
+  // Novelty heuristic: more specific/unique words = more novel
+  const uniqueRatio = new Set(words).size / Math.max(words.length, 1);
+  let novelty: TaskClassification["novelty"] = "routine";
+  if (uniqueRatio > 0.9) novelty = "novel";
+  else if (uniqueRatio > 0.75) novelty = "familiar";
+
+  // Confidence based on keyword match strength
+  const confidence = Math.min(bestScore / 3, 1);
+
+  // Token estimation: ~1.3 tokens per word for input, 2-5x for output
+  const estimatedTokens = Math.ceil(wordCount * 1.3);
+  const outputMultiplier = complexity === "trivial" ? 2 : complexity === "simple" ? 3 : complexity === "moderate" ? 4 : 5;
+  const estimatedCost = Math.ceil((estimatedTokens + estimatedTokens * outputMultiplier) * 0.003);
+
+  return { taskType: bestType, complexity, novelty, confidence, estimatedTokens, estimatedCost };
+}
+
+// ── Prompt Optimization ──
+
+export function optimizePrompt(prompt: string, taskType: string): { optimizedPrompt: string; improvements: string[] } {
+  const improvements: string[] = [];
+  let optimized = prompt;
+
+  // Add task-type-specific framing if not already present
+  if (taskType === "code" && !prompt.toLowerCase().includes("return")) {
+    optimized = `${optimized}\n\nPlease provide complete, working code with proper error handling.`;
+    improvements.push("Added code completeness instruction");
+  }
+  if (taskType === "research" && !prompt.toLowerCase().includes("source")) {
+    optimized = `${optimized}\n\nCite sources and provide evidence for claims.`;
+    improvements.push("Added source citation instruction");
+  }
+  if (taskType === "writing" && !prompt.toLowerCase().includes("tone")) {
+    optimized = `${optimized}\n\nUse a professional, clear tone.`;
+    improvements.push("Added tone guidance");
+  }
+
+  // Remove excessive whitespace
+  const before = optimized.length;
+  optimized = optimized.replace(/\s{3,}/g, "  ").trim();
+  if (optimized.length < before) {
+    improvements.push("Cleaned excessive whitespace");
+  }
+
+  return { optimizedPrompt: optimized, improvements };
+}
+
+// ── Semantic Cache ──
+
+export function hashPrompt(prompt: string): string {
+  const normalized = prompt.toLowerCase().replace(/\s+/g, " ").trim();
+  return createHash("sha256").update(normalized).digest("hex");
+}
+
+export async function checkCache(prompt: string): Promise<{ hit: boolean; response?: string; costSaved?: number }> {
+  const hash = hashPrompt(prompt);
+  const cached = await db.checkAegisCache(hash);
+  if (cached) {
+    return { hit: true, response: cached.response, costSaved: cached.costSavedPerHit };
+  }
+  return { hit: false };
+}
+
+export async function writeCache(prompt: string, response: string, taskType: string, costEstimate: number) {
+  const hash = hashPrompt(prompt);
+  const ttlHours = taskType === "conversation" ? 1 : taskType === "code" ? 24 : 12;
+  await db.writeAegisCache({
+    promptHash: hash,
+    prompt,
+    response,
+    taskType,
+    costSavedPerHit: costEstimate,
+    expiresAt: new Date(Date.now() + ttlHours * 3600000),
+  });
+}
+
+// ── Cost Estimation ──
+
+export function estimateCost(classification: TaskClassification): number {
+  const baseCost = classification.estimatedTokens * 0.003;
+  const complexityMultiplier = {
+    trivial: 1,
+    simple: 1.5,
+    moderate: 2.5,
+    complex: 4,
+    expert: 6,
+  }[classification.complexity];
+  return Math.ceil(baseCost * complexityMultiplier);
+}
+
+// ── Context Assembly ──
+
+export async function assembleContext(
+  optimizedPrompt: string,
+  patterns: Awaited<ReturnType<typeof db.getPatterns>>,
+  fragments: Awaited<ReturnType<typeof db.getFragments>>
+): Promise<{ assembledPrompt: string; tokensUsed: number; sourcesIncluded: number }> {
+  let assembled = optimizedPrompt;
+  let sourcesIncluded = 0;
+
+  // Inject relevant patterns as system guidance
+  if (patterns.length > 0) {
+    const patternContext = patterns.map((p) => `[Pattern: ${p.name}] ${p.description}`).join("\n");
+    assembled = `${patternContext}\n\n${assembled}`;
+    sourcesIncluded += patterns.length;
+  }
+
+  // Inject relevant fragments as reference material
+  if (fragments.length > 0) {
+    const fragmentContext = fragments.slice(0, 3).map((f) => `[Reference: ${f.fragmentType}] ${f.content.slice(0, 500)}`).join("\n");
+    assembled = `${assembled}\n\n---\nRelevant context:\n${fragmentContext}`;
+    sourcesIncluded += fragments.length;
+  }
+
+  const tokensUsed = Math.ceil(assembled.split(/\s+/).length * 1.3);
+  return { assembledPrompt: assembled, tokensUsed, sourcesIncluded };
+}
+
+// ── Quality Scoring ──
+
+export function scoreQuality(output: string, taskType: string): QualityScores {
+  const length = output.length;
+  const words = output.split(/\s+/).length;
+
+  // Completeness: longer outputs tend to be more complete (with diminishing returns)
+  const completeness = Math.min(Math.round((words / 200) * 100), 100);
+
+  // Accuracy: presence of specific markers (code blocks, citations, numbers)
+  let accuracy = 50;
+  if (taskType === "code" && (output.includes("```") || output.includes("function") || output.includes("const "))) accuracy += 30;
+  if (taskType === "research" && (output.includes("http") || output.includes("[") || /\d{4}/.test(output))) accuracy += 30;
+  if (output.includes("error") || output.includes("Error")) accuracy -= 10;
+  accuracy = Math.max(0, Math.min(accuracy, 100));
+
+  // Relevance: hard to measure without the prompt, default to moderate
+  const relevance = Math.min(70 + Math.round(words / 100), 100);
+
+  // Clarity: sentence structure, paragraph breaks, formatting
+  const hasParagraphs = (output.match(/\n\n/g) || []).length > 0;
+  const hasFormatting = output.includes("**") || output.includes("##") || output.includes("- ");
+  let clarity = 50;
+  if (hasParagraphs) clarity += 20;
+  if (hasFormatting) clarity += 15;
+  if (words > 50 && words < 2000) clarity += 15;
+  clarity = Math.min(clarity, 100);
+
+  // Efficiency: conciseness relative to content
+  const efficiency = words < 50 ? 90 : words < 500 ? 80 : words < 1500 ? 70 : 60;
+
+  const overall = Math.round((completeness + accuracy + relevance + clarity + efficiency) / 5);
+
+  return { completeness, accuracy, relevance, clarity, efficiency, overall };
+}
+
+// ── Output Validation ──
+
+export function validateOutput(output: string, taskType: string): { isValid: boolean; issues: string[] } {
+  const issues: string[] = [];
+
+  if (!output || output.trim().length === 0) {
+    issues.push("Empty output");
+    return { isValid: false, issues };
+  }
+
+  if (output.length < 10) {
+    issues.push("Output too short (< 10 chars)");
+  }
+
+  if (taskType === "code") {
+    // Check for common code issues
+    if (output.includes("TODO") || output.includes("FIXME")) {
+      issues.push("Contains TODO/FIXME markers");
+    }
+    // Check for unclosed brackets (simple heuristic)
+    const opens = (output.match(/\{/g) || []).length;
+    const closes = (output.match(/\}/g) || []).length;
+    if (Math.abs(opens - closes) > 2) {
+      issues.push("Potentially unclosed brackets");
+    }
+  }
+
+  if (taskType === "research" && output.length < 200) {
+    issues.push("Research output seems too brief");
+  }
+
+  return { isValid: issues.length === 0, issues };
+}
+
+// ── Fragment Extraction ──
+
+export function fragmentOutput(output: string, taskType: string): { fragments: Array<{ type: string; content: string; hash: string }> } {
+  const fragments: Array<{ type: string; content: string; hash: string }> = [];
+
+  // Extract code blocks
+  const codeBlocks = output.match(/```[\s\S]*?```/g) || [];
+  for (const block of codeBlocks.slice(0, 5)) {
+    const content = block.replace(/```\w*\n?/g, "").trim();
+    if (content.length > 20) {
+      fragments.push({
+        type: "code",
+        content,
+        hash: createHash("sha256").update(content).digest("hex").slice(0, 16),
+      });
+    }
+  }
+
+  // Extract key sentences (first sentence of each paragraph)
+  const paragraphs = output.split(/\n\n+/).filter((p) => p.trim().length > 50);
+  for (const para of paragraphs.slice(0, 3)) {
+    const firstSentence = para.split(/[.!?]/)[0]?.trim();
+    if (firstSentence && firstSentence.length > 20) {
+      fragments.push({
+        type: taskType,
+        content: firstSentence,
+        hash: createHash("sha256").update(firstSentence).digest("hex").slice(0, 16),
+      });
+    }
+  }
+
+  return { fragments };
+}
+
+// ── Lesson Extraction ──
+
+export function extractLessons(sessionMeta: {
+  taskType: string;
+  qualityScore: number;
+  costCredits: number;
+  latencyMs: number;
+  cacheHit: boolean;
+  status: string;
+}): Array<{ lessonType: string; description: string; impact: string }> {
+  const lessons: Array<{ lessonType: string; description: string; impact: string }> = [];
+
+  if (sessionMeta.qualityScore < 40) {
+    lessons.push({
+      lessonType: "quality_issue",
+      description: `Low quality score (${sessionMeta.qualityScore}) for ${sessionMeta.taskType} task. Consider adding more specific instructions or examples.`,
+      impact: "high",
+    });
+  }
+
+  if (sessionMeta.costCredits > 100) {
+    lessons.push({
+      lessonType: "cost_optimization",
+      description: `High cost (${sessionMeta.costCredits} credits) for ${sessionMeta.taskType} task. Consider caching or decomposition.`,
+      impact: "medium",
+    });
+  }
+
+  if (sessionMeta.latencyMs > 30000) {
+    lessons.push({
+      lessonType: "latency_issue",
+      description: `High latency (${sessionMeta.latencyMs}ms) for ${sessionMeta.taskType} task. Consider simpler models or caching.`,
+      impact: "medium",
+    });
+  }
+
+  if (sessionMeta.cacheHit) {
+    lessons.push({
+      lessonType: "cache_effective",
+      description: `Cache hit for ${sessionMeta.taskType} — caching strategy is working.`,
+      impact: "low",
+    });
+  }
+
+  if (sessionMeta.status === "failed") {
+    lessons.push({
+      lessonType: "failure_analysis",
+      description: `Task failed for ${sessionMeta.taskType}. Review error handling and retry logic.`,
+      impact: "high",
+    });
+  }
+
+  return lessons;
+}
+
+// ── Normalization ──
+
+function normalizeQualityScore(score: number): number {
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Main Pipeline Functions
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Pre-flight pipeline: classify → cache check → pattern/fragment retrieval → prompt optimization → cost estimation → context assembly
+ */
+export async function runPreFlight(prompt: string, userId: number, taskExternalId?: string): Promise<PreFlightResult> {
+  const classification = classifyTask(prompt);
+
+  // Check semantic cache
+  const cacheResult = await checkCache(prompt);
+  if (cacheResult.hit) {
+    // Record the cached session
+    const sessionId = await db.createAegisSession({
+      userId,
+      taskExternalId,
+      taskType: classification.taskType,
+      complexity: classification.complexity,
+      cacheHit: 1,
+      costCredits: 0,
+      status: "cached",
+    });
+    return {
+      cached: true,
+      response: cacheResult.response,
+      costSaved: cacheResult.costSaved,
+      classification,
+      sessionId,
+    };
+  }
+
+  // Retrieve relevant patterns and fragments
+  const relevantPatterns = await db.getPatterns({
+    patternType: classification.taskType as any,
+    isActive: true,
+    limit: 3,
+  });
+  const relevantFragments = await db.getFragments({
+    fragmentType: classification.taskType,
+    limit: 3,
+  });
+
+  // Optimize prompt
+  const { optimizedPrompt, improvements } = optimizePrompt(prompt, classification.taskType);
+
+  // Estimate cost
+  const costEstimate = estimateCost(classification);
+
+  // Assemble context
+  const context = await assembleContext(optimizedPrompt, relevantPatterns, relevantFragments);
+
+  // Create session record
+  const sessionId = await db.createAegisSession({
+    userId,
+    taskExternalId,
+    taskType: classification.taskType,
+    complexity: classification.complexity,
+    cacheHit: 0,
+    costCredits: costEstimate,
+    status: "pending",
+  });
+
+  return {
+    cached: false,
+    classification,
+    optimizedPrompt: context.assembledPrompt,
+    improvements,
+    costEstimate,
+    tokensUsed: context.tokensUsed,
+    sourcesIncluded: context.sourcesIncluded,
+    sessionId,
+  };
+}
+
+/**
+ * Post-flight pipeline: output validation → quality scoring → fragment extraction → lesson extraction → DB persistence
+ */
+export async function runPostFlight(
+  sessionId: number,
+  output: string,
+  taskType: string,
+  costCredits: number
+): Promise<PostFlightResult> {
+  const validation = validateOutput(output, taskType);
+  const quality = scoreQuality(output, taskType);
+  const fragResult = fragmentOutput(output, taskType);
+  const lessonsList = extractLessons({
+    taskType,
+    qualityScore: quality.overall,
+    costCredits,
+    latencyMs: 0,
+    cacheHit: false,
+    status: validation.isValid ? "completed" : "failed",
+  });
+
+  // Persist quality score
+  await db.createQualityScore({
+    sessionId,
+    completeness: normalizeQualityScore(quality.completeness),
+    accuracy: normalizeQualityScore(quality.accuracy),
+    relevance: normalizeQualityScore(quality.relevance),
+    clarity: normalizeQualityScore(quality.clarity),
+    efficiency: normalizeQualityScore(quality.efficiency),
+    overallScore: normalizeQualityScore(quality.overall),
+    validationPassed: validation.isValid ? 1 : 0,
+    validationErrors: validation.issues,
+  });
+
+  // Persist fragments
+  for (const frag of fragResult.fragments) {
+    await db.createFragment({
+      sessionId,
+      fragmentType: frag.type,
+      content: frag.content,
+      contentHash: frag.hash,
+      taskTypes: [taskType],
+    });
+  }
+
+  // Persist lessons
+  for (const lesson of lessonsList) {
+    await db.createLesson({
+      sessionId,
+      lessonType: lesson.lessonType,
+      taskType,
+      description: lesson.description,
+      impact: lesson.impact,
+    });
+  }
+
+  // Update session status
+  await db.updateAegisSession(sessionId, {
+    status: validation.isValid ? "completed" : "failed",
+    costCredits,
+  });
+
+  return { validation, quality, fragments: fragResult.fragments.length, lessons: lessonsList.length };
+}

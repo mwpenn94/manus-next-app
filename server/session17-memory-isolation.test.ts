@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Session 17 Tests — Memory Isolation, Extraction Quality, Credit Banner, Templates
  *
@@ -347,10 +348,7 @@ describe("Template CRUD backend", () => {
   let dbSource: string;
 
   beforeEach(() => {
-    routersSource = readFileSync(
-      resolve(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    routersSource = readRouterSource();
     dbSource = readFileSync(
       resolve(__dirname, "db.ts"),
       "utf-8"

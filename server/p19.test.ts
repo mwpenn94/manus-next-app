@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * P19 Tests — Platform Hardening + UX Enhancements
  *
@@ -63,7 +64,7 @@ describe("P19-2: Knowledge base file upload", () => {
   });
 
   it("memory.bulkAdd procedure exists in routers", () => {
-    const routers = fs.readFileSync(path.join(ROOT, "server", "routers.ts"), "utf-8");
+    const routers = readRouterSource();
     expect(routers).toContain("bulkAdd");
   });
 

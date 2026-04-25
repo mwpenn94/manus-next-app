@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Cycle 4 Phase C — GitHub CRUD→Preview→Publish + Browser/CDP QA with Virtual Users
  *
@@ -208,37 +209,37 @@ describe("Deploy from GitHub → Live URL", () => {
 
     it("deployFromGitHub fetches repo tree from GitHub", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("getRepoTree");
     });
 
     it("deployFromGitHub searches multiple paths for index.html", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("searchPaths");
     });
 
     it("deployFromGitHub uploads to S3", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("storagePut");
     });
 
     it("deployFromGitHub rewrites asset URLs", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("assetUrlMap");
     });
 
     it("deployFromGitHub creates deployment record", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("createWebappDeployment");
     });
 
     it("deployFromGitHub returns publishedUrl", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain("publishedUrl");
     });
   });
@@ -671,7 +672,7 @@ describe("Device Automation", () => {
 
     it("browser.navigate accepts browserType in input", async () => {
       const fs = await import("fs");
-      const source = fs.readFileSync("server/routers.ts", "utf-8");
+      const source = readRouterSource();
       expect(source).toContain('browserType: z.enum(["chromium", "firefox", "webkit"])');
     });
   });

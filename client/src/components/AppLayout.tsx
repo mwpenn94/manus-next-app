@@ -691,6 +691,7 @@ function AppsGridMenu({ location }: { location: string }) {
 
   const items = useMemo(() => {
     const all = [
+      { href: "/sovereign", label: "Sovereign AI", icon: "🏛️" },
       { href: "/analytics", label: "Analytics", icon: "📊" },
       { href: "/memory", label: "Memory", icon: "🧠" },
       { href: "/schedule", label: "Schedules", icon: "📅" },
@@ -1387,6 +1388,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <CommandItem value="Home" onSelect={() => { navigate("/"); setSearchOpen(false); }}>
               <Globe className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
               Home
+            </CommandItem>
+            <CommandItem value="Sovereign AI" onSelect={() => { navigate("/sovereign"); setSearchOpen(false); }}>
+              🏛️ Sovereign AI
             </CommandItem>
             <CommandItem value="Analytics" onSelect={() => { navigate("/analytics"); setSearchOpen(false); }}>
               <BarChart3 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />

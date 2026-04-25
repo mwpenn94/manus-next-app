@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as fs from "fs";
+import { readRouterSource } from "./test-utils/readRouterSource";
 
 /**
  * GDPR Compliance Tests — Panel 16 Fix Verification
@@ -14,14 +15,14 @@ describe("GDPR deleteAllData completeness", () => {
   });
 
   it("should delete from ALL user-owned tables in routers.ts", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
 
     // Extract the deleteAllData procedure body
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
     expect(deleteStart).toBeGreaterThan(-1);
 
     // Get the procedure body (from start to next procedure or closing)
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 5000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
 
     // All tables that have a userId column (direct ownership)
     const directUserTables = [
@@ -83,18 +84,18 @@ describe("GDPR deleteAllData completeness", () => {
   });
 
   it("should delete teams owned by user (ownerId)", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 5000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
 
     expect(deleteBody).toContain("teams.ownerId");
     expect(deleteBody).toContain("db.delete(teams)");
   });
 
   it("should remove user from teams they are a member of", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 5000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
 
     // Should delete teamMembers by userId (for teams user is a member of, not owner)
     expect(deleteBody).toContain("teamMembers");
@@ -102,9 +103,9 @@ describe("GDPR deleteAllData completeness", () => {
   });
 
   it("should delete in correct dependency order (children before parents)", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 5000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
 
     // taskMessages must be deleted before tasks
     const msgDeletePos = deleteBody.indexOf("db.delete(taskMessages)");
@@ -134,9 +135,9 @@ describe("GDPR deleteAllData completeness", () => {
   });
 
   it("should notify owner after deletion", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 5000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
 
     expect(deleteBody).toContain("notifyOwner");
     expect(deleteBody).toContain("GDPR Data Deletion");
@@ -150,7 +151,7 @@ describe("GDPR exportData completeness", () => {
   });
 
   it("should export from ALL user-owned tables", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const exportStart = routerCode.indexOf("exportData: protectedProcedure");
     const exportBody = routerCode.slice(exportStart, exportStart + 5000);
 
@@ -185,7 +186,7 @@ describe("GDPR exportData completeness", () => {
   });
 
   it("should redact sensitive fields in export", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const exportStart = routerCode.indexOf("exportData: protectedProcedure");
     const exportBody = routerCode.slice(exportStart, exportStart + 5000);
 
@@ -198,7 +199,7 @@ describe("GDPR exportData completeness", () => {
   });
 
   it("should upload export to S3 and return URL", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const exportStart = routerCode.indexOf("exportData: protectedProcedure");
     const exportBody = routerCode.slice(exportStart, exportStart + 6000);
 
@@ -208,7 +209,7 @@ describe("GDPR exportData completeness", () => {
   });
 
   it("should include team data in export", () => {
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
     const exportStart = routerCode.indexOf("exportData: protectedProcedure");
     const exportBody = routerCode.slice(exportStart, exportStart + 5000);
 
@@ -220,7 +221,7 @@ describe("GDPR exportData completeness", () => {
 describe("Schema table coverage verification", () => {
   it("all schema tables with userId should be in deleteAllData", () => {
     const schemaCode = fs.readFileSync("drizzle/schema.ts", "utf-8");
-    const routerCode = fs.readFileSync("server/routers.ts", "utf-8");
+    const routerCode = readRouterSource();
 
     // Find all table definitions
     const tableMatches = schemaCode.matchAll(/export const (\w+) = mysqlTable/g);
@@ -239,7 +240,7 @@ describe("Schema table coverage verification", () => {
 
     // Get the deleteAllData body
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 5000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
 
     // Every table with userId/ownerId should be referenced in deleteAllData
     for (const table of tablesWithUserId) {

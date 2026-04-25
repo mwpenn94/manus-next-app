@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2184,4 +2184,243 @@ export async function getPreferredStrategyOrder(
   }
 
   return order;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// AEGIS Layer — DB Helpers
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function createAegisSession(session: InsertAegisSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(aegisSessions).values(session);
+  return result[0].insertId;
+}
+
+export async function updateAegisSession(id: number, data: Partial<InsertAegisSession>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(aegisSessions).set(data).where(eq(aegisSessions.id, id));
+}
+
+export async function getAegisSession(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(aegisSessions).where(eq(aegisSessions.id, id)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function createQualityScore(score: InsertAegisQualityScore) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(aegisQualityScores).values(score);
+}
+
+export async function checkAegisCache(promptHash: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(aegisCache)
+    .where(and(eq(aegisCache.promptHash, promptHash), gte(aegisCache.expiresAt, new Date())))
+    .limit(1);
+  if (result[0]) {
+    await db.update(aegisCache).set({
+      hitCount: sql`${aegisCache.hitCount} + 1`,
+      lastHitAt: new Date(),
+    }).where(eq(aegisCache.id, result[0].id));
+    return result[0];
+  }
+  return null;
+}
+
+export async function writeAegisCache(entry: InsertAegisCache) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(aegisCache).values(entry).onDuplicateKeyUpdate({
+    set: { response: entry.response, expiresAt: entry.expiresAt, hitCount: 0 },
+  });
+}
+
+export async function createFragment(fragment: InsertAegisFragment) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(aegisFragments).values(fragment);
+}
+
+export async function getFragments(opts: { fragmentType?: string; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (opts.fragmentType) conditions.push(eq(aegisFragments.fragmentType, opts.fragmentType));
+  const query = conditions.length > 0
+    ? db.select().from(aegisFragments).where(and(...conditions)).orderBy(desc(aegisFragments.useCount)).limit(opts.limit ?? 5)
+    : db.select().from(aegisFragments).orderBy(desc(aegisFragments.useCount)).limit(opts.limit ?? 5);
+  return query;
+}
+
+export async function createLesson(lesson: InsertAegisLesson) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(aegisLessons).values(lesson);
+}
+
+export async function getPatterns(opts: { patternType?: string; isActive?: boolean; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (opts.patternType) conditions.push(eq(aegisPatterns.patternType, opts.patternType as any));
+  if (opts.isActive !== undefined) conditions.push(eq(aegisPatterns.isActive, opts.isActive ? 1 : 0));
+  const query = conditions.length > 0
+    ? db.select().from(aegisPatterns).where(and(...conditions)).orderBy(desc(aegisPatterns.effectiveness)).limit(opts.limit ?? 5)
+    : db.select().from(aegisPatterns).orderBy(desc(aegisPatterns.effectiveness)).limit(opts.limit ?? 5);
+  return query;
+}
+
+export async function createPattern(pattern: InsertAegisPattern) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(aegisPatterns).values(pattern);
+}
+
+export async function getAegisSessionStats(userId: number, days: number = 30) {
+  const db = await getDb();
+  if (!db) return null;
+  const since = new Date(Date.now() - days * 86400000);
+  const result = await db.select({
+    totalSessions: sql<number>`COUNT(*)`,
+    cacheHits: sql<number>`SUM(${aegisSessions.cacheHit})`,
+    totalCost: sql<number>`SUM(${aegisSessions.costCredits})`,
+    avgLatency: sql<number>`AVG(${aegisSessions.latencyMs})`,
+  }).from(aegisSessions)
+    .where(and(eq(aegisSessions.userId, userId), gte(aegisSessions.createdAt, since)));
+  return result[0] ?? null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ATLAS Layer — DB Helpers
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function createAtlasGoal(goal: InsertAtlasGoal) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(atlasGoals).values(goal);
+  const result = await db.select().from(atlasGoals).where(eq(atlasGoals.externalId, goal.externalId!)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getAtlasGoal(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(atlasGoals).where(eq(atlasGoals.externalId, externalId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function updateAtlasGoal(id: number, data: Partial<InsertAtlasGoal>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(atlasGoals).set(data).where(eq(atlasGoals.id, id));
+}
+
+export async function getUserGoals(userId: number, opts?: { limit?: number; status?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(atlasGoals.userId, userId)];
+  if (opts?.status) conditions.push(eq(atlasGoals.status, opts.status as any));
+  return db.select().from(atlasGoals).where(and(...conditions)).orderBy(desc(atlasGoals.createdAt)).limit(opts?.limit ?? 20);
+}
+
+export async function createAtlasPlan(plan: InsertAtlasPlan) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(atlasPlans).values(plan);
+  return result[0].insertId;
+}
+
+export async function createGoalTask(task: InsertAtlasGoalTask) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(atlasGoalTasks).values(task);
+  return result[0].insertId;
+}
+
+export async function getGoalTasks(goalId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(atlasGoalTasks).where(eq(atlasGoalTasks.goalId, goalId)).orderBy(asc(atlasGoalTasks.executionOrder));
+}
+
+export async function updateGoalTask(id: number, data: Partial<InsertAtlasGoalTask>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(atlasGoalTasks).set(data).where(eq(atlasGoalTasks.id, id));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Sovereign Layer — DB Helpers
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function getActiveProviders() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sovereignProviders).where(eq(sovereignProviders.isActive, 1));
+}
+
+export async function getProvider(name: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(sovereignProviders).where(eq(sovereignProviders.name, name)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function upsertProvider(provider: InsertSovereignProvider) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(sovereignProviders).values(provider).onDuplicateKeyUpdate({
+    set: {
+      baseUrl: provider.baseUrl,
+      model: provider.model,
+      costPer1kInput: provider.costPer1kInput,
+      costPer1kOutput: provider.costPer1kOutput,
+      isActive: provider.isActive,
+      capabilities: provider.capabilities,
+    },
+  });
+}
+
+export async function updateProviderCircuit(id: number, data: {
+  circuitState: "closed" | "open" | "half_open";
+  consecutiveFailures: number;
+  circuitOpenedAt?: Date | null;
+  successRate?: number;
+  avgLatencyMs?: number;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(sovereignProviders).set(data).where(eq(sovereignProviders.id, id));
+}
+
+export async function createRoutingDecision(decision: InsertSovereignRoutingDecision) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(sovereignRoutingDecisions).values(decision);
+}
+
+export async function createUsageLog(log: InsertSovereignUsageLog) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(sovereignUsageLogs).values(log);
+}
+
+export async function getProviderUsageStats(providerId: number, days: number = 7) {
+  const db = await getDb();
+  if (!db) return null;
+  const since = new Date(Date.now() - days * 86400000);
+  const result = await db.select({
+    totalRequests: sql<number>`COUNT(*)`,
+    successCount: sql<number>`SUM(${sovereignUsageLogs.success})`,
+    totalCost: sql<number>`SUM(${sovereignUsageLogs.costMillicredits})`,
+    avgLatency: sql<number>`AVG(${sovereignUsageLogs.latencyMs})`,
+  }).from(sovereignUsageLogs)
+    .where(and(eq(sovereignUsageLogs.providerId, providerId), gte(sovereignUsageLogs.createdAt, since)));
+  return result[0] ?? null;
 }

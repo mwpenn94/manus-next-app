@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Session 18 Tests — Context Bleed from Older Chats
  *
@@ -322,7 +323,7 @@ describe("Stale task auto-completion", () => {
   });
 
   it("should have a tRPC endpoint for manual stale sweep", () => {
-    const routersSource = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+    const routersSource = readRouterSource();
     expect(routersSource).toContain("sweepStale:");
     expect(routersSource).toContain("sweepStaleTasks");
   });

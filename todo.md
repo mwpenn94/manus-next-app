@@ -2541,7 +2541,7 @@
 - [x] Memory deduplication: prevent duplicate memories from being stored
 - [x] CloudFront custom error pages (404, 500, 403, 502, 503)
 - [x] Coverage metrics configuration (vitest coverage with @vitest/coverage-v8)
-- [x] Split routers.ts: directory structure created (server/routers/); full split deferred as it requires updating all test imports and is a refactoring-only change with no functional impact
+- [x] Split routers.ts: 4,136→2,545 lines. Extracted 7 routers (task, file, bridge, preferences, webappProject, branches, browser) into server/routers/. Updated 15 test files to use readRouterSource(). 0 TS errors, all tests pass.
 - [x] Decompose TaskView.tsx: component extraction is a refactoring-only change with no functional impact; current component works correctly (deferred to code quality sprint)
 
 ### Feature Maturity Elevation (Level 3→5, Level 4→5)
@@ -4227,3 +4227,52 @@
 - [x] FIX: Add Search to MobileBottomNav More menu for mobile users
 - [x] FIX: Make "+" button show DropdownMenu with New Project + New Task
 - [x] FIX: Remove conflicting Ctrl+K handler from Home.tsx
+
+## Recursive Optimization Pass — Real Code Changes
+
+### P1: Router Splitting (routers.ts → modular files)
+- [x] Create server/routers/ directory structure
+- [x] Extract task router (286 lines)
+- [x] Extract file router (48 lines)
+- [x] Extract bridge router (24 lines)
+- [x] Extract preferences router (29 lines)
+- [x] Extract webappProject router (844 lines)
+- [x] Extract branches router (154 lines)
+- [x] Extract browser router (288 lines)
+- [x] Update routers.ts to import and compose all 7 sub-routers (4,136→2,545 lines)
+- [x] Create readRouterSource() test utility for aggregated string scanning
+- [x] Update 15 test files to use readRouterSource()
+- [x] Verify all tests still pass after split
+- [x] Verify TypeScript compiles with 0 errors after split
+- [ ] Extract remaining routers (gdpr, usage, workspace, voice, llm, memory, share, schedule, replay, notification, project, skill, slides, connector, meeting, team, webapp, design, device, mobileProject, appPublish, payment, video, github)
+
+### P1: Bug Fixes from Live App Testing
+- [ ] Browse live app and identify real bugs
+- [ ] Fix each bug found
+
+### P2: Mobile Responsive Audit
+- [ ] Test all pages at 375px viewport width
+- [ ] Fix any overflow, truncation, or layout issues found
+
+### P2: Loading Skeleton Consistency
+- [ ] Audit all pages for loading state handling
+- [ ] Add Skeleton components where pages show blank during data fetch
+
+### P2: Add Tests for Uncovered Code Paths
+- [ ] Identify untested router procedures
+- [ ] Write tests for uncovered paths
+
+## 4-Layer Agent Stack Integration (New Meta-Prompt)
+- [x] Finish router refactor — extracted 7 routers (task, file, bridge, preferences, webappProject, branches, browser) from monolith (4,136→2,545 lines)
+- [x] Clone and analyze aegis-hybrid, atlas-hybrid, sovereign-hybrid reference repos
+- [ ] Phase A: Write holistic recursive optimization toolkit (tools/recursive_optimization_toolkit.cjs)
+- [ ] Phase A: Drive integration spec to convergence with expert panel + VU reviews
+- [x] Phase B: AEGIS layer integration (12 new schema tables, service layer, tRPC router, dashboard UI)
+- [x] Phase B: ATLAS kernel integration (goal decomposition, DAG execution, budget guards, reflection)
+- [x] Phase B: Sovereign routing integration (circuit breakers, guardrails, failover, provider management)
+- [x] Phase B: Cross-layer integration tests (40 tests for AEGIS/ATLAS/Sovereign + GDPR compliance)
+- [ ] Phase B: Class E founder validation against built code (12 personas, gap rate ≤10%)
+- [ ] Phase B: Required artifacts (CLAUDE.md, COMPREHENSIVE_GUIDE.md, OPTIMIZATION_LEDGER.md, ledger.json, Dockerfile, ecosystem.config.cjs)
+- [ ] Phase C: Deploy to production, stabilize, run Class E founder workflows
+- [ ] Phase D: Set up Class F VUs (VU-36 through VU-42) as scheduled tasks
+- [ ] Phase D: Implement recursive loop machinery (VU-41 triage + VU-42 convergence verifier)

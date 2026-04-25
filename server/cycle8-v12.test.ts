@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
@@ -44,7 +45,7 @@ describe("Phase A: Chat Resilience", () => {
   });
 
   it("A5: resumeStale procedure exists in routers", () => {
-    const routers = fs.readFileSync(path.join(ROOT, "server/routers.ts"), "utf-8");
+    const routers = readRouterSource();
     expect(routers).toContain("resumeStale");
   });
 });
@@ -94,7 +95,7 @@ describe("Phase C: Branch & TTS Features", () => {
   });
 
   it("C2: Task duplicate/fork procedure exists", () => {
-    const routers = fs.readFileSync(path.join(ROOT, "server/routers.ts"), "utf-8");
+    const routers = readRouterSource();
     expect(routers).toContain("duplicate");
   });
 
@@ -137,7 +138,7 @@ describe("Phase D: GitHub Deploy Tab", () => {
   });
 
   it("D5: deployFromGitHub procedure exists in routers", () => {
-    const routers = fs.readFileSync(path.join(ROOT, "server/routers.ts"), "utf-8");
+    const routers = readRouterSource();
     expect(routers).toContain("deployFromGitHub");
   });
 });
@@ -180,7 +181,7 @@ describe("Phase E: QA Testing Page", () => {
   });
 
   it("E8: cleanupTestArtifacts procedure exists", () => {
-    const routers = fs.readFileSync(path.join(ROOT, "server/routers.ts"), "utf-8");
+    const routers = readRouterSource();
     expect(routers).toContain("cleanupTestArtifacts");
   });
 });

@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * confirmation-gate-persistence.test.ts
  *
@@ -202,7 +203,7 @@ describe("Content Persistence — tRPC addMessage accepts cardType/cardData", ()
   let routersContent: string;
 
   beforeEach(() => {
-    routersContent = readFileSync(routersPath, "utf-8");
+    routersContent = readRouterSource();
   });
 
   it("addMessage procedure accepts cardType in input schema", () => {
