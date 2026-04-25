@@ -66,7 +66,7 @@ export default function FeedbackWidget() {
     <Card className="fixed right-4 z-40 w-[calc(100vw-2rem)] max-w-80 shadow-2xl border-border bg-card bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6 md:right-6">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm">Send Feedback</CardTitle>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)} aria-label="Close feedback">
           <X className="w-4 h-4" />
         </Button>
       </CardHeader>

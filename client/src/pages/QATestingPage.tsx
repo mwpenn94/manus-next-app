@@ -10,7 +10,7 @@
  * - Performance metrics
  * - Visual regression testing
  */
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -114,6 +114,20 @@ export default function QATestingPage() {
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
   const [tab, setTab] = useState<"scenarios" | "accessibility" | "performance" | "visual">("scenarios");
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Elapsed time counter for running tests
+  useEffect(() => {
+    if (runningId) {
+      setElapsedMs(0);
+      timerRef.current = setInterval(() => setElapsedMs(prev => prev + 100), 100);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [runningId]);
 
   // Accessibility audit
   const [auditUrl, setAuditUrl] = useState("");
@@ -364,7 +378,7 @@ export default function QATestingPage() {
                       size="sm"
                     >
                       {runningId === activeScenario.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Play className="w-3 h-3 mr-1" />}
-                      Run
+                      {runningId === activeScenario.id ? `${(elapsedMs / 1000).toFixed(1)}s` : "Run"}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => deleteScenario(activeScenario.id)}>
                       <Trash2 className="w-3 h-3" />

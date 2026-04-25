@@ -10,6 +10,7 @@ import { lazy, Suspense } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import OnboardingTooltips from "./components/OnboardingTooltips";
+import AnimatedRoute from "./components/AnimatedRoute";
 
 // Eagerly loaded
 import Home from "./pages/Home";
@@ -64,7 +65,7 @@ function PageLoader() {
 }
 
 function SuspenseRoute({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+  return <Suspense fallback={<PageLoader />}><AnimatedRoute>{children}</AnimatedRoute></Suspense>;
 }
 
 /** C8-F3/F4: Admin-only route wrapper — shows "No permission" for non-admin users */

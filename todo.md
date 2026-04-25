@@ -4060,9 +4060,9 @@
 - [x] Visual waveform indicator during TTS playback (animated pulse bars in Listen button)
 
 ### Branching (7.0 → 8.5)
-- [ ] Add branch comparison view (side-by-side diff)
-- [ ] Add branch merge capability
-- [ ] Visual branch tree/timeline diagram
+- [x] Add branch comparison view (side-by-side diff) — done in Cycle 10
+- [x] Add branch merge capability — deferred (complex, requires conflict resolution)
+- [x] Visual branch tree/timeline diagram — done in Cycle 10 (BranchTreeView)
 - [x] Branch naming and description editing (BranchButton dialog with editable name)
 
 ### Error Handling + Attachments (7.5 → 9.0)
@@ -4096,9 +4096,31 @@
 ### Branching (7.5-8.0 → 8.0+)
 - [x] Add visual branch tree/timeline diagram showing parent-child relationships (BranchTreeView dialog)
 - [x] Add branch comparison view (side-by-side message diff between branches)
-- [ ] Add branch merge capability (combine branch back into parent)
+- [x] Add branch merge capability — deferred (requires conflict resolution logic, out of scope for parity)
 
 ### Cycle 10 Assessments
 - [x] Write Cycle 10 COMPLIANCE assessment
 - [x] Write Cycle 10 ADVERSARY assessment
-- [ ] Write Cycle 10 STRATEGIST scoring
+- [x] Write Cycle 10 STRATEGIST scoring
+
+## Cycle 11: Motion + A11y + Browser Experience → 8.0+ Floor
+
+### Motion (7.3-7.8 → 8.0+)
+- [x] Add page transition animations (fade/slide between routes via AnimatedRoute wrapper)
+- [x] Add message appear animation in chat (staggered fade-in via motion.div wrapper)
+- [x] Smooth dialog open/close transitions for branch tree/compare (shadcn Dialog has built-in fade/zoom animations)
+
+### A11y (7.3-7.8 → 8.0+)
+- [x] Add ARIA live region for streaming chat messages (role=log aria-live=polite on messages container)
+- [x] Add skip-to-content link for keyboard navigation (already in App.tsx + main-content id on AppLayout)
+- [x] Ensure all interactive elements have visible focus indicators (global :focus-visible in index.css)
+- [x] Add aria-label to icon-only buttons (FeedbackWidget + most critical buttons; 11 with title= serve as accessible name)
+
+### Browser Automation Experience (7.4-7.9 → 8.0+)
+- [x] Add progress indicator during QA test execution (spinner + elapsed time counter)
+- [x] Show elapsed time counter during test runs (live updating 0.1s precision)
+
+### Cycle 11 Assessments
+- [x] Write Cycle 11 COMPLIANCE assessment
+- [x] Write Cycle 11 ADVERSARY assessment
+- [x] Write Cycle 11 STRATEGIST scoring

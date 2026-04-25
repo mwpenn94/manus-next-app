@@ -3652,7 +3652,7 @@ export default function TaskView() {
           scrollRef={scrollRef}
         />
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain" role="log" aria-live="polite" aria-label="Chat messages" aria-relevant="additions">
           {/* During streaming, hide card-type messages that were added mid-stream
               (convergence, system_notice, context_compressed) to prevent scattered
               progress indicators. They stay in the message list for history. */}
@@ -3660,8 +3660,14 @@ export default function TaskView() {
             ? task.messages.filter(m => !m.cardType || ["webapp_preview", "webapp_deployed", "confirmation_gate", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output", "system_notice"].includes(m.cardType))
             : task.messages
           ).map((msg, i) => (
-            <MessageBubble
+            <motion.div
               key={msg.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15, delay: Math.min(i * 0.02, 0.3) }}
+            >
+            <MessageBubble
+              key={`bubble-${msg.id}`}
               message={msg}
               isLast={i === task.messages.length - 1}
               canRegenerate={!streaming && msg.role === "assistant" && i === task.messages.length - 1}
@@ -3707,6 +3713,7 @@ export default function TaskView() {
                 }
               } : undefined}
             />
+            </motion.div>
           ))}
           {isTyping && <TypingIndicator />}
           {streaming && (
