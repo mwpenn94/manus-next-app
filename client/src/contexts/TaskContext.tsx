@@ -78,6 +78,7 @@ export interface Task {
   messagesLoaded?: boolean; // Whether server messages have been hydrated
   autoStreamed?: boolean; // Whether the initial auto-stream has been triggered for this task
   favorite?: number; // 0 = not favorited, 1 = favorited (synced from server)
+  projectId?: number | null; // Associated project ID
 }
 
 interface TaskContextValue {
@@ -144,6 +145,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         serverId: st.id,
         messagesLoaded: false,
         favorite: st.favorite ?? 0,
+        projectId: st.projectId ?? null,
       }));
       setTasks((prev) => {
         const existingIds = new Set(prev.map((t) => t.id));

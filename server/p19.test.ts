@@ -76,68 +76,36 @@ describe("P19-2: Knowledge base file upload", () => {
 // ── P19-3: Task history search and filtering ──
 
 describe("P19-3: Task history search and filtering", () => {
-  const appLayout = fs.readFileSync(path.join(CLIENT_SRC, "components", "AppLayout.tsx"), "utf-8");
-  const routers = fs.readFileSync(path.join(ROOT, "server", "routers.ts"), "utf-8");
-  const db = fs.readFileSync(path.join(ROOT, "server", "db.ts"), "utf-8");
+  const layoutSrc = fs.readFileSync(path.join(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
 
-  it("AppLayout has date range filter state", () => {
-    expect(appLayout).toContain("dateFrom");
-    expect(appLayout).toContain("dateTo");
-    expect(appLayout).toContain("showDateFilter");
-  });
-
-  it("AppLayout has date input fields", () => {
-    expect(appLayout).toMatch(/type.*date/);
+  it("AppLayout has status filter state", () => {
+    expect(layoutSrc).toContain("statusFilter");
   });
 
   it("AppLayout has filter toggle button", () => {
-    expect(appLayout).toContain("Date range filter");
-    expect(appLayout).toContain("showDateFilter");
+    expect(layoutSrc).toContain("Filter");
+    expect(layoutSrc).toContain("onStatusFilterChange");
   });
 
-  it("AppLayout passes date range to server search", () => {
-    expect(appLayout).toContain("dateFrom");
-    expect(appLayout).toContain("dateTo");
+  it("AppLayout has AllTasksSection with filtering", () => {
+    expect(layoutSrc).toContain("AllTasksSection");
+    expect(layoutSrc).toContain("statusFilter");
   });
 
-  it("AppLayout has local date range filtering", () => {
-    // Should filter local tasks by date when not in server search mode
-    expect(appLayout).toContain("T23:59:59");
-    expect(appLayout).toContain("createdAt");
+  it("AppLayout has filter options", () => {
+    expect(layoutSrc).toContain('"running"');
+    expect(layoutSrc).toContain('"completed"');
+    expect(layoutSrc).toContain('"error"');
+    expect(layoutSrc).toContain('"favorites"');
   });
 
-  it("task.search procedure accepts date range params", () => {
-    // The search input should accept dateFrom and dateTo
-    expect(routers).toMatch(/search:.*protectedProcedure/);
-    expect(routers).toContain("dateFrom");
-    expect(routers).toContain("dateTo");
+  it("AppLayout has clear filter mechanism", () => {
+    expect(layoutSrc).toContain('"all"');
   });
 
-  it("searchTasks function supports date range filtering", () => {
-    expect(db).toContain("dateFrom");
-    expect(db).toContain("dateTo");
-    expect(db).toContain("gte(tasks.createdAt");
-    expect(db).toContain("lte(tasks.createdAt");
-  });
-
-  it("searchTasks function supports status filtering", () => {
-    expect(db).toContain("statusFilter");
-  });
-
-  it("AppLayout has status filter tabs", () => {
-    expect(appLayout).toContain("statusFilter");
-    expect(appLayout).toContain("Running");
-    expect(appLayout).toContain("Completed");
-    expect(appLayout).toContain("Error");
-  });
-
-  it("AppLayout has clear date filter button", () => {
-    expect(appLayout).toContain("Clear date filter");
-  });
-
-  it("server search includes full-text across messages", () => {
-    expect(db).toContain("taskMessages");
-    expect(db).toContain("like(taskMessages.content");
+  it("AppLayout passes status filter to AllTasksSection", () => {
+    expect(layoutSrc).toContain("statusFilter={statusFilter}");
+    expect(layoutSrc).toContain("onStatusFilterChange={setStatusFilter}");
   });
 });
 

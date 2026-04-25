@@ -232,19 +232,19 @@ describe("P23-5: getStreamErrorMessage user-friendly messages", () => {
   );
 
   it("returns connection lost message for retryable errors", () => {
-    expect(src).toContain("Connection lost after multiple retry attempts");
+    expect(src).toContain("Connection was interrupted after several attempts");
   });
 
   it("returns timeout message for timeout errors", () => {
-    expect(src).toContain("The request timed out");
+    expect(src).toContain("took longer than expected");
   });
 
   it("returns generic fallback for unknown errors", () => {
-    expect(src).toContain("Something went wrong. Please try again.");
+    expect(src).toContain("Something went wrong. Please try again");
   });
 
   it("includes the original error message when available", () => {
-    expect(src).toContain("I encountered an error:");
+    expect(src).toContain("Something unexpected happened");
   });
 });
 

@@ -53,6 +53,8 @@ import {
   getProjectByExternalId,
   updateProject,
   deleteProject,
+  toggleProjectPin,
+  reorderProjects,
   getProjectTasks,
   assignTaskToProject,
   addProjectKnowledge,
@@ -1204,6 +1206,23 @@ export const appRouter = router({
         const project = await getProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         await deleteProject(project.id);
+        return { success: true };
+      }),
+    pin: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        await toggleProjectPin(project.id);
+        return { success: true };
+      }),
+    reorder: protectedProcedure
+      .input(z.object({ orderedExternalIds: z.array(z.string()) }))
+      .mutation(async ({ ctx, input }) => {
+        const userProjects = await getUserProjects(ctx.user.id);
+        const idMap = new Map(userProjects.map(p => [p.externalId, p.id]));
+        const orderedIds = input.orderedExternalIds.map(eid => idMap.get(eid)).filter((id): id is number => id !== undefined);
+        await reorderProjects(ctx.user.id, orderedIds);
         return { success: true };
       }),
     tasks: protectedProcedure

@@ -113,32 +113,24 @@ describe("Cycle 7 Phase A: Page Components Exist", () => {
 });
 
 describe("Cycle 7 Phase B: Sidebar Navigation", () => {
-  it("Has SIDEBAR_SECTIONS constant", () => {
-    expect(LAYOUT_TSX).toContain("SIDEBAR_SECTIONS");
+  it("Has SidebarProjectTree component", () => {
+    expect(LAYOUT_TSX).toContain("function SidebarProjectTree");
   });
 
-  it("Has 3 sections: Manus, Tools, More", () => {
-    expect(LAYOUT_TSX).toContain('label: "Manus"');
-    expect(LAYOUT_TSX).toContain('label: "Tools"');
-    expect(LAYOUT_TSX).toContain('label: "More"');
+  it("Has AllTasksSection component", () => {
+    expect(LAYOUT_TSX).toContain("function AllTasksSection");
   });
 
-  it("Tools section is collapsible", () => {
-    const toolsMatch = LAYOUT_TSX.match(/label:\s*"Tools"[\s\S]*?collapsible:\s*true/);
-    expect(toolsMatch).not.toBeNull();
+  it("Has AppsGridMenu for tools", () => {
+    expect(LAYOUT_TSX).toContain("function AppsGridMenu");
   });
 
-  it("More section is collapsible", () => {
-    const moreMatch = LAYOUT_TSX.match(/label:\s*"More"[\s\S]*?collapsible:\s*true/);
-    expect(moreMatch).not.toBeNull();
+  it("SidebarProjectTree component exists", () => {
+    expect(LAYOUT_TSX).toContain("SidebarProjectTree");
   });
 
-  it("SidebarNav component exists", () => {
-    expect(LAYOUT_TSX).toContain("function SidebarNav");
-  });
-
-  it("SidebarNavLink component exists", () => {
-    expect(LAYOUT_TSX).toContain("function SidebarNavLink");
+  it("AllTasksSection component exists", () => {
+    expect(LAYOUT_TSX).toContain("AllTasksSection");
   });
 
   it("Has ChevronDown/ChevronRight for collapse", () => {
@@ -147,15 +139,13 @@ describe("Cycle 7 Phase B: Sidebar Navigation", () => {
   });
 
   it("Auto-expands section on active route", () => {
-    expect(LAYOUT_TSX).toContain("hasActiveItem");
-    expect(LAYOUT_TSX).toContain("expandedSections");
+    expect(LAYOUT_TSX).toContain("hasActiveChild");
+    expect(LAYOUT_TSX).toContain("expanded");
   });
 
-  const sidebarItems = [
+  const appsGridItems = [
     { href: "/analytics", label: "Analytics" },
     { href: "/memory", label: "Memory" },
-    { href: "/projects", label: "Projects" },
-    { href: "/library", label: "Library" },
     { href: "/schedule", label: "Schedules" },
     { href: "/browser", label: "Browser" },
     { href: "/github", label: "GitHub" },
@@ -167,17 +157,12 @@ describe("Cycle 7 Phase B: Sidebar Navigation", () => {
     { href: "/discover", label: "Discover" },
     { href: "/team", label: "Team" },
     { href: "/meetings", label: "Meetings" },
-    { href: "/webhooks", label: "Webhooks" },
     { href: "/deployed-websites", label: "Websites" },
     { href: "/desktop", label: "Desktop" },
-    { href: "/connect-device", label: "Devices" },
-    { href: "/mobile-projects", label: "Mobile" },
-    { href: "/client-inference", label: "Inference" },
-    { href: "/mail", label: "Mail" },
-    { href: "/data-controls", label: "Data Controls" },
+    { href: "/billing", label: "Billing" },
   ];
 
-  for (const item of sidebarItems) {
+  for (const item of appsGridItems) {
     it(`Sidebar has "${item.label}" at ${item.href}`, () => {
       expect(LAYOUT_TSX).toContain(`href: "${item.href}"`);
       expect(LAYOUT_TSX).toContain(`label: "${item.label}"`);
@@ -187,10 +172,10 @@ describe("Cycle 7 Phase B: Sidebar Navigation", () => {
 
 describe("Cycle 7 Phase B: Icon Imports", () => {
   const requiredIcons = [
-    "GitBranch", "Plug", "Zap", "Presentation", "Video",
-    "Webhook", "ChevronDown", "ChevronRight", "Compass",
-    "Smartphone", "MonitorPlay", "Mail", "Shield",
-    "MessageSquare", "Cpu", "Laptop", "Upload",
+    "LayoutGrid", "FolderOpen", "ChevronDown", "ChevronRight",
+    "MoreHorizontal", "Share2", "Pencil", "ExternalLink",
+    "FolderInput", "FolderMinus", "FileText", "Crosshair",
+    "Copy", "BookOpen", "Filter", "Star", "Trash2",
   ];
 
   for (const icon of requiredIcons) {
@@ -224,8 +209,8 @@ describe("Cycle 7 Phase C: Integration Checks", () => {
     }
   });
 
-  it("SidebarNav is used in AppLayout", () => {
-    expect(LAYOUT_TSX).toContain("<SidebarNav");
+  it("SidebarProjectTree is used in AppLayout", () => {
+    expect(LAYOUT_TSX).toContain("<SidebarProjectTree");
   });
 
   it("Total route count is 35+", () => {
@@ -233,9 +218,9 @@ describe("Cycle 7 Phase C: Integration Checks", () => {
     expect(routeMatches.length).toBeGreaterThanOrEqual(35);
   });
 
-  it("Total sidebar items count is 23", () => {
-    const hrefMatches = LAYOUT_TSX.match(/href: "\//g) || [];
-    expect(hrefMatches.length).toBeGreaterThanOrEqual(23);
+  it("Total AppsGridMenu items count is 16+", () => {
+    const hrefMatches = LAYOUT_TSX.match(/href: "\/[^"]*"/g) || [];
+    expect(hrefMatches.length).toBeGreaterThanOrEqual(16);
   });
 });
 

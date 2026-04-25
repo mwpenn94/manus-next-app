@@ -269,6 +269,10 @@ export const projects = mysqlTable("projects", {
   systemPrompt: text("systemPrompt"),
   /** Project icon emoji or URL */
   icon: varchar("icon", { length: 128 }),
+  /** Pinned to top of sidebar */
+  pinned: int("pinned").default(0).notNull(),
+  /** Sort order for manual reordering */
+  sortOrder: int("sortOrder").default(0).notNull(),
   /** Archived flag */
   archived: int("archived").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -290,12 +290,8 @@ describe("Credit warning banner", () => {
   });
 
   it("should be integrated into AppLayout", () => {
-    const layoutSource = readFileSync(
-      resolve(__dirname, "../client/src/components/AppLayout.tsx"),
-      "utf-8"
-    );
-    expect(layoutSource).toContain("CreditWarningBanner");
-    expect(layoutSource).toContain("Credit exhaustion warning banner");
+    const layoutSrc = readFileSync(resolve(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
+    expect(layoutSrc).toContain("CreditWarningBanner");
   });
 
   it("should dispatch credit-exhausted event from SSE error handler", () => {

@@ -106,6 +106,7 @@ import SandboxViewer from "@/components/SandboxViewer";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
 import GitHubBadge from "@/components/GitHubBadge";
+import ResizableDivider, { useWorkspaceDivider } from "@/components/ResizableDivider";
 import VoiceRecordingUI, { VoiceWaveStyles } from "@/components/VoiceRecordingUI";
 import { useTTS } from "@/hooks/useTTS";
 import BrowserAuthCard from "@/components/BrowserAuthCard";
@@ -2061,6 +2062,8 @@ export default function TaskView() {
       return next;
     });
   }, []);
+  const { ratio: workspaceRatio, updateRatio: updateWorkspaceRatio } = useWorkspaceDivider();
+  const splitContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
@@ -3029,9 +3032,12 @@ export default function TaskView() {
   const isFavorited = taskQuery.data?.favorite === 1;
 
   return (
-    <div className="h-full flex flex-col md:flex-row">
+    <div ref={splitContainerRef} className="h-full flex flex-col md:flex-row">
       {/* ── CONVERSATION PANEL ── */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+      <div
+        className="flex-1 flex flex-col min-w-0 min-h-0"
+        style={desktopWorkspaceOpen ? { flex: `0 0 ${workspaceRatio * 100}%`, maxWidth: `${workspaceRatio * 100}%` } : undefined}
+      >
         {/* Task Header */}
         <div className="h-12 flex items-center justify-between px-3 md:px-5 border-b border-border shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -4156,21 +4162,22 @@ export default function TaskView() {
         </div>
       </div>
 
-      {/* ── WORKSPACE PANEL (Desktop) ── */}
-      <AnimatePresence initial={false}>
-        {desktopWorkspaceOpen && (
-          <motion.div
+      {/* ── RESIZABLE DIVIDER + WORKSPACE PANEL (Desktop) ── */}
+      {desktopWorkspaceOpen && (
+        <>
+          <ResizableDivider
+            containerRef={splitContainerRef}
+            onRatioChange={updateWorkspaceRatio}
             className="hidden md:block"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: "auto", opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
+          />
+          <div
+            className="hidden md:flex flex-col min-w-0 min-h-0"
+            style={{ flex: `0 0 ${(1 - workspaceRatio) * 100}%`, maxWidth: `${(1 - workspaceRatio) * 100}%` }}
           >
             <ErrorBoundary><WorkspacePanel task={task} bridgeStatus={bridgeStatus} /></ErrorBoundary>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </>
+      )}
 
       {/* ── WORKSPACE PANEL (Mobile) ── */}
       <AnimatePresence>

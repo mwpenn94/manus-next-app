@@ -120,9 +120,14 @@ describe("P25 — System/Auto Theme", () => {
     });
 
     it("uses preference for icon selection", () => {
-      expect(layout).toContain("preference === 'system'");
-      expect(layout).toContain("preference === 'light'");
-    });
+    const layoutSrc = readFileSync(resolve(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
+    // Bottom bar theme toggle uses preference to select icon
+    expect(layoutSrc).toContain('preference === "system"');
+    expect(layoutSrc).toContain('preference === "light"');
+    expect(layoutSrc).toContain("Monitor");
+    expect(layoutSrc).toContain("Sun");
+    expect(layoutSrc).toContain("Moon");
+  });
 
     it("shows Monitor icon for system mode", () => {
       expect(layout).toContain("<Monitor");

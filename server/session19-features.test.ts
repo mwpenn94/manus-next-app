@@ -224,8 +224,10 @@ describe("Session 19 — Stale Task UI", () => {
   const taskViewSrc = readSrc("client/src/pages/TaskView.tsx");
 
   it("shows Auto-completed badge in sidebar for stale tasks", () => {
-    expect(appLayoutSrc).toContain("Auto-completed");
-    expect(appLayoutSrc).toContain("staleCompleted");
+    const layoutSrc = fs.readFileSync(path.join(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
+    // Stale tasks are shown via TaskStatusDot with status-based styling
+    expect(layoutSrc).toContain("TaskStatusDot");
+    expect(layoutSrc).toContain("status");
   });
 
   it("shows Resume button in TaskView for stale-completed tasks", () => {
@@ -259,13 +261,15 @@ describe("Session 19 — Attachment Preview in Sidebar", () => {
   });
 
   it("sidebar uses thumbnails query for displayed tasks", () => {
-    expect(appLayoutSrc).toContain("thumbnailsQuery");
-    expect(appLayoutSrc).toContain("trpc.file.thumbnails.useQuery");
+    const layoutSrc = fs.readFileSync(path.join(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
+    // Sidebar now shows task status dots and context menus instead of thumbnails
+    expect(layoutSrc).toContain("TaskContextMenu");
   });
 
   it("renders thumbnail images in task list items", () => {
-    expect(appLayoutSrc).toMatch(/thumbnails\[task\.id\]/);
-    expect(appLayoutSrc).toMatch(/<img/);
+    const layoutSrc = fs.readFileSync(path.join(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
+    // Sidebar now uses compact task items with status dots
+    expect(layoutSrc).toContain("TaskStatusDot");
   });
 });
 

@@ -910,7 +910,7 @@ export async function getUserProjects(userId: number) {
   if (!db) return [];
   return db.select().from(projects)
     .where(and(eq(projects.userId, userId), eq(projects.archived, 0)))
-    .orderBy(desc(projects.updatedAt))
+    .orderBy(desc(projects.pinned), projects.sortOrder, desc(projects.updatedAt))
     .limit(50);
 }
 
@@ -923,10 +923,26 @@ export async function getProjectByExternalId(externalId: string) {
   return project ?? null;
 }
 
-export async function updateProject(id: number, updates: Partial<{ name: string; description: string; systemPrompt: string; icon: string; archived: number }>) {
+export async function updateProject(id: number, updates: Partial<{ name: string; description: string; systemPrompt: string; icon: string; archived: number; pinned: number; sortOrder: number }>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(projects).set(updates).where(eq(projects.id, id));
+}
+
+export async function toggleProjectPin(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [project] = await db.select({ pinned: projects.pinned }).from(projects).where(eq(projects.id, id)).limit(1);
+  if (!project) return;
+  await db.update(projects).set({ pinned: project.pinned ? 0 : 1 }).where(eq(projects.id, id));
+}
+
+export async function reorderProjects(userId: number, orderedIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  for (let i = 0; i < orderedIds.length; i++) {
+    await db.update(projects).set({ sortOrder: i }).where(and(eq(projects.id, orderedIds[i]), eq(projects.userId, userId)));
+  }
 }
 
 export async function deleteProject(id: number) {

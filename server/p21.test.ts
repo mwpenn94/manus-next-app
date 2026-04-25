@@ -193,9 +193,10 @@ describe("P21-3 — Dashboard Analytics Frontend", () => {
   });
 
   it("Analytics nav entry exists in sidebar", () => {
-    expect(layout).toContain('href="/analytics"');
-    expect(layout).toContain("Analytics");
-    expect(layout).toContain("BarChart3");
+    const layoutSrc = readFileSync(resolve(root, "client/src/components/AppLayout.tsx"), "utf8");
+    // Analytics is now in the AppsGridMenu dropdown
+    expect(layoutSrc).toContain("/analytics");
+    expect(layoutSrc).toContain("Analytics");
   });
 });
 

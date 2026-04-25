@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { appRouter } from "./routers";
 import fs from "fs";
+import path from "path";
 
 const mockUser = { id: 1, openId: "test-user", role: "admin" as const, name: "Test" };
 
@@ -241,13 +242,13 @@ describe("P32: Routes & Navigation", () => {
   });
 
   it("AppLayout sidebar has Manus-aligned nav items", () => {
-    const content = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
-    expect(content).toContain('href="/analytics"');
-    expect(content).toContain('href="/memory"');
-    expect(content).toContain('href="/projects"');
-    expect(content).toContain('href="/library"');
-    expect(content).toContain('href="/schedule"');
-    // Extraneous sidebar items (Deployed Websites, Mail Manus, Data Controls) removed for Manus alignment
+    const layoutSrc = fs.readFileSync(path.join(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
+    // New sidebar has top nav items + AppsGridMenu
+    expect(layoutSrc).toContain("New task");
+    expect(layoutSrc).toContain("Agent");
+    expect(layoutSrc).toContain("Search");
+    expect(layoutSrc).toContain("Library");
+    expect(layoutSrc).toContain("AppsGridMenu");
   });
 });
 

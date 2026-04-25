@@ -23,9 +23,10 @@ describe("Cycle 12 — UI Component & Layout Parity Fixes", () => {
     });
 
     it("auth section is pinned at bottom with shrink-0", () => {
-      expect(src).toContain("Auth Section");
-      expect(src).toContain("border-t border-sidebar-border shrink-0");
-    });
+    const layoutSrc = readFileSync(join(ROOT, "client/src/components/AppLayout.tsx"), "utf8");
+    // Bottom icon bar is pinned with shrink-0
+    expect(layoutSrc).toContain("shrink-0 bg-sidebar");
+  });
 
     it("SidebarNav no longer has max-h-[40vh] constraint", () => {
       expect(src).not.toContain("max-h-[40vh]");

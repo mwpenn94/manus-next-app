@@ -4156,3 +4156,64 @@
 ## Cycle 13: Recursive Expert Assessment — Pass 2 Fixes
 - [x] Increase onboarding backdrop opacity from /40 to /60
 - [x] Write and pass Cycle 13 vitest tests (8 tests, all passing)
+
+## Cycle 14: Resizable Workspace Divider + Manus Projects Feature
+
+### Resizable Workspace Divider
+- [x] Add draggable splitter between conversation and workspace panels
+- [x] Persist divider position to localStorage
+- [x] Handle edge cases (min widths 25%, max 75%, double-click reset to 50%)
+
+### Manus Projects Feature — Database
+- [x] Add `projects` table to drizzle schema (id, userId, name, instructions, pinned, sortOrder, createdAt, updatedAt)
+- [x] Add `projectFiles` table to drizzle schema (id, projectId, fileName, fileUrl, fileKey, mimeType, size, createdAt)
+- [x] Add `projectId` nullable foreign key to `tasks` table
+- [x] Run pnpm db:push to sync schema
+
+### Manus Projects Feature — Server
+- [x] Add project CRUD procedures (create, update, delete, list, get)
+- [x] Add project.pin toggle procedure
+- [x] Add project.reorder procedure
+- [x] Add project.addFile / removeFile procedures
+- [x] Add project task count to list query
+
+### Manus Projects Feature — UI
+- [x] Add "PROJECTS" section in sidebar with collapsible project list
+- [x] Create Project dialog/modal (name + instructions)
+- [x] Project settings page with Instructions and Files tabs
+- [x] Sidebar project tree with nested tasks (Cycle 14 REVISED)
+- [x] Pin/unpin projects in sidebar
+- [x] Create task within project context (auto-assign projectId)
+
+### Expert Assessment Passes
+- [x] Pass 1: Expert assessment after implementation
+- [x] Pass 2+: Recursive convergence until 2 consecutive clean passes
+
+## Cycle 14 (REVISED): Real Manus Projects Sidebar — Tree Structure
+### Based on actual user screenshots — NOT guessing
+- [x] Restructure sidebar: replace flat task list with project tree + nested tasks
+- [x] Projects section header ("Projects" label + "+" create button)
+- [x] Collapsible project tree nodes (folder icon, expand/collapse chevron)
+- [x] Tasks nested under parent project with left indentation
+- [x] Task-type-specific icons (running circle, completed check, document, gear)
+- [x] "..." context menu on hover for each task in the tree
+- [x] Standalone tasks (no project) appear below projects section
+- [x] Keep existing flat task panel as overlay/drawer (for search/filter across all tasks)
+- [x] Resizable workspace divider (conversation ↔ workspace)
+- [x] Expert assessment passes until convergence
+
+## Cycle 14 Implementation Details (Sidebar Restructure)
+- [x] Rewrite SidebarProjects: collapsible project folders with nested task children
+- [x] Top nav items: New task, Agent, Search (Ctrl+K), Library
+- [x] Projects section header with "+" create button
+- [x] Task status icons: animated blue circle (running), document (completed), alert (error)
+- [x] "..." context menu on hover for each task (Share, Rename, Favorites, Open in tab, Move to project, Remove, Delete)
+- [x] "All tasks" section at bottom of scrollable area with filter icon
+- [x] Share banner: "Share Manus with a friend - Get 500 credits each"
+- [x] Bottom icon bar: settings, grid/apps, monitor + "from Meta" text
+- [x] Move SidebarNav items to grid/apps dropdown or settings
+- [x] Active task highlighted with bg-sidebar-accent
+- [x] TypeScript check: zero errors
+- [x] All vitest tests passing (109/110, 1 OOM crash in sandbox)
+- [x] Expert assessment Pass 1
+- [x] Expert assessment Pass 2 (convergence confirmed)

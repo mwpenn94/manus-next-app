@@ -35,6 +35,10 @@ import {
   Settings2,
   Loader2,
   FolderPlus,
+  Pin,
+  PinOff,
+  BookOpen,
+  MessageSquarePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -76,6 +80,14 @@ export default function ProjectsPage() {
     onSuccess: () => {
       projectsQuery.refetch();
       toast.success("Project archived");
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  const pinMutation = trpc.project.pin.useMutation({
+    onSuccess: () => {
+      projectsQuery.refetch();
+      toast.success("Pin toggled");
     },
     onError: (err) => { toast.error(err.message); },
   });
@@ -221,9 +233,17 @@ export default function ProjectsPage() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); pinMutation.mutate({ externalId: project.externalId }); }}>
+                              {project.pinned ? <PinOff className="w-3.5 h-3.5 mr-2" /> : <Pin className="w-3.5 h-3.5 mr-2" />}
+                              {project.pinned ? "Unpin" : "Pin to sidebar"}
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(project); }}>
                               <Pencil className="w-3.5 h-3.5 mr-2" />
                               Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/project/${project.externalId}`); }}>
+                              <BookOpen className="w-3.5 h-3.5 mr-2" />
+                              Knowledge base
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/project/${project.externalId}/settings`); }}>
                               <Settings2 className="w-3.5 h-3.5 mr-2" />
@@ -251,6 +271,12 @@ export default function ProjectsPage() {
                           <FileText className="w-3 h-3" />
                           {getProjectTaskCount(project.id)} tasks
                         </span>
+                        {project.pinned === 1 && (
+                          <span className="flex items-center gap-1 text-primary/70">
+                            <Pin className="w-3 h-3" />
+                            Pinned
+                          </span>
+                        )}
                         {project.systemPrompt && (
                           <span className="flex items-center gap-1">
                             <Settings2 className="w-3 h-3" />

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { appRouter } from "./routers";
 import fs from "fs";
+import path from "path";
 
 const mockUser = { id: 1, openId: "test-user", role: "admin" as const, name: "Test" };
 
@@ -39,23 +40,23 @@ describe("P33: Routes registered in App.tsx", () => {
 
 // ── P33: Sidebar Navigation (Manus alignment — extraneous items removed) ──
 describe("P33: Sidebar navigation entries", () => {
-  const layoutContent = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
+  const layoutSrc = fs.readFileSync(path.join(__dirname, "../client/src/components/AppLayout.tsx"), "utf8");
 
-  it("has Manus-aligned nav items (Analytics, Memory, Projects, Library, Schedules)", () => {
-    expect(layoutContent).toContain('href="/analytics"');
-    expect(layoutContent).toContain('href="/memory"');
-    expect(layoutContent).toContain('href="/projects"');
-    expect(layoutContent).toContain('href="/library"');
-    expect(layoutContent).toContain('href="/schedule"');
+  it("has Manus-aligned nav items (New task, Agent, Search, Library)", () => {
+    expect(layoutSrc).toContain("New task");
+    expect(layoutSrc).toContain("Agent");
+    expect(layoutSrc).toContain("Search");
+    expect(layoutSrc).toContain("Library");
   });
 
-  it("does NOT have extraneous nav items (Discover, Webhooks)", () => {
-    expect(layoutContent).not.toContain('href="/discover"');
-    expect(layoutContent).not.toContain('href="/webhooks"');
+  it("has AppsGridMenu with tools (Analytics, Memory, Schedules)", () => {
+    expect(layoutSrc).toContain("Analytics");
+    expect(layoutSrc).toContain("Memory");
+    expect(layoutSrc).toContain("Schedules");
   });
 
-  it("user avatar links to profile", () => {
-    expect(layoutContent).toContain('navigate("/profile")');
+  it("user avatar section exists in bottom bar", () => {
+    expect(layoutSrc).toContain("UserInitials");
   });
 });
 
