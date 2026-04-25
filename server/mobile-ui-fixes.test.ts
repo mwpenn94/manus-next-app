@@ -136,3 +136,91 @@ describe("TaskView mobile mode selector pill removed", () => {
     expect(taskView).toContain("mode is controlled via ModelSelector in header");
   });
 });
+
+// ── 6. PlusMenu includes GitHub Repos and Hands-free Mode items ──
+describe("PlusMenu includes GitHub Repos and Hands-free Mode items", () => {
+  const plusMenu = fs.readFileSync("client/src/components/PlusMenu.tsx", "utf-8");
+
+  it("has GitHub Repos menu item with GitBranch icon", () => {
+    expect(plusMenu).toContain('"github-repos"');
+    expect(plusMenu).toContain('"GitHub Repos"');
+    expect(plusMenu).toContain("GitBranch");
+  });
+
+  it("has Hands-free mode menu item with Headphones icon", () => {
+    expect(plusMenu).toContain('"hands-free"');
+    expect(plusMenu).toContain('"Hands-free mode"');
+    expect(plusMenu).toContain("Headphones");
+  });
+
+  it("GitHub Repos routes to /github", () => {
+    expect(plusMenu).toContain('route: "/github"');
+  });
+
+  it("Hands-free mode calls onToggleHandsFree callback", () => {
+    expect(plusMenu).toContain("onToggleHandsFree");
+    expect(plusMenu).toContain('item.id === "hands-free"');
+  });
+
+  it("PlusMenu accepts onToggleHandsFree prop", () => {
+    expect(plusMenu).toContain("onToggleHandsFree?: () => void");
+  });
+});
+
+// ── 7. TaskView conversation panel has mobile width override ──
+describe("TaskView conversation panel mobile width override", () => {
+  const taskView = fs.readFileSync("client/src/pages/TaskView.tsx", "utf-8");
+
+  it("has data-workspace-constrained attribute on conversation panel", () => {
+    expect(taskView).toContain("data-workspace-constrained");
+  });
+
+  it("has CSS media query override for mobile (<768px)", () => {
+    expect(taskView).toContain("@media (max-width: 767px)");
+    expect(taskView).toContain("[data-workspace-constrained]");
+  });
+
+  it("overrides flex and max-width to full width on mobile", () => {
+    expect(taskView).toContain("flex: 1 1 auto !important");
+    expect(taskView).toContain("max-width: 100% !important");
+  });
+
+  it("only applies data-workspace-constrained when workspace is open", () => {
+    expect(taskView).toContain('data-workspace-constrained={desktopWorkspaceOpen ? "true" : undefined}');
+  });
+});
+
+// ── 8. TaskView PlusMenu wires onToggleHandsFree ──
+describe("TaskView PlusMenu wires onToggleHandsFree", () => {
+  const taskView = fs.readFileSync("client/src/pages/TaskView.tsx", "utf-8");
+
+  it("passes onToggleHandsFree to PlusMenu in TaskView", () => {
+    expect(taskView).toContain("onToggleHandsFree=");
+    // Should wire to handsFree activate/deactivate
+    expect(taskView).toContain("handsFree.deactivate()");
+    expect(taskView).toContain("handsFree.activate()");
+  });
+});
+
+// ── 9. PlusMenu uses portal rendering for proper z-index ──
+describe("PlusMenu uses portal rendering", () => {
+  const plusMenu = fs.readFileSync("client/src/components/PlusMenu.tsx", "utf-8");
+
+  it("imports createPortal from react-dom", () => {
+    expect(plusMenu).toContain('import { createPortal } from "react-dom"');
+  });
+
+  it("renders mobile bottom sheet via portal", () => {
+    expect(plusMenu).toContain("createPortal(");
+    expect(plusMenu).toContain("document.body");
+  });
+
+  it("uses z-[9999] for proper layering above all content", () => {
+    expect(plusMenu).toContain("z-[9999]");
+  });
+
+  it("mobile uses bottom sheet with drag handle", () => {
+    expect(plusMenu).toContain("rounded-t-2xl");
+    expect(plusMenu).toContain("w-10 h-1 rounded-full");
+  });
+});
