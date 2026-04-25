@@ -121,6 +121,16 @@ function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: bo
     }
   }, [isAuthenticated, isListening, transcribeMutation]);
 
+  // Cleanup on unmount — stop recording and release microphone
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
+
   return (
     <button
       onClick={toggleRecording}
