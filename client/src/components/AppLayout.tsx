@@ -45,6 +45,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ImageLightbox from "@/components/ImageLightbox";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSWUpdate } from "@/hooks/useSWUpdate";
 import {
@@ -86,6 +94,7 @@ import {
   LayoutGrid,
   Crosshair,
   Copy,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -450,13 +459,26 @@ function SidebarProjectTree({
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Projects
           </span>
-          <button
-            onClick={() => navigate("/projects")}
-            className="p-1 rounded text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-            title="Create project"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-1 rounded text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                title="Create new"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate("/projects")}>
+                <FolderOpen className="w-4 h-4 mr-2" />
+                New Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { navigate("/"); }}>
+                <FileText className="w-4 h-4 mr-2" />
+                New Task
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <p className="text-[11px] text-muted-foreground/50 italic px-1">No projects yet</p>
       </div>
@@ -470,13 +492,26 @@ function SidebarProjectTree({
         <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
           Projects
         </span>
-        <button
-          onClick={() => navigate("/projects")}
-          className="p-1 rounded text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          title="Create project"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="p-1 rounded text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Create new"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => navigate("/projects")}>
+              <FolderOpen className="w-4 h-4 mr-2" />
+              New Project
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { navigate("/"); }}>
+              <FileText className="w-4 h-4 mr-2" />
+              New Task
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Loading state */}
@@ -749,6 +784,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
   const [location, navigate] = useLocation();
   const { tasks, activeTaskId, setActiveTask, updateTaskFavorite } = useTask();
@@ -797,6 +833,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     const handler = () => setMobileDrawerOpen(true);
     window.addEventListener("open-mobile-drawer", handler);
     return () => window.removeEventListener("open-mobile-drawer", handler);
+  }, []);
+
+  // Listen for custom event from MobileBottomNav to open search dialog
+  useEffect(() => {
+    const handler = () => setSearchOpen(true);
+    window.addEventListener("open-search-dialog", handler);
+    return () => window.removeEventListener("open-search-dialog", handler);
   }, []);
 
   // Close mobile drawer on resize to desktop
@@ -848,6 +891,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       navigate("/");
     },
     onToggleSidebar: () => setSidebarOpen((prev) => !prev),
+    onOpenSearch: () => setSearchOpen(true),
     onCycleTheme: cycleTheme,
     onNavigatePrevTask: () => {
       if (!tasks.length) return;
@@ -981,8 +1025,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </Link>
         <button
           onClick={() => {
-            // Focus search or open search dialog
-            toast.info("Search: Ctrl+K");
+            setSearchOpen(true);
           }}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
@@ -1285,6 +1328,89 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           onNavigate={(index: number) => setLightbox({ ...lightbox, index })}
         />
       )}
+
+      {/* Universal Search Dialog */}
+      <CommandDialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <CommandInput placeholder="Search tasks, projects, pages..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          {/* Tasks */}
+          {sidebarTasks.length > 0 && (
+            <CommandGroup heading="Tasks">
+              {sidebarTasks
+                .filter((t) => t.title)
+                .slice(0, 10)
+                .map((t) => (
+                  <CommandItem
+                    key={t.id}
+                    value={t.title}
+                    onSelect={() => {
+                      setActiveTask(t.id);
+                      navigate(`/task/${t.id}`);
+                      setSearchOpen(false);
+                    }}
+                  >
+                    {t.status === "running" ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-blue-400" />
+                    ) : t.status === "completed" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-400" />
+                    ) : t.status === "error" ? (
+                      <AlertCircle className="w-3.5 h-3.5 mr-2 text-red-400" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                    )}
+                    <span className="truncate">{t.title}</span>
+                  </CommandItem>
+                ))}
+            </CommandGroup>
+          )}
+          {/* Projects */}
+          {allProjectsMeta.length > 0 && (
+            <CommandGroup heading="Projects">
+              {allProjectsMeta.map((p) => (
+                <CommandItem
+                  key={p.externalId}
+                  value={p.name}
+                  onSelect={() => {
+                    navigate(`/projects/${p.externalId}`);
+                    setSearchOpen(false);
+                  }}
+                >
+                  <FolderOpen className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+                  <span className="truncate">{p.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {/* Pages */}
+          <CommandGroup heading="Pages">
+            <CommandItem value="Home" onSelect={() => { navigate("/"); setSearchOpen(false); }}>
+              <Globe className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Home
+            </CommandItem>
+            <CommandItem value="Analytics" onSelect={() => { navigate("/analytics"); setSearchOpen(false); }}>
+              <BarChart3 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Analytics
+            </CommandItem>
+            <CommandItem value="Memory" onSelect={() => { navigate("/memory"); setSearchOpen(false); }}>
+              <Brain className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Memory
+            </CommandItem>
+            <CommandItem value="Projects" onSelect={() => { navigate("/projects"); setSearchOpen(false); }}>
+              <FolderOpen className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Projects
+            </CommandItem>
+            <CommandItem value="Library" onSelect={() => { navigate("/library"); setSearchOpen(false); }}>
+              <BookOpen className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Library
+            </CommandItem>
+            <CommandItem value="Settings" onSelect={() => { navigate("/settings"); setSearchOpen(false); }}>
+              <Settings className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Settings
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 }

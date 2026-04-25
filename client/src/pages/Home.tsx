@@ -103,17 +103,6 @@ export default function Home() {
     }
   }, [input]);
 
-  // Global ⌘K shortcut
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        textareaRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
 
   const handleSubmit = useCallback(() => {
     if (!input.trim() && pendingFiles.length === 0) return;

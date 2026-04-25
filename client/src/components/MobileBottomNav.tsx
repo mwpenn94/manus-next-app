@@ -9,7 +9,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
-  Home, ListTodo, CreditCard, MoreHorizontal, X,
+  Home, ListTodo, CreditCard, MoreHorizontal, X, Search,
   Brain, FolderOpen, Clock, BookOpen, Settings, BarChart3, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -94,6 +94,17 @@ export default function MobileBottomNav() {
             </button>
           </div>
           <div className="grid grid-cols-3 gap-1 p-3">
+            {/* Search button */}
+            <button
+              onClick={() => {
+                setMoreOpen(false);
+                window.dispatchEvent(new CustomEvent("open-search-dialog"));
+              }}
+              className="flex flex-col items-center justify-center gap-1.5 py-3 min-h-[56px] rounded-lg transition-colors active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            >
+              <Search className="w-5 h-5" />
+              <span className="text-[10px] font-medium leading-none text-center">Search</span>
+            </button>
             {MORE_ITEMS.map((item) => {
               const active = location === item.path;
               return (

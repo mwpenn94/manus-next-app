@@ -86,6 +86,7 @@ export interface KeyboardShortcutOptions {
   onToggleSidebar?: () => void;
   onEscape?: () => void;
   onFocusInput?: () => void;
+  onOpenSearch?: () => void;
   onStopGeneration?: () => void;
   onCycleTheme?: () => void;
   onNavigatePrevTask?: () => void;
@@ -105,10 +106,14 @@ export function useKeyboardShortcuts(options?: KeyboardShortcutOptions) {
         target.tagName === "TEXTAREA" ||
         target.isContentEditable;
 
-      // Cmd+K: Focus input
+      // Cmd+K: Open search dialog (or focus input as fallback)
       if (isMod && e.key === "k") {
         e.preventDefault();
-        options?.onFocusInput?.();
+        if (options?.onOpenSearch) {
+          options.onOpenSearch();
+        } else {
+          options?.onFocusInput?.();
+        }
         return;
       }
 

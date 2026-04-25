@@ -4217,3 +4217,13 @@
 - [x] All vitest tests passing (109/110, 1 OOM crash in sandbox)
 - [x] Expert assessment Pass 1
 - [x] Expert assessment Pass 2 (convergence confirmed)
+
+## Cycle 14 Bugfixes (User-Reported)
+- [x] BUG: Search button shows toast "Search: Ctrl+K" instead of opening search dialog
+- [x] BUG: "+" button options not visible/usable when opened
+- [x] BUG: Mobile task view crowded/cramped header
+- [x] FIX: Replace toast with CommandDialog (cmdk-based universal search)
+- [x] FIX: Wire Ctrl+K to open search dialog instead of focusing textarea
+- [x] FIX: Add Search to MobileBottomNav More menu for mobile users
+- [x] FIX: Make "+" button show DropdownMenu with New Project + New Task
+- [x] FIX: Remove conflicting Ctrl+K handler from Home.tsx
