@@ -91,6 +91,8 @@ import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
 import ShareDialog from "@/components/ShareDialog";
 import TaskProgressCard from "@/components/TaskProgressCard";
 import { BranchBanner, ChildBranches, BranchButton } from "@/components/BranchIndicator";
+import { BranchTreeView } from "@/components/BranchTreeView";
+import { BranchCompareView } from "@/components/BranchCompareView";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -2063,6 +2065,8 @@ export default function TaskView() {
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const [systemPromptDraft, setSystemPromptDraft] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [branchTreeOpen, setBranchTreeOpen] = useState(false);
+  const [branchCompareOpen, setBranchCompareOpen] = useState(false);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>(() => {
@@ -3202,6 +3206,20 @@ export default function TaskView() {
                       <Settings2 className="w-3.5 h-3.5" />
                       System Prompt
                     </button>
+                    <button
+                      onClick={() => { setBranchTreeOpen(true); setShowMoreMenu(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <GitBranch className="w-3.5 h-3.5" />
+                      Branch Tree
+                    </button>
+                    <button
+                      onClick={() => { setBranchCompareOpen(true); setShowMoreMenu(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
+                    >
+                      <GitBranch className="w-3.5 h-3.5" />
+                      Compare Branches
+                    </button>
                     {/* Export format auto-detection */}
                     {(() => {
                       if (!task || task.messages.length === 0) return null;
@@ -3622,6 +3640,8 @@ export default function TaskView() {
         {/* Branch indicators */}
         <BranchBanner taskExternalId={task.id} />
         <ChildBranches taskExternalId={task.id} />
+        <BranchTreeView taskExternalId={task.id} open={branchTreeOpen} onOpenChange={setBranchTreeOpen} />
+        <BranchCompareView taskExternalId={task.id} open={branchCompareOpen} onOpenChange={setBranchCompareOpen} />
 
         {/* In-Conversation Search Overlay (Pass 5 Step 1) */}
         <div className="relative flex-1 flex flex-col min-h-0">

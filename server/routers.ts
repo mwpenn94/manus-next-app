@@ -3758,6 +3758,73 @@ Provide a JSON response with this exact structure:
         const [parentTask] = await db.select({ externalId: tasks.externalId, title: tasks.title }).from(tasks).where(eq(tasks.id, branch.parentTaskId)).limit(1);
         return { ...branch, parentTask };
       }),
+    /** Compare messages between two branches */
+    compare: protectedProcedure
+      .input(z.object({
+        taskAExternalId: z.string(),
+        taskBExternalId: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const taskA = await getTaskByExternalId(input.taskAExternalId);
+        const taskB = await getTaskByExternalId(input.taskBExternalId);
+        if (!taskA || taskA.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!taskB || taskB.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const [msgsA, msgsB] = await Promise.all([
+          getTaskMessages(taskA.id),
+          getTaskMessages(taskB.id),
+        ]);
+        // Find divergence point (first message that differs)
+        let divergeIdx = 0;
+        const minLen = Math.min(msgsA.length, msgsB.length);
+        for (let i = 0; i < minLen; i++) {
+          if (msgsA[i].content !== msgsB[i].content || msgsA[i].role !== msgsB[i].role) break;
+          divergeIdx = i + 1;
+        }
+        return {
+          taskA: { externalId: taskA.externalId, title: taskA.title, messageCount: msgsA.length },
+          taskB: { externalId: taskB.externalId, title: taskB.title, messageCount: msgsB.length },
+          sharedMessages: divergeIdx,
+          messagesA: msgsA.slice(divergeIdx).map(m => ({ role: m.role, content: m.content.slice(0, 500), createdAt: m.createdAt })),
+          messagesB: msgsB.slice(divergeIdx).map(m => ({ role: m.role, content: m.content.slice(0, 500), createdAt: m.createdAt })),
+        };
+      }),
+    /** Get full branch tree for a task (walks up to root, then down to all descendants) */
+    tree: protectedProcedure
+      .input(z.object({ taskExternalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const task = await getTaskByExternalId(input.taskExternalId);
+        if (!task || task.userId !== ctx.user.id) return null;
+        // Walk up to find root
+        let rootId = task.id;
+        let rootExternalId = task.externalId;
+        let rootTitle = task.title;
+        const visited = new Set<number>();
+        while (!visited.has(rootId)) {
+          visited.add(rootId);
+          const parentBranch = await getParentBranch(rootId);
+          if (!parentBranch) break;
+          const db = await getDb();
+          if (!db) break;
+          const [parentTask] = await db.select({ id: tasks.id, externalId: tasks.externalId, title: tasks.title }).from(tasks).where(eq(tasks.id, parentBranch.parentTaskId)).limit(1);
+          if (!parentTask) break;
+          rootId = parentTask.id;
+          rootExternalId = parentTask.externalId;
+          rootTitle = parentTask.title;
+        }
+        // BFS down from root to build tree
+        interface TreeNode { id: number; externalId: string; title: string; label?: string | null; children: TreeNode[]; isCurrent: boolean; }
+        const buildNode = async (taskId: number, taskExternalId: string, taskTitle: string, label?: string | null): Promise<TreeNode> => {
+          const children = await getChildBranches(taskId);
+          const childNodes: TreeNode[] = [];
+          for (const c of children) {
+            const childExtId = c.task?.externalId || '';
+            const childTitle = c.task?.title || c.branch?.label || 'Branch';
+            childNodes.push(await buildNode(c.branch?.childTaskId || 0, childExtId, childTitle, c.branch?.label));
+          }
+          return { id: taskId, externalId: taskExternalId, title: taskTitle, label, children: childNodes, isCurrent: taskExternalId === input.taskExternalId };
+        };
+        return buildNode(rootId, rootExternalId, rootTitle);
+      }),
   }),
 
   /** Browser Automation — Playwright-based browser control */

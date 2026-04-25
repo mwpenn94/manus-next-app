@@ -441,11 +441,33 @@ export default function QATestingPage() {
                               </div>
                               {/* Step result */}
                               {stepResult && (
-                                <div className={cn("text-xs p-1.5 rounded", stepResult.success ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600")}>
-                                  {stepResult.success ? "Passed" : `Failed: ${stepResult.error || "Unknown error"}`}
-                                  {stepResult.duration && <span className="ml-2 text-muted-foreground">{stepResult.duration}ms</span>}
+                                <div className={cn("text-xs rounded-md border", stepResult.success ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20")}>
+                                  <div className="flex items-center gap-2 p-2">
+                                    {stepResult.success ? (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                                    ) : (
+                                      <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                    )}
+                                    <span className={stepResult.success ? "text-green-600" : "text-red-600"}>
+                                      {stepResult.success ? "Passed" : `Failed: ${stepResult.error || "Unknown error"}`}
+                                    </span>
+                                    {stepResult.duration != null && (
+                                      <span className="ml-auto flex items-center gap-1 text-muted-foreground">
+                                        <Clock className="w-3 h-3" />
+                                        {stepResult.duration}ms
+                                      </span>
+                                    )}
+                                  </div>
                                   {stepResult.screenshotUrl && (
-                                    <a href={stepResult.screenshotUrl} target="_blank" rel="noopener noreferrer" className="ml-2 underline">View Screenshot</a>
+                                    <div className="px-2 pb-2">
+                                      <a href={stepResult.screenshotUrl} target="_blank" rel="noopener noreferrer" className="block">
+                                        <img
+                                          src={stepResult.screenshotUrl}
+                                          alt={`Screenshot - Step ${idx + 1}`}
+                                          className="rounded border border-border max-h-32 object-contain hover:opacity-80 transition-opacity"
+                                        />
+                                      </a>
+                                    </div>
                                   )}
                                 </div>
                               )}
@@ -637,18 +659,45 @@ export default function QATestingPage() {
                   </Button>
                 </div>
                 {diffResult && (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <Badge variant={diffResult.match ? "default" : "destructive"}>
-                        {diffResult.match ? "Match" : "Differences Detected"}
+                      <Badge variant={diffResult.match ? "default" : "destructive"} className="text-xs">
+                        {diffResult.match ? "Match — No visual changes" : "Differences Detected"}
                       </Badge>
                       {diffResult.diffPercentage !== undefined && (
-                        <span className="text-sm text-muted-foreground">{(diffResult.diffPercentage * 100).toFixed(2)}% different</span>
+                        <span className="text-xs text-muted-foreground">
+                          {(diffResult.diffPercentage * 100).toFixed(2)}% pixel difference
+                        </span>
                       )}
                     </div>
+                    {/* Before/After side-by-side */}
+                    {(diffResult.baselineScreenshotUrl || diffResult.currentScreenshotUrl) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-[10px] font-medium text-muted-foreground mb-1">Baseline</p>
+                          {diffResult.baselineScreenshotUrl ? (
+                            <img src={diffResult.baselineScreenshotUrl} alt="Baseline" className="w-full rounded border border-border" />
+                          ) : (
+                            <div className="h-32 bg-muted/30 rounded border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">No baseline</div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium text-muted-foreground mb-1">Current</p>
+                          {diffResult.currentScreenshotUrl ? (
+                            <img src={diffResult.currentScreenshotUrl} alt="Current" className="w-full rounded border border-border" />
+                          ) : (
+                            <div className="h-32 bg-muted/30 rounded border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">No current</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {/* Diff overlay */}
                     {diffResult.diffImageUrl && (
-                      <div className="border border-border rounded-lg overflow-hidden">
-                        <img src={diffResult.diffImageUrl} alt="Visual diff" className="w-full" />
+                      <div>
+                        <p className="text-[10px] font-medium text-muted-foreground mb-1">Diff Overlay (differences highlighted in red)</p>
+                        <div className="border border-border rounded-lg overflow-hidden">
+                          <img src={diffResult.diffImageUrl} alt="Visual diff overlay" className="w-full" />
+                        </div>
                       </div>
                     )}
                   </div>

@@ -4085,3 +4085,20 @@
 - [x] Update PARITY_MATRIX.md with 10-dimension scoring per capability
 - [x] Update CURRENT_BEST.md with actual scores and state
 - [x] Save v1.2 prompt as authoritative reference in docs/uho/
+
+## Cycle 10: Browser Automation + Branching → 8.0+
+
+### Browser Automation (7.0-7.5 → 8.0+)
+- [x] Add screenshot capture display in QA test results (inline thumbnail with click-to-open)
+- [x] Add visual regression comparison (before/after side-by-side + diff overlay)
+- [x] Improve QA test result cards with timing, screenshots, and error details (icon + timing bar + screenshot preview)
+
+### Branching (7.5-8.0 → 8.0+)
+- [x] Add visual branch tree/timeline diagram showing parent-child relationships (BranchTreeView dialog)
+- [x] Add branch comparison view (side-by-side message diff between branches)
+- [ ] Add branch merge capability (combine branch back into parent)
+
+### Cycle 10 Assessments
+- [x] Write Cycle 10 COMPLIANCE assessment
+- [x] Write Cycle 10 ADVERSARY assessment
+- [ ] Write Cycle 10 STRATEGIST scoring
