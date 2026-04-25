@@ -5,9 +5,13 @@
  * from the chat input bar. On mobile, renders as a bottom drawer;
  * on desktop, renders as an anchored popover above the + button.
  *
+ * Uses React Portal to render into document.body, bypassing any
+ * overflow:hidden or transform ancestors that would clip the menu.
+ *
  * Organized into sections: Media, Create, Tools, Connectors
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation } from "wouter";
 import {
   Camera,
@@ -106,6 +110,7 @@ export default function PlusMenu({
 }: PlusMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
 
@@ -122,8 +127,29 @@ export default function PlusMenu({
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Calculate anchor position for desktop popover
   useEffect(() => {
-    if (!open || isMobile) return;
+    if (!open || isMobile || !anchorRef?.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    setAnchorRect(rect);
+
+    // Recalculate on scroll/resize
+    const recalc = () => {
+      if (anchorRef.current) {
+        setAnchorRect(anchorRef.current.getBoundingClientRect());
+      }
+    };
+    window.addEventListener("scroll", recalc, true);
+    window.addEventListener("resize", recalc);
+    return () => {
+      window.removeEventListener("scroll", recalc, true);
+      window.removeEventListener("resize", recalc);
+    };
+  }, [open, isMobile, anchorRef]);
+
+  // Close on outside click (desktop)
+  useEffect(() => {
+    if (!open) return;
     const handler = (e: MouseEvent) => {
       if (
         menuRef.current &&
@@ -136,8 +162,9 @@ export default function PlusMenu({
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [open, isMobile, onClose, anchorRef]);
+  }, [open, onClose, anchorRef]);
 
+  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -192,8 +219,9 @@ export default function PlusMenu({
 
   if (!open) return null;
 
+  // ── Mobile: bottom sheet via portal ──
   if (isMobile) {
-    return (
+    return createPortal(
       <AnimatePresence>
         {open && (
           <>
@@ -202,7 +230,7 @@ export default function PlusMenu({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-50 bg-black/60"
+              className="fixed inset-0 z-[9999] bg-black/60"
               onClick={onClose}
             />
             <motion.div
@@ -214,7 +242,7 @@ export default function PlusMenu({
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
               className={cn(
-                "fixed inset-x-0 bottom-0 z-50 max-h-[80vh] rounded-t-2xl bg-card border-t border-border overflow-hidden",
+                "fixed inset-x-0 bottom-0 z-[9999] max-h-[80vh] rounded-t-2xl bg-card border-t border-border overflow-hidden",
                 className
               )}
             >
@@ -235,11 +263,29 @@ export default function PlusMenu({
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
     );
   }
 
-  return (
+  // ── Desktop: anchored popover via portal ──
+  // Position above the + button, clamped so it never extends outside viewport
+  const popoverStyle: React.CSSProperties = (() => {
+    if (!anchorRect) {
+      return { position: "fixed" as const, left: 16, bottom: 80, zIndex: 9999 };
+    }
+    // Anchor the bottom of the popover just above the + button
+    const bottomOffset = window.innerHeight - anchorRect.top + 8;
+    return {
+      position: "fixed" as const,
+      left: anchorRect.left,
+      bottom: bottomOffset,
+      top: 8, // clamp to viewport top so it scrolls internally instead of clipping
+      zIndex: 9999,
+    };
+  })();
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -248,12 +294,13 @@ export default function PlusMenu({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 8, scale: 0.96 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
+          style={popoverStyle}
           className={cn(
-            "absolute bottom-full left-0 mb-2 z-50 w-72 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl shadow-black/20 overflow-hidden",
+            "w-72 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl shadow-black/20 overflow-hidden flex flex-col",
             className
           )}
         >
-          <div className="max-h-[50vh] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             <CategorizedFeatureList
               items={MENU_ITEMS}
               connectors={connectedList}
@@ -266,7 +313,8 @@ export default function PlusMenu({
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

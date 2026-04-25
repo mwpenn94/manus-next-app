@@ -1281,7 +1281,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-hidden min-h-0 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0"
+          className="flex-1 overflow-hidden min-h-0"
         >
           {children}
         </main>

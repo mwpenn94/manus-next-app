@@ -4360,3 +4360,11 @@
 ### Critical: TaskView Mobile Chat Input Bar
 - [x] BUG-005: TaskView mobile chat input bar is cramped/unusable — mic, headphones, +, submit all squished in tiny space, making core chat experience broken on mobile
 - [x] Redesign mobile input bar layout for proper spacing and touch targets
+
+### BUG-005 Reopened: Mobile input bar still cramped
+- [x] BUG-005-REOPEN: TaskView mobile input bar still visually cramped — fixed by adding pb-mobile-nav to TaskView outer container so input bar sits above bottom nav
+- [x] BUG-006: Home page dark overlay was actually the broken PlusMenu (see BUG-007) — no sidebar leak issue
+- [x] Visually verified Home, Settings, Billing, Library pages in Playwright at 393x852 viewport
+- [x] BUG-007: PlusMenu rewritten with portal rendering — mobile uses bottom sheet, desktop uses viewport-clamped popover. All items fully readable and tappable. Verified in screenshots.
+- [x] BUG-008: Removed double bottom padding from AppLayout main element — pages handle their own pb-mobile-nav
+- [x] Visually verified ALL fixes via Playwright screenshots at iPhone 14 Pro viewport (393x852)
