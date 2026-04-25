@@ -1,0 +1,19 @@
+{
+  "project": "manus-next-app",
+  "version": "2.0.0",
+  "stack": "4-layer-holistic",
+  "layers": ["aegis", "atlas", "sovereign", "app"],
+  "phase": "B",
+  "toolkit": "tools/recursive_optimization_toolkit.cjs",
+  "config": "tools/optimization-config.json",
+  "ledger": "ledger.json",
+  "artifacts": {
+    "CLAUDE.md": true,
+    "COMPREHENSIVE_GUIDE.md": true,
+    "GAP_ANALYSIS.md": true,
+    "OPTIMIZATION_LEDGER.md": true,
+    "DB_SCHEMA_DUMP.sql": true,
+    "Dockerfile": true,
+    "ecosystem.config.cjs": true
+  }
+}

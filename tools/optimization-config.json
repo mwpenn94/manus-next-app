@@ -1,0 +1,151 @@
+{
+  "project": "manus-next-app",
+  "automation_tier": "manual",
+  "layers": [
+    "aegis",
+    "atlas",
+    "sovereign",
+    "manus-next-app"
+  ],
+  "convergence": {
+    "min_improvement_delta": 0.02,
+    "target_quality_score": 9,
+    "max_passes": 7,
+    "stagnation_window": 2,
+    "regression_tolerance": 0,
+    "novelty_threshold": 3,
+    "cost_ratio_ceiling": 5,
+    "consecutive_convergence_required": 3
+  },
+  "divergence": {
+    "enabled": true,
+    "max_active_branches": 3,
+    "temperature_schedule": "adaptive",
+    "initial_temperature": 1,
+    "min_temperature": 0.1,
+    "cooling_rate": 0.15,
+    "divergence_budget": 0.3,
+    "auto_prune_after_passes": 3
+  },
+  "graduation": {
+    "manual_to_semi": {
+      "min_cycles": 10,
+      "max_false_convergence_rate": 0.05,
+      "min_regression_detection_rate": 0.95,
+      "min_kappa": 0.7
+    },
+    "semi_to_auto": {
+      "min_cycles": 20,
+      "max_regression_rate": 0.02,
+      "min_judge_kappa": 0.8,
+      "min_convergence_accuracy": 0.95
+    }
+  },
+  "assessment_dimensions": [
+    "completeness",
+    "accuracy",
+    "depth",
+    "novelty",
+    "actionability",
+    "regression_safety",
+    "ux_quality",
+    "performance",
+    "security",
+    "accessibility",
+    "test_coverage",
+    "documentation",
+    "code_quality",
+    "deployment_readiness"
+  ],
+  "quality_guards": [
+    "goodhart_detection",
+    "vertical_positioning",
+    "free_tier_integrity",
+    "compliance_fidelity",
+    "regression_prevention",
+    "stagnation_escape",
+    "gaming_detection",
+    "dimension_balance",
+    "inflation_detection",
+    "branch_hygiene",
+    "safety_cap",
+    "novelty_decay",
+    "cost_ceiling",
+    "coverage_regression",
+    "latency_regression",
+    "error_rate_regression"
+  ],
+  "phases": {
+    "A": {
+      "name": "Specification & Convergence",
+      "gate": {
+        "min_score": 7,
+        "required_artifacts": [
+          "converged-spec",
+          "expert-panel",
+          "vu-roster"
+        ]
+      }
+    },
+    "B": {
+      "name": "Implementation",
+      "gate": {
+        "min_score": 8,
+        "min_tests": 250,
+        "max_ts_errors": 0,
+        "clean_build": true
+      }
+    },
+    "C": {
+      "name": "Hardening & Validation",
+      "gate": {
+        "min_score": 8.5,
+        "security_audit": true,
+        "class_e_validation": true,
+        "runbooks": true
+      }
+    },
+    "D": {
+      "name": "Continuous Operations",
+      "gate": {
+        "min_score": 9,
+        "steady_state_days": 7,
+        "class_f_active": true
+      }
+    }
+  },
+  "expert_panel": {
+    "classes": {
+      "A": {
+        "name": "Domain Experts",
+        "count": 5,
+        "focus": "architecture, scalability, correctness"
+      },
+      "B": {
+        "name": "Adversarial Testers",
+        "count": 3,
+        "focus": "edge cases, failure modes, security"
+      },
+      "C": {
+        "name": "UX Reviewers",
+        "count": 3,
+        "focus": "usability, accessibility, design consistency"
+      },
+      "D": {
+        "name": "Compliance Auditors",
+        "count": 2,
+        "focus": "GDPR, data handling, audit trails"
+      },
+      "E": {
+        "name": "Founder Personas",
+        "count": 12,
+        "focus": "real-world workflows, business value"
+      },
+      "F": {
+        "name": "Continuous Validators",
+        "count": 5,
+        "focus": "steady-state monitoring, drift detection"
+      }
+    }
+  }
+}

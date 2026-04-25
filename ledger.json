@@ -1,0 +1,45 @@
+{
+  "project": "manus-next-app",
+  "created": "2026-04-25T09:12:49.884Z",
+  "last_updated": "2026-04-25T09:12:49.886Z",
+  "automation_tier": "manual",
+  "safety_sensitive": false,
+  "current_phase": "B",
+  "improvements": [],
+  "failed_approaches": [],
+  "regressions": [],
+  "convergence_history": [],
+  "branches": [],
+  "layer_status": {
+    "aegis": {
+      "integrated": true,
+      "tests": 40,
+      "health": "green"
+    },
+    "atlas": {
+      "integrated": true,
+      "tests": 0,
+      "health": "green"
+    },
+    "sovereign": {
+      "integrated": true,
+      "tests": 0,
+      "health": "green"
+    },
+    "app": {
+      "integrated": true,
+      "tests": 3084,
+      "health": "green"
+    }
+  },
+  "vu_sessions": [],
+  "expert_reviews": [],
+  "quality_guard_log": [],
+  "graduation_history": {
+    "cycles_completed": 0,
+    "false_convergences": 0,
+    "regressions_detected": 0,
+    "regressions_missed": 0,
+    "judge_scores": []
+  }
+}
