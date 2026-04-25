@@ -139,7 +139,7 @@ All API access is through tRPC procedures under `/api/trpc`. Key namespaces:
 
 ## 6. Testing
 
-The project has 111 test files with 3,084+ tests covering:
+The project has 113 test files with 3,168+ tests covering:
 
 - **Unit tests** — Individual service functions, DB helpers, utility functions
 - **Integration tests** — tRPC procedure behavior, auth flows, GDPR compliance
@@ -152,6 +152,8 @@ pnpm test                                    # All tests (may OOM in small sandb
 npx vitest run server/specific.test.ts       # Single file
 npx vitest run server/agent-stack.test.ts    # Agent stack tests
 ```
+
+**Important:** Tests that scan router source code must use `readRouterSource()` from `server/test-utils/readRouterSource.ts`. This utility aggregates the thin composition root with all 37 sub-files. Never read `server/routers.ts` directly for pattern matching.
 
 ## 7. Deployment
 

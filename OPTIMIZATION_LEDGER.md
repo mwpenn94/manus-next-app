@@ -56,4 +56,32 @@ Created all required project artifacts: `tools/recursive_optimization_toolkit.cj
 | Regressions | 0 | 0 | Yes |
 | Open gaps | 10 | 0 | No |
 
-**Next action**: Execute optimization Pass 004 targeting G-002 (ATLAS/Sovereign tests) and G-003 (AEGIS cache wiring).
+---
+
+### Pass 004 — Full Router Extraction + Mobile Bug Fixes (REFINE)
+
+**Date**: 2026-04-25
+**Phase**: B
+**Temperature**: 0.5 (REFINE)
+
+Extracted all remaining 30 inline routers from the 2,572-line monolith into 37 total sub-files under `server/routers/`. Fixed 69 import path issues. Updated 15+ test files to use `readRouterSource()`. Investigated and resolved mobile bug reports (error toast caused by broken import paths, sidebar task list is DB-backed and loads correctly). Added loading skeletons to SettingsPage and MemoryPage. Fixed Home.tsx accessibility (semantic `<main>` element). Updated CLAUDE.md and COMPREHENSIVE_GUIDE.md with current stats.
+
+**Score**: 8.5/10 (full extraction complete, mobile bugs resolved, accessibility improved)
+
+---
+
+## Convergence Status
+
+| Metric | Value | Threshold | Met |
+|--------|-------|-----------|-----|
+| Passes | 4 | 5+ | No |
+| Multi-modal score | 8.0 | 8.0 | Yes |
+| TypeScript errors | 0 | 0 | Yes |
+| Test count | 3,168+ | 250 | Yes |
+| Build status | Green | Green | Yes |
+| Regressions | 0 | 0 | Yes |
+| Open gaps | 6 | 0 | No |
+| Router sub-files | 37 | 37 | Yes |
+| Composition root | 92 lines | <200 | Yes |
+
+**Next action**: Execute Pass 005 targeting remaining gaps (mobile responsive audit, recursive optimization toolkit, Class E validation).

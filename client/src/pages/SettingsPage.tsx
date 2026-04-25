@@ -163,6 +163,15 @@ function CacheMetricsSection() {
     refetchInterval: 15000, // refresh every 15s
   });
   const m = metricsQuery.data;
+  if (metricsQuery.isLoading) return (
+    <div className="mt-6">
+      <div className="h-4 w-32 bg-muted rounded animate-pulse mb-3" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-card border border-border rounded-xl p-4 h-20 animate-pulse" />
+        <div className="bg-card border border-border rounded-xl p-4 h-20 animate-pulse" />
+      </div>
+    </div>
+  );
   if (!m) return null;
 
   const prefixHitRate = m.prefix.hits + m.prefix.misses > 0

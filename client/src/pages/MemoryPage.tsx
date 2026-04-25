@@ -178,7 +178,7 @@ export default function MemoryPage() {
   const [selectedArchived, setSelectedArchived] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: memories = [], refetch } = trpc.memory.list.useQuery(
+  const { data: memories = [], refetch, isLoading: memoriesLoading } = trpc.memory.list.useQuery(
     { limit: 100 },
     { enabled: isAuthenticated }
   );
@@ -406,7 +406,17 @@ export default function MemoryPage() {
             )}
 
             <div className="space-y-2">
-              {displayMemories.length === 0 ? (
+              {memoriesLoading ? (
+                <div className="space-y-2">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="p-3 rounded-lg bg-card border border-border animate-pulse">
+                      <div className="h-4 w-24 bg-muted rounded mb-2" />
+                      <div className="h-3 w-full bg-muted rounded mb-1" />
+                      <div className="h-3 w-2/3 bg-muted rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : displayMemories.length === 0 ? (
                 <div className="py-12 text-center">
                   <Sparkles className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">{searchQuery ? "No matching memories found" : "No memories yet. Add entries or drag-and-drop files to import knowledge."}</p>

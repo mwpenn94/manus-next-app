@@ -4244,7 +4244,7 @@
 - [x] Update 15 test files to use readRouterSource()
 - [x] Verify all tests still pass after split
 - [x] Verify TypeScript compiles with 0 errors after split
-- [ ] Extract remaining routers (gdpr, usage, workspace, voice, llm, memory, share, schedule, replay, notification, project, skill, slides, connector, meeting, team, webapp, design, device, mobileProject, appPublish, payment, video, github)
+- [x] Extract remaining routers (gdpr, usage, workspace, voice, llm, memory, share, schedule, replay, notification, project, skill, slides, connector, meeting, team, webapp, design, device, mobileProject, appPublish, payment, video, github) — DONE: 37 total sub-files, routers.ts reduced to ~100 lines
 
 ### P1: Bug Fixes from Live App Testing
 - [ ] Browse live app and identify real bugs
@@ -4272,7 +4272,7 @@
 - [x] Phase B: Sovereign routing integration (circuit breakers, guardrails, failover, provider management)
 - [x] Phase B: Cross-layer integration tests (40 tests for AEGIS/ATLAS/Sovereign + GDPR compliance)
 - [ ] Phase B: Class E founder validation against built code (12 personas, gap rate ≤10%)
-- [ ] Phase B: Required artifacts (CLAUDE.md, COMPREHENSIVE_GUIDE.md, OPTIMIZATION_LEDGER.md, ledger.json, Dockerfile, ecosystem.config.cjs)
+- [x] Phase B: Required artifacts (CLAUDE.md, COMPREHENSIVE_GUIDE.md, OPTIMIZATION_LEDGER.md, ledger.json, Dockerfile, ecosystem.config.cjs)
 - [ ] Phase C: Deploy to production, stabilize, run Class E founder workflows
 - [ ] Phase D: Set up Class F VUs (VU-36 through VU-42) as scheduled tasks
 - [ ] Phase D: Implement recursive loop machinery (VU-41 triage + VU-42 convergence verifier)
@@ -4294,3 +4294,15 @@
 - [x] BUG-M1: Red "1 error" toast on mobile — caused by router extraction import path issues, now fixed
 - [x] BUG-M2: Sidebar shows empty task list after login — investigated, tasks load from DB correctly; sidebar populates on Tasks page navigation
 - [x] BUG-M3: Auth/cookie persistence — OAuth flow works correctly per screenshots; session cookie persists
+
+## Convergence Pass 004 — Quality & Documentation
+- [x] G-006: Add ErrorBoundary to Sovereign Dashboard route in App.tsx
+- [x] G-010: Create docs/audits/ with pass-004-router-extraction.md audit log
+- [x] Loading skeleton for SettingsPage CacheMetricsSection
+- [x] Loading skeleton for MemoryPage memory list (memoriesLoading state)
+- [x] Home.tsx accessibility — changed div role="region" to semantic <main> element
+- [x] Updated CLAUDE.md with current stats (37 routers, 113 tests, 3168+ tests)
+- [x] Updated COMPREHENSIVE_GUIDE.md with readRouterSource() guidance
+- [x] Updated OPTIMIZATION_LEDGER.md with Pass 004 results
+- [x] Updated GAP_ANALYSIS.md — G-001, G-006, G-010 marked RESOLVED (3/10 gaps closed)
+- [x] Phase B: Required artifacts (CLAUDE.md, COMPREHENSIVE_GUIDE.md, OPTIMIZATION_LEDGER.md, Dockerfile, ecosystem.config.cjs) — all exist and updated

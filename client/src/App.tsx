@@ -220,7 +220,7 @@ function Router() {
         <SuspenseRoute><QATestingPage /></SuspenseRoute>
       </Route>
       <Route path="/sovereign">
-        <SuspenseRoute><SovereignDashboard /></SuspenseRoute>
+        <ErrorBoundary><SuspenseRoute><SovereignDashboard /></SuspenseRoute></ErrorBoundary>
       </Route>
 
       <Route path="/404" component={NotFound} />

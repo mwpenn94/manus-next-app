@@ -46,13 +46,12 @@ Schema: `sovereign_providers`, `sovereign_routing_decisions`, `sovereign_usage_l
 client/src/pages/          → 39 page components (SovereignDashboard.tsx is the agent stack UI)
 client/src/components/     → Reusable UI (shadcn/ui based)
 client/src/contexts/       → TaskContext, BridgeContext, ThemeContext
-server/routers/            → 10 extracted router modules (task, file, bridge, preferences,
-                              webappProject, branches, browser, aegis, atlas, sovereign)
-server/routers.ts          → Composition root (2,545 lines, imports sub-routers)
+server/routers/            → 37 extracted router modules (all routers now in sub-files)
+server/routers.ts          → Thin composition root (~92 lines, imports all sub-routers)
 server/services/           → AEGIS, ATLAS, Sovereign service layers
 server/db.ts               → All DB helpers (Drizzle query functions)
 server/_core/              → Framework plumbing (DO NOT EDIT unless extending infra)
-drizzle/schema.ts          → 48 tables (945+ lines)
+drizzle/schema.ts          → 48 tables (1,249 lines)
 server/test-utils/         → readRouterSource.ts (aggregates router source for string-scanning tests)
 ```
 
@@ -86,7 +85,7 @@ server/test-utils/         → readRouterSource.ts (aggregates router source for
 
 ## Testing
 
-- 111 test files, 3,084+ tests
+- 113 test files, 3,168+ tests
 - Tests use vitest with the config in `vitest.config.ts`
 - String-scanning tests (GDPR, false-positive-elimination, security) use `readRouterSource()` to aggregate all router sub-files
 - Full suite may OOM in constrained sandboxes — run subsets: `npx vitest run server/specific.test.ts`

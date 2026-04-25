@@ -195,7 +195,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-full overflow-y-auto relative bg-background" role="region" aria-label="Home" tabIndex={-1}>
+    <main className="h-full overflow-y-auto relative bg-background" aria-label="Home" tabIndex={-1}>
       {/* Top header bar — hamburger + ModelSelector left, Credits right (mobile only; desktop uses AppLayout header) */}
       <div className="sticky top-0 z-20 flex items-center justify-between px-3 py-2 bg-background/80 backdrop-blur-sm md:hidden">
         <div className="flex items-center gap-2">
@@ -528,6 +528,6 @@ export default function Home() {
           ))}
         </motion.div>
       </div>
-    </div>
+    </main>
   );
 }
