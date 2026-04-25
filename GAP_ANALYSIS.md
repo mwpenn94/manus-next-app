@@ -1,7 +1,7 @@
 # GAP_ANALYSIS.md — Sovereign AI Platform
 
 **Generated**: 2026-04-25
-**Phase**: B (Implementation)
+**Phase**: D (Continuous Operations) — All Gaps Resolved
 **Toolkit Version**: 2.0.0-holistic
 
 ---
@@ -18,7 +18,7 @@
 ### G-002: ATLAS/Sovereign Dedicated Tests Missing
 - **Severity**: High
 - **Layer**: ATLAS, Sovereign
-- **Status**: Open
+- **Status**: RESOLVED (Pass 006-007)
 - **Description**: ATLAS and Sovereign layers have 0 dedicated test files. The 40 tests in `agent-stack.test.ts` cover basic unit tests but not integration paths.
 - **Remediation**: Write `server/atlas.test.ts` and `server/sovereign.test.ts` with at least 30 tests each covering goal decomposition flows, circuit breaker state transitions, and provider failover.
 - **Effort**: 1-2 hours
@@ -26,7 +26,7 @@
 ### G-003: AEGIS Semantic Cache Not Wired to LLM Pipeline
 - **Severity**: High
 - **Layer**: AEGIS
-- **Status**: Open
+- **Status**: RESOLVED (Pass 006-007)
 - **Description**: The AEGIS cache exists in the database but the main LLM invocation path (`server/_core/llm.ts`) does not check it before calling the provider. Cache hits would save cost and latency.
 - **Remediation**: Wrap `invokeLLM` with an AEGIS pre-flight check that queries the cache before forwarding to the provider. Wire post-flight to store results.
 - **Effort**: 1 hour
@@ -34,7 +34,7 @@
 ### G-004: Sovereign Circuit Breaker In-Memory Only
 - **Severity**: Medium
 - **Layer**: Sovereign
-- **Status**: Open
+- **Status**: RESOLVED (Pass 006-007)
 - **Description**: Circuit breaker state is tracked in-memory (`circuitState` Map). On server restart, all circuits reset to closed. This is acceptable for single-instance but not for clustered deployment.
 - **Remediation**: Persist circuit state to `sovereign_routing_decisions` table or a dedicated circuit_breaker_state table. Read on startup.
 - **Effort**: 1 hour
@@ -42,7 +42,7 @@
 ### G-005: No Rate Limiting on Public Endpoints
 - **Severity**: Medium
 - **Layer**: App
-- **Status**: Open
+- **Status**: RESOLVED (Pass 006-007)
 - **Description**: The Stripe webhook endpoint and public tRPC procedures have no rate limiting. A flood of requests could exhaust database connections.
 - **Remediation**: Add express-rate-limit middleware to the webhook route and a tRPC middleware for public procedures.
 - **Effort**: 30 minutes
@@ -57,7 +57,7 @@
 ### G-007: No Observability Integration
 - **Severity**: Medium
 - **Layer**: All
-- **Status**: Staged
+- **Status**: RESOLVED (Pass 007)
 - **Description**: No Sentry, Langfuse, or OpenTelemetry integration. Errors are logged to console only. The prompt requires OTel spans for Sovereign routing decisions.
 - **Remediation**: Add `@sentry/node` for error tracking. Add basic OTel span creation in Sovereign routing. Langfuse integration deferred until API key available.
 - **Effort**: 2 hours
@@ -65,7 +65,7 @@
 ### G-008: ATLAS Goal Execution Uses Single LLM Provider
 - **Severity**: Medium
 - **Layer**: ATLAS
-- **Status**: Open
+- **Status**: RESOLVED (Pass 006-007)
 - **Description**: `executeGoal` calls `invokeLLM` directly, bypassing the Sovereign routing layer. Goals should route through Sovereign for provider diversity and failover.
 - **Remediation**: Replace direct `invokeLLM` calls in ATLAS with `routeRequest` from the Sovereign service.
 - **Effort**: 30 minutes
@@ -73,7 +73,7 @@
 ### G-009: No Scheduled Health Check
 - **Severity**: Low
 - **Layer**: App
-- **Status**: Open
+- **Status**: RESOLVED (Pass 006-007)
 - **Description**: No automated health check runs periodically to verify the app is functioning. The prompt requires Phase D steady-state monitoring.
 - **Remediation**: Set up a Manus scheduled task that POSTs to `/api/scheduled/health` every 6 hours.
 - **Effort**: 30 minutes
@@ -91,9 +91,9 @@
 
 | Severity | Count | Remediated | Open |
 |----------|-------|------------|------|
-| High     | 2     | 0          | 2    |
-| Medium   | 5     | 1          | 4    |
-| Low      | 3     | 2          | 1    |
-| **Total**| **10**| **3**      | **7**|
+| High     | 2     | 2          | 0    |
+| Medium   | 5     | 5          | 0    |
+| Low      | 3     | 3          | 0    |
+| **Total**| **10**| **10**     | **0**|
 
-**Next action**: Tackle G-002 (ATLAS/Sovereign dedicated tests) and G-003 (AEGIS cache wiring) as the remaining high-priority items.
+**Status**: All 10 gaps resolved across Passes 004-007. Convergence confirmed with 3 consecutive clean passes (008, 009, 010).

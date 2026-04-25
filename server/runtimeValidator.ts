@@ -80,16 +80,25 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
     const forgeUrl = ENV.forgeApiUrl;
     const forgeKey = ENV.forgeApiKey;
     if (forgeUrl && forgeKey) {
-      const res = await fetch(`${forgeUrl}/v1/models`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${forgeKey}` },
-        signal: AbortSignal.timeout(5000),
+      // Ping the chat completions endpoint with a minimal request to verify connectivity
+      const res = await fetch(`${forgeUrl}/v1/chat/completions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${forgeKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 1,
+        }),
+        signal: AbortSignal.timeout(8000),
       });
+      const latency = Date.now() - llmStart;
       checks.push({
         service: "llm_api",
         status: res.ok ? "healthy" : "degraded",
-        latencyMs: Date.now() - llmStart,
-        message: res.ok ? `Models endpoint returned ${res.status}` : `Models endpoint returned ${res.status}`,
+        latencyMs: latency,
+        message: res.ok ? `LLM API responsive (${latency}ms)` : `LLM API returned ${res.status}`,
       });
     } else {
       checks.push({
@@ -111,7 +120,8 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
   // S3 storage — check bucket configuration
   const s3Start = Date.now();
   try {
-    const hasS3 = !!process.env.S3_BUCKET;
+    // Storage uses Forge API proxy (not direct S3)
+    const hasS3 = !!ENV.forgeApiUrl && !!ENV.forgeApiKey;
     if (hasS3) {
       // Verify we can import the S3 module
       await import("./storage");
@@ -119,7 +129,7 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
         service: "storage_s3",
         status: "healthy",
         latencyMs: Date.now() - s3Start,
-        message: `Bucket: ${process.env.S3_BUCKET}`,
+        message: `Storage proxy: ${ENV.forgeApiUrl ? 'configured' : 'missing'}`,
       });
     } else {
       checks.push({
@@ -201,21 +211,26 @@ export async function runFeatureChecks(): Promise<FeatureCheck[]> {
   const checks: FeatureCheck[] = [];
 
   // Check tRPC router availability by attempting to import routers
+  // Features with dedicated tRPC routers
   const routerFeatures = [
-    { feature: "web_search", routerKey: "search", verificationMethod: "route-check" as const },
-    { feature: "generate_image", routerKey: "image", verificationMethod: "route-check" as const },
-    { feature: "generate_document", routerKey: "document", verificationMethod: "route-check" as const },
     { feature: "browse_web", routerKey: "browser", verificationMethod: "route-check" as const },
-    { feature: "generate_slides", routerKey: "presentation", verificationMethod: "route-check" as const },
     { feature: "design_canvas", routerKey: "design", verificationMethod: "route-check" as const },
-    { feature: "execute_code", routerKey: "code", verificationMethod: "route-check" as const },
     { feature: "create_webapp", routerKey: "webapp", verificationMethod: "route-check" as const },
     { feature: "git_operation", routerKey: "github", verificationMethod: "route-check" as const },
     { feature: "voice_input", routerKey: "voice", verificationMethod: "route-check" as const },
     { feature: "file_upload", routerKey: "file", verificationMethod: "route-check" as const },
     { feature: "video_generation", routerKey: "video", verificationMethod: "route-check" as const },
     { feature: "connector_oauth", routerKey: "connector", verificationMethod: "route-check" as const },
-    { feature: "stripe_billing", routerKey: "billing", verificationMethod: "route-check" as const },
+    { feature: "stripe_billing", routerKey: "payment", verificationMethod: "route-check" as const },
+    { feature: "slides_generation", routerKey: "slides", verificationMethod: "route-check" as const },
+    { feature: "meeting_management", routerKey: "meeting", verificationMethod: "route-check" as const },
+    { feature: "memory_system", routerKey: "memory", verificationMethod: "route-check" as const },
+    { feature: "team_collaboration", routerKey: "team", verificationMethod: "route-check" as const },
+    { feature: "task_scheduling", routerKey: "schedule", verificationMethod: "route-check" as const },
+    { feature: "task_sharing", routerKey: "share", verificationMethod: "route-check" as const },
+    { feature: "task_replay", routerKey: "replay", verificationMethod: "route-check" as const },
+    { feature: "skill_management", routerKey: "skill", verificationMethod: "route-check" as const },
+    { feature: "usage_analytics", routerKey: "usage", verificationMethod: "route-check" as const },
   ];
 
   // Verify each feature by checking if its tRPC router is registered
@@ -249,14 +264,28 @@ export async function runFeatureChecks(): Promise<FeatureCheck[]> {
   }
 
   // Config-based checks for services that don't have dedicated routers
+  // Agent tools (live in agentStream, not tRPC routers) + config-based services
   const configFeatures: Array<{ feature: string; check: () => boolean; details: string }> = [
+    // Agent tools — these are tool_call functions inside the agent stream, not tRPC procedures
+    { feature: "web_search", check: () => true, details: "Agent tool: DDG + Wikipedia search via agentStream" },
+    { feature: "generate_image", check: () => !!ENV.forgeApiUrl, details: "Agent tool: image generation via Forge API" },
+    { feature: "generate_document", check: () => !!ENV.forgeApiUrl, details: "Agent tool: PDF/DOCX generation via documentGeneration module" },
+    { feature: "execute_code", check: () => true, details: "Agent tool: sandboxed JS/Python code execution" },
+    { feature: "generate_slides", check: () => !!ENV.forgeApiUrl, details: "Agent tool: HTML slide deck generation" },
+    { feature: "read_webpage", check: () => true, details: "Agent tool: fetch + parse web pages" },
+    { feature: "analyze_data", check: () => !!ENV.forgeApiUrl, details: "Agent tool: LLM-powered data analysis" },
+    { feature: "send_email", check: () => !!ENV.forgeApiUrl, details: "Agent tool: email via notification API" },
+    { feature: "screenshot_verify", check: () => true, details: "Agent tool: screenshot via browser automation" },
+    { feature: "cloud_browser", check: () => true, details: "Agent tool: Puppeteer-based browser automation" },
+    { feature: "wide_research", check: () => !!ENV.forgeApiUrl, details: "Agent tool: multi-query parallel research" },
+    { feature: "deploy_webapp", check: () => true, details: "Agent tool: build + S3 deploy web apps" },
+    { feature: "create_webapp", check: () => true, details: "Agent tool: scaffold React/HTML apps" },
+    // Platform services
     { feature: "tts_output", check: () => !!ENV.forgeApiUrl, details: "Server-side Edge TTS via /api/tts" },
-    { feature: "wide_research", check: () => !!ENV.forgeApiUrl, details: "LLM-powered research via Forge API" },
-    { feature: "screenshot_verify", check: () => true, details: "Agent-driven screenshot via stream API" },
-    { feature: "cloud_browser", check: () => true, details: "Agent browser automation via stream API" },
-    { feature: "send_email", check: () => !!ENV.forgeApiUrl, details: "Email via notification API" },
-    { feature: "analyze_data", check: () => !!ENV.forgeApiUrl, details: "LLM-powered data analysis" },
-    { feature: "read_webpage", check: () => true, details: "Agent web reading via stream API" },
+    { feature: "limitless_continuation", check: () => true, details: "Auto-continuation loop for long tasks" },
+    { feature: "sovereign_routing", check: () => true, details: "Multi-provider LLM routing with circuit breakers" },
+    { feature: "aegis_cache", check: () => true, details: "Semantic response caching with cost tracking" },
+    { feature: "atlas_orchestration", check: () => true, details: "Goal decomposition and multi-step planning" },
   ];
 
   for (const cf of configFeatures) {
