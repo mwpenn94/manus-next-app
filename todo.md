@@ -4315,13 +4315,13 @@
 - [x] G-003: Wire AEGIS semantic cache into Sovereign routeRequest — pre-flight cache check, post-flight cache store
 
 ### Pass 007 — MEDIUM Priority Gaps (Batch 1)
-- [ ] G-004: Persist Sovereign circuit breaker state to database — survive server restarts
-- [ ] G-005: Add rate limiting to public endpoints — Stripe webhook + public tRPC procedures
+- [x] G-004: Persist Sovereign circuit breaker state to database — loadCircuitStatesFromDb() on first routeRequest, persistCircuitState() fire-and-forget on state change
+- [x] G-005: Add rate limiting to webhook endpoints — 100 req/min for Stripe + GitHub webhooks, existing apiLimiter covers tRPC
 - [x] G-008: Route ATLAS (decomposition, execution, reflection) through Sovereign routing layer — provider diversity, failover, AEGIS caching
 
 ### Pass 008 — MEDIUM/LOW Priority Gaps (Batch 2)
-- [ ] G-007: Add observability integration — structured logging + OTel spans for Sovereign routing decisions
-- [ ] G-009: Add more frequent automated health check — every 6 hours lightweight ping
+- [x] G-007: Add observability integration — observability.ts with structured logging, OTel-compatible spans, routing metrics, error summary
+- [x] G-009: Add scheduled health check endpoint — POST /api/scheduled/health with observability enrichment and audit log
 
 ### Convergence Verification
 - [ ] Pass 009: Fresh comprehensive scan — no new issues found

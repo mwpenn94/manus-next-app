@@ -14,6 +14,7 @@
 import * as db from "../db";
 import { invokeLLM } from "../_core/llm";
 import { checkCache, writeCache, estimateCost, classifyTask } from "./aegis";
+import * as obs from "./observability";
 
 // ── Types ──
 
@@ -61,6 +62,48 @@ interface CircuitState {
 }
 
 const circuitStates = new Map<string, CircuitState>();
+let circuitStatesLoaded = false;
+
+/**
+ * Load circuit breaker states from DB on first access (G-004).
+ * Survives server restarts by reading from sovereign_providers table.
+ */
+async function loadCircuitStatesFromDb(): Promise<void> {
+  if (circuitStatesLoaded) return;
+  circuitStatesLoaded = true;
+  try {
+    const providers = await db.getActiveProviders();
+    for (const p of providers) {
+      circuitStates.set(p.name, {
+        state: (p.circuitState as CircuitState["state"]) || "closed",
+        failures: p.consecutiveFailures ?? 0,
+        openedAt: p.circuitOpenedAt ? new Date(p.circuitOpenedAt).getTime() : null,
+        halfOpenRequests: 0,
+      });
+    }
+  } catch (err) {
+    console.warn("[Sovereign] Failed to load circuit states from DB, using defaults:", (err as Error).message?.slice(0, 100));
+  }
+}
+
+/**
+ * Persist circuit breaker state change to DB (G-004).
+ * Non-blocking — fire-and-forget to avoid slowing the hot path.
+ */
+function persistCircuitState(providerName: string, circuit: CircuitState): void {
+  db.getActiveProviders().then((providers) => {
+    const provider = providers.find((p) => p.name === providerName);
+    if (provider) {
+      db.updateProviderCircuit(provider.id, {
+        circuitState: circuit.state,
+        consecutiveFailures: circuit.failures,
+        circuitOpenedAt: circuit.openedAt ? new Date(circuit.openedAt) : null,
+      }).catch((err) => {
+        console.warn("[Sovereign] Failed to persist circuit state:", (err as Error).message?.slice(0, 100));
+      });
+    }
+  }).catch(() => { /* non-fatal */ });
+}
 
 function getCircuitState(providerName: string): CircuitState {
   if (!circuitStates.has(providerName)) {
@@ -95,6 +138,7 @@ function recordSuccess(providerName: string) {
   circuit.failures = 0;
   circuit.openedAt = null;
   circuit.halfOpenRequests = 0;
+  persistCircuitState(providerName, circuit); // G-004: persist to DB
 }
 
 function recordFailure(providerName: string) {
@@ -105,6 +149,7 @@ function recordFailure(providerName: string) {
     // Failed during half-open → back to open
     circuit.state = "open";
     circuit.openedAt = Date.now();
+    persistCircuitState(providerName, circuit); // G-004: persist to DB
     return;
   }
 
@@ -112,6 +157,7 @@ function recordFailure(providerName: string) {
     circuit.state = "open";
     circuit.openedAt = Date.now();
   }
+  persistCircuitState(providerName, circuit); // G-004: persist to DB
 }
 
 // ── Guardrails ──
@@ -255,6 +301,9 @@ export async function selectProvider(
 export async function routeRequest(request: RoutingRequest): Promise<RoutingResult> {
   const startTime = Date.now();
 
+  // Load circuit breaker states from DB on first call (G-004)
+  await loadCircuitStatesFromDb();
+
   // Input guardrails
   const lastMessage = request.messages[request.messages.length - 1];
   const inputContent = typeof lastMessage.content === "string" ? lastMessage.content : "";
@@ -268,6 +317,13 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
     request.requiredCapabilities ?? [],
     request.maxCost,
     request.preferredProvider
+  );
+
+  // G-007: Start observability span for this routing decision
+  const routingSpan = obs.startRoutingSpan(
+    request.taskType ?? "unknown",
+    request.userId,
+    providers.length
   );
 
   let lastError: Error | null = null;
@@ -288,8 +344,9 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
         // Cache hit — zero-cost response
         output = cacheResult.response;
         response = { choices: [{ message: { content: output } }] };
-        console.log(`[Sovereign] AEGIS cache hit for provider ${provider.name}, saved ${cacheResult.costSaved ?? 0} credits`);
+        obs.recordCacheHit(routingSpan, cacheResult.costSaved ?? 0);
       } else {
+        obs.recordCacheMiss(routingSpan);
         // Cache miss — call LLM and store result
         response = await invokeLLM({
           messages: request.messages as any,
@@ -313,6 +370,7 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
 
       // Record success
       recordSuccess(provider.name);
+      obs.recordProviderAttempt(routingSpan, provider.name, true, Date.now() - startTime);
 
       const latencyMs = Date.now() - startTime;
       const estimatedTokens = Math.ceil(inputContent.split(/\s+/).length * 1.3);
@@ -339,6 +397,9 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
         });
       }
 
+      // G-007: End span on success
+      obs.endSpan(routingSpan, "ok");
+
       return {
         provider: provider.name,
         model: provider.model,
@@ -351,6 +412,7 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
     } catch (err: any) {
       lastError = err;
       recordFailure(provider.name);
+      obs.recordProviderAttempt(routingSpan, provider.name, false, undefined, err.message);
       console.warn(`[Sovereign] Provider ${provider.name} failed (attempt ${attempts}):`, err.message?.slice(0, 200));
 
       // Record failed routing decision
@@ -364,6 +426,8 @@ export async function routeRequest(request: RoutingRequest): Promise<RoutingResu
     }
   }
 
+  // G-007: End span on total failure
+  obs.endSpan(routingSpan, "error");
   throw new Error(`All providers failed after ${attempts} attempts. Last error: ${lastError?.message ?? "Unknown"}`);
 }
 

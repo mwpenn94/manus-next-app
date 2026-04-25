@@ -185,6 +185,17 @@ async function startServer() {
   app.use("/api/trpc", apiLimiter);
   app.use("/api/analytics/collect", analyticsLimiter);
 
+  // Webhook rate limiters (G-005)
+  const webhookLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 100, // 100 webhook events per minute per IP (Stripe sends bursts)
+    message: { error: "Webhook rate limit exceeded." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use("/api/stripe/webhook", webhookLimiter);
+  app.use("/api/github/webhook", webhookLimiter);
+
   // ── GitHub webhook (raw body for HMAC verification) ──
   app.post("/api/github/webhook", express.raw({ type: "application/json" }), async (req, res) => {
     try {
@@ -237,6 +248,17 @@ async function startServer() {
       await handleVuMonitor(req, res);
     } catch (err: any) {
       console.error("[VU Monitor] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Scheduled Health Check (G-009) ──
+  app.post("/api/scheduled/health", async (req, res) => {
+    try {
+      const { handleHealthCheck } = await import("../scheduledHealthCheck");
+      await handleHealthCheck(req, res);
+    } catch (err: any) {
+      console.error("[ScheduledHealthCheck] Error:", err);
       res.status(500).json({ error: err.message });
     }
   });
