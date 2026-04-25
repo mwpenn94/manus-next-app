@@ -88,7 +88,7 @@ export default function ShareDialog({ open, onOpenChange, taskExternalId, taskTi
   };
 
   const copyLink = useCallback((token: string, id: string) => {
-    const fullUrl = `${window.location.origin}/shared/${token}`;
+    const fullUrl = `${window.location.origin}/share/${token}`;
     navigator.clipboard.writeText(fullUrl);
     setCopiedId(id);
     toast.success("Link copied!");
@@ -121,7 +121,7 @@ export default function ShareDialog({ open, onOpenChange, taskExternalId, taskTi
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{taskTitle}</p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      {window.location.origin}/shared/...
+                      {window.location.origin}/share/...
                     </p>
                   </div>
                 </div>
@@ -178,7 +178,7 @@ export default function ShareDialog({ open, onOpenChange, taskExternalId, taskTi
                         )}
                       </button>
                       <button
-                        onClick={() => window.open(`/shared/${share.shareToken}`, "_blank")}
+                        onClick={() => window.open(`/share/${share.shareToken}`, "_blank")}
                         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                         title="Open"
                       >

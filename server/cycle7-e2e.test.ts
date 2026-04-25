@@ -35,7 +35,7 @@ describe("Cycle 7 Phase A: All Pages Routed", () => {
     { path: "/browser", component: "BrowserPage" },
     { path: "/webapp-builder", component: "WebAppBuilderPage" },
     { path: "/profile", component: "ProfilePage" },
-    { path: "/shared/:token", component: "SharedTaskView" },
+    { path: "/share/:token", component: "SharedTaskView" },
     { path: "/connectors", component: "ConnectorsPage" },
     { path: "/skills", component: "SkillsPage" },
     { path: "/slides", component: "SlidesPage" },
@@ -229,7 +229,7 @@ describe("Cycle 7 Regression: Existing Routes Preserved", () => {
     "/", "/task/:id", "/billing", "/analytics", "/settings",
     "/memory", "/schedule", "/replay", "/replay/:taskId",
     "/projects", "/projects/webapp/:projectId", "/project/:id",
-    "/library", "/github", "/github/:repoId", "/shared/:token",
+    "/library", "/github", "/github/:repoId", "/share/:token",
     "/browser", "/webapp-builder", "/profile",
   ];
 

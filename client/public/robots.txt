@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /share/
 Disallow: /shared/
 
 # Manus Next — Sovereign AI Agent

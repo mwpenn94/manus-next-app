@@ -42,7 +42,7 @@ export const shareRouter = router({
 
         return {
           shareToken,
-          shareUrl: `/shared/${shareToken}`,
+          shareUrl: `/share/${shareToken}`,
           expiresAt,
           hasPassword: !!passwordHash,
         };
@@ -110,6 +110,10 @@ export const shareRouter = router({
               role: m.role,
               content: m.content,
               createdAt: m.createdAt,
+              // Include actions and card data for rich rendering in shared view
+              actions: m.actions ?? undefined,
+              cardType: m.cardType ?? undefined,
+              cardData: m.cardData ?? undefined,
             })),
             viewCount: (share as any).viewCount ?? 0,
             expiresAt: share.expiresAt ?? null,

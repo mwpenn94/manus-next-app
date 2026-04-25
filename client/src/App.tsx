@@ -142,6 +142,9 @@ function Router() {
       <Route path="/github">
         <SuspenseRoute><GitHubPage /></SuspenseRoute>
       </Route>
+      <Route path="/share/:token">
+        <SuspenseRoute><SharedTaskView /></SuspenseRoute>
+      </Route>
       <Route path="/shared/:token">
         <SuspenseRoute><SharedTaskView /></SuspenseRoute>
       </Route>

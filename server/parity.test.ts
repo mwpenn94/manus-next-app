@@ -263,7 +263,7 @@ describe("share router", () => {
 
     expect(result.shareToken).toBeDefined();
     expect(result.shareToken.length).toBe(24);
-    expect(result.shareUrl).toContain("/shared/");
+    expect(result.shareUrl).toContain("/share/");
     expect(result.hasPassword).toBe(false);
     expect(result.expiresAt).toBeNull();
   });

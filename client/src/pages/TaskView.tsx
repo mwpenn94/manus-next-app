@@ -2970,19 +2970,43 @@ export default function TaskView() {
 
   // ── Header button handlers ──
 
-  const handleShareUrl = () => {
-    const url = `${window.location.origin}/task/${task.id}`;
-    navigator.clipboard.writeText(url);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
+  const createShareMutation = trpc.share.create.useMutation();
+
+  const handleShareUrl = async () => {
+    // Auto-create a share link and copy the share URL (not the task URL)
+    if (!taskExternalId || !isAuthenticated) {
+      // Fallback for unauth: copy the task URL
+      const url = `${window.location.origin}/task/${task.id}`;
+      navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+      return;
+    }
+    try {
+      const result = await createShareMutation.mutateAsync({
+        taskExternalId,
+      });
+      const fullUrl = `${window.location.origin}/share/${result.shareToken}`;
+      navigator.clipboard.writeText(fullUrl);
+      setShareCopied(true);
+      toast.success("Share link copied!");
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create share link");
+    }
   };
 
   const handleShareDialog = () => {
     if (isAuthenticated) {
-      setShareDialogOpen(true);
+      // One-tap: auto-create share link and copy URL
+      handleShareUrl();
     } else {
       handleShareUrl();
     }
+  };
+
+  const handleManageShares = () => {
+    setShareDialogOpen(true);
   };
 
   const handleToggleFavorite = () => {

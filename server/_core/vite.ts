@@ -6,6 +6,35 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
 
+/**
+ * Extract share token from a URL path that starts with /share/ or /shared/
+ * Returns null if the path doesn't match.
+ */
+function extractShareToken(url: string): string | null {
+  const match = url.match(/^\/share[d]?\/([^?/]+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Inject OG/social meta tags into the HTML template for share pages.
+ * Works for both /share/:token and /shared/:token (legacy) routes.
+ */
+async function injectShareMeta(template: string, token: string): Promise<string> {
+  try {
+    const { getTaskShareByToken } = await import("../db");
+    const share = await getTaskShareByToken(token);
+    if (share) {
+      const title = `Shared Task — Manus Next`;
+      const desc = `View a shared AI agent task on Manus Next.`;
+      return template
+        .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+        .replace(/content="Manus — Your Autonomous AI Agent"/, `content="${title}"`)
+        .replace(/content="An open-source autonomous AI agent[^"]*"/, `content="${desc}"`);
+    }
+  } catch { /* fallback to default meta */ }
+  return template;
+}
+
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
@@ -39,21 +68,10 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx?v=${nanoid()}"`
       );
 
-      // Inject dynamic meta tags for shared task pages
-      if (url.startsWith("/shared/")) {
-        try {
-          const token = url.replace("/shared/", "").split("?")[0];
-          const { getTaskShareByToken } = await import("../db");
-          const share = await getTaskShareByToken(token);
-          if (share) {
-            const title = `Shared Task — Manus`;
-            const desc = `View a shared AI agent task on Manus.`;
-            template = template
-              .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-              .replace(/content="Manus — Your Autonomous AI Agent"/, `content="${title}"`)
-              .replace(/content="An open-source autonomous AI agent[^"]*"/, `content="${desc}"`);
-          }
-        } catch { /* fallback to default meta */ }
+      // Inject dynamic meta tags for shared task pages (/share/ and /shared/)
+      const shareToken = extractShareToken(url);
+      if (shareToken) {
+        template = await injectShareMeta(template, shareToken);
       }
 
       const page = await vite.transformIndexHtml(url, template);
@@ -82,19 +100,14 @@ export function serveStatic(app: Express) {
   // For shared pages, inject dynamic meta tags
   app.use("*", async (req, res) => {
     const url = req.originalUrl;
-    if (url.startsWith("/shared/")) {
+    const shareToken = extractShareToken(url);
+    if (shareToken) {
       try {
-        const token = url.replace("/shared/", "").split("?")[0];
         const { getTaskShareByToken } = await import("../db");
-        const share = await getTaskShareByToken(token);
+        const share = await getTaskShareByToken(shareToken);
         if (share) {
           let html = fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
-          const title = `Shared Task — Manus`;
-          const desc = `View a shared AI agent task on Manus.`;
-          html = html
-            .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-            .replace(/content="Manus — Your Autonomous AI Agent"/, `content="${title}"`)
-            .replace(/content="An open-source autonomous AI agent[^"]*"/, `content="${desc}"`);
+          html = await injectShareMeta(html, shareToken);
           return res.status(200).set({ "Content-Type": "text/html" }).end(html);
         }
       } catch { /* fallback */ }

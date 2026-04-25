@@ -4386,3 +4386,19 @@
 - [x] Remove card-like bg/border from completed actions accordion
 - [x] Fix InteractiveOutputCard Open action — xlsx/csv files force download instead of opening blank tab in Safari
 - [x] 21 tests passing in gate-removal-and-card-fixes.test.ts
+### Share Link System Overhaul
+- [x] Fix Share button to auto-create share link and copy URL (not task prompt/URL)
+- [x] Change share route from /shared/:token to /share/:token for Manus parity
+- [x] Upgrade SharedTaskView with Manus-style header, message rendering, action steps, tool indicators, output cards
+- [x] Add loading skeleton with pulse animations to SharedTaskView
+- [x] Add sticky bottom bar with "Try Manus" CTA on share page
+- [x] Fix ShareDialog.tsx stale /shared/ references → /share/
+- [x] Fix vite.ts meta-tag injection for both /share/ and /shared/ routes
+- [x] Enrich share.view API to include actions, cardType, cardData in messages
+- [x] Add wrong password handling with error feedback in PasswordGate
+- [x] Parse JSON strings for actions/cardData in SharedTaskView
+- [x] Add Array.isArray guard for parsed actions
+- [x] Update robots.txt to block both /share/ and /shared/
+- [x] Update all test files (/shared/ → /share/) — parity, cycle7-e2e
+- [x] Write 19 new share-view-enrichment tests (all passing)
+- [x] Recursive optimization converged (4 passes, 2 consecutive no-action passes)
