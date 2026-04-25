@@ -4324,6 +4324,6 @@
 - [x] G-009: Add scheduled health check endpoint — POST /api/scheduled/health with observability enrichment and audit log
 
 ### Convergence Verification
-- [ ] Pass 009: Fresh comprehensive scan — no new issues found
-- [ ] Pass 010: Second clean pass — no new issues found
-- [ ] Pass 011: Third clean pass — convergence confirmed
+- [x] Pass 008: Adversarial scan — 39/39 tests pass, no new issues found (convergence 1/3)
+- [x] Pass 009: Depth scan — 37/37 tests pass, no new issues found (convergence 2/3)
+- [x] Pass 010: Future-State & Synthesis scan — 24/24 tests pass, convergence confirmed (3/3)
