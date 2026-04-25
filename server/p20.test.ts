@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * P20 Tests — Stripe Checkout + Keyboard Shortcuts Panel
  *
@@ -108,7 +109,7 @@ describe("P20 — Stripe Checkout Integration", () => {
   });
 
   describe("Payment Router", () => {
-    const routers = readFile("server/routers.ts");
+    const routers = readRouterSource();
 
     it("has payment.products public procedure", () => {
       expect(routers).toMatch(/payment.*router/);

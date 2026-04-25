@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Tests for PDF text extraction module
  */
@@ -103,10 +104,7 @@ describe("agentTools PDF integration", () => {
 describe("Library PDF tRPC endpoints", () => {
   it("routers.ts exports extractPdfText procedure", async () => {
     const fs = await import("fs");
-    const source = fs.readFileSync(
-      new URL("./routers.ts", import.meta.url).pathname.replace("file:", ""),
-      "utf-8"
-    );
+    const source = readRouterSource();
     expect(source).toContain("extractPdfText");
     expect(source).toContain("extractPdfFromUpload");
   });

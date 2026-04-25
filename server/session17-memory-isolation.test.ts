@@ -356,11 +356,11 @@ describe("Template CRUD backend", () => {
   });
 
   it("should have templates router with list/create/update/delete/use", () => {
-    expect(routersSource).toContain("templates: router(");
+    expect(routersSource).toContain("templatesRouter = router(");
     expect(routersSource).toContain("list: protectedProcedure");
     // create, update, delete, use are all under templates router
     const templatesSection = routersSource.slice(
-      routersSource.indexOf("templates: router(")
+      routersSource.indexOf("templatesRouter = router(")
     );
     expect(templatesSection).toContain("create: protectedProcedure");
     expect(templatesSection).toContain("update: protectedProcedure");

@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Session 25: Convergence-Validated Tests
  *
@@ -496,12 +497,7 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
 // ── Feature 6: Task Duplicate/Fork ──
 describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
   it("routers.ts has a task.duplicate procedure", async () => {
-    const fs = await import("fs");
-    const path = await import("path");
-    const source = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const source = readRouterSource();
     expect(source).toContain("duplicate:");
     expect(source).toContain("sourceExternalId");
     expect(source).toContain("upToMessageIndex");
@@ -509,24 +505,14 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
   });
 
   it("Duplicate procedure copies messages from source task", async () => {
-    const fs = await import("fs");
-    const path = await import("path");
-    const source = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const source = readRouterSource();
     expect(source).toContain("getTaskMessages(sourceTask.id)");
     expect(source).toContain("addTaskMessage");
     expect(source).toContain("messagesCopied");
   });
 
   it("Duplicate procedure supports partial copy via upToMessageIndex", async () => {
-    const fs = await import("fs");
-    const path = await import("path");
-    const source = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const source = readRouterSource();
     // Should slice messages when upToMessageIndex is provided
     expect(source).toMatch(/upToMessageIndex.*slice/s);
   });
@@ -555,12 +541,7 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
 
   // Convergence Pass 2: Adversarial — empty task guard on server
   it("Server-side duplicate rejects empty tasks", async () => {
-    const fs = await import("fs");
-    const path = await import("path");
-    const source = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const source = readRouterSource();
     expect(source).toContain("Cannot duplicate a task with no messages");
     expect(source).toContain("sourceMessages.length === 0");
   });
@@ -593,12 +574,7 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
 
   // Convergence Pass 2: Adversarial — upToMessageIndex bounds clamping
   it("Server-side duplicate clamps upToMessageIndex to message count", async () => {
-    const fs = await import("fs");
-    const path = await import("path");
-    const source = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const source = readRouterSource();
     // Should use Math.min to prevent out-of-bounds slicing
     expect(source).toContain("Math.min(input.upToMessageIndex + 1, sourceMessages.length)");
   });

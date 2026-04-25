@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * P21 Tests — Task Export + Notification Center + Dashboard Analytics
  *
@@ -71,7 +72,7 @@ describe("P21-2 — Notification Center", () => {
 
 describe("P21-3 — Dashboard Analytics Backend", () => {
   const db = readFile("server/db.ts");
-  const routers = readFile("server/routers.ts");
+  const routers = readRouterSource();
 
   describe("getTaskTrends function", () => {
     it("is exported from db.ts", () => {
@@ -106,11 +107,11 @@ describe("P21-3 — Dashboard Analytics Backend", () => {
 
   describe("tRPC usage router", () => {
     it("imports getTaskTrends from ./db", () => {
-      expect(routers).toMatch(/getTaskTrends.*from\s+["']\.\/db["']/s);
+      expect(routers).toMatch(/getTaskTrends.*from\s+["']\.\.?\/db["']/s);
     });
 
     it("imports getTaskPerformance from ./db", () => {
-      expect(routers).toMatch(/getTaskPerformance.*from\s+["']\.\/db["']/s);
+      expect(routers).toMatch(/getTaskPerformance.*from\s+["']\.\.?\/db["']/s);
     });
 
     it("has usage.taskTrends procedure", () => {

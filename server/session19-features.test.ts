@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * Session 19 Tests: Memory Key Hygiene, Stale Task Notifications,
  * Attachment Preview, Memory Persistence Toggle
@@ -186,7 +187,7 @@ describe("Session 19 — Memory Extraction Key Naming", () => {
 describe("Session 19 — Stale Task Notifications", () => {
   const dbSrc = readSrc("server/db.ts");
   const schemaSrc = readSrc("drizzle/schema.ts");
-  const routersSrc = readSrc("server/routers.ts");
+  const routersSrc = readRouterSource();
 
   it("adds staleCompleted flag to tasks schema", () => {
     expect(schemaSrc).toMatch(/staleCompleted/);
@@ -241,7 +242,7 @@ describe("Session 19 — Stale Task UI", () => {
 // ═══════════════════════════════════════════════════════════════
 describe("Session 19 — Attachment Preview in Sidebar", () => {
   const dbSrc = readSrc("server/db.ts");
-  const routersSrc = readSrc("server/routers.ts");
+  const routersSrc = readRouterSource();
   const appLayoutSrc = readSrc("client/src/components/AppLayout.tsx");
 
   it("has getTaskThumbnails function in db.ts", () => {

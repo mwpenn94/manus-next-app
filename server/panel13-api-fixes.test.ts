@@ -42,7 +42,7 @@ describe("Panel 13: Input length constraints", () => {
   });
 
   it("library.artifacts has max length on search and type", () => {
-    const artifactsStart = routerCode.indexOf("library: router");
+    const artifactsStart = routerCode.indexOf("libraryRouter = router(");
     const artifactsBlock = routerCode.slice(artifactsStart, artifactsStart + 500);
     expect(artifactsBlock).toContain("type: z.string().max(64)");
     expect(artifactsBlock).toContain("search: z.string().max(256)");
@@ -60,13 +60,13 @@ describe("Panel 13: Ownership checks (IDOR prevention)", () => {
   const routerCode = readRouterSource();
 
   it("design.get checks userId ownership", () => {
-    const getStart = routerCode.indexOf("design: router");
+    const getStart = routerCode.indexOf("designRouter = router(");
     const getBlock = routerCode.slice(getStart, getStart + 500);
     expect(getBlock).toContain("design.userId !== ctx.user.id");
   });
 
   it("design.update checks userId ownership before updating", () => {
-    const updateStart = routerCode.indexOf("design: router");
+    const updateStart = routerCode.indexOf("designRouter = router(");
     const routerBlock = routerCode.slice(updateStart, updateStart + 2000);
     // Find the update mutation
     const updatePos = routerBlock.indexOf("update: protectedProcedure");
@@ -76,7 +76,7 @@ describe("Panel 13: Ownership checks (IDOR prevention)", () => {
   });
 
   it("design.export checks userId ownership before exporting", () => {
-    const designStart = routerCode.indexOf("design: router");
+    const designStart = routerCode.indexOf("designRouter = router(");
     const routerBlock = routerCode.slice(designStart, designStart + 3000);
     const exportPos = routerBlock.indexOf("export: protectedProcedure");
     const exportBlock = routerBlock.slice(exportPos, exportPos + 500);

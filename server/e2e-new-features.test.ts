@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * E2E Tests for New Features:
  * 1. GitHub Import flow
@@ -36,20 +37,14 @@ describe("GitHub Import Flow", () => {
   });
 
   it("connectRepo procedure exists in routers.ts", () => {
-    const content = fs.readFileSync(
-      path.resolve("server/routers.ts"),
-      "utf-8"
-    );
+    const content = readRouterSource();
     expect(content).toContain("connectRepo:");
     expect(content).toContain("fullName: z.string()");
     expect(content).toContain("htmlUrl: z.string()");
   });
 
   it("listRemoteRepos procedure exists and returns repos with connected flag", () => {
-    const content = fs.readFileSync(
-      path.resolve("server/routers.ts"),
-      "utf-8"
-    );
+    const content = readRouterSource();
     expect(content).toContain("listRemoteRepos:");
     expect(content).toContain("return { repos, connected: true }");
     expect(content).toContain("return { repos: [], connected: false }");
@@ -60,19 +55,13 @@ describe("GitHub Import Flow", () => {
 
 describe("Deploy from GitHub Repo", () => {
   it("deployFromGitHub procedure exists in routers.ts", () => {
-    const content = fs.readFileSync(
-      path.resolve("server/routers.ts"),
-      "utf-8"
-    );
+    const content = readRouterSource();
     expect(content).toContain("deployFromGitHub:");
     expect(content).toContain("externalId: z.string()");
   });
 
   it("deployFromGitHub fetches repo tree and finds index.html", () => {
-    const content = fs.readFileSync(
-      path.resolve("server/routers.ts"),
-      "utf-8"
-    );
+    const content = readRouterSource();
     expect(content).toContain("getRepoTree");
     expect(content).toContain("index.html");
     // Should look in multiple directories
@@ -80,10 +69,7 @@ describe("Deploy from GitHub Repo", () => {
   });
 
   it("deployFromGitHub uses CloudFront provisioning", () => {
-    const content = fs.readFileSync(
-      path.resolve("server/routers.ts"),
-      "utf-8"
-    );
+    const content = readRouterSource();
     // The deploy procedure should use the same publishing pipeline
     expect(content).toContain("storagePut");
   });

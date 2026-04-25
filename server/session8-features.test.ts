@@ -108,7 +108,7 @@ describe("CloudFront Distribution Provisioning", () => {
     const routersFile = readRouterSource();
 
     it("deploy procedure imports provisionDistribution from cloudfront", () => {
-      expect(routersFile).toContain('import("./cloudfront")');
+      expect(routersFile).toContain('import("../cloudfront")');
     });
 
     it("deploy procedure calls provisionDistribution", () => {

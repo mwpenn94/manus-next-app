@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * P25 Tests — System/Auto Theme Option
  *
@@ -147,7 +148,7 @@ describe("P25 — System/Auto Theme", () => {
   });
 
   describe("Server — Theme default in preferences", () => {
-    const routers = read("server/routers.ts");
+    const routers = readRouterSource();
 
     it("includes theme: 'dark' in default generalSettings", () => {
       expect(routers).toContain("theme: 'dark'");

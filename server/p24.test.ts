@@ -1,3 +1,4 @@
+import { readRouterSource } from "./test-utils/readRouterSource";
 /**
  * P24 Tests — Dark/Light Theme Toggle + Persistence
  *
@@ -190,7 +191,7 @@ describe("P24 — Theme Toggle", () => {
   });
 
   describe("Server — Theme in Preferences Default", () => {
-    const routers = read("server/routers.ts");
+    const routers = readRouterSource();
 
     it("includes theme in default generalSettings", () => {
       expect(routers).toContain("theme: 'dark'");

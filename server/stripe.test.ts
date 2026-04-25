@@ -338,7 +338,7 @@ describe("Stripe Integration", () => {
       const fs = await import("fs");
       const routersContent = readRouterSource();
       
-      expect(routersContent).toContain("payment: router(");
+      expect(routersContent).toContain("paymentRouter = router(");
       expect(routersContent).toContain("products: publicProcedure");
       expect(routersContent).toContain("createCheckout: protectedProcedure");
     });
