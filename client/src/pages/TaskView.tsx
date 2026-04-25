@@ -969,6 +969,14 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                 <Volume2 className="w-3 h-3" />
               )}
               {tts.isLoading ? "Loading..." : tts.isSpeaking ? "Stop" : "Listen"}
+              {tts.isSpeaking && (
+                <span className="flex items-center gap-[2px] ml-1" aria-hidden="true">
+                  <span className="w-[2px] h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "0ms" }} />
+                  <span className="w-[2px] h-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
+                  <span className="w-[2px] h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: "300ms" }} />
+                  <span className="w-[2px] h-3 bg-primary rounded-full animate-pulse" style={{ animationDelay: "450ms" }} />
+                </span>
+              )}
             </button>
             {/* Regenerate button for last assistant message */}
             {isLast && canRegenerate && onRegenerate && (
@@ -3901,14 +3909,29 @@ export default function TaskView() {
                   const ext = f.fileName.split(".").pop()?.toUpperCase() || "FILE";
                   const sizeKB = f.size ? Math.round(f.size / 1024) : null;
                   const sizeLabel = sizeKB ? (sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`) : null;
+                  const isImage = /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(f.fileName);
                   return (
-                    <div key={i} className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
-                      <FileIcon className="w-3 h-3 text-primary" />
-                      <span className="text-foreground max-w-[150px] truncate">{f.fileName}</span>
-                      <span className="text-muted-foreground text-[10px] shrink-0">{ext}{sizeLabel ? ` · ${sizeLabel}` : ""}</span>
-                      <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
-                        <X className="w-3 h-3" />
-                      </button>
+                    <div key={i} className="relative group">
+                      {isImage && f.url ? (
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border bg-muted/50">
+                          <img src={f.url} alt={f.fileName} className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => removeFile(i)}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 bg-muted/50 border border-border rounded-lg px-2.5 py-1.5 text-xs">
+                          <FileIcon className="w-3 h-3 text-primary" />
+                          <span className="text-foreground max-w-[150px] truncate">{f.fileName}</span>
+                          <span className="text-muted-foreground text-[10px] shrink-0">{ext}{sizeLabel ? ` · ${sizeLabel}` : ""}</span>
+                          <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

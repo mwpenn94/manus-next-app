@@ -88,11 +88,36 @@ export function buildStreamCallbacks(
       setters.accumulatedRef.current = state.accumulated;
       setters.setStreamContent(state.accumulated);
     },
-    onDocument: (doc: { title: string; url: string }) => {
+    onDocument: (doc: { title: string; url: string; format?: string }) => {
       const docTitle = doc.title || "Document";
-      state.accumulated += `\n\n📄 **${docTitle}** — [Download Document](${doc.url})\n\n`;
-      setters.accumulatedRef.current = state.accumulated;
-      setters.setStreamContent(state.accumulated);
+      const fmt = doc.format?.toLowerCase() || "";
+      const urlLower = doc.url?.toLowerCase() || "";
+      const isPdf = fmt === "pdf" || urlLower.endsWith(".pdf");
+      const isDocx = fmt === "docx" || urlLower.endsWith(".docx");
+      const isXlsx = fmt === "xlsx" || urlLower.endsWith(".xlsx") || fmt === "csv" || urlLower.endsWith(".csv");
+      const isRichDoc = isPdf || isDocx || isXlsx;
+      if (isRichDoc && setters.addMessage) {
+        const outputType = isXlsx ? "spreadsheet" : "document";
+        const formatLabel = isPdf ? "PDF" : isDocx ? "Word" : isXlsx ? "Spreadsheet" : "Document";
+        setters.addMessage(setters.taskId, {
+          role: "assistant",
+          content: `\uD83D\uDCC4 **${docTitle}** is ready`,
+          cardType: "interactive_output" as const,
+          cardData: {
+            outputType,
+            title: docTitle,
+            description: `${formatLabel} document generated`,
+            previewUrl: isPdf ? doc.url : undefined,
+            openUrl: doc.url,
+            downloadUrl: doc.url,
+          },
+        });
+      } else {
+        // Plain or no addMessage: inline markdown link
+        state.accumulated += `\n\n\uD83D\uDCC4 **${docTitle}** — [Download Document](${doc.url})\n\n`;
+        setters.accumulatedRef.current = state.accumulated;
+        setters.setStreamContent(state.accumulated);
+      }
     },
     onDone: (content: string) => {
       state.accumulated = content || state.accumulated;

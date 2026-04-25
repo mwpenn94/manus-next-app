@@ -951,7 +951,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         aria-label="Main navigation"
         className={cn(
           "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200",
-          sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden"
+          sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden opacity-0"
         )}
       >
         {sidebarContent}

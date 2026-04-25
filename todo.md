@@ -4030,3 +4030,58 @@
 - [x] C8-K1: Server-side PDF text extraction — extract PDF text before sending to LLM so the agent can actually read attached PDFs
 - [x] C8-K2: PDF file_url → text content conversion in agentStream preprocessing
 - [x] C8-K3: Strengthen system prompt to NEVER claim inability to read attached files even if extraction fails — use failover (describe what you can infer)
+
+## Cycle 9: Continuous Parity Optimization (7.82 → 9.0+)
+
+### Streaming Chat (8.5 → 9.0)
+- [x] Fix step count accuracy — only show completed count when steps actually completed
+- [x] Fix TaskProgressCard derivePhases to not inflate with placeholder phases
+
+### Browser Automation (7.5 → 8.5)
+- [x] Wire QA Testing page Run buttons to actual Playwright execution via runQATestSuite
+- [x] Show real test results (pass/fail/duration per step) in QA Testing UI
+- [x] Connect QA tests to deployed preview URLs automatically
+
+### Document Generation (8.5 → 9.0)
+- [x] Add inline PDF preview in chat (render first page as interactive output card)
+- [x] Add document download progress indicator (via InteractiveOutputCard download button)
+- [x] Support DOCX/XLSX preview cards in chat (interactive output cards for all rich doc types)
+
+### Visual Polish (7.5 → 8.5)
+- [x] Add micro-animations to sidebar expand/collapse transitions (opacity + width transition-all)
+- [x] Add loading skeletons for all major pages (TaskViewSkeleton for chat, existing DashboardSkeleton)
+- [x] Add subtle hover/focus transitions on interactive elements (global CSS transitions + active scale)
+- [x] Smooth page transition animations (TaskViewSkeleton + global transition-all on interactive elements)
+
+### TTS/Listen (7.0 → 8.5)
+- [x] Add voice selector UI for Edge TTS neural voices (in Settings page with dynamic catalog)
+- [x] Add playback speed control for TTS (in Settings page with slider 0.5x-2.0x)
+- [x] Add auto-read toggle for new messages (hands-free mode with autoListen)
+- [x] Visual waveform indicator during TTS playback (animated pulse bars in Listen button)
+
+### Branching (7.0 → 8.5)
+- [ ] Add branch comparison view (side-by-side diff)
+- [ ] Add branch merge capability
+- [ ] Visual branch tree/timeline diagram
+- [x] Branch naming and description editing (BranchButton dialog with editable name)
+
+### Error Handling + Attachments (7.5 → 9.0)
+- [x] Add retry button on failed messages (retryable error banner with Retry button)
+- [x] Add inline error recovery suggestions (retryable error banner with explanation)
+- [x] Image attachment preview thumbnails in chat (with hover-remove button)
+- [x] Drag-and-drop file upload visual feedback (animated overlay with border-dashed + backdrop-blur)
+
+### State Files & Documentation
+- [x] Update PARITY_MATRIX.md with actual scores
+- [x] Update CURRENT_BEST.md with current state
+- [x] Write Cycle 9 COMPLIANCE assessment
+- [x] Write Cycle 9 ADVERSARY assessment
+- [x] Write Cycle 9 STRATEGIST scoring
+
+### v1.2 Prompt Alignment (Attached Prompt Improvements)
+- [x] Update STATE_MANIFEST.md to full v1.2 schema (20+ required fields)
+- [x] Convert all scores to ranges (not single numbers)
+- [x] Recalculate temperature using proper v1.2 formula
+- [x] Update PARITY_MATRIX.md with 10-dimension scoring per capability
+- [x] Update CURRENT_BEST.md with actual scores and state
+- [x] Save v1.2 prompt as authoritative reference in docs/uho/

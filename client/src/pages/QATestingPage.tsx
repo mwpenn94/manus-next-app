@@ -172,7 +172,7 @@ export default function QATestingPage() {
     const scenario: TestScenario = {
       id,
       name: preset?.name || "New Test Scenario",
-      baseUrl: preset?.baseUrl || "http://localhost:3000",
+      baseUrl: preset?.baseUrl || window.location.origin,
       steps: preset?.steps?.map(s => ({ ...s, id: genId() })) || [],
     };
     setScenarios(prev => [...prev, scenario]);
@@ -225,14 +225,15 @@ export default function QATestingPage() {
 
   // Run scenario
   const runScenario = useCallback((scenario: TestScenario) => {
-    if (!scenario.baseUrl || scenario.steps.length === 0) {
-      toast.error("Set a base URL and add at least one step");
+    const effectiveUrl = scenario.baseUrl || window.location.origin;
+    if (scenario.steps.length === 0) {
+      toast.error("Add at least one step to run");
       return;
     }
     setRunningId(scenario.id);
     updateScenario(scenario.id, { lastRun: { status: "running" } });
     runQAMut.mutate({
-      baseUrl: scenario.baseUrl,
+      baseUrl: effectiveUrl,
       steps: scenario.steps.map(s => ({
         action: s.action,
         selector: s.selector,
@@ -351,7 +352,7 @@ export default function QATestingPage() {
                       <Input
                         value={activeScenario.baseUrl}
                         onChange={(e) => updateScenario(activeScenario.id, { baseUrl: e.target.value })}
-                        placeholder="http://localhost:3000"
+                        placeholder={window.location.origin}
                         className="h-8 text-sm"
                       />
                     </div>
@@ -617,7 +618,7 @@ export default function QATestingPage() {
                     <Input
                       value={compareUrl}
                       onChange={(e) => setCompareUrl(e.target.value)}
-                      placeholder="http://localhost:3000"
+                      placeholder={window.location.origin}
                       className="mt-1"
                     />
                   </div>

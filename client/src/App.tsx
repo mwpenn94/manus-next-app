@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 
 // Lazy-loaded pages — Core
 const TaskView = lazy(() => import("./pages/TaskView"));
+import TaskViewSkeleton from "./components/TaskViewSkeleton";
 const BillingPage = lazy(() => import("./pages/BillingPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const SharedTaskView = lazy(() => import("./pages/SharedTaskView"));
@@ -96,7 +97,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/task/:id">
-        {() => <SuspenseRoute><TaskView /></SuspenseRoute>}
+        {() => <Suspense fallback={<TaskViewSkeleton />}><TaskView /></Suspense>}
       </Route>
 
       {/* Core pages */}

@@ -291,6 +291,16 @@
   outline-offset: 2px;
 }
 
+/* Global micro-interaction transitions for interactive elements */
+button, a, [role="button"], input, textarea, select, [tabindex] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+button:active:not(:disabled), a:active, [role="button"]:active {
+  transform: scale(0.98);
+}
+
 /* Safe area for mobile bottom nav */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);

@@ -4,6 +4,9 @@
  * Displays in the chat during streaming to show phase-level progress.
  * Each phase shows: green check (completed), blue dot + timer (active), clock (pending).
  * Collapsible with chevron toggle. Matches Manus screenshots precisely.
+ *
+ * v1.2 FIX: Header counts use authoritative stepProgress.completed/total from server SSE,
+ * NOT inflated placeholder phases. Phase list shows only real actions.
  */
 import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, Clock, ChevronDown, ChevronUp } from "lucide-react";
@@ -65,13 +68,10 @@ function PhaseStatusIcon({ status }: { status: Phase["status"] }) {
   return <Clock className="w-4 h-4 text-muted-foreground shrink-0" />;
 }
 
-// ── Derive phases from actions ──
+// ── Derive phases from actions (no placeholder inflation) ──
 
-function derivePhases(
-  actions: AgentAction[],
-  stepProgress: { completed: number; total: number; turn: number } | null
-): Phase[] {
-  if (actions.length === 0 && !stepProgress) return [];
+function derivePhases(actions: AgentAction[]): Phase[] {
+  if (actions.length === 0) return [];
 
   const phases: Phase[] = [];
   let phaseId = 1;
@@ -85,13 +85,6 @@ function derivePhases(
 
   for (const action of activeActions) {
     phases.push({ id: phaseId++, label: getPhaseLabel(action), status: "active" });
-  }
-
-  if (stepProgress && stepProgress.total > 0) {
-    const remaining = Math.max(0, stepProgress.total - phases.length);
-    for (let i = 0; i < remaining; i++) {
-      phases.push({ id: phaseId++, label: "Processing...", status: "pending" });
-    }
   }
 
   return phases;
@@ -129,12 +122,16 @@ function getPhaseLabel(action: AgentAction): string {
 export default function TaskProgressCard({ actions, stepProgress, streaming }: TaskProgressCardProps) {
   const [expanded, setExpanded] = useState(true);
 
-  const phases = derivePhases(actions, stepProgress);
-  if (phases.length === 0) return null;
+  const phases = derivePhases(actions);
 
-  const completedCount = phases.filter((p) => p.status === "completed").length;
-  const totalCount = phases.length;
-  const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  // Use authoritative server-side step progress for header counts
+  // Fall back to action-derived counts only if no server progress available
+  const completedCount = stepProgress ? stepProgress.completed : phases.filter((p) => p.status === "completed").length;
+  const totalCount = stepProgress ? stepProgress.total : phases.length;
+  const progressPercent = totalCount > 0 ? Math.min((completedCount / totalCount) * 100, 100) : 0;
+
+  // Don't render if nothing to show
+  if (phases.length === 0 && !stepProgress) return null;
 
   return (
     <motion.div
@@ -168,9 +165,9 @@ export default function TaskProgressCard({ actions, stepProgress, streaming }: T
         )}
       </button>
 
-      {/* Phase list */}
+      {/* Phase list — only real actions, no placeholders */}
       <AnimatePresence initial={false}>
-        {expanded && (
+        {expanded && phases.length > 0 && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -208,9 +205,11 @@ export default function TaskProgressCard({ actions, stepProgress, streaming }: T
 
       {/* Progress bar at bottom */}
       <div className="h-0.5 bg-muted">
-        <div
-          className="h-full bg-primary transition-all duration-500 ease-out"
-          style={{ width: `${progressPercent}%` }}
+        <motion.div
+          className="h-full bg-primary"
+          initial={{ width: 0 }}
+          animate={{ width: `${progressPercent}%` }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         />
       </div>
     </motion.div>
