@@ -1,0 +1,35 @@
+[
+  {
+    "id": "NOTIF-2026-04-24-01",
+    "severity": "P1",
+    "class": "t0-scan",
+    "summary": "Tier 0 existing replay corpus has not been scanned by Operator",
+    "operator_question": "Have you scanned your Manus task history for relevant replays? If so, please provide inputs/tier-0-existing-replays.md. If not, please scan and tag relevant replays (~1 hr). The loop can proceed without T0 but quality will be lower.",
+    "operator_options": ["T0 scan complete — file provided", "Skip T0 for now — proceed without", "Will scan later — proceed with available data"],
+    "blocking": false,
+    "created": "2026-04-24T23:45:00Z",
+    "status": "open"
+  },
+  {
+    "id": "NOTIF-2026-04-24-02",
+    "severity": "P2",
+    "class": "infrastructure",
+    "summary": "F38: vite-plugin-manus-runtime build-time dependency on oracle vendor",
+    "operator_question": "The project depends on vite-plugin-manus-runtime@^0.0.57 which is a Manus-specific build dependency. Has this been investigated for replacement or npm publication status?",
+    "operator_options": ["Investigated — acceptable risk", "Needs replacement plan", "Defer to later pass"],
+    "blocking": false,
+    "created": "2026-04-24T23:45:00Z",
+    "status": "open"
+  },
+  {
+    "id": "NOTIF-2026-04-24-03",
+    "severity": "P2",
+    "class": "legal",
+    "summary": "F42: MIT license declared on Manus-generated scaffold — counsel review needed",
+    "operator_question": "The repo declares MIT license on AI-generated scaffold code. Has counsel reviewed AI-output competing-use rights and license defensibility?",
+    "operator_options": ["Counsel reviewed — acceptable", "Needs counsel review", "Change license", "Defer"],
+    "blocking": false,
+    "created": "2026-04-24T23:45:00Z",
+    "status": "open"
+  }
+]

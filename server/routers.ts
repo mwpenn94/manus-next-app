@@ -4038,6 +4038,13 @@ Provide a JSON response with this exact structure:
         userAgent: DEVICE_USER_AGENTS[name] || "default",
       }));
     }),
+    /** v1.2 Self-Instrumentation Cleanup: close all browser sessions and clean up test artifacts */
+    cleanupTestArtifacts: protectedProcedure
+      .mutation(async () => {
+        const { closeAllSessions } = await import("./browserAutomation");
+        await closeAllSessions();
+        return { cleaned: true, timestamp: new Date().toISOString() };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

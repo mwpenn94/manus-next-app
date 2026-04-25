@@ -146,6 +146,12 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 
 13. **RESPECT OUTPUT FORMAT REQUESTS.** When the user asks for a specific format (PDF, DOCX, spreadsheet, etc.), you MUST use generate_document with the correct output_format parameter. If they say "make it a PDF", set output_format: "pdf". Do not produce markdown when PDF was requested.
 
+14. **FAILOVER PROTOCOL — NEVER HALT.** When you encounter any blocker (missing data, failed tool, ambiguous context, partial results), apply a failover: use the best available alternative and continue. Log what you did differently but NEVER stop and wait. Every blocker has either a fix-now path or a best-inference path. There is no "wait for human" path during execution. If a tool fails, try an alternative tool. If data is missing, use your best inference. If context is ambiguous, state your assumption and proceed.
+
+15. **CLEANUP AFTER OPERATIONS.** When you create temporary artifacts during research or testing (draft files, test data, intermediate calculations), clean them up before delivering the final result. The user should receive a clean deliverable, not your working notes.
+
+16. **CONTINUOUS IMPROVEMENT — CONVERGENCE IS SOFT.** When you believe your output is good enough, still look for one more improvement before delivering. Quality is asymptotic — always make one more pass. But do not loop infinitely; if 3 consecutive review passes find nothing to improve, deliver.
+
 ## YOUR TOOLS
 
 - **web_search(query)**: Search the web via DuckDuckGo + Wikipedia. Returns results with titles, URLs, snippets, and sometimes full page content. Use short, specific queries (2-4 words work best). USE THIS LIBERALLY.
@@ -820,6 +826,60 @@ When performing recursive optimization passes, use the report_convergence tool t
     const stuckStrategiesUsed: string[] = []; // Track which strategies we've tried
     let pendingTelemetryId: number | null = null; // Track the current telemetry entry for outcome update
     let telemetryTurnAtIntervention = 0; // Turn count when intervention was applied
+
+    // ── PDF/File Preprocessing: Extract text from file_url attachments so the LLM can read them ──
+    // Many LLM providers don't natively support file_url content parts for PDFs.
+    // We extract the text server-side and convert file_url → text content.
+    for (let i = 0; i < conversation.length; i++) {
+      const msg = conversation[i];
+      if (msg.role === "user" && Array.isArray(msg.content)) {
+        const newContent: any[] = [];
+        for (const part of msg.content as any[]) {
+          if (part.type === "file_url" && part.file_url?.mime_type === "application/pdf") {
+            // Extract PDF text server-side
+            try {
+              const pdfUrl = part.file_url.url;
+              console.log(`[Agent] Extracting text from PDF: ${pdfUrl.slice(0, 80)}...`);
+              const resp = await fetch(pdfUrl);
+              if (resp.ok) {
+                const buffer = Buffer.from(await resp.arrayBuffer());
+                const pdfParse = require("pdf-parse");
+                const parsed = await pdfParse(buffer);
+                const pdfText = parsed.text?.trim();
+                if (pdfText && pdfText.length > 0) {
+                  // Replace file_url with extracted text content
+                  newContent.push({
+                    type: "text",
+                    text: `[Attached PDF Content - ${parsed.numpages || '?'} pages]:\n\n${pdfText.slice(0, 100000)}${pdfText.length > 100000 ? '\n\n[...truncated, PDF has ' + pdfText.length + ' characters total]' : ''}`
+                  });
+                  console.log(`[Agent] PDF extracted: ${pdfText.length} chars, ${parsed.numpages} pages`);
+                } else {
+                  // PDF has no extractable text (scanned image PDF)
+                  newContent.push({
+                    type: "text",
+                    text: `[Attached PDF - ${parsed.numpages || '?'} pages, but no extractable text (likely a scanned/image PDF). The user attached this file — acknowledge it and work with whatever context is available from the conversation.]`
+                  });
+                  console.log(`[Agent] PDF has no extractable text (scanned?)`);
+                }
+              } else {
+                // Fetch failed — keep original and add note
+                newContent.push(part);
+                newContent.push({ type: "text", text: `[Note: PDF attachment was provided but could not be fetched. Proceed with available context.]` });
+                console.log(`[Agent] PDF fetch failed: ${resp.status}`);
+              }
+            } catch (err) {
+              // Extraction failed — keep original and add note
+              console.error(`[Agent] PDF extraction error:`, err);
+              newContent.push(part);
+              newContent.push({ type: "text", text: `[Note: PDF attachment was provided but text extraction failed. Proceed with available context and NEVER claim you cannot read attachments.]` });
+            }
+          } else {
+            newContent.push(part);
+          }
+        }
+        conversation[i] = { ...msg, content: newContent };
+      }
+    }
 
     // Register prefix for caching (system prompt + tool definitions)
     const toolsJson = JSON.stringify(AGENT_TOOLS);

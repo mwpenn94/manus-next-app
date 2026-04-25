@@ -25,6 +25,16 @@ import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
 import { CreditWarningBanner } from "@/components/CreditWarningBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import ImageLightbox from "@/components/ImageLightbox";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSWUpdate } from "@/hooks/useSWUpdate";
@@ -222,6 +232,7 @@ function SidebarNavLink({ item, location }: { item: SidebarNavItem; location: st
   return (
     <Link
       href={item.href}
+      title={item.label}
       className={cn(
         "flex items-center gap-2.5 px-3 py-2 md:py-1.5 rounded-md text-sm transition-colors active:scale-[0.98]",
         isActive
@@ -483,12 +494,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     navigate("/");
   };
 
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; externalId: string; title: string }>({ open: false, externalId: "", title: "" });
+
   const handleDeleteTask = (externalId: string) => {
-    archiveMutation.mutate({ externalId });
-    if (activeTaskId === externalId) {
+    const task = tasks.find(t => t.id === externalId);
+    setDeleteConfirm({ open: true, externalId, title: task?.title || "this task" });
+  };
+
+  const confirmDeleteTask = () => {
+    archiveMutation.mutate({ externalId: deleteConfirm.externalId });
+    if (activeTaskId === deleteConfirm.externalId) {
       setActiveTask(null);
       navigate("/");
     }
+    setDeleteConfirm({ open: false, externalId: "", title: "" });
   };
 
   const favoritesCount = tasks.filter(t => t.favorite === 1).length;
@@ -1020,6 +1039,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Keyboard Shortcuts Help Dialog */}
       <KeyboardShortcutsDialog open={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* H1: Delete confirmation dialog */}
+      <AlertDialog open={deleteConfirm.open} onOpenChange={(open) => !open && setDeleteConfirm({ open: false, externalId: "", title: "" })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteConfirm.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Image Lightbox */}
       {lightbox && (
         <ImageLightbox

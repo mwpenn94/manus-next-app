@@ -217,13 +217,26 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
  */
 export function getStreamErrorMessage(err: any): string {
   if (isRetryableError(err)) {
-    return "Connection lost after multiple retry attempts. Please check your network and try again.";
+    return "Connection was interrupted after several attempts. This usually resolves on its own \u2014 try sending your message again in a moment.";
   }
   if (err.message?.includes("timeout")) {
-    return "The request timed out. Please try again with a shorter message.";
+    return "The response took longer than expected. Try breaking your request into smaller parts, or simply try again.";
+  }
+  if (err.message?.includes("rate limit") || err.message?.includes("429")) {
+    return "The system is handling a lot of requests right now. Please wait a moment and try again.";
+  }
+  if (err.message?.includes("context length") || err.message?.includes("token")) {
+    return "This conversation has grown quite long. Try starting a new task, or summarize the key points and continue.";
+  }
+  if (err.message?.includes("network") || err.message?.includes("fetch")) {
+    return "There seems to be a network issue. Check your connection and try again.";
+  }
+  if (err.message?.includes("500") || err.message?.includes("internal server")) {
+    return "Something went wrong on our end. This is temporary \u2014 please try again in a few seconds.";
   }
   if (err.message) {
-    return `I encountered an error: ${err.message}. Please try again.`;
+    const cleanMsg = err.message.replace(/\[.*?\]/g, "").replace(/Error:\s*/i, "").trim();
+    return `Something unexpected happened: ${cleanMsg.slice(0, 100)}. Please try again.`;
   }
-  return "Something went wrong. Please try again.";
+  return "Something went wrong. Please try again \u2014 if the issue persists, try starting a new task.";
 }

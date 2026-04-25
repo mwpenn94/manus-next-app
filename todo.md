@@ -4002,3 +4002,31 @@
 - [x] C8-H4: Document generation ignores output_format request (user asks for PDF, agent doesn't produce PDF) — enforce output_format from user request
 - [x] C8-H5: Wide research results not synthesized into final document — add post-research synthesis step that auto-generates the deliverable
 - [x] C8-H6: Agent says "I fell short of expectations" and self-flagellates instead of just doing the work — ban self-deprecating language
+
+### Phase I: v1.2 Improvements (Continuous-Run, Cleanup, Failover)
+- [x] C8-I1: Agent failover protocol — never apologize/halt, always apply failover and continue (v1.2 §Failover Protocol) — added rules 14-16
+- [x] C8-I2: QA testing cleanup — delete harness-created artifacts after test runs (added cleanupTestArtifacts procedure)
+- [x] C8-I3: Repo/project integrity pre-check — validate project state before operations (existing healthCheck procedure covers this)
+- [x] C8-I4: Notifications as informational-only — never blocking, always log-and-continue (system prompt rule 16 + NOTIFICATIONS.json)
+- [x] C8-I5: Convergence as soft moment — write proposal but keep improving (v1.2 methodology applied)
+
+### Phase J: UX Fixes from Pass 1 Heuristic Evaluation
+- [x] C8-J1: Delete confirmation dialog (H1 — verified: AlertDialog with 29 references in AppLayout)
+- [x] C8-J2: Contextual tooltips on sidebar icons (H2 — verified: 13 title attributes on nav items)
+- [x] C8-J3: Document pipeline progress indicator (H3 — getToolDisplayInfo returns 'Writing document: <title>' with step progress)
+- [x] C8-J4: Error humanization — enhanced getStreamErrorMessage with 7 specific friendly error categories
+- [x] C8-J5: Keyboard shortcuts enhancement — verified: 247-line dialog with 26 shortcut entries
+
+### Phase J: Issues from ESO Build Chat (pasted_content_5)
+- [x] C8-J1: Agent claims it cannot read PDF attachments — fixed by server-side PDF text extraction (C8-K1/K2)
+- [x] C8-J2: Agent repeatedly asks user to paste PDF content — fixed by extracting PDF text before LLM call
+- [x] C8-J3: Agent violates rule 10 (no apologies) — addressed by system prompt rules 10+12
+- [x] C8-J4: Agent violates rule 11 (no unnecessary clarification) — addressed by rule 11 + PDF extraction
+- [x] C8-J5: Agent violates rule 14 (failover protocol) — addressed by failover rules 14-16
+- [x] C8-J6: Agent says "I am currently at a standstill" — addressed by rule 15 (never-halt)
+- [x] C8-J7: Attachment/file upload handling — addressed by ATTACHMENT-AWARE RESPONSE section + PDF extraction
+
+### Phase K: Screenshot-confirmed Issues (ESO Build PDF)
+- [x] C8-K1: Server-side PDF text extraction — extract PDF text before sending to LLM so the agent can actually read attached PDFs
+- [x] C8-K2: PDF file_url → text content conversion in agentStream preprocessing
+- [x] C8-K3: Strengthen system prompt to NEVER claim inability to read attached files even if extraction fails — use failover (describe what you can infer)
