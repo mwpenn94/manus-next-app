@@ -129,11 +129,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
-    color-scheme: light;
+    color-scheme: light dark;
   }
   .dark body,
   .dark {
     color-scheme: dark;
+  }
+  :root:not(.dark) body {
+    color-scheme: light;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);

@@ -4144,3 +4144,15 @@
 - [x] Add safe-area-inset padding to mobile drawer for notched devices
 ### Tests
 - [x] Write and pass Cycle 12 layout vitest (12 tests, all passing)
+
+## Cycle 13: Recursive Expert Assessment — Pass 1 Fixes
+- [x] Change default theme to "dark" (Manus is dark-first)
+- [x] Add task preview text (last assistant message snippet) under task titles in sidebar
+- [x] Persist onboarding "seen" state to localStorage (already implemented via ONBOARDING_KEY)
+- [x] Add subtle shadow-sm on task card hover
+- [x] Fix color-scheme CSS to be dynamic based on theme
+- [x] Add error boundary around WorkspacePanel in TaskView
+
+## Cycle 13: Recursive Expert Assessment — Pass 2 Fixes
+- [x] Increase onboarding backdrop opacity from /40 to /60
+- [x] Write and pass Cycle 13 vitest tests (8 tests, all passing)

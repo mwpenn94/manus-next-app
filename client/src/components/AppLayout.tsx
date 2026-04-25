@@ -750,7 +750,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     "w-full text-left px-3 py-3 md:py-2.5 rounded-lg transition-all active:scale-[0.98]",
                     activeTaskId === task.id
                       ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:shadow-sm"
                   )}
                 >
                   <div className="flex items-start gap-2.5">
@@ -791,6 +791,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                           />
                         </div>
                       )}
+                      {/* Preview text — last assistant message snippet */}
+                      {!searchQuery && (() => {
+                        const localTask = tasks.find(t => t.id === task.id);
+                        if (!localTask?.messages?.length) return null;
+                        const lastAssistant = [...localTask.messages].reverse().find(m => m.role === "assistant" && m.content && !m.cardType);
+                        if (!lastAssistant) return null;
+                        const preview = lastAssistant.content.replace(/[#*`>\[\]()]/g, "").trim().slice(0, 80);
+                        if (!preview) return null;
+                        return (
+                          <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-1 leading-relaxed">
+                            {preview}{preview.length >= 80 ? "…" : ""}
+                          </p>
+                        );
+                      })()}
                       {/* Search match snippet */}
                       {searchQuery && (task as any).matchSnippet && (
                         <p className="text-[10px] text-muted-foreground/80 mt-0.5 line-clamp-2 leading-relaxed">

@@ -13,6 +13,7 @@ import { useBridge } from "@/contexts/BridgeContext";
 import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   Send,
   Paperclip,
@@ -4166,7 +4167,7 @@ export default function TaskView() {
             transition={{ duration: 0.25, ease: "easeInOut" }}
             style={{ overflow: "hidden" }}
           >
-            <WorkspacePanel task={task} bridgeStatus={bridgeStatus} />
+            <ErrorBoundary><WorkspacePanel task={task} bridgeStatus={bridgeStatus} /></ErrorBoundary>
           </motion.div>
         )}
       </AnimatePresence>
@@ -4181,12 +4182,12 @@ export default function TaskView() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="md:hidden overflow-hidden"
           >
-            <WorkspacePanel
+            <ErrorBoundary><WorkspacePanel
               task={task}
               isMobile
               bridgeStatus={bridgeStatus}
               onClose={() => setMobileWorkspaceOpen(false)}
-            />
+            /></ErrorBoundary>
           </motion.div>
         )}
       </AnimatePresence>
