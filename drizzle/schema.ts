@@ -367,8 +367,10 @@ export const connectors = mysqlTable("connectors", {
   name: varchar("name", { length: 256 }).notNull(),
   /** Encrypted config (API keys, tokens, webhook URLs) */
   config: json("config").$type<Record<string, string>>(),
-  /** Authentication method: oauth or api_key */
-  authMethod: mysqlEnum("authMethod", ["oauth", "api_key", "webhook"]).default("api_key"),
+  /** Authentication method: oauth, api_key, webhook, or manus_oauth (verified via Manus portal) */
+  authMethod: mysqlEnum("authMethod", ["oauth", "api_key", "webhook", "manus_oauth"]).default("api_key"),
+  /** Provider identity verified via Manus OAuth (e.g., github username, microsoft email) */
+  manusVerifiedIdentity: varchar("manusVerifiedIdentity", { length: 256 }),
   /** OAuth access token (encrypted) */
   accessToken: text("accessToken"),
   /** OAuth refresh token (encrypted) */

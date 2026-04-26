@@ -1,0 +1,2 @@
+ALTER TABLE `connectors` MODIFY COLUMN `authMethod` enum('oauth','api_key','webhook','manus_oauth') DEFAULT 'api_key';--> statement-breakpoint
+ALTER TABLE `connectors` ADD `manusVerifiedIdentity` varchar(256);

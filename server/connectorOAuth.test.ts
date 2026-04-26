@@ -19,14 +19,14 @@ describe("Connector OAuth Procedures", () => {
     expect(result.fallback).toBe("api_key");
   });
 
-  it("getOAuthUrl returns supported:true for GitHub when credentials are available (CONNECTOR_ or platform failover)", async () => {
+  it("getOAuthUrl returns supported:true for GitHub only when CONNECTOR_ credentials are set", async () => {
     const caller = authedCaller();
     const result = await caller.connector.getOAuthUrl({
       connectorId: "github",
       origin: "https://example.com",
     });
-    // Failover chain: CONNECTOR_GITHUB_CLIENT_ID → GITHUB_OAUTH_CLIENT_ID → GITHUB_CLIENT_ID (platform)
-    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
+    // Only CONNECTOR_ prefixed env vars are used (no platform credential failover)
+    const hasGitHubCreds = !!process.env.CONNECTOR_GITHUB_CLIENT_ID;
     if (hasGitHubCreds) {
       expect(result.supported).toBe(true);
       expect(result.url).toContain("github.com/login/oauth/authorize");
@@ -175,13 +175,14 @@ describe("Connector OAuth Provider Module", () => {
     }
   });
 
-  it("isOAuthSupported returns true for GitHub when credentials are available via failover chain", async () => {
+  it("isOAuthSupported returns true for GitHub only when CONNECTOR_ credentials are set", async () => {
     const { isOAuthSupported } = await import("./connectorOAuth");
-    // Failover chain: CONNECTOR_ → legacy OAUTH_ → platform GITHUB_CLIENT_ID
-    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
+    // Only CONNECTOR_ prefixed env vars are used (no platform credential failover)
+    const hasGitHubCreds = !!process.env.CONNECTOR_GITHUB_CLIENT_ID;
     if (hasGitHubCreds) {
       expect(isOAuthSupported("github")).toBe(true);
     } else {
+      // Without CONNECTOR_ env vars, OAuth is not supported even if platform GITHUB_CLIENT_ID exists
       expect(isOAuthSupported("github")).toBe(false);
     }
   });
@@ -323,20 +324,103 @@ describe("ENV OAuth Declarations", () => {
     expect(envContent).toContain("process.env.CONNECTOR_SLACK_CLIENT_SECRET");
   });
 
-  it("env.ts fallback chain: CONNECTOR_ prefix ?? legacy OAUTH_ ?? platform credentials ?? empty string", async () => {
+  it("env.ts uses ONLY CONNECTOR_ prefix for connector OAuth (no platform credential fallback)", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Verify the failover pattern: CONNECTOR_GITHUB_CLIENT_ID ?? GITHUB_OAUTH_CLIENT_ID ?? GITHUB_CLIENT_ID ?? ""
-    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_ID.*\?\?.*GITHUB_OAUTH_CLIENT_ID.*\?\?.*GITHUB_CLIENT_ID.*\?\?.*""/s);
-    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_SECRET.*\?\?.*GITHUB_OAUTH_CLIENT_SECRET.*\?\?.*GITHUB_CLIENT_SECRET.*\?\?.*""/s);
+    // Connector OAuth uses ONLY CONNECTOR_ prefixed env vars
+    // Platform's GITHUB_CLIENT_ID / MICROSOFT_365_CLIENT_ID are NOT used as fallback
+    // because they have different redirect URIs (Manus platform vs our app)
+    expect(envContent).toMatch(/GITHUB_OAUTH_CLIENT_ID:\s*process\.env\.CONNECTOR_GITHUB_CLIENT_ID\s*\?\?\s*""/s);
+    expect(envContent).toMatch(/GITHUB_OAUTH_CLIENT_SECRET:\s*process\.env\.CONNECTOR_GITHUB_CLIENT_SECRET\s*\?\?\s*""/s);
+    // The actual assignment line should NOT chain to platform credentials
+    // (comments may mention them for documentation, but the code should not use them)
+    const githubLine = envContent.split('\n').find(l => l.trim().startsWith('GITHUB_OAUTH_CLIENT_ID:'));
+    expect(githubLine).toBeTruthy();
+    // Should NOT reference process.env.GITHUB_CLIENT_ID (the platform credential)
+    // Note: CONNECTOR_GITHUB_CLIENT_ID contains the substring, so check for the bare form
+    expect(githubLine).not.toMatch(/process\.env\.GITHUB_CLIENT_ID[^_]|process\.env\.GITHUB_CLIENT_ID"/);
+    const msLine = envContent.split('\n').find(l => l.trim().startsWith('MICROSOFT_365_OAUTH_CLIENT_ID:'));
+    expect(msLine).toBeTruthy();
+    expect(msLine).not.toMatch(/process\.env\.MICROSOFT_365_CLIENT_ID[^_]|process\.env\.MICROSOFT_365_CLIENT_ID"/);
   });
 
-  it("env.ts includes platform GITHUB_CLIENT_ID as final failover for connector OAuth", async () => {
+  it("env.ts documents why platform credentials are not used for connector OAuth", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Platform's GITHUB_CLIENT_ID is used as final failover for connector OAuth
-    expect(envContent).toContain("process.env.GITHUB_CLIENT_ID");
-    // Microsoft 365 platform credentials also used as failover
-    expect(envContent).toContain("process.env.MICROSOFT_365_CLIENT_ID");
+    // Should have clear documentation about why platform creds are not used
+    expect(envContent).toContain("redirect_uri_mismatch");
+  });
+});
+
+// ── Tiered Auth Connector Dialog Tests (replaces Token-First) ──
+
+describe("Tiered Auth Connector Dialog", () => {
+  it("ConnectorsPage uses tiered auth with auto-selection of best tier", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/pages/ConnectorsPage.tsx", "utf-8");
+    // The connect dialog should use tiered auth with expandedTier state
+    expect(content).toContain('expandedTier');
+    expect(content).toContain('setExpandedTier');
+    // Should auto-select best tier from tieredAuthStatus
+    expect(content).toContain('bestTier');
+    // Should NOT use old tab-based approach
+    expect(content).not.toContain('setConnectTab(isOAuthCapable');
+  });
+
+  it("key connectors have tokenHelp with URL and steps", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/pages/ConnectorsPage.tsx", "utf-8");
+    // GitHub should have tokenHelp with link to token generation
+    expect(content).toContain("github.com/settings/tokens");
+    expect(content).toContain("ghp_");
+    // Microsoft 365 should have tokenHelp
+    expect(content).toContain("graph-explorer");
+    // Notion should have tokenHelp
+    expect(content).toContain("notion.so/my-integrations");
+    expect(content).toContain("secret_");
+    // OpenAI should have tokenHelp
+    expect(content).toContain("platform.openai.com/api-keys");
+    expect(content).toContain("sk-");
+    // Google Drive should have tokenHelp
+    expect(content).toContain("console.cloud.google.com");
+  });
+
+  it("ConnectorsPage renders tokenHelp section in connect dialog", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/pages/ConnectorsPage.tsx", "utf-8");
+    // Should have the "How to get your token" section
+    expect(content).toContain("How to get your token");
+    // Should render steps as numbered list
+    expect(content).toContain("tokenHelp.steps");
+    // Should have external link to token generation page
+    expect(content).toContain("tokenHelp.url");
+    expect(content).toContain("tokenHelp.label");
+  });
+
+  it("Tiered auth renders all 4 tier types in the dialog", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/pages/ConnectorsPage.tsx", "utf-8");
+    // Should have all 4 tier types referenced
+    expect(content).toContain('Direct OAuth');
+    expect(content).toContain('Manus Verify');
+    expect(content).toContain('Smart PAT');
+    expect(content).toContain('Manual Entry');
+    // Should have tier indicators
+    expect(content).toContain('tier1');
+    expect(content).toContain('tier2');
+    expect(content).toContain('tier3');
+    expect(content).toContain('tier4');
+  });
+
+  it("Manus Verify button exists for identity verification", async () => {
+    const fs = await import("fs");
+    const content = fs.readFileSync("client/src/pages/ConnectorsPage.tsx", "utf-8");
+    // Should have Manus Verify button
+    expect(content).toContain('Verify via Manus');
+    // Should have Fingerprint icon for Manus verify
+    expect(content).toContain('Fingerprint');
+    // Should have verified identity banner
+    expect(content).toContain('Identity Verified');
+    expect(content).toContain('BadgeCheck');
   });
 });

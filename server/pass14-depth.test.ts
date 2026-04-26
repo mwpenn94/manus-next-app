@@ -164,9 +164,9 @@ describe("Input Validation Edge Cases", () => {
 
   it("connector.getOAuthUrl should handle empty origin gracefully", async () => {
     const caller = appRouter.createCaller(authCtx());
-    // Failover chain: CONNECTOR_ → OAUTH_ → platform GITHUB_CLIENT_ID
+    // Only CONNECTOR_ prefixed env vars are used (no platform credential failover)
     const result = await caller.connector.getOAuthUrl({ connectorId: "github", origin: "" });
-    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
+    const hasGitHubCreds = !!process.env.CONNECTOR_GITHUB_CLIENT_ID;
     if (hasGitHubCreds) {
       expect(result.supported).toBe(true);
       expect(result.url).toBeTruthy();

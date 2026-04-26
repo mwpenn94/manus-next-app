@@ -112,6 +112,73 @@ a{display:inline-block;padding:0.625rem 1.5rem;background:#c9a227;color:#000;tex
 </body></html>`;
 }
 
+/**
+ * Build HTML response for Manus OAuth verification callback (Tier 2).
+ * On success: notifies opener via postMessage (popup flow) or redirects (same-window).
+ * On error: shows error message and auto-closes.
+ */
+function buildManusVerifyHtml(
+  result: {
+    connectorId: string;
+    verifiedIdentity: string;
+    loginMethod: string;
+    email: string;
+    origin: string;
+  } | null,
+  error?: string
+): string {
+  if (error || !result) {
+    return `<!DOCTYPE html><html><body>
+<div style="font-family:system-ui;text-align:center;margin-top:40vh;color:#e5e5e5;background:#0a0a0a;min-height:100vh">
+  <h2 style="color:#ef4444">Verification Failed</h2>
+  <p>${error || "Unknown error"}</p>
+</div>
+<script>setTimeout(()=>window.close(),3000)</script>
+</body></html>`;
+  }
+
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}
+.card{text-align:center;padding:2rem;border-radius:1rem;background:#1a1a1a;border:1px solid #333;max-width:360px}
+.check{width:48px;height:48px;border-radius:50%;background:#22c55e20;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.check svg{width:24px;height:24px;color:#22c55e}
+h2{margin:0 0 0.5rem;font-size:1.25rem}p{color:#999;margin:0 0 0.5rem;font-size:0.875rem}
+.identity{color:#c9a227;font-weight:600;font-size:1rem}
+a{display:inline-block;padding:0.625rem 1.5rem;background:#c9a227;color:#000;text-decoration:none;border-radius:0.5rem;font-weight:500;font-size:0.875rem;margin-top:1rem}
+</style></head><body>
+<div class="card">
+  <div class="check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+  <h2>Identity Verified</h2>
+  <p class="identity">${result.verifiedIdentity}</p>
+  <p>Verified via ${result.loginMethod} through Manus</p>
+  <p style="font-size:0.75rem;color:#666">You can now set up your ${result.connectorId} connector with guided token creation.</p>
+  <a href="${result.origin}/connectors?manus_verified=${encodeURIComponent(result.connectorId)}&identity=${encodeURIComponent(result.verifiedIdentity)}&method=${encodeURIComponent(result.loginMethod)}">Continue</a>
+</div>
+<script>
+  (function() {
+    var data = {
+      type: "connector-manus-verified",
+      connectorId: ${JSON.stringify(result.connectorId)},
+      verifiedIdentity: ${JSON.stringify(result.verifiedIdentity)},
+      loginMethod: ${JSON.stringify(result.loginMethod)},
+      email: ${JSON.stringify(result.email)}
+    };
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.postMessage(data, "*");
+        setTimeout(function() { window.close(); }, 1200);
+        return;
+      } catch(e) { /* fall through */ }
+    }
+    // Same-window: auto-redirect after 2s
+    setTimeout(function() {
+      window.location.href = ${JSON.stringify(result.origin)} + "/connectors?manus_verified=" + encodeURIComponent(${JSON.stringify(result.connectorId)}) + "&identity=" + encodeURIComponent(${JSON.stringify(result.verifiedIdentity)}) + "&method=" + encodeURIComponent(${JSON.stringify(result.loginMethod)});
+    }, 2000);
+  })();
+</script>
+</body></html>`;
+}
+
 async function startServer() {
   const app = express();
   app.set("trust proxy", 1); // Trust first proxy for rate limiting behind reverse proxy
@@ -589,6 +656,92 @@ async function startServer() {
     } catch (err: any) {
       console.error("[Connector OAuth Callback] Error:", err);
       res.status(500).send(buildOAuthCallbackHtml(null, null, err.message || "OAuth callback failed"));
+    }
+  });
+
+  // ── Manus OAuth Verification callback for Connectors (Tier 2) ──
+  // This route handles the redirect from the Manus OAuth portal when a user
+  // verifies their identity for a connector. It exchanges the Manus code for
+  // user info, extracts the verified identity (loginMethod, name, email),
+  // and saves it to the connector record.
+  app.get("/api/connector/manus/callback", async (req, res) => {
+    try {
+      const code = req.query.code as string;
+      const stateRaw = req.query.state as string;
+      const connectorId = req.query.cid as string;
+      const userId = parseInt(req.query.uid as string, 10);
+
+      if (!code || !stateRaw) {
+        return res.status(400).send(buildManusVerifyHtml(null, "Missing code or state parameter"));
+      }
+      if (!connectorId || isNaN(userId)) {
+        return res.status(400).send(buildManusVerifyHtml(null, "Missing connector ID or user ID"));
+      }
+
+      // Exchange the Manus OAuth code for tokens and get user info
+      const { sdk: sdkInstance } = await import("./sdk");
+      const tokenResponse = await sdkInstance.exchangeCodeForToken(code, stateRaw);
+      const userInfo = await sdkInstance.getUserInfo(tokenResponse.accessToken);
+
+      if (!userInfo.openId) {
+        return res.status(400).send(buildManusVerifyHtml(null, "Could not verify identity"));
+      }
+
+      // Extract verified identity
+      const verifiedIdentity = userInfo.name || userInfo.email || userInfo.openId;
+      const loginMethod = userInfo.loginMethod || userInfo.platform || "unknown";
+
+      // Save the connector with manus_oauth auth method
+      const { upsertConnector, updateConnectorOAuthTokens, getDb } = await import("../db");
+      const { connectors } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const connId = await upsertConnector({
+        userId,
+        connectorId,
+        name: verifiedIdentity,
+        config: {
+          authMethod: "manus_oauth",
+          verifiedIdentity,
+          verifiedEmail: userInfo.email || "",
+          loginMethod,
+        },
+        status: "connected",
+      });
+
+      await updateConnectorOAuthTokens(connId, {
+        authMethod: "manus_oauth",
+      });
+
+      // Update manusVerifiedIdentity column
+      const db = await getDb();
+      if (db) {
+        await db.update(connectors)
+          .set({ manusVerifiedIdentity: verifiedIdentity })
+          .where(eq(connectors.id, connId));
+      }
+
+      console.log(`[Connector Manus Verify] Verified ${connectorId} for user ${userId} as ${verifiedIdentity} (${loginMethod})`);
+
+      // Determine origin from the redirectUri in state
+      let origin = "";
+      try {
+        const redirectUri = Buffer.from(stateRaw, "base64").toString();
+        const parsed = new URL(redirectUri);
+        origin = parsed.origin;
+      } catch { /* ignore */ }
+
+      // Return HTML that notifies the opener (popup) or redirects (same-window)
+      return res.send(buildManusVerifyHtml({
+        connectorId,
+        verifiedIdentity,
+        loginMethod,
+        email: userInfo.email || "",
+        origin,
+      }));
+    } catch (err: any) {
+      console.error("[Connector Manus Verify] Error:", err);
+      return res.status(500).send(buildManusVerifyHtml(null, err.message || "Verification failed"));
     }
   });
 
