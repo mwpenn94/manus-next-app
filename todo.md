@@ -4810,3 +4810,13 @@
 - [x] Vitest: 5/5 ConnectorsSheet tests pass, 138/139 total files pass (1 pre-existing OOM)
 - [x] App compiles with no TypeScript errors
 - [x] Save checkpoint (Pass 27b)
+## Bug Fix: GitHub Connector Auth Redirects to Manus OAuth Instead of GitHub OAuth
+
+- [x] Investigated: env.ts was using only CONNECTOR_GITHUB_CLIENT_ID (not set) and ignoring platform GITHUB_CLIENT_ID
+- [x] Root cause: overly cautious redirect_uri_mismatch concern prevented platform credential fallback
+- [x] Fix: env.ts now falls back to platform GITHUB_CLIENT_ID/SECRET when CONNECTOR_ vars not set
+- [x] Same fix applied for Microsoft 365 (MICROSOFT_365_CLIENT_ID/SECRET fallback)
+- [x] Updated connectorOAuth.test.ts to reflect new fallback behavior (40/40 pass)
+- [x] All 3 github-oauth tests pass, 5 connectors-sheet tests pass
+- [x] Server restarted and compiles with no errors
+- [ ] Verify other connectors (Google, Microsoft) also use correct OAuth flows

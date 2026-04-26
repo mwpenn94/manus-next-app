@@ -19,14 +19,14 @@ describe("Connector OAuth Procedures", () => {
     expect(result.fallback).toBe("api_key");
   });
 
-  it("getOAuthUrl returns supported:true for GitHub only when CONNECTOR_ credentials are set", async () => {
+  it("getOAuthUrl returns supported:true for GitHub when platform or CONNECTOR_ credentials are set", async () => {
     const caller = authedCaller();
     const result = await caller.connector.getOAuthUrl({
       connectorId: "github",
       origin: "https://example.com",
     });
-    // Only CONNECTOR_ prefixed env vars are used (no platform credential failover)
-    const hasGitHubCreds = !!process.env.CONNECTOR_GITHUB_CLIENT_ID;
+    // GitHub OAuth is supported if either CONNECTOR_GITHUB_CLIENT_ID or platform GITHUB_CLIENT_ID is set
+    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
     if (hasGitHubCreds) {
       expect(result.supported).toBe(true);
       expect(result.url).toContain("github.com/login/oauth/authorize");
@@ -175,14 +175,13 @@ describe("Connector OAuth Provider Module", () => {
     }
   });
 
-  it("isOAuthSupported returns true for GitHub only when CONNECTOR_ credentials are set", async () => {
+  it("isOAuthSupported returns true for GitHub when platform or CONNECTOR_ credentials are set", async () => {
     const { isOAuthSupported } = await import("./connectorOAuth");
-    // Only CONNECTOR_ prefixed env vars are used (no platform credential failover)
-    const hasGitHubCreds = !!process.env.CONNECTOR_GITHUB_CLIENT_ID;
+    // GitHub OAuth is supported if either CONNECTOR_GITHUB_CLIENT_ID or platform GITHUB_CLIENT_ID is set
+    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
     if (hasGitHubCreds) {
       expect(isOAuthSupported("github")).toBe(true);
     } else {
-      // Without CONNECTOR_ env vars, OAuth is not supported even if platform GITHUB_CLIENT_ID exists
       expect(isOAuthSupported("github")).toBe(false);
     }
   });
@@ -324,31 +323,28 @@ describe("ENV OAuth Declarations", () => {
     expect(envContent).toContain("process.env.CONNECTOR_SLACK_CLIENT_SECRET");
   });
 
-  it("env.ts uses ONLY CONNECTOR_ prefix for connector OAuth (no platform credential fallback)", async () => {
+  it("env.ts uses CONNECTOR_ prefix with platform credential fallback for GitHub and Microsoft", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Connector OAuth uses ONLY CONNECTOR_ prefixed env vars
-    // Platform's GITHUB_CLIENT_ID / MICROSOFT_365_CLIENT_ID are NOT used as fallback
-    // because they have different redirect URIs (Manus platform vs our app)
-    expect(envContent).toMatch(/GITHUB_OAUTH_CLIENT_ID:\s*process\.env\.CONNECTOR_GITHUB_CLIENT_ID\s*\?\?\s*""/s);
-    expect(envContent).toMatch(/GITHUB_OAUTH_CLIENT_SECRET:\s*process\.env\.CONNECTOR_GITHUB_CLIENT_SECRET\s*\?\?\s*""/s);
-    // The actual assignment line should NOT chain to platform credentials
-    // (comments may mention them for documentation, but the code should not use them)
-    const githubLine = envContent.split('\n').find(l => l.trim().startsWith('GITHUB_OAUTH_CLIENT_ID:'));
-    expect(githubLine).toBeTruthy();
-    // Should NOT reference process.env.GITHUB_CLIENT_ID (the platform credential)
-    // Note: CONNECTOR_GITHUB_CLIENT_ID contains the substring, so check for the bare form
-    expect(githubLine).not.toMatch(/process\.env\.GITHUB_CLIENT_ID[^_]|process\.env\.GITHUB_CLIENT_ID"/);
-    const msLine = envContent.split('\n').find(l => l.trim().startsWith('MICROSOFT_365_OAUTH_CLIENT_ID:'));
-    expect(msLine).toBeTruthy();
-    expect(msLine).not.toMatch(/process\.env\.MICROSOFT_365_CLIENT_ID[^_]|process\.env\.MICROSOFT_365_CLIENT_ID"/);
+    // GitHub: CONNECTOR_ preferred, falls back to platform GITHUB_CLIENT_ID
+    expect(envContent).toContain("process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID");
+    expect(envContent).toContain("process.env.CONNECTOR_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET");
+    // Microsoft 365: CONNECTOR_ preferred, falls back to platform MICROSOFT_365_CLIENT_ID
+    expect(envContent).toContain("process.env.CONNECTOR_MICROSOFT_365_CLIENT_ID || process.env.MICROSOFT_365_CLIENT_ID");
+    expect(envContent).toContain("process.env.CONNECTOR_MICROSOFT_365_CLIENT_SECRET || process.env.MICROSOFT_365_CLIENT_SECRET");
+    // Google/Notion/Slack: no platform fallback (no platform credentials available)
+    const googleLine = envContent.split('\n').find(l => l.trim().startsWith('GOOGLE_OAUTH_CLIENT_ID:'));
+    expect(googleLine).toBeTruthy();
+    expect(googleLine).toContain("CONNECTOR_GOOGLE_CLIENT_ID");
+    expect(googleLine).not.toContain("GOOGLE_CLIENT_ID ||"); // no fallback chain
   });
 
-  it("env.ts documents why platform credentials are not used for connector OAuth", async () => {
+  it("env.ts documents the platform credential fallback strategy", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Should have clear documentation about why platform creds are not used
-    expect(envContent).toContain("redirect_uri_mismatch");
+    // Should document that platform credentials are used as fallback
+    expect(envContent).toContain("Fallback");
+    expect(envContent).toContain("redirect_uri");
   });
 });
 
