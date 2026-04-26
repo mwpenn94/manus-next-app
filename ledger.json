@@ -1,10 +1,10 @@
 {
   "project": "manus-next-app",
   "created": "2026-04-25T09:12:49.884Z",
-  "last_updated": "2026-04-26T10:29:23.318Z",
+  "last_updated": "2026-04-26T10:36:26.793Z",
   "automation_tier": "manual",
   "safety_sensitive": false,
-  "current_phase": "C",
+  "current_phase": "D",
   "improvements": [
     {
       "id": "pass-1-app-lifecycle",
@@ -51,6 +51,30 @@
       "depends_on": [],
       "depended_by": [],
       "created": "2026-04-26T10:29:23.292Z"
+    },
+    {
+      "id": "IMP-004",
+      "pass": "pass-17",
+      "status": "verified",
+      "description": "Pass 14: Depth — 40 tests covering connector OAuth flow, cross-layer auth guards, input validation edge cases, mobile layout regression guards, SW regression guards",
+      "files": [],
+      "tests": [],
+      "quality_delta": "",
+      "depends_on": [],
+      "depended_by": [],
+      "created": "2026-04-26T10:36:26.706Z"
+    },
+    {
+      "id": "IMP-005",
+      "pass": "pass-17",
+      "status": "verified",
+      "description": "Pass 15: Adversarial — 31 tests covering XSS/injection resistance, auth boundary stress, router completeness, CSS/layout guards, file structure integrity, concurrent access patterns",
+      "files": [],
+      "tests": [],
+      "quality_delta": "",
+      "depends_on": [],
+      "depended_by": [],
+      "created": "2026-04-26T10:36:26.734Z"
     }
   ],
   "failed_approaches": [],
@@ -419,6 +443,42 @@
       "novelty_count": 5,
       "phase": "B",
       "timestamp": "2026-04-26T10:29:23.317Z"
+    },
+    {
+      "pass": "pass-pass-14",
+      "type": "depth",
+      "mode": "divergent",
+      "score": 8.6,
+      "delta": 0.6,
+      "dimensions": {
+        "completeness": 8.5,
+        "accuracy": 9,
+        "depth": 8.5,
+        "novelty": 7.5,
+        "actionability": 8.5,
+        "regression_safety": 9.5
+      },
+      "novelty_count": 5,
+      "phase": "C",
+      "timestamp": "2026-04-26T10:36:26.764Z"
+    },
+    {
+      "pass": "pass-pass-15",
+      "type": "adversarial",
+      "mode": "divergent",
+      "score": 8.8,
+      "delta": 0.2,
+      "dimensions": {
+        "completeness": 9,
+        "accuracy": 9,
+        "depth": 8.5,
+        "novelty": 8,
+        "actionability": 9,
+        "regression_safety": 9.5
+      },
+      "novelty_count": 5,
+      "phase": "D",
+      "timestamp": "2026-04-26T10:36:26.793Z"
     }
   ],
   "branches": [],
@@ -646,6 +706,26 @@
     },
     {
       "timestamp": "2026-04-26T10:29:23.317Z",
+      "guards": [
+        {
+          "guard": "all",
+          "status": "PASS",
+          "message": "All quality guards passed"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-04-26T10:36:26.765Z",
+      "guards": [
+        {
+          "guard": "all",
+          "status": "PASS",
+          "message": "All quality guards passed"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-04-26T10:36:26.793Z",
       "guards": [
         {
           "guard": "all",
