@@ -1,0 +1,9 @@
+Pass 11 status check:
+- 0 TypeScript errors
+- 0 LSP errors
+- Dev server running on port 3000
+- Screenshot shows: onboarding modal "Welcome to Manus" Step 1 of 6 with progress dots, keyboard nav hint
+- User "Michael" is authenticated (no auth loop!)
+- Sidebar visible with tasks, model selector shows "Manus Max" in top bar
+- Home page visible behind modal with "Hello, Michael." greeting
+- Auth loop fix confirmed working — no redirect loop

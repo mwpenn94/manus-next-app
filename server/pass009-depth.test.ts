@@ -231,10 +231,13 @@ describe("Pass 009: Auth Flow Integrity", () => {
     expect(context).toContain("TrpcContext");
   });
 
-  it("should redirect to login on unauthorized error in frontend", () => {
+  it("should handle unauthorized errors without global redirect (prevents auth loop)", () => {
     const main = fs.readFileSync("client/src/main.tsx", "utf-8");
     expect(main).toContain("UNAUTHED_ERR_MSG");
-    expect(main).toContain("getLoginUrl");
+    // Auth redirects are handled per-page via useAuth({ redirectOnUnauthenticated: true })
+    // Global redirect in main.tsx was removed because it caused auth loops
+    expect(main).not.toContain("hasEverBeenAuthenticated");
+    expect(main).not.toContain("redirectToLoginIfUnauthorized");
   });
 });
 

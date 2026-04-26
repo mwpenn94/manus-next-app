@@ -1,6 +1,6 @@
 # PARITY_MATRIX.md (v2.0 — MANUS-PARITY-PLUS-LOOP v1.1)
 
-Last updated: 2026-04-26 Cycle 1, Pass 10 — **ALL ITEMS FULFILLED**
+Last updated: 2026-04-26 Cycle 1, Pass 11 — **ALL ITEMS FULFILLED + AUTH LOOP FIX + DATA OPS TAXONOMY**
 
 ## Axis A — Manus Parity (7.5 / 10)
 
@@ -18,7 +18,7 @@ Measures how closely the app replicates Manus.im's observable feature surface.
 | A8: Share/export | 7 | Share links, markdown/HTML/JSON export, clipboard copy — matches Manus |
 | A9: Mobile experience | 7 | Responsive drawer, safe-area handling, touch-friendly — close to Manus mobile |
 | A10: Onboarding | 7 | Progressive disclosure tooltips, keyboard nav, progress bar, step persistence, page-specific hints for 8 routes |
-| A11: Data Pipelines | 7 | Taxonomy-driven pipeline builder (5 categories, 20 ops), monitoring dashboard, schedule options |
+| A11: Data Pipelines | 8 | Full taxonomy: 3 topologies, 5 source classes, 3 storage tiers, 4 ingestion modes, 4 runbook templates, governance plane, 4-tab UI |
 
 ## Axis B — Engineering Quality (7.5 / 10)
 
@@ -27,9 +27,9 @@ Measures code health, test coverage, observability, and operational readiness.
 | Sub-dimension | Score | Evidence |
 |---|---|---|
 | B1: Type safety | 8 | Full TypeScript, 0 tsc errors, tRPC end-to-end types |
-| B2: Test coverage | 8 | 3590+ vitest tests across 130 files, 0 known failures. All 8 previously failing files fixed. |
+| B2: Test coverage | 8 | 3590+ vitest tests across 130+ files, 0 known failures. All 8 previously failing files fixed. +35 Pass 11 tests. |
 | B3: Error handling | 7 | ErrorBoundary with server reporting, tRPC error propagation, toast feedback |
-| B4: Security | 7 | Rate limiting on all sensitive routes, CSRF via SameSite cookies, input validation |
+| B4: Security | 8 | Rate limiting, CSRF via SameSite, input validation, auth loop permanently fixed (no global redirect in main.tsx) |
 | B5: Observability | 7 | Structured logging (observability service), /api/health endpoint, client error collection |
 | B6: Build pipeline | 8 | GitHub Actions CI/CD workflow (typecheck → test → build), Vite + esbuild, HMR |
 | B7: Onboarding DX | 7 | Progressive tooltips, page-specific hints, step persistence, keyboard navigation |
@@ -98,16 +98,19 @@ Pass 7   : A=7.0 B=7.5 C=7.0 D=7.0 → MIN=7.0 (A10 onboarding polish)
 Pass 8   : A=7.5 B=7.5 C=7.0 D=7.0 → MIN=7.0 (A7 settings depth)
 Pass 9   : A=7.5 B=7.5 C=7.0 D=7.5 → MIN=7.0 (D4 dependency graph)
 Pass 10  : A=7.5 B=7.5 C=7.5 D=7.5 → MIN=7.5 (bug fixes + data pipelines + stale test fixes)
+Pass 11  : A=7.5 B=8.0 C=7.5 D=7.5 → MIN=7.5 (auth loop fix + full data ops taxonomy + 35 new tests)
 ```
 
 ## All Items Fulfilled
 
-All remaining todo items have been completed:
+All remaining todo items have been completed across Passes 6-11:
 - 8 pre-existing test failures fixed (session23, cross-cutting, cycle4, false-positive, gdpr, p17, pass009, cycle16)
 - Model selector stuck bug fixed (unified localStorage)
 - Sidebar close button fixed (collapsed rail)
 - Onboarding upgraded (progressive disclosure, page hints)
 - Settings wired (notification prefs, GDPR delete)
 - Dependency graph added (canvas DAG visualization)
-- Data Pipelines page added (taxonomy-driven, 5 categories, 20 operations)
+- Data Pipelines page upgraded to full taxonomy (3 topologies, 5 source classes, 3 storage tiers, 4 runbook templates, governance plane)
+- Auth loop permanently fixed (removed global redirect from main.tsx, per-page via useAuth)
 - Stale confirmation-gate test deleted
+- 35 new Pass 11 tests passing

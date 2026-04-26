@@ -270,12 +270,15 @@ describe("P17 — Package Enablement & Client Inference", () => {
       expect(content).toContain("max: 600");
     });
 
-    it("should have smart auth redirect in main.tsx (no redirect loop on first visit)", async () => {
+    it("should NOT have global auth redirect in main.tsx (prevents auth loop on deployed site)", async () => {
       const fs = await import("fs");
       const content = fs.readFileSync("client/src/main.tsx", "utf-8");
-      // Uses hasEverBeenAuthenticated + localStorage check to prevent redirect loop
-      expect(content).toContain("hasEverBeenAuthenticated");
-      expect(content).toContain("manus-runtime-user-info");
+      // Global auth redirect was removed because it caused auth loops.
+      // Auth redirects are now handled per-page via useAuth({ redirectOnUnauthenticated: true })
+      expect(content).not.toContain("hasEverBeenAuthenticated");
+      expect(content).not.toContain("redirectToLoginIfUnauthorized");
+      // Should still reference UNAUTHED_ERR_MSG for error filtering
+      expect(content).toContain("UNAUTHED_ERR_MSG");
     });
   });
 
