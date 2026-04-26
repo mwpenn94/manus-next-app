@@ -1344,11 +1344,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <CreditWarningBanner />
         </div>
 
-        {/* Page content */}
+        {/* Page content — flex container so children's h-full is constrained */}
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 min-h-0"
+          className="flex-1 min-h-0 flex flex-col overflow-hidden"
         >
           {children}
         </main>

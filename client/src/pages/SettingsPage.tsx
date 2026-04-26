@@ -6,6 +6,7 @@
  * Tabs: Account, General, Capabilities, Bridge.
  */
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useLocation } from "wouter";
 import {
   User,
   Settings,
@@ -41,6 +42,7 @@ import {
   Zap,
   Timer,
   SlidersHorizontal,
+  Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -52,7 +54,7 @@ import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 
-type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "bridge" | "cloud_browser" | "data_controls" | "feedback";
+type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "connectors" | "bridge" | "cloud_browser" | "data_controls" | "feedback";
 
 interface Capability {
   name: string;
@@ -211,6 +213,7 @@ function CacheMetricsSection() {
 }
 
 export default function SettingsPage() {
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [capSearch, setCapSearch] = useState("");
   const [capFilter, setCapFilter] = useState<"all" | "enabled" | "disabled">("all");
@@ -382,6 +385,7 @@ export default function SettingsPage() {
     { id: "notifications", label: "Notifications", icon: Bell },
     { id: "secrets", label: "Secrets", icon: Settings },
     { id: "capabilities", label: "Capabilities", icon: Puzzle },
+    { id: "connectors" as SettingsTab, label: "Connectors", icon: Plug },
     { id: "cloud_browser", label: "Cloud Browser", icon: Globe },
     { id: "data_controls", label: "Data Controls", icon: Monitor },
     { id: "bridge", label: "Bridge", icon: Unplug },
@@ -398,7 +402,7 @@ export default function SettingsPage() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => tab.id === "connectors" ? navigate("/connectors") : setActiveTab(tab.id)}
             className={cn(
               "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
               activeTab === tab.id
@@ -418,7 +422,7 @@ export default function SettingsPage() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => tab.id === "connectors" ? navigate("/connectors") : setActiveTab(tab.id)}
               className={cn(
                 "flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs whitespace-nowrap transition-colors min-h-[44px]",
                 activeTab === tab.id
@@ -434,7 +438,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0 pb-mobile-nav md:pb-6">
         <div className="max-w-2xl">
           {/* ── Account ── */}
           {activeTab === "account" && (

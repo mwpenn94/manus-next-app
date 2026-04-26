@@ -265,7 +265,7 @@ export default function PlusMenu({
                   connectors={connectedList}
                   onItemClick={handleItemClick}
                   onConnectorClick={(c: any) => {
-                    navigate("/settings");
+                    navigate(c ? `/connectors?highlight=${c.connectorId || c.id}` : "/connectors");
                     onClose();
                   }}
                 />
@@ -316,7 +316,7 @@ export default function PlusMenu({
               connectors={connectedList}
               onItemClick={handleItemClick}
               onConnectorClick={(c: any) => {
-                navigate("/settings");
+                navigate(c ? `/connectors?highlight=${c.connectorId || c.id}` : "/connectors");
                 onClose();
               }}
             />

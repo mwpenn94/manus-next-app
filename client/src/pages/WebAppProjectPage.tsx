@@ -287,7 +287,7 @@ export default function WebAppProjectPage() {
       </div>
 
       {/* Panel Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto pb-mobile-nav md:pb-0">
         {/* Preview Panel */}
         {activePanel === "preview" && (
           <div className="h-full flex flex-col">

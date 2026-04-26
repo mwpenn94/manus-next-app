@@ -335,10 +335,12 @@ button:active:not(:disabled), a:active, [role="button"]:active {
   }
 }
 
-/* Universal mobile bottom nav padding — applied to ALL page root containers inside main */
-/* This ensures no page content is hidden behind the fixed MobileBottomNav */
+/* Universal mobile bottom nav padding — targets the page root containers */
+/* Layout: main#main-content > AnimatedRoute div > Page root div (h-full overflow-y-auto) */
+/* We target both levels to catch pages with and without AnimatedRoute */
 @media (max-width: 767px) {
-  #main-content > * {
+  #main-content > * > .overflow-y-auto,
+  #main-content > .overflow-y-auto {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
   }
 }

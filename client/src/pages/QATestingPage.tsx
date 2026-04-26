@@ -349,7 +349,7 @@ export default function QATestingPage() {
           </div>
 
           {/* Scenario Editor */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 pb-mobile-nav md:pb-6">
             {activeScenario ? (
               <div className="space-y-6 max-w-3xl">
                 {/* Scenario Header */}
@@ -527,7 +527,7 @@ export default function QATestingPage() {
         </TabsContent>
 
         {/* Accessibility Tab */}
-        <TabsContent value="accessibility" className="flex-1 overflow-y-auto m-0 p-6">
+        <TabsContent value="accessibility" className="flex-1 overflow-y-auto m-0 p-6 pb-mobile-nav md:pb-6">
           <div className="max-w-2xl mx-auto space-y-6">
             <Card>
               <CardHeader>
@@ -580,7 +580,7 @@ export default function QATestingPage() {
         </TabsContent>
 
         {/* Performance Tab */}
-        <TabsContent value="performance" className="flex-1 overflow-y-auto m-0 p-6">
+        <TabsContent value="performance" className="flex-1 overflow-y-auto m-0 p-6 pb-mobile-nav md:pb-6">
           <div className="max-w-2xl mx-auto space-y-6">
             <Card>
               <CardHeader>
@@ -631,7 +631,7 @@ export default function QATestingPage() {
         </TabsContent>
 
         {/* Visual Regression Tab */}
-        <TabsContent value="visual" className="flex-1 overflow-y-auto m-0 p-6">
+        <TabsContent value="visual" className="flex-1 overflow-y-auto m-0 p-6 pb-mobile-nav md:pb-6">
           <div className="max-w-2xl mx-auto space-y-6">
             <Card>
               <CardHeader>

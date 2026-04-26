@@ -36,13 +36,14 @@ describe("Cycle 12 — UI Component & Layout Parity Fixes", () => {
       expect(src).toContain("flex-1 flex flex-col min-w-0 min-h-0");
     });
 
-    it("main element has min-h-0 without overflow-hidden", () => {
-      // main now uses flex-1 min-h-0 (no overflow-hidden which was causing content cutoff)
+    it("main element has flex flex-col overflow-hidden for proper constraint (Pass 26)", () => {
+      // Pass 26: main needs overflow-hidden + flex flex-col to constrain AnimatedRoute
       const mainMatch = src.match(/<main[^>]*className="([^"]+)"/);
       expect(mainMatch).toBeTruthy();
       expect(mainMatch![1]).toContain("flex-1");
       expect(mainMatch![1]).toContain("min-h-0");
-      expect(mainMatch![1]).not.toContain("overflow-hidden");
+      expect(mainMatch![1]).toContain("overflow-hidden");
+      expect(mainMatch![1]).toContain("flex-col");
     });
 
     it("mobile drawer has safe-area-inset padding", () => {

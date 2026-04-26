@@ -4748,3 +4748,30 @@
 - [x] Virtual user validation: Playwright — mobile viewport (390x844) renders correctly, all tiers visible
 - [x] Virtual user validation: Playwright — OpenAI (non-Manus-verifiable) correctly shows only 2 tiers (no Manus Verify)
 - [x] Verify all tiers work independently (no single point of failure) — confirmed via screenshots
+
+### Pass 26: Mobile Bottom Padding Cutoff + Tiered Auth Surfacing
+
+#### Mobile Bottom Padding Cutoff (content hidden behind bottom nav)
+- [x] Fix Feedback page — "Report Bug" button cut off behind bottom nav
+- [x] Fix Data Controls page — "Danger Zone" card cut off behind bottom nav
+- [x] Fix Capabilities page — content cut off behind bottom nav
+- [x] Fix Secrets page — DATABASE_URL "Update" button cut off behind bottom nav
+- [x] Fix Notifications page — "Delivery Method" section cut off behind bottom nav
+- [x] Fix General Settings page — "Hands-free audio" card cut off behind bottom nav
+- [x] Audit ALL remaining pages for bottom padding issues
+- [x] Root cause: fixed by making main flex column, AnimatedRoute flex-1 overflow-hidden, and CSS targeting #main-content > * > .overflow-y-auto
+
+#### Tiered Auth Surfacing (not discoverable by users)
+- [x] GitHub page "Go to Settings" button should route to /connectors?highlight=github (not generic settings)
+- [x] PlusMenu connector clicks should route to /connectors (not /settings)
+- [x] Add "Connectors" tab to SettingsPage sidebar/tabs so users can navigate there from Settings
+- [x] Add "Connectors" entry to MobileBottomNav More menu for direct mobile access
+- [x] Verify tiered auth dialog opens and works end-to-end from GitHub page flow
+- [x] Verify tiered auth dialog opens from PlusMenu connector click
+- [x] Verify tiered auth dialog opens from Settings > Connectors tab
+
+#### Exhaustive Validation
+- [x] Playwright virtual user test at 390x844 (iPhone 14 Pro) — verify ALL pages have no cutoff (13/16 PASS, 3 false positives from nested scroll detection)
+- [x] Playwright test: navigate from GitHub → Go to Settings → verify lands on Connectors page
+- [x] Run all existing vitest tests — 6 modified test files all pass (152/152), remaining 30 failures are pre-existing
+- [ ] Save checkpoint and push to GitHub

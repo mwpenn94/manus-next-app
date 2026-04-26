@@ -87,18 +87,18 @@ describe("SkillsPage — mobile filter layout", () => {
   });
 });
 
-// ── AppLayout — No overflow-hidden on children wrapper ──
+// ── AppLayout — overflow-hidden on main for proper flex constraint (Pass 26) ──
 
-describe("AppLayout — children wrapper must not clip content", () => {
+describe("AppLayout — main uses overflow-hidden for flex constraint", () => {
   const content = readFileSync(join(CLIENT_COMPONENTS, "AppLayout.tsx"), "utf-8");
 
-  it("main content area does NOT have overflow-hidden on children wrapper", () => {
-    // The main element should use flex-1 min-h-0 but NOT overflow-hidden
-    // Check that children are not wrapped in an overflow-hidden div
-    const mainMatch = content.match(/<main[^>]*className="[^"]*"[^>]*>/);
-    if (mainMatch) {
-      expect(mainMatch[0]).not.toContain("overflow-hidden");
-    }
+  it("main content area has overflow-hidden for proper flex constraint", () => {
+    // Pass 26: main needs overflow-hidden + flex flex-col to constrain AnimatedRoute
+    const mainMatch = content.match(/<main[^>]*className="([^"]*)"/); 
+    expect(mainMatch).toBeTruthy();
+    expect(mainMatch![1]).toContain("overflow-hidden");
+    expect(mainMatch![1]).toContain("flex");
+    expect(mainMatch![1]).toContain("flex-col");
   });
 
   it("MobileBottomNav is rendered outside <main>", () => {

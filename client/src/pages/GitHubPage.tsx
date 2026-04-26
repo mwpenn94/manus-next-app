@@ -1017,8 +1017,8 @@ export default function GitHubPage() {
             {!remoteReposQuery.data?.connected ? (
               <div className="text-center py-8">
                 <p className="text-sm text-muted-foreground mb-3">Connect your GitHub account first</p>
-                <Button onClick={() => { setImportOpen(false); navigate("/settings"); }}>
-                  Go to Settings
+                <Button onClick={() => { setImportOpen(false); window.location.href = "/connectors?highlight=github"; }}>
+                  Connect GitHub Account
                 </Button>
               </div>
             ) : remoteReposQuery.isLoading ? (

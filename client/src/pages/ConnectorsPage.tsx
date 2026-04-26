@@ -781,6 +781,16 @@ export default function ConnectorsPage() {
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
+    // Highlight a specific connector (e.g., from GitHub page "Connect GitHub Account" button)
+    const highlight = params.get("highlight");
+    if (highlight) {
+      const connector = AVAILABLE_CONNECTORS.find(c => c.id === highlight);
+      if (connector) {
+        setConnectDialog(connector);
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
     // OAuth code callback
     const code = params.get("code");
     const state = params.get("state");

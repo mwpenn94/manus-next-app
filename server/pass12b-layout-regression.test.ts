@@ -1,20 +1,9 @@
 /**
- * Pass 12B: Layout Regression Fix Tests
+ * Pass 12B: Layout Regression Fix Tests (Updated Pass 26)
  * 
- * Verifies that the AppLayout children wrapper does NOT have overflow-hidden,
- * which was causing content cutoff on Billing, Settings, Discover, and other pages.
- * 
- * Root cause: In Passes 6-10, the children wrapper was changed from:
- *   <main className="flex-1 overflow-hidden min-h-0">{children}</main>
- * to:
- *   <main className="flex-1 flex flex-col overflow-hidden min-h-0">
- *     <div className="flex-1 overflow-hidden min-h-0">{children}</div>
- *     <MobileBottomNav />
- *   </main>
- * 
- * The nested overflow-hidden div clipped all page content.
- * Fix: Reverted to simple <main className="flex-1 min-h-0">{children}</main>
- * with MobileBottomNav outside <main>.
+ * Pass 26 fix: main now uses flex flex-col overflow-hidden to properly constrain
+ * the AnimatedRoute wrapper and page roots. Pages use h-full overflow-y-auto to
+ * scroll within the constrained space. CSS rule adds padding-bottom on mobile.
  */
 import { describe, it, expect } from "vitest";
 import * as fs from "fs";
@@ -27,12 +16,14 @@ describe("Pass 12B: Layout Regression Fix", () => {
   const appLayout = readFile("client/src/components/AppLayout.tsx");
 
   describe("AppLayout main content area", () => {
-    it("main element does NOT have overflow-hidden class", () => {
-      // Find the <main element and its className
+    it("main element has overflow-hidden for proper flex constraint", () => {
+      // Pass 26: main needs overflow-hidden + flex flex-col to constrain AnimatedRoute
       const mainMatch = appLayout.match(/<main[^>]*className="([^"]+)"/);
       expect(mainMatch).toBeTruthy();
       const mainClasses = mainMatch![1];
-      expect(mainClasses).not.toContain("overflow-hidden");
+      expect(mainClasses).toContain("overflow-hidden");
+      expect(mainClasses).toContain("flex");
+      expect(mainClasses).toContain("flex-col");
     });
 
     it("main element has flex-1 and min-h-0 for proper flex layout", () => {
@@ -43,18 +34,14 @@ describe("Pass 12B: Layout Regression Fix", () => {
       expect(mainClasses).toContain("min-h-0");
     });
 
-    it("children are rendered directly inside main without overflow-hidden wrapper", () => {
+    it("children are rendered inside main via AnimatedRoute", () => {
       // Find the <main> block
       const mainStart = appLayout.indexOf("<main");
       const mainEnd = appLayout.indexOf("</main>");
       const mainBlock = appLayout.slice(mainStart, mainEnd);
       
-      // There should be {children} directly in main, not wrapped in overflow-hidden div
+      // Children should be rendered inside main (via AnimatedRoute wrapper)
       expect(mainBlock).toContain("{children}");
-      // No overflow-hidden div wrapping children
-      const childrenPos = mainBlock.indexOf("{children}");
-      const beforeChildren = mainBlock.slice(0, childrenPos);
-      expect(beforeChildren).not.toContain('overflow-hidden');
     });
 
     it("MobileBottomNav is outside main element", () => {

@@ -160,13 +160,14 @@ describe("CSS/Layout Regression Guards", () => {
     expect(css).toContain("pb-mobile-nav");
   });
 
-  it("AppLayout should NOT have overflow-hidden on children wrapper", () => {
+  it("AppLayout main has overflow-hidden for flex constraint (Pass 26)", () => {
     const content = readFileSync(join(componentsDir, "AppLayout.tsx"), "utf-8");
-    // Find the main element that wraps children
-    const mainMatch = content.match(/<main[^>]*className="([^"]*)"/);
-    if (mainMatch) {
-      expect(mainMatch[1]).not.toContain("overflow-hidden");
-    }
+    // Pass 26: main needs overflow-hidden + flex flex-col to constrain AnimatedRoute
+    const mainMatch = content.match(/<main[^>]*className="([^"]*)"/); 
+    expect(mainMatch).toBeTruthy();
+    expect(mainMatch![1]).toContain("overflow-hidden");
+    expect(mainMatch![1]).toContain("flex");
+    expect(mainMatch![1]).toContain("flex-col");
   });
 
   it("MobileBottomNav should use fixed positioning", () => {
