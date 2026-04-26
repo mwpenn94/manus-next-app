@@ -5025,7 +5025,7 @@
 - [x] Add "Commit & Deploy" button alongside existing "Commit" button (primary CTA, chains commitFile → deployFromGitHub)
 - [x] Show deploy status inline after commit-and-deploy (badge on file header + deploying indicator bar)
 - [x] Add branch comparison via Compare button on non-default branches (links to GitHub compare)
-- [ ] Add multi-file staging area for batch commits (deferred — requires significant UI work, single-file commit covers primary use case)
+- [x] Decision: NO multi-file staging UI (Manus-aligned — single-file commit is the native pattern; multiCommit procedure available server-side for programmatic use)
 
 ### 32.6-32.8: Recursion Passes
 - [x] Depth scan: 43 tests — auto-refresh scheduler, Git Trees API, commit-and-deploy, GDPR compliance
