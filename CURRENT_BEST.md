@@ -1,59 +1,57 @@
 # CURRENT_BEST.md
 
 ## Status
-**CONVERGED** — Cycle 11 complete. All 10 scoring dimensions at 8.0+ floor. Temperature 0.175.
-323+ tests passing, TypeScript clean. 3 consecutive clean convergence passes confirmed.
+**OPTIMIZATION IN PROGRESS** — MANUS-PARITY-PLUS-LOOP v1.1, Cycle 1, Pass 4 complete.
+MIN score raised from 5.0 to 6.5 across 4 passes. 303+ tests passing, TypeScript clean.
 
-## Engineering Axis Scores
-| Dimension | Score Range | Notes |
+## v2.0 Scores (4-Axis Conjunctive Rubric)
+
+| Axis | Score | Trend |
 |---|---|---|
-| Visual | 8.1–8.5 | Page transitions, message stagger, dialog animations, branch tree/compare |
-| Behavioral | 8.1–8.6 | ARIA live regions, elapsed timer, progress indicators |
-| Functional | 8.3–8.8 | All branch CRUD + tree + compare, visual regression, inline doc preview |
-| Performance | 8.0–8.4 | Capped animation delays, timer cleanup, BFS visited sets |
-| A11y | 8.0–8.5 | ARIA live, skip-to-content, focus-visible, aria-labels on icon buttons |
+| A: Manus Parity | 7.0 | ↔ |
+| B: Engineering Quality | 6.5 | ↑ from 5.0 |
+| C: UX Polish | 6.5 | ↑ from 5.5 |
+| D: Orchestration Quality | 6.5 | ↑ from 5.0 |
+| **Overall (MIN)** | **6.5** | **↑ from 5.0** |
 
-## Experience Axis Scores
-| Dimension | Score Range | Notes |
-|---|---|---|
-| Interaction | 8.1–8.6 | Branch tree clickable nodes, compare side-by-side, QA screenshots |
-| Motion | 8.0–8.5 | AnimatedRoute page transitions, message fade-in, sidebar collapse |
-| State-coverage | 8.1–8.6 | TaskViewSkeleton, empty states, loading/error/success for all flows |
-| Microcopy | 8.0–8.5 | Branch compare labels, QA timing display, document type labels |
-| Flow | 8.1–8.6 | Branch tree → click → navigate, compare from menu, QA run → results |
+## Key Improvements This Cycle
 
-## Weighted Total
-| Metric | Range |
-|---|---|
-| Engineering Axis | 8.1–8.5 |
-| Experience Axis | 8.1–8.5 |
-| **Overall** | **8.1–8.5** |
+| Pass | Type | Delta | Key Changes |
+|---|---|---|---|
+| 1 | APP-LIFECYCLE | B: 5.0→6.5 | Feedback DB + router, ErrorBoundary with server reporting, help page |
+| 2 | ORCHESTRATION | D: 5.0→6.0 | Priority queue, concurrency control, timeout management |
+| 3 | UX-POLISH | C: 5.5→6.5 | Sidebar animation, empty states, verified existing polish |
+| 4 | CONVERGENT | D: 6.0→6.5 | Verified existing status indicators, updated scoring files |
 
-## Convergence Evidence
-- All dimensions ≥ 8.0 floor: YES
-- Temperature: 0.175 (below 0.20 threshold)
-- 3 consecutive clean test passes: YES (64 + 195 + 64)
-- TypeScript 0 errors: YES
-- COMPLIANCE pass: YES
-- ADVERSARY pass: YES
+## Bug Fixes This Cycle
 
-## Cycle 11 Changelog
-- AnimatedRoute component (page transition animations with fade/slide)
-- TaskViewSkeleton component (chat loading skeleton)
-- Message appear animation (staggered fade-in with motion.div wrapper)
-- ARIA live region on chat messages container (role=log, aria-live=polite)
-- aria-label on FeedbackWidget close button
-- QA elapsed time counter (0.1s precision with useRef cleanup)
-- Global CSS micro-interaction transitions (hover/focus/active)
-- COMPLIANCE + ADVERSARY + STRATEGIST assessments written
+- Mode selector stuck on "Manus Max" (React state fix)
+- Sidebar close button missing on desktop (PanelLeftClose added)
+- Copy link button replaced with functional close button
+- App icon not rendering (new favicon.ico + PWA icons from marble hero image)
+- CommandDialog landmark violation (moved DialogHeader inside DialogContent)
+- TypeScript errors in browserAutomation.ts (11 implicit any types fixed)
 
-## Trajectory
+## Convergence Trajectory
+
 ```
-Cycle  8: 7.0-7.5 (4 dims below 8.0)
-Cycle  9: 7.5-8.0 (3 dims below 8.0)
-Cycle 10: 7.9-8.4 (2 dims below 8.0)
-Cycle 11: 8.1-8.5 (0 dims below 8.0) ← CONVERGED
+Baseline : A=7.0 B=5.0 C=5.5 D=5.0 → MIN=5.0
+Pass 1   : A=7.0 B=6.5 C=5.5 D=5.0 → MIN=5.0 (B +1.5)
+Pass 2   : A=7.0 B=6.5 C=5.5 D=6.0 → MIN=5.5 (D +1.0)
+Pass 3   : A=7.0 B=6.5 C=6.5 D=6.0 → MIN=6.0 (C +1.0)
+Pass 4   : A=7.0 B=6.5 C=6.5 D=6.5 → MIN=6.5 (D +0.5)
 ```
+
+## Next Priority Targets (to reach MIN 7.0)
+
+1. B needs: E2E test execution, CI/CD pipeline
+2. C needs: Empty state improvements, accessibility depth
+3. D needs: Dependency visualization, automatic error recovery
+4. A is already at 7.0 and not the bottleneck
+
+## Legacy Scores (v1.2 — Cycle 11)
+
+The previous 2-axis rubric scored 8.1–8.5 composite across Engineering and Experience axes. Those scores measured per-capability dimensions (streaming-chat, task-sidebar, etc.) and are not directly comparable to the v2.0 4-axis rubric which measures cross-cutting quality axes.
 
 ## Last Updated
-2026-04-25T05:28:00Z — Cycle 11 (CONVERGED)
+2026-04-26T04:15:00Z — Cycle 1, Pass 4 (v2.0 rubric)

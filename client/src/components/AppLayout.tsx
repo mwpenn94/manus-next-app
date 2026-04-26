@@ -646,9 +646,16 @@ function AllTasksSection({
 
       {/* Task list */}
       {filteredTasks.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground/50 italic px-2 py-2">
-          {statusFilter !== "all" ? `No ${statusFilter} tasks` : "No tasks yet"}
-        </p>
+        <div className="px-3 py-4 text-center">
+          <p className="text-xs text-muted-foreground/60">
+            {statusFilter !== "all" ? `No ${statusFilter} tasks` : "No tasks yet"}
+          </p>
+          {statusFilter === "all" && (
+            <p className="text-[11px] text-muted-foreground/40 mt-1">
+              Start a new task from the input above
+            </p>
+          )}
+        </div>
       ) : (
         <div className="space-y-0.5">
           {filteredTasks.map((task) => (
@@ -1197,7 +1204,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <nav
         aria-label="Main navigation"
         className={cn(
-          "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200",
+          "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
           sidebarOpen ? "w-[260px]" : "w-0 overflow-hidden opacity-0"
         )}
       >
