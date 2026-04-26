@@ -1165,6 +1165,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* ── MOBILE OVERLAY ── */}
       {mobileDrawerOpen && (
         <div
+          role="presentation"
+          aria-hidden="true"
           className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-[2px]"
           onClick={() => setMobileDrawerOpen(false)}
         />
@@ -1270,23 +1272,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* Status banners */}
-        <div role="status" aria-label="System notifications" aria-live="polite">
-          <NetworkBanner />
-          <CreditWarningBanner />
-        </div>
-
         {/* Page content */}
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-hidden min-h-0"
+          className="flex-1 flex flex-col overflow-hidden min-h-0"
         >
-          {children}
+          {/* Status banners */}
+          <div role="status" aria-label="System notifications" aria-live="polite" className="shrink-0">
+            <NetworkBanner />
+            <CreditWarningBanner />
+          </div>
+          <div className="flex-1 overflow-hidden min-h-0">
+            {children}
+          </div>
+          {/* Mobile Bottom Navigation */}
+          <MobileBottomNav />
         </main>
-
-        {/* Mobile Bottom Navigation — inside the content column for landmark containment */}
-        <MobileBottomNav />
       </div>
 
       {/* Keyboard Shortcuts Help Dialog */}

@@ -100,6 +100,7 @@ export default function OnboardingTooltips() {
   const isLast = currentStep === STEPS.length - 1;
 
   return (
+    <aside aria-label="Onboarding walkthrough">
     <AnimatePresence>
       {visible && (
         <>
@@ -188,5 +189,6 @@ export default function OnboardingTooltips() {
         </>
       )}
     </AnimatePresence>
+    </aside>
   );
 }

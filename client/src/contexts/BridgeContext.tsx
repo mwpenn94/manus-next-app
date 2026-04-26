@@ -8,6 +8,7 @@
  * - Structured message protocol (task:start, task:step, task:complete, task:error)
  * - Connection quality indicator (latency, reconnect count, uptime)
  */
+import { useAuth } from "@/_core/hooks/useAuth";
 import {
   createContext,
   useContext,
@@ -124,10 +125,12 @@ export function BridgeProvider({ children }: { children: ReactNode }) {
   const apiKeyRef = useRef<string | undefined>(undefined);
   const taskEventHandlersRef = useRef<Set<(event: BridgeMessage) => void>>(new Set());
 
-  // Load saved config for auto-connect
+  // Load saved config for auto-connect — only when authenticated
+  const { isAuthenticated } = useAuth();
   const bridgeConfigQuery = trpc.bridge.getConfig.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: isAuthenticated,
   });
 
   const addEvent = useCallback((event: BridgeEvent) => {

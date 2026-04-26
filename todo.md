@@ -4431,3 +4431,18 @@
 
 ### Recursive Optimization Round 2
 - [x] Run recursive optimization passes until 2 consecutive no-action passes (4 passes, converged)
+
+### URGENT: Auth Loop Fix (Cycle 16)
+- [x] Root cause: BridgeContext.getConfig (protectedProcedure) fired unconditionally for unauthenticated users
+- [x] Gate BridgeContext.getConfig query behind isAuthenticated
+- [x] Remove aggressive redirect-on-401 from main.tsx (let per-component useAuth handle redirects)
+- [x] Silently ignore UNAUTHED_ERR_MSG in query/mutation error handlers
+
+### Accessibility Landmark Fix (Cycle 16)
+- [x] Move status banners (NetworkBanner, CreditWarningBanner) inside main landmark
+- [x] Move MobileBottomNav inside main landmark
+- [x] Add role=presentation + aria-hidden to mobile overlay backdrop
+- [x] Wrap OnboardingTooltips in aside landmark with aria-label
+- [x] Wrap skip-link in nav landmark with aria-label
+- [x] 25 new tests for auth loop + landmark fixes (all passing)
+- [x] 109 tests passing across 4 test files

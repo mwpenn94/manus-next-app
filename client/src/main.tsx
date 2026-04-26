@@ -5,7 +5,7 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
+// Auth redirects handled per-component via useAuth(), not globally
 import { I18nProvider } from "./i18n/I18nProvider";
 import "./index.css";
 import React from "react";
@@ -49,44 +49,13 @@ const queryClient = new QueryClient({
 });
 
 /**
- * Smart auth redirect: only redirect to login if the user was previously
- * authenticated (session expired) — NOT on first visit when they haven't
- * logged in yet. This prevents redirect loops on the homepage.
+ * Error logging for tRPC queries/mutations.
+ * Auth redirects are handled per-component via useAuth() hook —
+ * NOT globally here, to prevent redirect loops on unauthenticated pages.
  */
-let hasEverBeenAuthenticated = Boolean(
-  localStorage.getItem("manus-runtime-user-info") &&
-  localStorage.getItem("manus-runtime-user-info") !== "null"
-);
-
-const redirectToLoginIfUnauthorized = (error: unknown) => {
-  if (!(error instanceof TRPCClientError)) return;
-  if (typeof window === "undefined") return;
-  if (error.message !== UNAUTHED_ERR_MSG) return;
-
-  // Only redirect if user was previously logged in (session expired)
-  // First-time visitors should see the homepage, not a redirect loop
-  if (!hasEverBeenAuthenticated) return;
-
-  // Clear stale auth data and redirect once
-  hasEverBeenAuthenticated = false;
-  localStorage.removeItem("manus-runtime-user-info");
-  window.location.href = getLoginUrl();
-};
-
-// Track when user becomes authenticated
 queryClient.getQueryCache().subscribe(event => {
-  if (event.type === "updated" && event.action.type === "success") {
-    const queryKey = event.query.queryKey;
-    const isAuthMeQuery = Array.isArray(queryKey) && queryKey.some(
-      (k: unknown) => Array.isArray(k) && k.includes("auth") && k.includes("me")
-    );
-    if (isAuthMeQuery && event.query.state.data) {
-      hasEverBeenAuthenticated = true;
-    }
-  }
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error);
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Query Error]", error);
     }
@@ -96,7 +65,6 @@ queryClient.getQueryCache().subscribe(event => {
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
-    redirectToLoginIfUnauthorized(error);
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Mutation Error]", error);
     }
