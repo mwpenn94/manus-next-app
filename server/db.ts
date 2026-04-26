@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2423,4 +2423,126 @@ export async function getProviderUsageStats(providerId: number, days: number = 7
   }).from(sovereignUsageLogs)
     .where(and(eq(sovereignUsageLogs.providerId, providerId), gte(sovereignUsageLogs.createdAt, since)));
   return result[0] ?? null;
+}
+
+// ── Connector Health helpers ──
+
+/** Get or create health record for a user's connector */
+export async function getOrCreateConnectorHealth(userId: number, connectorId: string): Promise<InsertConnectorHealth & { id: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(connectorHealth)
+    .where(and(eq(connectorHealth.userId, userId), eq(connectorHealth.connectorId, connectorId)));
+  if (existing.length > 0) return existing[0] as InsertConnectorHealth & { id: number };
+  // Create default health record
+  const [result] = await db.insert(connectorHealth).values({
+    userId,
+    connectorId,
+    autoRefreshEnabled: false,
+    refreshFailCount: 0,
+    healthStatus: "no_token",
+    supportsAutoRefresh: false,
+  }).$returningId();
+  return { id: result.id, userId, connectorId, autoRefreshEnabled: false, refreshFailCount: 0, healthStatus: "no_token", supportsAutoRefresh: false } as InsertConnectorHealth & { id: number };
+}
+
+/** Get all health records for a user */
+export async function getUserConnectorHealth(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(connectorHealth).where(eq(connectorHealth.userId, userId));
+}
+
+/** Update health record fields */
+export async function updateConnectorHealth(
+  userId: number,
+  connectorId: string,
+  data: Partial<InsertConnectorHealth>
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(connectorHealth)
+    .set({ ...data, updatedAt: new Date() } as any)
+    .where(and(eq(connectorHealth.userId, userId), eq(connectorHealth.connectorId, connectorId)));
+}
+
+/** Toggle auto-refresh for a connector */
+export async function toggleAutoRefresh(userId: number, connectorId: string, enabled: boolean) {
+  const health = await getOrCreateConnectorHealth(userId, connectorId);
+  await updateConnectorHealth(userId, connectorId, { autoRefreshEnabled: enabled });
+  // Log the event
+  await logConnectorHealthEvent(userId, connectorId, enabled ? "auto_refresh_enabled" : "auto_refresh_disabled");
+  return { ...health, autoRefreshEnabled: enabled };
+}
+
+/** Log a health event */
+export async function logConnectorHealthEvent(
+  userId: number,
+  connectorId: string,
+  eventType: InsertConnectorHealthLog["eventType"],
+  details?: string
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(connectorHealthLogs).values({ userId, connectorId, eventType: eventType!, details });
+}
+
+/** Get recent health logs for a connector */
+export async function getConnectorHealthLogs(userId: number, connectorId: string, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(connectorHealthLogs)
+    .where(and(eq(connectorHealthLogs.userId, userId), eq(connectorHealthLogs.connectorId, connectorId)))
+    .orderBy(desc(connectorHealthLogs.createdAt))
+    .limit(limit);
+}
+
+/** Compute health status from connector data */
+export function computeHealthStatus(
+  tokenExpiresAt: Date | null,
+  refreshToken: string | null,
+  autoRefreshEnabled: boolean,
+  refreshFailCount: number
+): "healthy" | "expiring_soon" | "expired" | "refresh_failed" | "no_token" {
+  if (!tokenExpiresAt) return "no_token"; // PATs and manual tokens have no expiry
+  const now = Date.now();
+  const expiresMs = tokenExpiresAt.getTime();
+  if (refreshFailCount >= 3) return "refresh_failed";
+  if (expiresMs < now) return "expired";
+  // Expiring soon = within 15 minutes
+  if (expiresMs - now < 15 * 60 * 1000) return "expiring_soon";
+  return "healthy";
+}
+
+/** Sync health record from connector data (called after connect/refresh/disconnect) */
+export async function syncConnectorHealthFromConnector(userId: number, connectorId: string) {
+  const db = await getDb();
+  if (!db) return;
+  const userConns = await getUserConnectors(userId);
+  const conn = userConns.find(c => c.connectorId === connectorId);
+  if (!conn || conn.status !== "connected") {
+    // Connector disconnected or not found — reset health
+    await updateConnectorHealth(userId, connectorId, {
+      healthStatus: "no_token",
+      refreshFailCount: 0,
+      lastRefreshError: null,
+    });
+    return;
+  }
+  // Determine if this connector supports auto-refresh
+  const supportsRefresh = !!(conn.refreshToken && conn.tokenExpiresAt);
+  const authMethodCategory = conn.authMethod || "api_key";
+  const healthStatus = computeHealthStatus(
+    conn.tokenExpiresAt,
+    conn.refreshToken,
+    false, // We'll read actual autoRefreshEnabled from health record
+    0
+  );
+  await getOrCreateConnectorHealth(userId, connectorId);
+  await updateConnectorHealth(userId, connectorId, {
+    healthStatus,
+    supportsAutoRefresh: supportsRefresh,
+    authMethodCategory,
+    lastSyncAt: conn.lastSyncAt || new Date(),
+  });
 }

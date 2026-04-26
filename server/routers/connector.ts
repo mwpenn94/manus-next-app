@@ -6,6 +6,14 @@ import {
   getUserConnectors,
   updateConnectorOAuthTokens,
   upsertConnector,
+  getOrCreateConnectorHealth,
+  getUserConnectorHealth,
+  updateConnectorHealth,
+  toggleAutoRefresh,
+  logConnectorHealthEvent,
+  getConnectorHealthLogs,
+  computeHealthStatus,
+  syncConnectorHealthFromConnector,
  } from "../db";
 import { connectors } from "../../drizzle/schema";
 import { ENV } from "../_core/env";
@@ -345,5 +353,180 @@ export const connectorRouter = router({
           verifiedIdentity: input.verifiedIdentity,
           connectorId: input.connectorId,
         };
+      }),
+
+    // ══════════════════════════════════════════════════════════════════════
+    // CONNECTOR HEALTH DASHBOARD — Token lifecycle, auto-refresh, monitoring
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Get health status for all user connectors (merged with connector data) */
+    getHealth: protectedProcedure.query(async ({ ctx }) => {
+      const userConns = await getUserConnectors(ctx.user.id);
+      const healthRecords = await getUserConnectorHealth(ctx.user.id);
+      const healthMap = new Map(healthRecords.map(h => [h.connectorId, h]));
+
+      return userConns
+        .filter(c => c.status === "connected")
+        .map(conn => {
+          const health = healthMap.get(conn.connectorId);
+          const hasRefreshToken = !!conn.refreshToken;
+          const hasExpiry = !!conn.tokenExpiresAt;
+          const supportsAutoRefresh = hasRefreshToken && hasExpiry;
+          const authMethodCategory = conn.authMethod || "api_key";
+
+          // Compute live health status
+          const healthStatus = computeHealthStatus(
+            conn.tokenExpiresAt,
+            conn.refreshToken,
+            health?.autoRefreshEnabled ?? false,
+            health?.refreshFailCount ?? 0
+          );
+
+          return {
+            connectorId: conn.connectorId,
+            name: conn.name,
+            authMethod: conn.authMethod,
+            authMethodCategory,
+            tokenExpiresAt: conn.tokenExpiresAt?.toISOString() || null,
+            lastSyncAt: conn.lastSyncAt?.toISOString() || null,
+            oauthScopes: conn.oauthScopes,
+            healthStatus,
+            supportsAutoRefresh,
+            autoRefreshEnabled: health?.autoRefreshEnabled ?? false,
+            lastRefreshAt: health?.lastRefreshAt?.toISOString() || null,
+            nextRefreshAt: health?.nextRefreshAt?.toISOString() || null,
+            refreshFailCount: health?.refreshFailCount ?? 0,
+            lastRefreshError: health?.lastRefreshError || null,
+          };
+        });
+    }),
+
+    /** Get health details for a single connector */
+    getHealthDetail: protectedProcedure
+      .input(z.object({ connectorId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const health = await getOrCreateConnectorHealth(ctx.user.id, input.connectorId);
+        const logs = await getConnectorHealthLogs(ctx.user.id, input.connectorId, 20);
+        const userConns = await getUserConnectors(ctx.user.id);
+        const conn = userConns.find(c => c.connectorId === input.connectorId);
+
+        return {
+          health: {
+            ...health,
+            lastRefreshAt: health.lastRefreshAt ? new Date(health.lastRefreshAt).toISOString() : null,
+            lastSyncAt: health.lastSyncAt ? new Date(health.lastSyncAt).toISOString() : null,
+            nextRefreshAt: health.nextRefreshAt ? new Date(health.nextRefreshAt).toISOString() : null,
+          },
+          logs: logs.map(l => ({
+            ...l,
+            createdAt: l.createdAt.toISOString(),
+          })),
+          tokenExpiresAt: conn?.tokenExpiresAt?.toISOString() || null,
+          hasRefreshToken: !!conn?.refreshToken,
+        };
+      }),
+
+    /** Toggle auto-refresh for a connector */
+    updateAutoRefresh: protectedProcedure
+      .input(z.object({
+        connectorId: z.string(),
+        enabled: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify the connector exists and is connected
+        const userConns = await getUserConnectors(ctx.user.id);
+        const conn = userConns.find(c => c.connectorId === input.connectorId);
+        if (!conn || conn.status !== "connected") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Connector not found or not connected" });
+        }
+        // Only allow auto-refresh for OAuth connectors with refresh tokens
+        if (input.enabled && !conn.refreshToken) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Auto-refresh requires an OAuth connection with a refresh token",
+          });
+        }
+        const result = await toggleAutoRefresh(ctx.user.id, input.connectorId, input.enabled);
+
+        // If enabling, compute next refresh time (5 min before expiry, or now if already expired)
+        if (input.enabled && conn.tokenExpiresAt) {
+          const expiresMs = conn.tokenExpiresAt.getTime();
+          const bufferMs = 5 * 60 * 1000; // 5 minutes before expiry
+          const nextRefreshMs = Math.max(Date.now(), expiresMs - bufferMs);
+          await updateConnectorHealth(ctx.user.id, input.connectorId, {
+            nextRefreshAt: new Date(nextRefreshMs),
+          });
+        }
+
+        return { success: true, autoRefreshEnabled: input.enabled };
+      }),
+
+    /** Manual token refresh trigger */
+    manualRefresh: protectedProcedure
+      .input(z.object({ connectorId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const { getOAuthProvider } = await import("../connectorOAuth");
+        const userConns = await getUserConnectors(ctx.user.id);
+        const conn = userConns.find(c => c.connectorId === input.connectorId);
+        if (!conn) throw new TRPCError({ code: "NOT_FOUND", message: "Connector not found" });
+        if (!conn.refreshToken) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No refresh token available" });
+        }
+        const provider = getOAuthProvider(input.connectorId);
+        if (!provider?.refreshToken) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Provider does not support token refresh" });
+        }
+
+        try {
+          const tokens = await provider.refreshToken(conn.refreshToken);
+          const newExpiry = tokens.expiresIn ? new Date(Date.now() + tokens.expiresIn * 1000) : null;
+          await updateConnectorOAuthTokens(conn.id, {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken || undefined,
+            tokenExpiresAt: newExpiry,
+          });
+
+          // Update health record
+          await updateConnectorHealth(ctx.user.id, input.connectorId, {
+            healthStatus: "healthy",
+            lastRefreshAt: new Date(),
+            refreshFailCount: 0,
+            lastRefreshError: null,
+            nextRefreshAt: newExpiry ? new Date(newExpiry.getTime() - 5 * 60 * 1000) : null,
+          });
+          await logConnectorHealthEvent(ctx.user.id, input.connectorId, "manual_refresh", `New expiry: ${newExpiry?.toISOString()}`);
+
+          return {
+            success: true,
+            newExpiresAt: newExpiry?.toISOString() || null,
+            healthStatus: "healthy" as const,
+          };
+        } catch (err: any) {
+          // Log failure
+          const health = await getOrCreateConnectorHealth(ctx.user.id, input.connectorId);
+          const newFailCount = (health.refreshFailCount ?? 0) + 1;
+          await updateConnectorHealth(ctx.user.id, input.connectorId, {
+            refreshFailCount: newFailCount,
+            lastRefreshError: err.message || "Unknown error",
+            healthStatus: newFailCount >= 3 ? "refresh_failed" : "expiring_soon",
+          });
+          await logConnectorHealthEvent(ctx.user.id, input.connectorId, "refresh_failed", err.message);
+
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Token refresh failed: ${err.message}`,
+          });
+        }
+      }),
+
+    /** Get health event logs for a connector */
+    getHealthLogs: protectedProcedure
+      .input(z.object({ connectorId: z.string(), limit: z.number().min(1).max(100).default(20) }))
+      .query(async ({ ctx, input }) => {
+        const logs = await getConnectorHealthLogs(ctx.user.id, input.connectorId, input.limit);
+        return logs.map(l => ({
+          ...l,
+          createdAt: l.createdAt.toISOString(),
+        }));
       }),
   });

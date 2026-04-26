@@ -13,6 +13,8 @@ import {
   atlasPlans,
   bridgeConfigs,
   connectedDevices,
+  connectorHealth,
+  connectorHealthLogs,
   connectors,
   designs,
   deviceSessions,
@@ -61,12 +63,15 @@ export const gdprRouter = router({
       // ── Gather ALL user data from ALL user-owned tables ──
       const [userTasks, userPrefs, userMemories, userConnectors, userWebapps, userDesigns,
         userSchedules, userProjects, userSkills, userSlides, userMeetings,
+        userConnectorHealth, userConnectorHealthLogs,
         userDevices, userMobileProjects, userAppBuilds, userVideoProjects,
         userGitHubRepos, userTemplates, userBridgeConfigs, userNotifications] = await Promise.all([
         db.select().from(tasks).where(eq(tasks.userId, userId)),
         getUserPreferences(userId),
         db.select().from(memoryEntries).where(eq(memoryEntries.userId, userId)),
         db.select().from(connectors).where(eq(connectors.userId, userId)),
+        db.select().from(connectorHealth).where(eq(connectorHealth.userId, userId)),
+        db.select().from(connectorHealthLogs).where(eq(connectorHealthLogs.userId, userId)),
         db.select().from(webappProjects).where(eq(webappProjects.userId, userId)),
         db.select().from(designs).where(eq(designs.userId, userId)),
         db.select().from(scheduledTasks).where(eq(scheduledTasks.userId, userId)),
@@ -128,6 +133,8 @@ export const gdprRouter = router({
         preferences: userPrefs,
         memories: userMemories,
         connectors: userConnectors.map(c => ({ ...c, accessToken: "[REDACTED]", refreshToken: "[REDACTED]" })),
+        connectorHealth: userConnectorHealth,
+        connectorHealthLogs: userConnectorHealthLogs,
         webappProjects: userWebapps,
         designs: userDesigns,
         scheduledTasks: userSchedules,
@@ -206,6 +213,8 @@ export const gdprRouter = router({
       // ── Phase 5: Delete all direct user-owned tables ──
       await db.delete(tasks).where(eq(tasks.userId, userId));
       await db.delete(memoryEntries).where(eq(memoryEntries.userId, userId));
+      await db.delete(connectorHealthLogs).where(eq(connectorHealthLogs.userId, userId));
+      await db.delete(connectorHealth).where(eq(connectorHealth.userId, userId));
       await db.delete(connectors).where(eq(connectors.userId, userId));
       await db.delete(webappBuilds).where(eq(webappBuilds.userId, userId));
       await db.delete(webappProjects).where(eq(webappProjects.userId, userId));

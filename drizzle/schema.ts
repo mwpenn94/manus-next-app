@@ -1283,3 +1283,55 @@ export const appFeedback = mysqlTable("app_feedback", {
 }));
 export type AppFeedback = typeof appFeedback.$inferSelect;
 export type InsertAppFeedback = typeof appFeedback.$inferInsert;
+
+// ── Connector Health (auto-refresh, token lifecycle, health monitoring) ──
+export const connectorHealth = mysqlTable("connector_health", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Matches connectorId from connectors table (e.g., "github", "google-drive") */
+  connectorId: varchar("connectorId", { length: 128 }).notNull(),
+  /** Whether auto-refresh is enabled for this connector (only meaningful for OAuth with refresh_token) */
+  autoRefreshEnabled: boolean("autoRefreshEnabled").default(false).notNull(),
+  /** Last successful token refresh timestamp */
+  lastRefreshAt: timestamp("lastRefreshAt"),
+  /** Last successful sync/API call timestamp */
+  lastSyncAt: timestamp("lastSyncAt"),
+  /** Next scheduled refresh attempt (computed from token expiry minus buffer) */
+  nextRefreshAt: timestamp("nextRefreshAt"),
+  /** Number of consecutive refresh failures */
+  refreshFailCount: int("refreshFailCount").default(0).notNull(),
+  /** Last refresh failure reason */
+  lastRefreshError: text("lastRefreshError"),
+  /** Health status: healthy, expiring_soon, expired, refresh_failed, no_token */
+  healthStatus: mysqlEnum("healthStatus", ["healthy", "expiring_soon", "expired", "refresh_failed", "no_token"]).default("no_token").notNull(),
+  /** Auth method category for display: oauth, pat, api_key, manus_oauth, webhook */
+  authMethodCategory: varchar("authMethodCategory", { length: 32 }),
+  /** Whether this connector's auth method supports auto-refresh */
+  supportsAutoRefresh: boolean("supportsAutoRefresh").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userConnectorIdx: index("connector_health_user_connector_idx").on(table.userId, table.connectorId),
+}));
+export type ConnectorHealth = typeof connectorHealth.$inferSelect;
+export type InsertConnectorHealth = typeof connectorHealth.$inferInsert;
+
+// ── Connector Health Logs (audit trail of refresh attempts) ──
+export const connectorHealthLogs = mysqlTable("connector_health_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  connectorId: varchar("connectorId", { length: 128 }).notNull(),
+  /** Event type: refresh_success, refresh_failed, auto_refresh_enabled, auto_refresh_disabled, manual_refresh, token_expired */
+  eventType: mysqlEnum("eventType", [
+    "refresh_success", "refresh_failed", "auto_refresh_enabled",
+    "auto_refresh_disabled", "manual_refresh", "token_expired",
+    "connected", "disconnected"
+  ]).notNull(),
+  /** Optional details (error message, new expiry, etc.) */
+  details: text("details"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userConnectorIdx: index("health_logs_user_connector_idx").on(table.userId, table.connectorId),
+}));
+export type ConnectorHealthLog = typeof connectorHealthLogs.$inferSelect;
+export type InsertConnectorHealthLog = typeof connectorHealthLogs.$inferInsert;

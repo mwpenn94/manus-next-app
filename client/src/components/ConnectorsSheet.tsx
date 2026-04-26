@@ -281,6 +281,18 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
     staleTime: 30_000,
   });
 
+  const { data: healthData = [] } = trpc.connector.getHealth.useQuery(undefined, {
+    enabled: isAuthenticated && open,
+    staleTime: 30_000,
+  });
+
+  // ── Health status map ──
+  const healthMap = useMemo(() => {
+    const m = new Map<string, string>();
+    healthData.forEach((h) => m.set(h.connectorId, h.healthStatus));
+    return m;
+  }, [healthData]);
+
   // ── Derived ──
   const installedMap = useMemo(() => {
     const m = new Map<string, (typeof installed)[0]>();
@@ -355,6 +367,7 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
                       key={connector.id}
                       connector={connector}
                       isHighlighted={highlightId === connector.id}
+                      healthStatus={healthMap.get(connector.id)}
                       onClick={() => handleCardClick(connector.id)}
                     />
                   ))}
@@ -402,12 +415,21 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
 function ConnectorCard({
   connector,
   isHighlighted,
+  healthStatus,
   onClick,
 }: {
   connector: ConnectorDef;
   isHighlighted?: boolean;
+  healthStatus?: string;
   onClick: () => void;
 }) {
+  // Manus-aligned: tiny dot only for connected connectors
+  const showDot = !!healthStatus;
+  const dotColor =
+    healthStatus === "expired" || healthStatus === "refresh_failed"
+      ? "bg-amber-500"
+      : "bg-emerald-500";
+
   return (
     <button
       onClick={onClick}
@@ -419,8 +441,17 @@ function ConnectorCard({
       )}
     >
       {/* Icon container — rounded square matching Manus native */}
-      <div className="w-12 h-12 rounded-xl bg-muted/60 border border-border/40 flex items-center justify-center shrink-0">
+      <div className="relative w-12 h-12 rounded-xl bg-muted/60 border border-border/40 flex items-center justify-center shrink-0">
         <ConnectorIcon type={connector.icon} className="w-6 h-6 text-foreground" />
+        {/* Health status dot — subtle, bottom-right of icon */}
+        {showDot && (
+          <span
+            className={cn(
+              "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card",
+              dotColor
+            )}
+          />
+        )}
       </div>
 
       {/* Title + description */}

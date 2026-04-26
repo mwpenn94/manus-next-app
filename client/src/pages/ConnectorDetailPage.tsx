@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
@@ -43,6 +44,9 @@ import {
   ShieldCheck,
   Info,
   Layers,
+  RefreshCw,
+  Activity,
+  Clock,
 } from "lucide-react";
 import { CONNECTOR_DEFS, ConnectorIcon } from "@/components/ConnectorsSheet";
 import type { ConnectorDef } from "@/components/ConnectorsSheet";
@@ -227,6 +231,16 @@ export default function ConnectorDetailPage() {
     staleTime: 120_000,
   });
 
+  // ── Health query (only when connected) ──
+  const { data: healthDetail } = trpc.connector.getHealthDetail.useQuery(
+    { connectorId },
+    {
+      enabled: isAuthenticated && !!connectorId,
+      staleTime: 30_000,
+      refetchInterval: 60_000, // Poll every 60s for silent background updates
+    }
+  );
+
   // ── Mutations ──
   const getOAuthUrlMutation = trpc.connector.getOAuthUrl.useMutation();
   const completeOAuthMutation = trpc.connector.completeOAuth.useMutation({
@@ -262,6 +276,27 @@ export default function ConnectorDetailPage() {
     },
     onError: (err) => {
       toast.error(`Failed: ${err.message}`);
+    },
+  });
+
+  const autoRefreshMutation = trpc.connector.updateAutoRefresh.useMutation({
+    onSuccess: (data) => {
+      utils.connector.getHealthDetail.invalidate({ connectorId });
+      toast.success(data.autoRefreshEnabled ? "Connection will stay active" : "Auto-refresh disabled");
+    },
+    onError: (err) => {
+      toast.error(`Failed: ${err.message}`);
+    },
+  });
+
+  const manualRefreshMutation = trpc.connector.manualRefresh.useMutation({
+    onSuccess: () => {
+      utils.connector.getHealthDetail.invalidate({ connectorId });
+      utils.connector.list.invalidate();
+      toast.success("Connection refreshed");
+    },
+    onError: (err) => {
+      toast.error(`Refresh failed: ${err.message}`);
     },
   });
 
@@ -302,6 +337,28 @@ export default function ConnectorDetailPage() {
   // OAuth scopes from connected record
   const oauthScopes = connectorRecord?.oauthScopes;
   const authMethod = connectorRecord?.authMethod || (connectorRecord?.config as any)?.authMethod;
+
+  // ── Health derived ──
+  const healthStatus = healthDetail?.health?.healthStatus ?? "unknown";
+  const supportsAutoRefresh = !!healthDetail?.hasRefreshToken;
+  const autoRefreshEnabled = healthDetail?.health?.autoRefreshEnabled ?? false;
+  const lastConnectedAt = healthDetail?.health?.lastSyncAt || healthDetail?.health?.lastRefreshAt;
+
+  /** User-friendly connection status label */
+  const connectionStatusLabel = useMemo(() => {
+    if (!isConnected) return null;
+    switch (healthStatus) {
+      case "healthy": return "Active";
+      case "expiring_soon": return "Active";
+      case "expired": return "Expired";
+      case "refresh_failed": return "Needs Attention";
+      case "no_token": return "Active";
+      default: return "Active";
+    }
+  }, [isConnected, healthStatus]);
+
+  /** Whether to show the reconnect prompt */
+  const showReconnectPrompt = isConnected && (healthStatus === "expired" || healthStatus === "refresh_failed");
 
   // ── Build available tiers ──
   const availableTiers = useMemo(() => {
@@ -1190,6 +1247,68 @@ export default function ConnectorDetailPage() {
                 </>
               )}
 
+              {/* Connection Status (when connected) — Manus-aligned: Active / Needs Attention / Expired */}
+              {isConnected && connectionStatusLabel && (
+                <>
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <span className="text-sm text-muted-foreground">Connection Status</span>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-2 h-2 rounded-full",
+                        connectionStatusLabel === "Active" ? "bg-emerald-500" :
+                        connectionStatusLabel === "Needs Attention" ? "bg-amber-500" :
+                        connectionStatusLabel === "Expired" ? "bg-destructive" :
+                        "bg-muted-foreground"
+                      )} />
+                      <span className={cn(
+                        "text-sm font-medium",
+                        connectionStatusLabel === "Active" ? "text-foreground" :
+                        connectionStatusLabel === "Needs Attention" ? "text-amber-500" :
+                        connectionStatusLabel === "Expired" ? "text-destructive" :
+                        "text-foreground"
+                      )}>
+                        {connectionStatusLabel}
+                      </span>
+                    </div>
+                  </div>
+                  <DetailDivider />
+                </>
+              )}
+
+              {/* Keep connection active toggle (only for OAuth with refresh tokens) */}
+              {isConnected && supportsAutoRefresh && (
+                <>
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <div className="min-w-0 mr-3">
+                      <span className="text-sm text-muted-foreground">Keep connection active</span>
+                    </div>
+                    <Switch
+                      checked={autoRefreshEnabled}
+                      onCheckedChange={(checked) => {
+                        autoRefreshMutation.mutate({ connectorId, enabled: checked });
+                      }}
+                      disabled={autoRefreshMutation.isPending}
+                    />
+                  </div>
+                  <DetailDivider />
+                </>
+              )}
+
+              {/* Last connected timestamp */}
+              {isConnected && lastConnectedAt && (
+                <>
+                  <DetailRow
+                    label="Last connected"
+                    value={new Date(lastConnectedAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  />
+                  <DetailDivider />
+                </>
+              )}
+
               {/* Website */}
               {connectorDef.website && (
                 <>
@@ -1219,13 +1338,66 @@ export default function ConnectorDetailPage() {
               />
             </div>
           </div>
+          {/* ── Reconnect prompt (when token expired / refresh failed) ── */}
+          {showReconnectPrompt && (
+            <div className="mb-6">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3.5">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">Connection needs attention</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {healthStatus === "expired"
+                        ? "Your access token has expired. Reconnect to continue using this connector."
+                        : "We couldn\u2019t refresh your connection automatically. Please reconnect."}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (supportsAutoRefresh) {
+                          manualRefreshMutation.mutate({ connectorId });
+                        } else {
+                          setShowAuthSection(true);
+                        }
+                      }}
+                      disabled={manualRefreshMutation.isPending}
+                      className="mt-2.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5"
+                    >
+                      {manualRefreshMutation.isPending ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Reconnecting...</>
+                      ) : (
+                        <><RefreshCw className="w-3.5 h-3.5" /> Reconnect</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── Bottom action button ── */}
       <div className="shrink-0 px-6 pb-6 pt-2">
         {isConnected ? (
-          connectorDef.actionLabel && connectorDef.actionRoute ? (
+          showReconnectPrompt ? (
+            <button
+              onClick={() => {
+                if (supportsAutoRefresh) {
+                  manualRefreshMutation.mutate({ connectorId });
+                } else {
+                  setShowAuthSection(true);
+                }
+              }}
+              disabled={manualRefreshMutation.isPending}
+              className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-[15px] hover:opacity-90 active:opacity-80 transition-opacity flex items-center justify-center gap-2"
+            >
+              {manualRefreshMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Reconnecting...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4" /> Reconnect</>
+              )}
+            </button>
+          ) : connectorDef.actionLabel && connectorDef.actionRoute ? (
             <button
               onClick={() => navigate(connectorDef.actionRoute!)}
               className="w-full py-3.5 rounded-xl bg-foreground text-background font-semibold text-[15px] hover:opacity-90 active:opacity-80 transition-opacity"
