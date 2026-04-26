@@ -4871,11 +4871,12 @@
 - [x] Warning callout for unsupported devices (e.g., "The current device does not support plugin installation")
 
 ### 29.3: Build GitHub Repositories Browser Page
-- [ ] Route: /connector/github/repositories (deferred — GitHub page already exists at /github)
-- [ ] List user's GitHub repositories using GitHub API (via stored token)
-- [ ] Show repo name, description, language, stars, last updated
-- [ ] Search/filter repositories
-- [ ] Link to open repo on GitHub
+- [x] Route: /connector/github/repositories — resolved via existing /github page (full repo browser with files, branches, commits, PRs, issues)
+- [x] List user's GitHub repositories using GitHub API (via stored token) — already in GitHubPage
+- [x] Show repo name, description, language, stars, last updated — already in GitHubPage
+- [x] Search/filter repositories — already in GitHubPage
+- [x] Link to open repo on GitHub — already in GitHubPage
+- [x] ConnectorDetailPage GitHub "Add Repositories" button routes to /github
 
 ### 29.4: Validation
 - [x] Vitest tests for ConnectorDetailPage routing and rendering
