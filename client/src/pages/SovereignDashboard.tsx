@@ -431,7 +431,7 @@ export default function SovereignDashboard() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">

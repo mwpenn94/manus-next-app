@@ -141,7 +141,7 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* Header */}
         <motion.div

@@ -1,4 +1,4 @@
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { 
@@ -178,4 +178,14 @@ export const connectorRouter = router({
         const { isOAuthSupported } = await import("../connectorOAuth");
         return { supported: isOAuthSupported(input.connectorId) };
       }),
+    /** Public: returns which OAuth connectors are configured (no auth needed) */
+    oauthAvailability: publicProcedure.query(async () => {
+      const { isOAuthSupported } = await import("../connectorOAuth");
+      const connectorIds = ["github", "google-drive", "calendar", "notion", "slack", "microsoft-365"];
+      const result: Record<string, boolean> = {};
+      for (const id of connectorIds) {
+        result[id] = isOAuthSupported(id);
+      }
+      return result;
+    }),
   });

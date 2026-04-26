@@ -79,9 +79,10 @@ describe("Pass 12B: Layout Regression Fix", () => {
         expect(hasScroll).toBe(true);
       });
 
-      it(`${name} has pb-mobile-nav for bottom nav spacing`, () => {
-        const src = readFile(filePath);
-        expect(src).toContain("pb-mobile-nav");
+      it(`${name} mobile bottom nav spacing handled by universal CSS rule`, () => {
+        // pb-mobile-nav is now handled universally via #main-content > * CSS rule in index.css
+        const css = readFile("client/src/index.css");
+        expect(css).toContain("#main-content > *");
       });
     });
   });
@@ -105,8 +106,8 @@ describe("Pass 12B: Layout Regression Fix", () => {
       expect(connectorsSrc).toContain("GitHub");
     });
 
-    it("ConnectorsPage has OAuth connectors set", () => {
-      expect(connectorsSrc).toContain("OAUTH_CONNECTORS");
+    it("ConnectorsPage has OAuth capable connectors set", () => {
+      expect(connectorsSrc).toContain("OAUTH_CAPABLE_CONNECTORS");
     });
 
     it("ConnectorsPage has scrollable root", () => {

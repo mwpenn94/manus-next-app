@@ -19,22 +19,21 @@ describe("Connector OAuth Procedures", () => {
     expect(result.fallback).toBe("api_key");
   });
 
-  it("getOAuthUrl returns supported:true for GitHub when GITHUB_CLIENT_ID is set", async () => {
+  it("getOAuthUrl returns supported:true for GitHub when CONNECTOR_GITHUB_CLIENT_ID is set", async () => {
     const caller = authedCaller();
     const result = await caller.connector.getOAuthUrl({
       connectorId: "github",
       origin: "https://example.com",
     });
-    // GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are injected by the platform
-    // env.ts now reads GITHUB_CLIENT_ID with fallback to GITHUB_OAUTH_CLIENT_ID
-    if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    // Connector OAuth uses CONNECTOR_GITHUB_CLIENT_ID (separate from platform's GITHUB_CLIENT_ID)
+    if (process.env.CONNECTOR_GITHUB_CLIENT_ID && process.env.CONNECTOR_GITHUB_CLIENT_SECRET) {
       expect(result.supported).toBe(true);
       expect(result.url).toContain("github.com/login/oauth/authorize");
       expect(result.url).toContain("client_id=");
       expect(result.url).toContain("redirect_uri=");
       expect(result.url).toContain("state=");
     } else {
-      // Without env vars, falls back to api_key
+      // Without connector-specific env vars, falls back to api_key
       expect(result.supported).toBe(false);
       expect(result.fallback).toBe("api_key");
     }
@@ -176,12 +175,14 @@ describe("Connector OAuth Provider Module", () => {
     }
   });
 
-  it("isOAuthSupported returns true for GitHub when GITHUB_CLIENT_ID env var is set", async () => {
+  it("isOAuthSupported returns true for GitHub when CONNECTOR_GITHUB_CLIENT_ID env var is set", async () => {
     const { isOAuthSupported } = await import("./connectorOAuth");
-    // Platform injects GITHUB_CLIENT_ID (not GITHUB_OAUTH_CLIENT_ID)
-    // env.ts now reads both with fallback
-    if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    // Connector OAuth uses CONNECTOR_ prefixed env vars (separate from platform credentials)
+    if (process.env.CONNECTOR_GITHUB_CLIENT_ID && process.env.CONNECTOR_GITHUB_CLIENT_SECRET) {
       expect(isOAuthSupported("github")).toBe(true);
+    } else {
+      // Without connector-specific env vars, OAuth is not supported
+      expect(isOAuthSupported("github")).toBe(false);
     }
   });
 
@@ -308,37 +309,33 @@ describe("ENV OAuth Declarations", () => {
     }
   });
 
-  it("env.ts reads GITHUB_CLIENT_ID with fallback to GITHUB_OAUTH_CLIENT_ID (NS8 fix)", async () => {
+  it("env.ts reads CONNECTOR_GITHUB_CLIENT_ID with fallback to GITHUB_OAUTH_CLIENT_ID", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // The fix: env.ts must read process.env.GITHUB_CLIENT_ID first (platform name)
-    // then fall back to process.env.GITHUB_OAUTH_CLIENT_ID (legacy name)
-    expect(envContent).toContain("process.env.GITHUB_CLIENT_ID");
-    expect(envContent).toContain("process.env.GITHUB_CLIENT_SECRET");
-    // Verify the fallback chain pattern exists for all 4 providers
-    expect(envContent).toContain("process.env.GOOGLE_CLIENT_ID");
-    expect(envContent).toContain("process.env.GOOGLE_CLIENT_SECRET");
-    expect(envContent).toContain("process.env.NOTION_CLIENT_ID");
-    expect(envContent).toContain("process.env.NOTION_CLIENT_SECRET");
-    expect(envContent).toContain("process.env.SLACK_CLIENT_ID");
-    expect(envContent).toContain("process.env.SLACK_CLIENT_SECRET");
+    // Connector OAuth uses CONNECTOR_ prefixed env vars (separate from platform credentials)
+    expect(envContent).toContain("process.env.CONNECTOR_GITHUB_CLIENT_ID");
+    expect(envContent).toContain("process.env.CONNECTOR_GITHUB_CLIENT_SECRET");
+    expect(envContent).toContain("process.env.CONNECTOR_GOOGLE_CLIENT_ID");
+    expect(envContent).toContain("process.env.CONNECTOR_GOOGLE_CLIENT_SECRET");
+    expect(envContent).toContain("process.env.CONNECTOR_NOTION_CLIENT_ID");
+    expect(envContent).toContain("process.env.CONNECTOR_NOTION_CLIENT_SECRET");
+    expect(envContent).toContain("process.env.CONNECTOR_SLACK_CLIENT_ID");
+    expect(envContent).toContain("process.env.CONNECTOR_SLACK_CLIENT_SECRET");
   });
 
-  it("env.ts fallback chain: platform name ?? legacy name ?? empty string", async () => {
+  it("env.ts fallback chain: CONNECTOR_ prefix ?? legacy name ?? empty string", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Verify the specific fallback pattern: GITHUB_CLIENT_ID ?? GITHUB_OAUTH_CLIENT_ID ?? ""
-    expect(envContent).toMatch(/GITHUB_CLIENT_ID.*\?\?.*GITHUB_OAUTH_CLIENT_ID.*\?\?.*""/s);
-    expect(envContent).toMatch(/GITHUB_CLIENT_SECRET.*\?\?.*GITHUB_OAUTH_CLIENT_SECRET.*\?\?.*""/s);
+    // Verify the specific fallback pattern: CONNECTOR_GITHUB_CLIENT_ID ?? GITHUB_OAUTH_CLIENT_ID ?? ""
+    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_ID.*\?\?.*GITHUB_OAUTH_CLIENT_ID.*\?\?.*""/s);
+    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_SECRET.*\?\?.*GITHUB_OAUTH_CLIENT_SECRET.*\?\?.*""/s);
   });
 
-  it("GitHub OAuth URL includes the actual client_id from env", async () => {
-    const { getOAuthProvider } = await import("./connectorOAuth");
-    const github = getOAuthProvider("github")!;
-    const url = github.getAuthUrl("https://example.com/callback", "test-state");
-    // If GITHUB_CLIENT_ID is set, the URL should contain a non-empty client_id
-    if (process.env.GITHUB_CLIENT_ID) {
-      expect(url).toContain(`client_id=${process.env.GITHUB_CLIENT_ID}`);
-    }
+  it("env.ts does NOT map platform GITHUB_CLIENT_ID to connector OAuth", async () => {
+    const fs = await import("fs");
+    const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
+    // Platform's GITHUB_CLIENT_ID should NOT be used for connector OAuth
+    // (it's for git sync, not user-facing OAuth)
+    expect(envContent).not.toMatch(/process\.env\.GITHUB_CLIENT_ID\s*\?\?\s*process\.env\.GITHUB_OAUTH_CLIENT_ID/);
   });
 });

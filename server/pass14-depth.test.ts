@@ -164,10 +164,15 @@ describe("Input Validation Edge Cases", () => {
 
   it("connector.getOAuthUrl should handle empty origin gracefully", async () => {
     const caller = appRouter.createCaller(authCtx());
-    // Empty origin is accepted but produces a URL with empty origin in redirect_uri
+    // Without CONNECTOR_GITHUB_CLIENT_ID env var, OAuth is not supported
     const result = await caller.connector.getOAuthUrl({ connectorId: "github", origin: "" });
-    expect(result.supported).toBe(true);
-    expect(result.url).toBeTruthy();
+    if (process.env.CONNECTOR_GITHUB_CLIENT_ID && process.env.CONNECTOR_GITHUB_CLIENT_SECRET) {
+      expect(result.supported).toBe(true);
+      expect(result.url).toBeTruthy();
+    } else {
+      expect(result.supported).toBe(false);
+      expect(result.fallback).toBe("api_key");
+    }
   });
 });
 
@@ -176,8 +181,9 @@ describe("Input Validation Edge Cases", () => {
 describe("Mobile Layout Regression Guards", () => {
   const pagesDir = join(__dirname, "../client/src/pages");
 
-  // Pages that MUST have pb-mobile-nav for proper mobile bottom nav clearance
-  const mustHavePbMobileNav = [
+  // Mobile bottom nav clearance is now handled universally via CSS rule in index.css
+  // targeting #main-content > * on mobile viewports — no per-page class needed
+  const pagesForUniversalCheck = [
     "Home.tsx",
     "BillingPage.tsx",
     "SettingsPage.tsx",
@@ -188,11 +194,18 @@ describe("Mobile Layout Regression Guards", () => {
     "DataPipelinesPage.tsx",
   ];
 
-  for (const page of mustHavePbMobileNav) {
-    it(`${page} should have pb-mobile-nav for bottom nav clearance`, () => {
+  it("universal CSS rule handles mobile bottom nav clearance for all pages", () => {
+    const css = readFileSync(join(__dirname, "../client/src/index.css"), "utf-8");
+    expect(css).toContain("#main-content > *");
+    expect(css).toContain("3.5rem");
+    expect(css).toContain("max-width: 767px");
+  });
+
+  for (const page of pagesForUniversalCheck) {
+    it(`${page} does NOT need per-page pb-mobile-nav (handled universally)`, () => {
       const filePath = join(pagesDir, page);
       const content = readFileSync(filePath, "utf-8");
-      expect(content).toContain("pb-mobile-nav");
+      expect(content).not.toContain("pb-mobile-nav");
     });
   }
 

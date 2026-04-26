@@ -150,7 +150,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

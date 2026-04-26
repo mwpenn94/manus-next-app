@@ -66,7 +66,7 @@ export default function ProfilePage() {
   const initials = (user?.name || "U").split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>

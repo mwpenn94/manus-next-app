@@ -135,7 +135,7 @@ export default function SchedulePage() {
   const failedCount = schedules.filter(s => s.lastStatus === "error").length;
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>

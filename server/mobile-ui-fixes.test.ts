@@ -12,49 +12,42 @@ import * as fs from "fs";
 
 // ── 1. CSS Utility ──
 describe("pb-mobile-nav CSS utility", () => {
-  it("is defined in index.css with correct padding calculation", () => {
+  it("is defined in index.css via @utility directive", () => {
     const css = fs.readFileSync("client/src/index.css", "utf-8");
-    expect(css).toContain(".pb-mobile-nav");
-    expect(css).toContain("padding-bottom: calc(3.5rem");
+    expect(css).toContain("@utility pb-mobile-nav");
+    expect(css).toContain("padding-bottom");
     expect(css).toContain("safe-area-inset-bottom");
   });
 
-  it("is scoped to mobile viewport only (max-width: 767px)", () => {
+  it("has universal CSS rule for #main-content children on mobile", () => {
     const css = fs.readFileSync("client/src/index.css", "utf-8");
-    const mobileMediaIdx = css.indexOf("max-width: 767px");
-    const pbNavIdx = css.indexOf(".pb-mobile-nav");
-    expect(mobileMediaIdx).toBeGreaterThan(-1);
-    expect(pbNavIdx).toBeGreaterThan(mobileMediaIdx);
+    expect(css).toContain("#main-content");
+    expect(css).toContain("max-width: 767px");
+    expect(css).toContain("padding-bottom");
   });
 });
 
-// ── 2. Key pages have pb-mobile-nav ──
-describe("pb-mobile-nav applied to key pages", () => {
-  const keyPages = [
-    "BillingPage",
-    "Library",
-    "SettingsPage",
-    "AnalyticsPage",
-    "DiscoverPage",
-    "Home",
-    "GitHubPage",
-    "ProfilePage",
-    "MemoryPage",
-    "SchedulePage",
-    "ProjectsPage",
-    "TeamPage",
-    "ConnectorsPage",
-    "SkillsPage",
-    "MeetingsPage",
-    "ReplayPage",
-  ];
+// ── 2. Universal mobile bottom nav padding ──
+describe("Universal mobile bottom nav padding via CSS", () => {
+  it("index.css has universal rule targeting #main-content > * on mobile", () => {
+    const css = fs.readFileSync("client/src/index.css", "utf-8");
+    // The universal rule adds padding-bottom to all direct children of #main-content on mobile
+    expect(css).toContain("#main-content > *");
+    expect(css).toContain("3.5rem");
+  });
 
-  for (const page of keyPages) {
-    it(`${page}.tsx has pb-mobile-nav`, () => {
+  it("AppLayout main element has id=main-content", () => {
+    const layout = fs.readFileSync("client/src/components/AppLayout.tsx", "utf-8");
+    expect(layout).toContain('id="main-content"');
+  });
+
+  it("pages do NOT have per-page pb-mobile-nav (handled universally)", () => {
+    const pages = ["BillingPage", "SettingsPage", "Home", "DiscoverPage"];
+    for (const page of pages) {
       const content = fs.readFileSync(`client/src/pages/${page}.tsx`, "utf-8");
-      expect(content).toContain("pb-mobile-nav");
-    });
-  }
+      expect(content).not.toContain("pb-mobile-nav");
+    }
+  });
 });
 
 // ── 3. Mic button in Home.tsx ──

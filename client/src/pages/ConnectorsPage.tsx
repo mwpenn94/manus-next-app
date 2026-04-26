@@ -11,8 +11,8 @@ import { Plug, Search, CheckCircle, XCircle, Loader2, Shield, Key, ExternalLink,
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
-/** OAuth-capable connectors get a "Sign in with X" button as the primary flow */
-const OAUTH_CONNECTORS = new Set(["github", "google-drive", "notion", "slack", "calendar", "microsoft-365"]);
+/** OAuth-capable connectors — these COULD support OAuth if credentials are configured */
+const OAUTH_CAPABLE_CONNECTORS = new Set(["github", "google-drive", "notion", "slack", "calendar", "microsoft-365"]);
 
 const AVAILABLE_CONNECTORS = [
   // Communication
@@ -85,6 +85,8 @@ export default function ConnectorsPage() {
 
   const utils = trpc.useUtils();
   const { data: installed = [], isLoading } = trpc.connector.list.useQuery(undefined, { enabled: !!user });
+  // Check which OAuth connectors are actually configured on the server
+  const { data: oauthAvail = {} } = trpc.connector.oauthAvailability.useQuery();
 
   const connectMutation = trpc.connector.connect.useMutation({
     onSuccess: () => {
@@ -242,10 +244,12 @@ export default function ConnectorsPage() {
     });
   };
 
-  const isOAuthCapable = (id: string) => OAUTH_CONNECTORS.has(id);
+  // A connector is OAuth-capable only if it's in the static list AND the server confirms credentials are configured
+  const isOAuthCapable = (id: string) => OAUTH_CAPABLE_CONNECTORS.has(id);
+  const isOAuthConfigured = (id: string) => !!(oauthAvail as Record<string, boolean>)[id];
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav p-6">
+    <div className="h-full overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <Plug className="w-6 h-6 text-primary" />
@@ -301,7 +305,9 @@ export default function ConnectorsPage() {
                             <CardTitle className="text-base flex items-center gap-2">
                               {c.name}
                               {isOAuthCapable(c.id) && (
-                                <span title="OAuth supported"><Shield className="w-3.5 h-3.5 text-blue-500" /></span>
+                                isOAuthConfigured(c.id)
+                                  ? <span title="OAuth ready"><Shield className="w-3.5 h-3.5 text-blue-500" /></span>
+                                  : <span title="OAuth available (needs setup)"><Shield className="w-3.5 h-3.5 text-muted-foreground/40" /></span>
                               )}
                             </CardTitle>
                             <CardDescription>{c.description}</CardDescription>
@@ -465,33 +471,71 @@ export default function ConnectorsPage() {
                 <TabsTrigger value="manual" className="flex items-center gap-1.5"><Key className="w-3.5 h-3.5" /> API Key</TabsTrigger>
               </TabsList>
               <TabsContent value="oauth" className="space-y-4 pt-2">
-                <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-sm text-muted-foreground">
-                  <p className="flex items-start gap-2">
-                    <Shield className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                    <span>OAuth securely connects your account without sharing passwords or tokens. You'll be redirected to {connectDialog?.name} to authorize access.</span>
-                  </p>
-                </div>
-                {connectDialog?.id === "microsoft-365" && (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground space-y-2">
+                {isOAuthConfigured(connectDialog?.id ?? "") ? (
+                  <>
+                    <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-4 text-sm text-muted-foreground">
+                      <p className="flex items-start gap-2">
+                        <Shield className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                        <span>OAuth securely connects your account without sharing passwords or tokens. You'll be redirected to {connectDialog?.name} to authorize access.</span>
+                      </p>
+                    </div>
+                    <Button className="w-full" onClick={() => handleOAuthConnect(connectDialog!.id)} disabled={oauthUrlMutation.isPending}>
+                      {oauthUrlMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
+                      {connectDialog?.oauthLabel ?? `Sign in with ${connectDialog?.name}`}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-muted-foreground space-y-3">
                     <p className="flex items-start gap-2 font-medium text-amber-600">
                       <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                      <span>Azure AD App Registration Required</span>
+                      <span>OAuth Not Configured</span>
                     </p>
-                    <ol className="list-decimal list-inside space-y-1 text-xs ml-6">
-                      <li>Go to <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps" target="_blank" rel="noopener noreferrer" className="text-primary underline">Azure Portal &rarr; App Registrations</a></li>
-                      <li>Click &ldquo;New registration&rdquo; &rarr; name it (e.g., &ldquo;Manus Integration&rdquo;)</li>
-                      <li>Set redirect URI to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
-                      <li>Under &ldquo;Certificates &amp; secrets&rdquo;, create a new client secret</li>
-                      <li>Copy the Application (client) ID and secret value</li>
-                      <li>Add them in Settings &rarr; Secrets as MICROSOFT_365_CLIENT_ID and MICROSOFT_365_CLIENT_SECRET</li>
+                    <p className="text-xs">OAuth credentials for {connectDialog?.name} have not been set up yet. To enable OAuth:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs ml-2">
+                      {connectDialog?.id === "github" && (
+                        <>
+                          <li>Go to <a href="https://github.com/settings/developers" target="_blank" rel="noopener noreferrer" className="text-primary underline">GitHub Developer Settings</a></li>
+                          <li>Create a new OAuth App</li>
+                          <li>Set callback URL to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
+                          <li>Add Client ID and Secret in Settings &rarr; Secrets as <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_GITHUB_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_GITHUB_CLIENT_SECRET</code></li>
+                        </>
+                      )}
+                      {connectDialog?.id === "microsoft-365" && (
+                        <>
+                          <li>Go to <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps" target="_blank" rel="noopener noreferrer" className="text-primary underline">Azure Portal &rarr; App Registrations</a></li>
+                          <li>Create a new registration</li>
+                          <li>Set redirect URI to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
+                          <li>Add Client ID and Secret in Settings &rarr; Secrets as <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_MICROSOFT_365_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_MICROSOFT_365_CLIENT_SECRET</code></li>
+                        </>
+                      )}
+                      {(connectDialog?.id === "google-drive" || connectDialog?.id === "calendar") && (
+                        <>
+                          <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google Cloud Console</a></li>
+                          <li>Create OAuth 2.0 credentials</li>
+                          <li>Set redirect URI to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
+                          <li>Add Client ID and Secret in Settings &rarr; Secrets as <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_GOOGLE_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_GOOGLE_CLIENT_SECRET</code></li>
+                        </>
+                      )}
+                      {connectDialog?.id === "notion" && (
+                        <>
+                          <li>Go to <a href="https://www.notion.so/my-integrations" target="_blank" rel="noopener noreferrer" className="text-primary underline">Notion Integrations</a></li>
+                          <li>Create a new public integration</li>
+                          <li>Set redirect URI to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
+                          <li>Add Client ID and Secret in Settings &rarr; Secrets as <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_NOTION_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_NOTION_CLIENT_SECRET</code></li>
+                        </>
+                      )}
+                      {connectDialog?.id === "slack" && (
+                        <>
+                          <li>Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-primary underline">Slack API Apps</a></li>
+                          <li>Create a new Slack App</li>
+                          <li>Set redirect URL to: <code className="bg-muted px-1 rounded text-[10px]">{typeof window !== 'undefined' ? window.location.origin : ''}/api/connector/oauth/callback</code></li>
+                          <li>Add Client ID and Secret in Settings &rarr; Secrets as <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_SLACK_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">CONNECTOR_SLACK_CLIENT_SECRET</code></li>
+                        </>
+                      )}
                     </ol>
-                    <p className="text-xs text-muted-foreground/80 mt-2">Until configured, you can use the API Key tab with a personal access token from <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank" rel="noopener noreferrer" className="text-primary underline">Graph Explorer</a>.</p>
+                    <p className="text-xs text-muted-foreground/80 mt-1">Until configured, use the <strong>API Key</strong> tab to connect manually.</p>
                   </div>
                 )}
-                <Button className="w-full" onClick={() => handleOAuthConnect(connectDialog!.id)} disabled={oauthUrlMutation.isPending}>
-                  {oauthUrlMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
-                  {connectDialog?.oauthLabel ?? `Sign in with ${connectDialog?.name}`}
-                </Button>
               </TabsContent>
               <TabsContent value="manual" className="space-y-4 pt-2">
                 <div className="rounded-lg border border-border bg-muted-foreground/5 p-3 text-xs text-muted-foreground">

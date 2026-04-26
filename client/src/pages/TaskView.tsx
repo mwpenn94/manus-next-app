@@ -3052,7 +3052,7 @@ export default function TaskView() {
   const isFavorited = taskQuery.data?.favorite === 1;
 
   return (
-    <div ref={splitContainerRef} className="h-full flex flex-col md:flex-row pb-mobile-nav md:pb-0">
+    <div ref={splitContainerRef} className="h-full flex flex-col md:flex-row md:pb-0">
       {/* ── CONVERSATION PANEL ── */}
       <div
         className="flex-1 flex flex-col min-w-0 min-h-0"

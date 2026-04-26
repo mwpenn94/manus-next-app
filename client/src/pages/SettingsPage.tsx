@@ -434,7 +434,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Settings Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0 pb-mobile-nav">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
         <div className="max-w-2xl">
           {/* ── Account ── */}
           {activeTab === "account" && (

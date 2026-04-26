@@ -4663,3 +4663,21 @@
 - [x] Delta stabilized at [0,0] for 2 consecutive passes
 - [x] All 7 convergence criteria met
 - [x] **CONVERGENCE ACHIEVED** at Pass 21 — quality 9.1/10, 159 tests, 0 regressions, all layers green
+
+#### Pass 22: CRITICAL — Content cutoff STILL persists across entire app (user confirmed)
+- [x] Visually verify cutoff at mobile viewport on deployed site
+- [x] Identify the ACTUAL root cause — Tailwind v4 JIT was silently dropping plain @media blocks for custom classes
+- [x] Fix the root cause — used Tailwind v4 @utility directive for pb-mobile-nav
+- [x] Added universal CSS rule (#main-content > * padding-bottom on mobile) to fix ALL pages at once
+- [x] Removed per-page pb-mobile-nav classes (32 files) to prevent double-padding
+- [x] Visually verify fix on Billing, Settings, Discover, and other affected pages
+### Pass 22: CRITICAL — Two user-confirmed persistent bugs
+- [x] Content cutoff across entire app — fixed with universal CSS rule + @utility directive
+- [x] OAuth connectors (GitHub etc.) not accessible to users — fixed by separating platform credentials from connector OAuth
+- [x] env.ts: GITHUB_CLIENT_ID no longer maps to GITHUB_OAUTH_CLIENT_ID (platform creds are for git sync, not connector OAuth)
+- [x] Added CONNECTOR_ prefixed env vars for connector OAuth (CONNECTOR_GITHUB_CLIENT_ID, etc.)
+- [x] Added oauthAvailability public endpoint to check which connectors have OAuth configured
+- [x] Updated ConnectorsPage to show clear setup instructions when OAuth is not configured
+- [x] OAuth badge on cards now differentiates between configured (blue) and needs-setup (gray)
+- [x] All 8 previously failing test files now pass (311/311 tests)
+- [x] Visually verified fixes in browser

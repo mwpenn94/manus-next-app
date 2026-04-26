@@ -122,7 +122,7 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Header */}
         <motion.div

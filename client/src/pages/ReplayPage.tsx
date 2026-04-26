@@ -496,7 +496,7 @@ export default function ReplayPage() {
   // Session list view (no taskId selected)
   if (!taskId) {
     return (
-      <div className="h-full overflow-y-auto pb-mobile-nav">
+      <div className="h-full overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -523,7 +523,7 @@ export default function ReplayPage() {
   const totalTime = events.length > 0 ? `${(events[events.length - 1].offsetMs / 1000).toFixed(1)}s` : "0s";
 
   return (
-    <div className="h-full overflow-y-auto pb-mobile-nav">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">

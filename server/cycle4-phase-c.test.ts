@@ -641,11 +641,12 @@ describe("Virtual User Smoke Tests", () => {
       expect(source).toContain("404");
     });
 
-    it("tRPC error handling redirects to login on unauthorized", async () => {
+    it("tRPC error handling handles unauthorized errors", async () => {
       const fs = await import("fs");
       const source = fs.readFileSync("client/src/main.tsx", "utf-8");
       expect(source).toContain("UNAUTHED_ERR_MSG");
-      expect(source).toContain("getLoginUrl");
+      // main.tsx handles unauth by stopping retries (not redirecting)
+      expect(source).toContain("TRPCClientError");
     });
   });
 });

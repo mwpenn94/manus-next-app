@@ -161,16 +161,16 @@ describe("Mobile FAB overlap fix", () => {
     expect(app).not.toMatch(/<FeedbackWidget\s*\/>/);
   });
 
-  it("Pages use pb-mobile-nav CSS utility for MobileBottomNav spacing", async () => {
+  it("Mobile bottom nav spacing handled by universal CSS rule in index.css", async () => {
     const fs = await import("fs");
-    // The CSS utility should be defined in index.css
     const css = fs.readFileSync("client/src/index.css", "utf-8");
-    expect(css).toContain("pb-mobile-nav");
-    expect(css).toContain("calc(3.5rem");
-    // Key pages should use the utility
+    // @utility directive defines pb-mobile-nav for Tailwind v4
+    expect(css).toContain("@utility pb-mobile-nav");
+    // Universal CSS rule targets all direct children of #main-content on mobile
+    expect(css).toContain("#main-content > *");
+    expect(css).toContain("3.5rem");
+    // Pages should NOT have per-page pb-mobile-nav (handled universally)
     const billing = fs.readFileSync("client/src/pages/BillingPage.tsx", "utf-8");
-    expect(billing).toContain("pb-mobile-nav");
-    const settings = fs.readFileSync("client/src/pages/SettingsPage.tsx", "utf-8");
-    expect(settings).toContain("pb-mobile-nav");
+    expect(billing).not.toContain("pb-mobile-nav");
   });
 });
