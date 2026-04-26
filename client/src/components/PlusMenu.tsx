@@ -97,6 +97,7 @@ interface PlusMenuProps {
   onUploadVideo?: () => void;
   onInjectPrompt?: (prompt: string) => void;
   onToggleHandsFree?: () => void;
+  onOpenConnectorsSheet?: () => void;
   anchorRef?: React.RefObject<HTMLElement | null>;
   className?: string;
 }
@@ -110,6 +111,7 @@ export default function PlusMenu({
   onUploadVideo,
   onInjectPrompt,
   onToggleHandsFree,
+  onOpenConnectorsSheet,
   anchorRef,
   className,
 }: PlusMenuProps) {
@@ -265,7 +267,11 @@ export default function PlusMenu({
                   connectors={connectedList}
                   onItemClick={handleItemClick}
                   onConnectorClick={(c: any) => {
-                    navigate(c ? `/connectors?highlight=${c.connectorId || c.id}` : "/connectors");
+                    if (onOpenConnectorsSheet) {
+                      onOpenConnectorsSheet();
+                    } else {
+                      navigate(c ? `/connectors?highlight=${c.connectorId || c.id}` : "/connectors");
+                    }
                     onClose();
                   }}
                 />
@@ -316,7 +322,11 @@ export default function PlusMenu({
               connectors={connectedList}
               onItemClick={handleItemClick}
               onConnectorClick={(c: any) => {
-                navigate(c ? `/connectors?highlight=${c.connectorId || c.id}` : "/connectors");
+                if (onOpenConnectorsSheet) {
+                  onOpenConnectorsSheet();
+                } else {
+                  navigate(c ? `/connectors?highlight=${c.connectorId || c.id}` : "/connectors");
+                }
                 onClose();
               }}
             />

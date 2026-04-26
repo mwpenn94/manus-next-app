@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Plug, Search, CheckCircle, XCircle, Loader2, Shield, Key,
   ExternalLink, RefreshCw, Plus, Globe, Server, Trash2, Info,
-  ShieldCheck, BadgeCheck, Fingerprint, ChevronDown, Sparkles, Layers,
+  ShieldCheck, BadgeCheck, Fingerprint, ChevronDown, ChevronRight, Sparkles, Layers,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
@@ -955,9 +956,10 @@ export default function ConnectorsPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* ========== Apps Tab ========== */}
+          {/* ========== Apps Tab — Manus-native list layout (P27) ========== */}
           <TabsContent value="apps" className="mt-4">
-            <div className="relative mb-6">
+            {/* Search bar */}
+            <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search connectors..."
@@ -972,79 +974,84 @@ export default function ConnectorsPage() {
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filtered.map((c, i) => {
-                  const inst = installedMap.get(c.id);
-                  const isConnected = inst?.status === "connected";
-                  const authMethod = (inst as any)?.authMethod;
+              <>
+                {/* Group by category */}
+                {Object.entries(
+                  filtered.reduce<Record<string, typeof filtered>>((acc, c) => {
+                    (acc[c.category] ??= []).push(c);
+                    return acc;
+                  }, {})
+                ).map(([category, connectors]) => (
+                  <div key={category} className="mb-4">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-2">{category}</h3>
+                    <div className="rounded-xl bg-muted/30 border border-border overflow-hidden">
+                      {connectors.map((c, idx) => {
+                        const inst = installedMap.get(c.id);
+                        const isConnected = inst?.status === "connected";
+                        const authMethod = (inst as any)?.authMethod;
 
-                  return (
-                    <motion.div
-                      key={c.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25, delay: Math.min(i * 0.02, 0.3) }}
-                    >
-                      <Card className={cn(
-                        "hover:border-primary/30 transition-all duration-200",
-                        isConnected && "border-green-500/20 bg-green-500/[0.03]"
-                      )}>
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{c.icon}</span>
-                            <div className="min-w-0">
-                              <CardTitle className="text-base flex items-center gap-2">
-                                {c.name}
-                                {getTierIndicator(c.id)}
-                              </CardTitle>
-                              <CardDescription>{c.description}</CardDescription>
+                        return (
+                          <div key={c.id}>
+                            {idx > 0 && <div className="h-px bg-border mx-4" />}
+                            <div className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/30">
+                              {/* Icon */}
+                              <div className="w-9 h-9 rounded-lg bg-background/60 border border-border/50 flex items-center justify-center shrink-0">
+                                <span className="text-lg">{c.icon}</span>
+                              </div>
+
+                              {/* Name + description */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-foreground">{c.name}</span>
+                                  {getTierIndicator(c.id)}
+                                  {isConnected && inst && getAuthBadge(inst)}
+                                </div>
+                                <p className="text-xs text-muted-foreground truncate">{c.description}</p>
+                              </div>
+
+                              {/* Toggle / Connect */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isConnected && authMethod === "oauth" && (
+                                  <button
+                                    onClick={() => refreshOAuthMutation.mutate({ connectorId: c.id })}
+                                    disabled={refreshOAuthMutation.isPending}
+                                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                                    title="Refresh token"
+                                  >
+                                    <RefreshCw className={cn("w-3.5 h-3.5", refreshOAuthMutation.isPending && "animate-spin")} />
+                                  </button>
+                                )}
+                                {isConnected ? (
+                                  <Switch
+                                    checked={true}
+                                    onCheckedChange={() => disconnectMutation.mutate({ connectorId: c.id })}
+                                    disabled={disconnectMutation.isPending}
+                                    className="data-[state=checked]:bg-blue-500 h-[1.4rem] w-10"
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => setConnectDialog(c)}
+                                    className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors px-2 py-1"
+                                  >
+                                    Connect
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="secondary">{c.category}</Badge>
-                              {isConnected && inst && getAuthBadge(inst)}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {isConnected && authMethod === "oauth" && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => refreshOAuthMutation.mutate({ connectorId: c.id })}
-                                  disabled={refreshOAuthMutation.isPending}
-                                  title="Refresh token"
-                                >
-                                  <RefreshCw className={cn("w-3.5 h-3.5", refreshOAuthMutation.isPending && "animate-spin")} />
-                                </Button>
-                              )}
-                              {isConnected ? (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => disconnectMutation.mutate({ connectorId: c.id })}
-                                  disabled={disconnectMutation.isPending}
-                                >
-                                  <XCircle className="w-3.5 h-3.5 mr-1 text-destructive" /> Disconnect
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setConnectDialog(c)}
-                                >
-                                  Connect
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {filtered.length === 0 && (
+                  <div className="text-center py-12">
+                    <Plug className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No connectors match your search.</p>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 

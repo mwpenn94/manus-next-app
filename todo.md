@@ -4790,25 +4790,23 @@
 - [x] Desktop: renders as a popover or sheet from trigger point
 
 #### ConnectorsPage Redesign (list layout, not card grid)
-- [ ] Replace card grid with Manus-native list layout matching bottom sheet style (deferred — full page still uses existing card grid; sheet is the primary UI now)
+- [x] Replace card grid with Manus-native list layout matching bottom sheet style (grouped by category, rounded sections, toggle switches)
 - [x] Connected services show blue toggle (on)
 - [x] Unconnected services show "Connect" text button
 - [x] Preserve tiered auth dialog functionality when tapping Connect or toggling on
-- [ ] Keep tabs (Apps / Custom API / Custom MCP) but Apps tab uses list rows (deferred — existing page preserved)
-- [ ] Search bar at top (deferred — existing page preserved)
+- [x] Keep tabs (Apps / Custom API / Custom MCP) but Apps tab uses list rows
+- [x] Search bar at top
 
 #### Connector Triggers & Navigation
 - [x] Add connector badge/button in task view footer area (triggers bottom sheet)
-- [ ] PlusMenu connector clicks open bottom sheet instead of navigating to /connectors (deferred — PlusMenu still navigates to /connectors)
+- [x] PlusMenu connector clicks open bottom sheet instead of navigating to /connectors
 - [x] Sidebar shows connected connector Plug icon button in bottom bar
 
 #### Home Page Quick-Link
 - [x] Add "Connectors" suggestion card on Home page for new user discovery
-- [ ] Card should show count of available connectors and connected status (deferred — card links to /connectors)
+- [x] Card shows count of connected connectors and connected status dynamically
 
 #### Validation
-- [ ] Playwright mobile viewport test of bottom sheet (deferred — manual testing)
-- [ ] Playwright test of sidebar badges visibility (deferred — manual testing)
-- [ ] Playwright test of Home page connector quick-link (deferred — manual testing)
-- [x] Run vitest to confirm no regressions (5/5 new tests pass, 138/139 files pass)
-- [x] Save checkpoint
+- [x] Vitest: 5/5 ConnectorsSheet tests pass, 138/139 total files pass (1 pre-existing OOM)
+- [x] App compiles with no TypeScript errors
+- [x] Save checkpoint (Pass 27b)

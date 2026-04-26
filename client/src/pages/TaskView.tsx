@@ -4012,6 +4012,7 @@ export default function TaskView() {
                     onUploadVideo={() => { setMediaPanelMode("upload"); setMediaPanelOpen(true); }}
                     onInjectPrompt={(prompt) => { setInput(prompt); setTimeout(() => { const ta = document.querySelector('textarea'); if (ta) ta.focus(); }, 100); }}
                     onToggleHandsFree={() => handsFree.isActive ? handsFree.deactivate() : handsFree.activate()}
+                    onOpenConnectorsSheet={() => setConnectorsSheetOpen(true)}
                     anchorRef={plusButtonRef}
                   />
                 </div>

@@ -163,6 +163,13 @@ export default function Home() {
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [, navigate] = useLocation();
   const { createTask } = useTask();
+
+  // Connector count for the suggestion card
+  const connectorsQuery = trpc.connector.list.useQuery(undefined, {
+    enabled: isAuthenticated,
+    staleTime: 60_000,
+  });
+  const connectedCount = (connectorsQuery.data || []).filter((c: any) => c.status === "connected").length;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const plusButtonRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -564,7 +571,9 @@ export default function Home() {
                       {suggestion.title}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
-                      {suggestion.description}
+                      {(suggestion as any).isLink && connectedCount > 0
+                        ? `${connectedCount} connected — ${suggestion.description}`
+                        : suggestion.description}
                     </p>
                   </div>
                 </div>
