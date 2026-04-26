@@ -4620,3 +4620,11 @@
 - [x] Updated main.tsx onUpdate to auto-call skipWaitingAndReload() instead of dispatching event
 - [x] 22 new vitest tests in pass12-sw-fix.test.ts (all passing)
 - [x] Validate fix as virtual user in browser — confirm no redirect loop on unauthenticated visit
+
+### Pass 12B: CRITICAL REGRESSIONS (user-reported)
+- [x] BUG-REG-001: Bottom nav overlapping/cutting off page content — ROOT CAUSE: overflow-hidden wrapper added in Passes 6-10 clipped all children. FIX: removed wrapper, children render directly in <main className="flex-1 min-h-0">
+- [x] BUG-REG-002: Settings pages going offscreen and unviewable/unusable — same root cause as BUG-REG-001. FIX: pages with overflow-y-auto now scroll properly
+- [x] BUG-REG-003: OAuth/GitHub connectors — VERIFIED STILL PRESENT. ConnectorsPage has all 35+ OAuth providers. Issue was content being clipped, not removed.
+- [x] BUG-REG-004: Discover page category pills truncated — same root cause as BUG-REG-001. overflow-x-auto container was clipped by parent overflow-hidden.
+- [x] Comprehensive regression audit across all pages — confirmed AppLayout fix resolves all overflow issues
+- [x] Write regression tests — 17 new tests in pass12b-layout-regression.test.ts + updated cycle16-auth-landmarks.test.ts (45 tests passing)

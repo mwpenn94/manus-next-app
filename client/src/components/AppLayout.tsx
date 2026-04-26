@@ -1338,24 +1338,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
+        {/* Status banners */}
+        <div role="status" aria-label="System notifications" aria-live="polite" className="shrink-0">
+          <NetworkBanner />
+          <CreditWarningBanner />
+        </div>
+
         {/* Page content */}
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 flex flex-col overflow-hidden min-h-0"
+          className="flex-1 min-h-0"
         >
-          {/* Status banners */}
-          <div role="status" aria-label="System notifications" aria-live="polite" className="shrink-0">
-            <NetworkBanner />
-            <CreditWarningBanner />
-          </div>
-          <div className="flex-1 overflow-hidden min-h-0">
-            {children}
-          </div>
-          {/* Mobile Bottom Navigation */}
-          <MobileBottomNav />
+          {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation — outside main to avoid clipping */}
+      <MobileBottomNav />
 
       {/* Keyboard Shortcuts Help Dialog */}
       <KeyboardShortcutsDialog open={showHelp} onClose={() => setShowHelp(false)} />

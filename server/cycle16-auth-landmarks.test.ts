@@ -103,25 +103,22 @@ describe("Landmark Accessibility Fixes", () => {
       expect(src).toContain('aria-hidden="true"');
     });
 
-    it("status banners are inside main (after main opens, before children)", () => {
+    it("status banners are outside main (before main) to prevent overflow clipping", () => {
       const mainStart = src.indexOf("<main");
-      const mainEnd = src.indexOf("</main>");
       const networkBannerPos = src.indexOf("<NetworkBanner />");
       const creditBannerPos = src.indexOf("<CreditWarningBanner />");
 
-      expect(networkBannerPos).toBeGreaterThan(mainStart);
-      expect(networkBannerPos).toBeLessThan(mainEnd);
-      expect(creditBannerPos).toBeGreaterThan(mainStart);
-      expect(creditBannerPos).toBeLessThan(mainEnd);
+      // Banners must appear BEFORE <main> to avoid being clipped by overflow-hidden
+      expect(networkBannerPos).toBeLessThan(mainStart);
+      expect(creditBannerPos).toBeLessThan(mainStart);
     });
 
-    it("MobileBottomNav is inside main", () => {
-      const mainStart = src.indexOf("<main");
+    it("MobileBottomNav is outside main to prevent overflow clipping", () => {
       const mainEnd = src.indexOf("</main>");
       const mobileNavPos = src.indexOf("<MobileBottomNav />");
 
-      expect(mobileNavPos).toBeGreaterThan(mainStart);
-      expect(mobileNavPos).toBeLessThan(mainEnd);
+      // MobileBottomNav must be AFTER </main> to avoid layout interference
+      expect(mobileNavPos).toBeGreaterThan(mainEnd);
     });
   });
 
