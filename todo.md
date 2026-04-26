@@ -4446,3 +4446,9 @@
 - [x] Wrap skip-link in nav landmark with aria-label
 - [x] 25 new tests for auth loop + landmark fixes (all passing)
 - [x] 109 tests passing across 4 test files
+### Landmark Fix: CommandDialog DialogHeader (Cycle 17)
+- [x] Root cause identified: CommandDialog's DialogHeader rendered outside DialogContent (portal), placing it in main DOM tree outside any landmark
+- [x] Fix: Moved DialogHeader inside DialogContent in command.tsx so it renders within the portal's landmark context
+- [x] Verified: axe-core returns 0 violations after fix (confirmed via Playwright)
+- [x] Auth loop confirmed resolved: page loads without any 401 redirects or OAuth loops
+- [x] All test files passing: cycle16 (25), cycle15 (35), share-view (19), parity (30), cycle7-e2e (131), mobile-ui (42), session14 (20), auth.logout (1)
