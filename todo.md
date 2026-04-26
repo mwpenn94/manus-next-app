@@ -4990,3 +4990,45 @@
 - [x] Refresh button: inline "Reconnect" prompt when status is expired/needs_attention
 - [x] Decision: NO health event log in UI (server-side only, Manus doesn't surface these)
 - [x] All styling uses existing CSS variables (card, border, muted-foreground) — no new color system
+
+## Pass 32: Auto-Refresh Scheduler + GitHub CRUD Enhancement (Deep Manus Alignment)
+
+### 32.1: Expert Assessment
+- [x] Analyzed existing infrastructure: githubApi.ts (20+ functions), github.ts router (16 procedures), GitHubPage.tsx (1331 lines), deployFromGitHub pipeline
+- [x] Identified gaps: no auto-refresh scheduler, no multi-file commits, no branch diff, no commit-and-deploy UX
+- [x] Decision: Build /api/scheduled/connector-refresh endpoint (Manus scheduled task pattern)
+- [x] Decision: Add Git Trees API for multi-file commits, compare API for branch diff
+- [x] Decision: Add "Commit & Deploy" button in file editor (Manus-native, no CLI)
+
+### 32.2: Auto-Refresh Scheduler Endpoint
+- [x] Create scheduledConnectorRefresh.ts handler
+- [x] Iterate all users with autoRefreshEnabled connectors where nextRefreshAt <= now
+- [x] Refresh tokens using provider.refreshToken(), update health records
+- [x] Log all refresh events to connectorHealthLogs
+- [x] Handle failures: increment failCount, set refresh_failed status at 3+, auto-disable after 3
+- [x] Register route at /api/scheduled/connector-refresh in server/_core/index.ts
+
+### 32.3: GitHub API Enhancements (githubApi.ts)
+- [x] Add createTreeCommit() — multi-file commit via Git Trees API (atomic: tree + commit + ref update)
+- [x] Add compareBranches() — branch comparison with diff stats (ahead/behind/files)
+- [x] Add getCommitDiff() — single commit diff details (stats + file patches)
+- [x] Add forkRepo() — fork a repository (optional org target)
+
+### 32.4: New tRPC Procedures
+- [x] github.multiCommit — commit multiple files in a single commit (atomic via Git Trees)
+- [x] github.compareBranches — compare two branches (ahead/behind/diff)
+- [x] github.commitAndDeploy — commit + trigger deploy (creates deployment record)
+- [x] github.forkRepo — fork a repository to user's account
+- [x] github.commitDiff — detailed diff for a single commit
+
+### 32.5: GitHubPage File Editor Enhancement
+- [x] Add "Commit & Deploy" button alongside existing "Commit" button (primary CTA, chains commitFile → deployFromGitHub)
+- [x] Show deploy status inline after commit-and-deploy (badge on file header + deploying indicator bar)
+- [x] Add branch comparison via Compare button on non-default branches (links to GitHub compare)
+- [ ] Add multi-file staging area for batch commits (deferred — requires significant UI work, single-file commit covers primary use case)
+
+### 32.6-32.8: Recursion Passes
+- [x] Depth scan: 43 tests — auto-refresh scheduler, Git Trees API, commit-and-deploy, GDPR compliance
+- [x] Adversarial scan: 35 tests — 5 virtual users (CRUD dev, PR reviewer, deploy-focused, auto-refresh admin, multi-file committer)
+- [x] Synthesis: 4079 passed, 0 failures, convergence confirmed
+- [x] Save checkpoint

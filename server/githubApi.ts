@@ -283,3 +283,212 @@ export async function createWebhook(token: string, owner: string, repo: string, 
     },
   });
 }
+
+// ── Multi-File Commit via Git Trees API ──
+
+interface TreeEntry {
+  path: string;
+  mode: "100644" | "100755" | "040000" | "160000" | "120000";
+  type: "blob" | "tree" | "commit";
+  content?: string;
+  sha?: string | null; // null = delete file
+}
+
+interface CreateTreeCommitOpts {
+  owner: string;
+  repo: string;
+  branch: string;
+  message: string;
+  files: Array<{
+    path: string;
+    content: string | null; // null = delete
+  }>;
+}
+
+/**
+ * Multi-file commit using the Git Trees API.
+ * Creates a new tree with all file changes, then creates a commit pointing to it,
+ * and updates the branch ref. This is atomic — all files are committed together.
+ */
+export async function createTreeCommit(token: string, opts: CreateTreeCommitOpts) {
+  const { owner, repo, branch, message, files } = opts;
+
+  // 1. Get the current branch ref to find the latest commit SHA
+  const ref = await githubFetch<{ object: { sha: string } }>(
+    `/repos/${owner}/${repo}/git/ref/heads/${branch}`,
+    { token }
+  );
+  const latestCommitSha = ref.object.sha;
+
+  // 2. Get the tree SHA from the latest commit
+  const commit = await githubFetch<{ tree: { sha: string } }>(
+    `/repos/${owner}/${repo}/git/commits/${latestCommitSha}`,
+    { token }
+  );
+  const baseTreeSha = commit.tree.sha;
+
+  // 3. Build tree entries
+  const tree: TreeEntry[] = files.map((f) => {
+    if (f.content === null) {
+      // Delete: set sha to null (GitHub interprets this as deletion)
+      return {
+        path: f.path,
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: null,
+      };
+    }
+    return {
+      path: f.path,
+      mode: "100644" as const,
+      type: "blob" as const,
+      content: f.content,
+    };
+  });
+
+  // 4. Create the new tree
+  const newTree = await githubFetch<{ sha: string }>(
+    `/repos/${owner}/${repo}/git/trees`,
+    {
+      token,
+      method: "POST",
+      body: { base_tree: baseTreeSha, tree },
+    }
+  );
+
+  // 5. Create the commit
+  const newCommit = await githubFetch<{ sha: string; html_url: string }>(
+    `/repos/${owner}/${repo}/git/commits`,
+    {
+      token,
+      method: "POST",
+      body: {
+        message,
+        tree: newTree.sha,
+        parents: [latestCommitSha],
+      },
+    }
+  );
+
+  // 6. Update the branch ref to point to the new commit
+  await githubFetch(
+    `/repos/${owner}/${repo}/git/refs/heads/${branch}`,
+    {
+      token,
+      method: "PATCH",
+      body: { sha: newCommit.sha },
+    }
+  );
+
+  return {
+    sha: newCommit.sha,
+    url: newCommit.html_url,
+    branch,
+    filesChanged: files.length,
+  };
+}
+
+// ── Branch Comparison ──
+
+interface CompareResult {
+  status: "ahead" | "behind" | "diverged" | "identical";
+  ahead_by: number;
+  behind_by: number;
+  total_commits: number;
+  commits: Array<{
+    sha: string;
+    commit: {
+      message: string;
+      author: { name: string; date: string };
+    };
+    html_url: string;
+  }>;
+  files: Array<{
+    sha: string;
+    filename: string;
+    status: "added" | "removed" | "modified" | "renamed" | "copied" | "changed" | "unchanged";
+    additions: number;
+    deletions: number;
+    changes: number;
+    patch?: string;
+  }>;
+}
+
+/**
+ * Compare two branches to see ahead/behind counts and file diffs.
+ * basehead format: "base...head" (e.g., "main...feature-branch")
+ */
+export async function compareBranches(
+  token: string,
+  owner: string,
+  repo: string,
+  base: string,
+  head: string
+): Promise<CompareResult> {
+  return githubFetch<CompareResult>(
+    `/repos/${owner}/${repo}/compare/${base}...${head}`,
+    { token }
+  );
+}
+
+// ── Commit Diff ──
+
+interface CommitDetail {
+  sha: string;
+  commit: {
+    message: string;
+    author: { name: string; email: string; date: string };
+    committer: { name: string; email: string; date: string };
+  };
+  html_url: string;
+  stats: {
+    total: number;
+    additions: number;
+    deletions: number;
+  };
+  files: Array<{
+    sha: string;
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    changes: number;
+    patch?: string;
+  }>;
+}
+
+/**
+ * Get detailed diff for a single commit.
+ */
+export async function getCommitDiff(
+  token: string,
+  owner: string,
+  repo: string,
+  commitSha: string
+): Promise<CommitDetail> {
+  return githubFetch<CommitDetail>(
+    `/repos/${owner}/${repo}/commits/${commitSha}`,
+    { token }
+  );
+}
+
+// ── Fork ──
+
+/**
+ * Fork a repository to the authenticated user's account.
+ */
+export async function forkRepo(
+  token: string,
+  owner: string,
+  repo: string,
+  organization?: string
+): Promise<{ full_name: string; html_url: string; clone_url: string }> {
+  return githubFetch(
+    `/repos/${owner}/${repo}/forks`,
+    {
+      token,
+      method: "POST",
+      body: organization ? { organization } : {},
+    }
+  );
+}

@@ -385,4 +385,157 @@ export const githubRouter = router({
         const [owner, repoName] = repo.fullName.split("/");
         return listIssues(token, owner, repoName, input.state ?? "open");
       }),
+
+    /** Multi-file commit via Git Trees API — atomic batch commit */
+    multiCommit: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        branch: z.string(),
+        message: z.string(),
+        files: z.array(z.object({
+          path: z.string(),
+          content: z.string().nullable(), // null = delete
+        })).min(1).max(100),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
+        const conns = await getUserConnectors(ctx.user.id);
+        const ghConn = conns.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
+        const { createTreeCommit } = await import("../githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return createTreeCommit(token, {
+          owner,
+          repo: repoName,
+          branch: input.branch,
+          message: input.message,
+          files: input.files,
+        });
+      }),
+
+    /** Compare two branches — ahead/behind counts and file diffs */
+    compareBranches: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        base: z.string(),
+        head: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
+        const conns = await getUserConnectors(ctx.user.id);
+        const ghConn = conns.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
+        const { compareBranches: ghCompare } = await import("../githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return ghCompare(token, owner, repoName, input.base, input.head);
+      }),
+
+    /** Get detailed diff for a single commit */
+    commitDiff: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        commitSha: z.string(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
+        const conns = await getUserConnectors(ctx.user.id);
+        const ghConn = conns.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
+        const { getCommitDiff } = await import("../githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        return getCommitDiff(token, owner, repoName, input.commitSha);
+      }),
+
+    /** Commit multiple files and trigger deploy in one action */
+    commitAndDeploy: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        branch: z.string(),
+        message: z.string(),
+        files: z.array(z.object({
+          path: z.string(),
+          content: z.string().nullable(),
+        })).min(1).max(100),
+        webappProjectExternalId: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const repo = await getGitHubRepoByExternalId(input.externalId);
+        if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
+        const conns = await getUserConnectors(ctx.user.id);
+        const ghConn = conns.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
+
+        // Step 1: Multi-file commit
+        const { createTreeCommit } = await import("../githubApi");
+        const [owner, repoName] = repo.fullName.split("/");
+        const commitResult = await createTreeCommit(token, {
+          owner,
+          repo: repoName,
+          branch: input.branch,
+          message: input.message,
+          files: input.files,
+        });
+
+        // Step 2: Trigger deploy if webapp project is linked
+        let deployResult = null;
+        if (input.webappProjectExternalId) {
+          try {
+            const { getWebappProjectByExternalId, createWebappDeployment, updateWebappProject } = await import("../db");
+            const project = await getWebappProjectByExternalId(input.webappProjectExternalId);
+            if (project && project.userId === ctx.user.id) {
+              await updateWebappProject(project.id, { deployStatus: "building" });
+              const depId = await createWebappDeployment({
+                projectId: project.id,
+                userId: ctx.user.id,
+                versionLabel: `git-${commitResult.sha.slice(0, 7)}`,
+                commitSha: commitResult.sha,
+                commitMessage: input.message,
+                status: "building",
+              });
+              deployResult = {
+                deploymentId: depId,
+                status: "building",
+                commitSha: commitResult.sha,
+                projectName: project.name,
+              };
+            }
+          } catch (err: any) {
+            console.error("[commitAndDeploy] Deploy trigger failed:", err.message);
+            deployResult = { error: err.message, status: "failed" };
+          }
+        }
+
+        return {
+          commit: commitResult,
+          deploy: deployResult,
+        };
+      }),
+
+    /** Fork a repository to the authenticated user's account */
+    forkRepo: protectedProcedure
+      .input(z.object({
+        owner: z.string(),
+        repo: z.string(),
+        organization: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const conns = await getUserConnectors(ctx.user.id);
+        const ghConn = conns.find(c => c.connectorId === "github" && c.status === "connected");
+        if (!ghConn) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub not connected" });
+        const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+        if (!token) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "GitHub token not available" });
+        const { forkRepo: ghFork } = await import("../githubApi");
+        return ghFork(token, input.owner, input.repo, input.organization);
+      }),
   });

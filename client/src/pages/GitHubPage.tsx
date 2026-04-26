@@ -28,7 +28,7 @@ import {
   RefreshCw, ExternalLink, Star, GitFork, AlertCircle, Search,
   ChevronRight, File, Folder, Lock, Globe, ArrowLeft, Download,
   Loader2, Trash2, Unplug, Eye, Code, Clock, MessageSquare,
-  Rocket, Play, CheckCircle2, XCircle, ExternalLink as LinkIcon
+  Rocket, Play, CheckCircle2, XCircle, ExternalLink as LinkIcon, Upload
 } from "lucide-react";
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { useRoute, useLocation } from "wouter";
@@ -221,6 +221,62 @@ export default function GitHubPage() {
     onError: (err) => { toast.error(err.message); },
   });
 
+  // Commit & Deploy: linked project detection + deploy chaining
+  const projectsQuery = trpc.webappProject.list.useQuery(undefined, { enabled: !!selectedRepoId });
+  const linkedProject = useMemo(() => {
+    if (!projectsQuery.data || !selectedRepo) return null;
+    return projectsQuery.data.find(p => p.githubRepoId?.toString() === selectedRepo.id?.toString() || p.name === selectedRepo.name) ?? null;
+  }, [projectsQuery.data, selectedRepo]);
+
+  const [isDeploying, setIsDeploying] = useState(false);
+
+  const deployFromGitHubMut = trpc.webappProject.deployFromGitHub.useMutation({
+    onSuccess: (data) => {
+      setIsDeploying(false);
+      if (data.status === "live") {
+        toast.success("Deployed successfully!", {
+          description: data.publishedUrl ? `Live at ${data.publishedUrl}` : undefined,
+          action: data.publishedUrl ? { label: "Open", onClick: () => window.open(data.publishedUrl!, "_blank") } : undefined,
+        });
+      } else {
+        toast.error("Deploy failed");
+      }
+    },
+    onError: (err) => {
+      setIsDeploying(false);
+      toast.error(`Deploy failed: ${err.message}`);
+    },
+  });
+
+  const handleCommitAndDeploy = useCallback(() => {
+    if (!commitMsg.trim() || !selectedRepoId || !fileContentQuery.data) return;
+    // First commit the file
+    commitFileMut.mutate({
+      externalId: selectedRepoId,
+      path: currentPath,
+      content: btoa(unescape(encodeURIComponent(editContent))),
+      message: commitMsg,
+      sha: fileContentQuery.data.sha,
+      branch: selectedBranch || undefined,
+    }, {
+      onSuccess: () => {
+        // Then trigger deploy if linked project exists
+        if (linkedProject) {
+          setIsDeploying(true);
+          toast.info("File committed. Starting deploy...");
+          deployFromGitHubMut.mutate({
+            externalId: linkedProject.externalId,
+            branch: selectedBranch || undefined,
+          });
+        } else {
+          toast.success("File committed. No linked project for auto-deploy.", {
+            description: "Go to the Deploy tab to link a project.",
+          });
+        }
+      },
+    });
+  }, [commitMsg, selectedRepoId, fileContentQuery.data, editContent, currentPath, selectedBranch, linkedProject, commitFileMut, deployFromGitHubMut]);
+
   // Build file tree structure
   const fileTreeItems = useMemo(() => {
     if (!fileTreeQuery.data?.tree) return [];
@@ -378,6 +434,7 @@ export default function GitHubPage() {
               </div>
             ) : fileContentQuery.data && filePath.length > 0 ? (
               /* File content view with CodeEditor */
+              <>
               <Card className="border-border">
                 <CardHeader className="py-3 px-4 border-b border-border">
                   <div className="flex items-center justify-between">
@@ -385,6 +442,12 @@ export default function GitHubPage() {
                       <FileCode className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium">{filePath[filePath.length - 1]}</span>
                       <Badge variant="secondary" className="text-[10px]">{fileContentQuery.data.size} bytes</Badge>
+                      {linkedProject && (
+                        <Badge variant={linkedProject.deployStatus === "live" ? "default" : "secondary"} className="text-[10px] gap-1">
+                          <Rocket className="w-2.5 h-2.5" />
+                          {linkedProject.deployStatus || "not deployed"}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {!isEditing ? (
@@ -448,7 +511,8 @@ export default function GitHubPage() {
                         />
                         <Button
                           size="sm"
-                          disabled={!commitMsg.trim() || commitFileMut.isPending}
+                          variant="outline"
+                          disabled={!commitMsg.trim() || commitFileMut.isPending || isDeploying}
                           onClick={() => {
                             commitFileMut.mutate({
                               externalId: selectedRepoId!,
@@ -462,6 +526,19 @@ export default function GitHubPage() {
                         >
                           {commitFileMut.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <GitCommit className="w-3.5 h-3.5 mr-1" />}
                           Commit
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={!commitMsg.trim() || commitFileMut.isPending || isDeploying}
+                          onClick={handleCommitAndDeploy}
+                          title={linkedProject ? "Commit changes and redeploy" : "Commit changes (no linked project for deploy)"}
+                        >
+                          {(commitFileMut.isPending || isDeploying) ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                          ) : (
+                            <Upload className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          {isDeploying ? "Deploying..." : "Commit & Deploy"}
                         </Button>
                       </div>
                     </div>
@@ -479,6 +556,15 @@ export default function GitHubPage() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Deploy status indicator */}
+              {isDeploying && (
+                <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span className="text-sm text-primary">Deploying changes...</span>
+                </div>
+              )}
+              </>
             ) : (
               /* Directory listing */
               <Card className="border-border">
@@ -552,6 +638,13 @@ export default function GitHubPage() {
                       <Badge variant="outline" className="text-[10px]"><Lock className="w-2.5 h-2.5 mr-0.5" /> protected</Badge>
                     )}
                     <code className="ml-auto text-[10px] text-muted-foreground font-mono">{branch.commit.sha.slice(0, 7)}</code>
+                    {branch.name !== selectedRepo.defaultBranch && (
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={`https://github.com/${selectedRepo.fullName}/compare/${selectedRepo.defaultBranch}...${branch.name}`} target="_blank" rel="noopener noreferrer">
+                          <GitPullRequest className="w-3 h-3 mr-1" /> Compare
+                        </a>
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => { setSelectedBranch(branch.name); setRepoTab("files"); setFilePath([]); }}>
                       <Eye className="w-3 h-3 mr-1" /> Browse
                     </Button>

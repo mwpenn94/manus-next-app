@@ -364,6 +364,17 @@ async function startServer() {
     }
   });
 
+  // ── Scheduled Connector Refresh ──
+  app.post("/api/scheduled/connector-refresh", async (req, res) => {
+    try {
+      const { handleConnectorRefresh } = await import("../scheduledConnectorRefresh");
+      await handleConnectorRefresh(req, res);
+    } catch (err: any) {
+      console.error("[ConnectorRefresh] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Scheduled Health Check (G-009) ──
   app.post("/api/scheduled/health", async (req, res) => {
     try {
