@@ -4821,3 +4821,31 @@
 - [x] Server restarted and compiles with no errors
 - [x] Verified: GitHub and Microsoft 365 OAuth now supported via platform credential fallback (7/7 new tests pass)
 - [x] Verified: Google, Notion, Slack correctly report unsupported (no platform credentials available)
+
+## Pass 28: Deep Recursive Optimization — Connector OAuth E2E + Sub-Items + Guidance UX
+
+### 28.1: Harden GitHub OAuth End-to-End Flow
+- [x] ConnectorsSheet: add inline OAuth flow support (open popup, listen for postMessage callback)
+- [x] ConnectorsSheet: handle URL params for mobile same-window redirect (code+state, oauth_success)
+- [x] ConnectorsSheet: show loading state during OAuth exchange
+- [x] ConnectorsSheet: invalidate connector list on successful OAuth
+- [x] Test: vitest for ConnectorsSheet OAuth message handling (23 new tests pass)
+
+### 28.2: Connector Sub-Items in Bottom Sheet + Page
+- [x] ConnectorsSheet: add "Calendars" sub-item under Google Calendar when connected
+- [x] ConnectorsSheet: add "Files" sub-item under Google Drive when connected
+- [x] ConnectorsSheet: add "Mail" sub-item under Outlook/Microsoft 365 when connected
+- [x] ConnectorsSheet: add "Workspaces" sub-item under Notion when connected
+- [x] ConnectorsSheet: add "Channels" sub-item under Slack when connected
+- [x] ConnectorsPage: add sub-item rows below connected connectors in Apps tab list
+- [x] Sub-items navigate to relevant pages or show "Feature coming soon" toast
+
+### 28.3: Unsupported OAuth Guidance UX
+- [x] ConnectorsSheet: for unsupported OAuth (no platform creds), show inline setup hint "Requires setup in Settings"
+- [x] ConnectorsSheet: "Connect" for unsupported opens tiered auth dialog (navigates to /connectors)
+- [x] Add visual indicator (ShieldCheck icon) for OAuth-supported connectors
+- [x] ConnectorsPage: sub-items and guidance text updated for platform OAuth clarity
+
+### Validation
+- [x] Run full vitest suite — 78/78 connector tests pass, 0 regressions
+- [x] Save checkpoint

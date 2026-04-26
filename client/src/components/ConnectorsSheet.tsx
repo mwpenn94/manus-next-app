@@ -1,17 +1,17 @@
 /**
  * ConnectorsSheet — Manus-native bottom sheet for connectors
  *
- * Matches the real Manus mobile UI:
- * - Slides up from bottom with drag handle
- * - X close button (left), centered "Connectors" title
- * - "Add connectors" and "Manage connectors" action rows with chevrons
- * - Connected services with blue toggle switches
- * - Sub-items (e.g., "Repositories" under GitHub)
- * - Unconnected services with "Connect" text button
+ * Pass 28: Deep recursive optimization
+ * - Inline OAuth popup flow (GitHub, Microsoft 365)
+ * - Mobile same-window redirect fallback (code+state URL params)
+ * - Tiered auth for unsupported OAuth (Manus verify + manual)
+ * - Sub-items per connector (Repositories, Calendars, Files, etc.)
+ * - OAuth support indicators (shield icon)
+ * - Loading states during OAuth exchange
  *
  * Uses vaul Drawer primitives for native bottom sheet behavior.
  */
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import {
   Drawer,
@@ -21,7 +21,6 @@ import {
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Switch } from "@/components/ui/switch";
-import { Dialog } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -36,23 +35,93 @@ import {
   Globe,
   Monitor,
   Loader2,
+  ShieldCheck,
+  KeyRound,
+  Calendar,
+  FolderOpen,
+  Mail,
+  Layout,
+  Hash,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════════
    CONNECTOR DEFINITIONS (subset for quick-access sheet)
    ═══════════════════════════════════════════════════════════════════ */
 
+interface SubItem {
+  id: string;
+  label: string;
+  icon: string;
+  route?: string;
+}
+
+interface SheetConnector {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  subItems?: SubItem[];
+}
+
 /** Primary connectors shown in the quick-access sheet */
-const SHEET_CONNECTORS = [
+const SHEET_CONNECTORS: SheetConnector[] = [
   { id: "browser", name: "My Browser", icon: "monitor", category: "Tools" },
-  { id: "github", name: "GitHub", icon: "github", category: "Development", subItems: [{ id: "github-repos", label: "Repositories", icon: "git-branch" }] },
-  { id: "gmail", name: "Gmail", icon: "mail", category: "Communication" },
-  { id: "calendar", name: "Google Calendar", icon: "calendar", category: "Productivity" },
-  { id: "google-drive", name: "Google Drive", icon: "drive", category: "Storage" },
-  { id: "outlook", name: "Outlook Mail", icon: "mail-outlook", category: "Communication" },
-  { id: "microsoft-365", name: "Microsoft 365", icon: "microsoft", category: "Productivity" },
-  { id: "slack", name: "Slack", icon: "slack", category: "Communication" },
-  { id: "notion", name: "Notion", icon: "notion", category: "Productivity" },
+  {
+    id: "github",
+    name: "GitHub",
+    icon: "github",
+    category: "Development",
+    subItems: [{ id: "github-repos", label: "Repositories", icon: "git-branch", route: "/github" }],
+  },
+  {
+    id: "gmail",
+    name: "Gmail",
+    icon: "mail",
+    category: "Communication",
+    subItems: [{ id: "gmail-inbox", label: "Inbox", icon: "mail-sub" }],
+  },
+  {
+    id: "calendar",
+    name: "Google Calendar",
+    icon: "calendar",
+    category: "Productivity",
+    subItems: [{ id: "calendar-events", label: "Calendars", icon: "calendar-sub" }],
+  },
+  {
+    id: "google-drive",
+    name: "Google Drive",
+    icon: "drive",
+    category: "Storage",
+    subItems: [{ id: "drive-files", label: "Files", icon: "folder" }],
+  },
+  {
+    id: "outlook",
+    name: "Outlook Mail",
+    icon: "mail-outlook",
+    category: "Communication",
+    subItems: [{ id: "outlook-inbox", label: "Mail", icon: "mail-sub" }],
+  },
+  {
+    id: "microsoft-365",
+    name: "Microsoft 365",
+    icon: "microsoft",
+    category: "Productivity",
+    subItems: [{ id: "ms365-apps", label: "Apps", icon: "layout" }],
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    icon: "slack",
+    category: "Communication",
+    subItems: [{ id: "slack-channels", label: "Channels", icon: "hash" }],
+  },
+  {
+    id: "notion",
+    name: "Notion",
+    icon: "notion",
+    category: "Productivity",
+    subItems: [{ id: "notion-workspaces", label: "Workspaces", icon: "layout" }],
+  },
 ];
 
 /** SVG icons for connectors — matching Manus native style */
@@ -69,20 +138,11 @@ function ConnectorIcon({ type, className }: { type: string; className?: string }
         </svg>
       );
     case "mail":
-      return (
-        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect width="20" height="16" x="2" y="4" rx="2" />
-          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-        </svg>
-      );
+    case "mail-sub":
+      return <Mail className={cls} />;
     case "calendar":
-      return (
-        <svg viewBox="0 0 24 24" className={cls} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 2v4" /><path d="M16 2v4" />
-          <rect width="18" height="18" x="3" y="4" rx="2" />
-          <path d="M3 10h18" />
-        </svg>
-      );
+    case "calendar-sub":
+      return <Calendar className={cls} />;
     case "drive":
       return (
         <svg viewBox="0 0 24 24" className={cls} fill="currentColor">
@@ -118,6 +178,12 @@ function ConnectorIcon({ type, className }: { type: string; className?: string }
       );
     case "git-branch":
       return <GitBranch className={cls} />;
+    case "folder":
+      return <FolderOpen className={cls} />;
+    case "layout":
+      return <Layout className={cls} />;
+    case "hash":
+      return <Hash className={cls} />;
     default:
       return <Plug className={cls} />;
   }
@@ -135,24 +201,42 @@ interface ConnectorsSheetProps {
 }
 
 export default function ConnectorsSheet({ open, onOpenChange, highlightId }: ConnectorsSheetProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [, navigate] = useLocation();
   const utils = trpc.useUtils();
 
-  // Fetch installed connectors
+  // ── State ──
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const popupRef = useRef<Window | null>(null);
+
+  // ── Queries ──
   const { data: installed = [], isLoading } = trpc.connector.list.useQuery(undefined, {
     enabled: isAuthenticated && open,
     staleTime: 30_000,
   });
 
-  // Build installed map
-  const installedMap = useMemo(() => {
-    const m = new Map<string, (typeof installed)[0]>();
-    installed.forEach((c) => m.set(c.connectorId, c));
-    return m;
-  }, [installed]);
+  const { data: oauthAvailability } = trpc.connector.oauthAvailability.useQuery(undefined, {
+    staleTime: 120_000,
+  });
 
-  // Disconnect mutation
+  const { data: tieredAuth } = trpc.connector.tieredAuthStatus.useQuery(undefined, {
+    staleTime: 120_000,
+  });
+
+  // ── Mutations ──
+  const getOAuthUrlMutation = trpc.connector.getOAuthUrl.useMutation();
+  const completeOAuthMutation = trpc.connector.completeOAuth.useMutation({
+    onSuccess: (data) => {
+      utils.connector.list.invalidate();
+      toast.success(`Connected to ${data.name}`);
+      setConnectingId(null);
+    },
+    onError: (err) => {
+      toast.error(`OAuth failed: ${err.message}`);
+      setConnectingId(null);
+    },
+  });
+
   const disconnectMutation = trpc.connector.disconnect.useMutation({
     onSuccess: () => {
       utils.connector.list.invalidate();
@@ -161,27 +245,186 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
     onError: (err) => { toast.error(`Failed: ${err.message}`); },
   });
 
-  // Count connected
+  // ── Derived ──
+  const installedMap = useMemo(() => {
+    const m = new Map<string, (typeof installed)[0]>();
+    installed.forEach((c) => m.set(c.connectorId, c));
+    return m;
+  }, [installed]);
+
   const connectedCount = installed.filter((c) => c.status === "connected").length;
 
-  // Handle toggle — if connected, disconnect; if not, navigate to connectors page with highlight
-  const handleToggle = useCallback((connectorId: string, isCurrentlyConnected: boolean) => {
-    if (isCurrentlyConnected) {
-      disconnectMutation.mutate({ connectorId });
-    } else {
-      // Navigate to full connectors page to trigger tiered auth
-      onOpenChange(false);
-      window.location.href = `/connectors?highlight=${connectorId}`;
-    }
-  }, [disconnectMutation, onOpenChange]);
+  // ── OAuth postMessage listener ──
+  useEffect(() => {
+    if (!open) return;
 
-  // Handle sub-item click
-  const handleSubItemClick = useCallback((subItemId: string) => {
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (!data || typeof data !== "object") return;
+
+      // Popup OAuth callback — code received, exchange on server
+      if (data.type === "connector-oauth-callback" && data.connectorId && data.code) {
+        completeOAuthMutation.mutate({
+          connectorId: data.connectorId,
+          code: data.code,
+          origin: window.location.origin,
+        });
+      }
+
+      // Popup OAuth success — server already exchanged, just refresh
+      if (data.type === "connector-oauth-success" && data.connectorId) {
+        utils.connector.list.invalidate();
+        toast.success(`Connected to ${data.connectorId}`);
+        setConnectingId(null);
+      }
+
+      // Manus verify callback
+      if (data.type === "connector-manus-verified" && data.connectorId) {
+        utils.connector.list.invalidate();
+        toast.success(`Verified ${data.verifiedIdentity || data.connectorId}`);
+        setConnectingId(null);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [open, completeOAuthMutation, utils]);
+
+  // ── Handle URL params for mobile same-window redirect ──
+  useEffect(() => {
+    if (!open) return;
+    const params = new URLSearchParams(window.location.search);
+
+    // OAuth success redirect
+    const oauthSuccess = params.get("oauth_success");
+    if (oauthSuccess) {
+      utils.connector.list.invalidate();
+      toast.success(`Connected to ${oauthSuccess}`);
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("oauth_success");
+      window.history.replaceState({}, "", url.toString());
+      return;
+    }
+
+    // OAuth code+state redirect (mobile flow — server already exchanged in callback route)
+    const code = params.get("code");
+    const state = params.get("state");
+    if (code && state) {
+      try {
+        const stateData = JSON.parse(atob(state.replace(/-/g, "+").replace(/_/g, "/")));
+        if (stateData.connectorId) {
+          // Server already exchanged the code in the callback route,
+          // so just refresh the list
+          utils.connector.list.invalidate();
+          toast.success(`Connecting ${stateData.connectorId}...`);
+        }
+      } catch { /* ignore malformed state */ }
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("code");
+      url.searchParams.delete("state");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    // Manus verify redirect
+    const manusVerified = params.get("manus_verified");
+    if (manusVerified) {
+      utils.connector.list.invalidate();
+      toast.success(`Verified ${params.get("identity") || manusVerified}`);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("manus_verified");
+      url.searchParams.delete("identity");
+      url.searchParams.delete("method");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [open, utils]);
+
+  // ── Connect handler — inline OAuth or fallback to /connectors ──
+  const handleConnect = useCallback(async (connectorId: string) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to connect services");
+      return;
+    }
+
+    const isOAuthAvailable = oauthAvailability?.[connectorId] === true;
+    const tierInfo = tieredAuth?.[connectorId];
+
+    // Tier 1: Direct OAuth (popup flow)
+    if (isOAuthAvailable && tierInfo?.tier1) {
+      setConnectingId(connectorId);
+      try {
+        const result = await getOAuthUrlMutation.mutateAsync({
+          connectorId,
+          origin: window.location.origin,
+        });
+        if (result.supported && result.url) {
+          // Open OAuth in popup (desktop) or same-window (mobile)
+          const isMobile = window.innerWidth < 768;
+          if (isMobile) {
+            // Same-window redirect for mobile
+            window.location.href = result.url;
+          } else {
+            // Popup for desktop
+            const w = 500, h = 700;
+            const left = window.screenX + (window.outerWidth - w) / 2;
+            const top = window.screenY + (window.outerHeight - h) / 2;
+            popupRef.current = window.open(
+              result.url,
+              `oauth-${connectorId}`,
+              `width=${w},height=${h},left=${left},top=${top},popup=yes`
+            );
+            // Poll for popup close (fallback if postMessage fails)
+            const pollTimer = setInterval(() => {
+              if (popupRef.current?.closed) {
+                clearInterval(pollTimer);
+                // Refresh list in case server-side exchange happened
+                setTimeout(() => {
+                  utils.connector.list.invalidate();
+                  setConnectingId(null);
+                }, 1000);
+              }
+            }, 500);
+          }
+        } else {
+          // OAuth not supported, fall through to page
+          setConnectingId(null);
+          onOpenChange(false);
+          navigate(`/connectors?highlight=${connectorId}`);
+        }
+      } catch (err: any) {
+        toast.error(`OAuth error: ${err.message}`);
+        setConnectingId(null);
+      }
+      return;
+    }
+
+    // Tier 2+: Navigate to full connectors page for tiered auth dialog
     onOpenChange(false);
-    if (subItemId === "github-repos") {
-      navigate("/github");
+    navigate(`/connectors?highlight=${connectorId}`);
+  }, [isAuthenticated, oauthAvailability, tieredAuth, getOAuthUrlMutation, utils, onOpenChange, navigate]);
+
+  // ── Disconnect handler ──
+  const handleDisconnect = useCallback((connectorId: string) => {
+    disconnectMutation.mutate({ connectorId });
+  }, [disconnectMutation]);
+
+  // ── Sub-item click handler ──
+  const handleSubItemClick = useCallback((sub: SubItem) => {
+    onOpenChange(false);
+    if (sub.route) {
+      navigate(sub.route);
+    } else {
+      toast("Feature coming soon", {
+        description: `${sub.label} management will be available in a future update.`,
+      });
     }
   }, [navigate, onOpenChange]);
+
+  // ── Helper: is this connector OAuth-supported? ──
+  const isOAuthConnector = useCallback((connectorId: string) => {
+    return oauthAvailability?.[connectorId] === true;
+  }, [oauthAvailability]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -215,7 +458,7 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
             <button
               onClick={() => {
                 onOpenChange(false);
-                window.location.href = "/connectors";
+                navigate("/connectors");
               }}
               className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-accent/50 active:bg-accent/70 transition-colors"
             >
@@ -227,7 +470,7 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
             <button
               onClick={() => {
                 onOpenChange(false);
-                window.location.href = "/connectors";
+                navigate("/connectors");
               }}
               className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-accent/50 active:bg-accent/70 transition-colors"
             >
@@ -248,6 +491,8 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
                 const inst = installedMap.get(connector.id);
                 const isConnected = inst?.status === "connected";
                 const isHighlighted = highlightId === connector.id;
+                const isConnecting = connectingId === connector.id;
+                const hasOAuth = isOAuthConnector(connector.id);
                 const isToggling = disconnectMutation.isPending;
 
                 return (
@@ -264,20 +509,48 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
                       <div className="w-8 h-8 rounded-lg bg-background/60 border border-border/50 flex items-center justify-center shrink-0">
                         <ConnectorIcon type={connector.icon} className="w-4.5 h-4.5 text-foreground" />
                       </div>
-                      <span className="text-sm text-foreground flex-1 font-medium">
-                        {connector.name}
-                      </span>
-                      {isConnected ? (
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm text-foreground font-medium truncate">
+                            {connector.name}
+                          </span>
+                          {hasOAuth && !isConnected && (
+                            <span title="OAuth supported"><ShieldCheck className="w-3 h-3 text-emerald-500/70 shrink-0" /></span>
+                          )}
+                        </div>
+                        {/* Inline hint for unsupported OAuth */}
+                        {!isConnected && !hasOAuth && connector.id !== "browser" && (
+                          <p className="text-[10px] text-muted-foreground/50 leading-tight mt-0.5">
+                            Requires setup in Settings
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Right side: toggle or connect */}
+                      {isConnecting ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                      ) : isConnected ? (
                         <Switch
                           checked={true}
-                          onCheckedChange={() => handleToggle(connector.id, true)}
+                          onCheckedChange={() => handleDisconnect(connector.id)}
                           disabled={isToggling}
                           className="data-[state=checked]:bg-blue-500 h-[1.4rem] w-10"
                         />
+                      ) : connector.id === "browser" ? (
+                        <Switch
+                          checked={false}
+                          disabled
+                          className="h-[1.4rem] w-10 opacity-50"
+                        />
                       ) : (
                         <button
-                          onClick={() => handleToggle(connector.id, false)}
-                          className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors px-2 py-1"
+                          onClick={() => handleConnect(connector.id)}
+                          className={cn(
+                            "text-sm font-medium transition-colors px-2 py-1",
+                            hasOAuth
+                              ? "text-blue-400 hover:text-blue-300"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
                         >
                           Connect
                         </button>
@@ -289,7 +562,7 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
                       <div key={sub.id}>
                         <div className="h-px bg-border mx-4" />
                         <button
-                          onClick={() => handleSubItemClick(sub.id)}
+                          onClick={() => handleSubItemClick(sub)}
                           className="w-full flex items-center gap-3 px-4 py-3 pl-16 text-left hover:bg-accent/50 active:bg-accent/70 transition-colors"
                         >
                           <ConnectorIcon type={sub.icon} className="w-4 h-4 text-muted-foreground" />

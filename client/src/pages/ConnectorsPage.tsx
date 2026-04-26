@@ -1038,6 +1038,41 @@ export default function ConnectorsPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* Sub-items for connected connectors */}
+                            {isConnected && (() => {
+                              const subMap: Record<string, { label: string; route?: string }[]> = {
+                                "github": [{ label: "Repositories", route: "/github" }],
+                                "calendar": [{ label: "Calendars" }],
+                                "google-drive": [{ label: "Files" }],
+                                "outlook": [{ label: "Mail" }],
+                                "microsoft-365": [{ label: "Apps" }],
+                                "slack": [{ label: "Channels" }],
+                                "notion": [{ label: "Workspaces" }],
+                                "gmail": [{ label: "Inbox" }],
+                              };
+                              const subs = subMap[c.id];
+                              if (!subs) return null;
+                              return subs.map((sub) => (
+                                <div key={sub.label}>
+                                  <div className="h-px bg-border mx-4" />
+                                  <button
+                                    onClick={() => {
+                                      if (sub.route) {
+                                        window.location.href = sub.route;
+                                      } else {
+                                        toast("Feature coming soon", { description: `${sub.label} management will be available in a future update.` });
+                                      }
+                                    }}
+                                    className="w-full flex items-center gap-3 px-4 py-3 pl-16 text-left hover:bg-accent/50 active:bg-accent/70 transition-colors"
+                                  >
+                                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                    <span className="text-sm text-foreground flex-1">{sub.label}</span>
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                  </button>
+                                </div>
+                              ));
+                            })()}
                           </div>
                         );
                       })}
