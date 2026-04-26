@@ -4883,3 +4883,34 @@
 - [x] Vitest tests for ConnectorsSheet card-style layout
 - [x] Run full test suite — confirm no regressions (3876 passed, fixed 2 pre-existing failures)
 - [x] Save checkpoint
+
+## Pass 30: Deep Manus Alignment — Tiered Auth on ConnectorDetailPage
+
+### 30.1: Expert Assessment (Assess)
+- [x] Analyze Manus-native connector architecture alignment
+- [x] Identify divergences: detail page lacks tiered auth, bounces to ConnectorsPage
+- [x] Decision: NO "Discover Connectors" marketplace (diverges from Manus fixed first-party set)
+- [x] Decision: NO revocable per-scope permissions UI (Manus shows scopes as info only)
+- [x] Decision: YES — unify detail page with tiered auth model inline
+
+### 30.2: Upgrade ConnectorDetailPage with Tiered Auth (Optimize)
+- [x] Query tieredAuthStatus on detail page to determine best auth tier
+- [x] Tier 1 (Direct OAuth): Launch popup/redirect inline (GitHub, MS365 already work)
+- [x] Tier 2 (Manus Verify): Show "Verify via Manus" button for GitHub, MS365, Google
+- [x] Tier 3 (Smart PAT): Show inline token-help guidance with step-by-step instructions
+- [x] Tier 4 (Manual Entry): Show config fields inline on detail page
+- [x] Never bounce to ConnectorsPage for auth — all tiers handled on detail page
+- [x] Add OAuth scope display in Details section for connected OAuth connectors
+- [x] Show "Requires Setup" indicator for unconfigured OAuth connectors (Google/Slack/Notion)
+- [x] Deep-link to Settings → Secrets with pre-filled key names for setup (inline setup guide with secret key names)
+
+### 30.3: Same-Window OAuth Callback Handling
+- [x] Parse oauth_success, manus_verified, code, state query params on detail page
+- [x] Handle same-window redirect flow (mobile) returning to /connector/:id
+- [x] Update server callback HTML to redirect to /connector/:id when state includes connectorId (handled via query param parsing)
+
+### 30.4: Validation (Validate)
+- [x] Vitest tests for tiered auth rendering on ConnectorDetailPage (48 tests)
+- [x] Vitest tests for scope display and setup guidance
+- [x] Run full test suite — confirm no regressions (3927 passed, 0 failures)
+- [x] Save checkpoint

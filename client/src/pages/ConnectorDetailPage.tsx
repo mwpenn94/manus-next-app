@@ -1,16 +1,18 @@
 /**
- * ConnectorDetailPage — Manus-native connector detail view
+ * ConnectorDetailPage — Manus-native connector detail view with inline tiered auth
  *
- * Pass 29: Deep recursive optimization
- * Matches real Manus native screenshots:
+ * Pass 30: Deep Manus alignment — unified tiered auth on detail page
  * - Header: back arrow (←), ··· menu button
  * - Large centered icon in rounded square
  * - Title + description paragraph
  * - Warning callout (conditional — e.g., My Browser desktop-only)
  * - Auth steps: checkboxes (green check when done, empty circle when pending)
- * - Details section: key-value rows (Connector Type, Author, Website ↗, Privacy Policy ↗, Provide feedback ↗)
- * - Action button: "Add Repositories" / "Install Extension" / "Connect"
+ * - Inline tiered auth: Tier 1 OAuth, Tier 2 Manus Verify, Tier 3 Smart PAT, Tier 4 Manual
+ * - OAuth scope display for connected OAuth connectors
+ * - Details section: key-value rows
+ * - Action button at bottom
  * - Pull-to-reveal red "Disconnect" button
+ * - Same-window OAuth callback handling (query params)
  *
  * Route: /connector/:id
  */
@@ -20,6 +22,9 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
   MoreHorizontal,
@@ -29,20 +34,184 @@ import {
   Circle,
   Loader2,
   Trash2,
+  Shield,
+  Fingerprint,
+  Key,
+  Globe,
+  ChevronDown,
+  BadgeCheck,
+  ShieldCheck,
+  Info,
+  Layers,
 } from "lucide-react";
 import { CONNECTOR_DEFS, ConnectorIcon } from "@/components/ConnectorsSheet";
 import type { ConnectorDef } from "@/components/ConnectorsSheet";
+
+/* ═══════════════════════════════════════════════════════════════════
+   TIER LABELS — matches ConnectorsPage for consistency
+   ═══════════════════════════════════════════════════════════════════ */
+
+const TIER_LABELS: Record<number, { label: string; icon: typeof Shield; color: string; desc: string }> = {
+  1: { label: "Direct OAuth", icon: Shield, color: "text-emerald-400", desc: "One-click authorization via provider" },
+  2: { label: "Manus Verify", icon: Fingerprint, color: "text-amber-400", desc: "Verify identity via Manus, then guided token setup" },
+  3: { label: "Smart PAT", icon: Key, color: "text-blue-400", desc: "Step-by-step personal access token guide" },
+  4: { label: "Manual Entry", icon: Globe, color: "text-muted-foreground", desc: "Enter credentials directly" },
+};
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONNECTOR TOKEN HELP — ported from ConnectorsPage for inline display
+   ═══════════════════════════════════════════════════════════════════ */
+
+interface TokenHelp {
+  url: string;
+  label: string;
+  steps: string[];
+}
+
+interface ConfigField {
+  key: string;
+  label: string;
+  placeholder: string;
+}
+
+/** Token help and config fields for connectors that support Smart PAT (Tier 3) */
+const CONNECTOR_AUTH_DATA: Record<string, { configFields: ConfigField[]; tokenHelp?: TokenHelp; oauthLabel?: string }> = {
+  github: {
+    oauthLabel: "Sign in with GitHub",
+    configFields: [{ key: "token", label: "Personal Access Token", placeholder: "ghp_..." }],
+    tokenHelp: {
+      url: "https://github.com/settings/tokens?type=beta",
+      label: "Generate token at GitHub Settings",
+      steps: [
+        "Go to GitHub Settings → Developer settings → Personal access tokens",
+        "Click 'Generate new token (Fine-grained)'",
+        "Select repositories and permissions: Contents (read/write), Issues (read/write), Pull requests (read/write)",
+        "Copy the token (starts with ghp_)",
+      ],
+    },
+  },
+  slack: {
+    oauthLabel: "Sign in with Slack",
+    configFields: [{ key: "webhookUrl", label: "Webhook URL", placeholder: "https://hooks.slack.com/services/..." }],
+    tokenHelp: {
+      url: "https://api.slack.com/apps",
+      label: "Create app at Slack API",
+      steps: [
+        "Go to api.slack.com/apps and create a new app",
+        "Under 'Incoming Webhooks', activate and create a webhook",
+        "Copy the Webhook URL",
+        "Or use a Bot Token (xoxb-) for full API access",
+      ],
+    },
+  },
+  gmail: {
+    oauthLabel: "Sign in with Google",
+    configFields: [{ key: "serviceAccountKey", label: "Service Account JSON Key", placeholder: '{"type":"service_account",...}' }],
+    tokenHelp: {
+      url: "https://console.cloud.google.com/apis/credentials",
+      label: "Create credentials in Google Cloud",
+      steps: [
+        "Go to Google Cloud Console → APIs & Services",
+        "Enable the Gmail API",
+        "Create a Service Account with domain-wide delegation",
+        "Download the JSON key and paste it here",
+      ],
+    },
+  },
+  "google-drive": {
+    oauthLabel: "Sign in with Google",
+    configFields: [{ key: "serviceAccountKey", label: "Service Account JSON Key", placeholder: '{"type":"service_account",...}' }],
+    tokenHelp: {
+      url: "https://console.cloud.google.com/iam-admin/serviceaccounts",
+      label: "Create service account in Google Cloud",
+      steps: [
+        "Go to Google Cloud Console → IAM & Admin → Service Accounts",
+        "Create a service account and grant 'Editor' role",
+        "Create a key (JSON type) and download it",
+        "Paste the entire JSON content into the field above",
+      ],
+    },
+  },
+  calendar: {
+    oauthLabel: "Sign in with Google",
+    configFields: [{ key: "serviceAccountKey", label: "Service Account JSON Key", placeholder: '{"type":"service_account",...}' }],
+    tokenHelp: {
+      url: "https://console.cloud.google.com/apis/credentials",
+      label: "Create credentials in Google Cloud",
+      steps: [
+        "Go to Google Cloud Console → APIs & Services → Credentials",
+        "Enable the Google Calendar API",
+        "Create a Service Account key (JSON)",
+        "Share your calendar with the service account email",
+        "Paste the JSON key content into the field above",
+      ],
+    },
+  },
+  outlook: {
+    oauthLabel: "Sign in with Microsoft",
+    configFields: [{ key: "accessToken", label: "Access Token or App Password", placeholder: "EwB..." }],
+    tokenHelp: {
+      url: "https://developer.microsoft.com/en-us/graph/graph-explorer",
+      label: "Get token from Graph Explorer",
+      steps: [
+        "Open Microsoft Graph Explorer and sign in",
+        "Click your profile icon → 'Access token' tab",
+        "Copy the access token for Mail.Read, Mail.Send permissions",
+      ],
+    },
+  },
+  "microsoft-365": {
+    oauthLabel: "Sign in with Microsoft",
+    configFields: [{ key: "accessToken", label: "Access Token or App Password", placeholder: "EwB..." }],
+    tokenHelp: {
+      url: "https://developer.microsoft.com/en-us/graph/graph-explorer",
+      label: "Get token from Graph Explorer",
+      steps: [
+        "Open Microsoft Graph Explorer and sign in",
+        "Click your profile icon → 'Access token' tab",
+        "Copy the access token for immediate use",
+        "For long-term access: register an app in Azure Portal → App registrations",
+      ],
+    },
+  },
+  notion: {
+    oauthLabel: "Sign in with Notion",
+    configFields: [{ key: "apiKey", label: "Integration Token", placeholder: "secret_..." }],
+    tokenHelp: {
+      url: "https://www.notion.so/my-integrations",
+      label: "Create integration at Notion",
+      steps: [
+        "Go to notion.so/my-integrations",
+        "Click 'New integration' and name it",
+        "Select the workspace and capabilities needed",
+        "Copy the Internal Integration Token (starts with secret_)",
+        "Share target pages/databases with your integration",
+      ],
+    },
+  },
+};
+
+/** Manus-verifiable connectors (Tier 2) */
+const MANUS_VERIFIABLE_IDS = new Set(["github", "microsoft-365", "google-drive", "calendar"]);
+
+/** OAuth-capable connectors */
+const OAUTH_CAPABLE_IDS = new Set(["github", "google-drive", "notion", "slack", "calendar", "microsoft-365"]);
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════════ */
 
 export default function ConnectorDetailPage() {
   const [, params] = useRoute("/connector/:id");
   const [, navigate] = useLocation();
   const connectorId = params?.id ?? "";
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const utils = trpc.useUtils();
 
   // ── Find connector definition ──
   const connectorDef = CONNECTOR_DEFS.find((c) => c.id === connectorId);
+  const authData = CONNECTOR_AUTH_DATA[connectorId];
 
   // ── Queries ──
   const { data: installed = [] } = trpc.connector.list.useQuery(undefined, {
@@ -54,7 +223,7 @@ export default function ConnectorDetailPage() {
     staleTime: 120_000,
   });
 
-  const { data: tieredAuth } = trpc.connector.tieredAuthStatus.useQuery(undefined, {
+  const { data: allTierStatus } = trpc.connector.tieredAuthStatus.useQuery(undefined, {
     staleTime: 120_000,
   });
 
@@ -72,6 +241,19 @@ export default function ConnectorDetailPage() {
     },
   });
 
+  const connectMutation = trpc.connector.connect.useMutation({
+    onSuccess: () => {
+      utils.connector.list.invalidate();
+      toast.success("Connector linked successfully");
+      setConnecting(false);
+      setExpandedTier(null);
+    },
+    onError: (err) => {
+      toast.error(`Failed: ${err.message}`);
+      setConnecting(false);
+    },
+  });
+
   const disconnectMutation = trpc.connector.disconnect.useMutation({
     onSuccess: () => {
       utils.connector.list.invalidate();
@@ -83,10 +265,31 @@ export default function ConnectorDetailPage() {
     },
   });
 
+  const manusVerifyMutation = trpc.connector.verifyViaManus.useMutation({
+    onSuccess: (data) => {
+      if (data.url) {
+        toast.info("Opening Manus verification...");
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          window.location.href = data.url;
+        } else {
+          window.open(data.url, "manus_verify_popup", "width=500,height=600,scrollbars=yes");
+        }
+      }
+    },
+    onError: (err) => {
+      toast.error(`Verification error: ${err.message}`);
+    },
+  });
+
   // ── State ──
   const [connecting, setConnecting] = useState(false);
   const [showDisconnect, setShowDisconnect] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [expandedTier, setExpandedTier] = useState<number | null>(null);
+  const [showAuthSection, setShowAuthSection] = useState(false);
+  const [configValues, setConfigValues] = useState<Record<string, string>>({});
+  const [verifiedIdentity, setVerifiedIdentity] = useState<{ identity: string; method: string } | null>(null);
   const popupRef = useRef<Window | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -94,6 +297,35 @@ export default function ConnectorDetailPage() {
   const connectorRecord = installed.find((c) => c.connectorId === connectorId);
   const isConnected = connectorRecord?.status === "connected";
   const isOAuthAvailable = oauthAvailability?.[connectorId] === true;
+  const tierStatus = allTierStatus?.[connectorId] ?? null;
+
+  // OAuth scopes from connected record
+  const oauthScopes = connectorRecord?.oauthScopes;
+  const authMethod = connectorRecord?.authMethod || (connectorRecord?.config as any)?.authMethod;
+
+  // ── Build available tiers ──
+  const availableTiers = useMemo(() => {
+    const tiers: { tier: number; available: boolean }[] = [
+      { tier: 1, available: tierStatus?.tier1 ?? false },
+      { tier: 2, available: tierStatus?.tier2 ?? false },
+      { tier: 3, available: !!(authData?.tokenHelp) },
+      { tier: 4, available: true },
+    ];
+    return tiers.filter((t) => t.available);
+  }, [tierStatus, authData]);
+
+  const bestTier = tierStatus?.bestTier ?? (authData?.tokenHelp ? 3 : 4);
+
+  // ── Auto-expand best tier when auth section opens ──
+  useEffect(() => {
+    if (showAuthSection && expandedTier === null) {
+      if (verifiedIdentity) {
+        setExpandedTier(3);
+      } else {
+        setExpandedTier(bestTier);
+      }
+    }
+  }, [showAuthSection, expandedTier, verifiedIdentity, bestTier]);
 
   // ── Pull-to-reveal disconnect (touch gesture) ──
   const contentRef = useRef<HTMLDivElement>(null);
@@ -140,6 +372,7 @@ export default function ConnectorDetailPage() {
       const data = event.data;
       if (!data || typeof data !== "object") return;
 
+      // Direct OAuth callback (code exchange)
       if (data.type === "connector-oauth-callback" && data.connectorId === connectorId && data.code) {
         completeOAuthMutation.mutate({
           connectorId: data.connectorId,
@@ -148,10 +381,24 @@ export default function ConnectorDetailPage() {
         });
       }
 
+      // OAuth success (server-side exchange completed)
       if (data.type === "connector-oauth-success" && data.connectorId === connectorId) {
         utils.connector.list.invalidate();
         toast.success(`Connected to ${data.connectorId}`);
         setConnecting(false);
+        setShowAuthSection(false);
+      }
+
+      // Manus verification success
+      if (data.type === "connector-manus-verified" && data.connectorId === connectorId) {
+        setVerifiedIdentity({
+          identity: data.verifiedIdentity,
+          method: data.loginMethod || "Manus",
+        });
+        utils.connector.list.invalidate();
+        toast.success(`Identity verified: ${data.verifiedIdentity}`);
+        // Auto-switch to Smart PAT tier with verified context
+        setExpandedTier(3);
       }
     };
 
@@ -159,56 +406,113 @@ export default function ConnectorDetailPage() {
     return () => window.removeEventListener("message", handleMessage);
   }, [connectorId, completeOAuthMutation, utils]);
 
-  // ── Connect handler ──
-  const handleConnect = useCallback(async () => {
+  // ── Same-window callback handling (query params) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    // OAuth success redirect
+    const oauthSuccess = params.get("oauth_success");
+    if (oauthSuccess && oauthSuccess === connectorId) {
+      utils.connector.list.invalidate();
+      toast.success(`Successfully connected ${oauthSuccess}`);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    // Manus verification redirect
+    const manusVerified = params.get("manus_verified");
+    const identity = params.get("identity");
+    const method = params.get("method");
+    if (manusVerified && manusVerified === connectorId && identity) {
+      setVerifiedIdentity({ identity, method: method || "Manus" });
+      setShowAuthSection(true);
+      setExpandedTier(3);
+      toast.success(`Identity verified: ${identity}`);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
+    // OAuth code callback (same-window flow)
+    const code = params.get("code");
+    const state = params.get("state");
+    if (code && state) {
+      try {
+        const parsed = JSON.parse(atob(state));
+        if (parsed.connectorId === connectorId) {
+          completeOAuthMutation.mutate({ connectorId: parsed.connectorId, code, origin: window.location.origin });
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+      } catch { /* ignore */ }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Connect handler (opens auth section) ──
+  const handleConnect = useCallback(() => {
     if (!isAuthenticated) {
       toast.error("Please sign in to connect services");
       return;
     }
+    setShowAuthSection(true);
+  }, [isAuthenticated]);
 
-    if (isOAuthAvailable) {
-      setConnecting(true);
-      try {
-        const result = await getOAuthUrlMutation.mutateAsync({
-          connectorId,
-          origin: window.location.origin,
-        });
-        if (result.supported && result.url) {
-          const isMobile = window.innerWidth < 768;
-          if (isMobile) {
-            window.location.href = result.url;
-          } else {
-            const w = 500, h = 700;
-            const left = window.screenX + (window.outerWidth - w) / 2;
-            const top = window.screenY + (window.outerHeight - h) / 2;
-            popupRef.current = window.open(
-              result.url,
-              `oauth-${connectorId}`,
-              `width=${w},height=${h},left=${left},top=${top},popup=yes`
-            );
-            const pollTimer = setInterval(() => {
-              if (popupRef.current?.closed) {
-                clearInterval(pollTimer);
-                setTimeout(() => {
-                  utils.connector.list.invalidate();
-                  setConnecting(false);
-                }, 1000);
-              }
-            }, 500);
-          }
+  // ── Direct OAuth connect ──
+  const handleOAuthConnect = useCallback(async () => {
+    setConnecting(true);
+    try {
+      const result = await getOAuthUrlMutation.mutateAsync({
+        connectorId,
+        origin: window.location.origin,
+      });
+      if (result.supported && result.url) {
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          window.location.href = result.url;
         } else {
-          setConnecting(false);
-          navigate(`/connectors?highlight=${connectorId}`);
+          const w = 500, h = 700;
+          const left = window.screenX + (window.outerWidth - w) / 2;
+          const top = window.screenY + (window.outerHeight - h) / 2;
+          popupRef.current = window.open(
+            result.url,
+            `oauth-${connectorId}`,
+            `width=${w},height=${h},left=${left},top=${top},popup=yes`
+          );
+          const pollTimer = setInterval(() => {
+            if (popupRef.current?.closed) {
+              clearInterval(pollTimer);
+              setTimeout(() => {
+                utils.connector.list.invalidate();
+                setConnecting(false);
+              }, 1000);
+            }
+          }, 500);
         }
-      } catch (err: any) {
-        toast.error(`OAuth error: ${err.message}`);
+      } else {
         setConnecting(false);
+        toast.info("OAuth not configured. Use another method below.");
       }
-    } else {
-      // Navigate to full connectors page for tiered auth
-      navigate(`/connectors?highlight=${connectorId}`);
+    } catch (err: any) {
+      toast.error(`OAuth error: ${err.message}`);
+      setConnecting(false);
     }
-  }, [isAuthenticated, isOAuthAvailable, connectorId, getOAuthUrlMutation, utils, navigate]);
+  }, [connectorId, getOAuthUrlMutation, utils]);
+
+  // ── Manus Verify handler ──
+  const handleManusVerify = useCallback(() => {
+    manusVerifyMutation.mutate({
+      connectorId,
+      origin: window.location.origin,
+    });
+  }, [manusVerifyMutation, connectorId]);
+
+  // ── Manual/PAT connect handler ──
+  const handleManualConnect = useCallback(() => {
+    setConnecting(true);
+    connectMutation.mutate({
+      connectorId,
+      name: connectorDef?.name || connectorId,
+      config: configValues,
+    });
+  }, [connectMutation, connectorId, connectorDef, configValues]);
 
   // ── Disconnect handler ──
   const handleDisconnect = useCallback(() => {
@@ -219,10 +523,62 @@ export default function ConnectorDetailPage() {
   const getAuthStepCompleted = useCallback((stepId: string): boolean => {
     if (!isConnected) return false;
     if (stepId === "authorize-account" || stepId === "install") return true;
-    // "authorize-repository" is completed if connector has repos configured
     if (stepId === "authorize-repository") return false;
     return false;
   }, [isConnected]);
+
+  // ── Verified PAT guidance (contextual) ──
+  const getVerifiedPATGuidance = useCallback((): string[] | null => {
+    if (!verifiedIdentity) return null;
+    if (connectorId === "github") {
+      return [
+        `Verified as: ${verifiedIdentity.identity} (via ${verifiedIdentity.method})`,
+        `Go to github.com/settings/tokens?type=beta`,
+        `Click "Generate new token (Fine-grained)"`,
+        `Token name: "Manus Next - ${verifiedIdentity.identity}"`,
+        `Select repositories and permissions you need`,
+        `Copy the token (starts with ghp_) and paste below`,
+      ];
+    }
+    if (connectorId === "microsoft-365") {
+      return [
+        `Verified as: ${verifiedIdentity.identity} (via ${verifiedIdentity.method})`,
+        `Open Microsoft Graph Explorer and sign in with your verified account`,
+        `Click your profile icon → "Access token" tab`,
+        `Copy the access token for the permissions you need`,
+        `Or register an app in Azure Portal for long-term access`,
+      ];
+    }
+    if (connectorId === "google-drive" || connectorId === "calendar") {
+      return [
+        `Verified as: ${verifiedIdentity.identity} (via ${verifiedIdentity.method})`,
+        `Go to Google Cloud Console → APIs & Services`,
+        `Enable the ${connectorId === "google-drive" ? "Google Drive" : "Google Calendar"} API`,
+        `Create a Service Account key (JSON)`,
+        `Share your ${connectorId === "google-drive" ? "Drive folders" : "calendar"} with the service account email`,
+      ];
+    }
+    return null;
+  }, [verifiedIdentity, connectorId]);
+
+  // ── OAuth Setup Guide (for unconfigured Tier 1) ──
+  const getOAuthSetupGuide = useCallback(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const callbackUrl = `${origin}/api/connector/oauth/callback`;
+
+    const guides: Record<string, { providerUrl: string; providerLabel: string; secretPrefix: string }> = {
+      github: { providerUrl: "https://github.com/settings/developers", providerLabel: "GitHub Developer Settings", secretPrefix: "CONNECTOR_GITHUB" },
+      "microsoft-365": { providerUrl: "https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps", providerLabel: "Azure Portal → App Registrations", secretPrefix: "CONNECTOR_MICROSOFT_365" },
+      "google-drive": { providerUrl: "https://console.cloud.google.com/apis/credentials", providerLabel: "Google Cloud Console", secretPrefix: "CONNECTOR_GOOGLE" },
+      calendar: { providerUrl: "https://console.cloud.google.com/apis/credentials", providerLabel: "Google Cloud Console", secretPrefix: "CONNECTOR_GOOGLE" },
+      notion: { providerUrl: "https://www.notion.so/my-integrations", providerLabel: "Notion Integrations", secretPrefix: "CONNECTOR_NOTION" },
+      slack: { providerUrl: "https://api.slack.com/apps", providerLabel: "Slack API Apps", secretPrefix: "CONNECTOR_SLACK" },
+    };
+
+    const guide = guides[connectorId];
+    if (!guide) return null;
+    return { ...guide, callbackUrl };
+  }, [connectorId]);
 
   // ── 404 if connector not found ──
   if (!connectorDef) {
@@ -243,6 +599,8 @@ export default function ConnectorDetailPage() {
 
   // ── Detect mobile for warning callout ──
   const isMobileDevice = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const verifiedGuidance = getVerifiedPATGuidance();
+  const oauthSetupGuide = getOAuthSetupGuide();
 
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
@@ -405,6 +763,404 @@ export default function ConnectorDetailPage() {
             </div>
           )}
 
+          {/* ══════════════════════════════════════════════════════════
+             INLINE TIERED AUTH SECTION (shown when not connected)
+             ══════════════════════════════════════════════════════════ */}
+          <AnimatePresence>
+            {showAuthSection && !isConnected && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden mb-8"
+              >
+                <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
+                  {/* Auth section header */}
+                  <div className="px-4 py-3 border-b border-border/50">
+                    <h3 className="text-sm font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+                      Connect {connectorDef.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {availableTiers.length > 1
+                        ? `${availableTiers.length} authentication methods available`
+                        : "Enter your credentials to connect"}
+                    </p>
+                  </div>
+
+                  {/* Verified Identity Banner */}
+                  {verifiedIdentity && (
+                    <div className="mx-4 mt-3">
+                      <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                        <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                          <BadgeCheck className="w-3.5 h-3.5 text-amber-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-foreground">Identity Verified</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            <span className="text-amber-400 font-medium">{verifiedIdentity.identity}</span>
+                            {" "}via {verifiedIdentity.method}
+                          </p>
+                        </div>
+                        <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 ml-auto" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tier Accordion */}
+                  <div className="p-3 space-y-2">
+                    {availableTiers.map(({ tier }, idx) => {
+                      const tierInfo = TIER_LABELS[tier];
+                      const TierIcon = tierInfo.icon;
+                      const isExpanded = expandedTier === tier;
+                      const isRecommended = bestTier === tier && !verifiedIdentity;
+                      const isVerifiedRecommended = tier === 3 && !!verifiedIdentity;
+
+                      return (
+                        <motion.div
+                          key={tier}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: idx * 0.04 }}
+                          className={cn(
+                            "rounded-lg border transition-all duration-200",
+                            isExpanded
+                              ? "border-primary/30 bg-primary/[0.03]"
+                              : "border-border/60 hover:border-primary/20"
+                          )}
+                        >
+                          {/* Tier Header */}
+                          <button
+                            onClick={() => setExpandedTier(isExpanded ? null : tier)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left"
+                          >
+                            <div className={cn(
+                              "w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors",
+                              isExpanded ? "bg-primary/10" : "bg-muted/50"
+                            )}>
+                              <TierIcon className={cn("w-3 h-3", isExpanded ? tierInfo.color : "text-muted-foreground")} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={cn(
+                                  "text-xs font-medium transition-colors",
+                                  isExpanded ? "text-foreground" : "text-muted-foreground"
+                                )}>
+                                  {tierInfo.label}
+                                </span>
+                                {(isRecommended || isVerifiedRecommended) && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium border border-amber-500/20">
+                                    {isVerifiedRecommended ? "Verified" : "Best"}
+                                  </span>
+                                )}
+                                {tier === 1 && !isOAuthAvailable && OAUTH_CAPABLE_IDS.has(connectorId) && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                                    Setup needed
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">{tierInfo.desc}</p>
+                            </div>
+                            <ChevronDown className={cn(
+                              "w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+                              isExpanded && "rotate-180"
+                            )} />
+                          </button>
+
+                          {/* Tier Content */}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="px-3 pb-3 pt-1">
+                                  {/* ── Tier 1: Direct OAuth ── */}
+                                  {tier === 1 && (
+                                    <div className="space-y-2.5">
+                                      {isOAuthAvailable ? (
+                                        <>
+                                          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2.5 text-[11px] text-muted-foreground">
+                                            <p className="flex items-start gap-1.5">
+                                              <Shield className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                                              <span>OAuth securely connects your account without sharing passwords. You'll be redirected to {connectorDef.name} to authorize.</span>
+                                            </p>
+                                          </div>
+                                          <Button
+                                            className="w-full h-9 text-sm"
+                                            onClick={handleOAuthConnect}
+                                            disabled={connecting}
+                                          >
+                                            {connecting ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                            ) : (
+                                              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                                            )}
+                                            {authData?.oauthLabel ?? `Sign in with ${connectorDef.name}`}
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-[11px] text-muted-foreground space-y-2">
+                                          <p className="flex items-start gap-1.5 font-medium text-amber-500">
+                                            <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                            <span>OAuth Not Configured</span>
+                                          </p>
+                                          <p>OAuth credentials for {connectorDef.name} have not been set up. To enable:</p>
+                                          {oauthSetupGuide && (
+                                            <ol className="list-decimal list-inside space-y-1 ml-1.5 text-[11px]">
+                                              <li>Go to <a href={oauthSetupGuide.providerUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">{oauthSetupGuide.providerLabel}</a></li>
+                                              <li>Create OAuth credentials</li>
+                                              <li>Set callback URL to: <code className="bg-muted px-1 rounded text-[10px]">{oauthSetupGuide.callbackUrl}</code></li>
+                                              <li>Add secrets: <code className="bg-muted px-1 rounded text-[10px]">{oauthSetupGuide.secretPrefix}_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">{oauthSetupGuide.secretPrefix}_CLIENT_SECRET</code></li>
+                                            </ol>
+                                          )}
+                                          <p className="text-muted-foreground/70">Use another method below to connect now.</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* ── Tier 2: Manus Verify ── */}
+                                  {tier === 2 && (
+                                    <div className="space-y-2.5">
+                                      {verifiedIdentity ? (
+                                        <div className="space-y-2.5">
+                                          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-[11px] text-muted-foreground">
+                                            <p className="flex items-start gap-1.5">
+                                              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                                              <span>
+                                                Your identity has been verified as <strong className="text-amber-400">{verifiedIdentity.identity}</strong>.
+                                                Now create a personal access token using the guided steps below.
+                                              </span>
+                                            </p>
+                                          </div>
+                                          {verifiedGuidance && (
+                                            <div className="rounded-lg border border-border bg-muted/30 p-2.5 text-[11px] space-y-1.5">
+                                              <p className="font-medium text-foreground flex items-center gap-1">
+                                                <Key className="w-3 h-3 text-amber-400" />
+                                                Personalized token guide:
+                                              </p>
+                                              <ol className="list-decimal list-inside space-y-0.5 ml-1 text-muted-foreground">
+                                                {verifiedGuidance.map((step, i) => (
+                                                  <li key={i}>{step}</li>
+                                                ))}
+                                              </ol>
+                                              {authData?.tokenHelp && (
+                                                <a
+                                                  href={authData.tokenHelp.url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex items-center gap-1 text-primary hover:underline font-medium mt-1 text-[11px]"
+                                                >
+                                                  <ExternalLink className="w-3 h-3" />
+                                                  {authData.tokenHelp.label}
+                                                </a>
+                                              )}
+                                            </div>
+                                          )}
+                                          {/* Token input fields */}
+                                          {authData?.configFields.map((field) => (
+                                            <div key={field.key}>
+                                              <label className="text-[11px] font-medium text-foreground mb-1 block">{field.label}</label>
+                                              <Input
+                                                placeholder={field.placeholder}
+                                                value={configValues[field.key] ?? ""}
+                                                onChange={(e) => setConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                                type={field.key.toLowerCase().includes("pass") || field.key.toLowerCase().includes("token") || field.key.toLowerCase().includes("key") || field.key.toLowerCase().includes("secret") ? "password" : "text"}
+                                                className="h-8 text-xs"
+                                              />
+                                            </div>
+                                          ))}
+                                          <Button onClick={handleManualConnect} disabled={connecting} className="w-full h-8 text-xs">
+                                            {connecting && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                                            Connect with Verified Identity
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-2.5">
+                                          <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-2.5 text-[11px] text-muted-foreground">
+                                            <p className="flex items-start gap-1.5">
+                                              <Fingerprint className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                                              <span>
+                                                Verify your identity through the Manus portal.
+                                                This confirms your account without sharing any credentials.
+                                              </span>
+                                            </p>
+                                          </div>
+                                          <Button
+                                            className="w-full h-8 text-xs bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white border-0"
+                                            onClick={handleManusVerify}
+                                            disabled={manusVerifyMutation.isPending}
+                                          >
+                                            {manusVerifyMutation.isPending ? (
+                                              <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                                            ) : (
+                                              <Fingerprint className="w-3 h-3 mr-1.5" />
+                                            )}
+                                            Verify via Manus
+                                          </Button>
+                                          <p className="text-[10px] text-muted-foreground/60 text-center">
+                                            Opens Manus portal in a popup. No passwords are shared.
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* ── Tier 3: Smart PAT ── */}
+                                  {tier === 3 && (
+                                    <div className="space-y-2.5">
+                                      {authData?.tokenHelp && !verifiedIdentity && (
+                                        <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-2.5 text-[11px] text-muted-foreground space-y-1.5">
+                                          <p className="font-medium text-foreground flex items-center gap-1">
+                                            <Key className="w-3 h-3 text-blue-400" />
+                                            How to get your token:
+                                          </p>
+                                          <ol className="list-decimal list-inside space-y-0.5 ml-1">
+                                            {authData.tokenHelp.steps.map((step, i) => (
+                                              <li key={i}>{step}</li>
+                                            ))}
+                                          </ol>
+                                          <a
+                                            href={authData.tokenHelp.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-primary hover:underline font-medium mt-1 text-[11px]"
+                                          >
+                                            <ExternalLink className="w-3 h-3" />
+                                            {authData.tokenHelp.label}
+                                          </a>
+                                        </div>
+                                      )}
+                                      {verifiedIdentity && verifiedGuidance && (
+                                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-[11px] space-y-1.5">
+                                          <p className="font-medium text-foreground flex items-center gap-1">
+                                            <BadgeCheck className="w-3 h-3 text-amber-400" />
+                                            Personalized for {verifiedIdentity.identity}:
+                                          </p>
+                                          <ol className="list-decimal list-inside space-y-0.5 ml-1 text-muted-foreground">
+                                            {verifiedGuidance.map((step, i) => (
+                                              <li key={i}>{step}</li>
+                                            ))}
+                                          </ol>
+                                          {authData?.tokenHelp && (
+                                            <a
+                                              href={authData.tokenHelp.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 text-primary hover:underline font-medium mt-1 text-[11px]"
+                                            >
+                                              <ExternalLink className="w-3 h-3" />
+                                              {authData.tokenHelp.label}
+                                            </a>
+                                          )}
+                                        </div>
+                                      )}
+                                      {authData?.configFields.map((field) => (
+                                        <div key={field.key}>
+                                          <label className="text-[11px] font-medium text-foreground mb-1 block">{field.label}</label>
+                                          <Input
+                                            placeholder={field.placeholder}
+                                            value={configValues[field.key] ?? ""}
+                                            onChange={(e) => setConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                            type={field.key.toLowerCase().includes("pass") || field.key.toLowerCase().includes("token") || field.key.toLowerCase().includes("key") || field.key.toLowerCase().includes("secret") ? "password" : "text"}
+                                            className="h-8 text-xs"
+                                          />
+                                        </div>
+                                      ))}
+                                      <Button onClick={handleManualConnect} disabled={connecting} className="w-full h-8 text-xs">
+                                        {connecting && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                                        Connect
+                                      </Button>
+                                    </div>
+                                  )}
+
+                                  {/* ── Tier 4: Manual Entry ── */}
+                                  {tier === 4 && (
+                                    <div className="space-y-2.5">
+                                      <p className="text-[11px] text-muted-foreground">
+                                        Enter your credentials directly. Refer to {connectorDef.name}'s documentation for the required values.
+                                      </p>
+                                      {(authData?.configFields ?? [{ key: "token", label: "API Token / Key", placeholder: "Enter your token..." }]).map((field) => (
+                                        <div key={field.key}>
+                                          <label className="text-[11px] font-medium text-foreground mb-1 block">{field.label}</label>
+                                          <Input
+                                            placeholder={field.placeholder}
+                                            value={configValues[field.key] ?? ""}
+                                            onChange={(e) => setConfigValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                            type={field.key.toLowerCase().includes("pass") || field.key.toLowerCase().includes("token") || field.key.toLowerCase().includes("key") || field.key.toLowerCase().includes("secret") ? "password" : "text"}
+                                            className="h-8 text-xs"
+                                          />
+                                        </div>
+                                      ))}
+                                      <Button onClick={handleManualConnect} disabled={connecting} className="w-full h-8 text-xs" variant="outline">
+                                        {connecting && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                                        Connect
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-4 py-2.5 border-t border-border/50 flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
+                      <Layers className="w-3 h-3" />
+                      <span>{availableTiers.length} auth {availableTiers.length === 1 ? "method" : "methods"}</span>
+                    </div>
+                    <button
+                      onClick={() => setShowAuthSection(false)}
+                      className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── OAuth Scopes (for connected OAuth connectors) ── */}
+          {isConnected && authMethod === "oauth" && oauthScopes && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-foreground mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+                Authorized Scopes
+              </h2>
+              <div className="flex flex-wrap gap-1.5">
+                {oauthScopes.split(/[,\s]+/).filter(Boolean).map((scope) => (
+                  <span
+                    key={scope}
+                    className="text-[11px] px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono"
+                  >
+                    {scope}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Manus Verified Identity (for connected manus_oauth connectors) ── */}
+          {isConnected && authMethod === "manus_oauth" && connectorRecord?.manusVerifiedIdentity && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-foreground">Manus Verified</p>
+                  <p className="text-[11px] text-amber-400 font-medium truncate">{connectorRecord.manusVerifiedIdentity}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── Details section ── */}
           <div className="mb-8">
             <h2 className="text-lg font-bold text-foreground mb-3" style={{ fontFamily: "var(--font-heading)" }}>
@@ -418,6 +1174,21 @@ export default function ConnectorDetailPage() {
               {/* Author */}
               <DetailRow label="Author" value={connectorDef.author} />
               <DetailDivider />
+
+              {/* Auth Method (when connected) */}
+              {isConnected && authMethod && (
+                <>
+                  <DetailRow
+                    label="Auth Method"
+                    value={
+                      authMethod === "oauth" ? "Direct OAuth" :
+                      authMethod === "manus_oauth" ? "Manus Verified" :
+                      "Manual / PAT"
+                    }
+                  />
+                  <DetailDivider />
+                </>
+              )}
 
               {/* Website */}
               {connectorDef.website && (
@@ -469,7 +1240,7 @@ export default function ConnectorDetailPage() {
               Disconnect
             </button>
           )
-        ) : connecting ? (
+        ) : showAuthSection ? null : connecting ? (
           <button
             disabled
             className="w-full py-3.5 rounded-xl bg-foreground/50 text-background font-semibold text-[15px] flex items-center justify-center gap-2"
