@@ -107,6 +107,7 @@ import SandboxViewer from "@/components/SandboxViewer";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
 import GitHubBadge from "@/components/GitHubBadge";
+import ConnectorsSheet, { ConnectorsBadge } from "@/components/ConnectorsSheet";
 import ResizableDivider, { useWorkspaceDivider } from "@/components/ResizableDivider";
 import VoiceRecordingUI, { VoiceWaveStyles } from "@/components/VoiceRecordingUI";
 import { useTTS } from "@/hooks/useTTS";
@@ -2086,6 +2087,7 @@ export default function TaskView() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sandboxOpen, setSandboxOpen] = useState(false);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [connectorsSheetOpen, setConnectorsSheetOpen] = useState(false);
   const [mediaPanelOpen, setMediaPanelOpen] = useState(false);
   const [mediaPanelMode, setMediaPanelMode] = useState<"screen" | "camera" | "upload" | null>(null);
   const [mediaAttachments, setMediaAttachments] = useState<Array<{ url: string; mimeType: string; type: string }>>([]);
@@ -4013,6 +4015,8 @@ export default function TaskView() {
                     anchorRef={plusButtonRef}
                   />
                 </div>
+                {/* Connectors badge — opens bottom sheet */}
+                <ConnectorsBadge onClick={() => setConnectorsSheetOpen(true)} />
                 {/* GitHub integration badge — hidden on mobile to reduce toolbar crowding */}
                 <GitHubBadge onClick={() => window.open('/github', '_self')} className="hidden md:flex" />
                 {/* Mobile mode selector removed — mode is controlled via ModelSelector in header */}
@@ -4232,6 +4236,12 @@ export default function TaskView() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Connectors Bottom Sheet (P27) */}
+      <ConnectorsSheet
+        open={connectorsSheetOpen}
+        onOpenChange={setConnectorsSheetOpen}
+      />
     </div>
   );
 }

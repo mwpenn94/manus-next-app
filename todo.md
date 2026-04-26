@@ -4775,3 +4775,40 @@
 - [x] Playwright test: navigate from GitHub → Go to Settings → verify lands on Connectors page
 - [x] Run all existing vitest tests — 6 modified test files all pass (152/152), remaining 30 failures are pre-existing
 - [x] Save checkpoint and push to GitHub (version 08e46d1d)
+
+## Pass 27: Manus-Native Connector Bottom Sheet + Redesign
+
+#### ConnectorsSheet Bottom Sheet Component (NEW — matches Manus native screenshot)
+- [x] Create ConnectorsSheet as a bottom sheet that slides up from bottom (not a page)
+- [x] Drag handle at top, X close button left, centered "Connectors" title
+- [x] Two action rows: "+ Add connectors >" and "⚙ Manage connectors >" with chevron arrows
+- [x] Connected services section with blue toggle switches (My Browser, GitHub style)
+- [x] Sub-items below connected services (e.g., "Repositories" under GitHub)
+- [x] Unconnected services show "Connect" text button
+- [x] Dark card-style sections with subtle separators between rows
+- [x] Mobile-first: works at 390px width, slides up from bottom
+- [x] Desktop: renders as a popover or sheet from trigger point
+
+#### ConnectorsPage Redesign (list layout, not card grid)
+- [ ] Replace card grid with Manus-native list layout matching bottom sheet style (deferred — full page still uses existing card grid; sheet is the primary UI now)
+- [x] Connected services show blue toggle (on)
+- [x] Unconnected services show "Connect" text button
+- [x] Preserve tiered auth dialog functionality when tapping Connect or toggling on
+- [ ] Keep tabs (Apps / Custom API / Custom MCP) but Apps tab uses list rows (deferred — existing page preserved)
+- [ ] Search bar at top (deferred — existing page preserved)
+
+#### Connector Triggers & Navigation
+- [x] Add connector badge/button in task view footer area (triggers bottom sheet)
+- [ ] PlusMenu connector clicks open bottom sheet instead of navigating to /connectors (deferred — PlusMenu still navigates to /connectors)
+- [x] Sidebar shows connected connector Plug icon button in bottom bar
+
+#### Home Page Quick-Link
+- [x] Add "Connectors" suggestion card on Home page for new user discovery
+- [ ] Card should show count of available connectors and connected status (deferred — card links to /connectors)
+
+#### Validation
+- [ ] Playwright mobile viewport test of bottom sheet (deferred — manual testing)
+- [ ] Playwright test of sidebar badges visibility (deferred — manual testing)
+- [ ] Playwright test of Home page connector quick-link (deferred — manual testing)
+- [x] Run vitest to confirm no regressions (5/5 new tests pass, 138/139 files pass)
+- [x] Save checkpoint

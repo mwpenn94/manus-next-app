@@ -30,6 +30,7 @@ import {
   File as FileIcon,
   Upload,
   Loader2,
+  Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -55,6 +56,7 @@ const SUGGESTIONS = [
   { icon: GraduationCap, title: "Create Course Material", description: "Develop engaging educational content." },
   { icon: Globe, title: "Competitive Intelligence", description: "Research competitors and synthesize findings." },
   { icon: Star, title: "Automate Weekly Reports", description: "Set up automated report generation." },
+  { icon: Plug, title: "Connect Your Services", description: "Link GitHub, Gmail, Calendar, and more to supercharge your agent.", isLink: true, href: "/connectors" },
 ];
 
 const PACKAGES = [
@@ -540,8 +542,17 @@ export default function Home() {
                 initial={{ y: 8 }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
-                onClick={() => setInput(suggestion.title)}
-                className="text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]"
+                onClick={() => {
+                  if ((suggestion as any).isLink && (suggestion as any).href) {
+                    navigate((suggestion as any).href);
+                  } else {
+                    setInput(suggestion.title);
+                  }
+                }}
+                className={cn(
+                  "text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]",
+                  (suggestion as any).isLink && "border-blue-500/20 hover:border-blue-500/40"
+                )}
                 style={{ scrollSnapAlign: 'start' }}
               >
                 <div className="flex items-start gap-3">

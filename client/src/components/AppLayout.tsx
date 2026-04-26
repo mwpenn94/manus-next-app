@@ -98,8 +98,10 @@ import {
   BarChart3,
   HelpCircle,
   Home,
+  Plug,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ConnectorsSheet, { ConnectorsBadge } from "@/components/ConnectorsSheet";
 
 /* ─── Helper: format relative time ─── */
 function formatTimeAgo(date: Date): string {
@@ -795,6 +797,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   useSWUpdate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [connectorsSheetOpen, setConnectorsSheetOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState(() => {
     try {
       // Primary: read the model ID directly
@@ -1156,6 +1159,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </button>
               <AppsGridMenu location={location} />
               <button
+                onClick={() => setConnectorsSheetOpen(true)}
+                className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors relative"
+                title="Connectors"
+              >
+                <Plug className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => navigate("/help")}
                 className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
                 title="Help & Knowledge Base"
@@ -1482,6 +1492,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      {/* Connectors Bottom Sheet (P27) — accessible from sidebar plug icon */}
+      <ConnectorsSheet
+        open={connectorsSheetOpen}
+        onOpenChange={setConnectorsSheetOpen}
+      />
     </div>
   );
 }
