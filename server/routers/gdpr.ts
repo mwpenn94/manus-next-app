@@ -46,6 +46,9 @@ import {
   webappDeployments,
   webappProjects,
   workspaceArtifacts,
+  sovereignUsageLogs,
+  sovereignRoutingDecisions,
+  appFeedback,
  } from "../../drizzle/schema";
 
 export const gdprRouter = router({
@@ -242,6 +245,15 @@ export const gdprRouter = router({
         await db.delete(atlasPlans).where(inArray(atlasPlans.goalId, atlasGoalIds));
       }
       await db.delete(atlasGoals).where(eq(atlasGoals.userId, userId));
+
+      // ── Phase 5c: Delete Sovereign provider data (cascaded via aegisSessionId) ──
+      if (aegisSessionIds.length > 0) {
+        await db.delete(sovereignUsageLogs).where(inArray(sovereignUsageLogs.aegisSessionId, aegisSessionIds));
+        await db.delete(sovereignRoutingDecisions).where(inArray(sovereignRoutingDecisions.aegisSessionId, aegisSessionIds));
+      }
+
+      // ── Phase 5d: Delete user feedback ──
+      await db.delete(appFeedback).where(eq(appFeedback.userId, userId));
 
       // ── Phase 6: Delete the user record itself ──
       await db.delete(users).where(eq(users.id, userId));

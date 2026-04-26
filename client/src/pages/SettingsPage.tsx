@@ -245,6 +245,9 @@ export default function SettingsPage() {
   const [capabilityToggles, setCapabilityToggles] = useState<Record<string, boolean>>({});
   const [globalSystemPrompt, setGlobalSystemPrompt] = useState("");
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>({
+    taskComplete: true, taskError: true, shareActivity: false, systemUpdates: true,
+  });
   const [bridgeConfigLoaded, setBridgeConfigLoaded] = useState(false);
 
   // ── Dynamic TTS language & voice catalog ──
@@ -329,6 +332,15 @@ export default function SettingsPage() {
   const saveBridgeConfig = trpc.bridge.saveConfig.useMutation({
     onSuccess: () => { toast.success("Bridge configuration saved"); },
     onError: () => { toast.error("Failed to save bridge config"); },
+  });
+
+  // GDPR: Delete all user data
+  const deleteAllDataMutation = trpc.gdpr.deleteAllData.useMutation({
+    onSuccess: () => {
+      toast.success("All data has been deleted. You will be signed out.");
+      setTimeout(() => { window.location.href = "/"; }, 2000);
+    },
+    onError: (err) => { toast.error(`Failed to delete data: ${err.message}`); },
   });
 
   const handleBridgeConnect = useCallback(() => {
@@ -849,8 +861,20 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <Toggle
-                      checked={setting.defaultOn}
-                      onChange={() => toast.info("Notification preferences will be saved when backend support is added")}
+                      checked={notifPrefs[setting.key] ?? setting.defaultOn}
+                      onChange={() => {
+                        setNotifPrefs((prev) => {
+                          const updated = { ...prev, [setting.key]: !prev[setting.key] };
+                          if (isAuthenticated) {
+                            savePrefsMutation.mutate({
+                              generalSettings: { ...generalSettings, notificationPrefs: updated } as Record<string, unknown>,
+                              capabilities: capabilityToggles,
+                            });
+                          }
+                          toast.success(`${setting.label} ${updated[setting.key] ? "enabled" : "disabled"}`);
+                          return updated;
+                        });
+                      }}
                       label={setting.label}
                     />
                   </div>
@@ -1191,10 +1215,25 @@ export default function SettingsPage() {
                     Permanently delete all your data, tasks, and generated content
                   </p>
                   <button
-                    onClick={() => toast.info("Contact support to delete all data")}
-                    className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        toast.error("Please sign in to manage your data");
+                        return;
+                      }
+                      const confirmed = window.confirm(
+                        "PERMANENT ACTION: This will delete ALL your data including tasks, files, projects, and settings. This cannot be undone. Are you absolutely sure?"
+                      );
+                      if (!confirmed) return;
+                      const doubleConfirm = window.confirm(
+                        "This is your last chance. Type OK to confirm you want to delete everything."
+                      );
+                      if (!doubleConfirm) return;
+                      deleteAllDataMutation.mutate();
+                    }}
+                    disabled={deleteAllDataMutation?.isPending}
+                    className="px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50"
                   >
-                    Delete All Data
+                    {deleteAllDataMutation?.isPending ? "Deleting..." : "Delete All Data"}
                   </button>
                 </div>
               </div>

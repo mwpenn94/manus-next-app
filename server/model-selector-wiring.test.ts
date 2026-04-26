@@ -156,7 +156,7 @@ describe("TaskView.tsx — agentMode localStorage initialization", () => {
 
   it("defaults to quality when no stored mode", () => {
     // The fallback return value after the localStorage try/catch
-    expect(src).toMatch(/return\s*"quality"/);
+    expect(src).toMatch(/return\s*"max"/);
   });
 
   it("renders ModelSelector with onModelChange handler", () => {

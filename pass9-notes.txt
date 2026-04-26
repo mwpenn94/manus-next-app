@@ -1,0 +1,9 @@
+Pass 9 status check:
+- Dev server: running, port 3000
+- TypeScript: 0 errors
+- LSP: no errors
+- Screenshot shows: onboarding modal "Welcome to Manus" step 1 of 6 with progress dots, keyboard nav hint, show tip button
+- All Pass 6-9 code changes compiling cleanly
+- DependencyGraph component created and imported into SovereignDashboard
+- Notification prefs wired to persist via generalSettings
+- GDPR delete-all-data wired with double-confirm dialog

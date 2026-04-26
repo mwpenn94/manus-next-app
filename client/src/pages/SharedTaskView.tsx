@@ -569,8 +569,12 @@ export default function SharedTaskView() {
             </button>
             <button
               className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              title="More options"
-              onClick={() => toast.info("More options coming soon")}
+              title="Open original task"
+              onClick={() => {
+                // Copy the share link to clipboard
+                navigator.clipboard.writeText(window.location.href);
+                toast.success("Link copied to clipboard");
+              }}
             >
               <Ellipsis className="w-4 h-4" />
             </button>

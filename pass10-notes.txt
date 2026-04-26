@@ -1,0 +1,8 @@
+Pass 10 status check after model selector and sidebar fixes:
+- TypeScript: 0 errors
+- LSP: no errors
+- Dev server: running
+- Screenshot shows sidebar open with full content, onboarding modal visible
+- Model selector fix: both AppLayout and TaskView now read manus-selected-model as primary source
+- Sidebar fix: collapsed state now shows thin rail (w-12) with PanelLeft reopen, Home, and Plus buttons
+- Next: integrate data operations context, write tests

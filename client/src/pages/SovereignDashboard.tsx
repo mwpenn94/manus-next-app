@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import DependencyGraph from "@/components/DependencyGraph";
 import {
   Shield, Brain, Network, Activity, Zap, Target, BarChart3,
   CheckCircle2, XCircle, AlertTriangle, Clock, Loader2,
@@ -167,6 +168,7 @@ function AegisPanel() {
 // ── ATLAS Panel ──
 function AtlasPanel() {
   const [goalInput, setGoalInput] = useState("");
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const decomposeMutation = trpc.atlas.decompose.useMutation({
     onSuccess: (data) => {
       toast.success(`Goal decomposed into ${data.tasks.length} tasks`);
@@ -178,6 +180,10 @@ function AtlasPanel() {
   const goalsQuery = trpc.atlas.listGoals.useQuery(undefined, {
     refetchInterval: 10000,
   });
+  const goalDetailQuery = trpc.atlas.getGoal.useQuery(
+    { externalId: selectedGoalId! },
+    { enabled: !!selectedGoalId, refetchInterval: 5000 }
+  );
 
   return (
     <div className="space-y-6">
@@ -250,7 +256,14 @@ function AtlasPanel() {
           ) : (
             <div className="space-y-2">
               {goalsQuery.data?.map((goal: any) => (
-                <div key={goal.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors">
+                <button
+                  key={goal.id}
+                  onClick={() => setSelectedGoalId(goal.externalId === selectedGoalId ? null : goal.externalId)}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left",
+                    goal.externalId === selectedGoalId ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/50"
+                  )}
+                >
                   <div className={cn(
                     "w-2 h-2 rounded-full",
                     goal.status === "completed" ? "bg-emerald-500" :
@@ -264,12 +277,31 @@ function AtlasPanel() {
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {new Date(goal.createdAt).toLocaleDateString()}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Dependency Graph */}
+      {selectedGoalId && goalDetailQuery.data && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Task Dependency Graph</CardTitle>
+            <CardDescription>Visual DAG of task dependencies and execution flow</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {goalDetailQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <DependencyGraph tasks={goalDetailQuery.data.tasks as any} />
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

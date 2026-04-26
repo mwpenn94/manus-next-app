@@ -5,12 +5,34 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-// Auth redirects handled per-component via useAuth(), not globally
+import { getLoginUrl } from "./const";
 import { I18nProvider } from "./i18n/I18nProvider";
 import "./index.css";
 import React from "react";
 import ReactDOM from "react-dom";
 import { registerServiceWorker, skipWaitingAndReload } from "@/lib/registerSW";
+
+/**
+ * Smart auth redirect: only redirect to login if the user has ever been
+ * authenticated before (prevents redirect loop on first visit).
+ */
+function hasEverBeenAuthenticated(): boolean {
+  try {
+    const info = localStorage.getItem("manus-runtime-user-info");
+    return info !== null && info !== "null";
+  } catch {
+    return false;
+  }
+}
+
+function redirectToLoginIfUnauthorized(error: unknown) {
+  if (!(error instanceof TRPCClientError)) return;
+  if (typeof window === "undefined") return;
+  if (error.message !== UNAUTHED_ERR_MSG) return;
+  // Only redirect if user was previously authenticated (prevents loop on first visit)
+  if (!hasEverBeenAuthenticated()) return;
+  window.location.href = getLoginUrl();
+}
 
 // axe-core accessibility auditing in development
 if (import.meta.env.DEV) {
@@ -49,13 +71,14 @@ const queryClient = new QueryClient({
 });
 
 /**
- * Error logging for tRPC queries/mutations.
- * Auth redirects are handled per-component via useAuth() hook —
- * NOT globally here, to prevent redirect loops on unauthenticated pages.
+ * Error handling for tRPC queries/mutations.
+ * Smart auth redirect: only redirects users who were previously authenticated.
+ * Prevents redirect loops on first visit / unauthenticated pages.
  */
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
+    redirectToLoginIfUnauthorized(error);
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Query Error]", error);
     }
@@ -65,6 +88,7 @@ queryClient.getQueryCache().subscribe(event => {
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
+    redirectToLoginIfUnauthorized(error);
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Mutation Error]", error);
     }

@@ -2066,12 +2066,22 @@ export default function TaskView() {
   const [shareCopied, setShareCopied] = useState(false);
   const [agentMode, setAgentMode] = useState<AgentMode>(() => {
     try {
+      // Primary: read model ID and convert to mode
+      const direct = localStorage.getItem("manus-selected-model");
+      const modelToMode: Record<string, AgentMode> = {
+        "manus-next-limitless": "limitless",
+        "manus-next-max": "max",
+        "manus-next-standard": "quality",
+        "manus-next-lite": "speed",
+      };
+      if (direct && modelToMode[direct]) return modelToMode[direct];
+      // Fallback: read agent mode directly
       const stored = localStorage.getItem("manus-agent-mode");
       if (stored && ["speed", "quality", "max", "limitless"].includes(stored)) {
         return stored as AgentMode;
       }
     } catch {}
-    return "quality";
+    return "max";
   });
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sandboxOpen, setSandboxOpen] = useState(false);
@@ -2971,7 +2981,12 @@ export default function TaskView() {
 
   // ── Header button handlers ──
 
-  const createShareMutation = trpc.share.create.useMutation();
+  const createShareMutation = trpc.share.create.useMutation({
+    onError: (err) => {
+      toast.error("Failed to create share link");
+      console.error("[Share] create error:", err.message);
+    },
+  });
 
   const handleShareUrl = async () => {
     // Auto-create a share link and copy the share URL (not the task URL)

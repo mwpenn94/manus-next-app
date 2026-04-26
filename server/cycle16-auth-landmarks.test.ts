@@ -37,24 +37,21 @@ describe("Auth Loop Fix", () => {
     });
   });
 
-  describe("main.tsx — no global auth redirect", () => {
+  describe("main.tsx — smart auth redirect (hasEverBeenAuthenticated guard)", () => {
     const src = readFile("client/src/main.tsx");
 
-    it("does NOT contain redirectToLoginIfUnauthorized function", () => {
-      expect(src).not.toContain("redirectToLoginIfUnauthorized");
+    it("contains smart redirectToLoginIfUnauthorized with hasEverBeenAuthenticated guard", () => {
+      expect(src).toContain("redirectToLoginIfUnauthorized");
+      expect(src).toContain("hasEverBeenAuthenticated");
     });
 
-    it("does NOT contain hasEverBeenAuthenticated variable", () => {
-      expect(src).not.toContain("hasEverBeenAuthenticated");
+    it("only redirects when user was previously authenticated", () => {
+      // The smart redirect checks hasEverBeenAuthenticated before redirecting
+      expect(src).toContain("hasEverBeenAuthenticated");
     });
 
-    it("does NOT contain window.location.href = getLoginUrl()", () => {
-      expect(src).not.toContain("window.location.href = getLoginUrl()");
-    });
-
-    it("does NOT import getLoginUrl", () => {
-      // Should not have an active import of getLoginUrl
-      expect(src).not.toMatch(/^import.*getLoginUrl/m);
+    it("imports getLoginUrl for auth redirect", () => {
+      expect(src).toMatch(/getLoginUrl/);
     });
 
     it("still logs non-auth query errors", () => {

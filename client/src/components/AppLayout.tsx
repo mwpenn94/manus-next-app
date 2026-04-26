@@ -97,6 +97,7 @@ import {
   Copy,
   BarChart3,
   HelpCircle,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -707,6 +708,7 @@ function AppsGridMenu({ location }: { location: string }) {
       { href: "/browser", label: "Browser", icon: "🌐" },
       { href: "/github", label: "GitHub", icon: "🔗" },
       { href: "/connectors", label: "Connectors", icon: "🔌" },
+      { href: "/data-pipelines", label: "Data Pipelines", icon: "🔀" },
       { href: "/skills", label: "Skills", icon: "⚡" },
       { href: "/slides", label: "Slides", icon: "📊" },
       { href: "/video", label: "Video", icon: "🎬" },
@@ -795,6 +797,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState(() => {
     try {
+      // Primary: read the model ID directly
+      const direct = localStorage.getItem("manus-selected-model");
+      if (direct && ["manus-next-limitless", "manus-next-max", "manus-next-standard", "manus-next-lite"].includes(direct)) return direct;
+      // Fallback: read agent mode and map to model ID
       const m = localStorage.getItem("manus-agent-mode");
       if (m && MODE_TO_MODEL[m]) return MODE_TO_MODEL[m];
     } catch {}
@@ -1212,10 +1218,40 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         aria-label="Main navigation"
         className={cn(
           "hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          sidebarOpen ? "w-[260px]" : "w-0 overflow-hidden opacity-0"
+          sidebarOpen ? "w-[260px]" : "w-12 overflow-hidden"
         )}
       >
-        {sidebarContent}
+        {sidebarOpen ? sidebarContent : (
+          <div className="flex flex-col items-center py-3 gap-2 h-full">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Open sidebar"
+              aria-label="Open sidebar"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate("/")}
+              className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Home"
+              aria-label="Home"
+            >
+              <Home className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                const title = prompt("What would you like to work on?");
+                if (title?.trim()) navigate("/");
+              }}
+              className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="New task"
+              aria-label="New task"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* ── LEFT SIDEBAR (Mobile Drawer) ── */}

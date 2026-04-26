@@ -57,6 +57,7 @@ const MailManusPage = lazy(() => import("./pages/MailManusPage"));
 const QATestingPage = lazy(() => import("./pages/QATestingPage"));
 const SovereignDashboard = lazy(() => import("./pages/SovereignDashboard"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
+const DataPipelinesPage = lazy(() => import("./pages/DataPipelinesPage"));
 
 function PageLoader() {
   return (
@@ -222,6 +223,9 @@ function Router() {
       </Route>
       <Route path="/qa-testing">
         <SuspenseRoute><QATestingPage /></SuspenseRoute>
+      </Route>
+      <Route path="/data-pipelines">
+        <SuspenseRoute><DataPipelinesPage /></SuspenseRoute>
       </Route>
       <Route path="/sovereign">
         <ErrorBoundary><SuspenseRoute><SovereignDashboard /></SuspenseRoute></ErrorBoundary>
