@@ -1,6 +1,6 @@
 # PARITY_MATRIX.md (v2.0 — MANUS-PARITY-PLUS-LOOP v1.1)
 
-Last updated: 2026-04-26 Cycle 1, Pass 11 — **ALL ITEMS FULFILLED + AUTH LOOP FIX + DATA OPS TAXONOMY**
+Last updated: 2026-04-26 Cycle 1, Pass 12 — **SW CACHE-BUSTING FIX — AUTH LOOP ROOT CAUSE ELIMINATED**
 
 ## Axis A — Manus Parity (7.5 / 10)
 
@@ -29,7 +29,7 @@ Measures code health, test coverage, observability, and operational readiness.
 | B1: Type safety | 8 | Full TypeScript, 0 tsc errors, tRPC end-to-end types |
 | B2: Test coverage | 8 | 3590+ vitest tests across 130+ files, 0 known failures. All 8 previously failing files fixed. +35 Pass 11 tests. |
 | B3: Error handling | 7 | ErrorBoundary with server reporting, tRPC error propagation, toast feedback |
-| B4: Security | 8 | Rate limiting, CSRF via SameSite, input validation, auth loop permanently fixed (no global redirect in main.tsx) |
+| B4: Security | 8 | Rate limiting, CSRF via SameSite, input validation, auth loop permanently fixed (no global redirect + SW v3 cache-busting) |
 | B5: Observability | 7 | Structured logging (observability service), /api/health endpoint, client error collection |
 | B6: Build pipeline | 8 | GitHub Actions CI/CD workflow (typecheck → test → build), Vite + esbuild, HMR |
 | B7: Onboarding DX | 7 | Progressive tooltips, page-specific hints, step persistence, keyboard navigation |
@@ -99,6 +99,7 @@ Pass 8   : A=7.5 B=7.5 C=7.0 D=7.0 → MIN=7.0 (A7 settings depth)
 Pass 9   : A=7.5 B=7.5 C=7.0 D=7.5 → MIN=7.0 (D4 dependency graph)
 Pass 10  : A=7.5 B=7.5 C=7.5 D=7.5 → MIN=7.5 (bug fixes + data pipelines + stale test fixes)
 Pass 11  : A=7.5 B=8.0 C=7.5 D=7.5 → MIN=7.5 (auth loop fix + full data ops taxonomy + 35 new tests)
+Pass 12  : A=7.5 B=8.0 C=7.5 D=7.5 → MIN=7.5 (SW v3 cache-busting: no HTML caching, skipWaiting, aggressive old cache deletion + 22 new tests)
 ```
 
 ## All Items Fulfilled
@@ -112,5 +113,7 @@ All remaining todo items have been completed across Passes 6-11:
 - Dependency graph added (canvas DAG visualization)
 - Data Pipelines page upgraded to full taxonomy (3 topologies, 5 source classes, 3 storage tiers, 4 runbook templates, governance plane)
 - Auth loop permanently fixed (removed global redirect from main.tsx, per-page via useAuth)
+- SW v3 cache-busting fix: no HTML caching, skipWaiting on install, aggressive old cache deletion on activate
+- main.tsx auto-calls skipWaitingAndReload on SW update (prevents stale bundle loops)
 - Stale confirmation-gate test deleted
-- 35 new Pass 11 tests passing
+- 35 new Pass 11 tests + 22 new Pass 12 tests passing

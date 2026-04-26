@@ -2,34 +2,22 @@
  * Service Worker — Manus Next PWA
  *
  * Strategies:
- *   - App shell (HTML, offline page): network-first with offline fallback
+ *   - Navigation (HTML): ALWAYS network-first, NO caching of HTML
  *   - Hashed static assets (.js, .css with content hash): cache-first (immutable)
  *   - Fonts (Google Fonts): stale-while-revalidate
  *   - API routes (/api/*): network-only (never cached)
  *   - Everything else: network-first with cache fallback
  *
+ * CRITICAL: HTML is NEVER cached to prevent stale bundle references.
  * Version bump: change CACHE_VERSION to bust all caches on deploy.
  */
 
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 const CACHE_NAME = `manus-next-v${CACHE_VERSION}`;
-const OFFLINE_URL = '/offline.html';
-
-/**
- * Precache list — minimal shell for instant offline fallback.
- * Vite-hashed assets are cached on first fetch (cache-first).
- */
-const PRECACHE_URLS = [
-  '/',
-  '/offline.html',
-];
 
 // ── Install ──────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
-  // Activate immediately — don't wait for old tabs to close
+  // Skip waiting immediately — don't let old SW linger
   self.skipWaiting();
 });
 
@@ -39,7 +27,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((names) =>
       Promise.all(
         names
-          .filter((name) => name.startsWith('manus-next-') && name !== CACHE_NAME)
+          .filter((name) => name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       )
     )
@@ -81,6 +69,13 @@ self.addEventListener('fetch', (event) => {
   // Skip SSE / WebSocket upgrades
   if (request.headers.get('accept')?.includes('text/event-stream')) return;
 
+  // ── Navigation requests: ALWAYS network, NEVER cache ──
+  // This is critical to prevent stale HTML from referencing old JS bundles
+  if (request.mode === 'navigate') {
+    // Do not intercept — let the browser fetch from network directly
+    return;
+  }
+
   // ── Hashed static assets: cache-first (immutable) ──
   if (isHashedAsset(url)) {
     event.respondWith(
@@ -111,26 +106,6 @@ self.addEventListener('fetch', (event) => {
         });
         return cached || fetchPromise;
       })
-    );
-    return;
-  }
-
-  // ── Navigation requests: network-first with offline fallback ──
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then((cached) =>
-            cached || caches.match(OFFLINE_URL)
-          )
-        )
     );
     return;
   }

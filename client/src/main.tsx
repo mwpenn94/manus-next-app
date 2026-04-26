@@ -104,11 +104,9 @@ const trpcClient = trpc.createClient({
 // ── Service Worker Registration ──
 registerServiceWorker({
   onUpdate: () => {
-    // Show a non-blocking notification that an update is available
-    // We use a simple custom event that AppLayout/Toaster can pick up
-    window.dispatchEvent(
-      new CustomEvent("sw-update-available", { detail: { skipWaitingAndReload } })
-    );
+    // Auto-update immediately to prevent stale bundles causing auth loops
+    console.log("[SW] New version detected — auto-updating...");
+    skipWaitingAndReload();
   },
   onSuccess: () => {
     console.log("[SW] Content cached for offline use.");

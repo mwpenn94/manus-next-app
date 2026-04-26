@@ -1,0 +1,29 @@
+PASS 12 AUTH LOOP DIAGNOSIS
+===========================
+
+DEPLOYED BUNDLE: /assets/index-Ccweb8d1.js
+
+FINDING: The deployed bundle does NOT contain getLoginUrl, hasEverBeenAuthenticated, 
+or redirectToLoginIfUnauthorized from main.tsx. The Pass 11 fix IS deployed.
+
+However, there are 8 instances of window.location.href in the deployed bundle:
+
+1. ErrorBoundary — sends error report (harmless)
+2. useAuth hook — `window.location.href = n` when redirectOnUnauthenticated is true
+   Pattern: `t && (r.isLoading || a.isPending || c.user || typeof window > "u" || window.location.pathname !== n && (window.location.href = n))`
+   THIS IS THE AUTH LOOP SOURCE. When `redirectOnUnauthenticated: true` is passed,
+   and user is NOT authenticated, it redirects to the login URL.
+3. TaskView — `window.location.href = ut()` when user not authenticated and tries to navigate
+4. Home.tsx voice — `window.location.href = ut()` when user not authenticated
+5. Home.tsx submit — `window.location.href = ut()` when user not authenticated  
+6. Home.tsx share screen — `window.location.href = ut()` when user not authenticated
+7. Home.tsx record video — `window.location.href = ut()` when user not authenticated
+
+ROOT CAUSE: The useAuth hook itself has a redirect mechanism. When ANY component calls
+useAuth({ redirectOnUnauthenticated: true }), it will redirect to login if the user
+is not authenticated. This creates a loop because:
+1. User visits page → useAuth fires → user not authenticated → redirect to login
+2. Login page redirects back → useAuth fires again → still not authenticated → loop
+
+The fix in main.tsx was correct but INSUFFICIENT. The actual redirect is in useAuth.ts itself.
+Need to check which components pass redirectOnUnauthenticated: true.
