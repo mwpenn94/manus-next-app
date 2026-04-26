@@ -245,8 +245,89 @@ export async function incrementRetry(
   };
 }
 
-// ── Timeout Checker (runs in background) ──
+// ── Automatic Error Recovery ──
+
+const AUTO_RETRY_CHECK_INTERVAL_MS = 60_000; // Check every 60s
+const RETRY_BACKOFF_BASE_MS = 5_000; // 5s base
+const RETRY_BACKOFF_MAX_MS = 300_000; // 5 min max
+
+/**
+ * Calculate exponential backoff delay for a given retry count.
+ * Uses 2^retryCount * base with jitter, capped at max.
+ */
+export function calculateBackoffMs(retryCount: number): number {
+  const exponentialMs = Math.min(
+    RETRY_BACKOFF_BASE_MS * Math.pow(2, retryCount),
+    RETRY_BACKOFF_MAX_MS
+  );
+  // Add 10% jitter to prevent thundering herd
+  const jitter = exponentialMs * 0.1 * Math.random();
+  return Math.round(exponentialMs + jitter);
+}
+
+/**
+ * Find error tasks eligible for automatic retry and re-queue them.
+ * A task is eligible if:
+ * - status is 'error'
+ * - retryCount < maxRetries
+ * - updatedAt is old enough for the backoff delay to have elapsed
+ */
+export async function autoRetryFailedTasks(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const now = new Date();
+
+  // Find error tasks that haven't exhausted retries
+  const errorTasks = await db
+    .select({
+      id: tasks.id,
+      externalId: tasks.externalId,
+      retryCount: tasks.retryCount,
+      maxRetries: tasks.maxRetries,
+      updatedAt: tasks.updatedAt,
+      userId: tasks.userId,
+    })
+    .from(tasks)
+    .where(eq(tasks.status, "error"));
+
+  let retriedCount = 0;
+
+  for (const task of errorTasks) {
+    const maxRetries = task.maxRetries ?? DEFAULT_MAX_RETRIES;
+    if (task.retryCount >= maxRetries) continue;
+
+    // Check if enough time has passed for backoff
+    const backoffMs = calculateBackoffMs(task.retryCount);
+    const elapsed = now.getTime() - task.updatedAt.getTime();
+    if (elapsed < backoffMs) continue;
+
+    // Check concurrency limit before retrying
+    const { allowed } = await canStartTask(task.userId);
+    if (!allowed) continue;
+
+    // Re-queue the task: set status back to 'idle', increment retryCount
+    await db
+      .update(tasks)
+      .set({
+        status: "idle",
+        retryCount: task.retryCount + 1,
+        currentStep: `Auto-retry #${task.retryCount + 1} (backoff: ${Math.round(backoffMs / 1000)}s)`,
+      })
+      .where(eq(tasks.id, task.id));
+
+    retriedCount++;
+    console.log(
+      `[Orchestration] Auto-retrying task ${task.id} (attempt ${task.retryCount + 1}/${maxRetries}, backoff: ${Math.round(backoffMs / 1000)}s)`
+    );
+  }
+
+  return retriedCount;
+}
+
+// ── Background Checkers ──
 let timeoutInterval: ReturnType<typeof setInterval> | null = null;
+let autoRetryInterval: ReturnType<typeof setInterval> | null = null;
 
 export function startTimeoutChecker(): void {
   if (timeoutInterval) return;
@@ -261,11 +342,30 @@ export function startTimeoutChecker(): void {
     }
   }, TIMEOUT_CHECK_INTERVAL_MS);
   console.log("[Orchestration] Timeout checker started (30s interval)");
+
+  // Start auto-retry checker alongside timeout checker
+  if (!autoRetryInterval) {
+    autoRetryInterval = setInterval(async () => {
+      try {
+        const retried = await autoRetryFailedTasks();
+        if (retried > 0) {
+          console.log(`[Orchestration] Auto-retried ${retried} failed task(s)`);
+        }
+      } catch (err) {
+        console.error("[Orchestration] Auto-retry check error:", err);
+      }
+    }, AUTO_RETRY_CHECK_INTERVAL_MS);
+    console.log("[Orchestration] Auto-retry checker started (60s interval)");
+  }
 }
 
 export function stopTimeoutChecker(): void {
   if (timeoutInterval) {
     clearInterval(timeoutInterval);
     timeoutInterval = null;
+  }
+  if (autoRetryInterval) {
+    clearInterval(autoRetryInterval);
+    autoRetryInterval = null;
   }
 }

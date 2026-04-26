@@ -4521,3 +4521,26 @@
 - [x] A1: Manus parity verified — home (suggestion cards, categories, input), task view (streaming, tools, artifacts), settings (billing, profile)
 - [x] Cross-axis: Updated PARITY_MATRIX.md (v2.0 4-axis rubric) and CURRENT_BEST.md with convergence trajectory
 - [x] Update ledger.json with Pass 4 completion (all axes at 6.5+, MIN=6.5)
+
+### Pass 5: DEPTH (multi-axis floor lift, target MIN 7.0)
+**Signal:** All axes B/C/D tied at 6.5, below 7.0 floor. Depth pass targets weakest sub-dimensions.
+**Temperature:** 0.55 (base 0.2 + 0.15 for MIN<7.5 + 0.20 for stagnation risk)
+
+#### B-axis improvements (6.5→7.0)
+- [x] B2: Create CI/CD pipeline definition (GitHub Actions workflow for typecheck + test + build)
+- [x] B6: Add production build validation script (included in CI workflow build step)
+
+#### C-axis improvements (6.5→7.0)
+- [x] C3: Verified empty states in Library (artifacts + files), Projects (with CTA), SkillsPage (added search-no-results). Settings tabs have contextual content.
+- [x] C6: Added skip-to-content link in AppLayout (sr-only, visible on focus, targets #main-content)
+- [x] C7: Verified 0 tsc errors, existing axe-core VU spec (vu-6) covers automated audit
+
+#### D-axis improvements (6.5→7.0)
+- [x] D7: Verified scheduler.ts already implements full recurring execution (cron + interval polling, stale sweep, memory decay)
+- [x] D8: Added autoRetryFailedTasks() with exponential backoff (5s base, 5min cap, 10% jitter) to orchestration service, wired into background checker
+
+#### Cross-axis
+- [x] Update PARITY_MATRIX.md with Pass 5 scores
+- [x] Update CURRENT_BEST.md with Pass 5 results
+- [x] Append Pass 5 entry to ledger.json
+- [x] Write vitest tests for all new features (7 tests in orchestration-autoretry.test.ts, all passing)

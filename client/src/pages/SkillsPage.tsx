@@ -131,6 +131,15 @@ export default function SkillsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
+          filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-3">
+                <Search className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground mb-1">No skills match your search</p>
+              <p className="text-xs text-muted-foreground max-w-sm">Try adjusting your search terms or category filter.</p>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((skill) => {
               const installed = installedIds.has(skill.id);
@@ -174,6 +183,7 @@ export default function SkillsPage() {
               );
             })}
           </div>
+          )
         )}
       </div>
     </div>
