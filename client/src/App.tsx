@@ -35,6 +35,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 // Lazy-loaded pages — Tools & Features
 const ConnectorsPage = lazy(() => import("./pages/ConnectorsPage"));
+const ConnectorDetailPage = lazy(() => import("./pages/ConnectorDetailPage"));
 const SkillsPage = lazy(() => import("./pages/SkillsPage"));
 const SlidesPage = lazy(() => import("./pages/SlidesPage"));
 const TeamPage = lazy(() => import("./pages/TeamPage"));
@@ -163,6 +164,9 @@ function Router() {
       {/* Tools & Features */}
       <Route path="/connectors">
         <SuspenseRoute><ConnectorsPage /></SuspenseRoute>
+      </Route>
+      <Route path="/connector/:id">
+        <SuspenseRoute><ConnectorDetailPage /></SuspenseRoute>
       </Route>
       <Route path="/skills">
         <SuspenseRoute><SkillsPage /></SuspenseRoute>

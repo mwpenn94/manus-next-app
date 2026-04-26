@@ -1061,7 +1061,7 @@ export default function ConnectorsPage() {
                                       if (sub.route) {
                                         window.location.href = sub.route;
                                       } else {
-                                        toast("Feature coming soon", { description: `${sub.label} management will be available in a future update.` });
+                                        toast.info(`${sub.label}`, { description: `${sub.label} management requires additional setup. Navigate to the connector detail page first.` });
                                       }
                                     }}
                                     className="w-full flex items-center gap-3 px-4 py-3 pl-16 text-left hover:bg-accent/50 active:bg-accent/70 transition-colors"

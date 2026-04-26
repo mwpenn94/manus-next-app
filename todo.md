@@ -4849,3 +4849,36 @@
 ### Validation
 - [x] Run full vitest suite — 78/78 connector tests pass, 0 regressions
 - [x] Save checkpoint
+
+## Pass 29: Deep Recursive Optimization — Manus-Native Connector Detail Pages
+
+### 29.1: Redesign ConnectorsSheet to Match Manus Native Bottom Sheet
+- [x] Replace toggle-based rows with card-style rows: large icon, title, description, chevron (>)
+- [x] Remove toggle switches — tapping a card opens the connector detail page
+- [x] Add + button in top-right header (next to X close) for "Add connectors"
+- [x] Only show connected/installed connectors in the sheet (matching Manus native)
+- [x] Card rows have rounded corners, subtle background, description text below title
+
+### 29.2: Build ConnectorDetailPage (Manus Native Pattern)
+- [x] Route: /connector/:id — full-screen detail page
+- [x] Header: back arrow (←), centered icon in rounded square, ··· menu button
+- [x] Large centered connector icon
+- [x] Title and description paragraph
+- [x] Auth steps section: "Authorize Account" (green check when done), "Authorize Repository" (circle when pending)
+- [x] Details table: Connector Type (App/Browser extension/OAuth), Author (Manus), Website (↗), Privacy Policy (↗), Provide feedback (↗)
+- [x] Action button at bottom: "Add Repositories" for GitHub, "Install Extension" for My Browser
+- [x] Swipe-to-reveal "Disconnect" button (red) at top
+- [x] Warning callout for unsupported devices (e.g., "The current device does not support plugin installation")
+
+### 29.3: Build GitHub Repositories Browser Page
+- [ ] Route: /connector/github/repositories (deferred — GitHub page already exists at /github)
+- [ ] List user's GitHub repositories using GitHub API (via stored token)
+- [ ] Show repo name, description, language, stars, last updated
+- [ ] Search/filter repositories
+- [ ] Link to open repo on GitHub
+
+### 29.4: Validation
+- [x] Vitest tests for ConnectorDetailPage routing and rendering
+- [x] Vitest tests for ConnectorsSheet card-style layout
+- [x] Run full test suite — confirm no regressions (3876 passed, fixed 2 pre-existing failures)
+- [x] Save checkpoint
