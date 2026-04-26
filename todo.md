@@ -4681,3 +4681,17 @@
 - [x] OAuth badge on cards now differentiates between configured (blue) and needs-setup (gray)
 - [x] All 8 previously failing test files now pass (311/311 tests)
 - [x] Visually verified fixes in browser
+
+### Pass 23: Connector OAuth Credentials Setup + Mobile Verification
+- [x] Audit current OAuth credential state (platform-injected vs connector-specific)
+- [x] Configure connector OAuth credentials using platform's GitHub/Microsoft 365 credentials as failover
+- [x] Implement smart credential reuse: CONNECTOR_ → OAUTH_ → platform GITHUB_CLIENT_ID/MICROSOFT_365_CLIENT_ID
+- [x] Verified: GitHub OAuth available=true, Microsoft 365 OAuth available=true via failover chain
+- [x] oauthAvailability endpoint confirms github:true, microsoft-365:true
+- [x] Updated tests to reflect failover chain (76/76 passing)
+- [x] Visually verify mobile bottom nav fix on Settings page at mobile viewport (56px padding confirmed)
+- [x] Visually verify mobile bottom nav fix on Billing page at mobile viewport (56px padding confirmed)
+- [x] Visually verify mobile bottom nav fix on Discover page at mobile viewport (56px padding confirmed)
+- [x] Visually verify mobile bottom nav fix on Connectors page at mobile viewport (56px padding confirmed)
+- [x] Playwright automated test: all 5 pages show childPaddingBottom: 56px, navHeight: 57px, content not cut off
+- [x] Visually verify mobile bottom nav fix on Home page at mobile viewport (56px padding confirmed)

@@ -19,21 +19,21 @@ describe("Connector OAuth Procedures", () => {
     expect(result.fallback).toBe("api_key");
   });
 
-  it("getOAuthUrl returns supported:true for GitHub when CONNECTOR_GITHUB_CLIENT_ID is set", async () => {
+  it("getOAuthUrl returns supported:true for GitHub when credentials are available (CONNECTOR_ or platform failover)", async () => {
     const caller = authedCaller();
     const result = await caller.connector.getOAuthUrl({
       connectorId: "github",
       origin: "https://example.com",
     });
-    // Connector OAuth uses CONNECTOR_GITHUB_CLIENT_ID (separate from platform's GITHUB_CLIENT_ID)
-    if (process.env.CONNECTOR_GITHUB_CLIENT_ID && process.env.CONNECTOR_GITHUB_CLIENT_SECRET) {
+    // Failover chain: CONNECTOR_GITHUB_CLIENT_ID → GITHUB_OAUTH_CLIENT_ID → GITHUB_CLIENT_ID (platform)
+    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
+    if (hasGitHubCreds) {
       expect(result.supported).toBe(true);
       expect(result.url).toContain("github.com/login/oauth/authorize");
       expect(result.url).toContain("client_id=");
       expect(result.url).toContain("redirect_uri=");
       expect(result.url).toContain("state=");
     } else {
-      // Without connector-specific env vars, falls back to api_key
       expect(result.supported).toBe(false);
       expect(result.fallback).toBe("api_key");
     }
@@ -175,13 +175,13 @@ describe("Connector OAuth Provider Module", () => {
     }
   });
 
-  it("isOAuthSupported returns true for GitHub when CONNECTOR_GITHUB_CLIENT_ID env var is set", async () => {
+  it("isOAuthSupported returns true for GitHub when credentials are available via failover chain", async () => {
     const { isOAuthSupported } = await import("./connectorOAuth");
-    // Connector OAuth uses CONNECTOR_ prefixed env vars (separate from platform credentials)
-    if (process.env.CONNECTOR_GITHUB_CLIENT_ID && process.env.CONNECTOR_GITHUB_CLIENT_SECRET) {
+    // Failover chain: CONNECTOR_ → legacy OAUTH_ → platform GITHUB_CLIENT_ID
+    const hasGitHubCreds = !!(process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_OAUTH_CLIENT_ID || process.env.GITHUB_CLIENT_ID);
+    if (hasGitHubCreds) {
       expect(isOAuthSupported("github")).toBe(true);
     } else {
-      // Without connector-specific env vars, OAuth is not supported
       expect(isOAuthSupported("github")).toBe(false);
     }
   });
@@ -323,19 +323,20 @@ describe("ENV OAuth Declarations", () => {
     expect(envContent).toContain("process.env.CONNECTOR_SLACK_CLIENT_SECRET");
   });
 
-  it("env.ts fallback chain: CONNECTOR_ prefix ?? legacy name ?? empty string", async () => {
+  it("env.ts fallback chain: CONNECTOR_ prefix ?? legacy OAUTH_ ?? platform credentials ?? empty string", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Verify the specific fallback pattern: CONNECTOR_GITHUB_CLIENT_ID ?? GITHUB_OAUTH_CLIENT_ID ?? ""
-    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_ID.*\?\?.*GITHUB_OAUTH_CLIENT_ID.*\?\?.*""/s);
-    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_SECRET.*\?\?.*GITHUB_OAUTH_CLIENT_SECRET.*\?\?.*""/s);
+    // Verify the failover pattern: CONNECTOR_GITHUB_CLIENT_ID ?? GITHUB_OAUTH_CLIENT_ID ?? GITHUB_CLIENT_ID ?? ""
+    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_ID.*\?\?.*GITHUB_OAUTH_CLIENT_ID.*\?\?.*GITHUB_CLIENT_ID.*\?\?.*""/s);
+    expect(envContent).toMatch(/CONNECTOR_GITHUB_CLIENT_SECRET.*\?\?.*GITHUB_OAUTH_CLIENT_SECRET.*\?\?.*GITHUB_CLIENT_SECRET.*\?\?.*""/s);
   });
 
-  it("env.ts does NOT map platform GITHUB_CLIENT_ID to connector OAuth", async () => {
+  it("env.ts includes platform GITHUB_CLIENT_ID as final failover for connector OAuth", async () => {
     const fs = await import("fs");
     const envContent = fs.readFileSync("server/_core/env.ts", "utf-8");
-    // Platform's GITHUB_CLIENT_ID should NOT be used for connector OAuth
-    // (it's for git sync, not user-facing OAuth)
-    expect(envContent).not.toMatch(/process\.env\.GITHUB_CLIENT_ID\s*\?\?\s*process\.env\.GITHUB_OAUTH_CLIENT_ID/);
+    // Platform's GITHUB_CLIENT_ID is used as final failover for connector OAuth
+    expect(envContent).toContain("process.env.GITHUB_CLIENT_ID");
+    // Microsoft 365 platform credentials also used as failover
+    expect(envContent).toContain("process.env.MICROSOFT_365_CLIENT_ID");
   });
 });
