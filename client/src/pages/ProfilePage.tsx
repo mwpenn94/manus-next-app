@@ -48,7 +48,7 @@ export default function ProfilePage() {
             <User className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <h2 className="text-lg font-semibold mb-2">Sign in to view profile</h2>
             <p className="text-sm text-muted-foreground mb-4">You need to be logged in to manage your profile.</p>
-            <Button onClick={() => window.location.href = getLoginUrl()}>Sign In</Button>
+            <Button size="lg" className="min-h-[44px] px-8" onClick={() => window.location.href = getLoginUrl()}>Sign In</Button>
           </CardContent>
         </Card>
       </div>

@@ -249,7 +249,7 @@ Generate the complete HTML code now.`,
             <Code className="w-12 h-12 text-primary mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">Web App Builder</h2>
             <p className="text-muted-foreground mb-4">Sign in to build web applications.</p>
-            <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
+            <Button size="lg" className="min-h-[44px] px-8" onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
           </CardContent>
         </Card>
       </div>

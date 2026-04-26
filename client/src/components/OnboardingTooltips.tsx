@@ -220,7 +220,7 @@ export default function OnboardingTooltips() {
                 </span>
                 <button
                   onClick={dismiss}
-                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Close onboarding"
                 >
                   <X className="w-4 h-4" />
@@ -275,16 +275,18 @@ export default function OnboardingTooltips() {
                     <button
                       key={i}
                       onClick={() => goToStep(i)}
-                      className={cn(
-                        "w-2 h-2 rounded-full transition-all duration-200",
-                        i === currentStep
-                          ? "bg-primary scale-125"
-                          : i < currentStep
-                            ? "bg-primary/40"
-                            : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                      )}
+                      className="flex items-center justify-center w-11 h-11 -m-3 rounded-full"
                       aria-label={`Go to step ${i + 1}: ${s.title}`}
-                    />
+                    >
+                      <span className={cn(
+                        "rounded-full transition-all duration-200",
+                        i === currentStep
+                          ? "w-2.5 h-2.5 bg-primary"
+                          : i < currentStep
+                            ? "w-2 h-2 bg-primary/40"
+                            : "w-2 h-2 bg-muted-foreground/30"
+                      )} />
+                    </button>
                   ))}
                 </div>
 
@@ -292,14 +294,14 @@ export default function OnboardingTooltips() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={dismiss}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-2.5 min-h-[44px] flex items-center"
                   >
                     Skip
                   </button>
                   {!isFirst && (
                     <button
                       onClick={prev}
-                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-accent transition-colors"
+                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground px-3 py-2.5 rounded-lg hover:bg-accent transition-colors min-h-[44px]"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
                       Back
@@ -307,7 +309,7 @@ export default function OnboardingTooltips() {
                   )}
                   <button
                     onClick={next}
-                    className="flex items-center gap-1.5 text-sm font-medium bg-foreground text-background px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-1.5 text-sm font-medium bg-foreground text-background px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity min-h-[44px]"
                   >
                     {isLast ? (
                       <>

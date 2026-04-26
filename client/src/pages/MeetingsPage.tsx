@@ -389,7 +389,7 @@ export default function MeetingsPage() {
             <FileText className="w-12 h-12 text-primary mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">Meeting Notes</h2>
             <p className="text-muted-foreground mb-4">Sign in to capture and process meeting notes.</p>
-            <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
+            <Button size="lg" className="min-h-[44px] px-8" onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
           </CardContent>
         </Card>
       </div>

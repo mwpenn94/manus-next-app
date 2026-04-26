@@ -4628,3 +4628,12 @@
 - [x] BUG-REG-004: Discover page category pills truncated — same root cause as BUG-REG-001. overflow-x-auto container was clipped by parent overflow-hidden.
 - [x] Comprehensive regression audit across all pages — confirmed AppLayout fix resolves all overflow issues
 - [x] Write regression tests — 17 new tests in pass12b-layout-regression.test.ts + updated cycle16-auth-landmarks.test.ts (45 tests passing)
+
+### Pass 12C: Full Mobile Regression Audit
+- [x] Screenshot and audit every page at mobile viewport (390px width) — 30 pages audited via parallel subtasks
+- [x] Fix all identified layout issues:
+  - [x] OnboardingTooltips: pagination dots enlarged to 44px touch targets (w-11 h-11 wrapper), close/skip/back/next buttons all min-h-[44px]
+  - [x] SkillsPage: filter row stacks on mobile (flex-col sm:flex-row), filter pills min-h-[44px], search input min-h-[44px]
+  - [x] Sign In buttons: ALL 11 auth-gated pages now have size="lg" min-h-[44px] px-8
+  - [x] Pages fixed: DesignView, MeetingsPage, ProfilePage, QATestingPage, ReplayPage, TeamPage, WebAppBuilderPage, WebhooksPage, DataPipelinesPage, SchedulePage
+- [x] Verify fixes and run regression tests — 22 new tests in pass12c-mobile-regression.test.ts, 62 total tests passing across 3 test files

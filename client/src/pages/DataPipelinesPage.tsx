@@ -748,7 +748,7 @@ export default function DataPipelinesPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Sign in to manage your data pipelines.
             </p>
-            <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
+            <Button size="lg" className="min-h-[44px] px-8" onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
           </CardContent>
         </Card>
       </div>

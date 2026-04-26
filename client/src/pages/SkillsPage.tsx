@@ -113,14 +113,14 @@ export default function SkillsPage() {
             </div>
           </CardContent>
         </Card>
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search skills..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder="Search skills..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 min-h-[44px]" />
           </div>
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap overflow-x-auto scrollbar-none">
             {categories.map((cat) => (
-              <Button key={cat} variant={filter === cat ? "default" : "outline"} size="sm" onClick={() => setFilter(cat)} className="capitalize">
+              <Button key={cat} variant={filter === cat ? "default" : "outline"} size="sm" onClick={() => setFilter(cat)} className="capitalize min-h-[44px] px-4 whitespace-nowrap">
                 {cat}
               </Button>
             ))}

@@ -488,7 +488,7 @@ export default function ReplayPage() {
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <Film className="w-12 h-12 text-muted-foreground" />
         <p className="text-muted-foreground">Sign in to view session replays</p>
-        <Button onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
+        <Button size="lg" className="min-h-[44px] px-8" onClick={() => (window.location.href = getLoginUrl())}>Sign In</Button>
       </div>
     );
   }

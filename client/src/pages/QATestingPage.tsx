@@ -263,7 +263,7 @@ export default function QATestingPage() {
     <div className="flex flex-col items-center justify-center h-full gap-4">
       <LogIn className="w-8 h-8 text-muted-foreground" />
       <p className="text-muted-foreground">Sign in to access QA Testing</p>
-      <Link href={getLoginUrl()}><Button>Sign In</Button></Link>
+      <Link href={getLoginUrl()}><Button size="lg" className="min-h-[44px] px-8">Sign In</Button></Link>
     </div>
   );
 
