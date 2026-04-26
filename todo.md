@@ -4819,4 +4819,5 @@
 - [x] Updated connectorOAuth.test.ts to reflect new fallback behavior (40/40 pass)
 - [x] All 3 github-oauth tests pass, 5 connectors-sheet tests pass
 - [x] Server restarted and compiles with no errors
-- [ ] Verify other connectors (Google, Microsoft) also use correct OAuth flows
+- [x] Verified: GitHub and Microsoft 365 OAuth now supported via platform credential fallback (7/7 new tests pass)
+- [x] Verified: Google, Notion, Slack correctly report unsupported (no platform credentials available)
