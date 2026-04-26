@@ -51,6 +51,14 @@ export const tasks = mysqlTable("tasks", {
   favorite: int("favorite").default(0).notNull(),
   /** Flag: set to 1 when task was auto-completed by stale sweep */
   staleCompleted: int("staleCompleted").default(0).notNull(),
+  /** Task priority: high=1, normal=2, low=3 (lower number = higher priority) */
+  priority: int("priority").default(2).notNull(),
+  /** Per-task timeout in seconds (null = use default 300s) */
+  timeoutSeconds: int("timeoutSeconds"),
+  /** Number of retry attempts made for this task */
+  retryCount: int("retryCount").default(0).notNull(),
+  /** Maximum retries allowed (null = use default 3) */
+  maxRetries: int("maxRetries"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({

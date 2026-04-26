@@ -96,6 +96,7 @@ import {
   Crosshair,
   Copy,
   BarChart3,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -785,6 +786,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   useSWUpdate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [selectedModelId, setSelectedModelId] = useState(() => {
+    try {
+      const m = localStorage.getItem("manus-agent-mode");
+      if (m && MODE_TO_MODEL[m]) return MODE_TO_MODEL[m];
+    } catch {}
+    return "manus-next-max";
+  });
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchOpen, setSearchOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
@@ -992,14 +1000,20 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </span>
         </Link>
         <button
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            toast.success("Link copied");
-          }}
-          className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          title="Copy link"
+          onClick={() => setSidebarOpen(false)}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors hidden md:flex"
+          title="Close sidebar"
+          aria-label="Close sidebar"
         >
-          <Copy className="w-4 h-4" />
+          <PanelLeftClose className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setMobileDrawerOpen(false)}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors md:hidden"
+          title="Close sidebar"
+          aria-label="Close sidebar"
+        >
+          <X className="w-4 h-4" />
         </button>
       </div>
 
@@ -1129,6 +1143,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </button>
               <AppsGridMenu location={location} />
               <button
+                onClick={() => navigate("/help")}
+                className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                title="Help & Knowledge Base"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+              <button
                 onClick={cycleTheme}
                 className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
                 title={`Theme: ${preference === "system" ? "System" : preference === "light" ? "Light" : "Dark"}`}
@@ -1235,14 +1256,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           <div className="ml-3">
             <ModelSelector
               compact
-              selectedModelId={(() => {
-                try {
-                  const m = localStorage.getItem("manus-agent-mode");
-                  if (m && MODE_TO_MODEL[m]) return MODE_TO_MODEL[m];
-                } catch {}
-                return "manus-next-max";
-              })()}
+              selectedModelId={selectedModelId}
               onModelChange={(modelId) => {
+                setSelectedModelId(modelId);
                 try {
                   localStorage.setItem("manus-selected-model", modelId);
                   localStorage.setItem(

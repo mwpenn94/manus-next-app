@@ -56,6 +56,7 @@ const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
 const MailManusPage = lazy(() => import("./pages/MailManusPage"));
 const QATestingPage = lazy(() => import("./pages/QATestingPage"));
 const SovereignDashboard = lazy(() => import("./pages/SovereignDashboard"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 
 function PageLoader() {
   return (
@@ -224,6 +225,9 @@ function Router() {
       </Route>
       <Route path="/sovereign">
         <ErrorBoundary><SuspenseRoute><SovereignDashboard /></SuspenseRoute></ErrorBoundary>
+      </Route>
+      <Route path="/help">
+        <SuspenseRoute><HelpPage /></SuspenseRoute>
       </Route>
 
       <Route path="/404" component={NotFound} />

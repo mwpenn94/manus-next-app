@@ -4462,8 +4462,8 @@
 - [x] Create tests/orchestration-stress/scenarios.yaml (22 scenarios)
 - [x] Create e2e/vu-base.ts
 - [x] Create e2e/vu-{1..8}-*.spec.ts (8 persona spec files)
-- [ ] Complete Phase A gates A.2-A.6
-- [ ] Begin Phase B recursive optimization loop
+- [x] Complete Phase A gates A.2-A.6 (all 6 gates passed)
+- [x] Begin Phase B recursive optimization loop (Pass 1 complete)
 
 ### App Icon Fix (User-Reported Bug)
 - [x] Generate proper favicon.ico (16x16, 32x32, 48x48 multi-size) from white_marble_hero.png
@@ -4489,3 +4489,18 @@
 - [x] B9: Rate limiting already exists on all sensitive routes (stream, upload, tts, analytics, webhooks, trpc) — verified existing
 - [x] Write vitest tests for new features — 12 tests in feedback.test.ts (all passing)
 - [x] Update ledger.json with Pass 1 completion (convergence_history + improvements)
+
+### Pass 2: ORCHESTRATION (D-axis floor lift) + B8 completion
+- [x] B8: Add help/knowledge-base link in sidebar bottom icons + HelpPage with shortcuts, FAQ, quick links
+- [x] D1: Add task queue with priority ordering (high=1/normal=2/low=3) — priority column on tasks table + orchestration service
+- [x] D2: Task retry already exists (invokeLLMWithRetry in agentStream.ts) — added retryCount/maxRetries columns for tracking
+- [x] D3: Add concurrent task limit enforcement (default max 3) — canStartTask() + getOrchestrationStatus()
+- [x] D4: Task dependency already exists (atlasPlans DAG + atlasGoalTasks.dependsOn + taskBranches) — verified existing
+- [x] D5: Add task timeout (default 300s, configurable per-task) — timeoutSeconds column + checkTimeouts() background checker
+- [x] Write vitest tests for orchestration features — 13 tests in orchestration.test.ts (all passing)
+- [x] Update ledger.json with Pass 2 completion
+
+### User-Reported Bugs (from deployed screenshot)
+- [x] BUG: Mode selector stuck on "Manus Max" — fixed: added React state (selectedModelId) instead of inline IIFE from localStorage
+- [x] BUG: Copy link button replaced with PanelLeftClose sidebar close button (desktop) and X button (mobile)
+- [x] BUG: Close sidebar button added — PanelLeftClose on desktop, X on mobile, both wired to setSidebarOpen/setMobileDrawerOpen
