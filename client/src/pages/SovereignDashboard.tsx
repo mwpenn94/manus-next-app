@@ -431,6 +431,7 @@ export default function SovereignDashboard() {
   }
 
   return (
+    <div className="h-full overflow-y-auto pb-mobile-nav">
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
@@ -446,18 +447,18 @@ export default function SovereignDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview" className="gap-1.5">
-            <BarChart3 className="w-3.5 h-3.5" /> Overview
+        <TabsList className="mb-6 grid grid-cols-2 sm:grid-cols-4 w-full sm:w-auto sm:inline-flex h-auto gap-1">
+          <TabsTrigger value="overview" className="gap-1.5 min-h-[44px] text-sm">
+            <BarChart3 className="w-4 h-4" /> Overview
           </TabsTrigger>
-          <TabsTrigger value="aegis" className="gap-1.5">
-            <Shield className="w-3.5 h-3.5" /> AEGIS
+          <TabsTrigger value="aegis" className="gap-1.5 min-h-[44px] text-sm">
+            <Shield className="w-4 h-4" /> AEGIS
           </TabsTrigger>
-          <TabsTrigger value="atlas" className="gap-1.5">
-            <Brain className="w-3.5 h-3.5" /> ATLAS
+          <TabsTrigger value="atlas" className="gap-1.5 min-h-[44px] text-sm">
+            <Brain className="w-4 h-4" /> ATLAS
           </TabsTrigger>
-          <TabsTrigger value="sovereign" className="gap-1.5">
-            <Network className="w-3.5 h-3.5" /> Sovereign
+          <TabsTrigger value="sovereign" className="gap-1.5 min-h-[44px] text-sm">
+            <Network className="w-4 h-4" /> Sovereign
           </TabsTrigger>
         </TabsList>
 
@@ -515,6 +516,7 @@ export default function SovereignDashboard() {
           <SovereignPanel />
         </TabsContent>
       </Tabs>
+    </div>
     </div>
   );
 }

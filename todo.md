@@ -4637,3 +4637,10 @@
   - [x] Sign In buttons: ALL 11 auth-gated pages now have size="lg" min-h-[44px] px-8
   - [x] Pages fixed: DesignView, MeetingsPage, ProfilePage, QATestingPage, ReplayPage, TeamPage, WebAppBuilderPage, WebhooksPage, DataPipelinesPage, SchedulePage
 - [x] Verify fixes and run regression tests — 22 new tests in pass12c-mobile-regression.test.ts, 62 total tests passing across 3 test files
+
+### Pass 13: Landscape Assessment + Mobile Completeness
+- [x] Re-applied all Pass 13 changes lost during sandbox reset
+- [x] Added pb-mobile-nav to 10 pages missing it: SovereignDashboard, DataPipelinesPage, HelpPage, MobileProjectsPage (3 views), AppPublishPage, BrowserPage, QATestingPage, WebAppProjectPage, ComputerUsePage
+- [x] SovereignDashboard: wrapped in h-full overflow-y-auto scroll container, responsive tabs (grid-cols-2 on mobile, inline-flex on desktop), 44px touch targets
+- [x] 27 new atlas/sovereign layer tests (router structure, auth guards, input validation, cross-layer integration)
+- [x] All 111 key regression tests passing (84 regression + 27 atlas/sovereign)

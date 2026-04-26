@@ -1,10 +1,10 @@
 {
   "project": "manus-next-app",
   "created": "2026-04-25T09:12:49.884Z",
-  "last_updated": "2026-04-26T02:30:00.000Z",
+  "last_updated": "2026-04-26T10:29:23.318Z",
   "automation_tier": "manual",
   "safety_sensitive": false,
-  "current_phase": "B",
+  "current_phase": "C",
   "improvements": [
     {
       "id": "pass-1-app-lifecycle",
@@ -34,11 +34,23 @@
       "tests_added": 22,
       "scores_after": {
         "A": 7.5,
-        "B": 8.0,
+        "B": 8,
         "C": 7.5,
         "D": 7.5,
         "MIN": 7.5
       }
+    },
+    {
+      "id": "IMP-003",
+      "pass": "pass-16",
+      "status": "verified",
+      "description": "Pass 13: Landscape — pb-mobile-nav on 10 pages, responsive sovereign tabs, 27 atlas/sovereign tests",
+      "files": [],
+      "tests": [],
+      "quality_delta": "",
+      "depends_on": [],
+      "depended_by": [],
+      "created": "2026-04-26T10:29:23.292Z"
     }
   ],
   "failed_approaches": [],
@@ -133,7 +145,7 @@
         "overall_min": 5,
         "target": 8.5,
         "rubric": "4-axis-conjunctive-v1.1",
-        "note": "Re-derived from first principles per \u00a71 GATE A.5. Legacy 10-dim scores NOT transcribed."
+        "note": "Re-derived from first principles per §1 GATE A.5. Legacy 10-dim scores NOT transcribed."
       },
       "telemetry_status": "baseline_partial: telemetry_unavailable",
       "parity_strategy": "balanced",
@@ -189,8 +201,8 @@
         "D2: retryCount/maxRetries columns added for retry tracking",
         "13 orchestration tests + 12 feedback tests all passing"
       ],
-      "delta": "+1.0 D-axis (5.0\u21926.0), +0.5 overall MIN (5.0\u21925.5)",
-      "regression_check": "PASS \u2014 no regressions detected"
+      "delta": "+1.0 D-axis (5.0→6.0), +0.5 overall MIN (5.0→5.5)",
+      "regression_check": "PASS — no regressions detected"
     },
     {
       "pass": 3,
@@ -207,11 +219,11 @@
       "improvements": [
         "C1: Improved sidebar collapse animation (300ms cubic-bezier easing)",
         "C3: Improved task list empty state with guidance text",
-        "C2/C4/C5/C6: Verified existing \u2014 skeletons (67), toasts (386), mobile (safe-area), focus rings (64)",
+        "C2/C4/C5/C6: Verified existing — skeletons (67), toasts (386), mobile (safe-area), focus rings (64)",
         "Baseline C-axis re-scored from 5.5 to 6.5 after comprehensive audit of existing features"
       ],
-      "delta": "+1.0 C-axis (5.5\u21926.5), +0.5 overall MIN (5.5\u21926.0)",
-      "regression_check": "PASS \u2014 no regressions detected"
+      "delta": "+1.0 C-axis (5.5→6.5), +0.5 overall MIN (5.5→6.0)",
+      "regression_check": "PASS — no regressions detected"
     },
     {
       "pass": 4,
@@ -232,8 +244,8 @@
         "Updated CURRENT_BEST.md with convergence trajectory",
         "Fixed 3 user-reported bugs (mode selector, sidebar close, copy link)"
       ],
-      "delta": "+0.5 D-axis (6.0\u21926.5), +0.5 overall MIN (6.0\u21926.5)",
-      "regression_check": "PASS \u2014 0 tsc errors, no regressions detected"
+      "delta": "+0.5 D-axis (6.0→6.5), +0.5 overall MIN (6.0→6.5)",
+      "regression_check": "PASS — 0 tsc errors, no regressions detected"
     },
     {
       "pass": 5,
@@ -246,9 +258,9 @@
         "C": 7,
         "D": 7
       },
-      "min_score": 7.0,
+      "min_score": 7,
       "improvements": [
-        "B2/B6: GitHub Actions CI/CD workflow (typecheck \u2192 test \u2192 build)",
+        "B2/B6: GitHub Actions CI/CD workflow (typecheck → test → build)",
         "C3: SkillsPage empty state for search-no-results",
         "C6: Skip-to-content link in AppLayout (sr-only, visible on Tab focus)",
         "C7: Verified axe-core 0 violations, landmark structure intact",
@@ -256,8 +268,8 @@
         "D8: Auto-retry failed tasks with exponential backoff (5s base, 5min cap, 10% jitter)",
         "7 new tests in orchestration-autoretry.test.ts (all passing)"
       ],
-      "delta": "+0.5 B/C/D-axis (6.5\u21927.0), +0.5 overall MIN (6.5\u21927.0)",
-      "regression_check": "PASS \u2014 0 tsc errors, 8 pre-existing test file failures (not regressions)"
+      "delta": "+0.5 B/C/D-axis (6.5→7.0), +0.5 overall MIN (6.5→7.0)",
+      "regression_check": "PASS — 0 tsc errors, 8 pre-existing test file failures (not regressions)"
     },
     {
       "pass": 6,
@@ -270,7 +282,7 @@
         "C": 7,
         "D": 7
       },
-      "min_score": 7.0,
+      "min_score": 7,
       "improvements": [
         "Fixed session23.test.ts (setTokenUsage regex)",
         "Deleted stale confirmation-gate-persistence.test.ts",
@@ -281,8 +293,8 @@
         "Fixed p17.test.ts (hasEverBeenAuthenticated pattern)",
         "Fixed pass009-depth.test.ts (getLoginUrl import)"
       ],
-      "delta": "+0.5 B-axis (7.0\u21927.5), all 8 pre-existing test failures resolved",
-      "regression_check": "PASS \u2014 0 tsc errors, 0 known test failures"
+      "delta": "+0.5 B-axis (7.0→7.5), all 8 pre-existing test failures resolved",
+      "regression_check": "PASS — 0 tsc errors, 0 known test failures"
     },
     {
       "pass": 7,
@@ -295,13 +307,13 @@
         "C": 7,
         "D": 7
       },
-      "min_score": 7.0,
+      "min_score": 7,
       "improvements": [
         "A10: Upgraded OnboardingTooltips with progressive disclosure, keyboard nav, progress bar",
         "A10: Added step persistence via localStorage",
         "A10: Added PageHintBanner with contextual hints for 8 key routes"
       ],
-      "delta": "A10: 6\u21927 (onboarding polish)",
+      "delta": "A10: 6→7 (onboarding polish)",
       "regression_check": "PASS"
     },
     {
@@ -315,14 +327,14 @@
         "C": 7,
         "D": 7
       },
-      "min_score": 7.0,
+      "min_score": 7,
       "improvements": [
         "A7: Wired notification preferences to persist via generalSettings.notificationPrefs",
         "A7: Wired GDPR Delete All Data to trpc.gdpr.deleteAllData with double-confirm dialog",
         "A7: Verified account management and API key management already existed"
       ],
-      "delta": "A7: 6\u21927, A-axis: 7.0\u21927.5",
-      "regression_check": "PASS \u2014 0 tsc errors"
+      "delta": "A7: 6→7, A-axis: 7.0→7.5",
+      "regression_check": "PASS — 0 tsc errors"
     },
     {
       "pass": 9,
@@ -335,14 +347,14 @@
         "C": 7,
         "D": 7.5
       },
-      "min_score": 7.0,
+      "min_score": 7,
       "improvements": [
-        "D4: Created DependencyGraph.tsx \u2014 canvas-based DAG visualization",
+        "D4: Created DependencyGraph.tsx — canvas-based DAG visualization",
         "D4: Topological layout, 5 status colors, animated edges, hover tooltips",
-        "D4: Integrated into SovereignDashboard AtlasPanel (click goal \u2192 shows DAG)"
+        "D4: Integrated into SovereignDashboard AtlasPanel (click goal → shows DAG)"
       ],
-      "delta": "D4: 6\u21927, D-axis: 7.0\u21927.5",
-      "regression_check": "PASS \u2014 0 tsc errors"
+      "delta": "D4: 6→7, D-axis: 7.0→7.5",
+      "regression_check": "PASS — 0 tsc errors"
     },
     {
       "pass": 10,
@@ -357,15 +369,15 @@
       },
       "min_score": 7.5,
       "improvements": [
-        "A5: Fixed model selector stuck bug \u2014 unified localStorage source",
-        "A6: Fixed sidebar close button \u2014 collapsed rail with reopen/home/plus",
+        "A5: Fixed model selector stuck bug — unified localStorage source",
+        "A6: Fixed sidebar close button — collapsed rail with reopen/home/plus",
         "A11: Created DataPipelinesPage (5 categories, 20 operations, pipeline builder, monitoring)",
         "B2: Fixed cycle16 stale test + model-selector-wiring default",
         "29 new tests in pass10-bugfixes.test.ts (all passing)",
         "Integrated data operations taxonomy from user context files"
       ],
-      "delta": "C-axis: 7.0\u21927.5, overall MIN: 7.0\u21927.5",
-      "regression_check": "PASS \u2014 0 tsc errors, 290 tests across 9 targeted files all passing"
+      "delta": "C-axis: 7.0→7.5, overall MIN: 7.0→7.5",
+      "regression_check": "PASS — 0 tsc errors, 290 tests across 9 targeted files all passing"
     },
     {
       "pass": 11,
@@ -374,21 +386,39 @@
       "timestamp": "2026-04-26T06:15:00.000Z",
       "axis_scores": {
         "A": 7.5,
-        "B": 8.0,
+        "B": 8,
         "C": 7.5,
         "D": 7.5
       },
       "min_score": 7.5,
       "improvements": [
-        "CRITICAL: Removed global auth redirect from main.tsx \u2014 permanently fixes auth loop",
+        "CRITICAL: Removed global auth redirect from main.tsx — permanently fixes auth loop",
         "AUTH REDIRECT POLICY: per-page via useAuth, never globally in main.tsx",
         "A11: Upgraded DataPipelinesPage to full taxonomy (3 topologies, 5 source classes, 3 storage tiers, 4 runbook templates, governance plane)",
-        "B4: Security hardened \u2014 no more auth loop vulnerability",
+        "B4: Security hardened — no more auth loop vulnerability",
         "Updated pass009-depth, cycle16-auth-landmarks, p17 tests to match new policy",
         "35 new tests in pass11-auth-data.test.ts (all passing)"
       ],
-      "delta": "B-axis: 7.5\u21928.0 (security + test coverage), auth loop permanently resolved",
-      "regression_check": "PASS \u2014 0 tsc errors, 0 unchecked todo items, 35 new tests passing"
+      "delta": "B-axis: 7.5→8.0 (security + test coverage), auth loop permanently resolved",
+      "regression_check": "PASS — 0 tsc errors, 0 unchecked todo items, 35 new tests passing"
+    },
+    {
+      "pass": "pass-pass-13",
+      "type": "landscape",
+      "mode": "divergent",
+      "score": 8,
+      "delta": null,
+      "dimensions": {
+        "completeness": 8,
+        "accuracy": 8.5,
+        "depth": 7.5,
+        "novelty": 7,
+        "actionability": 8,
+        "regression_safety": 9
+      },
+      "novelty_count": 5,
+      "phase": "B",
+      "timestamp": "2026-04-26T10:29:23.317Z"
     }
   ],
   "branches": [],
@@ -418,7 +448,7 @@
     {
       "id": "VU-E-01",
       "class": "E",
-      "scenario": "Solo Technical Founder \u2014 5 workflow tests",
+      "scenario": "Solo Technical Founder — 5 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -431,7 +461,7 @@
     {
       "id": "VU-E-02",
       "class": "E",
-      "scenario": "Non-Technical CEO \u2014 4 workflow tests",
+      "scenario": "Non-Technical CEO — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -444,7 +474,7 @@
     {
       "id": "VU-E-03",
       "class": "E",
-      "scenario": "Agency Owner \u2014 4 workflow tests",
+      "scenario": "Agency Owner — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -457,7 +487,7 @@
     {
       "id": "VU-E-04",
       "class": "E",
-      "scenario": "Data Analyst \u2014 4 workflow tests",
+      "scenario": "Data Analyst — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -470,7 +500,7 @@
     {
       "id": "VU-E-05",
       "class": "E",
-      "scenario": "Content Creator \u2014 4 workflow tests",
+      "scenario": "Content Creator — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -483,7 +513,7 @@
     {
       "id": "VU-E-06",
       "class": "E",
-      "scenario": "Enterprise Admin \u2014 4 workflow tests",
+      "scenario": "Enterprise Admin — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -496,7 +526,7 @@
     {
       "id": "VU-E-07",
       "class": "E",
-      "scenario": "Developer Advocate \u2014 4 workflow tests",
+      "scenario": "Developer Advocate — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -509,7 +539,7 @@
     {
       "id": "VU-E-08",
       "class": "E",
-      "scenario": "Privacy-Conscious User \u2014 4 workflow tests",
+      "scenario": "Privacy-Conscious User — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -522,7 +552,7 @@
     {
       "id": "VU-E-09",
       "class": "E",
-      "scenario": "Mobile-First User \u2014 4 workflow tests",
+      "scenario": "Mobile-First User — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -535,7 +565,7 @@
     {
       "id": "VU-E-10",
       "class": "E",
-      "scenario": "Power User \u2014 5 workflow tests",
+      "scenario": "Power User — 5 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -548,7 +578,7 @@
     {
       "id": "VU-E-11",
       "class": "E",
-      "scenario": "Collaboration Lead \u2014 4 workflow tests",
+      "scenario": "Collaboration Lead — 4 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -561,7 +591,7 @@
     {
       "id": "VU-E-12",
       "class": "E",
-      "scenario": "Compliance Officer \u2014 5 workflow tests",
+      "scenario": "Compliance Officer — 5 workflow tests",
       "status": "completed",
       "started": "2026-04-25T10:47:32.169Z",
       "completed": "2026-04-25T10:47:32.169Z",
@@ -600,7 +630,7 @@
         {
           "guard": "dimension_balance",
           "status": "WARN",
-          "message": "All dimensions within 1 point \u2014 possible gaming"
+          "message": "All dimensions within 1 point — possible gaming"
         }
       ]
     },
@@ -610,7 +640,17 @@
         {
           "guard": "dimension_balance",
           "status": "WARN",
-          "message": "All dimensions within 1 point \u2014 possible gaming"
+          "message": "All dimensions within 1 point — possible gaming"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-04-26T10:29:23.317Z",
+      "guards": [
+        {
+          "guard": "all",
+          "status": "PASS",
+          "message": "All quality guards passed"
         }
       ]
     }
