@@ -26,6 +26,7 @@ import { projectRouter } from "./routers/project";
 import { replayRouter } from "./routers/replay";
 import { scheduleRouter } from "./routers/schedule";
 import { shareRouter } from "./routers/share";
+import { ogImageRouter } from "./routers/ogImage";
 import { skillRouter } from "./routers/skill";
 import { slidesRouter } from "./routers/slides";
 import { teamRouter } from "./routers/team";
@@ -78,6 +79,7 @@ export const appRouter = router({
   replay: replayRouter,
   schedule: scheduleRouter,
   share: shareRouter,
+  ogImage: ogImageRouter,
   skill: skillRouter,
   slides: slidesRouter,
   team: teamRouter,

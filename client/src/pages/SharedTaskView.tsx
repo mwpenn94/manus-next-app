@@ -19,6 +19,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import BrandAvatar from "@/components/BrandAvatar";
 import { Input } from "@/components/ui/input";
 import {
   Lock,
@@ -271,7 +272,7 @@ function MessageBubble({ msg }: { msg: SharedMessage }) {
       {/* Assistant avatar */}
       {!isUser && (
         <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center shrink-0 mt-1">
-          <span className="text-sm" role="img" aria-label="Manus">🐾</span>
+          <BrandAvatar size="sm" />
         </div>
       )}
 
@@ -530,7 +531,7 @@ export default function SharedTaskView() {
           {/* Left: Logo + brand + model badge */}
           <div className="flex items-center gap-1.5">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <span className="text-lg" role="img" aria-label="Manus">🐾</span>
+              <BrandAvatar size="md" />
               <span
                 className="text-[14px] font-semibold tracking-tight text-foreground"
                 style={{ fontFamily: "var(--font-heading)" }}
@@ -614,7 +615,7 @@ export default function SharedTaskView() {
             href="/"
             className="flex items-center justify-center gap-2 w-full py-3 bg-foreground text-background rounded-xl text-sm font-medium hover:opacity-90 transition-opacity shadow-lg"
           >
-            <span className="text-base" role="img" aria-label="Manus">🐾</span>
+            <BrandAvatar size="sm" />
             Try Manus Next
             <ArrowUp className="w-4 h-4 rotate-45" />
           </a>

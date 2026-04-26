@@ -14,6 +14,7 @@ import { useFileUpload, type UploadedFile } from "@/hooks/useFileUpload";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import BrandAvatar from "@/components/BrandAvatar";
 import {
   Send,
   Paperclip,
@@ -645,7 +646,7 @@ function TypingIndicator() {
   return (
     <div className="flex items-center gap-3 mb-4">
       <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-        <span className="text-sm">🐾</span>
+        <BrandAvatar size="sm" />
       </div>
       <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/30">
         <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -677,7 +678,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
     >
       {!isUser && (
         <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-          <span className="text-sm">🐾</span>
+          <BrandAvatar size="sm" />
         </div>
       )}
 
@@ -3716,7 +3717,7 @@ export default function TaskView() {
               className="flex gap-3 mb-5"
             >
               <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-sm">🐾</span>
+                <BrandAvatar size="sm" />
               </div>
               <div className="max-w-[90%] md:max-w-[80%]">
                 <div className="flex items-center gap-2 mb-1.5">

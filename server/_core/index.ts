@@ -241,6 +241,51 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
+  // ── OG Image endpoint for shared tasks ──
+  app.get("/api/og-image/:token", async (req, res) => {
+    try {
+      const token = req.params.token;
+      if (!token || token.length > 50) {
+        res.status(400).send("Invalid token");
+        return;
+      }
+      const { getTaskShareByToken, getTaskByExternalId, getTaskMessages } = await import("../db");
+      const share = await getTaskShareByToken(token);
+      if (!share) {
+        res.status(404).send("Share not found");
+        return;
+      }
+      const task = await getTaskByExternalId(share.taskExternalId);
+      if (!task) {
+        res.status(404).send("Task not found");
+        return;
+      }
+      // Count steps
+      const messages = await getTaskMessages(task.id);
+      let stepCount = 0;
+      for (const msg of messages.filter(m => m.role === "assistant")) {
+        try {
+          const actions = typeof msg.actions === "string" ? JSON.parse(msg.actions) : msg.actions;
+          if (Array.isArray(actions)) stepCount += actions.length;
+        } catch { /* skip */ }
+      }
+      // Generate OG image
+      const { generateOgImageBuffer } = await import("../routers/ogImage");
+      const { buffer, contentType } = await generateOgImageBuffer(
+        task.title || "Shared Task",
+        stepCount,
+        task.status || "completed",
+        task.createdAt,
+      );
+      res.set("Content-Type", contentType);
+      res.set("Cache-Control", "public, max-age=3600"); // Cache 1 hour
+      res.send(buffer);
+    } catch (err) {
+      console.error("[OG Image] Error:", err);
+      res.status(500).send("Error generating image");
+    }
+  });
+
   // ── Scheduled Task: VU Monitor ──
   app.post("/api/scheduled/vu-monitor", async (req, res) => {
     try {

@@ -19,6 +19,7 @@ import { useBridge } from "@/contexts/BridgeContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import BrandAvatar from "@/components/BrandAvatar";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
@@ -413,7 +414,7 @@ function SidebarProjectTree({
   onFavoriteTask,
   navigate,
 }: SidebarProjectTreeProps) {
-  const projectsQuery = trpc.project.list.useQuery();
+  const projectsQuery = trpc.project.list.useQuery(undefined, { staleTime: 30000 });
   const projects = projectsQuery.data ?? [];
   const utils = trpc.useUtils();
 
@@ -982,9 +983,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* ═══ Fixed Header ═══ */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border shrink-0">
         <Link href="/" className="flex items-center gap-2.5 group">
-          <span className="text-lg" role="img" aria-label="Manus">
-            🐾
-          </span>
+          <BrandAvatar size="md" />
           <span
             className="text-[15px] font-semibold tracking-tight text-sidebar-foreground"
             style={{ fontFamily: "var(--font-heading)" }}
@@ -1222,7 +1221,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <PanelLeft className="w-4 h-4 hidden md:block" />
           </button>
           <Link href="/" className="flex items-center gap-2 ml-3">
-            <span className="text-lg">🐾</span>
+            <BrandAvatar size="sm" />
             <span
               className="text-[15px] font-semibold tracking-tight"
               style={{ fontFamily: "var(--font-heading)" }}
@@ -1267,7 +1266,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <Moon className="w-4 h-4" />
               )}
             </button>
-            <NotificationCenter />
+            {isAuthenticated && <NotificationCenter />}
           </div>
         </header>
 
@@ -1285,10 +1284,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         >
           {children}
         </main>
-      </div>
 
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav />
+        {/* Mobile Bottom Navigation — inside the content column for landmark containment */}
+        <MobileBottomNav />
+      </div>
 
       {/* Keyboard Shortcuts Help Dialog */}
       <KeyboardShortcutsDialog open={showHelp} onClose={() => setShowHelp(false)} />

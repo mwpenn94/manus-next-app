@@ -430,10 +430,10 @@ describe("SharedTaskView renders standalone layout", () => {
     expect(content).toContain("bg-foreground text-background");
   });
 
-  it("renders assistant messages with paw avatar", () => {
+  it("renders assistant messages with BrandAvatar", () => {
     const content = fs.readFileSync("client/src/pages/SharedTaskView.tsx", "utf-8");
-    expect(content).toContain("🐾");
-    expect(content).toContain("Manus");
+    expect(content).toContain("BrandAvatar");
+    expect(content).not.toContain("🐾");
   });
 
   it("parses JSON strings for actions and cardData", () => {

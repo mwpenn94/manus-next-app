@@ -257,7 +257,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <div className="flex-1 p-4" role="region" aria-label="Dashboard content">{children}</div>
       </SidebarInset>
     </>
   );

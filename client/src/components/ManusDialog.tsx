@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import BrandAvatar from "@/components/BrandAvatar";
 import {
   Dialog,
   DialogContent,
@@ -63,7 +64,7 @@ export function ManusDialog({
             </div>
           ) : (
             <div className="w-16 h-16 bg-primary/15 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">🐾</span>
+              <BrandAvatar size="lg" />
             </div>
           )}
 

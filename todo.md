@@ -4402,3 +4402,32 @@
 - [x] Update all test files (/shared/ → /share/) — parity, cycle7-e2e
 - [x] Write 19 new share-view-enrichment tests (all passing)
 - [x] Recursive optimization converged (4 passes, 2 consecutive no-action passes)
+
+### Accessibility Landmark Fixes
+- [x] Fix nested main in Home.tsx — change to div (already inside AppLayout main)
+- [x] Fix nested main in DashboardLayout.tsx — change to div
+- [x] Ensure MobileBottomNav content is inside a landmark
+
+### Auth Loop Fix
+- [x] Investigate and fix auth redirect loop on deployed site (gated NotificationCenter behind isAuthenticated)
+
+### Brand Image Avatar Replacement
+- [x] Upload white_marble_hero.png as brand avatar via manus-upload-file --webdev
+- [x] Create reusable BrandAvatar component with configurable sizes
+- [x] Replace paw emoji in AppLayout.tsx sidebar header with brand image
+- [x] Replace paw emoji in AppLayout.tsx collapsed header with brand image
+- [x] Replace paw emoji in ManusDialog.tsx with brand image
+- [x] Replace paw emoji in SharedTaskView.tsx (3 instances) with brand image
+- [x] Replace paw emoji in TaskView.tsx (3 instances) with brand image
+- [x] Verified 0 remaining paw emojis in codebase
+
+### OG Image Generation for Shared Tasks
+- [x] Add server-side OG image generation endpoint (/api/og-image/:token)
+- [x] Update vite.ts meta-tag injection to include dynamic OG image URL
+- [x] Generate branded OG images with task title, step count, status badge, and brand styling
+- [x] Register ogImageRouter in main routers.ts
+- [x] Install sharp for SVG-to-PNG conversion
+- [x] Add Express route for direct image serving with 1-hour cache
+
+### Recursive Optimization Round 2
+- [x] Run recursive optimization passes until 2 consecutive no-action passes (4 passes, converged)
