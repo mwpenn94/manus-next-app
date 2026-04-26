@@ -1247,3 +1247,29 @@ export const sovereignUsageLogs = mysqlTable("sovereign_usage_logs", {
 }));
 export type SovereignUsageLog = typeof sovereignUsageLogs.$inferSelect;
 export type InsertSovereignUsageLog = typeof sovereignUsageLogs.$inferInsert;
+
+// ── App Feedback (B8: Support/feedback — general app feedback, feature requests, bug reports) ──
+export const appFeedback = mysqlTable("app_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Feedback category: general, feature_request, bug_report, praise */
+  category: mysqlEnum("category", ["general", "feature_request", "bug_report", "praise"]).default("general").notNull(),
+  /** Short summary */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Detailed feedback text */
+  content: text("content"),
+  /** Current page/route when feedback was submitted */
+  pageContext: varchar("pageContext", { length: 500 }),
+  /** User agent string for bug reports */
+  userAgent: text("userAgent"),
+  /** Status for admin tracking */
+  status: mysqlEnum("status", ["new", "acknowledged", "in_progress", "resolved", "wont_fix"]).default("new").notNull(),
+  /** Admin response */
+  adminResponse: text("adminResponse"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("app_feedback_userId_idx").on(table.userId),
+  statusIdx: index("app_feedback_status_idx").on(table.status),
+}));
+export type AppFeedback = typeof appFeedback.$inferSelect;
+export type InsertAppFeedback = typeof appFeedback.$inferInsert;

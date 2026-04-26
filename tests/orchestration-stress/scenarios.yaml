@@ -1,0 +1,276 @@
+# Orchestration Stress Scenario Set v1.0
+# ≥20 multi-tool tasks with deterministic seeded fault injection
+# Each scenario: id, description, oracle_runnable, primary_dimensions (D1-D6),
+# tools_required, fault_injection_points, pass_criteria
+# Created: 2026-04-25 (v1.1 Bootstrap)
+
+scenarios:
+  # === PARALLEL RESEARCH + SYNTHESIS ===
+  - id: S01
+    description: "Research 3 competitors of Stripe: pricing, funding, product features → produce comparison table"
+    oracle_runnable: "yes"
+    primary_dimensions: [D1, D3, D2]
+    tools_required: [search, browser, document]
+    fault_injection_points:
+      - point: "search_api_timeout"
+        seed: 42
+        trigger: "first search call"
+        expected_recovery: "retry with backoff, then fallback to browser-based search"
+    pass_criteria: "All 3 competitors researched in parallel, accurate data, synthesized into single table, recovered from search timeout"
+
+  - id: S02
+    description: "Simultaneously fetch weather, flights, and hotel prices for 3 cities → produce travel recommendation"
+    oracle_runnable: "yes"
+    primary_dimensions: [D3, D2, D1]
+    tools_required: [search, browser, document]
+    fault_injection_points:
+      - point: "browser_navigation_failure"
+        seed: 101
+        trigger: "second city hotel lookup"
+        expected_recovery: "retry navigation, fallback to search API"
+    pass_criteria: "Parallel data collection, no cross-city data contamination, coherent recommendation with trade-offs"
+
+  - id: S03
+    description: "Analyze 3 GitHub repositories simultaneously: star count, recent commits, issue response time, contributor diversity"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D3, D1, D2]
+    tools_required: [browser, code, document]
+    fault_injection_points:
+      - point: "rate_limit_429"
+        seed: 77
+        trigger: "third repo API call"
+        expected_recovery: "respect rate limit, queue and retry after delay"
+    pass_criteria: "All 3 repos analyzed, metrics accurate, rate limit handled gracefully"
+
+  # === MULTI-TOOL SEQUENTIAL PIPELINES ===
+  - id: S04
+    description: "User uploads CSV → clean data → analyze trends → generate chart → write report → email summary"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D2, D1, D5]
+    tools_required: [code, data-analysis, document, image-gen]
+    fault_injection_points:
+      - point: "malformed_csv_row"
+        seed: 33
+        trigger: "during data cleaning"
+        expected_recovery: "identify and skip/fix malformed rows, log warnings"
+    pass_criteria: "Complete pipeline executes, data cleaning handles edge cases, chart is accurate, report references chart"
+
+  - id: S05
+    description: "Scrape Hacker News top 10 → summarize each → produce daily digest → schedule recurring delivery"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D2, D1, D6]
+    tools_required: [browser, document, scheduler]
+    fault_injection_points:
+      - point: "hn_page_structure_change"
+        seed: 55
+        trigger: "during scraping"
+        expected_recovery: "detect structure change, adapt selectors or fallback to API"
+    pass_criteria: "All 10 stories scraped, summaries are accurate, scheduling configured correctly"
+
+  - id: S06
+    description: "Take a design mockup image → extract layout → generate HTML/CSS → deploy preview → collect feedback"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D2, D1, D4]
+    tools_required: [image-gen, code, browser]
+    fault_injection_points:
+      - point: "image_analysis_ambiguity"
+        seed: 88
+        trigger: "during layout extraction"
+        expected_recovery: "ask for clarification or make reasonable assumptions with documentation"
+    pass_criteria: "Generated HTML matches mockup layout, responsive, preview accessible"
+
+  # === FAULT INJECTION + RECOVERY ===
+  - id: S07
+    description: "Tool failure injection: external API returns 503 on first attempt → retry/fallback/clear error message"
+    oracle_runnable: "yes"
+    primary_dimensions: [D4, D1]
+    tools_required: [search, browser]
+    fault_injection_points:
+      - point: "api_503_first_attempt"
+        seed: 12
+        trigger: "first external API call"
+        expected_recovery: "retry with exponential backoff, succeed on second attempt"
+    pass_criteria: "Graceful 503 handling, user informed of retry, task completes successfully"
+
+  - id: S08
+    description: "Two parallel tasks → verify no resource contention or cross-leak between task contexts"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D3, D4]
+    tools_required: [code, document]
+    fault_injection_points:
+      - point: "shared_resource_contention"
+        seed: 66
+        trigger: "simultaneous file write"
+        expected_recovery: "proper locking or isolation, no data corruption"
+    pass_criteria: "Both tasks complete independently, no cross-contamination of data or context"
+
+  - id: S09
+    description: "Mid-task tool becomes unavailable (browser crashes) → detect, report, switch to alternative approach"
+    oracle_runnable: "yes"
+    primary_dimensions: [D4, D5]
+    tools_required: [browser, search, document]
+    fault_injection_points:
+      - point: "browser_crash_mid_task"
+        seed: 99
+        trigger: "after 3rd navigation"
+        expected_recovery: "detect crash, restart browser or switch to API-based approach"
+    pass_criteria: "Crash detected within 5s, alternative approach selected, task completes with degraded but acceptable quality"
+
+  - id: S10
+    description: "Network timeout during file upload → retry with resume, verify integrity"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D4, D5]
+    tools_required: [storage, code]
+    fault_injection_points:
+      - point: "upload_timeout_50_percent"
+        seed: 44
+        trigger: "at 50% upload progress"
+        expected_recovery: "detect timeout, retry upload (resume if possible), verify file integrity"
+    pass_criteria: "File uploaded successfully after retry, integrity verified via checksum"
+
+  # === REPLANNING + FOLLOW-UP ===
+  - id: S11
+    description: "User changes requirements mid-task: 'Actually, make it a blog post instead of a report' → replan and adapt"
+    oracle_runnable: "yes"
+    primary_dimensions: [D4, D5]
+    tools_required: [document]
+    fault_injection_points: []
+    pass_criteria: "Acknowledges change, replans without losing prior research, output matches new format, no orphaned artifacts"
+
+  - id: S12
+    description: "Task produces initial result → user asks 3 follow-up questions → each answer builds on prior context"
+    oracle_runnable: "yes"
+    primary_dimensions: [D5, D6]
+    tools_required: [document, search]
+    fault_injection_points: []
+    pass_criteria: "Each follow-up references prior context, no contradictions, progressive deepening of analysis"
+
+  - id: S13
+    description: "Complex task fails at step 4 of 7 → diagnose failure → replan remaining steps → complete with alternative approach"
+    oracle_runnable: "yes"
+    primary_dimensions: [D4, D2]
+    tools_required: [code, browser, document]
+    fault_injection_points:
+      - point: "step_4_dependency_failure"
+        seed: 21
+        trigger: "step 4 execution"
+        expected_recovery: "diagnose root cause, identify alternative path, replan steps 4-7"
+    pass_criteria: "Failure diagnosed correctly, alternative plan is viable, task completes with documented deviation"
+
+  - id: S14
+    description: "User provides ambiguous instruction → agent asks clarifying question → user clarifies → agent proceeds correctly"
+    oracle_runnable: "yes"
+    primary_dimensions: [D4, D5]
+    tools_required: [document]
+    fault_injection_points: []
+    pass_criteria: "Identifies ambiguity, asks targeted question (not generic), proceeds correctly after clarification"
+
+  # === BRANCHING + CONTINUATION ===
+  - id: S15
+    description: "Create two alternative approaches to a problem → user selects one → continue with selected branch → merge learnings from rejected branch"
+    oracle_runnable: "yes"
+    primary_dimensions: [D6, D2]
+    tools_required: [document, code]
+    fault_injection_points: []
+    pass_criteria: "Both alternatives are genuinely different, selected branch continues cleanly, useful insights from rejected branch preserved"
+
+  - id: S16
+    description: "Long-running task with 5 checkpoints → user interrupts at checkpoint 3 → resume from checkpoint without data loss"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D6, D4]
+    tools_required: [code, document]
+    fault_injection_points:
+      - point: "session_interrupt"
+        seed: 78
+        trigger: "checkpoint 3"
+        expected_recovery: "save state at checkpoint, resume cleanly on continuation"
+    pass_criteria: "State preserved at checkpoint 3, resume produces same result as uninterrupted execution"
+
+  - id: S17
+    description: "Task spawns 3 sub-tasks → sub-task 2 fails → complete sub-tasks 1 and 3 → retry sub-task 2 → aggregate all results"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D3, D4, D2]
+    tools_required: [search, code, document]
+    fault_injection_points:
+      - point: "subtask_2_failure"
+        seed: 56
+        trigger: "sub-task 2 execution"
+        expected_recovery: "isolate failure, complete other sub-tasks, retry failed one, aggregate"
+    pass_criteria: "Sub-tasks 1 and 3 unaffected by sub-task 2 failure, retry succeeds, aggregation is complete"
+
+  # === COMPLEX MULTI-MODAL ===
+  - id: S18
+    description: "Generate image → analyze it → write description → create variations → select best → produce final deliverable"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D2, D1]
+    tools_required: [image-gen, document]
+    fault_injection_points:
+      - point: "image_gen_content_filter"
+        seed: 34
+        trigger: "first generation attempt"
+        expected_recovery: "modify prompt to comply with content policy, regenerate"
+    pass_criteria: "Complete pipeline, image quality acceptable, description accurate, variations meaningfully different"
+
+  - id: S19
+    description: "Voice input → transcribe → extract action items → create tasks → schedule reminders → confirm with user"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D2, D1, D5]
+    tools_required: [voice, document, scheduler]
+    fault_injection_points:
+      - point: "transcription_low_confidence"
+        seed: 67
+        trigger: "during transcription"
+        expected_recovery: "flag low-confidence segments, ask user to confirm before proceeding"
+    pass_criteria: "Transcription accurate, action items correctly extracted, tasks created, reminders scheduled"
+
+  - id: S20
+    description: "Build a complete web component: design → code → test → document → deploy preview → iterate based on feedback"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D2, D6, D1]
+    tools_required: [code, browser, document, image-gen]
+    fault_injection_points:
+      - point: "test_failure_on_edge_case"
+        seed: 89
+        trigger: "during testing phase"
+        expected_recovery: "identify edge case, fix implementation, re-run tests"
+    pass_criteria: "Component works across browsers, tests pass, documentation complete, preview accessible"
+
+  # === ADDITIONAL STRESS SCENARIOS ===
+  - id: S21
+    description: "Process 100 items in batches of 10 → handle partial batch failure → retry failed items → produce completion report"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D3, D4, D2]
+    tools_required: [code, document]
+    fault_injection_points:
+      - point: "batch_3_partial_failure"
+        seed: 45
+        trigger: "items 21-25 in batch 3"
+        expected_recovery: "isolate failed items, continue remaining batches, retry failed items separately"
+    pass_criteria: "All 100 items processed, failed items retried successfully, completion report accurate"
+
+  - id: S22
+    description: "Concurrent tool access: search + browser + code execution simultaneously → verify no deadlocks or resource starvation"
+    oracle_runnable: "conditional"
+    primary_dimensions: [D3, D1]
+    tools_required: [search, browser, code]
+    fault_injection_points:
+      - point: "resource_starvation"
+        seed: 23
+        trigger: "simultaneous tool invocation"
+        expected_recovery: "queue excess requests, process in priority order"
+    pass_criteria: "All tools complete successfully, no deadlocks, results are correct"
+
+metadata:
+  version: "1.0"
+  created: "2026-04-25"
+  total_scenarios: 22
+  dimension_coverage:
+    D1_tool_selection: 14
+    D2_sequencing: 12
+    D3_parallel: 7
+    D4_replanning: 11
+    D5_followup: 7
+    D6_branching: 5
+  lifecycle:
+    last_rotation: "2026-04-25"
+    next_wholesale_replacement: "2026-10-25"

@@ -4452,3 +4452,40 @@
 - [x] Verified: axe-core returns 0 violations after fix (confirmed via Playwright)
 - [x] Auth loop confirmed resolved: page loads without any 401 redirects or OAuth loops
 - [x] All test files passing: cycle16 (25), cycle15 (35), share-view (19), parity (30), cycle7-e2e (131), mobile-ui (42), session14 (20), auth.logout (1)
+
+### MANUS-PARITY-PLUS-LOOP v1.1 Scaffolding Generation (Cycle 18)
+- [x] Create manus-oracle/STATE.json with full schema
+- [x] Update .manus/config.json with parity_strategy, automation_tier, safety_sensitive fields
+- [x] Create decision_record.md
+- [x] Create REGRESSION_SENTINEL.md
+- [x] Create tests/reasoning-probes/probes.yaml (32 probes across 8 domains)
+- [x] Create tests/orchestration-stress/scenarios.yaml (22 scenarios)
+- [x] Create e2e/vu-base.ts
+- [x] Create e2e/vu-{1..8}-*.spec.ts (8 persona spec files)
+- [ ] Complete Phase A gates A.2-A.6
+- [ ] Begin Phase B recursive optimization loop
+
+### App Icon Fix (User-Reported Bug)
+- [x] Generate proper favicon.ico (16x16, 32x32, 48x48 multi-size) from white_marble_hero.png
+- [x] Generate PWA icons (192x192, 512x512) from white_marble_hero.png
+- [x] Generate apple-touch-icon (180x180) from white_marble_hero.png
+- [x] Create/update web manifest with proper icon references
+- [x] Wire favicon and PWA icons into client/index.html with correct meta tags
+- [x] Verify icon renders in browser tab and as PWA home screen icon (CDN serving confirmed, needs deploy for full verification)
+
+### GATE A.5/A.6 Completion
+- [x] Complete GATE A.5 baseline snapshot (re-derive 4-axis scores: A=7.0, B=5.0, C=5.5, D=5.0, MIN=5.0)
+- [x] Complete GATE A.6 cycle startup entry in ledger.json (cycle-1-priming, Bootstrap)
+
+### Pass 1: APP-LIFECYCLE (B-axis floor lift)
+- [x] B8: Add in-app feedback widget — upgraded existing FeedbackWidget to persist to DB + notify owner
+- [x] B8: Create feedback database table (appFeedback) and tRPC procedures (submit/myFeedback/listAll/respond)
+- [ ] B8: Add help/docs link in sidebar navigation
+- [x] B7: Welcome dialog already has 6-step onboarding (OnboardingTooltips.tsx) — verified existing
+- [x] B7: First-run detection already exists (ONBOARDING_KEY in localStorage) — verified existing
+- [x] B5: Structured logging already exists (server/services/observability.ts) with traceId/spanId — verified existing
+- [x] B5: /api/health endpoint already exists with comprehensive validation report — verified existing
+- [x] B5: Upgraded ErrorBoundary with componentDidCatch → POST /api/client-error + copy button + try-again
+- [x] B9: Rate limiting already exists on all sensitive routes (stream, upload, tts, analytics, webhooks, trpc) — verified existing
+- [x] Write vitest tests for new features — 12 tests in feedback.test.ts (all passing)
+- [x] Update ledger.json with Pass 1 completion (convergence_history + improvements)

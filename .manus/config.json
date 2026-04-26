@@ -1,12 +1,15 @@
 {
   "project": "manus-next-app",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "stack": "4-layer-holistic",
   "layers": ["aegis", "atlas", "sovereign", "app"],
   "phase": "B",
   "toolkit": "tools/recursive_optimization_toolkit.cjs",
   "config": "tools/optimization-config.json",
   "ledger": "ledger.json",
+  "parity_strategy": "balanced",
+  "automation_tier": "semi",
+  "safety_sensitive": false,
   "artifacts": {
     "CLAUDE.md": true,
     "COMPREHENSIVE_GUIDE.md": true,

@@ -35,6 +35,7 @@ import { usageRouter } from "./routers/usage";
 import { videoRouter } from "./routers/video";
 import { voiceRouter } from "./routers/voice";
 import { webappRouter } from "./routers/webapp";
+import { feedbackRouter } from "./routers/feedback";
 import { workspaceRouter } from "./routers/workspace";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -56,6 +57,7 @@ export const appRouter = router({
   branches: branchesRouter,
   bridge: bridgeRouter,
   browser: browserRouter,
+  feedback: feedbackRouter,
   file: fileRouter,
   preferences: preferencesRouter,
   sovereign: sovereignRouter,

@@ -1,0 +1,79 @@
+Based on the detailed screen recording of the Manus AI platform, here is a comprehensive analysis covering the requested areas:
+
+### 1) UI Surfaces Visible
+
+The Manus platform utilizes a modern, dark-themed interface with several distinct UI surfaces:
+
+*   **Main Dashboard:**
+    *   **Left Sidebar:** Primary navigation containing: New task, Agent, Search, Library, and a collapsible "Projects" list (e.g., Sovereign AI, Manus Next).
+    *   **Central Input Area:** A large, prominent prompt box ("What can I do for you?") with quick-action buttons below (Create slides, Build website, Develop desktop apps, Design, How).
+    *   **Input Toolbar:** Inside the prompt box, there are icons to add attachments ('+'), use specific skills, open a larger context menu, and use voice input (microphone icon).
+    *   **Top Right Bar:** Displays current credit balance, a notification bell icon, and the user profile avatar.
+*   **Settings & Account Modals (accessed via Profile icon):**
+    *   **Personalization:** Tabs for "Profile" (Nickname, Occupation, "More about you", "Custom Instructions") and "Knowledge" (toggles for specific behavioral rules).
+    *   **Account / Usage & Billing:** Shows current plan (Manus Pro), credit balance, daily refresh credits, and detailed usage records broken down by "Tasks" and "Websites" with associated costs.
+    *   **Scheduled Tasks:** Lists scheduled and completed automated tasks.
+    *   **Mail Manus:** Settings to create tasks via email, showing a dedicated Manus email address and approved senders list.
+    *   **Data Controls:** A hub to manage Shared tasks, Shared files, Websites accessed, Apps, and Purchased domains. Includes a "My Computer" section (for local folder access) and a "Cloud browser" setting (to persist login status).
+    *   **Skills:** A searchable marketplace of AI capabilities (e.g., video-generator, manus-api, stock-analysis) that can be toggled on/off or custom-built.
+    *   **Connectors & Integrations:** Panels to link external apps (GitHub, Google Workspace, Meta Ads, etc.), custom APIs, and integrations like Zapier or Slack.
+*   **Library & Project Views:**
+    *   **Library:** A grid view of recent tasks and projects.
+    *   **Project Dashboard:** When a project (e.g., "Sovereign AI") is selected, the view splits. The left shows a list of tasks within the project. The right pane displays project-level "Instructions," connected "Files," active "Skills," and "Scheduled tasks."
+*   **Task Execution View:**
+    *   A chat-like interface showing the back-and-forth between the user and the AI. It displays the AI's "thought process" (collapsible steps), executing scripts, and formatted output (like data tables).
+    *   **File Manager Panel:** A slide-out panel on the right showing "All files in this task," categorized by Documents, Images, Code files, and Links, with batch download capabilities.
+*   **External Pages:** The video briefly shows the Stripe checkout page and the "Manus Trust Center" (detailing SOC 2, ISO certifications, and subprocessors).
+*   **Developer Tools:** A unique split-screen view revealing Microsoft Edge DevTools alongside a responsive mobile-sized view of the Manus interface.
+
+### 2) Capabilities Demonstrated
+
+The user navigates through the platform to demonstrate a wide array of capabilities:
+
+*   **Plan Exploration & Upgrading:** Navigating complex pricing tiers for Teams and Enterprise, and initiating a checkout process.
+*   **Security Auditing:** Reviewing the platform's compliance, data privacy controls, and subprocessor list in the Trust Center.
+*   **AI Personalization:** Setting global custom instructions (e.g., "Maintain a professional tone") and toggling specific knowledge rules (e.g., "Documentation Update After All Other Items").
+*   **Resource Management:** Reviewing granular credit usage and costs per project/website.
+*   **Workflow Automation Configuration:** Viewing scheduled tasks and setting up "Mail Manus" to trigger AI actions via email.
+*   **Data & Privacy Management:** Managing which tasks and files are public/private and controlling cloud browser session persistence.
+*   **Skill & Connector Management:** Browsing and enabling specific AI skills and preparing to connect third-party applications.
+*   **Project Organization:** Creating a new project, managing project files, and setting project-specific instructions.
+*   **Complex Task Execution & Monitoring:** Viewing a highly complex task ("How to Update Database and Event Schedule Tabs") where the AI is running Python scripts, performing multi-source verification against external APIs (FINRA), handling rate limits, and outputting statistical data in tables.
+*   **File Extraction:** Using the task file manager to select multiple generated files (Python scripts, CSVs, JSONs) and performing a batch download.
+*   **Environment Inspection:** Opening browser DevTools within the app to inspect the console and UI elements.
+
+### 3) Pricing or Billing Information Shown
+
+The video reveals extensive details about Manus's pricing structure and credit economy:
+
+*   **Team Plans:**
+    *   Base price: $20 per seat/month (or $200/seat/year, saving 15%).
+    *   Customizable based on seats and credits. For example, a 10-seat team with 4,000 credits/seat/month costs $200/month.
+    *   Credit tiers for teams range from 4,000 up to 1,200,000 credits/seat/month (which pushes the price to $5,000/seat/month).
+*   **Manus Pro (Individual/Enterprise) Plans:**
+    *   The user is currently on a "Manus Pro" plan.
+    *   A standard Pro tier is shown at $200/month, offering 200 daily refresh credits and 40,000 credits/month.
+    *   Higher customizable tiers are shown, such as $10,000/month (billed annually at $120,000) for 2,400,000 credits/month and 30 concurrent tasks.
+    *   The highest visible tier is 5,000,000 credits/month for $20,000/month.
+*   **Credit System:**
+    *   The platform operates on a "Credit" system. The user's dashboard shows a balance of 900,560 credits out of 1,200,000.
+    *   There are "Daily refresh credits" (e.g., 200/day) that reset.
+    *   The "Usage & Billing" section shows that actions cost specific amounts (e.g., a specific task cost $23.98, broken down into Cloud, AI, and Integrations costs).
+*   **Referral Program:** A modal shows "Invite to get credits," offering 500 credits per referral.
+
+### 4) Navigation Patterns and Layout Structure
+
+*   **Hub-and-Spoke Model:** The left sidebar acts as the central hub. Users navigate out to specific functions (Search, Library, specific Projects) and return to the sidebar to switch contexts.
+*   **Contextual Right Panels:** When viewing a project or a specific task, the right side of the screen is utilized for contextual meta-information (Project instructions, attached files, skills in use) rather than navigating away from the main content.
+*   **Modal Overlays:** Almost all settings, billing, personalization, and data control menus open as large, centralized modal windows over the main dashboard, keeping the user anchored to their primary workspace.
+*   **Drill-Down Task View:** Clicking a task from the Library or Project list replaces the central view with a deep, chronological chat history of that specific execution.
+
+### 5) New Features Not Commonly Documented
+
+Several features stand out as advanced or unique compared to standard consumer AI chatbots:
+
+*   **Mail Manus:** The ability to assign tasks to the AI by sending an email to a specific platform-generated address, complete with approved sender whitelists.
+*   **Cloud Browser Persistence:** Under Data Controls -> Cloud browser, there is a toggle to "Persist login status across tasks." This implies the AI operates a remote browser environment that can hold authentication cookies between different automated runs.
+*   **Custom MCP (Model Context Protocol):** Under Connectors, there is a tab for "Custom MCP," suggesting advanced users can define custom protocols for how the AI interacts with external data sources or APIs.
+*   **Integrated DevTools:** The ability to open Microsoft Edge DevTools directly within the Manus interface (around 11:15) to inspect the console and network activity of the platform or the AI's web view is a highly unusual, developer-centric feature.
+*   **Granular Cost Tracking:** The "Websites" tab under Usage & Billing breaks down the exact financial cost of the AI interacting with specific external domains or internal modules (e.g., `wealthbridge-ai` cost $23.98).

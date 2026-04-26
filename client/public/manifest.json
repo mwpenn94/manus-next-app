@@ -11,25 +11,35 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/manus-storage/icon-192_fb952706.png",
+      "src": "/manus-storage/favicon-32_6722802f.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/manus-storage/apple-touch-icon_34b64446.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/manus-storage/icon-192_b278a06b.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/manus-storage/icon-192_fb952706.png",
+      "src": "/manus-storage/icon-192_b278a06b.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/manus-storage/icon-512_141e7157.png",
+      "src": "/manus-storage/icon-512_bdf5e35a.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/manus-storage/icon-512_141e7157.png",
+      "src": "/manus-storage/icon-512_bdf5e35a.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

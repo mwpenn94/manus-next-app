@@ -1,11 +1,27 @@
 {
   "project": "manus-next-app",
   "created": "2026-04-25T09:12:49.884Z",
-  "last_updated": "2026-04-25T16:01:49.370Z",
+  "last_updated": "2026-04-26T03:50:25.602Z",
   "automation_tier": "manual",
   "safety_sensitive": false,
-  "current_phase": "D",
-  "improvements": [],
+  "current_phase": "B",
+  "improvements": [
+    {
+      "id": "pass-1-app-lifecycle",
+      "timestamp": "2026-04-26T03:50:25.602Z",
+      "axis": "B",
+      "description": "B-axis floor lifted from 5.0 to 6.5 via feedback persistence, error reporting, and infrastructure verification",
+      "files_changed": [
+        "drizzle/schema.ts",
+        "server/routers/feedback.ts",
+        "server/routers.ts",
+        "client/src/components/FeedbackWidget.tsx",
+        "client/src/components/ErrorBoundary.tsx",
+        "server/_core/index.ts",
+        "server/feedback.test.ts"
+      ]
+    }
+  ],
   "failed_approaches": [],
   "regressions": [],
   "convergence_history": [
@@ -80,6 +96,59 @@
       "novelty_count": 5,
       "phase": "D",
       "timestamp": "2026-04-25T16:01:49.370Z"
+    },
+    {
+      "pass": "cycle-1-priming",
+      "type": "Bootstrap",
+      "mode": "priming",
+      "scores": null,
+      "oracle_staleness_days": 1,
+      "evidence_unavailable": [],
+      "automation_tier": "semi",
+      "prerequisites_passed": true,
+      "baseline_snapshot": {
+        "axis_a": 7,
+        "axis_b": 5,
+        "axis_c": 5.5,
+        "axis_d": 5,
+        "overall_min": 5,
+        "target": 8.5,
+        "rubric": "4-axis-conjunctive-v1.1",
+        "note": "Re-derived from first principles per §1 GATE A.5. Legacy 10-dim scores NOT transcribed."
+      },
+      "telemetry_status": "baseline_partial: telemetry_unavailable",
+      "parity_strategy": "balanced",
+      "scaffolding_generated": true,
+      "oracle_sources": [
+        "manus-recording-1.mp4 (730s)",
+        "manus-recording-3.mp4 (1593s)",
+        "82 task replay URLs cataloged",
+        "Pass 1 Landscape Dossier (75+ sources)",
+        "41 repo screenshots",
+        "72 capability baselines"
+      ],
+      "timestamp": "2026-04-26T03:32:33.135Z",
+      "duration_seconds": 18153
+    },
+    {
+      "pass": "parity-pass-1",
+      "type": "APP-LIFECYCLE",
+      "mode": "convergent",
+      "score": 6.5,
+      "delta": 1.5,
+      "dimensions": {
+        "A_visual_parity": 7,
+        "B_engineering": 6.5,
+        "C_capability": 5.5,
+        "D_orchestration": 5
+      },
+      "changes": [
+        "NEW: appFeedback DB table + feedbackRouter (4 procedures)",
+        "UPGRADED: FeedbackWidget persists to DB + notifies owner",
+        "UPGRADED: ErrorBoundary with componentDidCatch + /api/client-error",
+        "VERIFIED: Observability, health, rate limiting, onboarding already existed"
+      ],
+      "timestamp": "2026-04-26T03:50:25.602Z"
     }
   ],
   "branches": [],

@@ -308,6 +308,22 @@ async function startServer() {
     }
   });
 
+  // ── Client Error Reporting (B5 Observability) ──
+  app.post("/api/client-error", express.json(), async (req, res) => {
+    try {
+      const { message, stack, componentStack, url, timestamp } = req.body || {};
+      console.error(`[ClientError] ${message || "Unknown"}`, {
+        url,
+        timestamp,
+        stack: stack?.slice(0, 500),
+        componentStack: componentStack?.slice(0, 300),
+      });
+      res.json({ received: true });
+    } catch {
+      res.status(200).json({ received: true });
+    }
+  });
+
   // ── Dev-only: Test Login for E2E (Playwright) ──
   // Creates a valid session cookie for the owner user without OAuth redirect.
   // Only available in development (NODE_ENV !== 'production').

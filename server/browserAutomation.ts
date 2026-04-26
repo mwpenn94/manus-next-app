@@ -253,7 +253,7 @@ export async function getOrCreateSession(sessionId?: string, browserType: Browse
   };
 
   // Capture console logs
-  page.on("console", (msg) => {
+  page.on("console", (msg: import("playwright").ConsoleMessage) => {
     session.consoleLogs.push({
       type: msg.type(),
       text: msg.text(),
@@ -266,7 +266,7 @@ export async function getOrCreateSession(sessionId?: string, browserType: Browse
 
   // Capture network requests with timing
   const requestTimings = new Map<string, number>();
-  page.on("request", (req) => {
+  page.on("request", (req: import("playwright").Request) => {
     const reqId = `${req.method()}-${req.url()}-${Date.now()}`;
     requestTimings.set(req.url(), Date.now());
     session.networkRequests.push({
@@ -279,7 +279,7 @@ export async function getOrCreateSession(sessionId?: string, browserType: Browse
     }
   });
 
-  page.on("response", async (resp) => {
+  page.on("response", async (resp: import("playwright").Response) => {
     const entry = session.networkRequests.find(
       (r) => r.url === resp.url() && !r.status
     );
@@ -370,7 +370,7 @@ async function captureScreenshot(session: BrowserSession, fullPage = false): Pro
 /** Extract readable text content from the page */
 async function extractPageContent(page: Page, maxLength = 4000): Promise<string> {
   try {
-    return await page.evaluate((max) => {
+    return await page.evaluate((max: number) => {
       // Try to get main content first
       const main = document.querySelector("main, article, [role='main'], #content, .content");
       const target = main || document.body;
@@ -527,7 +527,7 @@ export async function scroll(
       right: [px, 0],
     };
     const [x, y] = scrollMap[direction];
-    await session.page.evaluate(([sx, sy]) => window.scrollBy(sx, sy), [x, y]);
+    await session.page.evaluate(({ sx, sy }: { sx: number; sy: number }) => window.scrollBy(sx, sy), { sx: x, sy: y });
     await session.page.waitForTimeout(300);
 
     const title = await session.page.title();
@@ -843,7 +843,7 @@ export async function setViewport(
       await session.context.setExtraHTTPHeaders({});
       // Create a new page with the correct UA for the device
       const ua = DEVICE_USER_AGENTS[deviceName];
-      await session.page.evaluate((userAgent) => {
+      await session.page.evaluate((userAgent: string) => {
         Object.defineProperty(navigator, 'userAgent', { get: () => userAgent, configurable: true });
       }, ua);
     }
@@ -1269,7 +1269,7 @@ export async function runAccessibilityAudit(sessionId: string | undefined): Prom
       return issues;
     });
 
-    const typedViolations = violations.map(v => ({
+    const typedViolations = violations.map((v: any) => ({
       ...v,
       impact: v.impact as "critical" | "serious" | "moderate" | "minor",
     }));
@@ -1417,7 +1417,7 @@ export async function interceptRoute(
 ): Promise<{ success: boolean; error?: string }> {
   const session = await getOrCreateSession(sessionId);
   try {
-    await session.page.route(urlPattern, async (route) => {
+    await session.page.route(urlPattern, async (route: import("playwright").Route) => {
       if (action === "block") {
         await route.abort("blockedbyclient");
       } else if (action === "modify" && modifyOptions) {

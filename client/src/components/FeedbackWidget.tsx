@@ -8,12 +8,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, X, Send, Bug, Lightbulb, ThumbsUp } from "lucide-react";
+import { MessageSquare, X, Send, Bug, Lightbulb, ThumbsUp, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
 type FeedbackType = "bug" | "feature" | "praise";
+
+const FEEDBACK_CATEGORY_MAP: Record<FeedbackType, "bug_report" | "feature_request" | "praise"> = {
+  bug: "bug_report",
+  feature: "feature_request",
+  praise: "praise",
+};
 
 export default function FeedbackWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,6 +28,7 @@ export default function FeedbackWidget() {
   const [submitting, setSubmitting] = useState(false);
 
   const notifyOwner = trpc.system.notifyOwner.useMutation();
+  const submitFeedback = trpc.feedback.submit.useMutation();
 
   const handleSubmit = async () => {
     if (!message.trim()) {
@@ -30,10 +37,19 @@ export default function FeedbackWidget() {
     }
     setSubmitting(true);
     try {
+      // Persist to database for admin review
+      await submitFeedback.mutateAsync({
+        category: FEEDBACK_CATEGORY_MAP[type],
+        title: `[${type}] ${message.slice(0, 100)}`,
+        content: message,
+        pageContext: window.location.pathname,
+        userAgent: navigator.userAgent,
+      });
+      // Also notify owner immediately
       await notifyOwner.mutateAsync({
         title: `[Feedback/${type}] User feedback`,
         content: `Type: ${type}\n\n${message}`,
-      });
+      }).catch(() => { /* non-critical */ });
       toast.success("Feedback submitted — thank you!");
       setMessage("");
       setIsOpen(false);
