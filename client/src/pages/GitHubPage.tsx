@@ -77,22 +77,37 @@ export default function GitHubPage() {
   // ── Handle OAuth redirects (success + code fallback) ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const allParams = Object.fromEntries(params.entries());
+    if (Object.keys(allParams).length > 0) {
+      console.log("[GitHub OAuth] Page loaded with params:", allParams);
+    }
 
     // Case 1: Server-side exchange succeeded — ?oauth_success=github
     if (params.get("oauth_success") === "github") {
+      console.log("[GitHub OAuth] Server-side success detected");
       toast.success("GitHub connected!");
       connectorListQuery.refetch();
       window.history.replaceState({}, "", "/github");
       return;
     }
 
+    // Case 1b: Check for error param from GitHub
+    const error = params.get("error");
+    if (error) {
+      console.error("[GitHub OAuth] Error from provider:", error, params.get("error_description"));
+      toast.error(`GitHub OAuth error: ${params.get("error_description") || error}`);
+      window.history.replaceState({}, "", "/github");
+      return;
+    }
+
     // Case 2: Server-side exchange failed — fallback ?code=X&state=Y
-    // GitHubPage must handle this like ConnectorsPage does.
     const code = params.get("code");
     const state = params.get("state");
     if (code && state) {
+      console.log("[GitHub OAuth] Code+state fallback detected, attempting client-side exchange");
       try {
         const parsed = JSON.parse(atob(state.replace(/-/g, '+').replace(/_/g, '/')));
+        console.log("[GitHub OAuth] Parsed state:", { connectorId: parsed.connectorId, origin: parsed.origin, returnPath: parsed.returnPath });
         if (parsed.connectorId === "github") {
           setConnecting(true);
           completeOAuthMut.mutate({
@@ -103,6 +118,7 @@ export default function GitHubPage() {
         }
       } catch (e) {
         console.error("[GitHub OAuth] Failed to parse state:", e);
+        toast.error("GitHub connection failed: invalid state parameter");
       }
       window.history.replaceState({}, "", "/github");
     }

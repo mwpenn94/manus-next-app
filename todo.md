@@ -5224,4 +5224,11 @@
   when server-side token exchange fails. Also missing connector-oauth-callback popup handler.
 - [x] Fix: Added completeOAuth mutation + code/state URL handler + popup callback handler to GitHubPage
 - [x] Verify fix with testing (12/12 vitest pass)
+- [x] Save checkpoint (version 08abfab0)
+
+## Pass 37d: GitHub Auth Loop Still Persists After 37c Fix
+- [ ] Check deployed server logs for actual token exchange error message
+- [ ] Investigate why both server-side AND client-side token exchange fail
+- [ ] Fix the root cause
+- [ ] Verify fix
 - [ ] Save checkpoint

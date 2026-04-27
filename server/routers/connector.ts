@@ -531,4 +531,19 @@ export const connectorRouter = router({
           createdAt: l.createdAt.toISOString(),
         }));
       }),
+    /** Debug: check GitHub connector status (temporary) */
+    debugGitHub: protectedProcedure.query(async ({ ctx }) => {
+      const conns = await getUserConnectors(ctx.user.id);
+      const github = conns.find(c => c.connectorId === "github");
+      if (!github) return { found: false, status: null, hasToken: false, tokenLength: 0 };
+      return {
+        found: true,
+        status: github.status,
+        hasToken: !!github.accessToken,
+        tokenLength: github.accessToken?.length || 0,
+        authMethod: (github.config as any)?.authMethod || "unknown",
+        name: github.name,
+        lastSync: github.lastSyncAt,
+      };
+    }),
   });

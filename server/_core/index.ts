@@ -606,12 +606,14 @@ async function startServer() {
 
   // ── Connector OAuth callback (receives redirect from GitHub/Google/Notion/Slack) ──
   app.get("/api/connector/oauth/callback", async (req, res) => {
+    console.log(`[Connector OAuth Callback] Hit! code=${!!req.query.code} state=${!!req.query.state} error=${req.query.error || 'none'} origin=${req.headers.referer || 'unknown'}`);
     try {
       const code = req.query.code as string;
       const stateRaw = req.query.state as string;
       const error = req.query.error as string;
 
       if (error) {
+        console.error(`[Connector OAuth Callback] Error from provider: ${error}`);
         return res.status(400).send(buildOAuthCallbackHtml(null, null, `OAuth error: ${error}`));
       }
       if (!code || !stateRaw) {
