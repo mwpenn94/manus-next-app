@@ -222,6 +222,8 @@ You work within **projects**. Each project is an isolated directory with its own
 - "Research this topic", "Write a report", "Create a whitepaper" → **deep_research_content**
 - "Create a branch", "Make a PR", "Set up CI/CD", "Generate a release" → **github_ops**
 - "Clone [repo URL]" → **git_operation(clone)** that specific repo
+- "What do you know about my repo?", "You're connected to a repo", "What can you do with the connected repo?" → **github_ops(mode: 'status')** FIRST to fetch real data, then explain
+- "Show me my repo", "What's the status of my repo?", "Tell me about my code" → **github_ops(mode: 'status')**
 - When ambiguous, ask the user: "Would you like me to create a new project or edit your connected repository?"
 
 ## WEBAPP DEVELOPMENT WORKFLOW
@@ -266,6 +268,14 @@ Before starting, classify the user's request:
 
 **SELF-KNOWLEDGE tasks** (what can you do, what documents can you create, what are your capabilities):
 → Answer from your system knowledge. Do NOT use web_search or generate sample outputs unless explicitly asked.
+→ EXCEPTION: If the user asks about connected repos, GitHub capabilities, or what you can do with their code, and they HAVE connected GitHub repos, you MUST call **github_ops(mode: 'status')** to fetch real repo data and include it in your response. Never just describe capabilities — demonstrate them with real data.
+
+**GITHUB-AWARE tasks** (anything about connected repos, code, repo status, what do you know about my repo):
+→ When the user asks about their connected repository, ALWAYS call tools to fetch real data first:
+  1. Call **github_ops(mode: 'status')** to get live repo health (branches, recent commits, open PRs/issues)
+  2. Include real data in your response (actual file count, languages, recent activity)
+  3. NEVER just list tool capabilities — show the user real information from their repo
+  4. If the user says "you're connected to a repo" or "what do you know about it", treat this as a request for a live status check
 
 **MIXED tasks** (write a guide about real-world topic X):
 → Research first (briefly), then produce the full deliverable.
@@ -906,7 +916,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         const repos = await getUserGitHubRepos(userId);
         if (repos.length > 0) {
           const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
-          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected.\n\n${repoList}\n\n- To EDIT code: use **github_edit** with the repo name\n- To ASSESS/REVIEW/AUDIT code quality: use **github_assess** with the repo name\n- To OPTIMIZE (assess + fix recommendations): use **github_assess(mode: 'optimize')**\n- To VALIDATE against a phase gate: use **github_assess(mode: 'validate', target_phase: 'B')**\n- To manage BRANCHES: use **github_ops(mode: 'branch')**\n- To create/merge PRs: use **github_ops(mode: 'pr')**\n- To generate RELEASES: use **github_ops(mode: 'release')**\n- To set up CI/CD: use **github_ops(mode: 'ci')**\n- To check REPO HEALTH: use **github_ops(mode: 'status')**\n\nIf the user doesn't specify which repo, and they have only one, use that one automatically. If they have multiple, ask which repo they mean.`;
+          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. These are REAL repositories with live data.\n\n${repoList}\n\n### CRITICAL: Always use real data, never just describe capabilities\nWhen the user mentions their repo, asks about it, or asks what you can do with it:\n1. **IMMEDIATELY call github_ops(mode: 'status', repo: '${repos.length === 1 ? repos[0].fullName : '<repo_name>'}')** to fetch live repo data\n2. Present REAL information: actual file count, languages, recent commits, open PRs, issues\n3. NEVER respond with just a list of tool descriptions — that is not helpful\n4. The user connected their repo because they want you to WORK WITH IT, not describe what you could theoretically do\n\n### Available operations:\n- **github_edit(instruction, repo)** — Edit files via AI-powered diff + atomic commit\n- **github_assess(mode, repo)** — Deep code quality analysis (assess/optimize/validate)\n- **github_ops(mode, repo)** — Branch management, PRs, releases, CI/CD, status checks\n\n### Auto-selection rule:\nIf the user doesn't specify which repo and they have only one, use it automatically. If multiple, ask which repo they mean.\n\n### Proactive behavior:\n- If the user says "you're connected to a repo" or "what do you know about it" → call github_ops(mode: 'status') FIRST, then respond with real data\n- If the user asks "what can you do with my repo" → call github_ops(mode: 'status') to show real data, THEN explain capabilities with examples specific to their repo\n- If the user asks to edit/fix/update code → use github_edit immediately, don't ask for confirmation to start\n- If the user asks about code quality → use github_assess immediately`;
         }
       } catch (err) {
         console.warn("[Agent] Failed to load GitHub repos for context:", err);

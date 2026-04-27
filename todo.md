@@ -5344,3 +5344,26 @@
 - [x] TypeScript: 0 errors
 - [x] Full test suite: 4544+ tests passing
 - [x] Save checkpoint
+
+## Pass 40: GitHub Tools — Real Repo Integration
+
+### 40.1: Investigation
+- [x] Audit current github_edit, github_assess, github_ops tool implementations — all already wired to real GitHub API
+- [x] Audit GitHub connector integration — connectors table stores OAuth token, getUserConnectors fetches it
+- [x] Identify root cause: agent classifies repo questions as SELF-KNOWLEDGE and just lists capabilities instead of calling tools
+
+### 40.2: System Prompt Fixes (Root Cause)
+- [x] Add GITHUB-AWARE task type to system prompt — forces proactive github_ops(status) calls when repos are connected
+- [x] Fix SELF-KNOWLEDGE exception — when user asks about repos, MUST call github_ops(status) first
+- [x] Add repo-aware intent patterns: "what do you know about my repo" → github_ops(status)
+- [x] Strengthen connected repos injection with proactive behavior instructions (auto-call status, never just describe)
+
+### 40.3: E2E Test Stability
+- [x] Increase web_search and network-dependent test timeouts to 15s (were timing out at 5s)
+- [x] All 44 E2E tests passing
+
+### 40.4: Verification
+- [x] Confirmed github_ops(status) fetches real API data (branches, PRs, commits, CI detection)
+- [x] Confirmed githubApi.ts already has full REST API client (getRepo, listBranches, listPullRequests, etc.)
+- [x] TypeScript check: 0 errors
+- [x] Save checkpoint

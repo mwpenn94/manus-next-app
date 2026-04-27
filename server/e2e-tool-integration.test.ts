@@ -100,7 +100,7 @@ describe("E2E Tool Integration — All 31 Tools", () => {
     it("web_search returns results", async () => {
       const result = await executeTool("web_search", JSON.stringify({ query: "AI agent frameworks 2026" }), mockContext);
       expect(result).toBeDefined();
-    });
+    }, 15000);
 
     it("execute_code runs code", async () => {
       const result = await executeTool("execute_code", JSON.stringify({ code: "console.log('hello')", language: "javascript" }), mockContext);
@@ -239,7 +239,7 @@ describe("E2E Tool Integration — All 31 Tools", () => {
     it("null context handled gracefully", async () => {
       const result = await executeTool("web_search", JSON.stringify({ query: "test" }), null as any);
       expect(result).toBeDefined();
-    });
+    }, 15000);
 
     it("malformed JSON args handled", async () => {
       const result = await executeTool("execute_code", "not valid json", mockContext);
@@ -251,7 +251,7 @@ describe("E2E Tool Integration — All 31 Tools", () => {
     it("extremely long input does not crash", async () => {
       const result = await executeTool("web_search", JSON.stringify({ query: "a".repeat(10000) }), mockContext);
       expect(result).toBeDefined();
-    });
+    }, 15000);
   });
 
   // ── 5. Tool Chaining ──
