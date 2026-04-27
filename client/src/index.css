@@ -340,7 +340,9 @@ button:active:not(:disabled), a:active, [role="button"]:active {
 /* We target both levels to catch pages with and without AnimatedRoute */
 @media (max-width: 767px) {
   #main-content > * > .overflow-y-auto,
-  #main-content > .overflow-y-auto {
+  #main-content > .overflow-y-auto,
+  #main-content > * > .overflow-auto,
+  #main-content > .overflow-auto {
     padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
   }
 }

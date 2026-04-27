@@ -5367,3 +5367,14 @@
 - [x] Confirmed githubApi.ts already has full REST API client (getRepo, listBranches, listPullRequests, etc.)
 - [x] TypeScript check: 0 errors
 - [x] Save checkpoint
+
+## Pass 41: Mobile Layout Cutoff & Crowding Bug Fix
+
+- [x] Fix GitHub repo detail page top header crowding — repo name, branch badge, Sync button, and action buttons overflow off-screen to the right on mobile
+- [x] Make GitHub repo detail header responsive (wrap elements, stack on mobile)
+- [x] Fix all scrollable pages — content is clipped behind the fixed bottom navigation bar on mobile
+- [x] Audit all pages for bottom-nav overlap: Home, TaskView, Settings, Billing, Library, Search, Agent, GitHub repo detail
+- [x] Verify fixes on narrow mobile viewport (375px width)
+- [x] Fix GitHub repo detail tabs bar overflow — 6 tabs (Code, Branches, Commits, PRs, Issues, Deploy) overflow horizontally on mobile, need scrollable tabs
+- [x] Remove hardcoded ml-[72px] margins from description/stats rows in GitHub repo detail
+- [x] Run TypeScript check and vitest tests after mobile fixes

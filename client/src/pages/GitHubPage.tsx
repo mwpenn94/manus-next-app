@@ -482,34 +482,37 @@ export default function GitHubPage() {
     return (
       <div className="h-full flex flex-col bg-background">
         {/* Header */}
-        <div className="border-b border-border px-6 py-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Button variant="ghost" size="sm" onClick={() => { navigate("/github"); setFilePath([]); }}>
+        <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4">
+          {/* Row 1: Back + repo name + branch badge */}
+          <div className="flex items-center gap-2 mb-2 min-w-0">
+            <Button variant="ghost" size="sm" className="shrink-0" onClick={() => { navigate("/github"); setFilePath([]); }}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Button>
-            <div className="flex items-center gap-2">
-              {selectedRepo.isPrivate ? <Lock className="w-4 h-4 text-muted-foreground" /> : <Globe className="w-4 h-4 text-muted-foreground" />}
-              <h1 className="text-lg font-semibold">{selectedRepo.fullName}</h1>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {selectedRepo.isPrivate ? <Lock className="w-4 h-4 text-muted-foreground shrink-0" /> : <Globe className="w-4 h-4 text-muted-foreground shrink-0" />}
+              <h1 className="text-base sm:text-lg font-semibold truncate">{selectedRepo.fullName}</h1>
             </div>
-            <Badge variant="outline" className="ml-2">{selectedRepo.defaultBranch}</Badge>
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => syncRepoMut.mutate({ externalId: selectedRepo.externalId })}>
-                <RefreshCw className={cn("w-3.5 h-3.5 mr-1", syncRepoMut.isPending && "animate-spin")} /> Sync
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <a href={selectedRepo.htmlUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-3.5 h-3.5 mr-1" /> GitHub
-                </a>
-              </Button>
-              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => disconnectRepoMut.mutate({ externalId: selectedRepo.externalId })}>
-                <Unplug className="w-3.5 h-3.5 mr-1" /> Disconnect
-              </Button>
-            </div>
+            <Badge variant="outline" className="shrink-0 hidden sm:inline-flex">{selectedRepo.defaultBranch}</Badge>
+          </div>
+          {/* Row 2: Action buttons — wrap on mobile */}
+          <div className="flex items-center gap-2 flex-wrap ml-0 sm:ml-[72px] mb-2">
+            <Badge variant="outline" className="sm:hidden">{selectedRepo.defaultBranch}</Badge>
+            <Button variant="outline" size="sm" className="h-8" onClick={() => syncRepoMut.mutate({ externalId: selectedRepo.externalId })}>
+              <RefreshCw className={cn("w-3.5 h-3.5 mr-1", syncRepoMut.isPending && "animate-spin")} /> Sync
+            </Button>
+            <Button variant="outline" size="sm" className="h-8" asChild>
+              <a href={selectedRepo.htmlUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-3.5 h-3.5 mr-1" /> GitHub
+              </a>
+            </Button>
+            <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => disconnectRepoMut.mutate({ externalId: selectedRepo.externalId })}>
+              <Unplug className="w-3.5 h-3.5 mr-1" /> Disconnect
+            </Button>
           </div>
           {selectedRepo.description && (
-            <p className="text-sm text-muted-foreground ml-[72px]">{selectedRepo.description}</p>
+            <p className="text-sm text-muted-foreground ml-0 sm:ml-[72px]">{selectedRepo.description}</p>
           )}
-          <div className="flex items-center gap-4 mt-2 ml-[72px] text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 sm:gap-4 mt-2 ml-0 sm:ml-[72px] text-xs text-muted-foreground flex-wrap">
             {selectedRepo.language && <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-primary" />{selectedRepo.language}</span>}
             <span className="flex items-center gap-1"><Star className="w-3 h-3" />{selectedRepo.starCount}</span>
             <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{selectedRepo.forkCount}</span>
@@ -519,33 +522,33 @@ export default function GitHubPage() {
 
         {/* Tabs */}
         <Tabs value={repoTab} onValueChange={(v) => { setRepoTab(v as RepoTab); setFilePath([]); }} className="flex-1 flex flex-col">
-          <div className="border-b border-border px-6">
-            <TabsList className="bg-transparent h-10 p-0 gap-0">
-              <TabsTrigger value="files" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
-                <Code className="w-3.5 h-3.5 mr-1.5" /> Code
+          <div className="border-b border-border px-2 sm:px-6 overflow-x-auto scrollbar-none">
+            <TabsList className="bg-transparent h-10 p-0 gap-0 w-max sm:w-auto">
+              <TabsTrigger value="files" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 sm:px-4 whitespace-nowrap">
+                <Code className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Code</span>
               </TabsTrigger>
-              <TabsTrigger value="branches" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
-                <GitBranch className="w-3.5 h-3.5 mr-1.5" /> Branches
+              <TabsTrigger value="branches" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 sm:px-4 whitespace-nowrap">
+                <GitBranch className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Branches</span>
               </TabsTrigger>
-              <TabsTrigger value="commits" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
-                <GitCommit className="w-3.5 h-3.5 mr-1.5" /> Commits
+              <TabsTrigger value="commits" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 sm:px-4 whitespace-nowrap">
+                <GitCommit className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Commits</span>
               </TabsTrigger>
-              <TabsTrigger value="prs" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
-                <GitPullRequest className="w-3.5 h-3.5 mr-1.5" /> Pull Requests
+              <TabsTrigger value="prs" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 sm:px-4 whitespace-nowrap">
+                <GitPullRequest className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">PRs</span>
               </TabsTrigger>
-              <TabsTrigger value="issues" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
-                <MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Issues
+              <TabsTrigger value="issues" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 sm:px-4 whitespace-nowrap">
+                <MessageSquare className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Issues</span>
               </TabsTrigger>
-              <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4">
-                <Rocket className="w-3.5 h-3.5 mr-1.5" /> Deploy
+              <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 sm:px-4 whitespace-nowrap">
+                <Rocket className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Deploy</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
           {/* Files Tab */}
-          <TabsContent value="files" className="flex-1 overflow-auto m-0 p-6">
+          <TabsContent value="files" className="flex-1 overflow-auto m-0 px-4 sm:px-6 py-4 sm:py-6 pb-20 md:pb-6">
             {/* Branch selector + Breadcrumb + New File */}
-            <div className="flex items-center gap-2 mb-4 text-sm">
+            <div className="flex items-center gap-2 mb-4 text-sm flex-wrap">
               <Select value={selectedBranch || selectedRepo.defaultBranch || "main"} onValueChange={(v) => { setSelectedBranch(v); setFilePath([]); }}>
                 <SelectTrigger className="w-[180px] h-8 text-xs">
                   <GitBranch className="w-3 h-3 mr-1" />
@@ -589,12 +592,12 @@ export default function GitHubPage() {
               /* File content view with CodeEditor */
               <>
               <Card className="border-border">
-                <CardHeader className="py-3 px-4 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileCode className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{filePath[filePath.length - 1]}</span>
-                      <Badge variant="secondary" className="text-[10px]">{fileContentQuery.data.size} bytes</Badge>
+                <CardHeader className="py-3 px-3 sm:px-4 border-b border-border">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileCode className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm font-medium truncate">{filePath[filePath.length - 1]}</span>
+                      <Badge variant="secondary" className="text-[10px] shrink-0">{fileContentQuery.data.size} bytes</Badge>
                       {linkedProject && (
                         <Badge variant={linkedProject.deployStatus === "live" ? "default" : "secondary"} className="text-[10px] gap-1">
                           <Rocket className="w-2.5 h-2.5" />
@@ -602,7 +605,7 @@ export default function GitHubPage() {
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                       {!isEditing ? (
                         <Button variant="outline" size="sm" onClick={() => {
                           const decoded = fileContentQuery.data!.encoding === "base64"
@@ -681,7 +684,7 @@ export default function GitHubPage() {
                           />
                         </Suspense>
                       )}
-                      <div className="border-t border-border p-3 flex items-center gap-2">
+                      <div className="border-t border-border p-2 sm:p-3 flex items-center gap-2 flex-wrap">
                         <Input
                           placeholder="Commit message..."
                           value={commitMsg}
@@ -794,7 +797,7 @@ export default function GitHubPage() {
           </TabsContent>
 
           {/* Branches Tab */}
-          <TabsContent value="branches" className="flex-1 overflow-auto m-0 p-6">
+          <TabsContent value="branches" className="flex-1 overflow-auto m-0 px-4 sm:px-6 py-4 sm:py-6 pb-20 md:pb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Branches</h3>
               <Button variant="outline" size="sm" onClick={() => { setCreateBranchOpen(true); setNewBranchName(""); }}>
@@ -807,26 +810,28 @@ export default function GitHubPage() {
               )}
               {branchesQuery.data?.map((branch) => (
                 <Card key={branch.name} className="border-border">
-                  <CardContent className="flex items-center gap-3 py-3 px-4">
-                    <GitBranch className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">{branch.name}</span>
+                  <CardContent className="flex items-center gap-2 sm:gap-3 py-3 px-3 sm:px-4 flex-wrap">
+                    <GitBranch className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-sm font-medium truncate max-w-[200px] sm:max-w-none">{branch.name}</span>
                     {branch.name === selectedRepo.defaultBranch && (
                       <Badge variant="secondary" className="text-[10px]">default</Badge>
                     )}
                     {branch.protected && (
                       <Badge variant="outline" className="text-[10px]"><Lock className="w-2.5 h-2.5 mr-0.5" /> protected</Badge>
                     )}
-                    <code className="ml-auto text-[10px] text-muted-foreground font-mono">{branch.commit.sha.slice(0, 7)}</code>
-                    {branch.name !== selectedRepo.defaultBranch && (
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={`https://github.com/${selectedRepo.fullName}/compare/${selectedRepo.defaultBranch}...${branch.name}`} target="_blank" rel="noopener noreferrer">
-                          <GitPullRequest className="w-3 h-3 mr-1" /> Compare
-                        </a>
+                    <code className="ml-auto text-[10px] text-muted-foreground font-mono shrink-0">{branch.commit.sha.slice(0, 7)}</code>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {branch.name !== selectedRepo.defaultBranch && (
+                        <Button variant="ghost" size="sm" className="h-7 px-2" asChild>
+                          <a href={`https://github.com/${selectedRepo.fullName}/compare/${selectedRepo.defaultBranch}...${branch.name}`} target="_blank" rel="noopener noreferrer">
+                            <GitPullRequest className="w-3 h-3 sm:mr-1" /> <span className="hidden sm:inline">Compare</span>
+                          </a>
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => { setSelectedBranch(branch.name); setRepoTab("files"); setFilePath([]); }}>
+                        <Eye className="w-3 h-3 sm:mr-1" /> <span className="hidden sm:inline">Browse</span>
                       </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={() => { setSelectedBranch(branch.name); setRepoTab("files"); setFilePath([]); }}>
-                      <Eye className="w-3 h-3 mr-1" /> Browse
-                    </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -837,7 +842,7 @@ export default function GitHubPage() {
           </TabsContent>
 
           {/* Commits Tab */}
-          <TabsContent value="commits" className="flex-1 overflow-auto m-0 p-6">
+          <TabsContent value="commits" className="flex-1 overflow-auto m-0 px-4 sm:px-6 py-4 sm:py-6 pb-20 md:pb-6">
             <div className="space-y-2">
               {commitsQuery.isLoading && (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" /></div>
@@ -865,7 +870,7 @@ export default function GitHubPage() {
           </TabsContent>
 
           {/* Pull Requests Tab */}
-          <TabsContent value="prs" className="flex-1 overflow-auto m-0 p-6">
+          <TabsContent value="prs" className="flex-1 overflow-auto m-0 px-4 sm:px-6 py-4 sm:py-6 pb-20 md:pb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Pull Requests</h3>
               <Button variant="outline" size="sm" onClick={() => { setCreatePROpen(true); setPrTitle(""); setPrBody(""); setPrHead(""); setPrBase(selectedRepo.defaultBranch || "main"); }}>
@@ -878,18 +883,18 @@ export default function GitHubPage() {
               )}
               {prsQuery.data?.map((pr) => (
                 <Card key={pr.id} className="border-border">
-                  <CardContent className="flex items-center gap-3 py-3 px-4">
+                  <CardContent className="flex items-center gap-2 sm:gap-3 py-3 px-3 sm:px-4 flex-wrap">
                     <GitPullRequest className={cn("w-4 h-4 shrink-0", pr.state === "open" ? "text-green-500" : "text-purple-500")} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium truncate">{pr.title}</p>
-                        <span className="text-xs text-muted-foreground">#{pr.number}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">#{pr.number}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {pr.user.login} wants to merge <code className="text-[10px]">{pr.head.ref}</code> into <code className="text-[10px]">{pr.base.ref}</code>
                       </p>
                     </div>
-                    <Badge variant={pr.state === "open" ? "default" : "secondary"}>{pr.state}</Badge>
+                    <Badge variant={pr.state === "open" ? "default" : "secondary"} className="shrink-0">{pr.state}</Badge>
                     {pr.state === "open" && (
                       <Button variant="outline" size="sm"
                         disabled={mergePRMut.isPending}
@@ -917,7 +922,7 @@ export default function GitHubPage() {
           </TabsContent>
 
           {/* Issues Tab */}
-          <TabsContent value="issues" className="flex-1 overflow-auto m-0 p-6">
+          <TabsContent value="issues" className="flex-1 overflow-auto m-0 px-4 sm:px-6 py-4 sm:py-6 pb-20 md:pb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-muted-foreground">Issues</h3>
               <Button variant="outline" size="sm" onClick={() => { setCreateIssueOpen(true); setIssueTitle(""); setIssueBody(""); }}>
@@ -930,18 +935,18 @@ export default function GitHubPage() {
               )}
               {issuesQuery.data?.map((issue) => (
                 <Card key={issue.id} className="border-border">
-                  <CardContent className="flex items-center gap-3 py-3 px-4">
+                  <CardContent className="flex items-center gap-2 sm:gap-3 py-3 px-3 sm:px-4 flex-wrap">
                     <AlertCircle className={cn("w-4 h-4 shrink-0", issue.state === "open" ? "text-green-500" : "text-red-500")} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium truncate">{issue.title}</p>
-                        <span className="text-xs text-muted-foreground">#{issue.number}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">#{issue.number}</span>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         opened by {issue.user.login} on {new Date(issue.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       {issue.labels.slice(0, 3).map(l => (
                         <Badge key={l.name} variant="outline" className="text-[10px]" style={{ borderColor: `#${l.color}`, color: `#${l.color}` }}>
                           {l.name}
@@ -963,7 +968,7 @@ export default function GitHubPage() {
           </TabsContent>
 
           {/* Deploy Tab */}
-          <TabsContent value="deploy" className="flex-1 overflow-auto m-0 p-6">
+          <TabsContent value="deploy" className="flex-1 overflow-auto m-0 px-4 sm:px-6 py-4 sm:py-6 pb-20 md:pb-6">
             <DeployTab repoId={selectedRepoId!} repoFullName={selectedRepo?.fullName || ""} />
           </TabsContent>
         </Tabs>

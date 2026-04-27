@@ -754,7 +754,7 @@ export default function ConnectorDetailPage() {
       {/* ── Scrollable content ── */}
       <div
         ref={contentRef}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto pb-20 md:pb-0"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
