@@ -5228,7 +5228,10 @@
 
 ## Pass 37d: GitHub Auth Loop Still Persists After 37c Fix
 - [ ] Check deployed server logs for actual token exchange error message
-- [ ] Investigate why both server-side AND client-side token exchange fail
-- [ ] Fix the root cause
-- [ ] Verify fix
-- [ ] Save checkpoint
+- [x] Investigate why both server-side AND client-side token exchange fail
+  Root cause: GITHUB_CLIENT_SECRET was stale/invalid (original: 7ca08b...c229f4d8)
+  GitHub returned "incorrect_client_credentials" on token exchange
+- [x] Fix the root cause: User generated new client secret (1b506984...47730b49)
+  Verified via curl: GitHub now returns "bad_verification_code" (credentials valid)
+- [x] Updated credentials via webdev_request_secrets
+- [ ] Save checkpoint and deploy
