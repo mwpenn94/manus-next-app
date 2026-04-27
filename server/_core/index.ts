@@ -667,7 +667,8 @@ async function startServer() {
         const returnPath = state.returnPath || "/connectors";
         return res.send(buildOAuthSuccessHtml(base, state.connectorId, userName, returnPath));
       } catch (exchangeErr: any) {
-        console.error("[Connector OAuth] Token exchange failed:", exchangeErr);
+        console.error(`[Connector OAuth] Token exchange failed for ${state.connectorId} (user ${state.userId}):`, exchangeErr?.message || exchangeErr);
+        console.error(`[Connector OAuth] Falling back to client-side exchange. Origin: ${state.origin}, returnPath: ${state.returnPath}`);
         // Fall back to client-side exchange via postMessage/redirect
         return res.send(buildOAuthCallbackHtml(state.connectorId, code, null, stateRaw));
       }

@@ -61,30 +61,76 @@ export default function GitHubPage() {
 
   const [connecting, setConnecting] = useState(false);
   const getOAuthUrlMut = trpc.connector.getOAuthUrl.useMutation();
+  const completeOAuthMut = trpc.connector.completeOAuth.useMutation({
+    onSuccess: () => {
+      setConnecting(false);
+      toast.success("GitHub connected!");
+      connectorListQuery.refetch();
+    },
+    onError: (err) => {
+      setConnecting(false);
+      console.error("[GitHub OAuth] completeOAuth failed:", err);
+      toast.error(`GitHub connection failed: ${err.message}`);
+    },
+  });
 
-  // ── Handle OAuth success redirect (same-window mobile flow) ──
+  // ── Handle OAuth redirects (success + code fallback) ──
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Case 1: Server-side exchange succeeded — ?oauth_success=github
     if (params.get("oauth_success") === "github") {
       toast.success("GitHub connected!");
       connectorListQuery.refetch();
-      // Clean up URL
+      window.history.replaceState({}, "", "/github");
+      return;
+    }
+
+    // Case 2: Server-side exchange failed — fallback ?code=X&state=Y
+    // GitHubPage must handle this like ConnectorsPage does.
+    const code = params.get("code");
+    const state = params.get("state");
+    if (code && state) {
+      try {
+        const parsed = JSON.parse(atob(state.replace(/-/g, '+').replace(/_/g, '/')));
+        if (parsed.connectorId === "github") {
+          setConnecting(true);
+          completeOAuthMut.mutate({
+            connectorId: "github",
+            code,
+            origin: window.location.origin,
+          });
+        }
+      } catch (e) {
+        console.error("[GitHub OAuth] Failed to parse state:", e);
+      }
       window.history.replaceState({}, "", "/github");
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Listen for popup close (desktop OAuth flow) ──
+  // ── Listen for popup messages (desktop OAuth flow) ──
   useEffect(() => {
     const handler = (e: MessageEvent) => {
+      // Case A: Server-side exchange succeeded in popup
       if (e.data?.type === "connector-oauth-success" && e.data?.connectorId === "github") {
         setConnecting(false);
         toast.success("GitHub connected!");
         connectorListQuery.refetch();
+        return;
+      }
+      // Case B: Server-side exchange failed in popup — client-side fallback
+      if (e.data?.type === "connector-oauth-callback" && e.data?.connectorId === "github" && e.data?.code) {
+        setConnecting(true);
+        completeOAuthMut.mutate({
+          connectorId: "github",
+          code: e.data.code,
+          origin: window.location.origin,
+        });
       }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [connectorListQuery]);
+  }, [connectorListQuery, completeOAuthMut]);
 
   // ── Initiate GitHub OAuth ──
   const handleConnectGitHub = useCallback(async () => {

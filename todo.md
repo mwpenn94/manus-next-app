@@ -5211,3 +5211,17 @@
 - [x] Verified mobile /billing page: 56px bottom padding
 - [x] Verified desktop /github page: 0px bottom padding (no padding on desktop)
 - [x] Confirmed /github route renders GitHubPage component (not task chat)
+
+## Pass 37c: Auth Loop Issue (User-Reported)
+- [ ] Diagnose auth redirect loop — user reports being stuck in an auth loop
+- [ ] Fix the auth loop
+- [ ] Verify fix with browser testing
+- [ ] Save checkpoint
+
+## Pass 37c: GitHub Connector Auth Loop (User-Reported)
+- [x] Diagnose: GitHub OAuth completes (flash to GitHub and back) but token not persisted
+  Root cause: GitHubPage only handled ?oauth_success=github but NOT the ?code=X&state=Y fallback
+  when server-side token exchange fails. Also missing connector-oauth-callback popup handler.
+- [x] Fix: Added completeOAuth mutation + code/state URL handler + popup callback handler to GitHubPage
+- [x] Verify fix with testing (12/12 vitest pass)
+- [ ] Save checkpoint
