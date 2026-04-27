@@ -44,11 +44,13 @@ function buildOAuthCallbackHtml(
   if (error) {
     return `<!DOCTYPE html><html><body><h2>OAuth Error</h2><p>${error}</p><script>setTimeout(()=>window.close(),3000)</script></body></html>`;
   }
-  // Parse origin from state for same-window redirect
+  // Parse origin and returnPath from state for same-window redirect
   let origin = "";
+  let returnPath = "/connectors";
   try {
     const parsed = JSON.parse(Buffer.from(state || "", "base64url").toString());
     origin = parsed.origin || "";
+    returnPath = parsed.returnPath || "/connectors";
   } catch { /* ignore */ }
 
   return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
@@ -70,9 +72,10 @@ function buildOAuthCallbackHtml(
     }
 
     // Same-window redirect (mobile flow or popup blocked)
-    // Use origin from state to build the redirect URL
+    // Use origin and returnPath from state to build the redirect URL
     var base = origin || window.location.origin;
-    window.location.href = base + "/connectors?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state);
+    var returnPath = ${JSON.stringify(returnPath)};
+    window.location.href = base + returnPath + "?code=" + encodeURIComponent(code) + "&state=" + encodeURIComponent(state);
   })();
 </script>
 </body></html>`;
@@ -81,8 +84,11 @@ function buildOAuthCallbackHtml(
 function buildOAuthSuccessHtml(
   origin: string,
   connectorId: string,
-  userName: string
+  userName: string,
+  returnPath: string = "/connectors"
 ): string {
+  // Build the redirect URL using returnPath (e.g., /github) instead of always /connectors
+  const redirectUrl = `${origin}${returnPath}?oauth_success=${encodeURIComponent(connectorId)}`;
   return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}
 .card{text-align:center;padding:2rem;border-radius:1rem;background:#1a1a1a;border:1px solid #333;max-width:320px}
@@ -95,7 +101,7 @@ a{display:inline-block;padding:0.625rem 1.5rem;background:#c9a227;color:#000;tex
   <div class="check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
   <h2>Connected!</h2>
   <p>Successfully linked <strong>${userName}</strong> via ${connectorId}.</p>
-  <a href="${origin}/connectors?oauth_success=${encodeURIComponent(connectorId)}">Continue</a>
+  <a href="${redirectUrl}">Continue</a>
 </div>
 <script>
   // If opened as popup, notify parent and close
@@ -106,7 +112,7 @@ a{display:inline-block;padding:0.625rem 1.5rem;background:#c9a227;color:#000;tex
     } catch(e) { /* ignore, user can click Continue */ }
   } else {
     // Auto-redirect after 2 seconds for same-window flow
-    setTimeout(function() { window.location.href = "${origin}/connectors?oauth_success=${encodeURIComponent(connectorId)}"; }, 2000);
+    setTimeout(function() { window.location.href = "${redirectUrl}"; }, 2000);
   }
 </script>
 </body></html>`;
@@ -612,8 +618,8 @@ async function startServer() {
         return res.status(400).send(buildOAuthCallbackHtml(null, null, "Missing code or state parameter"));
       }
 
-      // Decode state to extract connectorId, userId, and origin
-      let state: { connectorId: string; userId: number; origin: string };
+      // Decode state to extract connectorId, userId, origin, and returnPath
+      let state: { connectorId: string; userId: number; origin: string; returnPath?: string };
       try {
         state = JSON.parse(Buffer.from(stateRaw, "base64url").toString());
       } catch {
@@ -656,9 +662,10 @@ async function startServer() {
 
         console.log(`[Connector OAuth] Successfully connected ${state.connectorId} for user ${state.userId} as ${userName}`);
 
-        // Redirect back to connectors page with success indicator
+        // Redirect back to the originating page (e.g., /github or /connectors)
         const base = state.origin || "";
-        return res.send(buildOAuthSuccessHtml(base, state.connectorId, userName));
+        const returnPath = state.returnPath || "/connectors";
+        return res.send(buildOAuthSuccessHtml(base, state.connectorId, userName, returnPath));
       } catch (exchangeErr: any) {
         console.error("[Connector OAuth] Token exchange failed:", exchangeErr);
         // Fall back to client-side exchange via postMessage/redirect

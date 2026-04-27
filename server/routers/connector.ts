@@ -117,6 +117,7 @@ export const connectorRouter = router({
       .input(z.object({
         connectorId: z.string(),
         origin: z.string(),
+        returnPath: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { getOAuthProvider, isOAuthSupported } = await import("../connectorOAuth");
@@ -129,6 +130,7 @@ export const connectorRouter = router({
           connectorId: input.connectorId,
           userId: ctx.user.id,
           origin: input.origin,
+          returnPath: input.returnPath || "/connectors",
           ts: Date.now(),
         });
         const stateEncoded = Buffer.from(state).toString("base64url");

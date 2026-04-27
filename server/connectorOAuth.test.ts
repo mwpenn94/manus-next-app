@@ -278,7 +278,9 @@ describe("Express OAuth Callback Route", () => {
   it("callback HTML falls back to redirect for same-window flow", async () => {
     const fs = await import("fs");
     const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
-    expect(indexContent).toContain('/connectors?code=');
+    // returnPath-based redirect: uses returnPath from state instead of hardcoded /connectors
+    expect(indexContent).toContain('returnPath');
+    expect(indexContent).toContain('?code=');
   });
 
   it("callback handles error parameter", async () => {

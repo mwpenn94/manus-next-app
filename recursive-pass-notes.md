@@ -123,3 +123,25 @@ The optimization loop should re-open if:
 - The 0.5 gap represents: (1) the limitless-continuation OOM test that needs memory optimization,
   (2) potential real-world performance tuning that requires production traffic data,
   (3) external OTel collector integration that depends on infrastructure decisions
+
+---
+
+## Pass 37: Fix GitHub Repo Connection & CRUD (User-Reported)
+
+**Problem:** Users reported that GitHub "supposedly connects" but there is no clear path to connecting and updating repos. The Connect GitHub hero state was implemented (Pass 35) but the OAuth success redirect sent users to `/connectors` instead of `/github`, creating a dead-end experience.
+
+**Root Cause:** `buildOAuthSuccessHtml` and `buildOAuthCallbackHtml` both hardcoded `/connectors` as the redirect target. The popup flow worked (postMessage reaches GitHubPage listener), but:
+- Mobile same-window flow redirected to wrong page
+- "Continue" button in success HTML linked to /connectors
+- Users who completed OAuth never saw the GitHub repo list
+
+**Fix:** Added `returnPath` parameter to the OAuth state flow:
+1. `getOAuthUrl` input schema now accepts optional `returnPath`
+2. GitHubPage passes `returnPath: "/github"` when initiating OAuth
+3. State includes `returnPath` in base64url-encoded JSON
+4. Both `buildOAuthSuccessHtml` and `buildOAuthCallbackHtml` extract `returnPath` from state
+5. All redirect paths (popup Continue link, same-window auto-redirect) now use the correct page
+
+**Tests:** 4,323 passed, 0 new failures. Fixed 1 regression in connectorOAuth.test.ts (updated assertion for returnPath-based redirect). 7 pre-existing timeouts (OOM) unchanged.
+
+**Convergence:** 0 TypeScript errors. OAuth redirect flow is now correct for all surfaces (GitHubPage, ConnectorsPage, ConnectorDetailPage).

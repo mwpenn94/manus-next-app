@@ -97,6 +97,7 @@ export default function GitHubPage() {
       const result = await getOAuthUrlMut.mutateAsync({
         connectorId: "github",
         origin: window.location.origin,
+        returnPath: "/github",
       });
       if (result.supported && result.url) {
         const isMobile = window.innerWidth < 768;
