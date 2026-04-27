@@ -5384,3 +5384,9 @@
 - [x] Fix insufficient color contrast on Home page — foreground #69686c on background #1b1a1d gives 3.13:1 ratio, needs 4.5:1 for small text (10px)
 - [x] Identify the specific element(s) with 10px font size and muted-foreground color on the home page — found in AppLayout.tsx:1191 "from ∞ Meta" span with text-muted-foreground/50
 - [x] Adjust the muted-foreground CSS variable or specific element colors to meet WCAG AA contrast requirements — removed /50 opacity modifier, now uses full text-muted-foreground (9.47:1 contrast ratio)
+
+## Pass 43: Mobile Sidebar Bottom Content Hidden Behind Nav Bar
+
+- [x] Fix sidebar drawer bottom content (user profile, theme toggle, "from ∞ Meta" branding) being covered by the fixed bottom navigation bar on mobile
+- [x] Add sufficient bottom padding to the mobile sidebar drawer to clear the bottom nav bar height — changed paddingBottom to calc(3.5rem + env(safe-area-inset-bottom, 0px))
+- [x] Verify the fix on mobile viewport — all sidebar footer elements must be visible and tappable

@@ -1274,7 +1274,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         )}
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          paddingBottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {sidebarContent}
