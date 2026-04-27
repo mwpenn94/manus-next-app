@@ -604,6 +604,36 @@ async function startServer() {
     res.send(script);
   });
 
+  // ── Diagnostic: Check GitHub OAuth credentials on deployed site ──
+  app.get("/api/debug/github-creds", async (req, res) => {
+    try {
+      const clientId = process.env.CONNECTOR_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID || "";
+      const clientSecret = process.env.CONNECTOR_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET || "";
+      // Test credentials against GitHub with a fake code
+      const resp = await fetch("https://github.com/login/oauth/access_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code: "diagnostic_test",
+          redirect_uri: "https://manusnext-mlromfub.manus.space/api/connector/oauth/callback",
+        }),
+      });
+      const data = await resp.json();
+      res.json({
+        clientIdPrefix: clientId.substring(0, 8),
+        secretPrefix: clientSecret.substring(0, 6),
+        secretSuffix: clientSecret.substring(clientSecret.length - 8),
+        secretLength: clientSecret.length,
+        githubResponse: data.error, // "bad_verification_code" = valid creds, "incorrect_client_credentials" = invalid
+        valid: data.error === "bad_verification_code",
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ── Connector OAuth callback (receives redirect from GitHub/Google/Notion/Slack) ──
   app.get("/api/connector/oauth/callback", async (req, res) => {
     console.log(`[Connector OAuth Callback] Hit! code=${!!req.query.code} state=${!!req.query.state} error=${req.query.error || 'none'} origin=${req.headers.referer || 'unknown'}`);

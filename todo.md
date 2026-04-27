@@ -5234,4 +5234,4 @@
 - [x] Fix the root cause: User generated new client secret (1b506984...47730b49)
   Verified via curl: GitHub now returns "bad_verification_code" (credentials valid)
 - [x] Updated credentials via webdev_request_secrets
-- [ ] Save checkpoint and deploy
+- [x] Save checkpoint (version 28f13358) and deploy
