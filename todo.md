@@ -5185,3 +5185,30 @@
 - [x] Fixed connectorOAuth.test.ts assertion (returnPath-based redirect instead of hardcoded /connectors)
 - [x] Full suite: 4323 passed, 7 pre-existing timeouts (OOM), 1 fixed regression = 0 new failures
 - [x] Save checkpoint
+
+## Pass 37b: REAL Browser Validation of GitHub Flow (User-Reported STILL BROKEN)
+
+### 37b.1: Actually test as a user
+- [ ] Log into the deployed app at manusnext-mlromfub.manus.space
+- [ ] Navigate to /github
+- [ ] Screenshot what the user actually sees
+- [ ] Click every button and document what happens
+- [ ] Identify ALL broken paths with evidence
+
+### 37b.2: Fix every broken path
+- [ ] Fix each issue found with browser-verified validation
+- [ ] Re-test after each fix in the browser
+
+### 37b.3: End-to-end proof
+- [ ] Full flow: login → /github → connect → see repos → browse files → edit → commit
+- [ ] Screenshot proof at each step
+- [ ] Save checkpoint
+
+### 37b.4: Mobile bottom nav content overlap fix
+- [x] Diagnosed mobile bottom nav (h-14 = 56px fixed) overlapping page content
+- [x] Added pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 to main content in AppLayout.tsx
+- [x] Verified mobile /github page: 56px bottom padding, GitHub content renders correctly
+- [x] Verified mobile /home page: 56px bottom padding
+- [x] Verified mobile /billing page: 56px bottom padding
+- [x] Verified desktop /github page: 0px bottom padding (no padding on desktop)
+- [x] Confirmed /github route renders GitHubPage component (not task chat)

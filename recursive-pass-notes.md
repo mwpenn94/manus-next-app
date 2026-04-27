@@ -145,3 +145,22 @@ The optimization loop should re-open if:
 **Tests:** 4,323 passed, 0 new failures. Fixed 1 regression in connectorOAuth.test.ts (updated assertion for returnPath-based redirect). 7 pre-existing timeouts (OOM) unchanged.
 
 **Convergence:** 0 TypeScript errors. OAuth redirect flow is now correct for all surfaces (GitHubPage, ConnectorsPage, ConnectorDetailPage).
+
+---
+## Pass 37b: Mobile Bottom Nav Content Overlap Fix (User-Reported)
+**Problem:** User screenshots (IMG_7177.PNG, IMG_7178.PNG) showed the mobile bottom navigation bar (Home, Tasks, Billing, More) overlapping and cutting off page content on all pages. The fixed bottom nav (h-14 = 56px + safe-area-inset-bottom) sat on top of the last ~56px of page content, making it inaccessible.
+
+**Root Cause:** The `<main id="main-content">` element in AppLayout.tsx had `overflow-hidden` but no bottom padding on mobile to account for the fixed MobileBottomNav. Pages with `h-full overflow-auto` containers (GitHubPage, Home, etc.) filled the full height without reserving space for the nav bar.
+
+**Fix:** Added `pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:pb-0` to the main content element in AppLayout.tsx. This adds exactly 56px + safe-area bottom padding on mobile viewports, and zero padding on desktop (md: breakpoint) where MobileBottomNav is hidden.
+
+**Verification (Playwright):**
+- Mobile /github: 56px padding-bottom, GitHub content renders correctly
+- Mobile /home: 56px padding-bottom
+- Mobile /billing: 56px padding-bottom
+- Desktop /github: 0px padding-bottom (correct — no mobile nav on desktop)
+- MobileBottomNav bounding box: y=787, height=57 (correct position at bottom of 844px viewport)
+
+**Routing confirmed:** /github correctly renders GitHubPage component (not task chat). App.tsx routing is correct with /github and /github/:repoId both mapping to GitHubPage.
+
+**Tests:** 16 new tests (pass37b-mobile-nav-fix.test.ts) — all passing. 0 TypeScript errors.
