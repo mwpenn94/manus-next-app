@@ -1363,7 +1363,32 @@ async function startServer() {
     }).catch((err) => {
       console.error("[Server] Failed to start scheduler:", err);
     });
+
+    // Start the in-app connector token auto-refresh timer
+    import("../connectorRefreshTimer").then(({ startAutoRefreshTimer }) => {
+      startAutoRefreshTimer();
+    }).catch((err) => {
+      console.error("[Server] Failed to start auto-refresh timer:", err);
+    });
   });
+
+  // Graceful shutdown — stop timers before exit
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`[Server] Received ${signal}, shutting down gracefully...`);
+    try {
+      const { stopAutoRefreshTimer } = await import("../connectorRefreshTimer");
+      stopAutoRefreshTimer();
+    } catch { /* ignore */ }
+    server.close(() => {
+      console.log("[Server] HTTP server closed");
+      process.exit(0);
+    });
+    // Force exit after 10s if graceful shutdown hangs
+    setTimeout(() => process.exit(1), 10_000);
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 }
 
 startServer().catch(console.error);

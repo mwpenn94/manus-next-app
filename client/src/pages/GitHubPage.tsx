@@ -28,7 +28,8 @@ import {
   RefreshCw, ExternalLink, Star, GitFork, AlertCircle, Search,
   ChevronRight, File, Folder, Lock, Globe, ArrowLeft, Download,
   Loader2, Trash2, Unplug, Eye, Code, Clock, MessageSquare,
-  Rocket, Play, CheckCircle2, XCircle, ExternalLink as LinkIcon, Upload
+  Rocket, Play, CheckCircle2, XCircle, ExternalLink as LinkIcon, Upload,
+  Diff, Copy, Webhook
 } from "lucide-react";
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { useRoute, useLocation } from "wouter";
@@ -36,6 +37,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const CodeEditor = lazy(() => import("@/components/CodeEditor"));
+const DiffViewer = lazy(() => import("@/components/DiffViewer"));
 
 type RepoTab = "files" | "branches" | "commits" | "prs" | "issues" | "deploy";
 
@@ -62,6 +64,7 @@ export default function GitHubPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [commitMsg, setCommitMsg] = useState("");
+  const [showDiff, setShowDiff] = useState(false);
 
   // New file / create issue / create branch / create PR dialogs
   const [newFileOpen, setNewFileOpen] = useState(false);
@@ -462,9 +465,20 @@ export default function GitHubPage() {
                           <Code className="w-3 h-3 mr-1" /> Edit
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                          Cancel
-                        </Button>
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => { setIsEditing(false); setShowDiff(false); }}>
+                            Cancel
+                          </Button>
+                          <Button
+                            variant={showDiff ? "secondary" : "ghost"}
+                            size="sm"
+                            onClick={() => setShowDiff(!showDiff)}
+                            title={showDiff ? "Back to editor" : "Review changes"}
+                          >
+                            <Diff className="w-3 h-3 mr-1" />
+                            {showDiff ? "Editor" : "Review Changes"}
+                          </Button>
+                        </>
                       )}
                       <Button variant="ghost" size="sm"
                         className="text-destructive"
@@ -494,14 +508,29 @@ export default function GitHubPage() {
                 <CardContent className="p-0">
                   {isEditing ? (
                     <div>
-                      <Suspense fallback={<div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>}>
-                        <CodeEditor
-                          value={editContent}
-                          onChange={setEditContent}
-                          filename={filePath[filePath.length - 1]}
-                          height="500px"
-                        />
-                      </Suspense>
+                      {showDiff ? (
+                        <Suspense fallback={<div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>}>
+                          <DiffViewer
+                            original={
+                              fileContentQuery.data!.encoding === "base64"
+                                ? atob(fileContentQuery.data!.content.replace(/\n/g, ""))
+                                : fileContentQuery.data!.content
+                            }
+                            modified={editContent}
+                            filename={filePath[filePath.length - 1]}
+                            className="rounded-none border-0"
+                          />
+                        </Suspense>
+                      ) : (
+                        <Suspense fallback={<div className="p-4 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div>}>
+                          <CodeEditor
+                            value={editContent}
+                            onChange={setEditContent}
+                            filename={filePath[filePath.length - 1]}
+                            height="500px"
+                          />
+                        </Suspense>
+                      )}
                       <div className="border-t border-border p-3 flex items-center gap-2">
                         <Input
                           placeholder="Commit message..."
@@ -1364,6 +1393,45 @@ function DeployTab({ repoId, repoFullName }: { repoId: string; repoFullName: str
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Webhook Configuration */}
+      <Card className="border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Webhook className="w-4 h-4" />
+            Auto-Deploy Webhook
+          </CardTitle>
+          <CardDescription>Configure GitHub to automatically deploy on push to main</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-muted/50 rounded-lg px-3 py-2 font-mono text-xs text-muted-foreground truncate border border-border">
+              {typeof window !== "undefined" ? `${window.location.origin}/api/github/webhook` : "/api/github/webhook"}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = `${window.location.origin}/api/github/webhook`;
+                navigator.clipboard.writeText(url);
+                toast.success("Webhook URL copied");
+              }}
+            >
+              <Copy className="w-3 h-3 mr-1" /> Copy
+            </Button>
+          </div>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Add this URL as a webhook in your GitHub repository settings:</p>
+            <ol className="list-decimal list-inside space-y-0.5 ml-1">
+              <li>Go to <a href={`https://github.com/${repoFullName}/settings/hooks/new`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Settings &rarr; Webhooks</a></li>
+              <li>Paste the URL above as the Payload URL</li>
+              <li>Set Content type to <code className="bg-muted px-1 rounded">application/json</code></li>
+              <li>Select "Just the push event"</li>
+              <li>Click "Add webhook"</li>
+            </ol>
+          </div>
         </CardContent>
       </Card>
 

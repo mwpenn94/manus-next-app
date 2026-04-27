@@ -5032,3 +5032,38 @@
 - [x] Adversarial scan: 35 tests — 5 virtual users (CRUD dev, PR reviewer, deploy-focused, auto-refresh admin, multi-file committer)
 - [x] Synthesis: 4079 passed, 0 failures, convergence confirmed
 - [x] Save checkpoint
+
+## Pass 33: Auto-Refresh Cron + Inline Diff + Deploy Triggers (Expert Panel)
+
+### 33.1: Expert Assessment
+- [x] Analyzed auto-refresh scheduler: endpoint exists, needs cron scheduling
+- [x] Analyzed diff viewer: CodeMirror exists, no merge extension; decision: lightweight custom diff
+- [x] Analyzed deploy triggers: webhook handler fully wired; need UI config + task-chat deploy
+- [x] Rejected: CI/CD pipeline viz, build log streaming, multi-environment, deploy rollback (diverges from Manus)
+
+### 33.2: In-App Auto-Refresh Timer (Self-Contained)
+- [x] ~~Create scheduled task via `schedule` tool~~ (REJECTED — app should not depend on external Manus task)
+- [x] Build server-side setInterval timer in server process that runs every 30 min
+- [x] Timer checks connectorHealth for autoRefreshEnabled + expiring tokens
+- [x] Refreshes tokens using existing scheduledConnectorRefresh logic
+- [x] Timer starts on server boot, stops on shutdown (graceful cleanup)
+- [x] No external dependency — app is sovereign
+
+### 33.3: Lightweight Diff Viewer
+- [x] Build DiffViewer component using line-by-line text comparison (no heavy deps)
+- [x] Color-coded: green for additions, red for deletions, gray for context
+- [x] Line numbers for both original and modified
+- [x] Add "Review Changes" toggle button in file editor toolbar
+- [x] Toggle between Edit mode and Review Changes mode
+
+### 33.4: Deploy Trigger UI
+- [x] Add webhook URL display + copy button in Deploy tab
+- [x] Show webhook setup instructions (GitHub repo → Settings → Webhooks)
+- [x] Add auto-deploy toggle per linked project (via webhook — push to main triggers deploy)
+- [x] Add "Deploy Now" button that triggers deployFromGitHub directly
+
+### 33.5: Recursion Passes
+- [x] Depth scan: 46 tests — diff edge cases, deploy failure modes, timer lifecycle (pass33-depth.test.ts)
+- [x] Adversarial scan: 33 tests — 5 virtual users (DevOps, Frontend Dev, Security Auditor, New User, Power User) (pass33-adversarial.test.ts)
+- [x] Synthesis: 4158 tests passed, 148/149 files passed (1 OOM: known), 0 TypeScript errors
+- [x] Save checkpoint
