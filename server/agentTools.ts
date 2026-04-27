@@ -682,6 +682,40 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── GitHub AI Assess Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "github_assess",
+      description:
+        "Deeply assess, optimize, or validate a connected GitHub repository using the Manus recursive optimization framework. Analyzes the repo across 14 dimensions (completeness, accuracy, depth, novelty, actionability, regression_safety, ux_quality, performance, security, accessibility, test_coverage, documentation, code_quality, deployment_readiness), routes findings to expert classes (A-F), runs quality guards, and generates a structured assessment report with scores. Three modes: 'assess' (read-only analysis), 'optimize' (assess + prioritized fix recommendations), 'validate' (assess + phase gate pass/fail check). Use this when the user asks to review, audit, analyze, assess, or evaluate their codebase quality.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["assess", "optimize", "validate"],
+            description: "Assessment mode: 'assess' for read-only analysis, 'optimize' for analysis + fix recommendations, 'validate' for phase gate checking",
+          },
+          repo: {
+            type: "string",
+            description: "Repository name or full name (owner/repo). If the user has only one repo connected, this can be omitted.",
+          },
+          focus: {
+            type: "string",
+            description: "Optional focus area for the assessment (e.g., 'security', 'performance', 'test coverage'). If omitted, all dimensions are assessed equally.",
+          },
+          target_phase: {
+            type: "string",
+            enum: ["A", "B", "C", "D"],
+            description: "Target phase gate to validate against (only used in 'validate' mode). A=Specification, B=Implementation, C=Hardening, D=Continuous Operations.",
+          },
+        },
+        required: ["mode"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -2405,6 +2439,10 @@ export async function executeTool(
     case "github_edit": {
       const { executeGitHubEdit } = await import("./githubEditTool");
       return executeGitHubEdit(args, context);
+    }
+    case "github_assess": {
+      const { executeGitHubAssess } = await import("./githubAssessTool");
+      return executeGitHubAssess(args, context);
     }
     default:
       return { success: false, result: `Unknown tool: ${name}` };

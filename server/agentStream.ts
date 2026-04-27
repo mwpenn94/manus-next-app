@@ -172,12 +172,14 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 - **git_operation(operation, args?)**: Perform git operations (init, add, commit, push, status, log, clone, remote_add) in the active webapp project. Use to version control the project and push to GitHub.
 - **deploy_webapp(version_label?)**: Build and deploy the active webapp project to the cloud. Bundles the project, uploads to cloud storage, and returns a live public URL. Use after the app is ready to share.
 - **github_edit(instruction, repo?, confirm?, edit_plan_id?)**: Edit files in a connected GitHub repo using natural language. PREFERRED method for repo editing — reads the repo via API, plans edits with AI, shows a diff preview, and commits atomically. No cloning needed. Two-step: first call generates a diff, second call with confirm=true applies it.
+- **github_assess(mode, repo?, focus?, target_phase?)**: Deeply assess, optimize, or validate a connected GitHub repo using the Manus recursive optimization framework. Analyzes across 14 dimensions (completeness, accuracy, depth, novelty, actionability, regression_safety, ux_quality, performance, security, accessibility, test_coverage, documentation, code_quality, deployment_readiness). Three modes: 'assess' (read-only report), 'optimize' (report + fix recommendations), 'validate' (phase gate pass/fail). Routes findings to expert classes A-F, runs quality guards, tracks convergence.
 
 ## CRITICAL SAFETY RULE — SELF-EDIT GUARD
 You are running INSIDE a host application (Manus Next). You MUST NEVER attempt to edit, modify, or overwrite the host application's own codebase. Your file tools (create_file, edit_file, etc.) operate within an **isolated project sandbox** — NOT the host app.
 
 - If the user asks you to "edit this app" or "fix a bug in this app" WITHOUT a connected GitHub repo, clarify: "I can create a new project for you, but I cannot modify the application I'm running inside. If you'd like me to edit your codebase, please connect your GitHub repository first."
 - If the user HAS a connected GitHub repo AND asks to edit their repo, use **github_edit** (preferred — fast, no cloning, atomic commits via API). Only fall back to git_operation(clone) for very large refactors requiring a full local build.
+- If the user asks to ASSESS, REVIEW, AUDIT, ANALYZE, or EVALUATE their repo quality, use **github_assess**. This runs a deep multi-dimensional analysis aligned to the Manus recursive optimization framework.
 - NEVER use create_file or edit_file to modify paths outside the active project sandbox (e.g., /home/ubuntu/manus-next-app/ or any system directory).
 
 ## PROJECT CONTEXT
@@ -206,6 +208,9 @@ You work within **projects**. Each project is an isolated directory with its own
 - "Create an app", "Build me a website", "Make a landing page" → **create_webapp** (new project)
 - "Edit this app", "Update the code", "Fix the bug in my repo" + GitHub connected → **github_edit** (AI-powered edit via API)
 - "Update the README", "Add a feature to my repo", "Refactor the auth module" → **github_edit**
+- "Assess my repo", "Review code quality", "Audit my codebase", "How good is my code?" → **github_assess(mode: 'assess')**
+- "Optimize my repo", "What should I fix?", "Improve my code" → **github_assess(mode: 'optimize')**
+- "Is my repo production-ready?", "Validate against Phase C" → **github_assess(mode: 'validate')**
 - "Clone [repo URL]" → **git_operation(clone)** that specific repo
 - When ambiguous, ask the user: "Would you like me to create a new project or edit your connected repository?"
 
@@ -891,7 +896,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         const repos = await getUserGitHubRepos(userId);
         if (repos.length > 0) {
           const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
-          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. When they ask to edit code, update files, or modify their repo, use **github_edit** with the appropriate repo name:\n\n${repoList}\n\nIf the user doesn't specify which repo, and they have only one, use that one automatically. If they have multiple, ask which repo they mean.`;
+          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected.\n\n${repoList}\n\n- To EDIT code: use **github_edit** with the repo name\n- To ASSESS/REVIEW/AUDIT code quality: use **github_assess** with the repo name\n- To OPTIMIZE (assess + fix recommendations): use **github_assess(mode: 'optimize')**\n- To VALIDATE against a phase gate: use **github_assess(mode: 'validate', target_phase: 'B')**\n\nIf the user doesn't specify which repo, and they have only one, use that one automatically. If they have multiple, ask which repo they mean.`;
         }
       } catch (err) {
         console.warn("[Agent] Failed to load GitHub repos for context:", err);
@@ -1977,6 +1982,14 @@ function getToolDisplayInfo(
         return { type: "versioning", label: `Committing changes to ${args.repo || "repository"}` };
       }
       return { type: "editing", label: `Editing repo: ${(args.instruction || "").slice(0, 60)}` };
+    case "github_assess":
+      if (args.mode === "optimize") {
+        return { type: "thinking", label: `Optimizing ${args.repo || "repository"}: analyzing code quality` };
+      }
+      if (args.mode === "validate") {
+        return { type: "thinking", label: `Validating ${args.repo || "repository"} against Phase ${args.target_phase || "B"} gate` };
+      }
+      return { type: "thinking", label: `Assessing ${args.repo || "repository"}: deep 14-dimension analysis` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

@@ -5235,3 +5235,27 @@
   Verified via curl: GitHub now returns "bad_verification_code" (credentials valid)
 - [x] Updated credentials via webdev_request_secrets
 - [x] Save checkpoint (version 28f13358) and deploy
+
+## Pass 37e: Deep GitHub Repo Assessment/Optimization/Validation (Manus-Aligned)
+### 37e.1: github_assess tool implementation
+- [x] Create server/githubAssessTool.ts — deep repo assessment pipeline
+  - Reads full repo structure and key files (broader than github_edit's 20-file cap)
+  - Runs multi-dimensional assessment against all 14 optimization dimensions
+  - Routes findings to expert classes (A-F) with specific recommendations
+  - Generates structured assessment report with per-dimension scores
+  - Identifies gaps with prioritized recommendations
+  - Tracks convergence history for the repo (pass-over-pass scoring)
+  - Quality guard evaluation (goodhart_detection, regression_prevention, etc.)
+- [x] Support 3 modes: assess (read-only report), optimize (assess + fix recommendations via github_edit), validate (assess + pass/fail gate check)
+### 37e.2: Tool registration and system prompt
+- [x] Register github_assess in AGENT_TOOLS (agentTools.ts) with full schema
+- [x] Add github_assess to executeTool switch in agentTools.ts
+- [x] Update system prompt in agentStream.ts to describe github_assess capabilities
+- [x] Tool display mapping: github_assess → "thinking" with mode-specific labels (assess/optimize/validate)
+### 37e.3: Testing
+- [x] Write comprehensive vitest tests (depth + adversarial with 5 VUs) — 76 tests, all passing
+- [x] Verify tool count updated (25 → 26) in existing tests
+- [x] Run full test suite — 0 TypeScript errors, 164/164 passing (3 key test files)
+### 37e.4: Checkpoint and delivery
+- [ ] Save checkpoint
+- [ ] Remove /api/debug/github-creds endpoint (cleanup from 37d)
