@@ -5073,7 +5073,7 @@
 - [x] Analyze repo connect/create flows in github.ts router
 - [x] Analyze githubApi.ts for existing webhook API functions
 - [x] Analyze githubWebhook.ts handler for notification integration points
-- [ ] Assess branch-specific deploy targets against Manus alignment
+- [x] Assess branch-specific deploy targets against Manus alignment (see 34.4 for rationale)
 ### 34.2: Auto-Webhook Registration
 - [x] Add createWebhook() function to githubApi.ts (GitHub REST API: POST /repos/{owner}/{repo}/hooks)
 - [x] Add listWebhooks() + ensureWebhook() + deleteWebhook() to githubApi.ts (idempotent registration)
@@ -5100,4 +5100,24 @@
 - [x] Depth scan: 38 tests passed (webhook API functions, auto-registration, deploy notifications, UI, alignment, secrets, edge cases)
 - [x] Adversarial scan: 31 tests passed (5 VUs: New User, DevOps Engineer, Project Owner, Security Auditor, Manus Alignment Auditor)
 - [x] Synthesis: 4226/4243 passed (1 pre-existing timeout: XLSX generation), 149/151 files passed (1 OOM: known), 0 TypeScript errors
+- [x] Save checkpoint
+
+## Pass 35: Surface GitHub Connection Flow to Users
+### 35.1: Audit & Gap Analysis
+- [x] Trace user journey: GitHub is in Apps grid (buried), not in main sidebar
+- [x] Check sidebar/nav: GitHub only in AppsGridMenu dropdown, not primary nav
+- [x] Check OAuth flow: exists in ConnectorsPage, but GitHubPage redirects there (3-step scavenger hunt)
+- [x] Check disconnected state: shows "Import Repo" but Import dialog says "Connect first" → redirects to /connectors
+### 35.2: Implementation
+- [x] GitHubPage: Add connector status query (trpc.connector.list) to detect if GitHub is connected
+- [x] GitHubPage: Build "Connect GitHub" hero state with inline OAuth (popup on desktop, redirect on mobile)
+- [x] GitHubPage: Handle post-OAuth success (popup close polling + MessageEvent listener + oauth_success param)
+- [x] GitHubPage: Show repo list/import flow only when connected (githubConnected === true)
+- [x] ConnectorsSheet: Route connectors with actionRoute to their dedicated page (GitHub → /github)
+- [x] MobileBottomNav: Add GitHub (with Github icon) to MORE_ITEMS between Projects and Library
+- [x] Handle oauth_success query param on /github for redirect-back flow (cleans URL after success)
+### 35.3: Recursion Passes
+- [x] Depth scan: 43 tests (connector status detection, OAuth flow, post-OAuth success, import dialog, ConnectorsSheet routing, MobileBottomNav, edge cases)
+- [x] Adversarial scan: 5 VUs (New User, Returning User, Mobile User, ConnectorsSheet User, PlusMenu User)
+- [x] Synthesis: 4270 tests passed, 151/152 files (1 OOM: known), 0 TypeScript errors
 - [x] Save checkpoint

@@ -60,6 +60,16 @@ The system has been verified from every angle:
 - **Depth** (Pass 009): Edge cases, data integrity, runtime behavior — all verified
 - **Synthesis** (Pass 010): System coherence, no regressions, future-proofing — confirmed
 
+### Pass 035 — Surface GitHub Connection Flow — Score 9.5
+- GitHubPage: Added connector status query + "Connect GitHub" hero state with inline OAuth (popup on desktop, redirect on mobile)
+- Post-OAuth success: popup close polling + MessageEvent listener + oauth_success query param
+- ConnectorsSheet: GitHub card click routes to /github (dedicated page) instead of /connector/github
+- MobileBottomNav: Added GitHub to MORE_ITEMS between Projects and Library
+- Import dialog: Not-connected state triggers inline OAuth instead of redirecting to /connectors
+- 43 new tests (depth + adversarial with 5 VUs: New User, Returning User, Mobile User, ConnectorsSheet User, PlusMenu User)
+- Full suite: 4270 passed, 151/152 files (1 OOM: known), 0 TS errors
+- Convergence: Confirmed. GitHub discoverability gap closed.
+
 ### Pass 034 — Auto-Webhook Registration + Deploy Notifications + Manus Alignment — Score 9.5
 - Auto-webhook registration: `ensureWebhook()` in githubApi.ts (idempotent: list → check → create)
 - Wired into `connectRepo` and `createRepo` as fire-and-forget with `.catch(() => {})`

@@ -310,7 +310,13 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
   // ── Navigate to connector detail ──
   const handleCardClick = (connectorId: string) => {
     onOpenChange(false);
-    navigate(`/connector/${connectorId}`);
+    // GitHub has a dedicated page — route there instead of generic connector detail
+    const def = CONNECTOR_DEFS.find(d => d.id === connectorId);
+    if (def?.actionRoute) {
+      navigate(def.actionRoute);
+    } else {
+      navigate(`/connector/${connectorId}`);
+    }
   };
 
   // ── Navigate to add connectors page ──

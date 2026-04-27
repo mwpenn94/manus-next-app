@@ -31,10 +31,11 @@ import {
   Rocket, Play, CheckCircle2, XCircle, ExternalLink as LinkIcon, Upload,
   Diff, Copy, Webhook
 } from "lucide-react";
-import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Github } from "lucide-react";
 
 const CodeEditor = lazy(() => import("@/components/CodeEditor"));
 const DiffViewer = lazy(() => import("@/components/DiffViewer"));
@@ -42,10 +43,96 @@ const DiffViewer = lazy(() => import("@/components/DiffViewer"));
 type RepoTab = "files" | "branches" | "commits" | "prs" | "issues" | "deploy";
 
 export default function GitHubPage() {
-  const { user } = useAuth();
-  const [, navigate] = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const [location, navigate] = useLocation();
   const [, routeParams] = useRoute("/github/:repoId");
   const selectedRepoId = routeParams?.repoId;
+  const oauthPopupRef = useRef<Window | null>(null);
+  const utils = trpc.useUtils();
+
+  // ── GitHub connector status ──
+  const connectorListQuery = trpc.connector.list.useQuery(undefined, { enabled: !!user });
+  const githubConnected = useMemo(() => {
+    if (!connectorListQuery.data) return null; // loading
+    return connectorListQuery.data.some(
+      (c: any) => c.connectorId === "github" && c.status === "connected"
+    );
+  }, [connectorListQuery.data]);
+
+  const [connecting, setConnecting] = useState(false);
+  const getOAuthUrlMut = trpc.connector.getOAuthUrl.useMutation();
+
+  // ── Handle OAuth success redirect (same-window mobile flow) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("oauth_success") === "github") {
+      toast.success("GitHub connected!");
+      connectorListQuery.refetch();
+      // Clean up URL
+      window.history.replaceState({}, "", "/github");
+    }
+  }, []);
+
+  // ── Listen for popup close (desktop OAuth flow) ──
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "connector-oauth-success" && e.data?.connectorId === "github") {
+        setConnecting(false);
+        toast.success("GitHub connected!");
+        connectorListQuery.refetch();
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [connectorListQuery]);
+
+  // ── Initiate GitHub OAuth ──
+  const handleConnectGitHub = useCallback(async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in first");
+      return;
+    }
+    setConnecting(true);
+    try {
+      const result = await getOAuthUrlMut.mutateAsync({
+        connectorId: "github",
+        origin: window.location.origin,
+      });
+      if (result.supported && result.url) {
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          // Same-window redirect — server callback will redirect back to /github
+          window.location.href = result.url;
+        } else {
+          // Popup flow
+          const w = 500, h = 700;
+          const left = window.screenX + (window.outerWidth - w) / 2;
+          const top = window.screenY + (window.outerHeight - h) / 2;
+          oauthPopupRef.current = window.open(
+            result.url,
+            "github-oauth",
+            `width=${w},height=${h},left=${left},top=${top},popup=yes`
+          );
+          // Poll for popup close as fallback
+          const pollTimer = setInterval(() => {
+            if (oauthPopupRef.current?.closed) {
+              clearInterval(pollTimer);
+              setTimeout(() => {
+                connectorListQuery.refetch();
+                setConnecting(false);
+              }, 1000);
+            }
+          }, 500);
+        }
+      } else {
+        setConnecting(false);
+        toast.error("GitHub OAuth is not configured. Please set up GitHub OAuth credentials in Settings.");
+      }
+    } catch (err: any) {
+      setConnecting(false);
+      toast.error(`OAuth error: ${err.message}`);
+    }
+  }, [isAuthenticated, getOAuthUrlMut, connectorListQuery]);
 
   // State
   const [importOpen, setImportOpen] = useState(false);
@@ -1034,6 +1121,57 @@ export default function GitHubPage() {
     );
   }
 
+  // ── Connect Hero State (GitHub not connected) ──
+  if (githubConnected === false && !selectedRepoId) {
+    return (
+      <div className="h-full overflow-auto bg-background">
+        <div className="max-w-2xl mx-auto px-6 py-16 flex flex-col items-center text-center">
+          {/* GitHub icon */}
+          <div className="w-20 h-20 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-6">
+            <Github className="w-10 h-10 text-foreground" />
+          </div>
+
+          <h1 className="text-2xl font-semibold mb-2" style={{ fontFamily: "var(--font-heading)" }}>
+            Connect GitHub
+          </h1>
+          <p className="text-muted-foreground text-sm max-w-md mb-8 leading-relaxed">
+            Access, search, and organize repos. Track issues, review pull requests,
+            browse code, and deploy — all from within Manus.
+          </p>
+
+          {/* Connect button */}
+          <Button
+            size="lg"
+            onClick={handleConnectGitHub}
+            disabled={connecting}
+            className="px-8 py-3 text-[15px] font-semibold gap-2"
+          >
+            {connecting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Connecting...</>
+            ) : (
+              <><Github className="w-4 h-4" /> Connect GitHub Account</>
+            )}
+          </Button>
+
+          {/* Capabilities preview */}
+          <div className="mt-12 w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { icon: FolderOpen, title: "Browse & Edit", desc: "Navigate file trees, edit code, and commit changes" },
+              { icon: GitPullRequest, title: "PRs & Issues", desc: "Create and manage pull requests and issues" },
+              { icon: Rocket, title: "Deploy", desc: "Deploy directly from your repos with one click" },
+            ].map((cap) => (
+              <div key={cap.title} className="p-4 rounded-xl border border-border bg-card/50 text-left">
+                <cap.icon className="w-5 h-5 text-primary mb-2" />
+                <p className="text-sm font-medium text-foreground">{cap.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{cap.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Repo List View ──
   return (
     <div className="h-full overflow-auto bg-background">
@@ -1066,7 +1204,7 @@ export default function GitHubPage() {
         </div>
 
         {/* Repo Grid */}
-        {reposQuery.isLoading ? (
+        {reposQuery.isLoading || githubConnected === null ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
@@ -1139,8 +1277,8 @@ export default function GitHubPage() {
             {!remoteReposQuery.data?.connected ? (
               <div className="text-center py-8">
                 <p className="text-sm text-muted-foreground mb-3">Connect your GitHub account first</p>
-                <Button onClick={() => { setImportOpen(false); window.location.href = "/connectors?highlight=github"; }}>
-                  Connect GitHub Account
+                <Button onClick={() => { setImportOpen(false); handleConnectGitHub(); }}>
+                  <Github className="w-4 h-4 mr-1.5" /> Connect GitHub Account
                 </Button>
               </div>
             ) : remoteReposQuery.isLoading ? (
