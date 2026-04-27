@@ -5378,3 +5378,9 @@
 - [x] Fix GitHub repo detail tabs bar overflow — 6 tabs (Code, Branches, Commits, PRs, Issues, Deploy) overflow horizontally on mobile, need scrollable tabs
 - [x] Remove hardcoded ml-[72px] margins from description/stats rows in GitHub repo detail
 - [x] Run TypeScript check and vitest tests after mobile fixes
+
+## Pass 42: Accessibility Color Contrast Fix
+
+- [x] Fix insufficient color contrast on Home page — foreground #69686c on background #1b1a1d gives 3.13:1 ratio, needs 4.5:1 for small text (10px)
+- [x] Identify the specific element(s) with 10px font size and muted-foreground color on the home page — found in AppLayout.tsx:1191 "from ∞ Meta" span with text-muted-foreground/50
+- [x] Adjust the muted-foreground CSS variable or specific element colors to meet WCAG AA contrast requirements — removed /50 opacity modifier, now uses full text-muted-foreground (9.47:1 contrast ratio)

@@ -1188,7 +1188,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               </button>
             </div>
             {/* Right: "from ∞ Meta" */}
-            <span className="text-[10px] text-muted-foreground/50 select-none">
+            <span className="text-[10px] text-muted-foreground select-none">
               from <span className="font-medium">∞</span> Meta
             </span>
           </div>
