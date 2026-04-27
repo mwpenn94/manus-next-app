@@ -716,6 +716,226 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── Pass 38: Manus Parity+ Tools ──
+  {
+    type: "function",
+    function: {
+      name: "data_pipeline",
+      description:
+        "Execute data operations: ingest, transform, enrich, model, and persist data from various sources. Supports CSV/JSON/XML/API/database sources, schema inference, quality scoring, null imputation, normalization, deduplication, and data modeling. Modes: 'ingest' (classify + validate source), 'transform' (clean + normalize + enrich), 'model' (schema inference + relationship mapping), 'persist' (storage strategy), 'full' (end-to-end pipeline). Use when the user asks about ETL, data processing, data cleaning, data modeling, or data integration.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["plan", "ingest", "transform", "model", "persist", "full"],
+            description: "Pipeline mode: ingest, transform, model, persist, or full end-to-end",
+          },
+          source_description: {
+            type: "string",
+            description: "Description of the data source (e.g., 'CSV file with customer records', 'REST API returning JSON')",
+          },
+          data_sample: {
+            type: "string",
+            description: "Optional sample of the data to analyze (first few rows or records)",
+          },
+          target_format: {
+            type: "string",
+            description: "Desired output format or storage target",
+          },
+          custom_instructions: {
+            type: "string",
+            description: "Additional instructions for the pipeline",
+          },
+        },
+        required: ["mode", "source_description"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "automation_orchestrate",
+      description:
+        "Design and orchestrate automation workflows: browser automation, API/webhook chains, scheduled tasks, event-driven pipelines, and agentic multi-step workflows. Modes: 'browser' (web scraping/interaction), 'api_chain' (multi-API orchestration), 'scheduled' (cron/interval tasks), 'event_driven' (webhook/trigger pipelines), 'agentic' (multi-step autonomous workflows), 'full' (complete automation design). Use when the user asks about automation, workflows, scheduling, web scraping, or API orchestration.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["plan", "browser", "api", "schedule", "workflow", "monitor"],
+            description: "Automation mode: plan (design workflow), browser (web scraping/interaction), api (multi-API orchestration), schedule (cron/interval tasks), workflow (multi-step autonomous), monitor (observability)",
+          },
+          description: {
+            type: "string",
+            description: "Description of the automation workflow to design or execute",
+          },
+          trigger: {
+            type: "string",
+            description: "What triggers this automation (e.g., 'every 6 hours', 'on webhook', 'on new email')",
+          },
+          target_url: {
+            type: "string",
+            description: "Target URL for browser automation or API endpoint",
+          },
+          custom_instructions: {
+            type: "string",
+            description: "Additional instructions for the automation",
+          },
+        },
+        required: ["mode", "description"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "app_lifecycle",
+      description:
+        "Manage the full application development lifecycle: design, architecture, build, test, deploy, observe, and maintain. Modes: 'design' (UI/UX wireframes + design system), 'architect' (system architecture + tech stack), 'build' (implementation plan + code generation), 'test' (test strategy + coverage analysis), 'deploy' (deployment strategy + CI/CD), 'observe' (monitoring + alerting + logging), 'maintain' (dependency updates + security patches + tech debt), 'full' (complete SDLC plan). Use when the user asks about app design, architecture, deployment, testing strategy, or maintenance.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["discover", "design", "architect", "implement", "integrate", "test", "deploy", "observe", "audit", "iterate", "full"],
+            description: "Lifecycle phase to execute",
+          },
+          description: {
+            type: "string",
+            description: "Description of the application or specific lifecycle task",
+          },
+          tech_stack: {
+            type: "string",
+            description: "Technology stack (e.g., 'React + Node + PostgreSQL')",
+          },
+          repo: {
+            type: "string",
+            description: "Repository name for context (optional)",
+          },
+          custom_instructions: {
+            type: "string",
+            description: "Additional instructions",
+          },
+        },
+        required: ["mode", "description"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "deep_research_content",
+      description:
+        "Conduct deep multi-source research and produce publication-quality content. Modes: 'research' (multi-source research with citations), 'write' (long-form content with structure and citations), 'media' (media generation specifications), 'document' (document production specs for PDF/DOCX/slides), 'analyze' (deep analysis of provided content), 'full' (research → analyze → write → document pipeline). Use when the user asks for research, reports, articles, whitepapers, content creation, or document production.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["research", "write", "media", "document", "analyze", "full"],
+            description: "Research/content mode",
+          },
+          topic: {
+            type: "string",
+            description: "Research topic or content subject",
+          },
+          description: {
+            type: "string",
+            description: "Detailed description of what to research or write",
+          },
+          depth: {
+            type: "string",
+            enum: ["quick", "standard", "deep", "exhaustive"],
+            description: "Research depth level",
+          },
+          format: {
+            type: "string",
+            description: "Content format (report, article, whitepaper, blog_post, executive_summary, technical_doc, presentation)",
+          },
+          target_length: {
+            type: "string",
+            enum: ["short", "standard", "long"],
+            description: "Target content length",
+          },
+          custom_instructions: {
+            type: "string",
+            description: "Additional instructions for research or writing",
+          },
+        },
+        required: ["mode"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "github_ops",
+      description:
+        "Enhanced GitHub operations for CI/CD, PR workflows, releases, and branch management. Modes: 'branch' (create/manage branches with strategy), 'pr' (create/review/merge PRs), 'release' (generate changelogs and release notes), 'ci' (generate/commit GitHub Actions workflows), 'status' (comprehensive repo health check). Use when the user asks about branches, pull requests, CI/CD, releases, or repo health.",
+      parameters: {
+        type: "object",
+        properties: {
+          mode: {
+            type: "string",
+            enum: ["branch", "pr", "release", "ci", "protect", "status"],
+            description: "Operation mode",
+          },
+          repo: {
+            type: "string",
+            description: "Repository name or full name (owner/repo)",
+          },
+          description: {
+            type: "string",
+            description: "Description of the operation (e.g., 'create feature branch for auth system')",
+          },
+          branch_name: {
+            type: "string",
+            description: "Branch name (for branch mode)",
+          },
+          from_branch: {
+            type: "string",
+            description: "Source branch to create from (defaults to default branch)",
+          },
+          head_branch: {
+            type: "string",
+            description: "Head branch for PR creation",
+          },
+          base_branch: {
+            type: "string",
+            description: "Base branch for PR creation (defaults to default branch)",
+          },
+          pr_title: {
+            type: "string",
+            description: "Pull request title",
+          },
+          pr_body: {
+            type: "string",
+            description: "Pull request body/description",
+          },
+          pr_number: {
+            type: "number",
+            description: "PR number for merge operations",
+          },
+          merge_method: {
+            type: "string",
+            enum: ["merge", "squash", "rebase"],
+            description: "Merge method for PR merging",
+          },
+          language: {
+            type: "string",
+            description: "Programming language for CI workflow generation",
+          },
+        },
+        required: ["mode"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -2443,6 +2663,38 @@ export async function executeTool(
     case "github_assess": {
       const { executeGitHubAssess } = await import("./githubAssessTool");
       return executeGitHubAssess(args, context);
+    }
+    // ── Pass 38: Manus Parity+ Tool Executors ──
+    case "data_pipeline": {
+      const { executeDataPipeline } = await import("./dataPipelineTool");
+      // Map schema args (source_description) to function args (sources[])
+      const pipelineArgs = {
+        ...args,
+        sources: args.sources || (args.source_description ? [args.source_description] : undefined),
+        description: args.description || args.source_description || args.data_sample,
+      };
+      return executeDataPipeline(pipelineArgs, context);
+    }
+    case "automation_orchestrate": {
+      const { executeAutomation } = await import("./automationTool");
+      // Map schema args (trigger) to function args (trigger_description)
+      const automationArgs = {
+        ...args,
+        trigger_description: args.trigger_description || args.trigger,
+      };
+      return executeAutomation(automationArgs, context);
+    }
+    case "app_lifecycle": {
+      const { executeAppLifecycle } = await import("./appLifecycleTool");
+      return executeAppLifecycle(args, context);
+    }
+    case "deep_research_content": {
+      const { executeDeepResearch } = await import("./deepResearchTool");
+      return executeDeepResearch(args, context);
+    }
+    case "github_ops": {
+      const { executeGitHubOps } = await import("./githubOpsTool");
+      return executeGitHubOps(args, context);
     }
     default:
       return { success: false, result: `Unknown tool: ${name}` };

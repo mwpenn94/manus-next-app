@@ -173,6 +173,11 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 - **deploy_webapp(version_label?)**: Build and deploy the active webapp project to the cloud. Bundles the project, uploads to cloud storage, and returns a live public URL. Use after the app is ready to share.
 - **github_edit(instruction, repo?, confirm?, edit_plan_id?)**: Edit files in a connected GitHub repo using natural language. PREFERRED method for repo editing — reads the repo via API, plans edits with AI, shows a diff preview, and commits atomically. No cloning needed. Two-step: first call generates a diff, second call with confirm=true applies it.
 - **github_assess(mode, repo?, focus?, target_phase?)**: Deeply assess, optimize, or validate a connected GitHub repo using the Manus recursive optimization framework. Analyzes across 14 dimensions (completeness, accuracy, depth, novelty, actionability, regression_safety, ux_quality, performance, security, accessibility, test_coverage, documentation, code_quality, deployment_readiness). Three modes: 'assess' (read-only report), 'optimize' (report + fix recommendations), 'validate' (phase gate pass/fail). Routes findings to expert classes A-F, runs quality guards, tracks convergence.
+- **data_pipeline(mode, source_description, data_sample?, target_format?, custom_instructions?)**: Execute data operations — ingest, transform, enrich, model, and persist data from any source. Supports CSV/JSON/XML/API/database sources, schema inference, quality scoring, null imputation, normalization, deduplication, and data modeling. Modes: 'ingest' (classify + validate), 'transform' (clean + normalize + enrich), 'model' (schema inference + relationships), 'persist' (storage strategy), 'full' (end-to-end pipeline).
+- **automation_orchestrate(mode, description, trigger?, target_url?, custom_instructions?)**: Design and orchestrate automation workflows — browser automation, API/webhook chains, scheduled tasks, event-driven pipelines, and agentic multi-step workflows. Modes: 'browser' (web scraping/interaction), 'api_chain' (multi-API orchestration), 'scheduled' (cron/interval tasks), 'event_driven' (webhook/trigger pipelines), 'agentic' (autonomous workflows), 'full' (complete automation design).
+- **app_lifecycle(mode, description, tech_stack?, repo?, custom_instructions?)**: Manage the full application development lifecycle. Modes: 'design' (UI/UX + design system), 'architect' (system architecture + tech stack), 'build' (implementation plan + code generation), 'test' (test strategy + coverage), 'deploy' (deployment strategy + CI/CD), 'observe' (monitoring + alerting), 'maintain' (dependency updates + tech debt), 'full' (complete SDLC plan).
+- **deep_research_content(mode, topic?, description?, depth?, format?, target_length?, custom_instructions?)**: Conduct deep multi-source research and produce publication-quality content. Modes: 'research' (multi-source with citations), 'write' (long-form structured content), 'media' (media generation specs), 'document' (PDF/DOCX/slides specs), 'analyze' (deep content analysis), 'full' (research → analyze → write → document pipeline).
+- **github_ops(mode, repo?, description?, branch_name?, from_branch?, head_branch?, base_branch?, pr_title?, pr_body?, pr_number?, merge_method?, language?)**: Enhanced GitHub operations for CI/CD, PR workflows, releases, and branch management. Modes: 'branch' (create/manage branches with strategy), 'pr' (create/review/merge PRs), 'release' (generate changelogs), 'ci' (generate GitHub Actions workflows), 'status' (comprehensive repo health check).
 
 ## CRITICAL SAFETY RULE — SELF-EDIT GUARD
 You are running INSIDE a host application (Manus Next). You MUST NEVER attempt to edit, modify, or overwrite the host application's own codebase. Your file tools (create_file, edit_file, etc.) operate within an **isolated project sandbox** — NOT the host app.
@@ -211,6 +216,11 @@ You work within **projects**. Each project is an isolated directory with its own
 - "Assess my repo", "Review code quality", "Audit my codebase", "How good is my code?" → **github_assess(mode: 'assess')**
 - "Optimize my repo", "What should I fix?", "Improve my code" → **github_assess(mode: 'optimize')**
 - "Is my repo production-ready?", "Validate against Phase C" → **github_assess(mode: 'validate')**
+- "Process this CSV", "Clean my data", "Build an ETL pipeline" → **data_pipeline**
+- "Automate this workflow", "Scrape this site", "Schedule a task" → **automation_orchestrate**
+- "Design my app", "What architecture should I use?", "Help me deploy" → **app_lifecycle**
+- "Research this topic", "Write a report", "Create a whitepaper" → **deep_research_content**
+- "Create a branch", "Make a PR", "Set up CI/CD", "Generate a release" → **github_ops**
 - "Clone [repo URL]" → **git_operation(clone)** that specific repo
 - When ambiguous, ask the user: "Would you like me to create a new project or edit your connected repository?"
 
@@ -896,7 +906,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         const repos = await getUserGitHubRepos(userId);
         if (repos.length > 0) {
           const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
-          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected.\n\n${repoList}\n\n- To EDIT code: use **github_edit** with the repo name\n- To ASSESS/REVIEW/AUDIT code quality: use **github_assess** with the repo name\n- To OPTIMIZE (assess + fix recommendations): use **github_assess(mode: 'optimize')**\n- To VALIDATE against a phase gate: use **github_assess(mode: 'validate', target_phase: 'B')**\n\nIf the user doesn't specify which repo, and they have only one, use that one automatically. If they have multiple, ask which repo they mean.`;
+          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected.\n\n${repoList}\n\n- To EDIT code: use **github_edit** with the repo name\n- To ASSESS/REVIEW/AUDIT code quality: use **github_assess** with the repo name\n- To OPTIMIZE (assess + fix recommendations): use **github_assess(mode: 'optimize')**\n- To VALIDATE against a phase gate: use **github_assess(mode: 'validate', target_phase: 'B')**\n- To manage BRANCHES: use **github_ops(mode: 'branch')**\n- To create/merge PRs: use **github_ops(mode: 'pr')**\n- To generate RELEASES: use **github_ops(mode: 'release')**\n- To set up CI/CD: use **github_ops(mode: 'ci')**\n- To check REPO HEALTH: use **github_ops(mode: 'status')**\n\nIf the user doesn't specify which repo, and they have only one, use that one automatically. If they have multiple, ask which repo they mean.`;
         }
       } catch (err) {
         console.warn("[Agent] Failed to load GitHub repos for context:", err);
@@ -1990,6 +2000,17 @@ function getToolDisplayInfo(
         return { type: "thinking", label: `Validating ${args.repo || "repository"} against Phase ${args.target_phase || "B"} gate` };
       }
       return { type: "thinking", label: `Assessing ${args.repo || "repository"}: deep 14-dimension analysis` };
+    // Pass 38: Manus Parity+ Tool Display Mappings
+    case "data_pipeline":
+      return { type: "analyzing", label: `Data pipeline (${args.mode || "full"}): ${(args.source_description || "").slice(0, 50)}` };
+    case "automation_orchestrate":
+      return { type: "building", label: `Automation (${args.mode || "full"}): ${(args.description || "").slice(0, 50)}` };
+    case "app_lifecycle":
+      return { type: "designing", label: `App lifecycle (${args.mode || "full"}): ${(args.description || "").slice(0, 50)}` };
+    case "deep_research_content":
+      return { type: "researching", label: `Research (${args.mode || "full"}): ${(args.topic || args.description || "").slice(0, 50)}` };
+    case "github_ops":
+      return { type: "versioning", label: `GitHub ops (${args.mode || "status"}): ${(args.description || args.repo || "").slice(0, 50)}` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

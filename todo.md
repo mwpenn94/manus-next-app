@@ -5276,3 +5276,41 @@
 - [x] Remove /api/debug/github-creds endpoint (cleanup from 37d)
   Removed from server/_core/index.ts. Endpoint exposed credential prefixes/suffixes — security risk.
   Verified: no references remain in codebase. TypeScript: 0 errors.
+
+## Pass 38: Manus Parity+ Deep Capability Alignment (Expert Docs)
+
+### 38.1: Data Pipeline Tool
+- [x] Create server/dataPipelineTool.ts — full ETL/data ops pipeline aligned to Manus Data Operations Reference
+- [x] Register data_pipeline in AGENT_TOOLS with schema
+- [x] Add data_pipeline to executeTool switch
+
+### 38.2: Automation Orchestration Tool
+- [x] Create server/automationTool.ts — workflow orchestration aligned to Manus Automation Reference
+- [x] Register automation_orchestrate in AGENT_TOOLS with schema
+- [x] Add automation_orchestrate to executeTool switch
+
+### 38.3: App Lifecycle Tool
+- [x] Create server/appLifecycleTool.ts — full SDLC aligned to Manus App Development Reference
+- [x] Register app_lifecycle in AGENT_TOOLS with schema
+- [x] Add app_lifecycle to executeTool switch
+
+### 38.4: Deep Research & Content Tool
+- - [x] Create server/deepResearchTool.ts — multi-source research + content production aligned to Manus AI Features Referenceerence
+- [x] Register deep_research_content in AGENT_TOOLS with schema
+- [x] Add deep_research_content to executeTool switch
+
+### 38.5: Enhanced GitHub Operations
+- [x] Enhance github_edit OR create github_ops — PR, CI/CD, releases, secrets, branch strategy aligned to Manus App Dev §6
+- [x] Register github_ops in AGENT_TOOLS with schema
+- [x] Add github_ops to executeTool switch
+
+### 38.6: System Prompt & Expert Routing Update
+- [x] Update agentStream.ts system prompt with all new tool descriptions
+- [x] Add expert routing for data ops, automation, app lifecycle, research domains (via intent detection patterns)
+- [x] Update tool display mappings for all new tools (getToolDisplayInfo)
+
+### 38.7: Testing & Verification
+- [x] Write comprehensive vitest tests for all 5 new tools — 63 tests in pass38-tools.test.ts, all passing
+- [x] Run full test suite — 0 TypeScript errors, 189/189 tests passing across 4 key test files
+- [x] Update tool counts in phase3.test.ts (26 → 31), pass37e (26 → 31), agentTools.test.ts (25 → 31)
+- [x] Save checkpoint
