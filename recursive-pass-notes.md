@@ -60,6 +60,21 @@ The system has been verified from every angle:
 - **Depth** (Pass 009): Edge cases, data integrity, runtime behavior — all verified
 - **Synthesis** (Pass 010): System coherence, no regressions, future-proofing — confirmed
 
+### Pass 036 — AI-Powered Repo Editing from Task Chat — Score 9.6
+- Built `server/githubEditTool.ts` — standalone module for AI-powered GitHub repo editing
+- Pipeline: read repo tree → LLM plans files → read files → LLM generates edits → diff preview → atomic commit
+- Smart filtering: SKIP_PATTERNS for node_modules/dist/.git/etc., 20-file cap, truncation detection
+- Two-step flow: first call returns diff preview, second call with confirm=true applies changes
+- Repo resolution: exact fullName match → name match → partial match → auto-select single repo
+- Wired into agent tool system: github_edit in AGENT_TOOLS, executeTool switch, dynamic import
+- System prompt: github_edit is PREFERRED over git_operation(clone), connected repos injected dynamically
+- Tool display: github_edit maps to "editing" (plan phase) and "versioning" (commit phase)
+- Pending edits cache with 10-minute auto-expiry, plan IDs with timestamp + random suffix
+- 61 new tests (depth + adversarial with 5 VUs: New User, Power User, Security Auditor, Manus Alignment Auditor, Edge Case Explorer)
+- Fixed 3 tool-count regression tests (agentTools.test.ts, phase3.test.ts, false-positive-elimination.test.ts)
+- Full suite: 4331 tests passed, 153/153 files, 0 TS errors
+- Convergence: Confirmed. AI repo editing is Manus-aligned: natural language in chat → agent edits → diff preview → commit.
+
 ### Pass 035 — Surface GitHub Connection Flow — Score 9.5
 - GitHubPage: Added connector status query + "Connect GitHub" hero state with inline OAuth (popup on desktop, redirect on mobile)
 - Post-OAuth success: popup close polling + MessageEvent listener + oauth_success query param

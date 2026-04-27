@@ -650,6 +650,38 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── GitHub AI Edit Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "github_edit",
+      description:
+        "Edit files in a connected GitHub repository using natural language. Describe what changes you want to make and the AI will read the repo, plan edits, generate diffs, and commit atomically. Use this when the user asks to update, modify, fix, refactor, or add code to any of their GitHub repos. Two-step flow: first call generates a diff preview, second call with confirm=true applies the changes.",
+      parameters: {
+        type: "object",
+        properties: {
+          instruction: {
+            type: "string",
+            description: "Natural language description of what changes to make (e.g., 'Add a login page with email/password form', 'Fix the bug in auth.ts where tokens expire too early', 'Update README with installation instructions')",
+          },
+          repo: {
+            type: "string",
+            description: "Repository name or full name (owner/repo). If the user has only one repo connected, this can be omitted.",
+          },
+          confirm: {
+            type: "boolean",
+            description: "Set to true to apply a previously generated edit plan. Must be used with edit_plan_id.",
+          },
+          edit_plan_id: {
+            type: "string",
+            description: "The plan ID returned from a previous github_edit call. Required when confirm=true.",
+          },
+        },
+        required: ["instruction"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -2370,6 +2402,10 @@ export async function executeTool(
         success: true,
         result: `Convergence pass ${args.pass_number} (${args.pass_type}): ${args.status}${args.description ? " — " + args.description : ""}${args.rating ? " [" + args.rating + "/10]" : ""}`,
       };
+    case "github_edit": {
+      const { executeGitHubEdit } = await import("./githubEditTool");
+      return executeGitHubEdit(args, context);
+    }
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }

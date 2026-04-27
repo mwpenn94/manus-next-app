@@ -171,12 +171,13 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 - **run_command(command)**: Run a shell command in the active webapp project directory. Use for build commands, linting, testing, or any CLI operation.
 - **git_operation(operation, args?)**: Perform git operations (init, add, commit, push, status, log, clone, remote_add) in the active webapp project. Use to version control the project and push to GitHub.
 - **deploy_webapp(version_label?)**: Build and deploy the active webapp project to the cloud. Bundles the project, uploads to cloud storage, and returns a live public URL. Use after the app is ready to share.
+- **github_edit(instruction, repo?, confirm?, edit_plan_id?)**: Edit files in a connected GitHub repo using natural language. PREFERRED method for repo editing — reads the repo via API, plans edits with AI, shows a diff preview, and commits atomically. No cloning needed. Two-step: first call generates a diff, second call with confirm=true applies it.
 
 ## CRITICAL SAFETY RULE — SELF-EDIT GUARD
 You are running INSIDE a host application (Manus Next). You MUST NEVER attempt to edit, modify, or overwrite the host application's own codebase. Your file tools (create_file, edit_file, etc.) operate within an **isolated project sandbox** — NOT the host app.
 
 - If the user asks you to "edit this app" or "fix a bug in this app" WITHOUT a connected GitHub repo, clarify: "I can create a new project for you, but I cannot modify the application I'm running inside. If you'd like me to edit your codebase, please connect your GitHub repository first."
-- If the user HAS a connected GitHub repo AND explicitly asks you to edit their repo, use git_operation(clone) to clone it into the sandbox, make changes there, and push back via git.
+- If the user HAS a connected GitHub repo AND asks to edit their repo, use **github_edit** (preferred — fast, no cloning, atomic commits via API). Only fall back to git_operation(clone) for very large refactors requiring a full local build.
 - NEVER use create_file or edit_file to modify paths outside the active project sandbox (e.g., /home/ubuntu/manus-next-app/ or any system directory).
 
 ## PROJECT CONTEXT
@@ -196,14 +197,15 @@ You work within **projects**. Each project is an isolated directory with its own
 4. Share the preview URL with the user
 
 ### When the user has a connected GitHub repo and asks to edit/update it:
-1. Use **git_operation(clone, remote_url)** to clone their repo as the active project
-2. Make changes with create_file/edit_file
-3. Use git_operation(add, commit, push) to push changes back
-4. This is how two-way sync works — pull latest, edit, push back
+1. Use **github_edit(instruction)** — this is the PREFERRED method. It reads the repo via GitHub API, uses AI to plan edits, shows a diff preview, and commits atomically. No cloning needed.
+2. Present the diff preview to the user and explain the changes.
+3. Once the user approves, call **github_edit** again with confirm=true and the edit_plan_id to apply the changes.
+4. Only use git_operation(clone) as a fallback for very large refactors that require running a local build/test.
 
 ### Intent detection:
 - "Create an app", "Build me a website", "Make a landing page" → **create_webapp** (new project)
-- "Edit this app", "Update the code", "Fix the bug in my repo" + GitHub connected → **git_operation(clone)** their repo
+- "Edit this app", "Update the code", "Fix the bug in my repo" + GitHub connected → **github_edit** (AI-powered edit via API)
+- "Update the README", "Add a feature to my repo", "Refactor the auth module" → **github_edit**
 - "Clone [repo URL]" → **git_operation(clone)** that specific repo
 - When ambiguous, ask the user: "Would you like me to create a new project or edit your connected repository?"
 
@@ -878,6 +880,21 @@ When performing recursive optimization passes, use the report_convergence tool t
           }
         }
         conversation[i] = { ...msg, content: newContent };
+      }
+    }
+
+    // ── Inject connected GitHub repos into system prompt ──
+    // This allows the agent to know which repos are available for github_edit
+    if (userId) {
+      try {
+        const { getUserGitHubRepos } = await import("./db");
+        const repos = await getUserGitHubRepos(userId);
+        if (repos.length > 0) {
+          const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
+          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. When they ask to edit code, update files, or modify their repo, use **github_edit** with the appropriate repo name:\n\n${repoList}\n\nIf the user doesn't specify which repo, and they have only one, use that one automatically. If they have multiple, ask which repo they mean.`;
+        }
+      } catch (err) {
+        console.warn("[Agent] Failed to load GitHub repos for context:", err);
       }
     }
 
@@ -1955,6 +1972,11 @@ function getToolDisplayInfo(
       return { type: "versioning", label: `Git ${args.operation || "operation"}${args.message ? `: ${args.message.slice(0, 40)}` : ""}` };
     case "deploy_webapp":
       return { type: "deploying", label: `Deploying webapp${args.version_label ? `: ${args.version_label.slice(0, 40)}` : " to production"}` };
+    case "github_edit":
+      if (args.confirm) {
+        return { type: "versioning", label: `Committing changes to ${args.repo || "repository"}` };
+      }
+      return { type: "editing", label: `Editing repo: ${(args.instruction || "").slice(0, 60)}` };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

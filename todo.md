@@ -5121,3 +5121,40 @@
 - [x] Adversarial scan: 5 VUs (New User, Returning User, Mobile User, ConnectorsSheet User, PlusMenu User)
 - [x] Synthesis: 4270 tests passed, 151/152 files (1 OOM: known), 0 TypeScript errors
 - [x] Save checkpoint
+
+## Pass 36: AI-Powered Repo Editing from Task Chat (Manus-Aligned)
+
+### 36.1: Analysis
+- [x] Analyze current task/agent architecture (TaskContext, agentStream, agentTools, ToolContext)
+- [x] Analyze GitHub API capabilities (getRepoTree, getFileContent, createTreeCommit — all available)
+- [x] Design: new github_edit tool — reads repo via API, LLM plans edits, generates diffs, atomic commit via createTreeCommit. No clone needed.
+
+### 36.2: Server-Side AI Repo Editing Pipeline
+- [x] Built server/githubEditTool.ts — standalone module with executeGitHubEdit function
+- [x] Step 1: getRepoStructure reads tree via GitHub API, filters noise (node_modules, dist, etc.)
+- [x] Step 2: LLM plans files_to_read with structured JSON output (capped at 20 files)
+- [x] Step 3: LLM generates edits with structured JSON (path, action, new_content)
+- [x] Step 4: generateDiffSummary shows additions/deletions/modifications preview
+- [x] Step 5: On confirm, atomic commit via createTreeCommit (with 10-min plan expiry)
+- [x] Handle large repos: SKIP_PATTERNS filter, 20-file cap, truncation detection
+
+### 36.3: Wire into Task Chat
+- [x] Added github_edit tool definition to AGENT_TOOLS array in agentTools.ts
+- [x] Added github_edit case to executeTool switch (dynamic import of githubEditTool.ts)
+- [x] Updated agent system prompt: github_edit is PREFERRED method, git_operation(clone) is fallback only
+- [x] Updated intent detection: "Edit this app", "Update the code", "Fix the bug" → github_edit
+- [x] Two-step flow: first call generates diff preview, second call with confirm=true applies changes
+
+### 36.4: Frontend UX
+- [x] Repo context injected into system prompt (agent knows which repos are connected)
+- [x] Agent auto-selects single repo, asks user if multiple repos connected
+- [x] Progress indicators: getToolDisplayInfo maps github_edit → "editing" (plan phase) and "versioning" (commit phase)
+- [x] Diff preview returned as markdown in tool result — rendered in chat via Streamdown
+- [x] Two-step confirm: agent shows diff, user approves, agent calls github_edit(confirm=true)
+- [x] Success result includes commit SHA and summary — rendered in chat
+
+### 36.5: Recursion Passes
+- [x] Depth scan: 61 tests (module structure, auth guards, diff summary, repo filtering, pending edits cache, repo resolution, LLM integration, commit flow, agent integration, system prompt)
+- [x] Adversarial scan: 5 VUs (New User, Power User, Security Auditor, Manus Alignment Auditor, Edge Case Explorer)
+- [x] Synthesis: 4331 tests passed, 153/153 files, 0 TS errors (fixed 3 tool-count regressions from adding github_edit)
+- [x] Save checkpoint
