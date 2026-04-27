@@ -282,9 +282,31 @@ async function triggerAsyncDeploy(
     });
 
     await appendLog("Deploy complete!");
+
+    // Notify owner of successful deploy
+    try {
+      const { notifyOwner } = await import("./_core/notification");
+      await notifyOwner({
+        title: `Deploy Succeeded: ${repo.fullName}`,
+        content: `Auto-deploy from branch \`${branch}\` completed successfully.\n\nProject: ${project.name || project.externalId}\nURL: ${publishedUrl}\nDeployment #${depId}`,
+      });
+    } catch (notifErr: any) {
+      console.warn(`[GitHub Webhook] Deploy notification failed: ${notifErr.message}`);
+    }
   } catch (err: any) {
     await appendLog(`ERROR: ${err.message}`);
     await updateWebappDeployment(depId, { status: "failed", errorMessage: err.message, buildLog: buildLogLines.join("\n") });
     await updateWebappProject(project.id, { deployStatus: "failed" });
+
+    // Notify owner of failed deploy
+    try {
+      const { notifyOwner } = await import("./_core/notification");
+      await notifyOwner({
+        title: `Deploy Failed: ${repo.fullName}`,
+        content: `Auto-deploy from branch \`${branch}\` failed.\n\nProject: ${project.name || project.externalId}\nError: ${err.message}\nDeployment #${depId}`,
+      });
+    } catch (notifErr: any) {
+      console.warn(`[GitHub Webhook] Failure notification failed: ${notifErr.message}`);
+    }
   }
 }

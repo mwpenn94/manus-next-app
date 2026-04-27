@@ -262,28 +262,6 @@ export async function createIssue(token: string, owner: string, repo: string, op
   });
 }
 
-// ── Webhooks ──
-export async function createWebhook(token: string, owner: string, repo: string, opts: {
-  url: string;
-  events: string[];
-  secret?: string;
-}) {
-  return githubFetch(`/repos/${owner}/${repo}/hooks`, {
-    token,
-    method: "POST",
-    body: {
-      name: "web",
-      active: true,
-      events: opts.events,
-      config: {
-        url: opts.url,
-        content_type: "json",
-        secret: opts.secret,
-      },
-    },
-  });
-}
-
 // ── Multi-File Commit via Git Trees API ──
 
 interface TreeEntry {
@@ -491,4 +469,114 @@ export async function forkRepo(
       body: organization ? { organization } : {},
     }
   );
+}
+
+
+// ── Webhooks ──
+
+export interface GitHubWebhook {
+  id: number;
+  name: string;
+  active: boolean;
+  events: string[];
+  config: {
+    url?: string;
+    content_type?: string;
+    insecure_ssl?: string;
+    secret?: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * List webhooks for a repository.
+ */
+export async function listWebhooks(
+  token: string,
+  owner: string,
+  repo: string
+): Promise<GitHubWebhook[]> {
+  return githubFetch<GitHubWebhook[]>(
+    `/repos/${owner}/${repo}/hooks`,
+    { token }
+  );
+}
+
+/**
+ * Create a webhook for a repository.
+ * Returns the created webhook object.
+ */
+export async function createWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  webhookUrl: string,
+  secret?: string,
+  events: string[] = ["push"]
+): Promise<GitHubWebhook> {
+  return githubFetch<GitHubWebhook>(
+    `/repos/${owner}/${repo}/hooks`,
+    {
+      token,
+      method: "POST",
+      body: {
+        name: "web",
+        active: true,
+        events,
+        config: {
+          url: webhookUrl,
+          content_type: "json",
+          insecure_ssl: "0",
+          ...(secret ? { secret } : {}),
+        },
+      },
+    }
+  );
+}
+
+/**
+ * Delete a webhook from a repository.
+ */
+export async function deleteWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  hookId: number
+): Promise<void> {
+  await githubFetch(
+    `/repos/${owner}/${repo}/hooks/${hookId}`,
+    { token, method: "DELETE" }
+  );
+}
+
+/**
+ * Ensure a webhook exists for the given URL on the repo.
+ * If one already exists with the same URL, returns it (idempotent).
+ * Otherwise creates a new one.
+ * Returns { webhook, created } where created=true if newly created.
+ */
+export async function ensureWebhook(
+  token: string,
+  owner: string,
+  repo: string,
+  webhookUrl: string,
+  secret?: string,
+  events: string[] = ["push"]
+): Promise<{ webhook: GitHubWebhook; created: boolean }> {
+  try {
+    const existing = await listWebhooks(token, owner, repo);
+    const match = existing.find(
+      (h) => h.config.url === webhookUrl && h.active
+    );
+    if (match) {
+      return { webhook: match, created: false };
+    }
+  } catch (err: any) {
+    // If we can't list hooks (e.g. insufficient permissions), try creating anyway
+    console.warn(`[GitHub Webhook] Could not list hooks: ${err.message}`);
+  }
+
+  const webhook = await createWebhook(token, owner, repo, webhookUrl, secret, events);
+  return { webhook, created: true };
 }

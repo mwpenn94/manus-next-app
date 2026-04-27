@@ -13,6 +13,31 @@ import {
  } from "../db";
 import { connectors } from "../../drizzle/schema";
 
+/**
+ * Auto-register webhook on a repo after connect/create.
+ * Fire-and-forget: failures are logged but don't block the main flow.
+ * Idempotent: skips if webhook already exists for this URL.
+ */
+async function autoRegisterWebhook(token: string, fullName: string): Promise<void> {
+  try {
+    const { ensureWebhook } = await import("../githubApi");
+    const [owner, repo] = fullName.split("/");
+    // Use the deployed domain if available, otherwise fall back to env
+    const baseUrl = process.env.VITE_APP_URL || `https://${process.env.VITE_APP_DOMAIN || "localhost:3000"}`;
+    const webhookUrl = `${baseUrl}/api/github/webhook`;
+    const secret = process.env.GITHUB_WEBHOOK_SECRET || "";
+    const { created } = await ensureWebhook(token, owner, repo, webhookUrl, secret || undefined, ["push"]);
+    if (created) {
+      console.log(`[AutoWebhook] Registered webhook on ${fullName}`);
+    } else {
+      console.log(`[AutoWebhook] Webhook already exists on ${fullName}`);
+    }
+  } catch (err: any) {
+    // Non-fatal: user may not have admin access to the repo
+    console.warn(`[AutoWebhook] Failed to register webhook on ${fullName}: ${err.message}`);
+  }
+}
+
 export const githubRouter = router({
     /** List user's connected GitHub repos */
     repos: protectedProcedure.query(async ({ ctx }) => {
@@ -70,6 +95,13 @@ export const githubRouter = router({
           status: "connected",
         });
         const repo = await getGitHubRepoById(id);
+        // Auto-register webhook (fire-and-forget)
+        const conns = await getUserConnectors(ctx.user.id);
+        const ghConn = conns.find(c => c.connectorId === "github" && c.status === "connected");
+        if (ghConn) {
+          const token = ghConn.accessToken || (ghConn.config as Record<string, string>)?.token;
+          if (token) autoRegisterWebhook(token, input.fullName).catch(() => {});
+        }
         return { id, externalId: repo?.externalId ?? "", alreadyConnected: false };
       }),
     /** Create a new GitHub repo */
@@ -115,6 +147,8 @@ export const githubRouter = router({
           status: "connected",
         });
         const repo = await getGitHubRepoById(id);
+        // Auto-register webhook on newly created repo (fire-and-forget)
+        autoRegisterWebhook(token, ghRepo.full_name).catch(() => {});
         return { id, externalId: repo?.externalId ?? "", fullName: ghRepo.full_name };
       }),
     /** Disconnect a repo */

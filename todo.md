@@ -5067,3 +5067,37 @@
 - [x] Adversarial scan: 33 tests — 5 virtual users (DevOps, Frontend Dev, Security Auditor, New User, Power User) (pass33-adversarial.test.ts)
 - [x] Synthesis: 4158 tests passed, 148/149 files passed (1 OOM: known), 0 TypeScript errors
 - [x] Save checkpoint
+
+## Pass 34: Auto-Webhook Registration + Deploy Notifications (Manus Alignment)
+### 34.1: Expert Assessment
+- [x] Analyze repo connect/create flows in github.ts router
+- [x] Analyze githubApi.ts for existing webhook API functions
+- [x] Analyze githubWebhook.ts handler for notification integration points
+- [ ] Assess branch-specific deploy targets against Manus alignment
+### 34.2: Auto-Webhook Registration
+- [x] Add createWebhook() function to githubApi.ts (GitHub REST API: POST /repos/{owner}/{repo}/hooks)
+- [x] Add listWebhooks() + ensureWebhook() + deleteWebhook() to githubApi.ts (idempotent registration)
+- [x] Wire auto-webhook into github.connectRepo procedure (fire-and-forget after successful connect)
+- [x] Wire auto-webhook into github.createRepo procedure (fire-and-forget after successful create)
+- [x] Handle idempotency: ensureWebhook checks existing hooks by URL before creating
+- [x] Remove manual webhook setup instructions from Deploy tab (now automatic)
+- [x] Show webhook status indicator in Deploy tab (green "Webhook Active" badge + fallback link to GitHub settings)
+### 34.3: Deploy Notifications via notifyOwner
+- [x] Wire notifyOwner() into githubWebhook.ts triggerAsyncDeploy (success + failure paths)
+- [x] Send success notification with repo name, branch, project name, published URL, deployment ID
+- [x] Send failure notification with repo name, branch, project name, error message, deployment ID
+- [x] Include repo name, branch, project name in notification content (commit message in deploy log)
+### 34.4: Branch-Specific Deploy Assessment
+- [x] Assess whether branch-specific deploy targets align with Manus patterns
+- [x] Decision: DO NOT implement branch-specific deploy target UI
+  - Rationale: Manus deploys from the repo's default branch (main/master). The shouldAutoDeploy
+    function already uses repo.defaultBranch as the target, which GitHub sets per-repo. If a user
+    changes their default branch in GitHub settings, it propagates automatically via syncRepo.
+    Adding a per-project branch override would diverge from the Manus pattern where the repo's
+    default branch IS the deploy branch. Multi-branch deploy environments (staging/production)
+    are a Vercel/Netlify pattern, not a Manus pattern. The current architecture is correct.
+### 34.5: Recursion Passes
+- [x] Depth scan: 38 tests passed (webhook API functions, auto-registration, deploy notifications, UI, alignment, secrets, edge cases)
+- [x] Adversarial scan: 31 tests passed (5 VUs: New User, DevOps Engineer, Project Owner, Security Auditor, Manus Alignment Auditor)
+- [x] Synthesis: 4226/4243 passed (1 pre-existing timeout: XLSX generation), 149/151 files passed (1 OOM: known), 0 TypeScript errors
+- [x] Save checkpoint

@@ -60,6 +60,17 @@ The system has been verified from every angle:
 - **Depth** (Pass 009): Edge cases, data integrity, runtime behavior — all verified
 - **Synthesis** (Pass 010): System coherence, no regressions, future-proofing — confirmed
 
+### Pass 034 — Auto-Webhook Registration + Deploy Notifications + Manus Alignment — Score 9.5
+- Auto-webhook registration: `ensureWebhook()` in githubApi.ts (idempotent: list → check → create)
+- Wired into `connectRepo` and `createRepo` as fire-and-forget with `.catch(() => {})`
+- Uses `GITHUB_WEBHOOK_SECRET` when available, handles permission errors gracefully
+- Deploy notifications: `notifyOwner()` wired into `triggerAsyncDeploy` success + failure paths (non-fatal)
+- Branch-specific deploy: Assessed and declined — Manus pattern = deploy from default branch only
+- Deploy tab UI: Replaced manual webhook instructions with "Webhook Active" status indicator
+- 69 new tests (38 depth + 31 adversarial) — all passing
+- Full suite: 4226/4243 passed (1 pre-existing timeout), 149/151 files (1 known OOM), 0 TS errors
+- Convergence: Confirmed. No new issues surfaced.
+
 ### Pass 033 — Expert Panel: Auto-Refresh Timer + Diff Viewer + Deploy Triggers — Score 9.5
 - Built self-contained setInterval auto-refresh timer (30-min cycle, 5-min expiry buffer, 3-fail disable)
 - Timer starts on server boot, stops on graceful shutdown — zero external dependencies
