@@ -192,6 +192,7 @@ function TaskContextMenu({
         <button
           className="p-1 rounded text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors opacity-0 group-hover/task:opacity-100"
           onClick={(e) => e.stopPropagation()}
+          aria-label="Task options"
         >
           <MoreHorizontal className="w-4 h-4" />
         </button>

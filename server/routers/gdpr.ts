@@ -51,6 +51,7 @@ import {
   sovereignUsageLogs,
   sovereignRoutingDecisions,
   appFeedback,
+  automationSchedules,
  } from "../../drizzle/schema";
 
 export const gdprRouter = router({
@@ -261,8 +262,9 @@ export const gdprRouter = router({
         await db.delete(sovereignRoutingDecisions).where(inArray(sovereignRoutingDecisions.aegisSessionId, aegisSessionIds));
       }
 
-      // ── Phase 5d: Delete user feedback ──
+      // ── Phase 5d: Delete user feedback & automation schedules ──
       await db.delete(appFeedback).where(eq(appFeedback.userId, userId));
+      await db.delete(automationSchedules).where(eq(automationSchedules.userId, userId));
 
       // ── Phase 6: Delete the user record itself ──
       await db.delete(users).where(eq(users.id, userId));

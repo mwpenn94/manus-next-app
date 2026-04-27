@@ -5314,3 +5314,33 @@
 - [x] Run full test suite — 0 TypeScript errors, 189/189 tests passing across 4 key test files
 - [x] Update tool counts in phase3.test.ts (26 → 31), pass37e (26 → 31), agentTools.test.ts (25 → 31)
 - [x] Save checkpoint
+
+## Pass 39: Accessibility, E2E Test Harness, Scheduled Automation
+
+### 39.1: Accessibility Fix
+- [x] Add aria-label="Task options" to MoreHorizontal dropdown trigger in AppLayout.tsx
+- [x] Add aria-label="User menu" to DashboardLayout.tsx user dropdown trigger
+
+### 39.2: Scheduled Automation Backend
+- [x] Add automation_schedules table to drizzle/schema.ts
+- [x] Push migration with pnpm db:push
+- [x] Create server/scheduledAutomation.ts endpoint handler
+- [x] Register /api/scheduled/automation endpoint in server/_core/index.ts
+- [x] Create server/routers/automation.ts tRPC router (create, list, cancel)
+- [x] Register automationRouter in server/routers.ts
+
+### 39.3: E2E Tool Integration Test Harness
+- [x] Create server/e2e-tool-integration.test.ts with 44 tests covering all 31 tools
+- [x] Fix tool property path: t.function.name (OpenAI function-calling format)
+- [x] Fix executeTool signature: argsJson is string, not Record (use JSON.stringify)
+- [x] Fix tool name references: list_files not manage_files, generate_document not create_document
+- [x] All 44 E2E tests passing
+
+### 39.4: GDPR Compliance Fix
+- [x] Add automationSchedules to GDPR deleteAllData procedure in gdpr.ts
+- [x] GDPR test passing (12/12)
+
+### 39.5: Verification
+- [x] TypeScript: 0 errors
+- [x] Full test suite: 4544+ tests passing
+- [x] Save checkpoint

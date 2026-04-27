@@ -1,4 +1,5 @@
 import { aegisRouter } from "./routers/aegis";
+import { automationRouter } from "./routers/automation";
 import { atlasRouter } from "./routers/atlas";
 import { branchesRouter } from "./routers/branches";
 import { bridgeRouter } from "./routers/bridge";
@@ -93,6 +94,7 @@ export const appRouter = router({
   voice: voiceRouter,
   webapp: webappRouter,
   workspace: workspaceRouter,
+  automation: automationRouter,
 });
 
 export type AppRouter = typeof appRouter;

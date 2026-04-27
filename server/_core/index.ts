@@ -392,6 +392,17 @@ async function startServer() {
     }
   });
 
+  // ── Scheduled Automation (Pass 39) ──
+  app.post("/api/scheduled/automation", async (req, res) => {
+    try {
+      const { handleScheduledAutomation } = await import("../scheduledAutomation");
+      await handleScheduledAutomation(req, res);
+    } catch (err: any) {
+      console.error("[ScheduledAutomation] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Client Error Reporting (B5 Observability) ──
   app.post("/api/client-error", express.json(), async (req, res) => {
     try {

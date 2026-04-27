@@ -1335,3 +1335,28 @@ export const connectorHealthLogs = mysqlTable("connector_health_logs", {
 }));
 export type ConnectorHealthLog = typeof connectorHealthLogs.$inferSelect;
 export type InsertConnectorHealthLog = typeof connectorHealthLogs.$inferInsert;
+
+// ── Automation Schedules (Pass 39) ──
+export const automationSchedules = mysqlTable("automation_schedules", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  mode: varchar("mode", { length: 50 }).notNull().default("schedule"),
+  triggerType: varchar("triggerType", { length: 50 }).notNull().default("cron"),
+  cronExpression: varchar("cronExpression", { length: 100 }),
+  intervalSeconds: int("intervalSeconds"),
+  workflowDefinition: json("workflowDefinition").$type<Record<string, unknown>>(),
+  status: mysqlEnum("status", ["active", "paused", "completed", "failed"]).default("active").notNull(),
+  lastRunAt: bigint("lastRunAt", { mode: "number" }),
+  nextRunAt: bigint("nextRunAt", { mode: "number" }),
+  runCount: int("runCount").default(0).notNull(),
+  lastRunResult: json("lastRunResult").$type<Record<string, unknown>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("automation_schedules_userId_idx").on(table.userId),
+  statusIdx: index("automation_schedules_status_idx").on(table.status),
+}));
+export type AutomationSchedule = typeof automationSchedules.$inferSelect;
+export type InsertAutomationSchedule = typeof automationSchedules.$inferInsert;
