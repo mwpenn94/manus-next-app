@@ -5675,3 +5675,38 @@
 - [x] UI convergence: Reduce Home page input shadow from shadow-lg to shadow-md
 - [x] TypeScript: 0 errors confirmed
 - [x] Tests: 4549 passed, 55 failed (all pre-existing legacy routing/nav assertions)
+
+## Pass 50 — Fix Legacy Tests, Replay Mode UI, WCAG AA Contrast
+### Step 1: Fix 55 legacy test assertions to match current routing
+- [x] Audit all 14 failing test files and update route/nav assertions to match current App.tsx
+- [x] Remove or update stale route expectations (e.g., /analytics, /browser, /webapp-builder as top-level routes)
+- [x] Update sidebar navigation assertions to match current nav structure
+- [x] Update MobileBottomNav assertions to match current implementation
+
+### Step 2: Build replay mode UI
+- [x] Create TaskReplayOverlay component with step-by-step playback (17 action types, StepCard, buildTimeline)
+- [x] Add timeline scrubber (Slider) for navigating through task steps with time display
+- [x] Wire ?replay=1 query param in TaskView to activate replay mode (useSearch from wouter)
+- [x] Add play/pause/step-forward/step-back/restart/skip-to-end controls with speed selector (0.5x-4x)
+- [x] Display action steps with timestamps, status indicators, and expand/collapse mode
+- [x] Add keyboard shortcuts (Space, ←→, Shift+←→, Home, End, Esc, 1-4 speed)
+- [x] Add scrollToMessage callback to sync chat scroll with replay position
+- [x] Add data-message-index attributes to message elements for scroll targeting
+- [x] 76 new tests in pass50-replay-overlay.test.ts — all passing
+
+### Step 3: Fix WCAG AA contrast
+- [x] Increase muted-foreground lightness to >= 0.75 in dark theme
+- [x] Increase sidebar-foreground lightness to >= 0.75 in dark theme
+- [x] Verify contrast ratios meet WCAG AA (4.5:1 for normal text) — 51 tests passing
+
+### Step 4: Deep Manus Parity (from reference screenshots IMG_7246-7258)
+- [ ] Connectors page: categorized list (Communication, Development, etc.), search bar, Apps/Custom API/Custom MCP tabs
+- [ ] Connectors page: green dot for connected status, "Connect" action in primary color
+- [ ] Sidebar: emoji icons matching Manus (Projects, Library, Skills, Schedule, Connectors, Memory, GitHub, Billing, Discover, Help, Webhooks, Data Controls)
+- [ ] Notifications: popover with "Read all" + X close, amber unread dots, "Resume All" action
+- [ ] Notifications: grouped auto-completed tasks with clock icon, Bug Report section
+- [ ] Settings: horizontal scrollable tab bar with pill-shaped active tab (amber/primary fill)
+- [ ] Settings: tabs include General, Notifications, Secrets, Capabilities
+- [ ] Cloud Browser page: toggle switch for persist login, saved cookies section, Clear All destructive button
+- [ ] Bridge page: form with mono-font inputs, Connect button, Developer Guide + GitHub links
+- [ ] Error page: "Something went wrong" with triangle warning, mono code block detail, Try Again + Reload Page buttons

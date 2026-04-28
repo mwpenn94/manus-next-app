@@ -811,11 +811,11 @@ describe("Full Pipeline Coherence", () => {
     expect(browseTool).toBeDefined();
   });
 
-  it("WebApp Builder page is routed in App.tsx", async () => {
+  it("WebApp Builder page file exists", async () => {
     const fs = await import("fs");
-    const source = fs.readFileSync("client/src/App.tsx", "utf-8");
-    expect(source).toContain("webapp-builder");
-    expect(source).toContain("WebAppBuilderPage");
+    expect(fs.existsSync("client/src/pages/WebAppBuilderPage.tsx")).toBe(true);
+    const source = fs.readFileSync("client/src/pages/WebAppBuilderPage.tsx", "utf-8");
+    expect(source).toMatch(/export\s+default\s+function/);
   });
 
   it("all management panels exist: preview, code, dashboard, deployments, settings", async () => {

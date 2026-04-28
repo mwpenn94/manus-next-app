@@ -132,9 +132,14 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
-  // For shared pages, inject dynamic meta tags
+  // IMPORTANT: Do NOT serve index.html for asset requests (.js, .css, .map, etc.)
+  // This prevents the "'text/html' is not a valid JavaScript MIME type" error
   app.use("*", async (req, res) => {
     const url = req.originalUrl;
+    // If the request looks like a static asset, return 404 instead of HTML fallback
+    if (/\.(js|css|map|json|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|webp|mp3|mp4|webm|wasm)$/i.test(url)) {
+      return res.status(404).end();
+    }
     const shareToken = extractShareToken(url);
     if (shareToken) {
       try {

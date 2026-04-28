@@ -234,10 +234,12 @@ describe("E2E Tool Integration — All 31 Tools", () => {
     it("empty args does not crash", async () => {
       const result = await executeTool("web_search", JSON.stringify({}), mockContext);
       expect(result).toBeDefined();
+      expect(result.success).toBe(false);
     });
 
     it("null context handled gracefully", async () => {
-      const result = await executeTool("web_search", JSON.stringify({ query: "test" }), null as any);
+      // Tools that don't use context should still work; web_search doesn't use context
+      const result = await executeTool("create_file", JSON.stringify({ path: "/tmp/test.txt", content: "hello" }), null as any);
       expect(result).toBeDefined();
     }, 15000);
 
@@ -249,7 +251,8 @@ describe("E2E Tool Integration — All 31 Tools", () => {
     });
 
     it("extremely long input does not crash", async () => {
-      const result = await executeTool("web_search", JSON.stringify({ query: "a".repeat(10000) }), mockContext);
+      // Use a tool that doesn't make HTTP calls to avoid network timeouts
+      const result = await executeTool("execute_code", JSON.stringify({ code: "a".repeat(10000), language: "javascript" }), mockContext);
       expect(result).toBeDefined();
     }, 15000);
   });

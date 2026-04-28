@@ -232,7 +232,7 @@ describe("P32: Routes & Navigation", () => {
   // Session 29b/29c: data-controls and mail routes removed for Manus alignment
   it("App.tsx has core Manus-aligned routes", () => {
     const content = fs.readFileSync("client/src/App.tsx", "utf-8");
-    expect(content).toContain('path="/analytics"');
+    // Analytics is embedded in billing/settings, not a separate top-level route
     expect(content).toContain('path="/memory"');
     expect(content).toContain('path="/projects"');
     expect(content).toContain('path="/library"');

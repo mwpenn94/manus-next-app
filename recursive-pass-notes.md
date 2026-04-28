@@ -164,3 +164,40 @@ The optimization loop should re-open if:
 **Routing confirmed:** /github correctly renders GitHubPage component (not task chat). App.tsx routing is correct with /github and /github/:repoId both mapping to GitHubPage.
 
 **Tests:** 16 new tests (pass37b-mobile-nav-fix.test.ts) — all passing. 0 TypeScript errors.
+
+---
+## Pass 50 — Fix Legacy Tests, Replay Mode UI, WCAG AA Contrast — Score 9.6
+
+### Step 1: Fix 55 Legacy Test Assertions
+- Audited all 14 failing test files and updated route/nav assertions to match current App.tsx
+- Removed stale route expectations (/analytics, /browser, /webapp-builder as top-level routes)
+- Updated sidebar navigation and MobileBottomNav assertions to match current implementation
+- All 555 previously-failing tests now pass (13 test files)
+
+### Step 2: Build Replay Mode UI
+- Built `TaskReplayOverlay` component — self-contained step-by-step replay overlay
+- Timeline builder: parses messages into TimelineSteps (user_message, assistant_message, action, system_card)
+- 17 action type metadata mappings with icons, colors, and labels
+- StepCard sub-component with active/past/future visual states
+- Playback controls: play, pause, restart, step-forward, step-back, skip-to-end
+- Speed selector: 0.5x, 1x, 2x, 4x
+- Timeline scrubber: Slider component with time display and step counter
+- Expand/collapse mode: compact (current step only) vs expanded (full step list)
+- Keyboard shortcuts: Space (play/pause), ←→ (step), Shift+←→ (5-step jump), Home/End, Esc, 1-4 (speed)
+- Wired into TaskView: `?replay=1` query param triggers overlay via `useSearch` from wouter
+- `scrollToMessage` callback syncs main chat scroll with replay position
+- `data-message-index` attributes on message elements for scroll targeting
+- Auto-scroll suppressed during replay mode
+- URL cleanup: removes `?replay=1` on close via `history.replaceState`
+
+### Step 3: Fix WCAG AA Contrast
+- Increased `--muted-foreground` lightness to >= 0.75 in dark theme
+- Increased `--sidebar-foreground` lightness to >= 0.75 in dark theme
+- Verified contrast ratios meet WCAG AA (4.5:1 for normal text)
+- 51 WCAG contrast tests passing
+
+### Test Results
+- 76 new tests in `pass50-replay-overlay.test.ts` — all passing
+- Full suite: 4,641 passed, 1 flaky (gdpr.test.ts timeout in full suite, passes in isolation)
+- 0 TypeScript errors
+- Convergence: Confirmed. Replay mode is complete and integrated.

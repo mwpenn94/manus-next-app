@@ -1228,7 +1228,10 @@ async function ddgHtmlSearch(query: string): Promise<Array<{ title: string; url:
  */
 async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
   try {
-    const query = args.query;
+    const query = args?.query;
+    if (!query || typeof query !== "string" || query.trim().length === 0) {
+      return { success: false, result: "Invalid web_search: 'query' parameter is required and must be a non-empty string." };
+    }
     let formattedResults = `## Web Search Results for: "${query}"\n\n`;
     let foundDirectAnswer = false;
     const sources: SearchSource[] = [];

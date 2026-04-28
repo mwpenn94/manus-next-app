@@ -111,12 +111,12 @@ Format as structured markdown. Be specific about musical elements.`,
   /** Delete a track */
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const track = musicLibrary.get(input.id);
       if (!track || track.userId !== ctx.user.id) {
         throw new Error("Track not found");
       }
-      musicLibrary.delete(input.id);
+      await Promise.resolve(musicLibrary.delete(input.id));
       return { success: true };
     }),
 });

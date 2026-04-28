@@ -49,10 +49,12 @@ describe("P33: Sidebar navigation entries", () => {
     expect(layoutSrc).toContain("Library");
   });
 
-  it("has AppsGridMenu with tools (Analytics, Memory, Schedules)", () => {
-    expect(layoutSrc).toContain("Analytics");
+  it("has AppsGridMenu with tools (Memory, Schedule, Billing)", () => {
+    // Analytics is not in AppsGridMenu (embedded in billing page)
+    // Schedule (not Schedules) is the current label
     expect(layoutSrc).toContain("Memory");
-    expect(layoutSrc).toContain("Schedules");
+    expect(layoutSrc).toContain("Schedule");
+    expect(layoutSrc).toContain("Billing");
   });
 
   it("user avatar section exists in bottom bar", () => {

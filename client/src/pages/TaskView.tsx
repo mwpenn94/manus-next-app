@@ -130,6 +130,8 @@ import { Headphones } from "lucide-react";
 import { streamWithRetry, getStreamErrorMessage } from "@/lib/streamWithRetry";
 import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
 import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
+import TaskReplayOverlay from "@/components/TaskReplayOverlay";
+import { useSearch } from "wouter";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -2035,6 +2037,9 @@ function mapToolToAction(
 export default function TaskView() {
   const [, params] = useRoute("/task/:id");
   const [, navigate] = useLocation();
+  const searchString = useSearch();
+  const replayRequested = useMemo(() => new URLSearchParams(searchString).get("replay") === "1", [searchString]);
+  const [replayOpen, setReplayOpen] = useState(false);
   const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite, editMessageAndTruncate } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
@@ -2310,12 +2315,31 @@ export default function TaskView() {
 
   const task = activeTask || tasks.find((t) => t.id === params?.id);
 
+  // Auto-open replay mode when ?replay=1 is in URL
+  useEffect(() => {
+    if (replayRequested && task && task.messages.length > 0) {
+      setReplayOpen(true);
+    }
+  }, [replayRequested, task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to a specific message index (used by replay overlay)
+  const scrollToMessage = useCallback((messageIndex: number) => {
+    if (!scrollRef.current) return;
+    const messageElements = scrollRef.current.querySelectorAll('[data-message-index]');
+    const target = Array.from(messageElements).find(
+      el => (el as HTMLElement).dataset.messageIndex === String(messageIndex)
+    );
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
   // Auto-scroll to bottom
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !replayOpen) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [task?.messages.length]);
+  }, [task?.messages.length, replayOpen]);
 
   // Focus input on mount
   useEffect(() => {
@@ -3705,6 +3729,7 @@ export default function TaskView() {
           ).map((msg, i) => (
             <motion.div
               key={msg.id}
+              data-message-index={i}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15, delay: Math.min(i * 0.02, 0.3) }}
@@ -4248,6 +4273,22 @@ export default function TaskView() {
         open={connectorsSheetOpen}
         onOpenChange={setConnectorsSheetOpen}
       />
+      {/* Task Replay Overlay (Pass 50) */}
+      <AnimatePresence>
+        {replayOpen && task && (
+          <TaskReplayOverlay
+            messages={task.messages}
+            onClose={() => {
+              setReplayOpen(false);
+              // Remove ?replay=1 from URL without navigation
+              const url = new URL(window.location.href);
+              url.searchParams.delete("replay");
+              window.history.replaceState({}, "", url.pathname);
+            }}
+            scrollToMessage={scrollToMessage}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

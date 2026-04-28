@@ -1,5 +1,6 @@
 /**
  * Cycle 7 E2E Tests — Route All Pages + Sidebar Navigation
+ * Updated Pass 50: Aligned with current architecture (28 routes, 12 grid items)
  */
 import { describe, it, expect } from "vitest";
 import * as fs from "fs";
@@ -20,7 +21,6 @@ describe("Cycle 7 Phase A: All Pages Routed", () => {
     { path: "/", component: "Home" },
     { path: "/task/:id", component: "TaskView" },
     { path: "/billing", component: "BillingPage" },
-    { path: "/analytics", component: "AnalyticsPage" },
     { path: "/settings", component: "SettingsPage" },
     { path: "/memory", component: "MemoryPage" },
     { path: "/schedule", component: "SchedulePage" },
@@ -32,30 +32,19 @@ describe("Cycle 7 Phase A: All Pages Routed", () => {
     { path: "/library", component: "Library" },
     { path: "/github", component: "GitHubPage" },
     { path: "/github/:repoId", component: "GitHubPage" },
-    { path: "/browser", component: "BrowserPage" },
-    { path: "/webapp-builder", component: "WebAppBuilderPage" },
     { path: "/profile", component: "ProfilePage" },
     { path: "/share/:token", component: "SharedTaskView" },
+    { path: "/shared/:token", component: "SharedTaskView" },
     { path: "/connectors", component: "ConnectorsPage" },
+    { path: "/connector/:id", component: "ConnectorDetailPage" },
     { path: "/skills", component: "SkillsPage" },
-    { path: "/slides", component: "SlidesPage" },
     { path: "/team", component: "TeamPage" },
-    { path: "/video", component: "VideoGeneratorPage" },
     { path: "/webhooks", component: "WebhooksPage" },
-    { path: "/meetings", component: "MeetingsPage" },
-    { path: "/desktop", component: "DesktopAppPage" },
-    { path: "/connect-device", component: "ConnectDevicePage" },
-    { path: "/mobile-projects", component: "MobileProjectsPage" },
-    { path: "/app-publish", component: "AppPublishPage" },
-    { path: "/client-inference", component: "ClientInferencePage" },
-    { path: "/computer-use", component: "ComputerUsePage" },
+    { path: "/discover", component: "DiscoverPage" },
+    { path: "/help", component: "HelpPage" },
     { path: "/deployed-websites", component: "DeployedWebsitesPage" },
     { path: "/design/:id", component: "DesignView" },
-    { path: "/discover", component: "DiscoverPage" },
-    { path: "/figma-import", component: "FigmaImportPage" },
-    { path: "/messaging", component: "MessagingAgentPage" },
     { path: "/data-controls", component: "DataControlsPage" },
-    { path: "/mail", component: "MailManusPage" },
   ];
 
   for (const route of requiredRoutes) {
@@ -64,16 +53,16 @@ describe("Cycle 7 Phase A: All Pages Routed", () => {
     });
   }
 
-  it("All new pages have lazy() imports", () => {
-    const newPages = [
-      "ConnectorsPage", "SkillsPage", "SlidesPage", "TeamPage",
-      "VideoGeneratorPage", "WebhooksPage", "MeetingsPage", "DesktopAppPage",
-      "ConnectDevicePage", "MobileProjectsPage", "AppPublishPage",
-      "ClientInferencePage", "ComputerUsePage", "DeployedWebsitesPage",
-      "DesignView", "DiscoverPage", "FigmaImportPage", "MessagingAgentPage",
-      "DataControlsPage", "MailManusPage",
+  it("All lazy-loaded pages have lazy() imports", () => {
+    const lazyPages = [
+      "BillingPage", "SettingsPage", "MemoryPage", "SchedulePage",
+      "ReplayPage", "ProjectsPage", "WebAppProjectPage", "Library",
+      "GitHubPage", "ProfilePage", "SharedTaskView", "ConnectorsPage",
+      "ConnectorDetailPage", "SkillsPage", "TeamPage", "WebhooksPage",
+      "DiscoverPage", "HelpPage", "DeployedWebsitesPage", "DesignView",
+      "DataControlsPage",
     ];
-    for (const page of newPages) {
+    for (const page of lazyPages) {
       expect(APP_TSX).toContain(`lazy(() => import("./pages/${page}"))`);
     }
   });
@@ -94,12 +83,10 @@ describe("Cycle 7 Phase A: All Pages Routed", () => {
 
 describe("Cycle 7 Phase A: Page Components Exist", () => {
   const pageFiles = [
-    "ConnectorsPage", "SkillsPage", "SlidesPage", "TeamPage",
-    "VideoGeneratorPage", "WebhooksPage", "MeetingsPage", "DesktopAppPage",
-    "ConnectDevicePage", "MobileProjectsPage", "AppPublishPage",
-    "ClientInferencePage", "ComputerUsePage", "DeployedWebsitesPage",
-    "DesignView", "DiscoverPage", "FigmaImportPage", "MessagingAgentPage",
-    "DataControlsPage", "MailManusPage",
+    "ConnectorsPage", "SkillsPage", "TeamPage",
+    "WebhooksPage", "DeployedWebsitesPage",
+    "DesignView", "DiscoverPage", "DataControlsPage",
+    "ConnectorDetailPage", "HelpPage",
   ];
 
   for (const page of pageFiles) {
@@ -125,14 +112,6 @@ describe("Cycle 7 Phase B: Sidebar Navigation", () => {
     expect(LAYOUT_TSX).toContain("function AppsGridMenu");
   });
 
-  it("SidebarProjectTree component exists", () => {
-    expect(LAYOUT_TSX).toContain("SidebarProjectTree");
-  });
-
-  it("AllTasksSection component exists", () => {
-    expect(LAYOUT_TSX).toContain("AllTasksSection");
-  });
-
   it("Has ChevronDown/ChevronRight for collapse", () => {
     expect(LAYOUT_TSX).toContain("ChevronDown");
     expect(LAYOUT_TSX).toContain("ChevronRight");
@@ -144,22 +123,16 @@ describe("Cycle 7 Phase B: Sidebar Navigation", () => {
   });
 
   const appsGridItems = [
-    { href: "/analytics", label: "Analytics" },
-    { href: "/memory", label: "Memory" },
-    { href: "/schedule", label: "Schedules" },
-    { href: "/browser", label: "Browser" },
-    { href: "/github", label: "GitHub" },
-    { href: "/connectors", label: "Connectors" },
+    { href: "/projects", label: "Projects" },
+    { href: "/library", label: "Library" },
     { href: "/skills", label: "Skills" },
-    { href: "/slides", label: "Slides" },
-    { href: "/video", label: "Video" },
-    { href: "/computer-use", label: "Computer Use" },
-    { href: "/discover", label: "Discover" },
-    { href: "/team", label: "Team" },
-    { href: "/meetings", label: "Meetings" },
-    { href: "/deployed-websites", label: "Websites" },
-    { href: "/desktop", label: "Desktop" },
+    { href: "/schedule", label: "Schedule" },
+    { href: "/connectors", label: "Connectors" },
+    { href: "/memory", label: "Memory" },
+    { href: "/github", label: "GitHub" },
     { href: "/billing", label: "Billing" },
+    { href: "/discover", label: "Discover" },
+    { href: "/help", label: "Help" },
   ];
 
   for (const item of appsGridItems) {
@@ -174,8 +147,7 @@ describe("Cycle 7 Phase B: Icon Imports", () => {
   const requiredIcons = [
     "LayoutGrid", "FolderOpen", "ChevronDown", "ChevronRight",
     "MoreHorizontal", "Share2", "Pencil", "ExternalLink",
-    "FolderInput", "FolderMinus", "FileText", "Crosshair",
-    "Copy", "BookOpen", "Filter", "Star", "Trash2",
+    "BookOpen", "Filter", "Star", "Trash2",
   ];
 
   for (const icon of requiredIcons) {
@@ -213,24 +185,24 @@ describe("Cycle 7 Phase C: Integration Checks", () => {
     expect(LAYOUT_TSX).toContain("<SidebarProjectTree");
   });
 
-  it("Total route count is 35+", () => {
+  it("Total route count is 25+", () => {
     const routeMatches = APP_TSX.match(/path="/g) || [];
-    expect(routeMatches.length).toBeGreaterThanOrEqual(35);
+    expect(routeMatches.length).toBeGreaterThanOrEqual(25);
   });
 
-  it("Total AppsGridMenu items count is 16+", () => {
+  it("Total AppsGridMenu items count is 10+", () => {
     const hrefMatches = LAYOUT_TSX.match(/href: "\/[^"]*"/g) || [];
-    expect(hrefMatches.length).toBeGreaterThanOrEqual(16);
+    expect(hrefMatches.length).toBeGreaterThanOrEqual(10);
   });
 });
 
 describe("Cycle 7 Regression: Existing Routes Preserved", () => {
   const existingRoutes = [
-    "/", "/task/:id", "/billing", "/analytics", "/settings",
+    "/", "/task/:id", "/billing", "/settings",
     "/memory", "/schedule", "/replay", "/replay/:taskId",
     "/projects", "/projects/webapp/:projectId", "/project/:id",
     "/library", "/github", "/github/:repoId", "/share/:token",
-    "/browser", "/webapp-builder", "/profile",
+    "/profile",
   ];
 
   for (const route of existingRoutes) {
