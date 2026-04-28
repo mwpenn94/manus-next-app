@@ -138,6 +138,8 @@ export default function OnboardingTooltips() {
     try {
       localStorage.setItem(ONBOARDING_KEY, "true");
       localStorage.removeItem(ONBOARDING_STEP_KEY);
+      // Also mark old sovereign onboarding as complete to prevent legacy tour from showing
+      localStorage.setItem("sovereign-onboarding-complete", "true");
     } catch {}
   }, []);
 

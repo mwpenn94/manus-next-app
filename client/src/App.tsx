@@ -10,7 +10,7 @@ import { lazy, Suspense } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import OnboardingTooltips from "./components/OnboardingTooltips";
-import { OnboardingTour } from "./components/OnboardingTour";
+// OnboardingTour removed — replaced by OnboardingTooltips (Pass 52)
 import AnimatedRoute from "./components/AnimatedRoute";
 
 // Eagerly loaded
@@ -210,7 +210,6 @@ function App() {
               <Router />
             </AppLayout>
             <OnboardingTooltips />
-            <OnboardingTour />
           </TooltipProvider>
           </TaskProvider>
         </BridgeProvider>

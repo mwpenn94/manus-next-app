@@ -91,7 +91,7 @@ import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
 import ShareDialog from "@/components/ShareDialog";
-import TaskProgressCard from "@/components/TaskProgressCard";
+// TaskProgressCard replaced by inline step counter (Pass 52)
 import { BranchBanner, ChildBranches, BranchButton } from "@/components/BranchIndicator";
 import { BranchTreeView } from "@/components/BranchTreeView";
 import { BranchCompareView } from "@/components/BranchCompareView";
@@ -2334,12 +2334,29 @@ export default function TaskView() {
     }
   }, []);
 
-  // Auto-scroll to bottom
+  // Track whether user has scrolled up (to avoid forcing scroll during reading)
+  const userScrolledUpRef = useRef(false);
   useEffect(() => {
-    if (scrollRef.current && !replayOpen) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      // User is "scrolled up" if more than 150px from bottom
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      userScrolledUpRef.current = distFromBottom > 150;
+    };
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (scrollRef.current && !replayOpen && !userScrolledUpRef.current) {
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      });
     }
-  }, [task?.messages.length, replayOpen]);
+  }, [task?.messages.length, replayOpen, streamContent, agentActions.length, streaming]);
 
   // Focus input on mount
   useEffect(() => {
@@ -3771,19 +3788,7 @@ export default function TaskView() {
                   <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>manus</span>
                   <Loader2 className="w-3 h-3 text-primary animate-spin" />
                 </div>
-                {/* Task Progress Card — NS19 */}
-                <TaskProgressCard
-                  actions={agentActions}
-                  stepProgress={stepProgress}
-                  streaming={streaming}
-                />
-                {/* Agent action steps */}
-                {agentActions.length > 0 && (
-                  <div className="mb-2 bg-card/50 rounded-lg border border-border/50 py-1">
-                    <GroupedActionsList actions={agentActions} />
-                  </div>
-                )}
-                {/* Agent Presence Indicator — Unified state system */}
+                {/* Agent Presence Indicator — "Manus is using [Tool]" header */}
                 <ActiveToolIndicator
                   actions={agentActions}
                   streaming={streaming}
@@ -3791,6 +3796,24 @@ export default function TaskView() {
                   isReconnecting={isReconnecting}
                   knowledgeRecalled={knowledgeRecalled}
                 />
+                {/* Inline action step pills (Manus-style compact tool pills) */}
+                {agentActions.length > 0 && (
+                  <div className="mb-2 space-y-0.5">
+                    <GroupedActionsList actions={agentActions} />
+                  </div>
+                )}
+                {/* Task Progress — step counter (compact inline) */}
+                {stepProgress && stepProgress.total > 0 && (
+                  <div className="flex items-center gap-2 mb-2 text-[11px] text-muted-foreground">
+                    <span className="font-mono tabular-nums">{stepProgress.completed}/{stepProgress.total} steps</span>
+                    <div className="flex-1 h-0.5 bg-muted rounded-full overflow-hidden max-w-[120px]">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((stepProgress.completed / stepProgress.total) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 {/* Streaming text content */}
                 {streamContent && (
                   <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none">

@@ -196,12 +196,16 @@ export function buildStreamCallbacks(
     onDone: (content: string) => {
       state.accumulated = content || state.accumulated;
       setters.accumulatedRef.current = state.accumulated;
-      // Append images to content if they were generated
-      if (state.images.length > 0 && !state.accumulated.includes(state.images[0])) {
+      // Append images to content if they were generated (check each individually to avoid duplicates)
+      if (state.images.length > 0) {
+        let appended = false;
         for (const img of state.images) {
-          state.accumulated += `\n\n![Generated Image](${img})`;
+          if (!state.accumulated.includes(img)) {
+            state.accumulated += `\n\n![Generated Image](${img})`;
+            appended = true;
+          }
         }
-        setters.accumulatedRef.current = state.accumulated;
+        if (appended) setters.accumulatedRef.current = state.accumulated;
       }
       // Post-process: Convert plain-text citations to clickable markdown links
       // Matches patterns like (Source: Name), (Source: Name, Name2), [Source: Name]

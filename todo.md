@@ -5717,3 +5717,5 @@
 - [x] Investigate citation rendering code — LLM outputs plain-text citations (Source: Name) instead of markdown links; Streamdown correctly renders <a> tags but prose CSS needed explicit link styling
 - [x] Fix citation hyperlinks: (1) strengthened system prompt, (2) added explicit CSS link styling in prose-themed, (3) added linkifyCitations post-processor converting plain-text citations to clickable links using source URLs from tool results
 - [x] Write/update tests — 19 citation tests + 11 PDF pagination tests + 18 existing doc gen tests = 48 total, all passing
+- [x] Fix double onboarding: old "Welcome to Sovereign AI" onboarding appears after new "Welcome to Manus" onboarding completes
+- [x] Write/update tests — 19 Pass 52 tests (image dedup, onboarding dedup, auto-scroll deps, streaming refactor), all passing
