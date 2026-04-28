@@ -704,33 +704,19 @@ function AppsGridMenu({ location }: { location: string }) {
 
   const items = useMemo(() => {
     const all = [
-      { href: "/sovereign", label: "Sovereign AI", icon: "🏛️" },
-      { href: "/analytics", label: "Analytics", icon: "📊" },
-      { href: "/memory", label: "Memory", icon: "🧠" },
-      { href: "/schedule", label: "Schedules", icon: "📅" },
-      { href: "/browser", label: "Browser", icon: "🌐" },
-      { href: "/github", label: "GitHub", icon: "🔗" },
-      { href: "/connectors", label: "Connectors", icon: "🔌" },
-      { href: "/data-pipelines", label: "Data Pipelines", icon: "🔀" },
-      { href: "/documents", label: "Documents", icon: "📄" },
-      { href: "/deep-research", label: "Deep Research", icon: "🔬" },
-      { href: "/music", label: "Music", icon: "🎵" },
-      { href: "/data-analysis", label: "Data Analysis", icon: "📈" },
+      { href: "/projects", label: "Projects", icon: "📁" },
+      { href: "/library", label: "Library", icon: "📚" },
       { href: "/skills", label: "Skills", icon: "⚡" },
-      { href: "/slides", label: "Slides", icon: "📊" },
-      { href: "/video", label: "Video", icon: "🎬" },
-      { href: "/computer-use", label: "Computer Use", icon: "🖥️" },
-      { href: "/qa-testing", label: "QA Testing", icon: "🧪" },
-      { href: "/discover", label: "Discover", icon: "🧭" },
-      { href: "/team", label: "Team", icon: "👥" },
-      { href: "/meetings", label: "Meetings", icon: "💬" },
-      { href: "/deployed-websites", label: "Websites", icon: "🌍" },
-      { href: "/desktop", label: "Desktop", icon: "💻" },
+      { href: "/schedule", label: "Schedule", icon: "📅" },
+      { href: "/connectors", label: "Connectors", icon: "🔌" },
+      { href: "/memory", label: "Memory", icon: "🧠" },
+      { href: "/github", label: "GitHub", icon: "🔗" },
       { href: "/billing", label: "Billing", icon: "💳" },
+      { href: "/discover", label: "Discover", icon: "🧭" },
+      { href: "/help", label: "Help", icon: "❓" },
       ...(userRole === "admin"
         ? [
             { href: "/webhooks", label: "Webhooks", icon: "🪝" },
-            { href: "/client-inference", label: "Inference", icon: "🤖" },
             { href: "/data-controls", label: "Data Controls", icon: "🛡️" },
           ]
         : []),
@@ -1471,17 +1457,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <Globe className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
               Home
             </CommandItem>
-            <CommandItem value="Sovereign AI" onSelect={() => { navigate("/sovereign"); setSearchOpen(false); }}>
-              🏛️ Sovereign AI
-            </CommandItem>
-            <CommandItem value="Analytics" onSelect={() => { navigate("/analytics"); setSearchOpen(false); }}>
-              <BarChart3 className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-              Analytics
-            </CommandItem>
-            <CommandItem value="Memory" onSelect={() => { navigate("/memory"); setSearchOpen(false); }}>
-              <Brain className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
-              Memory
-            </CommandItem>
             <CommandItem value="Projects" onSelect={() => { navigate("/projects"); setSearchOpen(false); }}>
               <FolderOpen className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
               Projects
@@ -1490,9 +1465,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               <BookOpen className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
               Library
             </CommandItem>
+            <CommandItem value="Skills" onSelect={() => { navigate("/skills"); setSearchOpen(false); }}>
+              ⚡ Skills
+            </CommandItem>
+            <CommandItem value="Schedule" onSelect={() => { navigate("/schedule"); setSearchOpen(false); }}>
+              📅 Schedule
+            </CommandItem>
+            <CommandItem value="Memory" onSelect={() => { navigate("/memory"); setSearchOpen(false); }}>
+              <Brain className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
+              Memory
+            </CommandItem>
+            <CommandItem value="Billing" onSelect={() => { navigate("/billing"); setSearchOpen(false); }}>
+              💳 Billing
+            </CommandItem>
             <CommandItem value="Settings" onSelect={() => { navigate("/settings"); setSearchOpen(false); }}>
               <Settings className="w-3.5 h-3.5 mr-2 text-muted-foreground" />
               Settings
+            </CommandItem>
+            <CommandItem value="Help" onSelect={() => { navigate("/help"); setSearchOpen(false); }}>
+              ❓ Help
             </CommandItem>
           </CommandGroup>
         </CommandList>

@@ -5600,3 +5600,60 @@
 - [x] Wire HeroIllustration into WebAppBuilderPage header (type: hero-webapp)
 - [x] Wire HeroIllustration into BrowserPage header (type: hero-browser)
 - [x] TypeScript clean and tests passing
+
+### 48: Deep Manus Alignment Pass — Redundancy Removal & Visual Polish
+
+#### Phase 1: Remove Redundant Standalone Capability Pages
+- [x] Remove BrowserPage (browser is within task view, not standalone)
+- [x] Remove ComputerUsePage (My Computer is task-initiated capability)
+- [x] Remove DocumentStudioPage (documents created within tasks, viewed in Library)
+- [x] Remove MusicStudioPage (music generation within tasks)
+- [x] Remove DataAnalysisPage (data analysis within tasks)
+- [x] Remove SlidesPage (slides created within tasks)
+- [x] Remove VideoGeneratorPage (video generation within tasks)
+- [x] Remove DeepResearchPage (research is a task type)
+- [x] Remove DesktopAppPage (deployment option, not standalone builder)
+- [x] Remove FigmaImportPage (not a Manus feature)
+- [x] Remove ClientInferencePage (not a Manus feature)
+- [x] Remove QATestingPage (not a Manus feature)
+- [x] Remove DataPipelinesPage (not a Manus feature)
+- [x] Remove MeetingsPage (not a standalone Manus page)
+- [x] Remove MessagingAgentPage (not a standalone Manus page)
+- [x] Remove ConnectDevicePage (My Computer setup, not separate page)
+- [x] Remove AnalyticsPage (not a Manus user-facing page)
+- [x] Remove SovereignDashboard (not a Manus concept)
+- [x] Remove MailManusPage as standalone (email forwarding feature, not a page)
+- [x] Clean up all routes for removed pages from App.tsx
+- [x] Remove unused router files for removed pages (kept backend routers for task-initiated use)
+
+#### Phase 2: Consolidate Navigation to Match Manus
+- [x] Reduce More menu to: Projects, Library, Skills, Schedule, Connectors, Settings, Help
+- [x] Remove capability pages from all navigation surfaces
+- [x] Ensure bottom nav matches Manus: Home, Tasks, Billing, More
+
+#### Phase 3: Visual Alignment
+- [x] Remove HeroIllustration component usage from ALL remaining pages (all pages using it were already removed from routes)
+- [x] Tighten dark theme — true blacks (oklch 0.09), deeper sidebar (0.07), less gray
+- [x] Match Manus font weights — lighter, more whitespace (Source Sans 3 + Sora already aligned)
+- [x] Reduce card borders, make cards more subtle (border oklch lowered to 0.21)
+- [x] Match Manus home page layout — centered greeting, large input, category pills, suggestion cards (already aligned from prior passes)
+
+#### Phase 4: Stripe Subscription Flow
+- [x] Create Stripe products/prices configuration file (server/products.ts)
+- [x] Add checkout session creation procedure (payment.createCheckout)
+- [x] Add webhook handler for payment events (/api/stripe/webhook)
+- [x] Wire billing page plan cards to Stripe checkout
+- [x] Add payment success/cancel redirect handling (redirects to /billing?success=1)
+- [x] Add Manage Subscription button (Stripe Customer Portal)
+
+#### Phase 5: Empty States
+- [x] Add empty state for tasks list (Home page already has inline empty state)
+- [x] Add empty state for library (Library already has EmptyState component)
+- [x] Add empty state for projects (upgraded to shared EmptyState)
+- [x] Add empty state for skills (catalog-based, search-empty state exists)
+- [x] Add empty state for schedule (upgraded to shared EmptyState)
+
+#### Phase 6: Validation
+- [x] TypeScript clean (0 errors)
+- [x] All tests passing (35/35)
+- [x] Mobile virtual user test on key flows

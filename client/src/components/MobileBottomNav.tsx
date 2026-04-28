@@ -1,17 +1,13 @@
 /**
  * MobileBottomNav — Fixed bottom navigation bar for mobile devices.
- * Shows on screens < md breakpoint. Provides quick access to Home, Tasks, Billing,
- * and a "More" menu that exposes Manus-aligned sidebar destinations.
- *
- * Uses env(safe-area-inset-bottom) for iOS notch/home-indicator devices.
- * Touch targets are minimum 44px for accessibility.
+ * Matches Manus mobile: Home, Tasks, Billing, More.
+ * More menu shows: Projects, Library, Skills, Schedule, Connectors, Settings, Help.
  */
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Home, ListTodo, CreditCard, MoreHorizontal, X, Search,
-  Brain, FolderOpen, Clock, BookOpen, Settings, BarChart3, Globe, Plug, Github,
-  FileText, Presentation, Music, FlaskConical, Monitor, Wand2,
+  FolderOpen, BookOpen, Clock, Zap, Plug, Settings, HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -30,22 +26,13 @@ const PRIMARY_ITEMS: NavItem[] = [
 ];
 
 const MORE_ITEMS: NavItem[] = [
-  { path: "/analytics", label: "Analytics", icon: BarChart3 },
-  { path: "/memory", label: "Memory", icon: Brain },
   { path: "/projects", label: "Projects", icon: FolderOpen },
-  { path: "/github", label: "GitHub", icon: Github },
   { path: "/library", label: "Library", icon: BookOpen },
-  { path: "/schedule", label: "Schedules", icon: Clock },
+  { path: "/skills", label: "Skills", icon: Zap },
+  { path: "/schedule", label: "Schedule", icon: Clock },
   { path: "/connectors", label: "Connectors", icon: Plug },
-  { path: "/browser", label: "Browser", icon: Globe },
-  { path: "/documents", label: "Documents", icon: FileText },
-  { path: "/slides", label: "Slides", icon: Presentation },
-  { path: "/music", label: "Music", icon: Music },
-  { path: "/research", label: "Research", icon: Search },
-  { path: "/data-analysis", label: "Analysis", icon: FlaskConical },
-  { path: "/desktop", label: "Desktop", icon: Monitor },
-  { path: "/webapp", label: "Web App", icon: Wand2 },
   { path: "/settings", label: "Settings", icon: Settings },
+  { path: "/help", label: "Help", icon: HelpCircle },
 ];
 
 export default function MobileBottomNav() {
@@ -53,15 +40,12 @@ export default function MobileBottomNav() {
   const { tasks } = useTask();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  // Close more menu on navigation
   useEffect(() => {
     setMoreOpen(false);
   }, [location]);
 
   const isActive = (item: NavItem) => {
-    if (item.matchPrefix) {
-      return location.startsWith("/task");
-    }
+    if (item.matchPrefix) return location.startsWith("/task");
     return location === item.path;
   };
 
@@ -73,7 +57,9 @@ export default function MobileBottomNav() {
     }
   };
 
-  const isMoreActive = MORE_ITEMS.some((item) => location === item.path || location.startsWith(item.path + "/"));
+  const isMoreActive = MORE_ITEMS.some(
+    (item) => location === item.path || location.startsWith(item.path + "/")
+  );
 
   return (
     <>
@@ -90,10 +76,10 @@ export default function MobileBottomNav() {
         <div
           role="dialog"
           aria-label="More navigation options"
-          className="md:hidden fixed left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl max-h-[60vh] overflow-y-auto"
+          className="md:hidden fixed left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl"
           style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border sticky top-0 bg-card/95 backdrop-blur-md">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <span className="text-sm font-medium text-foreground">More</span>
             <button
               onClick={() => setMoreOpen(false)}
@@ -103,17 +89,17 @@ export default function MobileBottomNav() {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-1 p-3">
+          <div className="p-3 space-y-0.5">
             {/* Search button */}
             <button
               onClick={() => {
                 setMoreOpen(false);
                 window.dispatchEvent(new CustomEvent("open-search-dialog"));
               }}
-              className="flex flex-col items-center justify-center gap-1.5 py-3 min-h-[56px] rounded-lg transition-colors active:scale-95 text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-colors active:scale-[0.98] text-muted-foreground hover:text-foreground hover:bg-accent/50"
             >
               <Search className="w-5 h-5" />
-              <span className="text-[10px] font-medium leading-none text-center">Search</span>
+              <span className="text-sm font-medium">Search</span>
             </button>
             {MORE_ITEMS.map((item) => {
               const active = location === item.path;
@@ -125,14 +111,14 @@ export default function MobileBottomNav() {
                     setMoreOpen(false);
                   }}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1.5 py-3 min-h-[56px] rounded-lg transition-colors active:scale-95",
+                    "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-colors active:scale-[0.98]",
                     active
                       ? "text-primary bg-primary/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                 >
                   <item.icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
-                  <span className="text-[10px] font-medium leading-none text-center">{item.label}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
                 </button>
               );
             })}
@@ -140,7 +126,7 @@ export default function MobileBottomNav() {
         </div>
       )}
 
-      {/* Bottom nav bar — with safe-area-inset-bottom for iOS */}
+      {/* Bottom nav bar */}
       <nav
         aria-label="Mobile bottom navigation"
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border"
@@ -162,9 +148,7 @@ export default function MobileBottomNav() {
                 }}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] h-full rounded-lg transition-colors active:scale-95",
-                  active
-                    ? "text-primary"
-                    : "text-muted-foreground"
+                  active ? "text-primary" : "text-muted-foreground"
                 )}
                 aria-label={item.label}
               >
@@ -178,9 +162,7 @@ export default function MobileBottomNav() {
             onClick={() => setMoreOpen(!moreOpen)}
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] h-full rounded-lg transition-colors active:scale-95",
-              moreOpen || isMoreActive
-                ? "text-primary"
-                : "text-muted-foreground"
+              moreOpen || isMoreActive ? "text-primary" : "text-muted-foreground"
             )}
             aria-label="More navigation options"
           >

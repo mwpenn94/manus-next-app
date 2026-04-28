@@ -12,6 +12,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Brain,
   Plus,
@@ -418,10 +419,11 @@ export default function MemoryPage() {
                   ))}
                 </div>
               ) : displayMemories.length === 0 ? (
-                <div className="py-12 text-center">
-                  <Sparkles className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">{searchQuery ? "No matching memories found" : "No memories yet. Add entries or drag-and-drop files to import knowledge."}</p>
-                </div>
+                <EmptyState
+                  icon={<Sparkles className="w-7 h-7 text-primary" />}
+                  title={searchQuery ? "No matching memories" : "No memories yet"}
+                  description={searchQuery ? "Try adjusting your search terms." : "Add entries or drag-and-drop files to import knowledge."}
+                />
               ) : (
                 displayMemories.map((m: any) => (
                   <div key={m.id}>

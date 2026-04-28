@@ -4,6 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -280,15 +281,11 @@ export default function SchedulePage() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : schedules.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-muted-foreground">No scheduled tasks yet</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Create a schedule to automate recurring tasks
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={<Clock className="w-7 h-7 text-primary" />}
+            title="No scheduled tasks yet"
+            description="Create a schedule to automate recurring tasks. Schedules run on a cron or interval basis."
+          />
         ) : (
           <div className="space-y-3">
             {schedules.map((schedule) => (

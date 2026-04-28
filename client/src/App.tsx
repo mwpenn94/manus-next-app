@@ -16,7 +16,7 @@ import AnimatedRoute from "./components/AnimatedRoute";
 // Eagerly loaded
 import Home from "./pages/Home";
 
-// Lazy-loaded pages — Core
+// Lazy-loaded pages — Manus-aligned core surfaces only
 const TaskView = lazy(() => import("./pages/TaskView"));
 import TaskViewSkeleton from "./components/TaskViewSkeleton";
 const BillingPage = lazy(() => import("./pages/BillingPage"));
@@ -29,41 +29,19 @@ const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const GitHubPage = lazy(() => import("./pages/GitHubPage"));
 const WebAppProjectPage = lazy(() => import("./pages/WebAppProjectPage"));
 const Library = lazy(() => import("./pages/Library"));
-const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
-const BrowserPage = lazy(() => import("./pages/BrowserPage"));
-const WebAppBuilderPage = lazy(() => import("./pages/WebAppBuilderPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
-// Lazy-loaded pages — Tools & Features
+// Tools & Management surfaces (Manus-aligned)
 const ConnectorsPage = lazy(() => import("./pages/ConnectorsPage"));
 const ConnectorDetailPage = lazy(() => import("./pages/ConnectorDetailPage"));
 const SkillsPage = lazy(() => import("./pages/SkillsPage"));
-const SlidesPage = lazy(() => import("./pages/SlidesPage"));
 const TeamPage = lazy(() => import("./pages/TeamPage"));
-const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
 const WebhooksPage = lazy(() => import("./pages/WebhooksPage"));
-const MeetingsPage = lazy(() => import("./pages/MeetingsPage"));
-const DesktopAppPage = lazy(() => import("./pages/DesktopAppPage"));
-const ConnectDevicePage = lazy(() => import("./pages/ConnectDevicePage"));
-const MobileProjectsPage = lazy(() => import("./pages/MobileProjectsPage"));
-const AppPublishPage = lazy(() => import("./pages/AppPublishPage"));
-const ClientInferencePage = lazy(() => import("./pages/ClientInferencePage"));
-const ComputerUsePage = lazy(() => import("./pages/ComputerUsePage"));
+const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
+const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 const DeployedWebsitesPage = lazy(() => import("./pages/DeployedWebsitesPage"));
 const DesignView = lazy(() => import("./pages/DesignView"));
-const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
-const FigmaImportPage = lazy(() => import("./pages/FigmaImportPage"));
-const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
-const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
-const MailManusPage = lazy(() => import("./pages/MailManusPage"));
-const QATestingPage = lazy(() => import("./pages/QATestingPage"));
-const SovereignDashboard = lazy(() => import("./pages/SovereignDashboard"));
-const HelpPage = lazy(() => import("./pages/HelpPage"));
-const DataPipelinesPage = lazy(() => import("./pages/DataPipelinesPage"));
-const DocumentStudioPage = lazy(() => import("./pages/DocumentStudioPage"));
-const DeepResearchPage = lazy(() => import("./pages/DeepResearchPage"));
-const MusicStudioPage = lazy(() => import("./pages/MusicStudioPage"));
-const DataAnalysisPage = lazy(() => import("./pages/DataAnalysisPage"));
 
 function PageLoader() {
   return (
@@ -77,9 +55,9 @@ function SuspenseRoute({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}><AnimatedRoute>{children}</AnimatedRoute></Suspense>;
 }
 
-/** C8-F3/F4: Admin-only route wrapper — shows "No permission" for non-admin users */
+/** Admin-only route wrapper */
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAdminAuth();
+  const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
   if (!user || user.role !== "admin") {
     return (
@@ -97,11 +75,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-/** Hook wrapper for AdminRoute */
-function useAdminAuth() {
-  return useAuth();
-}
-
 function Router() {
   return (
     <Switch>
@@ -110,12 +83,9 @@ function Router() {
         {() => <Suspense fallback={<TaskViewSkeleton />}><TaskView /></Suspense>}
       </Route>
 
-      {/* Core pages */}
+      {/* Core Manus pages */}
       <Route path="/billing">
         <SuspenseRoute><BillingPage /></SuspenseRoute>
-      </Route>
-      <Route path="/analytics">
-        <SuspenseRoute><AnalyticsPage /></SuspenseRoute>
       </Route>
       <Route path="/settings">
         <SuspenseRoute><SettingsPage /></SuspenseRoute>
@@ -156,17 +126,17 @@ function Router() {
       <Route path="/shared/:token">
         <SuspenseRoute><SharedTaskView /></SuspenseRoute>
       </Route>
-      <Route path="/browser">
-        <SuspenseRoute><BrowserPage /></SuspenseRoute>
-      </Route>
-      <Route path="/webapp-builder">
-        <SuspenseRoute><WebAppBuilderPage /></SuspenseRoute>
-      </Route>
       <Route path="/profile">
         <SuspenseRoute><ProfilePage /></SuspenseRoute>
       </Route>
+      <Route path="/discover">
+        <SuspenseRoute><DiscoverPage /></SuspenseRoute>
+      </Route>
+      <Route path="/help">
+        <SuspenseRoute><HelpPage /></SuspenseRoute>
+      </Route>
 
-      {/* Tools & Features */}
+      {/* Management surfaces */}
       <Route path="/connectors">
         <SuspenseRoute><ConnectorsPage /></SuspenseRoute>
       </Route>
@@ -176,38 +146,8 @@ function Router() {
       <Route path="/skills">
         <SuspenseRoute><SkillsPage /></SuspenseRoute>
       </Route>
-      <Route path="/slides">
-        <SuspenseRoute><SlidesPage /></SuspenseRoute>
-      </Route>
       <Route path="/team">
         <SuspenseRoute><TeamPage /></SuspenseRoute>
-      </Route>
-      <Route path="/video">
-        <SuspenseRoute><VideoGeneratorPage /></SuspenseRoute>
-      </Route>
-      <Route path="/webhooks">
-        <SuspenseRoute><AdminRoute><WebhooksPage /></AdminRoute></SuspenseRoute>
-      </Route>
-      <Route path="/meetings">
-        <SuspenseRoute><MeetingsPage /></SuspenseRoute>
-      </Route>
-      <Route path="/desktop">
-        <SuspenseRoute><DesktopAppPage /></SuspenseRoute>
-      </Route>
-      <Route path="/connect-device">
-        <SuspenseRoute><ConnectDevicePage /></SuspenseRoute>
-      </Route>
-      <Route path="/mobile-projects">
-        <SuspenseRoute><MobileProjectsPage /></SuspenseRoute>
-      </Route>
-      <Route path="/app-publish">
-        <SuspenseRoute><AppPublishPage /></SuspenseRoute>
-      </Route>
-      <Route path="/client-inference">
-        <SuspenseRoute><AdminRoute><ClientInferencePage /></AdminRoute></SuspenseRoute>
-      </Route>
-      <Route path="/computer-use">
-        <SuspenseRoute><ComputerUsePage /></SuspenseRoute>
       </Route>
       <Route path="/deployed-websites">
         <SuspenseRoute><DeployedWebsitesPage /></SuspenseRoute>
@@ -215,44 +155,13 @@ function Router() {
       <Route path="/design/:id">
         <SuspenseRoute><DesignView /></SuspenseRoute>
       </Route>
-      <Route path="/discover">
-        <SuspenseRoute><DiscoverPage /></SuspenseRoute>
-      </Route>
-      <Route path="/figma-import">
-        <SuspenseRoute><FigmaImportPage /></SuspenseRoute>
-      </Route>
-      <Route path="/messaging">
-        <SuspenseRoute><MessagingAgentPage /></SuspenseRoute>
+
+      {/* Admin-only */}
+      <Route path="/webhooks">
+        <SuspenseRoute><AdminRoute><WebhooksPage /></AdminRoute></SuspenseRoute>
       </Route>
       <Route path="/data-controls">
         <SuspenseRoute><AdminRoute><DataControlsPage /></AdminRoute></SuspenseRoute>
-      </Route>
-      <Route path="/mail">
-        <SuspenseRoute><MailManusPage /></SuspenseRoute>
-      </Route>
-      <Route path="/qa-testing">
-        <SuspenseRoute><QATestingPage /></SuspenseRoute>
-      </Route>
-      <Route path="/data-pipelines">
-        <SuspenseRoute><DataPipelinesPage /></SuspenseRoute>
-      </Route>
-      <Route path="/sovereign">
-        <ErrorBoundary><SuspenseRoute><SovereignDashboard /></SuspenseRoute></ErrorBoundary>
-      </Route>
-      <Route path="/help">
-        <SuspenseRoute><HelpPage /></SuspenseRoute>
-      </Route>
-      <Route path="/documents">
-        <SuspenseRoute><DocumentStudioPage /></SuspenseRoute>
-      </Route>
-      <Route path="/deep-research">
-        <SuspenseRoute><DeepResearchPage /></SuspenseRoute>
-      </Route>
-      <Route path="/music">
-        <SuspenseRoute><MusicStudioPage /></SuspenseRoute>
-      </Route>
-      <Route path="/data-analysis">
-        <SuspenseRoute><DataAnalysisPage /></SuspenseRoute>
       </Route>
 
       <Route path="/404" component={NotFound} />

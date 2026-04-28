@@ -26,6 +26,30 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 
+function ManageSubscriptionButton() {
+  const portalMutation = trpc.payment.createPortalSession.useMutation({
+    onSuccess: (data) => {
+      toast.success("Opening subscription management...");
+      window.open(data.url, "_blank");
+    },
+    onError: (err) => { toast.error("Failed: " + err.message); },
+  });
+  return (
+    <button
+      onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+      disabled={portalMutation.isPending}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0"
+    >
+      {portalMutation.isPending ? (
+        <Loader2 className="w-3 h-3 animate-spin" />
+      ) : (
+        <ExternalLink className="w-3 h-3" />
+      )}
+      Manage
+    </button>
+  );
+}
+
 export default function BillingPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
 
@@ -167,6 +191,7 @@ export default function BillingPage() {
                   {new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString()}
                 </p>
               </div>
+              <ManageSubscriptionButton />
             </div>
           </motion.div>
         )}

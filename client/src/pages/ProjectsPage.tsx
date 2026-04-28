@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useTask } from "@/contexts/TaskContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { EmptyState } from "@/components/EmptyState";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -180,19 +181,16 @@ export default function ProjectsPage() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-              <FolderPlus className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h2 className="text-lg font-medium text-foreground mb-2">No projects yet</h2>
-            <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-              Projects let you group related tasks together with shared instructions and knowledge files.
-            </p>
-            <Button onClick={() => setCreateOpen(true)} variant="outline" className="gap-2">
-              <Plus className="w-4 h-4" />
-              Create your first project
-            </Button>
-          </div>
+          <EmptyState
+            icon={<FolderPlus className="w-7 h-7 text-primary" />}
+            title="No projects yet"
+            description="Projects let you group related tasks together with shared instructions and knowledge files."
+            action={{
+              label: "Create your first project",
+              onClick: () => setCreateOpen(true),
+              icon: <Plus className="w-4 h-4" />,
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence mode="popLayout">
