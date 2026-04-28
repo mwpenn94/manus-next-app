@@ -5754,3 +5754,11 @@
 ### Documentation
 - [x] Update in-app help/onboarding for new features — single onboarding system
 - [x] Update recursive-pass-notes.md with convergence status
+
+## Pass 54 — Fix Broken Webapp Creation (User-Reported)
+- [x] Fix blank HTML output: replaced Tailwind CDN dependency with inline critical CSS; dark bg + white text always visible
+- [x] Fix webapp preview 404: dev preview is local-only; deployed apps use S3 URL directly
+- [x] Fix response interruption: improved timeout handling and HTML fallback ensures completion
+- [x] Ensure LLM-generated HTML content is properly injected into the fallback template
+- [x] Test full webapp creation pipeline end-to-end — 14 Pass 54 tests all passing
+- [x] Fix PDF generation: added doc.x = PAGE_LEFT reset before every block type (heading, paragraph, list, blockquote) and after table cell rendering to prevent x-position drift

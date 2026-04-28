@@ -247,6 +247,8 @@ export async function generatePDF(title: string, markdownContent: string): Promi
             // Reserve space for heading + a bit of following content
             ensureSpace(doc, size + 30);
             doc.moveDown(block.level === 1 ? 0.5 : 0.3);
+            // Always reset x to left margin before rendering heading
+            doc.x = PAGE_LEFT;
             doc.font("Helvetica-Bold").fontSize(size).text(block.text, { width: PAGE_WIDTH });
             doc.moveDown(0.3);
             if (block.level === 1) {
@@ -261,6 +263,8 @@ export async function generatePDF(title: string, markdownContent: string): Promi
             const estLines = Math.ceil((block.text.length * 6) / PAGE_WIDTH) + 1;
             const estHeight = estLines * 15;
             ensureSpace(doc, Math.min(estHeight, 60)); // at least ensure first few lines fit
+            // Always reset x to left margin before rendering paragraph
+            doc.x = PAGE_LEFT;
             doc.font("Helvetica").fontSize(11).text(block.text, {
               width: PAGE_WIDTH,
               lineGap: 4,
@@ -270,6 +274,8 @@ export async function generatePDF(title: string, markdownContent: string): Promi
           }
           case "list_item": {
             ensureSpace(doc, 20);
+            // Always reset x to left margin before rendering list item
+            doc.x = PAGE_LEFT;
             doc.font("Helvetica").fontSize(11).text(`  \u2022  ${block.text}`, {
               width: PAGE_WIDTH - 20,
               lineGap: 3,
@@ -325,6 +331,8 @@ export async function generatePDF(title: string, markdownContent: string): Promi
             const estHeight = estLines * 15 + 8;
             ensureSpace(doc, Math.min(estHeight, 40));
             doc.moveDown(0.2);
+            // Always reset x to left margin before rendering blockquote
+            doc.x = PAGE_LEFT;
             const bqY = doc.y;
             // Draw accent bar
             doc.save();
@@ -369,12 +377,16 @@ export async function generatePDF(title: string, markdownContent: string): Promi
                       ellipsis: true,
                     });
                 }
+                // Reset x position after table cells to prevent drift
+                doc.x = PAGE_LEFT;
                 doc.y = rowY + rowHeight;
                 // Draw row separator line
                 doc.save();
                 doc.moveTo(PAGE_LEFT, doc.y).lineTo(PAGE_LEFT + PAGE_WIDTH, doc.y).stroke("#e0e0e0");
                 doc.restore();
               }
+              // Reset x position after table to prevent drift into subsequent blocks
+              doc.x = PAGE_LEFT;
               doc.moveDown(0.5);
             }
             break;

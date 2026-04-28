@@ -2859,7 +2859,19 @@ async function executeCreateWebapp(args: {
       fs.mkdirSync(path.join(projectDir, "src"), { recursive: true });
       fs.writeFileSync(path.join(projectDir, "src", "index.css"), `@import "tailwindcss";`);
       fs.writeFileSync(path.join(projectDir, "src", "main.jsx"), `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\nReactDOM.createRoot(document.getElementById('root')).render(<App />);`);
-      fs.writeFileSync(path.join(projectDir, "src", "App.jsx"), `export default function App() {\n  return (\n    <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">\n      <div className="text-center space-y-4">\n        <h1 className="text-4xl font-bold">${projectName}</h1>\n        <p className="text-neutral-400">${args.description}</p>\n      </div>\n    </div>\n  );\n}`);
+         fs.writeFileSync(path.join(projectDir, "src", "App.jsx"), `export default function App() {
+  return (
+    <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
+      <div className="text-center space-y-6 max-w-2xl mx-auto px-6">
+        <h1 className="text-4xl font-bold tracking-tight">${projectName}</h1>
+        <p className="text-neutral-400 text-lg leading-relaxed">${args.description}</p>
+        <div className="pt-4">
+          <span className="inline-block px-4 py-2 rounded-full bg-white/10 text-sm text-neutral-300">Built with Manus</span>
+        </div>
+      </div>
+    </div>
+  );
+}`);
 
       // Install deps with error handling + fallback to HTML on total failure
       let installSuccess = false;
@@ -2880,25 +2892,31 @@ async function executeCreateWebapp(args: {
       if (!installSuccess || !fs.existsSync(path.join(projectDir, "node_modules"))) {
         console.warn(`[create_webapp] Falling back to HTML template for "${projectName}"`);
         usedFallback = true;
-        // Rewrite as plain HTML with inline Tailwind CDN
+        // Rewrite as plain HTML with inline styles (no CDN dependency)
         fs.writeFileSync(path.join(projectDir, "index.html"), `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${projectName}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    #app { text-align: center; padding: 2rem; }
+    h1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }
+    p { color: #a3a3a3; font-size: 1.125rem; line-height: 1.75; }
+  </style>
 </head>
-<body class="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
-  <div id="app" class="text-center space-y-4">
-    <h1 class="text-4xl font-bold">${projectName}</h1>
-    <p class="text-neutral-400">${args.description}</p>
+<body>
+  <div id="app">
+    <h1>${projectName}</h1>
+    <p>${args.description}</p>
   </div>
   <script src="main.js"></script>
 </body>
 </html>`);
-        fs.writeFileSync(path.join(projectDir, "styles.css"), `/* Custom styles */`);
+        fs.writeFileSync(path.join(projectDir, "styles.css"), `/* Additional custom styles */\n* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }\np { color: #a3a3a3; font-size: 1.125rem; line-height: 1.75; }`);
         fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
 
         const htmlPort = await findWebappPort(4100);
