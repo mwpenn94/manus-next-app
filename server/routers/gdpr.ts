@@ -52,6 +52,10 @@ import {
   sovereignRoutingDecisions,
   appFeedback,
   automationSchedules,
+  dataPipelines,
+  dataPipelineRuns,
+  memoryEmbeddings,
+  scheduleExecutionHistory,
  } from "../../drizzle/schema";
 
 export const gdprRouter = router({
@@ -264,7 +268,13 @@ export const gdprRouter = router({
 
       // ── Phase 5d: Delete user feedback & automation schedules ──
       await db.delete(appFeedback).where(eq(appFeedback.userId, userId));
+      await db.delete(scheduleExecutionHistory).where(eq(scheduleExecutionHistory.userId, userId));
       await db.delete(automationSchedules).where(eq(automationSchedules.userId, userId));
+
+      // ── Phase 5e: Delete data pipelines & memory embeddings ──
+      await db.delete(dataPipelineRuns).where(eq(dataPipelineRuns.userId, userId));
+      await db.delete(dataPipelines).where(eq(dataPipelines.userId, userId));
+      await db.delete(memoryEmbeddings).where(eq(memoryEmbeddings.userId, userId));
 
       // ── Phase 6: Delete the user record itself ──
       await db.delete(users).where(eq(users.id, userId));

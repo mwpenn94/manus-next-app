@@ -67,4 +67,61 @@ export const sovereignRouter = router({
     .query(async ({ input }) => {
       return db.getProviderUsageStats(input.providerId, input.days);
     }),
+
+  /** Multi-model compare — run the same prompt through multiple providers in parallel */
+  compare: protectedProcedure
+    .input(z.object({
+      prompt: z.string().min(1).max(10000),
+      providers: z.array(z.string()).min(1).max(5),
+      systemPrompt: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const messages = [
+        ...(input.systemPrompt ? [{ role: "system" as const, content: input.systemPrompt }] : []),
+        { role: "user" as const, content: input.prompt },
+      ];
+
+      const results = await Promise.allSettled(
+        input.providers.map(async (provider) => {
+          const start = Date.now();
+          try {
+            const result = await sovereign.routeRequest({
+              messages,
+              preferredProvider: provider,
+              userId: ctx.user.id,
+            });
+            return {
+              provider: result.provider,
+              model: result.model,
+              output: result.output,
+              latencyMs: result.latencyMs,
+              cost: result.cost,
+              status: "success" as const,
+            };
+          } catch (err: unknown) {
+            return {
+              provider,
+              model: "unknown",
+              output: "",
+              latencyMs: Date.now() - start,
+              cost: 0,
+              status: "error" as const,
+              error: err instanceof Error ? err.message : "Unknown error",
+            };
+          }
+        })
+      );
+
+      return results.map((r) =>
+        r.status === "fulfilled" ? r.value : {
+          provider: "unknown",
+          model: "unknown",
+          output: "",
+          latencyMs: 0,
+          cost: 0,
+          status: "error" as const,
+          error: r.reason?.message ?? "Promise rejected",
+        }
+      );
+    }),
 });

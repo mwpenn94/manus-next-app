@@ -274,6 +274,13 @@
       "when": 1777299333975,
       "tag": "0038_lazy_pepper_potts",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1777341804701,
+      "tag": "0039_square_silhouette",
+      "breakpoints": true
     }
   ]
 }

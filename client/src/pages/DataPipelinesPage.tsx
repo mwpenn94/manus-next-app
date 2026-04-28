@@ -14,6 +14,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import {
   Card,
   CardContent,
@@ -525,6 +526,23 @@ function CreatePipelineDialog({
     setSteps((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const utils = trpc.useUtils();
+  const createMutation = trpc.pipeline.create.useMutation({
+    onSuccess: () => {
+      utils.pipeline.list.invalidate();
+      toast.success(`Pipeline "${name}" created`);
+      onOpenChange(false);
+      setName("");
+      setDescription("");
+      setTopology("linear");
+      setSchedule("manual");
+      setSteps([]);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to create pipeline");
+    },
+  });
+
   const handleCreate = () => {
     if (!name.trim()) {
       toast.error("Pipeline name is required");
@@ -534,13 +552,18 @@ function CreatePipelineDialog({
       toast.error("Add at least one step to the pipeline");
       return;
     }
-    toast.success(`Pipeline "${name}" created`);
-    onOpenChange(false);
-    setName("");
-    setDescription("");
-    setTopology("linear");
-    setSchedule("manual");
-    setSteps([]);
+    createMutation.mutate({
+      name: name.trim(),
+      description: description || undefined,
+      pipelineType: topology,
+      sourceConfig: { sourceClass },
+      transformSteps: steps.map((s) => ({
+        name: s.operation,
+        type: s.type,
+      })),
+      schedule: schedule === "manual" ? undefined : schedule,
+      accessTier: storageTier,
+    });
   };
 
   return (

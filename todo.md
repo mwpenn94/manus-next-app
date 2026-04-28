@@ -5400,33 +5400,33 @@
 - [x] Prepend focus-specific system prompt prefix when focus is set (e.g., "You are a financial expert..." for Financial)
 
 ### 44.2: P0 — Data Pipeline Execution Wiring
-- [ ] Replace DEMO_PIPELINES with tRPC-backed pipeline records from database
-- [ ] Add pipelines table to drizzle schema (id, userId, name, description, topology, sourceClass, steps JSON, status, lastRunAt, runCount, convergenceCount)
-- [ ] Add pipeline CRUD procedures to server/routers (create, list, update, delete, run, getStatus)
+- [x] Replace DEMO_PIPELINES with tRPC-backed pipeline records from database
+- [x] Add pipelines table to drizzle schema (id, userId, name, description, topology, sourceClass, steps JSON, status, lastRunAt, runCount, convergenceCount)
+- [x] Add pipeline CRUD procedures to server/routers (create, list, update, delete, run, getStatus)
 - [ ] Wire "Run Pipeline" button to agent tool execution via data_pipeline tool
 - [ ] Add real-time pipeline status updates via polling or SSE
 
 ### 44.3: P0 — Automation Schedule Execution Bridge
 - [ ] Add "Execute Now" button to SchedulePage for manual trigger
 - [ ] Wire stored schedules to the Manus scheduled task API endpoint for actual execution
-- [ ] Add schedule execution history tracking (lastRunAt, lastRunStatus, runCount)
+- [x] Add schedule execution history tracking (lastRunAt, lastRunStatus, runCount)
 - [ ] Show execution status and logs in SchedulePage detail view
 
 ### 44.4: P1 — Memory Semantic Search Enhancement
 - [ ] Add embedding generation on memory entry creation (via LLM helper)
-- [ ] Store embeddings in memoryEntries table (add embedding column or separate embeddings table)
+- [x] Store embeddings in memoryEntries table (add embedding column or separate embeddings table)
 - [ ] Implement vector similarity search for memory.search procedure
 - [ ] Add "Related Memories" section in MemoryPage when viewing an entry
 
 ### 44.5: P1 — Voice TTS Endpoint
-- [ ] Add TTS synthesis procedure to voice router (text → audio URL)
-- [ ] Use Edge TTS or platform voice synthesis API
+- [x] Add TTS synthesis procedure to voice router (text → audio URL)
+- [x] Use Edge TTS or platform voice synthesis API
 - [ ] Wire VoiceMode.tsx speaking state to actual audio playback from TTS endpoint
 - [ ] Add voice selection persistence to user preferences
 
 ### 44.6: P2 — Multi-Model Synthesis Option
-- [ ] Add "Compare Models" toggle in Sovereign dashboard
-- [ ] When enabled, route same request to top 2-3 providers
+- [x] Add "Compare Models" toggle in Sovereign dashboard (sovereign.compare procedure)
+- [x] When enabled, route same request to top 2-3 providers
 - [ ] Present side-by-side comparison in task view
 - [ ] Let user select preferred response
 

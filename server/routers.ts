@@ -35,6 +35,7 @@ import { templatesRouter } from "./routers/templates";
 import { usageRouter } from "./routers/usage";
 import { videoRouter } from "./routers/video";
 import { voiceRouter } from "./routers/voice";
+import { pipelineRouter } from "./routers/pipeline";
 import { webappRouter } from "./routers/webapp";
 import { feedbackRouter } from "./routers/feedback";
 import { orchestrationRouter } from "./routers/orchestration";
@@ -95,6 +96,7 @@ export const appRouter = router({
   webapp: webappRouter,
   workspace: workspaceRouter,
   automation: automationRouter,
+  pipeline: pipelineRouter,
 });
 
 export type AppRouter = typeof appRouter;

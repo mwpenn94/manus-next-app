@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2553,4 +2553,111 @@ export async function syncConnectorHealthFromConnector(userId: number, connector
     authMethodCategory,
     lastSyncAt: conn.lastSyncAt || new Date(),
   });
+}
+
+
+// ── Data Pipeline Helpers ──
+
+export async function createDataPipeline(data: InsertDataPipeline) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(dataPipelines).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getUserDataPipelines(userId: number, limit = 50, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(dataPipelines).where(eq(dataPipelines.userId, userId)).orderBy(desc(dataPipelines.createdAt)).limit(limit).offset(offset);
+}
+
+export async function getDataPipelineById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(dataPipelines).where(eq(dataPipelines.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateDataPipeline(id: number, data: Partial<InsertDataPipeline>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(dataPipelines).set(data).where(eq(dataPipelines.id, id));
+}
+
+export async function deleteDataPipeline(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(dataPipelineRuns).where(eq(dataPipelineRuns.pipelineId, id));
+  await db.delete(dataPipelines).where(eq(dataPipelines.id, id));
+}
+
+// ── Data Pipeline Run Helpers ──
+
+export async function createPipelineRun(data: InsertDataPipelineRun) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(dataPipelineRuns).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getPipelineRuns(pipelineId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(dataPipelineRuns).where(eq(dataPipelineRuns.pipelineId, pipelineId)).orderBy(desc(dataPipelineRuns.startedAt)).limit(limit);
+}
+
+export async function updatePipelineRun(id: number, data: Partial<InsertDataPipelineRun>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(dataPipelineRuns).set(data).where(eq(dataPipelineRuns.id, id));
+}
+
+// ── Memory Embedding Helpers ──
+
+export async function createMemoryEmbedding(data: InsertMemoryEmbedding) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(memoryEmbeddings).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getMemoryEmbeddings(userId: number, memoryEntryId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(memoryEmbeddings.userId, userId)];
+  if (memoryEntryId) conditions.push(eq(memoryEmbeddings.memoryEntryId, memoryEntryId));
+  return db.select().from(memoryEmbeddings).where(and(...conditions)).orderBy(desc(memoryEmbeddings.createdAt));
+}
+
+export async function deleteMemoryEmbedding(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(memoryEmbeddings).where(eq(memoryEmbeddings.id, id));
+}
+
+// ── Schedule Execution History Helpers ──
+
+export async function createScheduleExecution(data: InsertScheduleExecutionHistory) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(scheduleExecutionHistory).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getScheduleExecutions(scheduleId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(scheduleExecutionHistory).where(eq(scheduleExecutionHistory.scheduleId, scheduleId)).orderBy(desc(scheduleExecutionHistory.startedAt)).limit(limit);
+}
+
+export async function getUserScheduleExecutions(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(scheduleExecutionHistory).where(eq(scheduleExecutionHistory.userId, userId)).orderBy(desc(scheduleExecutionHistory.startedAt)).limit(limit);
+}
+
+export async function updateScheduleExecution(id: number, data: Partial<InsertScheduleExecutionHistory>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(scheduleExecutionHistory).set(data).where(eq(scheduleExecutionHistory.id, id));
 }

@@ -1360,3 +1360,85 @@ export const automationSchedules = mysqlTable("automation_schedules", {
 }));
 export type AutomationSchedule = typeof automationSchedules.$inferSelect;
 export type InsertAutomationSchedule = typeof automationSchedules.$inferInsert;
+
+
+// ── Pass 44: Data Pipelines ──
+export const dataPipelines = mysqlTable("data_pipelines", {
+  id: int("id").primaryKey().autoincrement(),
+  externalId: varchar("externalId", { length: 36 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  pipelineType: varchar("pipelineType", { length: 50 }).notNull().default("etl"),
+  sourceConfig: json("sourceConfig").$type<Record<string, unknown>>(),
+  transformSteps: json("transformSteps").$type<Array<{ name: string; type: string; config: Record<string, unknown> }>>(),
+  destinationConfig: json("destinationConfig").$type<Record<string, unknown>>(),
+  schedule: varchar("schedule", { length: 100 }),
+  accessTier: varchar("accessTier", { length: 50 }).notNull().default("internal"),
+  qualityScore: int("qualityScore"),
+  status: mysqlEnum("status", ["draft", "active", "paused", "error", "archived"]).default("draft").notNull(),
+  lastRunAt: timestamp("lastRunAt"),
+  runCount: int("runCount").default(0),
+  tags: json("tags").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdIdx: index("data_pipelines_user_idx").on(table.userId),
+}));
+export type DataPipeline = typeof dataPipelines.$inferSelect;
+export type InsertDataPipeline = typeof dataPipelines.$inferInsert;
+
+// ── Pass 44: Data Pipeline Runs ──
+export const dataPipelineRuns = mysqlTable("data_pipeline_runs", {
+  id: int("id").primaryKey().autoincrement(),
+  pipelineId: int("pipelineId").notNull(),
+  userId: int("userId").notNull(),
+  status: mysqlEnum("status", ["running", "completed", "failed", "cancelled"]).default("running").notNull(),
+  recordsProcessed: int("recordsProcessed").default(0),
+  recordsFailed: int("recordsFailed").default(0),
+  durationMs: int("durationMs"),
+  errorMessage: text("errorMessage"),
+  metadata: json("metadata").$type<Record<string, unknown>>(),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+}, (table) => ({
+  pipelineIdIdx: index("data_pipeline_runs_pipeline_idx").on(table.pipelineId),
+}));
+export type DataPipelineRun = typeof dataPipelineRuns.$inferSelect;
+export type InsertDataPipelineRun = typeof dataPipelineRuns.$inferInsert;
+
+// ── Pass 44: Memory Embeddings ──
+export const memoryEmbeddings = mysqlTable("memory_embeddings", {
+  id: int("id").primaryKey().autoincrement(),
+  memoryEntryId: int("memoryEntryId").notNull(),
+  userId: int("userId").notNull(),
+  embeddedText: text("embeddedText").notNull(),
+  embedding: json("embedding").$type<number[]>().notNull(),
+  model: varchar("model", { length: 100 }).notNull().default("text-embedding-3-small"),
+  dimensions: int("dimensions").notNull().default(1536),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  memoryIdx: index("memory_embeddings_memory_idx").on(table.memoryEntryId),
+  userIdx: index("memory_embeddings_user_idx").on(table.userId),
+}));
+export type MemoryEmbedding = typeof memoryEmbeddings.$inferSelect;
+export type InsertMemoryEmbedding = typeof memoryEmbeddings.$inferInsert;
+
+// ── Pass 44: Schedule Execution History ──
+export const scheduleExecutionHistory = mysqlTable("schedule_execution_history", {
+  id: int("id").primaryKey().autoincrement(),
+  scheduleId: int("scheduleId").notNull(),
+  userId: int("userId").notNull(),
+  status: mysqlEnum("status", ["running", "completed", "failed", "cancelled"]).default("running").notNull(),
+  output: text("output"),
+  errorMessage: text("errorMessage"),
+  durationMs: int("durationMs"),
+  triggerType: varchar("triggerType", { length: 50 }).notNull().default("scheduled"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+}, (table) => ({
+  scheduleIdx: index("schedule_execution_history_schedule_idx").on(table.scheduleId),
+  userIdx: index("schedule_execution_history_user_idx").on(table.userId),
+}));
+export type ScheduleExecutionHistoryRow = typeof scheduleExecutionHistory.$inferSelect;
+export type InsertScheduleExecutionHistory = typeof scheduleExecutionHistory.$inferInsert;

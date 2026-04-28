@@ -3,9 +3,9 @@
  */
 import { z } from "zod";
 import { eq, and, desc } from "drizzle-orm";
-import { automationSchedules } from "../../drizzle/schema";
+import { automationSchedules, scheduleExecutionHistory } from "../../drizzle/schema";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
+import { getDb, createScheduleExecution, getScheduleExecutions, getUserScheduleExecutions, updateScheduleExecution } from "../db";
 import { TRPCError } from "@trpc/server";
 
 async function requireDb() {
@@ -134,5 +134,65 @@ export const automationRouter = router({
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Schedule not found" });
       await db.delete(automationSchedules).where(eq(automationSchedules.id, input.id));
       return { id: input.id, deleted: true };
+    }),
+
+  /** Execute a schedule (creates a run record) */
+  execute: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const [schedule] = await db
+        .select()
+        .from(automationSchedules)
+        .where(and(
+          eq(automationSchedules.id, input.id),
+          eq(automationSchedules.userId, ctx.user.id)
+        ))
+        .limit(1);
+      if (!schedule) throw new TRPCError({ code: "NOT_FOUND", message: "Schedule not found" });
+
+      const execution = await createScheduleExecution({
+        scheduleId: input.id,
+        userId: ctx.user.id,
+        status: "running",
+        triggerType: "manual",
+      });
+
+      // Update schedule run count and lastRunAt
+      await db.update(automationSchedules).set({
+        runCount: (schedule.runCount ?? 0) + 1,
+        lastRunAt: Date.now(),
+      }).where(eq(automationSchedules.id, input.id));
+
+      return execution;
+    }),
+
+  /** Get execution history for a specific schedule */
+  getExecutionHistory: protectedProcedure
+    .input(z.object({
+      scheduleId: z.number(),
+      limit: z.number().min(1).max(100).default(20),
+    }))
+    .query(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const [schedule] = await db
+        .select()
+        .from(automationSchedules)
+        .where(and(
+          eq(automationSchedules.id, input.scheduleId),
+          eq(automationSchedules.userId, ctx.user.id)
+        ))
+        .limit(1);
+      if (!schedule) throw new TRPCError({ code: "NOT_FOUND", message: "Schedule not found" });
+      return getScheduleExecutions(input.scheduleId, input.limit);
+    }),
+
+  /** Get all execution history for the current user */
+  allExecutions: protectedProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).default(50),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      return getUserScheduleExecutions(ctx.user.id, input?.limit ?? 50);
     }),
 });
