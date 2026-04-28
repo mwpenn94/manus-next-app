@@ -413,9 +413,95 @@ function SovereignPanel() {
           )}
         </CardContent>
       </Card>
+      {/* Compare Models */}
+      <CompareModelsPanel />
+
       {/* Recent Routing Decisions */}
       <RoutingDecisionsTable />
     </div>
+  );
+}
+
+/** Compare Models — side-by-side multi-provider synthesis */
+function CompareModelsPanel() {
+  const [prompt, setPrompt] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const compareMutation = trpc.sovereign.compare.useMutation({
+    onSuccess: (data) => {
+      setResults(data);
+      toast.success(`Compared ${data.length} providers`);
+    },
+    onError: (err) => { toast.error(err.message); },
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Layers className="w-4 h-4 text-primary" />
+          Compare Models
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Send the same prompt to multiple providers and compare responses side-by-side
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Textarea
+            placeholder="Enter a prompt to compare across providers..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={2}
+            className="flex-1 text-sm"
+          />
+          <Button
+            onClick={() => compareMutation.mutate({ prompt, providers: [] })}
+            disabled={!prompt.trim() || compareMutation.isPending}
+            className="self-end"
+          >
+            {compareMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <Play className="w-4 h-4 mr-1" />
+            )}
+            Compare
+          </Button>
+        </div>
+
+        {results.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {results.map((r: any, i: number) => (
+              <div
+                key={i}
+                className={cn(
+                  "p-3 rounded-lg border",
+                  r.error ? "border-red-500/30 bg-red-500/5" : "border-border bg-muted/20"
+                )}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <StatusDot status={r.error ? "down" : "healthy"} />
+                    <span className="text-xs font-medium text-foreground">{r.provider}</span>
+                  </div>
+                  {r.latencyMs && (
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                      {r.latencyMs}ms
+                    </Badge>
+                  )}
+                </div>
+                {r.error ? (
+                  <p className="text-xs text-red-400">{r.error}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-6">
+                    {r.response}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

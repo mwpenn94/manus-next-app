@@ -22,6 +22,10 @@ import {
   CheckCircle2,
   XCircle,
   RotateCw,
+  Zap,
+  History,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 /** Get the user's IANA timezone string */
@@ -98,6 +102,16 @@ export default function SchedulePage() {
     },
     onError: (err) => { toast.error("Delete failed: " + err.message); },
   });
+
+  const executeMutation = trpc.automation.execute.useMutation({
+    onSuccess: () => {
+      toast.success("Schedule executed manually");
+      schedulesQuery.refetch();
+    },
+    onError: (err) => { toast.error("Execute failed: " + err.message); },
+  });
+
+  const [expandedScheduleId, setExpandedScheduleId] = useState<number | null>(null);
 
   if (authLoading) {
     return (
@@ -364,6 +378,20 @@ export default function SchedulePage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 text-primary hover:text-primary"
+                        onClick={() => executeMutation.mutate({ id: schedule.id })}
+                        disabled={executeMutation.isPending}
+                        title="Execute Now"
+                      >
+                        {executeMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Zap className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8"
                         onClick={() => toggleMutation.mutate({ id: schedule.id })}
                         title={schedule.enabled ? "Pause" : "Resume"}
@@ -372,6 +400,19 @@ export default function SchedulePage() {
                           <Pause className="w-4 h-4" />
                         ) : (
                           <Play className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setExpandedScheduleId(expandedScheduleId === schedule.id ? null : schedule.id)}
+                        title="Execution History"
+                      >
+                        {expandedScheduleId === schedule.id ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <History className="w-4 h-4" />
                         )}
                       </Button>
                       <Button
@@ -388,6 +429,10 @@ export default function SchedulePage() {
                       </Button>
                     </div>
                   </div>
+                  {/* Execution History Panel */}
+                  {expandedScheduleId === schedule.id && (
+                    <ScheduleExecutionHistory scheduleId={schedule.id} />
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -412,6 +457,72 @@ export default function SchedulePage() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   EXECUTION HISTORY PANEL
+   ═══════════════════════════════════════════════════════ */
+function ScheduleExecutionHistory({ scheduleId }: { scheduleId: number }) {
+  const historyQuery = trpc.automation.getExecutionHistory.useQuery(
+    { scheduleId },
+    { refetchInterval: 10_000 }
+  );
+
+  if (historyQuery.isLoading) {
+    return (
+      <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        Loading execution history...
+      </div>
+    );
+  }
+
+  const executions = historyQuery.data ?? [];
+
+  if (executions.length === 0) {
+    return (
+      <div className="mt-3 pt-3 border-t border-border">
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <History className="w-3 h-3" />
+          No execution history yet
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border space-y-2">
+      <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+        <History className="w-3 h-3" />
+        Execution History ({executions.length})
+      </p>
+      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+        {executions.map((exec: any) => (
+          <div
+            key={exec.id}
+            className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-md bg-muted/30"
+          >
+            <div className="flex items-center gap-2">
+              {exec.status === "success" && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+              {exec.status === "error" && <XCircle className="w-3 h-3 text-red-500" />}
+              {exec.status === "running" && <RotateCw className="w-3 h-3 text-blue-500 animate-spin" />}
+              {exec.status === "pending" && <Clock className="w-3 h-3 text-amber-500" />}
+              <span className="capitalize">{exec.status}</span>
+              <span className="text-muted-foreground">
+                {exec.triggerType === "manual" ? "Manual" : "Scheduled"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              {exec.durationMs && (
+                <span>{(exec.durationMs / 1000).toFixed(1)}s</span>
+              )}
+              <span>{formatLocalTime(exec.startedAt)}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

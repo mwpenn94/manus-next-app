@@ -10,8 +10,9 @@
  * - Voice/persona config
  * - Graceful degradation messaging
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useVoiceSession, type VoiceConfig, type VoiceState } from "@/hooks/useVoiceSession";
+import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -67,11 +68,25 @@ export default function VoiceMode({
   className,
 }: VoiceModeProps) {
   const [showConfig, setShowConfig] = useState(false);
-  const [config, setConfig] = useState<VoiceConfig>({
-    voice: "en-US-AriaNeural",
-    persona: "default",
-    language: "en",
+  // Load persisted voice config from localStorage (fast) and preferences (authoritative)
+  const [config, setConfig] = useState<VoiceConfig>(() => {
+    try {
+      const saved = localStorage.getItem("manus-voice-config");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { voice: "en-US-AriaNeural", persona: "default", language: "en" };
   });
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, { staleTime: 60_000 });
+  const prefsSave = trpc.preferences.save.useMutation();
+
+  // Sync from server preferences on load
+  useEffect(() => {
+    const gs = prefsQuery.data?.generalSettings as Record<string, unknown> | undefined;
+    if (gs?.voiceConfig) {
+      const serverConfig = gs.voiceConfig as VoiceConfig;
+      setConfig((prev) => ({ ...prev, ...serverConfig }));
+    }
+  }, [prefsQuery.data]);
 
   const voice = useVoiceSession({
     taskId,
@@ -82,6 +97,19 @@ export default function VoiceMode({
       }
     },
   });
+
+  // Persist config changes
+  const updateConfig = useCallback((newConfig: VoiceConfig) => {
+    setConfig(newConfig);
+    voice.updateConfig(newConfig);
+    localStorage.setItem("manus-voice-config", JSON.stringify(newConfig));
+    prefsSave.mutate({
+      generalSettings: {
+        ...(prefsQuery.data?.generalSettings as Record<string, unknown> ?? {}),
+        voiceConfig: newConfig,
+      },
+    });
+  }, [voice, prefsSave, prefsQuery.data]);
 
   const handleStart = useCallback(async () => {
     await voice.start(config);
@@ -288,9 +316,7 @@ export default function VoiceMode({
               <select
                 value={config.voice}
                 onChange={(e) => {
-                  const newConfig = { ...config, voice: e.target.value };
-                  setConfig(newConfig);
-                  voice.updateConfig(newConfig);
+                  updateConfig({ ...config, voice: e.target.value });
                 }}
                 className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm mb-3"
               >
@@ -310,9 +336,7 @@ export default function VoiceMode({
               <select
                 value={config.persona}
                 onChange={(e) => {
-                  const newConfig = { ...config, persona: e.target.value };
-                  setConfig(newConfig);
-                  voice.updateConfig(newConfig);
+                  updateConfig({ ...config, persona: e.target.value });
                 }}
                 className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm mb-3"
               >
@@ -328,9 +352,7 @@ export default function VoiceMode({
               <select
                 value={config.language}
                 onChange={(e) => {
-                  const newConfig = { ...config, language: e.target.value };
-                  setConfig(newConfig);
-                  voice.updateConfig(newConfig);
+                  updateConfig({ ...config, language: e.target.value });
                 }}
                 className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm"
               >

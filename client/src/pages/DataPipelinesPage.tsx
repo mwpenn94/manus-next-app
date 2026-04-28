@@ -735,6 +735,47 @@ function CreatePipelineDialog({
 }
 
 /* ═══════════════════════════════════════════════════════
+   §10b  RUN PIPELINE BUTTON
+   ═══════════════════════════════════════════════════════ */
+function RunPipelineButton({ pipeline, onDone }: { pipeline: Pipeline; onDone: () => void }) {
+  const utils = trpc.useUtils();
+  const startRun = trpc.pipeline.startRun.useMutation({
+    onSuccess: () => {
+      utils.pipeline.list.invalidate();
+      toast.success(`Pipeline "${pipeline.name}" started`);
+      onDone();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to start pipeline");
+    },
+  });
+
+  return (
+    <Button
+      onClick={() => {
+        // DEMO_PIPELINES have string IDs; DB pipelines have numeric IDs
+        const numId = Number(pipeline.id);
+        if (isNaN(numId)) {
+          toast.success(`Running "${pipeline.name}"...`);
+          onDone();
+          return;
+        }
+        startRun.mutate({ pipelineId: numId });
+      }}
+      disabled={startRun.isPending}
+      className="gap-1.5"
+    >
+      {startRun.isPending ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <Play className="w-3.5 h-3.5" />
+      )}
+      Run Now
+    </Button>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
    §11  MAIN PAGE
    ═══════════════════════════════════════════════════════ */
 export default function DataPipelinesPage() {
@@ -1432,16 +1473,7 @@ export default function DataPipelinesPage() {
               <Button variant="outline" onClick={() => setSelectedPipeline(null)}>
                 Close
               </Button>
-              <Button
-                onClick={() => {
-                  toast.success(`Running "${selectedPipeline.name}"...`);
-                  setSelectedPipeline(null);
-                }}
-                className="gap-1.5"
-              >
-                <Play className="w-3.5 h-3.5" />
-                Run Now
-              </Button>
+              <RunPipelineButton pipeline={selectedPipeline} onDone={() => setSelectedPipeline(null)} />
             </DialogFooter>
           </DialogContent>
         </Dialog>

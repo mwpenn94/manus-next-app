@@ -176,6 +176,7 @@ export default function MemoryPage() {
   const [uploadQueue, setUploadQueue] = useState<FileUploadItem[]>([]);
   const [showUploadPanel, setShowUploadPanel] = useState(false);
   const [selectedArchived, setSelectedArchived] = useState<Set<number>>(new Set());
+  const [selectedMemoryId, setSelectedMemoryId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: memories = [], refetch, isLoading: memoriesLoading } = trpc.memory.list.useQuery(
@@ -423,21 +424,31 @@ export default function MemoryPage() {
                 </div>
               ) : (
                 displayMemories.map((m: any) => (
-                  <div key={m.id} className="group p-3 rounded-lg bg-card border border-border hover:border-primary/20 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Tag className="w-3 h-3 text-primary" />
-                          <span className="text-sm font-medium text-foreground">{m.key}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{m.source}</span>
+                  <div key={m.id}>
+                    <div
+                      className={`group p-3 rounded-lg bg-card border transition-colors cursor-pointer ${
+                        selectedMemoryId === m.id ? "border-primary/40 bg-primary/5" : "border-border hover:border-primary/20"
+                      }`}
+                      onClick={() => setSelectedMemoryId(selectedMemoryId === m.id ? null : m.id)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Tag className="w-3 h-3 text-primary" />
+                            <span className="text-sm font-medium text-foreground">{m.key}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{m.source}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground leading-relaxed">{m.value}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">{formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{m.value}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">{formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}</p>
+                        <button onClick={(e) => { e.stopPropagation(); deleteMemory.mutate({ id: m.id }); }} className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" title="Delete memory">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <button onClick={() => deleteMemory.mutate({ id: m.id })} className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100" title="Delete memory">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
                     </div>
+                    {selectedMemoryId === m.id && (
+                      <RelatedMemories memoryKey={m.key} memoryValue={m.value} currentId={m.id} />
+                    )}
                   </div>
                 ))
               )}
@@ -512,6 +523,64 @@ export default function MemoryPage() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   RELATED MEMORIES — keyword-based similarity
+   ═══════════════════════════════════════════════════════ */
+function RelatedMemories({ memoryKey, memoryValue, currentId }: { memoryKey: string; memoryValue: string; currentId: number }) {
+  // Build a search query from the memory's key words
+  const searchTerm = useMemo(() => {
+    const words = memoryKey.split(/[\s\-_]+/).filter(w => w.length > 2).slice(0, 3);
+    return words.join(" ");
+  }, [memoryKey]);
+
+  const { data: related, isLoading } = trpc.memory.search.useQuery(
+    { query: searchTerm, limit: 6 },
+    { enabled: searchTerm.length > 0 }
+  );
+
+  const filtered = useMemo(() => {
+    if (!related) return [];
+    return related.filter((r: any) => r.id !== currentId).slice(0, 4);
+  }, [related, currentId]);
+
+  if (isLoading) {
+    return (
+      <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-primary/20 py-2">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Finding related memories...
+        </div>
+      </div>
+    );
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-muted py-2">
+        <p className="text-[11px] text-muted-foreground">No related memories found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ml-4 mt-1 mb-2 pl-3 border-l-2 border-primary/20 py-2 space-y-1.5">
+      <p className="text-[11px] font-medium text-primary/70 flex items-center gap-1">
+        <Sparkles className="w-3 h-3" />
+        Related Memories ({filtered.length})
+      </p>
+      {filtered.map((r: any) => (
+        <div key={r.id} className="p-2 rounded-md bg-muted/30 border border-border/50">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <Tag className="w-2.5 h-2.5 text-muted-foreground" />
+            <span className="text-xs font-medium text-foreground">{r.key}</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground line-clamp-2">{r.value}</p>
+        </div>
+      ))}
     </div>
   );
 }
