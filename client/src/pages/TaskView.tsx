@@ -1139,6 +1139,10 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { taskId: serverId, type: "document_docx" },
     { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
+  const slidesArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "slides" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
 
   // When serverId transitions from undefined to a value (new task synced to server),
   // force an immediate refetch of all artifact queries
@@ -1154,6 +1158,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
       documentArtifacts.refetch();
       documentPdfArtifacts.refetch();
       documentDocxArtifacts.refetch();
+      slidesArtifacts.refetch();
     }
   }, [hasServerId, serverId]);
 
@@ -1170,8 +1175,9 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     for (const d of documentArtifacts.data ?? []) docs.push({ ...d, docType: "markdown" });
     for (const d of documentPdfArtifacts.data ?? []) docs.push({ ...d, docType: "pdf" });
     for (const d of documentDocxArtifacts.data ?? []) docs.push({ ...d, docType: "docx" });
+    for (const d of slidesArtifacts.data ?? []) docs.push({ ...d, docType: "slides" });
     return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [documentArtifacts.data, documentPdfArtifacts.data, documentDocxArtifacts.data]);
+  }, [documentArtifacts.data, documentPdfArtifacts.data, documentDocxArtifacts.data, slidesArtifacts.data]);
 
   // Collect links from messages (URLs in assistant responses)
   const extractedLinks = useMemo(() => {
@@ -1622,7 +1628,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div className="shrink-0 border-b border-border overflow-x-auto">
                   <div className="flex items-center gap-0 px-2 pt-1">
                     {allDocuments.map((doc, i) => {
-                      const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : "📋";
+                      const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : doc.docType === "slides" ? "📊" : "📋";
                       return (
                         <button
                           key={doc.id || i}
@@ -1688,11 +1694,12 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                         </div>
                       </div>
                       {/* Preview content */}
-                      {doc.docType === "pdf" && doc.url ? (
+                      {(doc.docType === "pdf" || doc.docType === "slides") && doc.url ? (
                         <iframe
                           src={doc.url}
                           className="w-full h-full border-0"
-                          title={doc.label || "PDF Preview"}
+                          title={doc.label || (doc.docType === "slides" ? "Slides Preview" : "PDF Preview")}
+                          sandbox="allow-scripts allow-same-origin"
                         />
                       ) : doc.content ? (
                         <div className="p-4 prose prose-sm dark:prose-invert max-w-none">

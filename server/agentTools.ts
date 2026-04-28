@@ -2249,7 +2249,7 @@ show(0);
       success: true,
       result: `Presentation generated: **${args.topic}** (${slides.length} slides, ${style} style)\n\n[\u25B6 Present Slides](${htmlUrl})\n\n${markdown.slice(0, 3000)}`,
       url: htmlUrl,
-      artifactType: "document",
+      artifactType: "slides",
       artifactLabel: `Slides: ${args.topic.slice(0, 60)}`,
     };
   } catch (err: any) {
@@ -2834,6 +2834,7 @@ async function executeCreateWebapp(args: {
       // React + Vite + Tailwind scaffold
       // Find available port dynamically (avoid hardcoded 4200 which may conflict)
       const port = await findWebappPort(4200);
+      let usedFallback = false;
 
       const packageJson = {
         name: projectName,
@@ -2860,20 +2861,83 @@ async function executeCreateWebapp(args: {
       fs.writeFileSync(path.join(projectDir, "src", "main.jsx"), `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\nReactDOM.createRoot(document.getElementById('root')).render(<App />);`);
       fs.writeFileSync(path.join(projectDir, "src", "App.jsx"), `export default function App() {\n  return (\n    <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">\n      <div className="text-center space-y-4">\n        <h1 className="text-4xl font-bold">${projectName}</h1>\n        <p className="text-neutral-400">${args.description}</p>\n      </div>\n    </div>\n  );\n}`);
 
-      // Install deps with error handling
+      // Install deps with error handling + fallback to HTML on total failure
+      let installSuccess = false;
       try {
-        execSync(`cd ${projectDir} && npm install --prefer-offline 2>&1 | tail -5`, { timeout: 90000 });
+        execSync(`cd ${projectDir} && npm install --prefer-offline 2>&1 | tail -5`, { timeout: 60000 });
+        installSuccess = true;
       } catch (installErr: any) {
-        // Try again without --prefer-offline
         console.warn(`[create_webapp] npm install --prefer-offline failed, retrying: ${installErr.message}`);
-        execSync(`cd ${projectDir} && npm install 2>&1 | tail -5`, { timeout: 120000 });
+        try {
+          execSync(`cd ${projectDir} && npm install 2>&1 | tail -5`, { timeout: 90000 });
+          installSuccess = true;
+        } catch (retryErr: any) {
+          console.warn(`[create_webapp] npm install retry also failed: ${retryErr.message}`);
+        }
       }
 
-      // Verify node_modules exists
-      if (!fs.existsSync(path.join(projectDir, "node_modules"))) {
+      // If npm install failed entirely, fall back to HTML template
+      if (!installSuccess || !fs.existsSync(path.join(projectDir, "node_modules"))) {
+        console.warn(`[create_webapp] Falling back to HTML template for "${projectName}"`);
+        usedFallback = true;
+        // Rewrite as plain HTML with inline Tailwind CDN
+        fs.writeFileSync(path.join(projectDir, "index.html"), `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${projectName}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
+  <div id="app" class="text-center space-y-4">
+    <h1 class="text-4xl font-bold">${projectName}</h1>
+    <p class="text-neutral-400">${args.description}</p>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>`);
+        fs.writeFileSync(path.join(projectDir, "styles.css"), `/* Custom styles */`);
+        fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
+
+        const htmlPort = await findWebappPort(4100);
+        try { execSync(`fuser -k ${htmlPort}/tcp 2>/dev/null || true`); } catch {}
+        execSync(`cd ${projectDir} && nohup npx -y serve -l ${htmlPort} -s . > /dev/null 2>&1 &`, { timeout: 15000 });
+        const ready = await waitForPort(htmlPort, 8000);
+
+        activeProjectDir = projectDir;
+        activeProjectPort = htmlPort;
+
+        let projectExternalId: string | undefined;
+        if (context?.userId) {
+          try {
+            const { createWebappProject } = await import("./db");
+            const { nanoid } = await import("nanoid");
+            projectExternalId = nanoid();
+            await createWebappProject({
+              externalId: projectExternalId,
+              userId: context.userId,
+              name: projectName,
+              description: args.description,
+              framework: "static",
+              buildCommand: "",
+              outputDir: ".",
+              installCommand: "",
+              deployStatus: "live",
+            });
+          } catch (dbErr) {
+            console.warn("[create_webapp] Failed to persist project to DB:", dbErr);
+          }
+        }
+
         return {
-          success: false,
-          result: `Failed to install dependencies for "${projectName}". node_modules directory not found after npm install.`,
+          success: true,
+          result: `Created HTML project "${projectName}" (React scaffold failed, using HTML+Tailwind CDN fallback). Dev server ${ready ? "running" : "starting"} on port ${htmlPort}.\n\nFiles created:\n- index.html (with Tailwind CDN)\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
+          url: `/api/webapp-preview/`,
+          artifactType: "webapp_preview",
+          artifactLabel: projectName,
+          projectExternalId,
         };
       }
 
