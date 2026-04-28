@@ -8,6 +8,22 @@ import { Presentation, Plus, Loader2, Eye, Clock, AlertCircle, Sparkles, Downloa
 import { useState } from "react";
 import { toast } from "sonner";
 
+function ExportPdfButton({ deckId, title }: { deckId: number; title: string }) {
+  const exportMutation = trpc.slides.exportPdf.useMutation({
+    onSuccess: (data) => {
+      window.open(data.url, "_blank");
+      toast.success(`Exported ${data.filename} (print to PDF)`);
+    },
+    onError: (err) => { toast.error(`Export failed: ${err.message}`); },
+  });
+  return (
+    <Button size="sm" variant="outline" className="mt-2 w-full gap-1.5" onClick={() => exportMutation.mutate({ id: deckId })} disabled={exportMutation.isPending}>
+      {exportMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+      Export PDF
+    </Button>
+  );
+}
+
 function ExportPptxButton({ deckId, title }: { deckId: number; title: string }) {
   const exportMutation = trpc.slides.exportPptx.useMutation({
     onSuccess: (data) => {
@@ -148,7 +164,10 @@ export default function SlidesPage() {
                     </div>
                   )}
                   {deck.status === "ready" && (
-                    <ExportPptxButton deckId={deck.id} title={deck.title ?? "slides"} />
+                    <>
+                      <ExportPptxButton deckId={deck.id} title={deck.title ?? "slides"} />
+                      <ExportPdfButton deckId={deck.id} title={deck.title ?? "slides"} />
+                    </>
                   )}
                 </CardContent>
               </Card>

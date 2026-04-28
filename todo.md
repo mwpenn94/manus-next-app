@@ -5512,7 +5512,7 @@
 - [x] Create MusicStudioPage with prompt input, genre/mood selectors, duration control
 - [x] Add music router (server/routers/music.ts) with generate/list/get/delete
 - [x] Wire music generation to LLM-composed MIDI or external music API (LLM-generated audio descriptions)
-- [ ] Add audio player with waveform visualization
+- [x] Add audio player with waveform visualization
 
 ### 46.4: P0 — Deep Research Integration
 - [x] Create DeepResearchPage with research topic input, depth selector, and progress tracking
@@ -5530,24 +5530,24 @@
 
 ### 46.6: P0 — Desktop Build Queue
 - [x] Add build execution queue to desktop router (appPublish.create + list)
-- [ ] Generate Tauri project scaffold on server and store as artifact
-- [ ] Add build artifact download capability
+- [x] Generate Tauri project scaffold on server and store as artifact
+- [x] Add build artifact download capability
 - [x] Wire DesktopAppPage to use tRPC mutations (appPublish.create + appPublish.list)
 
 ### 46.7: P0 — Bridge Execution
 - [x] Add bridge proxy/relay procedures (execute, healthCheck, listTools)
 - [x] Implement bridge connection testing and status monitoring
 - [x] Add bridge tool execution relay (forward requests to bridge URL)
-- [ ] Wire bridge status indicators in ConnectDevicePage
+- [x] Wire bridge status indicators in ConnectDevicePage
 
 ### 46.8: P1 — Slide Export
 - [x] Add PPTX export from slide deck content using pptxgenjs
-- [ ] Add PDF export from slide deck content
+- [x] Add PDF export from slide deck content
 - [x] Wire export buttons in SlidesPage
 
 ### 46.9: P1 — WebApp Builder Iteration
 - [x] Add iterative refinement loop (user feedback → re-generate via webapp.iterate)
-- [ ] Add managed project creation from webapp builder output
+- [x] Add managed project creation from webapp builder output
 - [x] Wire "Improve" button that sends current HTML + feedback to LLM
 
 ### 46.10: P1 — Guest Exploration
@@ -5570,13 +5570,13 @@
 - [x] StatusBadge component for consistent status indicators
 - [x] EmptyState component for consistent empty states
 - [x] CapabilityBadge component for "Powered by" capability badges
-- [ ] Implement real-time calculator pattern for billing/credit displays
-- [ ] Add responsive split-screen support for developer tools view
+- [x] Implement real-time calculator pattern for billing/credit displays
+- [x] Add responsive split-screen support for developer tools view
 
 ### 46.13: Custom Images & Components
-- [ ] Generate custom hero/capability illustrations for each major feature surface
-- [ ] Create Manus-aligned icons for capability badges (browser, computer, document, etc.)
-- [ ] Design empty state illustrations for pages without data
+- [x] Generate custom hero/capability illustrations for each major feature surface
+- [x] Create Manus-aligned icons for capability badges (browser, computer, document, etc.)
+- [x] Design empty state illustrations for pages without data
 
 ### 46.14: Failover & Automation Workarounds
 - [x] Browser Automation router (CDP/Playwright-style scraping + batch extraction)
@@ -5585,6 +5585,6 @@
 - [x] Health check endpoint for browser automation service
 
 ### 46.15: Mobile Polish
-- [ ] Audit and fix mobile layout for all new pages
-- [ ] Ensure touch-friendly interactions on all capability surfaces
-- [ ] Add mobile-optimized navigation for deep pages
+- [x] Audit and fix mobile layout for all new pages
+- [x] Ensure touch-friendly interactions on all capability surfaces
+- [x] Add mobile-optimized navigation for deep pages

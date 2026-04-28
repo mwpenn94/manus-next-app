@@ -11,6 +11,7 @@ import { useLocation } from "wouter";
 import {
   Home, ListTodo, CreditCard, MoreHorizontal, X, Search,
   Brain, FolderOpen, Clock, BookOpen, Settings, BarChart3, Globe, Plug, Github,
+  FileText, Presentation, Music, FlaskConical, Monitor, Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -37,6 +38,13 @@ const MORE_ITEMS: NavItem[] = [
   { path: "/schedule", label: "Schedules", icon: Clock },
   { path: "/connectors", label: "Connectors", icon: Plug },
   { path: "/browser", label: "Browser", icon: Globe },
+  { path: "/documents", label: "Documents", icon: FileText },
+  { path: "/slides", label: "Slides", icon: Presentation },
+  { path: "/music", label: "Music", icon: Music },
+  { path: "/research", label: "Research", icon: Search },
+  { path: "/data-analysis", label: "Analysis", icon: FlaskConical },
+  { path: "/desktop", label: "Desktop", icon: Monitor },
+  { path: "/webapp", label: "Web App", icon: Wand2 },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 

@@ -43,6 +43,7 @@ import { researchRouter } from "./routers/research";
 import { dataAnalysisRouter } from "./routers/dataAnalysis";
 import { musicRouter } from "./routers/music";
 import { videoWorkerRouter } from "./routers/videoWorker";
+import { illustrationsRouter } from "./routers/illustrations";
 import { webappRouter } from "./routers/webapp";
 import { feedbackRouter } from "./routers/feedback";
 import { orchestrationRouter } from "./routers/orchestration";
@@ -111,6 +112,7 @@ export const appRouter = router({
   dataAnalysis: dataAnalysisRouter,
   music: musicRouter,
   videoWorker: videoWorkerRouter,
+  illustrations: illustrationsRouter,
 });
 
 export type AppRouter = typeof appRouter;

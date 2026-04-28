@@ -8,6 +8,7 @@ import {
   updateBuildStatus,
   updateBuildStoreMetadata,
  } from "../db";
+import { storagePut } from "../storage";
 
 export const appPublishRouter = router({
     builds: protectedProcedure
@@ -71,6 +72,29 @@ export const appPublishRouter = router({
         const { buildId, ...metadata } = input;
         await updateBuildStoreMetadata(buildId, metadata);
         return { success: true };
+      }),
+    /** Generate Tauri project scaffold and store as artifact */
+    generateTauriScaffold: protectedProcedure
+      .input(z.object({ appName: z.string().min(1).max(100), bundleId: z.string().min(1).max(200), version: z.string().default("1.0.0"), windowTitle: z.string().optional(), width: z.number().default(1024), height: z.number().default(768) }))
+      .mutation(async ({ ctx, input }) => {
+        const tauriConf = { build: { distDir: "../dist", devPath: "http://localhost:3000", beforeDevCommand: "pnpm dev", beforeBuildCommand: "pnpm build" }, package: { productName: input.appName, version: input.version }, tauri: { bundle: { active: true, identifier: input.bundleId, icon: ["icons/32x32.png", "icons/128x128.png", "icons/icon.icns", "icons/icon.ico"], targets: "all" }, security: { csp: null }, windows: [{ title: input.windowTitle || input.appName, width: input.width, height: input.height, resizable: true, fullscreen: false }] } };
+        const cargoToml = `[package]\nname = "${input.appName.toLowerCase().replace(/[^a-z0-9]/g, "-")}"\nversion = "${input.version}"\nedition = "2021"\n\n[build-dependencies]\ntauri-build = { version = "1", features = [] }\n\n[dependencies]\ntauri = { version = "1", features = ["shell-open"] }\nserde = { version = "1", features = ["derive"] }\nserde_json = "1"\n`;
+        const mainRs = `#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]\n\nfn main() {\n    tauri::Builder::default()\n        .run(tauri::generate_context!())\n        .expect("error while running tauri application");\n}\n`;
+        const buildRs = `fn main() {\n    tauri_build::build()\n}\n`;
+        const scaffold = { "src-tauri/tauri.conf.json": JSON.stringify(tauriConf, null, 2), "src-tauri/Cargo.toml": cargoToml, "src-tauri/src/main.rs": mainRs, "src-tauri/build.rs": buildRs };
+        const buffer = Buffer.from(JSON.stringify(scaffold, null, 2), "utf-8");
+        const suffix = Math.random().toString(36).slice(2, 8);
+        const { url } = await storagePut(`desktop/${ctx.user.id}/${Date.now()}-tauri-scaffold-${suffix}.json`, buffer, "application/json");
+        return { url, files: Object.keys(scaffold), appName: input.appName };
+      }),
+    /** Download a build artifact */
+    getArtifactUrl: protectedProcedure
+      .input(z.object({ buildId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const builds = await getUserBuilds(ctx.user.id);
+        const build = builds.find((b) => b.id === input.buildId);
+        if (!build) return { url: null, filename: null };
+        return { url: build.artifactUrl ?? null, filename: build.artifactUrl ? `${build.platform}-build-${build.version || "1.0.0"}.zip` : null };
       }),
     /** Generate GitHub Actions workflow for automated builds */
     generateGitHubWorkflow: protectedProcedure

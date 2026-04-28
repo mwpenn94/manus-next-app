@@ -53,6 +53,20 @@ export const slidesRouter = router({
         })();
         return { id: deckId, title };
       }),
+    /** Export slide deck as printable HTML (open in browser → Print to PDF) */
+    exportPdf: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const deck = await getSlideDeck(input.id);
+        if (!deck || deck.userId !== ctx.user.id) throw new Error("Deck not found");
+        const slides = (deck.slides as Array<{ title: string; content: string; notes?: string }>) || [];
+        const slideHtml = slides.map((s, i) => `<div style="page-break-after:always;padding:60px;min-height:700px;border:1px solid #e5e7eb;margin-bottom:20px;background:white;border-radius:8px;"><div style="font-size:10px;color:#9ca3af;margin-bottom:40px;">Slide ${i + 1} of ${slides.length}</div><h2 style="font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:24px;">${s.title || ""}</h2><div style="font-size:16px;color:#374151;line-height:1.8;white-space:pre-wrap;">${(s.content || "").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</div>${s.notes ? `<div style="margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;font-style:italic;">Notes: ${s.notes}</div>` : ""}</div>`).join("\n");
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${deck.title || "Presentation"}</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9fafb;padding:40px;margin:0;}@media print{body{padding:0;background:white;}div{page-break-inside:avoid;}}</style></head><body><h1 style="text-align:center;font-size:32px;margin-bottom:40px;color:#111827;">${deck.title || "Presentation"}</h1>${slideHtml}</body></html>`;
+        const buffer = Buffer.from(html, "utf-8");
+        const filename = `${(deck.title || "slides").replace(/[^a-zA-Z0-9]/g, "_")}_slides.html`;
+        const { url } = await storagePut(`slides/${ctx.user.id}/${Date.now()}-${filename}`, buffer, "text/html");
+        return { url, filename };
+      }),
     /** Export a slide deck as PPTX */
     exportPptx: protectedProcedure
       .input(z.object({ id: z.number() }))
