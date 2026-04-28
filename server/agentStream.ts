@@ -849,6 +849,7 @@ When performing recursive optimization passes, use the report_convergence tool t
     let usedReadWebpage = false;
     let nudgedForDeepResearch = false;
     let continuationRounds = 0; // Track consecutive auto-continuation rounds (Manus parity)
+    let appBuildingContinuations = 0; // Track how many times we've nudged the agent to continue building
 
     // ── Token usage tracking (Session 23: Context Window Indicator) ──
     let cumulativePromptTokens = 0;
@@ -1499,14 +1500,39 @@ If the user hasn't specified content details, ASK them what content they want. D
 
         // APP-BUILDING PIPELINE CONTINUATION: If the agent used create_webapp but hasn't
         // deployed yet, force continuation so the full create→build→deploy pipeline completes.
+        // Use escalating prompts with a hard limit to prevent infinite building loops.
         if (isAppBuildingPipeline && turn < maxTurns - 2) {
-          console.log(`[Agent] App-building pipeline: ${completedToolCalls} tool calls completed, deploy not yet called — forcing continuation`);
-          conversation.push({ role: "assistant", content: textContent || "" });
-          conversation.push({
-            role: "user",
-            content: `You have scaffolded the webapp but NOT deployed it yet. Continue building out the app's pages, components, and styles using create_file and edit_file. When the app is complete and working, call deploy_webapp to deploy it to a public URL. Do NOT stop until the app is deployed.`,
-          });
-          continue;
+          appBuildingContinuations++;
+          const MAX_APP_BUILD_CONTINUATIONS = 5;
+          
+          if (appBuildingContinuations >= MAX_APP_BUILD_CONTINUATIONS) {
+            // Hard limit reached — force deploy NOW
+            console.log(`[Agent] App-building pipeline: HARD LIMIT reached (${appBuildingContinuations} continuations). Forcing deploy.`);
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `STOP BUILDING FILES IMMEDIATELY. You have been building for ${appBuildingContinuations} rounds. The app has enough files to work. Call deploy_webapp RIGHT NOW to deploy what you have. This is your FINAL instruction — deploy_webapp is the ONLY tool you should call next. Do not create or edit any more files.`,
+            });
+            continue;
+          } else if (appBuildingContinuations >= 3) {
+            // Escalated prompt — strongly push toward deploy
+            console.log(`[Agent] App-building pipeline: ${appBuildingContinuations}/${MAX_APP_BUILD_CONTINUATIONS} continuations, escalating to deploy`);
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `You have created enough files for the app. It is time to DEPLOY. Call deploy_webapp now to make the app available at a public URL. Do not add more features or files — deploy what you have. The user is waiting for a working deployed app.`,
+            });
+            continue;
+          } else {
+            // Early continuations — gentle nudge
+            console.log(`[Agent] App-building pipeline: ${appBuildingContinuations}/${MAX_APP_BUILD_CONTINUATIONS} continuations, deploy not yet called`);
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `Good progress on the webapp. Finish the essential files and then call deploy_webapp to deploy it to a public URL. Keep it simple — the user wants a working app, not a perfect one.`,
+            });
+            continue;
+          }
         }
 
         // Auto-continue if: user wants continuous work AND capability groups remain undemonstrated
@@ -1722,6 +1748,41 @@ If the user hasn't specified content details, ASK them what content they want. D
           tool_call_id: toolCall.id,
           name: toolName,
         });
+      }
+
+      // APP-BUILDING DEPLOY NUDGE: After executing tool calls, check if we're in an app-building
+      // pipeline with too many file operations. If so, inject a deploy nudge before the next LLM call.
+      {
+        const appBuildToolCount = conversation.filter(m =>
+          (m as any).tool_calls?.some((tc: any) =>
+            ["create_file", "edit_file", "read_file", "install_deps", "run_command"].includes(tc.function?.name)
+          )
+        ).length;
+        const hasCreatedWebapp = conversation.some(m =>
+          (m as any).tool_calls?.some((tc: any) => tc.function?.name === "create_webapp")
+        );
+        const hasDeployedWebapp = conversation.some(m =>
+          (m as any).tool_calls?.some((tc: any) => tc.function?.name === "deploy_webapp")
+        );
+        
+        if (hasCreatedWebapp && !hasDeployedWebapp) {
+          const SOFT_LIMIT = 6;  // After 6 file operations, start nudging
+          const HARD_LIMIT = 12; // After 12 file operations, demand deploy
+          
+          if (appBuildToolCount >= HARD_LIMIT) {
+            console.log(`[Agent] App-building: HARD LIMIT (${appBuildToolCount} file ops). Injecting mandatory deploy prompt.`);
+            conversation.push({
+              role: "user",
+              content: `CRITICAL: You have created/edited ${appBuildToolCount} files. STOP creating files NOW. The app is complete enough. Your ONLY next action must be to call deploy_webapp to deploy the app. Do NOT create, edit, or read any more files. Call deploy_webapp immediately.`,
+            });
+          } else if (appBuildToolCount >= SOFT_LIMIT) {
+            console.log(`[Agent] App-building: soft limit (${appBuildToolCount} file ops). Nudging toward deploy.`);
+            conversation.push({
+              role: "user",
+              content: `You've created ${appBuildToolCount} files. The app should be functional now. Wrap up any final essential changes and call deploy_webapp to deploy it. The user is waiting for a working deployed app.`,
+            });
+          }
+        }
       }
 
       // If finish_reason is "stop" and no pending tool calls, the LLM is done
