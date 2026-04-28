@@ -435,6 +435,7 @@ function DiagramPanel({
   const [mermaidCode, setMermaidCode] = useState(
     "graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action 1]\n    B -->|No| D[Action 2]\n    C --> E[End]\n    D --> E"
   );
+  const [previewHtml, setPreviewHtml] = useState("");
   const mutation = trpc.document.generateDiagram.useMutation({
     onSuccess: (data) => {
       onGenerated(data.url, data.filename);
@@ -445,6 +446,12 @@ function DiagramPanel({
     },
   });
 
+  // Generate live preview HTML
+  const updatePreview = () => {
+    const html = `<!DOCTYPE html><html><head><script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"><\/script><style>body{margin:0;padding:16px;background:#1a1a2e;display:flex;justify-content:center;align-items:center;min-height:100vh}.mermaid{color:#e0e0e0}</style></head><body><div class="mermaid">${mermaidCode.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div><script>mermaid.initialize({startOnLoad:true,theme:'dark'})<\/script></body></html>`;
+    setPreviewHtml(html);
+  };
+
   return (
     <div className="space-y-4">
       <Input
@@ -452,13 +459,44 @@ function DiagramPanel({
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Diagram title"
       />
-      <Textarea
-        value={mermaidCode}
-        onChange={(e) => setMermaidCode(e.target.value)}
-        placeholder="Enter Mermaid diagram code..."
-        rows={8}
-        className="resize-none font-mono text-sm"
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Mermaid Code</p>
+          <Textarea
+            value={mermaidCode}
+            onChange={(e) => setMermaidCode(e.target.value)}
+            placeholder="Enter Mermaid diagram code..."
+            rows={10}
+            className="resize-none font-mono text-sm"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={updatePreview}
+            className="mt-2 gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Preview
+          </Button>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Live Preview</p>
+          {previewHtml ? (
+            <div className="border border-border rounded-lg overflow-hidden" style={{ height: "260px" }}>
+              <iframe
+                srcDoc={previewHtml}
+                className="w-full h-full"
+                sandbox="allow-scripts"
+                title="Diagram Preview"
+              />
+            </div>
+          ) : (
+            <div className="border border-border rounded-lg flex items-center justify-center text-muted-foreground text-sm" style={{ height: "260px" }}>
+              Click Preview to render diagram
+            </div>
+          )}
+        </div>
+      </div>
       <Button
         onClick={() => mutation.mutate({ title, mermaidCode })}
         disabled={!title.trim() || !mermaidCode.trim() || mutation.isPending}

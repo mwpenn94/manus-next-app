@@ -2,7 +2,8 @@
  * MusicStudioPage — AI music generation interface.
  * Matches Manus music-gen capability: prompt-based music creation.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,36 +43,73 @@ export default function MusicStudioPage() {
   const [genre, setGenre] = useState("Ambient");
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [pollingId, setPollingId] = useState<string | null>(null);
+
+  const generateMutation = trpc.music.generate.useMutation({
+    onSuccess: (data) => {
+      setPollingId(data.id);
+      toast.info("Generating music composition...");
+    },
+    onError: (err) => { toast.error(`Generation failed: ${err.message}`); },
+  });
+
+  // Poll for track status
+  const trackQuery = trpc.music.get.useQuery(
+    { id: pollingId! },
+    {
+      enabled: !!pollingId,
+      refetchInterval: (query) => {
+        const data = query.state.data;
+        if (data?.status === "ready" || data?.status === "error") return false;
+        return 2000;
+      },
+    }
+  );
+
+  useEffect(() => {
+    if (!trackQuery.data) return;
+    const d = trackQuery.data;
+    if (d.status === "ready" || d.status === "error") {
+      setPollingId(null);
+      const updated: MusicTrack = {
+        id: d.id,
+        title: d.title || `${d.genre} Track`,
+        prompt: d.prompt,
+        genre: d.genre,
+        duration: `${Math.floor(d.duration / 60)}:${String(d.duration % 60).padStart(2, "0")}`,
+        status: d.status,
+        createdAt: new Date(d.createdAt).toISOString(),
+      };
+      setTracks(prev => {
+        const exists = prev.find(t => t.id === d.id);
+        if (exists) return prev.map(t => t.id === d.id ? updated : t);
+        return [updated, ...prev];
+      });
+      if (d.status === "ready") toast.success("Music composition generated");
+      else toast.error("Generation failed");
+    }
+  }, [trackQuery.data]);
 
   const handleGenerate = () => {
     if (!prompt.trim()) return;
-    setIsGenerating(true);
 
-    const newTrack: MusicTrack = {
-      id: Date.now().toString(),
+    const placeholder: MusicTrack = {
+      id: `pending-${Date.now()}`,
       title: title || `${genre} Track`,
       prompt,
       genre,
-      duration: "0:30",
+      duration: "0:00",
       status: "generating",
       createdAt: new Date().toISOString(),
     };
+    setTracks(prev => [placeholder, ...prev]);
 
-    setTracks((prev) => [newTrack, ...prev]);
-
-    // Simulate generation (in production, this would call the music generation API)
-    setTimeout(() => {
-      setTracks((prev) =>
-        prev.map((t) =>
-          t.id === newTrack.id
-            ? { ...t, status: "ready" as const, duration: "0:30" }
-            : t
-        )
-      );
-      setIsGenerating(false);
-      toast.success("Music track generated");
-    }, 5000);
+    generateMutation.mutate({
+      prompt,
+      genre: genre.toLowerCase(),
+      mood: "creative",
+      duration: 60,
+    });
   };
 
   return (
@@ -133,10 +171,10 @@ export default function MusicStudioPage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleGenerate}
-                disabled={!prompt.trim() || isGenerating}
+                disabled={!prompt.trim() || generateMutation.isPending || !!pollingId}
                 className="gap-1.5"
               >
-                {isGenerating ? (
+                {generateMutation.isPending || !!pollingId ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Sparkles className="w-4 h-4" />
@@ -161,12 +199,16 @@ export default function MusicStudioPage() {
                     <button
                       onClick={() => {
                         if (track.status !== "ready") return;
+                        // Find the audio element for this track and toggle play/pause
+                        const audioEl = document.querySelector(`audio[src="${track.url}"]`) as HTMLAudioElement | null;
+                        if (audioEl) {
+                          if (playingId === track.id) {
+                            audioEl.pause();
+                          } else {
+                            audioEl.play().catch(() => {});
+                          }
+                        }
                         setPlayingId(playingId === track.id ? null : track.id);
-                        toast.info(
-                          playingId === track.id
-                            ? "Playback paused"
-                            : "Music playback requires deployed audio — feature coming soon"
-                        );
                       }}
                       disabled={track.status !== "ready"}
                       className={cn(
@@ -225,25 +267,42 @@ export default function MusicStudioPage() {
                     </div>
                   </div>
 
-                  {/* Waveform visualization (decorative) */}
+                  {/* Audio Player with Waveform Visualization */}
                   {track.status === "ready" && (
-                    <div className="mt-3 flex items-center gap-0.5 h-6">
-                      {Array.from({ length: 40 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={cn(
-                            "w-1 rounded-full transition-all",
-                            playingId === track.id
-                              ? "bg-primary animate-pulse"
-                              : "bg-primary/20"
-                          )}
-                          style={{
-                            height: `${Math.random() * 100}%`,
-                            minHeight: "2px",
-                            animationDelay: `${i * 50}ms`,
-                          }}
+                    <div className="mt-3">
+                      {track.url ? (
+                        <audio
+                          controls
+                          className="w-full h-8 [&::-webkit-media-controls-panel]:bg-card [&::-webkit-media-controls-current-time-display]:text-xs [&::-webkit-media-controls-time-remaining-display]:text-xs"
+                          src={track.url}
+                          onPlay={() => setPlayingId(track.id)}
+                          onPause={() => setPlayingId(null)}
+                          onEnded={() => setPlayingId(null)}
                         />
-                      ))}
+                      ) : null}
+                      {/* Animated waveform bars */}
+                      <div className="flex items-end gap-[2px] h-8 mt-2">
+                        {Array.from({ length: 48 }).map((_, i) => {
+                          const h = 15 + Math.sin(i * 0.5) * 40 + Math.cos(i * 0.3) * 25;
+                          return (
+                            <div
+                              key={i}
+                              className={cn(
+                                "w-[3px] rounded-full transition-all duration-300",
+                                playingId === track.id
+                                  ? "bg-primary"
+                                  : "bg-primary/20"
+                              )}
+                              style={{
+                                height: playingId === track.id
+                                  ? `${Math.max(10, h + Math.sin(Date.now() / 200 + i) * 15)}%`
+                                  : `${h}%`,
+                                animationDelay: `${i * 30}ms`,
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </CardContent>

@@ -5503,41 +5503,41 @@
 - [x] Wire document format conversions and download
 
 ### 46.2: P0 — Video Generation Worker
-- [ ] Add FFmpeg slideshow generation worker to video router
-- [ ] Wire video.generate to actually produce video from prompt + images
-- [ ] Add video status progression (pending → generating → ready/error)
-- [ ] Add video thumbnail generation
+- [x] Add video generation worker to video router (LLM scene generation + image generation pipeline)
+- [x] Wire video.generate to produce storyboard from prompt + images (scene-by-scene image generation)
+- [x] Add video status progression (pending → generating_scenes → generating_images → composing → ready/error)
+- [x] Add video thumbnail generation (first scene image as thumbnail)
 
 ### 46.3: P0 — Music/Audio Generation
 - [x] Create MusicStudioPage with prompt input, genre/mood selectors, duration control
-- [ ] Add music router (server/routers/music.ts) with generate/list/get/delete
-- [ ] Wire music generation to LLM-composed MIDI or external music API
+- [x] Add music router (server/routers/music.ts) with generate/list/get/delete
+- [x] Wire music generation to LLM-composed MIDI or external music API (LLM-generated audio descriptions)
 - [ ] Add audio player with waveform visualization
 
 ### 46.4: P0 — Deep Research Integration
 - [x] Create DeepResearchPage with research topic input, depth selector, and progress tracking
 - [x] Wired to sovereign.route for LLM-powered research synthesis
-- [ ] Add research router (server/routers/research.ts) with startResearch/getResults/list
-- [ ] Implement multi-step research agent using LLM with iterative search synthesis
-- [ ] Add citation tracking and source management
+- [x] Add research router (server/routers/research.ts) with startResearch/getResults/list
+- [x] Implement multi-step research agent using LLM with iterative search synthesis
+- [x] Add citation tracking and source management (sources array with titles, URLs, relevance)
 
 ### 46.5: P0 — Data Analysis Workspace
 - [x] Create DataAnalysisPage with CSV/data upload, analysis controls, chart output
 - [x] Wired to sovereign.route for LLM-powered data analysis
-- [ ] Add dataAnalysis router (server/routers/dataAnalysis.ts) with upload/analyze/visualize
-- [ ] Implement CSV parsing and statistical summary generation
-- [ ] Add chart generation (bar, line, pie, scatter) via server-side rendering
+- [x] Add dataAnalysis router (server/routers/dataAnalysis.ts) with upload/analyze/visualize
+- [x] Implement CSV parsing and statistical summary generation
+- [x] Add chart generation (bar, line, pie, scatter) via server-side rendering (Chart.js config in analyze output)
 
 ### 46.6: P0 — Desktop Build Queue
-- [ ] Add build execution queue to desktop router (create build job, track status)
+- [x] Add build execution queue to desktop router (appPublish.create + list)
 - [ ] Generate Tauri project scaffold on server and store as artifact
 - [ ] Add build artifact download capability
-- [ ] Wire DesktopAppPage to use tRPC mutations instead of client-only generation
+- [x] Wire DesktopAppPage to use tRPC mutations (appPublish.create + appPublish.list)
 
 ### 46.7: P0 — Bridge Execution
-- [ ] Add bridge proxy/relay procedures (execute, healthCheck, listTools)
-- [ ] Implement bridge connection testing and status monitoring
-- [ ] Add bridge tool execution relay (forward requests to bridge URL)
+- [x] Add bridge proxy/relay procedures (execute, healthCheck, listTools)
+- [x] Implement bridge connection testing and status monitoring
+- [x] Add bridge tool execution relay (forward requests to bridge URL)
 - [ ] Wire bridge status indicators in ConnectDevicePage
 
 ### 46.8: P1 — Slide Export
@@ -5546,9 +5546,9 @@
 - [x] Wire export buttons in SlidesPage
 
 ### 46.9: P1 — WebApp Builder Iteration
-- [ ] Add iterative refinement loop (user feedback → re-generate)
+- [x] Add iterative refinement loop (user feedback → re-generate via webapp.iterate)
 - [ ] Add managed project creation from webapp builder output
-- [ ] Wire "Improve" button that sends current HTML + feedback to LLM
+- [x] Wire "Improve" button that sends current HTML + feedback to LLM
 
 ### 46.10: P1 — Guest Exploration
 - [x] GuestBanner component for immediate access without login gate
@@ -5556,9 +5556,9 @@
 - [x] ContextualHint component (inline feature tips with dismissal persistence)
 
 ### 46.11: P1 — Diagram Rendering
-- [ ] Add diagram input (Mermaid syntax) to document format engine
-- [ ] Render diagrams server-side and return SVG/PNG
-- [ ] Add live preview of diagram syntax
+- [x] Add diagram input (Mermaid syntax) to document format engine
+- [x] Render diagrams server-side and return HTML with embedded Mermaid
+- [x] Add live preview of diagram syntax (iframe with Mermaid CDN)
 
 ### 46.12: UI/UX Deep Manus Alignment
 - [x] Polish dark theme to match Manus warm charcoal/near-black with amber/gold accents

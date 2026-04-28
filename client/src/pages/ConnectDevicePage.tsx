@@ -20,6 +20,7 @@ import {
   LogIn, Laptop, Settings, Zap, Shield, ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type DeviceType = "desktop" | "android" | "ios" | "browser_only";
 type ConnectionMethod = "electron_app" | "cloudflare_vnc" | "cdp_browser" | "adb_wireless" | "wda_rest" | "shortcuts_webhook";
@@ -231,6 +232,9 @@ export default function ConnectDevicePage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {device.status === "online" && (
+                          <BridgeHealthButton deviceId={device.id} />
+                        )}
                         {device.status === "pairing" && device.pairingCode && (
                           <Button
                             variant="outline"
@@ -529,4 +533,52 @@ export default function ConnectDevicePage() {
   }
 
   return null;
+}
+
+/** Bridge health check button for online devices */
+function BridgeHealthButton({ deviceId: _deviceId }: { deviceId: number }) {
+  const [checkStatus, setCheckStatus] = useState<"idle" | "checking" | "healthy" | "unhealthy">("idle");
+  const healthCheck = trpc.bridge.healthCheck.useMutation({
+    onSuccess: (data) => {
+      const isHealthy = data.status === "connected";
+      setCheckStatus(isHealthy ? "healthy" : "unhealthy");
+      toast[isHealthy ? "success" : "error"](
+        isHealthy
+          ? `Bridge connected (${data.latencyMs}ms)`
+          : `Bridge ${data.status}${"error" in data && data.error ? `: ${data.error}` : ""}`
+      );
+    },
+    onError: () => {
+      setCheckStatus("unhealthy");
+      toast.error("Failed to reach bridge");
+    },
+  });
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        setCheckStatus("checking");
+        healthCheck.mutate();
+      }}
+      disabled={checkStatus === "checking"}
+      className={cn(
+        "text-xs gap-1",
+        checkStatus === "healthy" && "border-green-500/50 text-green-400",
+        checkStatus === "unhealthy" && "border-destructive/50 text-destructive"
+      )}
+    >
+      {checkStatus === "checking" ? (
+        <Loader2 className="w-3 h-3 animate-spin" />
+      ) : checkStatus === "healthy" ? (
+        <Wifi className="w-3 h-3" />
+      ) : checkStatus === "unhealthy" ? (
+        <WifiOff className="w-3 h-3" />
+      ) : (
+        <Zap className="w-3 h-3" />
+      )}
+      {checkStatus === "idle" ? "Test" : checkStatus === "checking" ? "Checking..." : checkStatus === "healthy" ? "Healthy" : "Unhealthy"}
+    </Button>
+  );
 }

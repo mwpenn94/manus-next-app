@@ -39,6 +39,10 @@ import { pipelineRouter } from "./routers/pipeline";
 import { documentRouter } from "./routers/document";
 import { browserAutomationRouter } from "./routers/browserAutomation";
 import { systemHealthRouter } from "./routers/systemHealth";
+import { researchRouter } from "./routers/research";
+import { dataAnalysisRouter } from "./routers/dataAnalysis";
+import { musicRouter } from "./routers/music";
+import { videoWorkerRouter } from "./routers/videoWorker";
 import { webappRouter } from "./routers/webapp";
 import { feedbackRouter } from "./routers/feedback";
 import { orchestrationRouter } from "./routers/orchestration";
@@ -103,6 +107,10 @@ export const appRouter = router({
   document: documentRouter,
   browserAutomation: browserAutomationRouter,
   systemHealth: systemHealthRouter,
+  research: researchRouter,
+  dataAnalysis: dataAnalysisRouter,
+  music: musicRouter,
+  videoWorker: videoWorkerRouter,
 });
 
 export type AppRouter = typeof appRouter;

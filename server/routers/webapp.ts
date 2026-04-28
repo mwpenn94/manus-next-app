@@ -3,6 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { createWebappBuild, getUserWebappBuilds, getWebappBuild, updateWebappBuild } from "../db";
+import { invokeLLM } from "../_core/llm";
 
 export const webappRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
@@ -33,6 +34,47 @@ export const webappRouter = router({
         const { id, ...updates } = input;
         await updateWebappBuild(id, updates);
         return { success: true };
+      }),
+    /** Iterative refinement: send current HTML + feedback to LLM for improvement */
+    iterate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        feedback: z.string().min(1).max(2000),
+      }))
+      .mutation(async ({ input }) => {
+        const build = await getWebappBuild(input.id);
+        if (!build) throw new TRPCError({ code: "NOT_FOUND" });
+
+        await updateWebappBuild(input.id, { status: "generating" });
+
+        try {
+          const currentHtml = build.generatedHtml || "<html><body><h1>Empty</h1></body></html>";
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: `You are a web developer. The user has an existing HTML page and wants improvements. Return ONLY the complete updated HTML code, nothing else. No markdown fences.`,
+              },
+              {
+                role: "user",
+                content: `Current HTML:\n\n${currentHtml.slice(0, 8000)}\n\nFeedback: ${input.feedback}\n\nReturn the improved complete HTML:`,
+              },
+            ],
+          });
+
+          const newHtml = String(response.choices[0].message.content || "");
+          await updateWebappBuild(input.id, {
+            generatedHtml: newHtml,
+            status: "ready",
+          });
+          return { success: true, html: newHtml };
+        } catch (err) {
+          await updateWebappBuild(input.id, { status: "error" });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: err instanceof Error ? err.message : "Iteration failed",
+          });
+        }
       }),
     publish: protectedProcedure
       .input(z.object({ id: z.number() }))

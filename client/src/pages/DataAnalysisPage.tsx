@@ -38,9 +38,9 @@ export default function DataAnalysisPage() {
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const analyzeMutation = trpc.sovereign.route.useMutation({
+  const analyzeMutation = trpc.dataAnalysis.analyze.useMutation({
     onSuccess: (data) => {
-      setAnalysisResult(data.output || "");
+      setAnalysisResult(data.analysis || "");
       setIsAnalyzing(false);
       toast.success("Analysis complete");
     },
@@ -57,19 +57,25 @@ export default function DataAnalysisPage() {
     }
     setIsAnalyzing(true);
 
-    const modePrompts: Record<AnalysisMode, string> = {
-      explore: `Analyze this dataset and provide:\n1. Data structure overview (columns, types, row count)\n2. Data quality assessment (missing values, outliers, duplicates)\n3. Basic statistics for each column\n4. Initial observations and patterns\n\nData:\n${dataInput}`,
-      visualize: `Suggest and describe the best visualizations for this data. For each visualization:\n1. Chart type and why it's appropriate\n2. What axes/dimensions to use\n3. Key insights the chart would reveal\n4. Provide the data formatted for charting\n\nData:\n${dataInput}`,
-      summarize: `Provide a comprehensive summary of this data:\n1. Executive summary (2-3 sentences)\n2. Key metrics and statistics\n3. Notable trends and patterns\n4. Anomalies or concerns\n5. Actionable recommendations\n\nData:\n${dataInput}`,
-      query: `Answer this question about the data: ${question}\n\nProvide:\n1. Direct answer\n2. Supporting evidence from the data\n3. Confidence level\n4. Caveats or limitations\n\nData:\n${dataInput}`,
+    // Parse the pasted data into headers + rows for the analyze endpoint
+    const lines = dataInput.trim().split("\n").filter(l => l.trim());
+    const delimiter = lines[0]?.includes("\t") ? "\t" : ",";
+    const headers = lines[0]?.split(delimiter).map(h => h.trim()) || [];
+    const allRows = lines.slice(1).map(l => l.split(delimiter).map(c => c.trim()));
+    const sampleRows = allRows.slice(0, 20);
+
+    const modeQuestions: Record<AnalysisMode, string> = {
+      explore: "Analyze this dataset: provide data structure overview, quality assessment, basic statistics, and initial observations.",
+      visualize: "Suggest the best visualizations for this data. For each: chart type, axes, and key insights it would reveal.",
+      summarize: "Provide executive summary, key metrics, notable trends, anomalies, and actionable recommendations.",
+      query: question || "Describe this dataset.",
     };
 
     analyzeMutation.mutate({
-      messages: [
-        { role: "system", content: "You are a data analysis expert. Provide thorough, structured analysis with clear formatting." },
-        { role: "user", content: modePrompts[mode] },
-      ],
-      taskType: "analysis",
+      headers,
+      sampleRows,
+      question: modeQuestions[mode],
+      totalRows: allRows.length,
     });
   };
 

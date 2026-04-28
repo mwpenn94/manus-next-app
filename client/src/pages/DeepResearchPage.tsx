@@ -40,19 +40,52 @@ export default function DeepResearchPage() {
   const [activeResearch, setActiveResearch] = useState<ResearchResult | null>(null);
   const [history, setHistory] = useState<ResearchResult[]>([]);
 
-  const researchMutation = trpc.sovereign.route.useMutation({
-    onSuccess: (data) => {
-      const result: ResearchResult = {
-        id: Date.now().toString(),
-        query,
-        report: data.output || "",
-        sources: [],
-        createdAt: new Date().toISOString(),
-        status: "complete",
-      };
-      setActiveResearch(result);
-      setHistory((prev) => [result, ...prev]);
+  const [pollingId, setPollingId] = useState<string | null>(null);
+
+  // Poll for research results when we have an active research ID
+  const researchQuery = trpc.research.get.useQuery(
+    { id: pollingId! },
+    {
+      enabled: !!pollingId,
+      refetchInterval: (query) => {
+        const data = query.state.data;
+        if (data?.status === "complete" || data?.status === "error") return false;
+        return 3000;
+      },
+    }
+  );
+
+  // Update active research when polling data changes
+  useEffect(() => {
+    if (!researchQuery.data) return;
+    const d = researchQuery.data;
+    const result: ResearchResult = {
+      id: d.id,
+      query: d.topic,
+      report: d.summary || d.sections.map(s => `## ${s.heading}\n\n${s.content}`).join("\n\n"),
+      sources: d.sections.flatMap(s => s.sources),
+      createdAt: new Date(d.startedAt).toISOString(),
+      status: d.status === "complete" ? "complete" : d.status === "error" ? "error" : "running",
+    };
+    setActiveResearch(result);
+    if (d.status === "complete") {
+      setPollingId(null);
+      setHistory(prev => {
+        const exists = prev.find(h => h.id === result.id);
+        if (exists) return prev.map(h => h.id === result.id ? result : h);
+        return [result, ...prev];
+      });
       toast.success("Research complete");
+    } else if (d.status === "error") {
+      setPollingId(null);
+      toast.error("Research failed");
+    }
+  }, [researchQuery.data]);
+
+  const startMutation = trpc.research.start.useMutation({
+    onSuccess: (data) => {
+      setPollingId(data.id);
+      toast.info("Research started — this may take a few minutes");
     },
     onError: (err) => {
       toast.error(`Research failed: ${err.message}`);
@@ -81,12 +114,9 @@ export default function DeepResearchPage() {
         ? "Conduct an exhaustive, multi-source analysis. Include citations, data points, competing perspectives, and a structured report with executive summary, methodology, findings, and recommendations."
         : "Provide a thorough analysis with key findings, supporting evidence, and actionable insights.";
 
-    researchMutation.mutate({
-      messages: [
-        { role: "system", content: depthPrompt },
-        { role: "user", content: query },
-      ],
-      taskType: "research",
+    startMutation.mutate({
+      topic: query,
+      depth,
     });
   };
 
@@ -141,10 +171,10 @@ export default function DeepResearchPage() {
 
                 <Button
                   onClick={handleStartResearch}
-                  disabled={!query.trim() || researchMutation.isPending}
+                  disabled={!query.trim() || startMutation.isPending || !!pollingId}
                   className="gap-1.5"
                 >
-                  {researchMutation.isPending ? (
+                  {startMutation.isPending || !!pollingId ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <Sparkles className="w-4 h-4" />

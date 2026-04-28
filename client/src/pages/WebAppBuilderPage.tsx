@@ -45,7 +45,32 @@ export default function WebAppBuilderPage() {
   const [generatedCode, setGeneratedCode] = useState("");
   const [activeTab, setActiveTab] = useState("builder");
   const [currentBuildId, setCurrentBuildId] = useState<number | null>(null);
+  const [iterateFeedback, setIterateFeedback] = useState("");
+  const [isIterating, setIsIterating] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Iterate mutation
+  const iterateMut = trpc.webapp.iterate.useMutation({
+    onSuccess: (data) => {
+      if (data.html) {
+        setPreviewHtml(data.html);
+        setGeneratedCode(data.html);
+      }
+      setIsIterating(false);
+      setIterateFeedback("");
+      toast.success("App improved successfully!");
+    },
+    onError: (err) => {
+      setIsIterating(false);
+      toast.error(`Iteration failed: ${err.message}`);
+    },
+  });
+
+  const handleIterate = useCallback(() => {
+    if (!currentBuildId || !iterateFeedback.trim()) return;
+    setIsIterating(true);
+    iterateMut.mutate({ id: currentBuildId, feedback: iterateFeedback });
+  }, [currentBuildId, iterateFeedback, iterateMut]);
 
   // Real tRPC queries
   const buildsQuery = trpc.webapp.list.useQuery(undefined, { enabled: !!user });
@@ -407,7 +432,7 @@ Generate the complete HTML code now.`,
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="border border-border rounded-lg overflow-hidden bg-white" style={{ height: "600px" }}>
+                <div className="border border-border rounded-lg overflow-hidden bg-white" style={{ height: "500px" }}>
                   <iframe
                     ref={iframeRef}
                     srcDoc={previewHtml}
@@ -415,6 +440,33 @@ Generate the complete HTML code now.`,
                     sandbox="allow-scripts allow-same-origin"
                     title="App Preview"
                   />
+                </div>
+                {/* Iterate / Improve Section */}
+                <div className="mt-4 border-t border-border pt-4">
+                  <h4 className="text-sm font-medium text-foreground mb-2">Improve This App</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Describe what to change or improve..."
+                      value={iterateFeedback}
+                      onChange={(e) => setIterateFeedback(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey && iterateFeedback.trim() && currentBuildId) {
+                          e.preventDefault();
+                          handleIterate();
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleIterate}
+                      disabled={isIterating || !iterateFeedback.trim() || !currentBuildId}
+                      className="gap-1.5"
+                    >
+                      {isIterating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      Improve
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">Send feedback to regenerate with improvements. Current build #{currentBuildId || "none"}</p>
                 </div>
               </CardContent>
             </Card>

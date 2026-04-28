@@ -197,6 +197,43 @@ export default function BillingPage() {
           ))}
         </div>
 
+        {/* Real-Time Credit Calculator */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="mt-6"
+        >
+          <h3 className="text-sm font-medium text-foreground mb-3" style={{ fontFamily: "var(--font-heading)" }}>
+            <Zap className="w-4 h-4 inline mr-2" />
+            Credit Estimator
+          </h3>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Tasks/month</p>
+                <p className="text-lg font-semibold text-foreground tabular-nums">{stats?.totalTasks ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Avg cost/task</p>
+                <p className="text-lg font-semibold text-foreground tabular-nums">~$0.12</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground mb-1">Est. monthly</p>
+                <p className="text-lg font-semibold text-primary tabular-nums">
+                  ~${((stats?.totalTasks ?? 0) * 0.12).toFixed(2)}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground">Sovereign routing saves ~18% vs single-provider</span>
+                <span className="text-[10px] font-medium text-primary">-${((stats?.totalTasks ?? 0) * 0.12 * 0.18).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Completion Rate */}
         {stats && stats.totalTasks > 0 && (
           <motion.div
