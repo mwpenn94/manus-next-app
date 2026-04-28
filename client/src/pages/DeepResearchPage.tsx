@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import HeroIllustration from "@/components/HeroIllustration";
 
 interface ResearchResult {
   id: string;
@@ -123,18 +124,13 @@ export default function DeepResearchPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1
-            className="text-2xl font-semibold text-foreground mb-1"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Deep Research
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Autonomous multi-source research agent — provide a topic and get a comprehensive, cited report
-          </p>
-        </div>
+        {/* Hero Header */}
+        <HeroIllustration
+          type="hero-research"
+          title="Deep Research"
+          subtitle="Autonomous multi-source research agent — provide a topic and get a comprehensive, cited report"
+          icon={<Search className="w-5 h-5 text-primary" />}
+        />
 
         {/* Research Input */}
         <Card className="mb-6">

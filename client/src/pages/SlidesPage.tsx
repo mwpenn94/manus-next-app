@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Presentation, Plus, Loader2, Eye, Clock, AlertCircle, Sparkles, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import HeroIllustration from "@/components/HeroIllustration";
 
 function ExportPdfButton({ deckId, title }: { deckId: number; title: string }) {
   const exportMutation = trpc.slides.exportPdf.useMutation({
@@ -83,10 +84,14 @@ export default function SlidesPage() {
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <Presentation className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-semibold text-foreground">Slides</h1>
-          <Badge variant="secondary" className="ml-auto">{decks.length} decks</Badge>
+        <HeroIllustration
+          type="hero-slides"
+          title="Slides"
+          subtitle="AI-powered presentation generation — describe your topic and get a complete slide deck"
+          icon={<Presentation className="w-5 h-5 text-primary" />}
+        />
+        <div className="flex items-center justify-end mb-4">
+          <Badge variant="secondary">{decks.length} decks</Badge>
         </div>
 
         <Card className="mb-6">

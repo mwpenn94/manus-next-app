@@ -24,6 +24,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import HeroIllustration from "@/components/HeroIllustration";
 
 type Platform = "windows" | "macos" | "linux";
 
@@ -208,22 +209,22 @@ echo "Installers are in src-tauri/target/release/bundle/"
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-              Desktop App Builder
-            </h1>
-            <p className="text-sm text-muted-foreground">Package your web app as a native desktop application</p>
-          </div>
           {builds.length > 0 && (
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" className="text-[10px] ml-auto">
               {builds.filter((b) => b.status === "completed").length}/{builds.length} builds
             </Badge>
           )}
         </div>
+        <HeroIllustration
+          type="hero-desktop"
+          title="Desktop App Builder"
+          subtitle="Package your web app as a native desktop application"
+          icon={<Monitor className="w-5 h-5 text-primary" />}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">

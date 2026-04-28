@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import HeroIllustration from "@/components/HeroIllustration";
 
 type FormatTab = "ai" | "docx" | "xlsx" | "pdf" | "diagram";
 
@@ -42,18 +43,13 @@ export default function DocumentStudioPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1
-            className="text-2xl font-semibold text-foreground mb-1"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Document Studio
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Generate documents, spreadsheets, presentations, and diagrams
-          </p>
-        </div>
+        {/* Hero Header */}
+        <HeroIllustration
+          type="hero-documents"
+          title="Document Studio"
+          subtitle="Generate documents, spreadsheets, presentations, and diagrams"
+          icon={<FileText className="w-5 h-5 text-primary" />}
+        />
 
         {/* Format Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">

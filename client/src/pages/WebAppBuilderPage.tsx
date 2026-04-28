@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import HeroIllustration from "@/components/HeroIllustration";
 
 type BuildStep = {
   id: string;
@@ -287,19 +288,11 @@ Generate the complete HTML code now.`,
     <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-2 mb-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Go back to home">
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
-              Web App Builder
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Describe your app and let AI build it for you
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={() => navigate("/mobile-projects")}>
               <Smartphone className="w-4 h-4 mr-1.5" />
               Mobile
@@ -310,6 +303,12 @@ Generate the complete HTML code now.`,
             </Button>
           </div>
         </div>
+        <HeroIllustration
+          type="hero-webapp"
+          title="Web App Builder"
+          subtitle="Describe your app and let AI build it for you"
+          icon={<Code className="w-5 h-5 text-primary" />}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>

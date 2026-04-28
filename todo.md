@@ -5588,3 +5588,15 @@
 - [x] Audit and fix mobile layout for all new pages
 - [x] Ensure touch-friendly interactions on all capability surfaces
 - [x] Add mobile-optimized navigation for deep pages
+
+### 47: Wire Illustrations Router into Capability Page Headers
+- [x] Create reusable HeroIllustration component with localStorage caching, generation trigger, and gradient fallback
+- [x] Wire HeroIllustration into DocumentStudioPage header (type: hero-documents)
+- [x] Wire HeroIllustration into DeepResearchPage header (type: hero-research)
+- [x] Wire HeroIllustration into MusicStudioPage header (type: hero-music)
+- [x] Wire HeroIllustration into DataAnalysisPage header (type: hero-data)
+- [x] Wire HeroIllustration into SlidesPage header (type: hero-slides)
+- [x] Wire HeroIllustration into DesktopAppPage header (type: hero-desktop)
+- [x] Wire HeroIllustration into WebAppBuilderPage header (type: hero-webapp)
+- [x] Wire HeroIllustration into BrowserPage header (type: hero-browser)
+- [x] TypeScript clean and tests passing

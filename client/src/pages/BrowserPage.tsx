@@ -43,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import HeroIllustration from "@/components/HeroIllustration";
 
 // ── Types ──
 interface BrowserSessionInfo {
@@ -706,6 +707,16 @@ export default function BrowserPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
+      {/* Hero Header - compact for browser tool */}
+      <div className="shrink-0 px-3 pt-3">
+        <HeroIllustration
+          type="hero-browser"
+          title="Browser"
+          subtitle="Interactive browser automation with live screenshots and session management"
+          icon={<Globe className="w-5 h-5 text-primary" />}
+          className="mb-0 rounded-lg"
+        />
+      </div>
       {/* ── Top Bar: URL + Navigation ── */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card shrink-0">
         {/* Nav buttons */}

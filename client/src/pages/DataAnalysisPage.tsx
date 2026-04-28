@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import HeroIllustration from "@/components/HeroIllustration";
 
 type AnalysisMode = "explore" | "visualize" | "summarize" | "query";
 
@@ -82,18 +83,13 @@ export default function DataAnalysisPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1
-            className="text-2xl font-semibold text-foreground mb-1"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            Data Analysis
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Upload or paste data for AI-powered analysis, visualization, and insights
-          </p>
-        </div>
+        {/* Hero Header */}
+        <HeroIllustration
+          type="hero-data"
+          title="Data Analysis"
+          subtitle="Upload or paste data for AI-powered analysis, visualization, and insights"
+          icon={<BarChart3 className="w-5 h-5 text-primary" />}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Input */}

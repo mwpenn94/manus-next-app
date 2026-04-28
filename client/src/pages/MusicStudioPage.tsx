@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import HeroIllustration from "@/components/HeroIllustration";
 
 interface MusicTrack {
   id: string;
@@ -115,23 +116,14 @@ export default function MusicStudioPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-1">
-            <h1
-              className="text-2xl font-semibold text-foreground"
-              style={{ fontFamily: "var(--font-heading)" }}
-            >
-              Music Studio
-            </h1>
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary uppercase tracking-wider">
-              beta
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Generate original music tracks from text descriptions
-          </p>
-        </div>
+        {/* Hero Header */}
+        <HeroIllustration
+          type="hero-music"
+          title="Music Studio"
+          subtitle="Generate original music tracks from text descriptions"
+          icon={<Music className="w-5 h-5 text-primary" />}
+          badge="beta"
+        />
 
         {/* Generation Form */}
         <Card className="mb-6">
