@@ -291,6 +291,53 @@ async function startServer() {
     }
   });
 
+  // ── Generic Webhook Ingest (event-driven data integration) ──
+  app.post("/api/ingest/:connectorId", express.json({ limit: "1mb" }), async (req, res) => {
+    try {
+      const { connectorId } = req.params;
+      const payload = req.body;
+      const source = req.headers["x-webhook-source"] || "unknown";
+      const timestamp = Date.now();
+
+      // Log the ingest event
+      console.log(`[Ingest] Received webhook for connector ${connectorId} from ${source}`);
+
+      // Validate connector exists
+      const { getDb } = await import("../db");
+      const { connectors, connectorHealthLogs } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) {
+        return res.status(503).json({ error: "Database unavailable" });
+      }
+      const connector = await db.select().from(connectors).where(eq(connectors.id, parseInt(connectorId))).limit(1);
+
+      if (!connector.length) {
+        return res.status(404).json({ error: "Connector not found" });
+      }
+
+      // Log the ingest event in connector health logs
+      // Note: connectorHealthLogs requires userId and has a fixed eventType enum
+      // We use "refresh_success" as the closest match for a webhook ingest event
+      await db.insert(connectorHealthLogs).values({
+        connectorId: connectorId,
+        userId: connector[0].userId,
+        eventType: "refresh_success",
+        details: `Webhook ingest from ${source}: ${JSON.stringify(payload).slice(0, 500)}`,
+      });
+
+      res.json({
+        success: true,
+        connectorId: parseInt(connectorId),
+        receivedAt: new Date(timestamp).toISOString(),
+        payloadSize: JSON.stringify(payload).length,
+      });
+    } catch (err: any) {
+      console.error("[Ingest] Error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Configure body parser with larger size limit for file uploads
   // Skip JSON parsing for /api/upload (binary) and /api/stripe/webhook (raw) to allow raw body reading
   app.use((req, res, next) => {
@@ -1167,6 +1214,21 @@ async function startServer() {
         }
       } catch { /* default to enabled */ }
 
+      // Read aiFocus preference (default: "general")
+      let aiFocus: string = "general";
+      try {
+        if (streamUserId) {
+          const { getUserPreferences: gupFocus } = await import("../db");
+          const focusPrefs = await gupFocus(streamUserId);
+          if (focusPrefs?.generalSettings && typeof focusPrefs.generalSettings === "object") {
+            const gs = focusPrefs.generalSettings as Record<string, unknown>;
+            if (typeof gs.aiFocus === "string" && ["general", "financial", "technical", "creative", "custom"].includes(gs.aiFocus)) {
+              aiFocus = gs.aiFocus;
+            }
+          }
+        }
+      } catch { /* default to general */ }
+
       // Run the agentic stream
       await runAgentStream({
         messages,
@@ -1177,6 +1239,7 @@ async function startServer() {
         safeEnd,
         mode,
         autoTuneStrategies,
+        aiFocus,
         memoryContext,
         // Persist the final assistant response server-side so it survives client disconnects
         onComplete: async (content) => {

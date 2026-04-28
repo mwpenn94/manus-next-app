@@ -524,6 +524,8 @@ export interface AgentStreamOptions {
   onComplete?: (content: string, actions?: Array<{ type: string; label?: string; status: string }>) => void;
   /** Whether to use telemetry-based auto-tuning for stuck recovery strategies (default: true) */
   autoTuneStrategies?: boolean;
+  /** AI Focus domain preference — shapes system prompt emphasis (default: "general") */
+  aiFocus?: string;
 }
 
 function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknown>): boolean {
@@ -594,7 +596,7 @@ async function invokeLLMWithRetry(
  * @returns Promise that resolves when the stream is complete
  */
 export async function runAgentStream(options: AgentStreamOptions): Promise<void> {
-  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, userId, taskExternalId } = options;
+  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, userId, taskExternalId, aiFocus = "general" } = options;
 
   try {
     const { invokeLLM } = await import("./_core/llm");
@@ -622,6 +624,20 @@ export async function runAgentStream(options: AgentStreamOptions): Promise<void>
 
     // Inject or replace system prompt
     let systemPrompt = resolvedSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+
+    // Inject AI Focus domain prefix — shapes how the agent approaches tasks
+    if (aiFocus && aiFocus !== "general") {
+      const FOCUS_PREFIXES: Record<string, string> = {
+        financial: `\n\n## AI FOCUS: FINANCIAL DOMAIN\nYou are operating in Financial focus mode. Prioritize:\n- Quantitative analysis, financial modeling, and data-driven insights\n- Market research, valuation frameworks (DCF, comparables, precedent transactions)\n- Economic indicators, portfolio theory, risk assessment\n- Regulatory awareness (SEC, GAAP/IFRS, compliance frameworks)\n- When researching, prefer financial data sources (SEC filings, Bloomberg, Yahoo Finance, FRED)\n- Frame recommendations with risk/reward tradeoffs and confidence intervals\n- Use execute_code for financial calculations, Monte Carlo simulations, and data visualization`,
+        technical: `\n\n## AI FOCUS: TECHNICAL DOMAIN\nYou are operating in Technical focus mode. Prioritize:\n- System architecture, design patterns, and engineering best practices\n- Code quality, performance optimization, and security considerations\n- Technical documentation with precise terminology\n- When researching, prefer technical sources (GitHub, Stack Overflow, official docs, RFCs)\n- Provide implementation details, code examples, and architecture diagrams\n- Consider scalability, maintainability, and operational concerns\n- Use execute_code for prototyping, benchmarking, and proof-of-concept implementations`,
+        creative: `\n\n## AI FOCUS: CREATIVE DOMAIN\nYou are operating in Creative focus mode. Prioritize:\n- Compelling narratives, engaging prose, and strong voice\n- Visual design thinking, composition, and aesthetic sensibility\n- Media production workflows (image, video, audio, presentation)\n- When researching, seek inspiration from diverse creative sources\n- Use generate_image proactively for visual concepts and illustrations\n- Frame feedback constructively with specific, actionable creative direction\n- Balance originality with clarity — creative work should still communicate effectively`,
+      };
+      const prefix = FOCUS_PREFIXES[aiFocus];
+      if (prefix) {
+        systemPrompt += prefix;
+        console.log(`[Agent] AI Focus domain: ${aiFocus}`);
+      }
+    }
 
     // Inject memory context if available — with strong isolation boundaries
     if (memoryContext) {

@@ -795,6 +795,10 @@ export default function DataPipelinesPage() {
               <Activity className="w-3.5 h-3.5" />
               Monitoring
             </TabsTrigger>
+            <TabsTrigger value="governance" className="gap-1.5">
+              <Shield className="w-3.5 h-3.5" />
+              Governance
+            </TabsTrigger>
           </TabsList>
 
           {/* ─── Pipelines Tab ─── */}
@@ -1186,6 +1190,142 @@ export default function DataPipelinesPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ═══ Governance Tab ═══ */}
+          <TabsContent value="governance" className="space-y-6">
+            {/* Data Lineage Visualization */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Network className="w-4 h-4 text-primary" />
+                  Data Lineage
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Visual trace of data flow from source through transformations to destination
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  {/* Lineage flow diagram */}
+                  <div className="flex items-center gap-0 overflow-x-auto pb-4">
+                    {[
+                      { stage: "Source", items: ["API Endpoints", "File Uploads", "Web Scrapes", "Databases"], icon: Globe, color: "bg-blue-500/10 border-blue-500/30 text-blue-400" },
+                      { stage: "Ingest", items: ["Batch Loader", "Fan-out Splitter", "Scheduled Pull", "Event Listener"], icon: Download, color: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" },
+                      { stage: "Transform", items: ["Clean & Normalize", "Deduplicate", "Enrich (LLM)", "Impute Nulls"], icon: RefreshCw, color: "bg-amber-500/10 border-amber-500/30 text-amber-400" },
+                      { stage: "Model", items: ["Score & Classify", "Aggregate", "Forecast", "Cluster"], icon: BarChart3, color: "bg-purple-500/10 border-purple-500/30 text-purple-400" },
+                      { stage: "Persist", items: ["S3 Storage", "Database Write", "Share Page", "GitHub Export"], icon: HardDrive, color: "bg-rose-500/10 border-rose-500/30 text-rose-400" },
+                    ].map((stage, idx, arr) => (
+                      <div key={stage.stage} className="flex items-center">
+                        <div className={cn("rounded-xl border p-4 min-w-[160px]", stage.color)}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <stage.icon className="w-4 h-4" />
+                            <span className="text-xs font-semibold uppercase tracking-wider">{stage.stage}</span>
+                          </div>
+                          <div className="space-y-1">
+                            {stage.items.map((item) => (
+                              <p key={item} className="text-[10px] text-muted-foreground">{item}</p>
+                            ))}
+                          </div>
+                        </div>
+                        {idx < arr.length - 1 && (
+                          <ArrowRight className="w-5 h-5 text-muted-foreground/40 mx-2 shrink-0" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quality Scoring Rules */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  Quality Scoring Framework
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Automated data quality checks applied at each pipeline stage
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { dimension: "Completeness", weight: 25, description: "Percentage of non-null required fields", threshold: "≥95%" },
+                    { dimension: "Accuracy", weight: 25, description: "Schema validation + type conformance", threshold: "≥98%" },
+                    { dimension: "Freshness", weight: 20, description: "Time since last successful sync", threshold: "<24h" },
+                    { dimension: "Uniqueness", weight: 15, description: "Deduplication ratio after processing", threshold: "≥99%" },
+                    { dimension: "Consistency", weight: 10, description: "Cross-source value agreement", threshold: "≥90%" },
+                    { dimension: "Timeliness", weight: 5, description: "Pipeline execution within SLA", threshold: "<5min" },
+                  ].map((q) => (
+                    <div key={q.dimension} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-xs font-bold text-primary">{q.weight}%</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground">{q.dimension}</p>
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0">{q.threshold}</Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">{q.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Access Control & Retention */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-amber-400" />
+                    Access Tiers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    { tier: "Public", desc: "Open datasets, web scrapes, public APIs", retention: "7 days", color: "text-emerald-400" },
+                    { tier: "Authenticated", desc: "OAuth-connected services, personal data", retention: "14 days", color: "text-blue-400" },
+                    { tier: "Admin", desc: "Secrets, credentials, internal databases", retention: "21 days", color: "text-amber-400" },
+                  ].map((t) => (
+                    <div key={t.tier} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("text-sm font-medium", t.color)}>{t.tier}</span>
+                        <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[9px]">{t.retention}</Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-blue-400" />
+                    Audit Trail
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    { event: "Pipeline created", detail: "Prospect Consolidation", time: "2d ago" },
+                    { event: "Schema validated", detail: "12 fields, 0 violations", time: "2d ago" },
+                    { event: "Quality score", detail: "96.2% composite score", time: "1d ago" },
+                    { event: "Data persisted", detail: "234 records to S3", time: "1d ago" },
+                    { event: "Retention applied", detail: "Tier 1 sandbox, 7-day TTL", time: "1d ago" },
+                  ].map((e, i) => (
+                    <div key={i} className="flex items-center gap-3 text-xs">
+                      <span className="text-muted-foreground/60 w-12 shrink-0">{e.time}</span>
+                      <span className="font-medium text-foreground">{e.event}</span>
+                      <span className="text-muted-foreground truncate">{e.detail}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

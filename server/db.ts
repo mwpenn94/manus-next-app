@@ -2405,6 +2405,14 @@ export async function createRoutingDecision(decision: InsertSovereignRoutingDeci
   await db.insert(sovereignRoutingDecisions).values(decision);
 }
 
+export async function getRecentRoutingDecisions(limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(sovereignRoutingDecisions)
+    .orderBy(desc(sovereignRoutingDecisions.createdAt))
+    .limit(limit);
+}
+
 export async function createUsageLog(log: InsertSovereignUsageLog) {
   const db = await getDb();
   if (!db) return;

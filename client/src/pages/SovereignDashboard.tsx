@@ -413,7 +413,81 @@ function SovereignPanel() {
           )}
         </CardContent>
       </Card>
+      {/* Recent Routing Decisions */}
+      <RoutingDecisionsTable />
     </div>
+  );
+}
+
+/** Recent routing decisions table — shows provider selection transparency */
+function RoutingDecisionsTable() {
+  const decisionsQuery = trpc.sovereign.recentDecisions.useQuery({ limit: 10 }, {
+    refetchInterval: 10000,
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Eye className="w-4 h-4 text-primary" />
+          Recent Routing Decisions
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Transparent log of which provider was selected for each request
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {decisionsQuery.isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : !decisionsQuery.data?.length ? (
+          <div className="text-center py-4 text-sm text-muted-foreground">
+            No routing decisions recorded yet. Send a message to trigger routing.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Provider</th>
+                  <th className="text-left py-2 px-2 text-muted-foreground font-medium text-xs">Task Type</th>
+                  <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs">Strategy</th>
+                  <th className="text-center py-2 px-2 text-muted-foreground font-medium text-xs">Status</th>
+                  <th className="text-right py-2 px-2 text-muted-foreground font-medium text-xs">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {decisionsQuery.data.map((d: any) => (
+                  <tr key={d.id} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+                    <td className="py-2 px-2">
+                      <div className="flex items-center gap-2">
+                        <StatusDot status={d.success ? "healthy" : "down"} />
+                        <span className="font-medium text-foreground text-xs">{d.chosenProvider}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-xs text-muted-foreground">{d.taskType}</td>
+                    <td className="py-2 px-2 text-center">
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0">{d.strategy}</Badge>
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      {d.success ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mx-auto" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5 text-red-400 mx-auto" />
+                      )}
+                    </td>
+                    <td className="py-2 px-2 text-right text-xs text-muted-foreground">
+                      {d.createdAt ? new Date(d.createdAt).toLocaleTimeString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

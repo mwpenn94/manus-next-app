@@ -646,6 +646,8 @@ export default function ConnectorsPage() {
   const { data: installed = [], isLoading } = trpc.connector.list.useQuery(undefined, { enabled: !!user });
   const { data: oauthAvail = {} } = trpc.connector.oauthAvailability.useQuery();
   const { data: tierStatus = {} } = trpc.connector.tieredAuthStatus.useQuery();
+  const { data: healthList = [] } = trpc.connector.getHealth.useQuery(undefined, { enabled: !!user });
+  const healthMap = useMemo(() => new Map(healthList.map((h: any) => [h.connectorId, h])), [healthList]);
 
   const connectMutation = trpc.connector.connect.useMutation({
     onSuccess: () => {
@@ -1003,10 +1005,33 @@ export default function ConnectorsPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-foreground">{c.name}</span>
+                                  {isConnected && (() => {
+                                    const h = healthMap.get(c.id);
+                                    if (!h) return null;
+                                    const statusColor = h.healthStatus === "healthy" ? "bg-emerald-500" : h.healthStatus === "expiring_soon" ? "bg-amber-500" : h.healthStatus === "expired" || h.healthStatus === "refresh_failed" ? "bg-red-500" : "bg-muted-foreground";
+                                    const statusLabel = h.healthStatus === "healthy" ? "Healthy" : h.healthStatus === "expiring_soon" ? "Expiring soon" : h.healthStatus === "expired" ? "Token expired" : h.healthStatus === "refresh_failed" ? "Refresh failed" : h.healthStatus;
+                                    return (
+                                      <span className="flex items-center gap-1" title={statusLabel}>
+                                        <span className={cn("w-2 h-2 rounded-full", statusColor)} />
+                                      </span>
+                                    );
+                                  })()}
                                   {getTierIndicator(c.id)}
                                   {isConnected && inst && getAuthBadge(inst)}
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate">{c.description}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {isConnected && (() => {
+                                    const h = healthMap.get(c.id);
+                                    if (h?.lastSyncAt) {
+                                      const ago = Date.now() - new Date(h.lastSyncAt).getTime();
+                                      const mins = Math.floor(ago / 60000);
+                                      const syncText = mins < 1 ? "just now" : mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.floor(mins/60)}h ago` : `${Math.floor(mins/1440)}d ago`;
+                                      return `Last sync: ${syncText} · `;
+                                    }
+                                    return "";
+                                  })()}
+                                  {c.description}
+                                </p>
                               </div>
 
                               {/* Toggle / Connect */}

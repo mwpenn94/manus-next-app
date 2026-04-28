@@ -613,7 +613,7 @@ describe("Pass 37e: GitHub Assess Tool", () => {
 
     it("connected repos section mentions github_assess", () => {
       const source = fs.readFileSync("server/agentStream.ts", "utf-8");
-      expect(source).toContain("ASSESS/REVIEW/AUDIT code quality");
+      expect(source).toContain("ASSESS, REVIEW, AUDIT");
       expect(source).toContain("github_assess");
     });
 

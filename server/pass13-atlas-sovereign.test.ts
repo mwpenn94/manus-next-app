@@ -148,13 +148,14 @@ describe("Sovereign Router", () => {
       expect(appRouter._def.procedures).toHaveProperty("sovereign.providerUsage");
     });
 
-    it("should expose exactly 6 sovereign procedures", () => {
+    it("should expose exactly 7 sovereign procedures", () => {
       const sovereignKeys = Object.keys(appRouter._def.procedures).filter(k => k.startsWith("sovereign."));
-      expect(sovereignKeys).toHaveLength(6);
+      expect(sovereignKeys).toHaveLength(7);
       expect(sovereignKeys.sort()).toEqual([
         "sovereign.circuitStatus",
         "sovereign.providerUsage",
         "sovereign.providers",
+        "sovereign.recentDecisions",
         "sovereign.route",
         "sovereign.seedProviders",
         "sovereign.stats",

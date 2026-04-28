@@ -43,6 +43,7 @@ import {
   Timer,
   SlidersHorizontal,
   Plug,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -105,6 +106,7 @@ interface GeneralSettings {
   ttsVoice: string;
   ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
+  aiFocus: "general" | "financial" | "technical" | "creative" | "custom";
 }
 
 const DEFAULT_GENERAL: GeneralSettings = {
@@ -121,6 +123,7 @@ const DEFAULT_GENERAL: GeneralSettings = {
   ttsVoice: "en-US-AriaNeural",
   ttsLanguage: "en",
   ttsRate: 1.0,
+  aiFocus: "general" as const,
 };
 
 // TTS voices are now loaded dynamically from the server based on selected language
@@ -757,6 +760,51 @@ export default function SettingsPage() {
                   <span className="text-sm font-medium text-foreground w-10 text-center tabular-nums">
                     {(generalSettings.ttsRate ?? 1.0).toFixed(1)}x
                   </span>
+                </div>
+              </div>
+
+              {/* ── AI Focus Domain ── */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-muted-foreground" />
+                  AI Focus Domain
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Set the Sovereign AI's primary expertise area. This shapes how the agent approaches tasks, prioritizes tools, and frames responses.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    { value: "general" as const, label: "General", description: "Balanced across all domains — research, coding, writing, analysis", icon: Sparkles },
+                    { value: "financial" as const, label: "Financial", description: "Markets, valuation, portfolio analysis, economic modeling", icon: BarChart3 },
+                    { value: "technical" as const, label: "Technical", description: "Engineering, architecture, code review, system design", icon: Code },
+                    { value: "creative" as const, label: "Creative", description: "Writing, design, media production, storytelling", icon: Palette },
+                  ] as const).map((focus) => (
+                    <button
+                      key={focus.value}
+                      onClick={() => {
+                        setGeneralSettings((prev) => {
+                          const updated = { ...prev, aiFocus: focus.value };
+                          if (isAuthenticated) {
+                            savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                          }
+                          return updated;
+                        });
+                        toast.success(`AI Focus: ${focus.label}`);
+                      }}
+                      className={cn(
+                        "flex items-start gap-3 p-4 rounded-xl border transition-all text-left",
+                        generalSettings.aiFocus === focus.value
+                          ? "border-primary/50 bg-primary/5"
+                          : "border-border bg-card hover:border-primary/20"
+                      )}
+                    >
+                      <focus.icon className={cn("w-5 h-5 mt-0.5 shrink-0", generalSettings.aiFocus === focus.value ? "text-primary" : "text-muted-foreground")} />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{focus.label}</p>
+                        <p className="text-xs text-muted-foreground">{focus.description}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 

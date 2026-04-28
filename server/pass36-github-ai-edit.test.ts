@@ -448,7 +448,7 @@ describe("Pass 36 — Depth Scan: System prompt integration", () => {
       "/home/ubuntu/manus-next-app/server/agentStream.ts",
       "utf-8"
     );
-    expect(source).toContain("only one, use that one automatically");
+    expect(source).toContain("only one, use it automatically");
     expect(source).toContain("ask which repo");
   });
 });

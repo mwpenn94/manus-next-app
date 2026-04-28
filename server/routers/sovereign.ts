@@ -51,6 +51,13 @@ export const sovereignRouter = router({
       return { success: true };
     }),
 
+  /** Recent routing decisions for transparency */
+  recentDecisions: protectedProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).default(20) }).optional())
+    .query(async ({ input }) => {
+      return db.getRecentRoutingDecisions(input?.limit ?? 20);
+    }),
+
   /** Get usage stats for a specific provider */
   providerUsage: protectedProcedure
     .input(z.object({
