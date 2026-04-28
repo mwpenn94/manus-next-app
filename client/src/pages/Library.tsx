@@ -823,7 +823,7 @@ function ArtifactCard({ artifact, index, onNavigate, onPreview, selectMode, sele
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.02 }}
       className={cn(
-        "group relative bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer",
+        "group relative bg-card border rounded-xl overflow-hidden hover:shadow-sm transition-all cursor-pointer",
         selected ? "border-primary ring-1 ring-primary/20 shadow-primary/10" : "border-border hover:border-primary/30 hover:shadow-primary/5"
       )}
       onClick={handleClick}
@@ -1002,7 +1002,7 @@ function FileCard({ file, index, onPreview, selectMode, selected, onToggleSelect
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.02 }}
       className={cn(
-        "group relative bg-card border rounded-xl overflow-hidden hover:shadow-md transition-all cursor-pointer",
+        "group relative bg-card border rounded-xl overflow-hidden hover:shadow-sm transition-all cursor-pointer",
         selected ? "border-primary ring-1 ring-primary/20 shadow-primary/10" : "border-border hover:border-primary/30 hover:shadow-primary/5"
       )}
       onClick={handleClick}

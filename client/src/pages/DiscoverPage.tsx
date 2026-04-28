@@ -209,7 +209,7 @@ export default function DiscoverPage() {
               transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.3) }}
             >
               <Card
-                className="border-border hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all cursor-pointer group h-full"
+                className="border-border hover:border-primary/30 hover:shadow-sm hover:shadow-primary/5 transition-all cursor-pointer group h-full"
                 onClick={() => handleUseTemplate(template)}
               >
                 <CardContent className="p-4 flex flex-col h-full">

@@ -407,7 +407,7 @@ export default function Home() {
             </div>
           )}
           <div className={cn(
-            "relative bg-card border border-border shadow-lg shadow-black/30 focus-within:border-foreground/20 transition-colors",
+            "relative bg-card border border-border shadow-md shadow-black/20 focus-within:border-foreground/20 transition-colors",
             pendingFiles.length > 0 ? "rounded-2xl" : "rounded-full"
           )}>
             <textarea

@@ -151,7 +151,7 @@ export default function HelpPage() {
                     {shortcut.keys.map((key, j) => (
                       <kbd
                         key={j}
-                        className="px-2 py-0.5 text-xs font-mono bg-background border border-border rounded shadow-sm"
+                        className="px-2 py-0.5 text-xs font-mono bg-background border border-border/60 rounded shadow-sm"
                       >
                         {key}
                       </kbd>
@@ -242,7 +242,7 @@ export default function HelpPage() {
                 filteredFAQ.map((item, i) => (
                   <div
                     key={i}
-                    className="border border-border rounded-lg overflow-hidden"
+                    className="border border-border/60 rounded-lg overflow-hidden"
                   >
                     <button
                       onClick={() => setExpandedFAQ(expandedFAQ === i ? null : i)}
@@ -258,7 +258,7 @@ export default function HelpPage() {
                       )}
                     </button>
                     {expandedFAQ === i && (
-                      <div className="px-4 pb-3 text-sm text-muted-foreground border-t border-border/50 pt-3">
+                      <div className="px-4 pb-3 text-sm text-muted-foreground border-t border-border/60/50 pt-3">
                         {item.answer}
                         <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                           {item.category}

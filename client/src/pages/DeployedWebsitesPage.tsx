@@ -164,7 +164,7 @@ export default function DeployedWebsitesPage() {
                 ) : (
                   <div className="space-y-4">
                     {deployedProjects.map((project: any) => (
-                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border">
+                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border/60">
                         <div className="flex items-center gap-3">
                           <Globe className="w-4 h-4 text-primary" />
                           <div>
@@ -208,7 +208,7 @@ export default function DeployedWebsitesPage() {
                 ) : (
                   <div className="space-y-3">
                     {deployedProjects.map((project: any) => (
-                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border">
+                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border/60">
                         <div className="flex items-center gap-3">
                           <Database className="w-4 h-4 text-primary" />
                           <div>
@@ -242,7 +242,7 @@ export default function DeployedWebsitesPage() {
                 ) : (
                   <div className="space-y-3">
                     {deployedProjects.map((project: any) => (
-                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border">
+                      <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-accent/30 border border-border/60">
                         <div className="flex items-center gap-3">
                           <FolderOpen className="w-4 h-4 text-primary" />
                           <div>
@@ -276,7 +276,7 @@ export default function DeployedWebsitesPage() {
                 ) : (
                   <div className="space-y-3">
                     {deployedProjects.map((project: any) => (
-                      <div key={project.id} className="p-4 rounded-lg bg-accent/30 border border-border">
+                      <div key={project.id} className="p-4 rounded-lg bg-accent/30 border border-border/60">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
                             <Globe className="w-4 h-4 text-primary" />

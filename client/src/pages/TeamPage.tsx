@@ -115,7 +115,7 @@ export default function TeamPage() {
 
         {/* Create / Join */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border/60">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Plus className="w-4 h-4" /> Create Team
@@ -137,7 +137,7 @@ export default function TeamPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border/60">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Share2 className="w-4 h-4" /> Join Team
@@ -166,7 +166,7 @@ export default function TeamPage() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : teams.length === 0 ? (
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border/60">
             <CardContent className="py-12 text-center">
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">No teams yet. Create one or join with an invite code.</p>
@@ -177,7 +177,7 @@ export default function TeamPage() {
             {teams.map((team: any) => (
               <Card
                 key={team.id}
-                className={`cursor-pointer transition-all hover:border-primary/30 bg-card border-border ${selectedTeamId === team.id ? "border-primary ring-1 ring-primary/20" : ""}`}
+                className={`cursor-pointer transition-all hover:border-primary/30 bg-card border-border/60 ${selectedTeamId === team.id ? "border-primary ring-1 ring-primary/20" : ""}`}
                 onClick={() => setSelectedTeamId(team.id)}
               >
                 <CardHeader>
@@ -230,7 +230,7 @@ export default function TeamPage() {
             ) : (
               <div className="space-y-2">
                 {members.map((m: any) => (
-                  <div key={m.userId} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg">
+                  <div key={m.userId} className="flex items-center justify-between p-3 bg-card border border-border/60 rounded-lg">
                     <div className="flex items-center gap-3">
                       {m.role === "owner" ? <Crown className="w-4 h-4 text-yellow-500" /> :
                        m.role === "admin" ? <Shield className="w-4 h-4 text-blue-500" /> :
@@ -256,7 +256,7 @@ export default function TeamPage() {
             )}
 
             {/* Billing */}
-            <Card className="bg-card border-border">
+            <Card className="bg-card border-border/60/60">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <CreditCard className="w-4 h-4" /> Billing
@@ -265,15 +265,15 @@ export default function TeamPage() {
               <CardContent>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{selectedTeam.creditBalance ?? 0}</p>
+                    <p className="text-2xl font-semibold text-foreground">{selectedTeam.creditBalance ?? 0}</p>
                     <p className="text-xs text-muted-foreground">Credits</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{members.length}</p>
+                    <p className="text-2xl font-semibold text-foreground">{members.length}</p>
                     <p className="text-xs text-muted-foreground">Members</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{selectedTeam.maxSeats}</p>
+                    <p className="text-2xl font-semibold text-foreground">{selectedTeam.maxSeats}</p>
                     <p className="text-xs text-muted-foreground">Max Seats</p>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export default function TeamPage() {
             </Card>
 
             {/* Shared Sessions */}
-            <Card className="bg-card border-border">
+            <Card className="bg-card border-border/60/60">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Share2 className="w-4 h-4" /> Shared Sessions ({sessions.length})

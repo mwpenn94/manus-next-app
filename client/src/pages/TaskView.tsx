@@ -521,6 +521,7 @@ function GroupedActionsList({ actions }: { actions: AgentAction[] }) {
 function ActionStep({ action, index, total }: { action: AgentAction; index: number; total: number }) {
   const isActive = action.status === "active";
   const isDone = action.status === "done";
+  const isError = action.status === "error";
   const [previewExpanded, setPreviewExpanded] = useState(false);
 
   return (
@@ -530,12 +531,14 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
       )}
       <div className={cn(
         "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-px relative z-10",
-        isActive ? "bg-primary/20" : isDone ? "bg-muted" : "bg-muted/50"
+        isActive ? "bg-primary/20" : isDone ? "bg-muted" : isError ? "bg-destructive/20" : "bg-muted/50"
       )}>
         {isActive ? (
           <Loader2 className="w-3 h-3 text-primary animate-spin" />
         ) : isDone ? (
           <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+        ) : isError ? (
+          <AlertTriangle className="w-3 h-3 text-destructive" />
         ) : (
           <ActionIcon type={action.type} />
         )}
@@ -660,7 +663,7 @@ function TypingIndicator() {
 
 // ── Message bubble ──
 
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey, onShare }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number; onShare?: () => void }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
   const isUser = message.role === "user";
@@ -683,7 +686,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
         </div>
       )}
 
-      <div className={cn("max-w-[90%] md:max-w-[80%]", isUser ? "ml-auto" : "")}>
+      <div className={cn("max-w-[90%] md:max-w-[80%] overflow-hidden break-words", isUser ? "ml-auto" : "")}>
         {!isUser && (
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -783,6 +786,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           <TaskCompletedCard
             taskId={(message.cardData?.taskId as string) ?? ""}
             onRate={(id, rating) => toast.success(`Rated ${rating} stars`)}
+            onShare={onShare}
           />
         ) : message.cardType === "convergence" ? (
           <ConvergenceIndicator
@@ -3186,7 +3190,7 @@ export default function TaskView() {
             {/* Share */}
             <button
               onClick={handleShareDialog}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors hidden md:flex focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors flex focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none"
               title={shareCopied ? "Copied!" : "Share task"}
               aria-label="Share task"
             >
@@ -3723,6 +3727,7 @@ export default function TaskView() {
               onSaveEdit={() => handleEditAndResend(msg.id, editDraft)}
               onEditDraftChange={(val) => setEditDraft(val)}
               previewRefreshKey={previewRefreshKey}
+              onShare={handleShareDialog}
             />
             </motion.div>
           ))}

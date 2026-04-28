@@ -204,7 +204,7 @@ export default function ProjectsPage() {
                   transition={{ duration: 0.2 }}
                 >
                   <Card
-                    className="group cursor-pointer hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 transition-all"
+                    className="group cursor-pointer hover:border-primary/30 hover:shadow-sm hover:shadow-primary/5 transition-all"
                     onClick={() => navigate(`/project/${project.externalId}`)}
                   >
                     <CardHeader className="pb-3">

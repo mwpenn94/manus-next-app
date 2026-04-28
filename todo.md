@@ -5657,3 +5657,21 @@
 - [x] TypeScript clean (0 errors)
 - [x] All tests passing (35/35)
 - [x] Mobile virtual user test on key flows
+
+## Pass 49 — Convergence: Replay/Share UI, Error States, UI Polish
+- [x] TaskCompletedCard: Add "View Replay" and "Share" buttons
+- [x] MessageBubble: Pass onShare prop through to TaskCompletedCard
+- [x] AgentAction type: Add "error" status to all action type variants
+- [x] ActionStep: Render error status with destructive color + AlertTriangle icon
+- [x] Message bubble: Add overflow-hidden + break-words for mobile rendering
+- [x] Share button: Make visible on mobile (remove hidden md:flex)
+- [x] UI convergence: Reduce font-bold to font-semibold on ProfilePage header
+- [x] UI convergence: Reduce font-bold to font-semibold on WebhooksPage header
+- [x] UI convergence: Reduce font-bold to font-semibold on TeamPage stat cards
+- [x] UI convergence: Reduce font-bold to font-semibold on BillingPage price
+- [x] UI convergence: Soften borders to border-border/60 on ConnectorsPage, MemoryPage, HelpPage, SchedulePage, DeployedWebsitesPage
+- [x] UI convergence: Soften borders to border-border/60 on TeamPage, ProfilePage, WebhooksPage, BillingPage
+- [x] UI convergence: Reduce hover shadows from shadow-md to shadow-sm on ProjectsPage, DiscoverPage, Library
+- [x] UI convergence: Reduce Home page input shadow from shadow-lg to shadow-md
+- [x] TypeScript: 0 errors confirmed
+- [x] Tests: 4549 passed, 55 failed (all pre-existing legacy routing/nav assertions)

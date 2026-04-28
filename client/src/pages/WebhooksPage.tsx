@@ -95,7 +95,7 @@ export default function WebhooksPage() {
   if (!isAuthenticated) {
     return (
       <div className="h-full flex items-center justify-center">
-        <Card className="max-w-sm border-border">
+        <Card className="max-w-sm border-border/60">
           <CardContent className="py-8 text-center">
             <Webhook className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <h2 className="text-lg font-semibold mb-2">Sign in required</h2>
@@ -157,14 +157,14 @@ export default function WebhooksPage() {
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-2xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
             Integrations
           </h1>
           <p className="text-muted-foreground mb-6">Manage webhooks, API keys, and notification rules.</p>
         </motion.div>
 
         <Tabs defaultValue="webhooks" className="space-y-6">
-          <TabsList className="bg-muted/50 border border-border">
+          <TabsList className="bg-muted/50 border border-border/60">
             <TabsTrigger value="webhooks" className="gap-1.5 data-[state=active]:bg-background">
               <Webhook className="w-3.5 h-3.5" /> Webhooks
             </TabsTrigger>
@@ -185,7 +185,7 @@ export default function WebhooksPage() {
               </Button>
             </div>
             {webhooks.map((wh) => (
-              <Card key={wh.id} className="border-border">
+              <Card key={wh.id} className="border-border/60">
                 <CardContent className="py-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -240,7 +240,7 @@ export default function WebhooksPage() {
               </Button>
             </div>
             {apiKeys.map((key) => (
-              <Card key={key.id} className="border-border">
+              <Card key={key.id} className="border-border/60">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -297,7 +297,7 @@ export default function WebhooksPage() {
               </Button>
             </div>
             {rules.map((rule) => (
-              <Card key={rule.id} className="border-border">
+              <Card key={rule.id} className="border-border/60">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div>

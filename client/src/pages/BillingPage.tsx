@@ -209,7 +209,7 @@ export default function BillingPage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: i * 0.05 }}
-              className="bg-card border border-border rounded-xl p-4"
+              className="bg-card border border-border/60 rounded-xl p-4"
             >
               <div className="flex items-center gap-2 mb-2">
                 <stat.icon className={cn("w-4 h-4", stat.color)} />
@@ -233,7 +233,7 @@ export default function BillingPage() {
             <Zap className="w-4 h-4 inline mr-2" />
             Credit Estimator
           </h3>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-card border border-border/60 rounded-xl p-4">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Tasks/month</p>
@@ -250,7 +250,7 @@ export default function BillingPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-border/50">
+            <div className="mt-3 pt-3 border-t border-border/60/50">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground">Sovereign routing saves ~18% vs single-provider</span>
                 <span className="text-[10px] font-medium text-primary">-${((stats?.totalTasks ?? 0) * 0.12 * 0.18).toFixed(2)}</span>
@@ -265,7 +265,7 @@ export default function BillingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3, delay: 0.2 }}
-            className="bg-card border border-border rounded-xl p-5 mt-5"
+            className="bg-card border border-border/60 rounded-xl p-5 mt-5"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -302,11 +302,11 @@ export default function BillingPage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {(productsQuery.data ?? []).map((product: any) => (
-              <div key={product.id} className="bg-card border border-border rounded-xl p-4">
+              <div key={product.id} className="bg-card border border-border/60 rounded-xl p-4">
                 <h4 className="text-sm font-semibold text-foreground">{product.name}</h4>
                 <p className="text-xs text-muted-foreground mt-1 mb-3">{product.description}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-foreground">
+                  <span className="text-lg font-semibold text-foreground">
                     ${product.price}{product.interval ? `/${product.interval === "month" ? "mo" : "yr"}` : ""}
                   </span>
                   <button
@@ -342,21 +342,21 @@ export default function BillingPage() {
             Payment History
           </h3>
           {historyQuery.isLoading ? (
-            <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <div className="bg-card border border-border/60 rounded-xl p-8 text-center">
               <Loader2 className="w-5 h-5 text-muted-foreground animate-spin mx-auto" />
             </div>
           ) : payments.length === 0 ? (
-            <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <div className="bg-card border border-border/60 rounded-xl p-8 text-center">
               <Receipt className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">No payments yet.</p>
               <p className="text-xs text-muted-foreground mt-1">Purchases and subscriptions will appear here.</p>
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card border border-border/60 rounded-xl overflow-hidden">
               {payments.map((payment: any, i: number) => (
                 <div key={payment.id} className={cn(
                   "flex items-center justify-between px-4 py-3",
-                  i < payments.length - 1 && "border-b border-border/50"
+                  i < payments.length - 1 && "border-b border-border/60/50"
                 )}>
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={cn(
@@ -410,15 +410,15 @@ export default function BillingPage() {
             Recent Activity
           </h3>
           {recentTasks.length === 0 ? (
-            <div className="bg-card border border-border rounded-xl p-8 text-center">
+            <div className="bg-card border border-border/60 rounded-xl p-8 text-center">
               <p className="text-sm text-muted-foreground">No tasks yet. Create your first task from the home page.</p>
             </div>
           ) : (
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-card border border-border/60 rounded-xl overflow-hidden">
               {recentTasks.map((task: any, i: number) => (
                 <div key={task.id} className={cn(
                   "flex items-center justify-between px-4 py-3",
-                  i < recentTasks.length - 1 && "border-b border-border/50"
+                  i < recentTasks.length - 1 && "border-b border-border/60/50"
                 )}>
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={cn(

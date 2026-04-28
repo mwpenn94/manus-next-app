@@ -18,25 +18,25 @@ import { useBridge, type BridgeMessage, type BridgeTaskStep, type BridgeTaskComp
 
 // ── Types ──
 export type AgentAction =
-  | { type: "browsing"; url: string; status: "active" | "done"; preview?: string }
-  | { type: "scrolling"; status: "active" | "done"; preview?: string }
-  | { type: "clicking"; element: string; status: "active" | "done"; preview?: string }
-  | { type: "executing"; command: string; status: "active" | "done"; preview?: string }
-  | { type: "creating"; file: string; status: "active" | "done"; preview?: string }
-  | { type: "searching"; query: string; status: "active" | "done"; preview?: string }
-  | { type: "generating"; description: string; status: "active" | "done"; preview?: string }
-  | { type: "thinking"; status: "active" | "done"; preview?: string }
-  | { type: "writing"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "researching"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "building"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "editing"; label?: string; file?: string; status: "active" | "done"; preview?: string }
-  | { type: "reading"; label?: string; file?: string; status: "active" | "done"; preview?: string }
-  | { type: "installing"; label?: string; packages?: string; status: "active" | "done"; preview?: string }
-  | { type: "versioning"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "analyzing"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "designing"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "sending"; label?: string; status: "active" | "done"; preview?: string }
-  | { type: "deploying"; label?: string; status: "active" | "done"; preview?: string };
+  | { type: "browsing"; url: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "scrolling"; status: "active" | "done" | "error"; preview?: string }
+  | { type: "clicking"; element: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "executing"; command: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "creating"; file: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "searching"; query: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "generating"; description: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "thinking"; status: "active" | "done" | "error"; preview?: string }
+  | { type: "writing"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "researching"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "building"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "editing"; label?: string; file?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "reading"; label?: string; file?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "installing"; label?: string; packages?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "versioning"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "analyzing"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "designing"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "sending"; label?: string; status: "active" | "done" | "error"; preview?: string }
+  | { type: "deploying"; label?: string; status: "active" | "done" | "error"; preview?: string };
 
 export type CardType =
   | "browser_auth"

@@ -470,7 +470,7 @@ function ScheduleExecutionHistory({ scheduleId }: { scheduleId: number }) {
 
   if (historyQuery.isLoading) {
     return (
-      <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="mt-3 pt-3 border-t border-border/60 flex items-center gap-2 text-xs text-muted-foreground">
         <Loader2 className="w-3 h-3 animate-spin" />
         Loading execution history...
       </div>
@@ -481,7 +481,7 @@ function ScheduleExecutionHistory({ scheduleId }: { scheduleId: number }) {
 
   if (executions.length === 0) {
     return (
-      <div className="mt-3 pt-3 border-t border-border">
+      <div className="mt-3 pt-3 border-t border-border/60">
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
           <History className="w-3 h-3" />
           No execution history yet
@@ -491,7 +491,7 @@ function ScheduleExecutionHistory({ scheduleId }: { scheduleId: number }) {
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-border space-y-2">
+    <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
       <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
         <History className="w-3 h-3" />
         Execution History ({executions.length})

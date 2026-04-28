@@ -43,7 +43,7 @@ export default function ProfilePage() {
   if (!isAuthenticated) {
     return (
       <div className="h-full flex items-center justify-center">
-        <Card className="max-w-sm border-border">
+        <Card className="max-w-sm border-border/60">
           <CardContent className="py-8 text-center">
             <User className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <h2 className="text-lg font-semibold mb-2">Sign in to view profile</h2>
@@ -69,7 +69,7 @@ export default function ProfilePage() {
     <div className="h-full overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 md:px-6 py-6 md:py-10">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+          <h1 className="text-2xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
             Profile
           </h1>
           <p className="text-muted-foreground mb-8">Manage your account and preferences.</p>
@@ -77,7 +77,7 @@ export default function ProfilePage() {
 
         {/* Avatar & Name */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-          <Card className="border-border mb-6">
+          <Card className="border-border/60 mb-6">
             <CardContent className="py-6">
               <div className="flex items-start gap-5">
                 <div className="relative group">
@@ -161,13 +161,13 @@ export default function ProfilePage() {
 
         {/* Account Details */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
-          <Card className="border-border mb-6">
+          <Card className="border-border/60 mb-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Account</CardTitle>
               <CardDescription className="text-xs">Account details and authentication.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
+              <div className="flex items-center justify-between py-2 border-b border-border/60/50">
                 <div className="flex items-center gap-3">
                   <Shield className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -177,7 +177,7 @@ export default function ProfilePage() {
                 </div>
                 <Badge variant="outline" className="text-xs capitalize">{user?.role || "user"}</Badge>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
+              <div className="flex items-center justify-between py-2 border-b border-border/60/50">
                 <div className="flex items-center gap-3">
                   <Key className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -187,7 +187,7 @@ export default function ProfilePage() {
                 </div>
                 <Badge variant="outline" className="text-xs text-green-500 border-green-500/30">Connected</Badge>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
+              <div className="flex items-center justify-between py-2 border-b border-border/60/50">
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -205,13 +205,13 @@ export default function ProfilePage() {
 
         {/* Preferences */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.18 }}>
-          <Card className="border-border mb-6">
+          <Card className="border-border/60 mb-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Preferences</CardTitle>
               <CardDescription className="text-xs">Language, timezone, and notification settings.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
+              <div className="flex items-center justify-between py-2 border-b border-border/60/50">
                 <div className="flex items-center gap-3">
                   <Globe className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                     <p className="text-xs text-muted-foreground">Display language for the interface</p>
                   </div>
                 </div>
-                <select className="text-xs bg-muted/30 border border-border rounded-md px-2 py-1 text-foreground">
+                <select className="text-xs bg-muted/30 border border-border/60 rounded-md px-2 py-1 text-foreground">
                   <option>English</option>
                   <option>Spanish</option>
                   <option>French</option>
@@ -228,7 +228,7 @@ export default function ProfilePage() {
                   <option>Chinese (Simplified)</option>
                 </select>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
+              <div className="flex items-center justify-between py-2 border-b border-border/60/50">
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -254,7 +254,7 @@ export default function ProfilePage() {
 
         {/* Connected Sessions */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
-          <Card className="border-border mb-6">
+          <Card className="border-border/60 mb-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Active Sessions</CardTitle>
               <CardDescription className="text-xs">Devices where you're currently signed in.</CardDescription>

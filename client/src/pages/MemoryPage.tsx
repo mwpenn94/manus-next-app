@@ -348,14 +348,14 @@ export default function MemoryPage() {
           <>
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search memories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 bg-card border-border" />
+              <Input placeholder="Search memories..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 bg-card border-border/60" />
             </div>
 
             <div className="flex gap-2 mb-6">
               {adding ? (
-                <div className="w-full p-4 rounded-xl bg-card border border-border space-y-3">
-                  <Input placeholder="Key (e.g., 'Preferred programming language')" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="bg-background border-border" autoFocus />
-                  <textarea placeholder="Value (e.g., 'TypeScript — prefers strict mode')" value={newValue} onChange={(e) => setNewValue(e.target.value)} className="w-full resize-none bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px]" />
+                <div className="w-full p-4 rounded-xl bg-card border border-border/60 space-y-3">
+                  <Input placeholder="Key (e.g., 'Preferred programming language')" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="bg-background border-border/60" autoFocus />
+                  <textarea placeholder="Value (e.g., 'TypeScript — prefers strict mode')" value={newValue} onChange={(e) => setNewValue(e.target.value)} className="w-full resize-none bg-background border border-border/60 rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px]" />
                   <div className="flex items-center gap-2">
                     <Button onClick={() => addMemory.mutate({ key: newKey, value: newValue, source: "user" })} disabled={!newKey.trim() || !newValue.trim()} size="sm">Save</Button>
                     <Button variant="outline" size="sm" onClick={() => setAdding(false)}>Cancel</Button>
@@ -375,8 +375,8 @@ export default function MemoryPage() {
             </div>
 
             {showUploadPanel && uploadQueue.length > 0 && (
-              <div className="mb-6 rounded-xl bg-card border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="mb-6 rounded-xl bg-card border border-border/60 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" />
                     <span className="text-sm font-medium text-foreground">File Import</span>
@@ -411,7 +411,7 @@ export default function MemoryPage() {
               {memoriesLoading ? (
                 <div className="space-y-2">
                   {[1,2,3].map(i => (
-                    <div key={i} className="p-3 rounded-lg bg-card border border-border animate-pulse">
+                    <div key={i} className="p-3 rounded-lg bg-card border border-border/60 animate-pulse">
                       <div className="h-4 w-24 bg-muted rounded mb-2" />
                       <div className="h-3 w-full bg-muted rounded mb-1" />
                       <div className="h-3 w-2/3 bg-muted rounded" />
@@ -429,7 +429,7 @@ export default function MemoryPage() {
                   <div key={m.id}>
                     <div
                       className={`group p-3 rounded-lg bg-card border transition-colors cursor-pointer ${
-                        selectedMemoryId === m.id ? "border-primary/40 bg-primary/5" : "border-border hover:border-primary/20"
+                        selectedMemoryId === m.id ? "border-primary/40 bg-primary/5" : "border-border/60 hover:border-primary/20"
                       }`}
                       onClick={() => setSelectedMemoryId(selectedMemoryId === m.id ? null : m.id)}
                     >
@@ -462,7 +462,7 @@ export default function MemoryPage() {
         {activeTab === "archived" && (
           <>
             {filteredArchived.length > 0 && (
-              <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-card border border-border">
+              <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-card border border-border/60">
                 <div className="flex items-center gap-3">
                   <button onClick={selectAllArchived} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors" title={selectedArchived.size === filteredArchived.length ? "Deselect all" : "Select all"}>
                     {selectedArchived.size === filteredArchived.length && filteredArchived.length > 0 ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4" />}
@@ -488,7 +488,7 @@ export default function MemoryPage() {
                 </div>
               ) : (
                 filteredArchived.map((m: any) => (
-                  <div key={m.id} className={`group p-3 rounded-lg border transition-colors ${selectedArchived.has(m.id) ? "bg-primary/5 border-primary/30" : "bg-card border-border hover:border-amber-500/20"}`}>
+                  <div key={m.id} className={`group p-3 rounded-lg border transition-colors ${selectedArchived.has(m.id) ? "bg-primary/5 border-primary/30" : "bg-card border-border/60 hover:border-amber-500/20"}`}>
                     <div className="flex items-start gap-3">
                       <button onClick={() => toggleArchivedSelection(m.id)} className="mt-0.5 p-0.5 rounded text-muted-foreground hover:text-primary transition-colors shrink-0">
                         {selectedArchived.has(m.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4" />}
@@ -575,7 +575,7 @@ function RelatedMemories({ memoryKey, memoryValue, currentId }: { memoryKey: str
         Related Memories ({filtered.length})
       </p>
       {filtered.map((r: any) => (
-        <div key={r.id} className="p-2 rounded-md bg-muted/30 border border-border/50">
+        <div key={r.id} className="p-2 rounded-md bg-muted/30 border border-border/60/50">
           <div className="flex items-center gap-1.5 mb-0.5">
             <Tag className="w-2.5 h-2.5 text-muted-foreground" />
             <span className="text-xs font-medium text-foreground">{r.key}</span>

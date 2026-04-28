@@ -198,7 +198,7 @@ function TieredAuthDialog({
   const verifiedGuidance = getVerifiedPATGuidance();
 
   return (
-    <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-border">
+    <DialogContent className="max-w-lg p-0 overflow-hidden bg-card border-border/60">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
         <DialogHeader>
@@ -263,7 +263,7 @@ function TieredAuthDialog({
                 "rounded-xl border transition-all duration-200",
                 isExpanded
                   ? "border-primary/30 bg-primary/[0.03] shadow-sm"
-                  : "border-border hover:border-primary/20"
+                  : "border-border/60 hover:border-primary/20"
               )}
             >
               {/* Tier Header */}
@@ -369,7 +369,7 @@ function TieredAuthDialog({
                               </div>
                               {/* Show contextual PAT guidance */}
                               {verifiedGuidance && (
-                                <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-1.5">
+                                <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs space-y-1.5">
                                   <p className="font-medium text-foreground flex items-center gap-1.5">
                                     <Key className="w-3.5 h-3.5 text-amber-400" />
                                     Personalized token guide:
@@ -544,7 +544,7 @@ function TieredAuthDialog({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-border flex items-center justify-between">
+      <div className="px-6 py-3 border-t border-border/60 flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
           <Layers className="w-3 h-3" />
           <span>{availableTiers.length} auth {availableTiers.length === 1 ? "method" : "methods"} available</span>
@@ -986,7 +986,7 @@ export default function ConnectorsPage() {
                 ).map(([category, connectors]) => (
                   <div key={category} className="mb-4">
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 mb-2">{category}</h3>
-                    <div className="rounded-xl bg-muted/30 border border-border overflow-hidden">
+                    <div className="rounded-xl bg-muted/30 border border-border/60 overflow-hidden">
                       {connectors.map((c, idx) => {
                         const inst = installedMap.get(c.id);
                         const isConnected = inst?.status === "connected";
@@ -997,7 +997,7 @@ export default function ConnectorsPage() {
                             {idx > 0 && <div className="h-px bg-border mx-4" />}
                             <div className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/30">
                               {/* Icon */}
-                              <div className="w-9 h-9 rounded-lg bg-background/60 border border-border/50 flex items-center justify-center shrink-0">
+                              <div className="w-9 h-9 rounded-lg bg-background/60 border border-border/60/50 flex items-center justify-center shrink-0">
                                 <span className="text-lg">{c.icon}</span>
                               </div>
 
