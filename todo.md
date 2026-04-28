@@ -5700,13 +5700,13 @@
 - [x] Verify contrast ratios meet WCAG AA (4.5:1 for normal text) — 51 tests passing
 
 ### Step 4: Deep Manus Parity (from reference screenshots IMG_7246-7258)
-- [ ] Connectors page: categorized list (Communication, Development, etc.), search bar, Apps/Custom API/Custom MCP tabs
-- [ ] Connectors page: green dot for connected status, "Connect" action in primary color
-- [ ] Sidebar: emoji icons matching Manus (Projects, Library, Skills, Schedule, Connectors, Memory, GitHub, Billing, Discover, Help, Webhooks, Data Controls)
-- [ ] Notifications: popover with "Read all" + X close, amber unread dots, "Resume All" action
-- [ ] Notifications: grouped auto-completed tasks with clock icon, Bug Report section
-- [ ] Settings: horizontal scrollable tab bar with pill-shaped active tab (amber/primary fill)
-- [ ] Settings: tabs include General, Notifications, Secrets, Capabilities
-- [ ] Cloud Browser page: toggle switch for persist login, saved cookies section, Clear All destructive button
-- [ ] Bridge page: form with mono-font inputs, Connect button, Developer Guide + GitHub links
-- [ ] Error page: "Something went wrong" with triangle warning, mono code block detail, Try Again + Reload Page buttons
+- [x] Connectors page: categorized list (Communication, Development, etc.), search bar, Apps/Custom API/Custom MCP tabs — already implemented in ConnectorsPage.tsx
+- [x] Connectors page: green dot for connected status, "Connect" action in primary color — already implemented with health status dots
+- [x] Sidebar: emoji icons matching Manus (Projects 📁, Library 📚, Skills ⚡, Schedule 📅, Connectors 🔌, Memory 🧠, GitHub 🔗, Billing 💳, Discover 🧭, Help ❓, Webhooks 🪝, Data Controls 🛡️) — already in AppLayout AppsGridMenu
+- [x] Notifications: popover with "Read all" + X close, amber unread dots, "Resume All" action — already in NotificationCenter.tsx
+- [x] Notifications: grouped auto-completed tasks with clock icon, Bug Report section — already in NotificationCenter.tsx with stale_completed grouping
+- [x] Settings: horizontal scrollable tab bar with pill-shaped active tab (primary fill) — already in SettingsPage.tsx mobile tab bar
+- [x] Settings: tabs include General, Notifications, Secrets, Capabilities + Account, Connectors, Cloud Browser, Data Controls, Bridge, Feedback
+- [x] Cloud Browser page: toggle switch for persist login, saved cookies section, Clear All destructive button — already in SettingsPage cloud_browser tab
+- [x] Bridge page: form with mono-font inputs, Connect button, Developer Guide + GitHub links — already in SettingsPage bridge tab
+- [x] Error page: "Something went wrong" with triangle warning, mono code block detail, Try Again + Reload Page buttons — already in ErrorBoundary.tsx
