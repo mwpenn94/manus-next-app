@@ -403,19 +403,50 @@ export async function generatePDF(title: string, markdownContent: string): Promi
         }
       }
 
-      // Add page numbers
-      const pageCount = doc.bufferedPageRange().count;
+      // Add page numbers — place footer inside the bottom margin area
+      // Footer Y: 20pt above the very bottom of the page, safely within bounds
+      const FOOTER_Y = A4_HEIGHT - 40;
+      const range = doc.bufferedPageRange();
+      let pageCount = range.count;
+
+      // Detect and remove trailing blank pages:
+      // If the last page has doc.y still at the top margin, it's empty.
+      // We can't truly delete a buffered page in PDFKit, but we can avoid
+      // numbering it and instead just skip it by switching back.
+      // A simpler approach: check if content cursor is still near top of last page.
+      if (pageCount > 1) {
+        doc.switchToPage(pageCount - 1);
+        // If the y position on the last page is at or near the top margin,
+        // the page is effectively blank. We'll treat pageCount - 1 as the real count.
+        if (doc.y <= PAGE_TOP + 5) {
+          pageCount = pageCount - 1;
+        }
+      }
+
       for (let i = 0; i < pageCount; i++) {
         doc.switchToPage(i);
+        // Temporarily set bottom margin to 0 to prevent PDFKit from
+        // triggering auto-pagination when we write in the footer area.
+        // PDFKit checks the target Y against page margins and creates a new
+        // page if the text would land below (pageHeight - bottomMargin).
+        const origBottom = doc.page.margins.bottom;
+        doc.page.margins.bottom = 0;
         doc.save();
         doc.font("Helvetica").fontSize(8).fill("#999999")
           .text(
             `Page ${i + 1} of ${pageCount}`,
             PAGE_LEFT,
-            A4_HEIGHT - PAGE_BOTTOM + 20,
-            { width: PAGE_WIDTH, align: "center" }
+            FOOTER_Y,
+            { width: PAGE_WIDTH, align: "center", lineBreak: false }
           );
         doc.restore();
+        doc.page.margins.bottom = origBottom;
+      }
+
+      // If we detected a blank trailing page, switch to it and leave it
+      // (PDFKit requires ending on the last page)
+      if (range.count > pageCount) {
+        doc.switchToPage(range.count - 1);
       }
 
       doc.end();

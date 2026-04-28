@@ -1466,7 +1466,20 @@ If the user hasn't specified content details, ASK them what content they want. D
         // SCOPE-CREEP DETECTION: If the user asked for a single deliverable and the agent already
         // produced it (via tool call), but the LLM text says "Next, I will..." or "Now I will also...",
         // inject a STOP signal to prevent unrequested outputs.
-        if (!wantsContinuous && completedToolCalls >= 1) {
+        // EXCEPTION: App-building is a multi-step pipeline (create → build files → deploy).
+        // The agent MUST continue after create_webapp to build out files and deploy.
+        const usedAppBuildingTools = conversation.some(m =>
+          (m as any).tool_calls?.some((tc: any) =>
+            ["create_webapp", "create_file", "edit_file", "install_deps", "run_command"].includes(tc.function?.name)
+          )
+        );
+        const hasDeployed = conversation.some(m =>
+          (m as any).tool_calls?.some((tc: any) => tc.function?.name === "deploy_webapp")
+        );
+        // If we're in an app-building pipeline and haven't deployed yet, NEVER trigger scope-creep
+        const isAppBuildingPipeline = usedAppBuildingTools && !hasDeployed;
+
+        if (!wantsContinuous && completedToolCalls >= 1 && !isAppBuildingPipeline) {
           const scopeCreepSignals = /\b(next[,.]?\s+I\s+will|now\s+I\s+will\s+(also|demonstrate|proceed)|I\s+will\s+(also|additionally|furthermore)\s+(generate|create|demonstrate|show|produce|build)|let\s+me\s+(also|additionally)\s+(generate|create|demonstrate)|proceed\s+to\s+(the\s+next|demonstrate|generate))\b/i.test(textContent);
           if (scopeCreepSignals) {
             console.log(`[Agent] SCOPE-CREEP DETECTED: Agent trying to produce unrequested outputs after completing ${completedToolCalls} tool calls. Injecting STOP.`);
@@ -1482,6 +1495,18 @@ If the user hasn't specified content details, ASK them what content they want. D
             }
             break;
           }
+        }
+
+        // APP-BUILDING PIPELINE CONTINUATION: If the agent used create_webapp but hasn't
+        // deployed yet, force continuation so the full create→build→deploy pipeline completes.
+        if (isAppBuildingPipeline && turn < maxTurns - 2) {
+          console.log(`[Agent] App-building pipeline: ${completedToolCalls} tool calls completed, deploy not yet called — forcing continuation`);
+          conversation.push({ role: "assistant", content: textContent || "" });
+          conversation.push({
+            role: "user",
+            content: `You have scaffolded the webapp but NOT deployed it yet. Continue building out the app's pages, components, and styles using create_file and edit_file. When the app is complete and working, call deploy_webapp to deploy it to a public URL. Do NOT stop until the app is deployed.`,
+          });
+          continue;
         }
 
         // Auto-continue if: user wants continuous work AND capability groups remain undemonstrated

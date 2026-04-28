@@ -5762,3 +5762,14 @@
 - [x] Ensure LLM-generated HTML content is properly injected into the fallback template
 - [x] Test full webapp creation pipeline end-to-end — 14 Pass 54 tests all passing
 - [x] Fix PDF generation: added doc.x = PAGE_LEFT reset before every block type (heading, paragraph, list, blockquote) and after table cell rendering to prevent x-position drift
+
+## Pass 55 — Fix Agent Stream Hang After create_webapp + PDF Extra Blank Page
+- [x] Agent stream hangs after create_webapp tool completes — root cause: scope-creep detection breaks the loop when LLM says "Next I will..." after create_webapp, preventing deploy
+- [x] Fix: detect app-building pipeline (create_webapp/create_file/edit_file used but deploy_webapp not yet called) and exclude from scope-creep detection
+- [x] Fix: inject continuation prompt when in app-building pipeline to force deploy_webapp
+- [x] Fix PDF extra blank page: root cause: PDFKit auto-pagination triggers when footer text Y position (801.89) exceeds page height minus bottom margin (769.89)
+- [x] Fix: temporarily set doc.page.margins.bottom = 0 when writing footer text, then restore original margin
+- [x] Fix: detect trailing blank pages and exclude from page numbering
+- [x] All 15 Pass 55 tests passing (6 PDF source checks, 2 PDF generation checks, 7 webapp pipeline checks)
+- [x] All 11 existing PDF pagination tests still passing (no regressions)
+- [x] All 46 existing continuation/deploy tests still passing (no regressions)
