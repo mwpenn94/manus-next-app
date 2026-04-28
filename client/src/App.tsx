@@ -10,6 +10,7 @@ import { lazy, Suspense } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import AppLayout from "./components/AppLayout";
 import OnboardingTooltips from "./components/OnboardingTooltips";
+import { OnboardingTour } from "./components/OnboardingTour";
 import AnimatedRoute from "./components/AnimatedRoute";
 
 // Eagerly loaded
@@ -59,6 +60,10 @@ const QATestingPage = lazy(() => import("./pages/QATestingPage"));
 const SovereignDashboard = lazy(() => import("./pages/SovereignDashboard"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const DataPipelinesPage = lazy(() => import("./pages/DataPipelinesPage"));
+const DocumentStudioPage = lazy(() => import("./pages/DocumentStudioPage"));
+const DeepResearchPage = lazy(() => import("./pages/DeepResearchPage"));
+const MusicStudioPage = lazy(() => import("./pages/MusicStudioPage"));
+const DataAnalysisPage = lazy(() => import("./pages/DataAnalysisPage"));
 
 function PageLoader() {
   return (
@@ -237,6 +242,18 @@ function Router() {
       <Route path="/help">
         <SuspenseRoute><HelpPage /></SuspenseRoute>
       </Route>
+      <Route path="/documents">
+        <SuspenseRoute><DocumentStudioPage /></SuspenseRoute>
+      </Route>
+      <Route path="/deep-research">
+        <SuspenseRoute><DeepResearchPage /></SuspenseRoute>
+      </Route>
+      <Route path="/music">
+        <SuspenseRoute><MusicStudioPage /></SuspenseRoute>
+      </Route>
+      <Route path="/data-analysis">
+        <SuspenseRoute><DataAnalysisPage /></SuspenseRoute>
+      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
@@ -284,6 +301,7 @@ function App() {
               <Router />
             </AppLayout>
             <OnboardingTooltips />
+            <OnboardingTour />
           </TooltipProvider>
           </TaskProvider>
         </BridgeProvider>

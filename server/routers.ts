@@ -36,6 +36,9 @@ import { usageRouter } from "./routers/usage";
 import { videoRouter } from "./routers/video";
 import { voiceRouter } from "./routers/voice";
 import { pipelineRouter } from "./routers/pipeline";
+import { documentRouter } from "./routers/document";
+import { browserAutomationRouter } from "./routers/browserAutomation";
+import { systemHealthRouter } from "./routers/systemHealth";
 import { webappRouter } from "./routers/webapp";
 import { feedbackRouter } from "./routers/feedback";
 import { orchestrationRouter } from "./routers/orchestration";
@@ -97,6 +100,9 @@ export const appRouter = router({
   workspace: workspaceRouter,
   automation: automationRouter,
   pipeline: pipelineRouter,
+  document: documentRouter,
+  browserAutomation: browserAutomationRouter,
+  systemHealth: systemHealthRouter,
 });
 
 export type AppRouter = typeof appRouter;

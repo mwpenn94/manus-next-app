@@ -4,9 +4,31 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Presentation, Plus, Loader2, Eye, Clock, AlertCircle, Sparkles } from "lucide-react";
+import { Presentation, Plus, Loader2, Eye, Clock, AlertCircle, Sparkles, Download } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+function ExportPptxButton({ deckId, title }: { deckId: number; title: string }) {
+  const exportMutation = trpc.slides.exportPptx.useMutation({
+    onSuccess: (data) => {
+      window.open(data.url, "_blank");
+      toast.success(`Exported ${data.filename}`);
+    },
+    onError: (err) => { toast.error(`Export failed: ${err.message}`); },
+  });
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="mt-3 w-full gap-1.5"
+      onClick={() => exportMutation.mutate({ id: deckId })}
+      disabled={exportMutation.isPending}
+    >
+      {exportMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+      Export PPTX
+    </Button>
+  );
+}
 
 export default function SlidesPage() {
   const { user } = useAuth();
@@ -124,6 +146,9 @@ export default function SlidesPage() {
                         <div className="text-xs text-muted-foreground">+{(deck.slides as unknown[]).length - 3} more...</div>
                       )}
                     </div>
+                  )}
+                  {deck.status === "ready" && (
+                    <ExportPptxButton deckId={deck.id} title={deck.title ?? "slides"} />
                   )}
                 </CardContent>
               </Card>

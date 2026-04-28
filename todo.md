@@ -5489,3 +5489,102 @@
 - [x] TypeScript: 0 errors
 - [x] Tests: 40/40 passing (sovereign 27, GDPR 12, auth 1)
 - [x] Zero uncompleted items remaining in todo.md
+
+## Pass 46: Manus Capability Parity+ Audit & Implementation
+
+### 46.1: P0 — Document Format Engine
+- [x] Create DocumentStudioPage with tabs for PDF, DOCX, XLSX, PPTX, Diagrams
+- [x] Add document router (server/routers/document.ts) with generate procedures for all formats
+- [x] Implement PDF generation from markdown/HTML content via server-side rendering
+- [x] Implement DOCX generation using docx npm package
+- [x] Implement XLSX generation using exceljs npm package
+- [x] Implement PPTX generation from slide deck content using pptxgenjs
+- [x] Implement Mermaid diagram rendering to SVG via server-side mermaid-js
+- [x] Wire document format conversions and download
+
+### 46.2: P0 — Video Generation Worker
+- [ ] Add FFmpeg slideshow generation worker to video router
+- [ ] Wire video.generate to actually produce video from prompt + images
+- [ ] Add video status progression (pending → generating → ready/error)
+- [ ] Add video thumbnail generation
+
+### 46.3: P0 — Music/Audio Generation
+- [x] Create MusicStudioPage with prompt input, genre/mood selectors, duration control
+- [ ] Add music router (server/routers/music.ts) with generate/list/get/delete
+- [ ] Wire music generation to LLM-composed MIDI or external music API
+- [ ] Add audio player with waveform visualization
+
+### 46.4: P0 — Deep Research Integration
+- [x] Create DeepResearchPage with research topic input, depth selector, and progress tracking
+- [x] Wired to sovereign.route for LLM-powered research synthesis
+- [ ] Add research router (server/routers/research.ts) with startResearch/getResults/list
+- [ ] Implement multi-step research agent using LLM with iterative search synthesis
+- [ ] Add citation tracking and source management
+
+### 46.5: P0 — Data Analysis Workspace
+- [x] Create DataAnalysisPage with CSV/data upload, analysis controls, chart output
+- [x] Wired to sovereign.route for LLM-powered data analysis
+- [ ] Add dataAnalysis router (server/routers/dataAnalysis.ts) with upload/analyze/visualize
+- [ ] Implement CSV parsing and statistical summary generation
+- [ ] Add chart generation (bar, line, pie, scatter) via server-side rendering
+
+### 46.6: P0 — Desktop Build Queue
+- [ ] Add build execution queue to desktop router (create build job, track status)
+- [ ] Generate Tauri project scaffold on server and store as artifact
+- [ ] Add build artifact download capability
+- [ ] Wire DesktopAppPage to use tRPC mutations instead of client-only generation
+
+### 46.7: P0 — Bridge Execution
+- [ ] Add bridge proxy/relay procedures (execute, healthCheck, listTools)
+- [ ] Implement bridge connection testing and status monitoring
+- [ ] Add bridge tool execution relay (forward requests to bridge URL)
+- [ ] Wire bridge status indicators in ConnectDevicePage
+
+### 46.8: P1 — Slide Export
+- [x] Add PPTX export from slide deck content using pptxgenjs
+- [ ] Add PDF export from slide deck content
+- [x] Wire export buttons in SlidesPage
+
+### 46.9: P1 — WebApp Builder Iteration
+- [ ] Add iterative refinement loop (user feedback → re-generate)
+- [ ] Add managed project creation from webapp builder output
+- [ ] Wire "Improve" button that sends current HTML + feedback to LLM
+
+### 46.10: P1 — Guest Exploration
+- [x] GuestBanner component for immediate access without login gate
+- [x] OnboardingTour component (6-step guided tour for first-time users)
+- [x] ContextualHint component (inline feature tips with dismissal persistence)
+
+### 46.11: P1 — Diagram Rendering
+- [ ] Add diagram input (Mermaid syntax) to document format engine
+- [ ] Render diagrams server-side and return SVG/PNG
+- [ ] Add live preview of diagram syntax
+
+### 46.12: UI/UX Deep Manus Alignment
+- [x] Polish dark theme to match Manus warm charcoal/near-black with amber/gold accents
+- [x] Implement progressive disclosure pattern (ProgressiveDisclosure component)
+- [x] Add slide-out panels (SlidePanel component — right-side overlay)
+- [x] Add contextual hover states for sidebar/list items (CSS utilities)
+- [x] ThinkingIndicator component for real-time AI status
+- [x] InlineWorkspace component for real-time AI action display
+- [x] StatusBadge component for consistent status indicators
+- [x] EmptyState component for consistent empty states
+- [x] CapabilityBadge component for "Powered by" capability badges
+- [ ] Implement real-time calculator pattern for billing/credit displays
+- [ ] Add responsive split-screen support for developer tools view
+
+### 46.13: Custom Images & Components
+- [ ] Generate custom hero/capability illustrations for each major feature surface
+- [ ] Create Manus-aligned icons for capability badges (browser, computer, document, etc.)
+- [ ] Design empty state illustrations for pages without data
+
+### 46.14: Failover & Automation Workarounds
+- [x] Browser Automation router (CDP/Playwright-style scraping + batch extraction)
+- [x] Failover service (retry with exponential backoff, circuit breaker, deduplication)
+- [x] System Health router (circuit breaker states + infrastructure monitoring)
+- [x] Health check endpoint for browser automation service
+
+### 46.15: Mobile Polish
+- [ ] Audit and fix mobile layout for all new pages
+- [ ] Ensure touch-friendly interactions on all capability surfaces
+- [ ] Add mobile-optimized navigation for deep pages

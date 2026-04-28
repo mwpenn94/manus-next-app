@@ -1,6 +1,8 @@
 import { protectedProcedure, router } from "../_core/trpc";
 import { z } from "zod";
 import { createSlideDeck, getSlideDeck, getUserSlideDecks, updateSlideDeck } from "../db";
+import { storagePut } from "../storage";
+import PptxGenJS from "pptxgenjs";
 
 export const slidesRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
@@ -50,5 +52,41 @@ export const slidesRouter = router({
           }
         })();
         return { id: deckId, title };
+      }),
+    /** Export a slide deck as PPTX */
+    exportPptx: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const deck = await getSlideDeck(input.id);
+        if (!deck || deck.userId !== ctx.user.id) {
+          throw new Error("Deck not found");
+        }
+        const slides = (deck.slides as Array<{ title: string; content: string; notes?: string }>) || [];
+        const pptx = new PptxGenJS();
+        pptx.title = deck.title || "Presentation";
+        pptx.author = "Sovereign AI";
+        for (const slide of slides) {
+          const s = pptx.addSlide();
+          s.addText(slide.title || "", {
+            x: 0.5, y: 0.3, w: 9, h: 0.8,
+            fontSize: 28, bold: true, color: "1a1a1a",
+          });
+          s.addText(slide.content || "", {
+            x: 0.5, y: 1.3, w: 9, h: 5,
+            fontSize: 14, color: "333333", valign: "top",
+            paraSpaceAfter: 6,
+          });
+          if (slide.notes) {
+            s.addNotes(slide.notes);
+          }
+        }
+        const buffer = await pptx.write({ outputType: "nodebuffer" }) as Buffer;
+        const filename = `${(deck.title || "slides").replace(/[^a-zA-Z0-9]/g, "_")}.pptx`;
+        const { url } = await storagePut(
+          `slides/${ctx.user.id}/${Date.now()}-${filename}`,
+          buffer,
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        );
+        return { url, filename };
       }),
   });
