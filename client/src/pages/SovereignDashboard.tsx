@@ -426,6 +426,7 @@ function SovereignPanel() {
 function CompareModelsPanel() {
   const [prompt, setPrompt] = useState("");
   const [results, setResults] = useState<any[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const compareMutation = trpc.sovereign.compare.useMutation({
     onSuccess: (data) => {
       setResults(data);
@@ -492,9 +493,30 @@ function CompareModelsPanel() {
                 {r.error ? (
                   <p className="text-xs text-red-400">{r.error}</p>
                 ) : (
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-6">
-                    {r.response}
-                  </p>
+                  <>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-6">
+                      {r.response ?? r.output}
+                    </p>
+                    <div className="mt-2 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant={selectedIdx === i ? "default" : "outline"}
+                        className="text-[10px] h-6 px-2"
+                        onClick={() => {
+                          setSelectedIdx(i);
+                          toast.success(`Preferred: ${r.provider}`);
+                          // Copy response to clipboard for easy use
+                          navigator.clipboard.writeText(r.response ?? r.output ?? "").catch(() => {});
+                        }}
+                      >
+                        {selectedIdx === i ? (
+                          <><CheckCircle2 className="w-3 h-3 mr-1" /> Preferred</>
+                        ) : (
+                          "Select"
+                        )}
+                      </Button>
+                    </div>
+                  </>
                 )}
               </div>
             ))}
