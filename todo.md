@@ -5710,3 +5710,10 @@
 - [x] Cloud Browser page: toggle switch for persist login, saved cookies section, Clear All destructive button — already in SettingsPage cloud_browser tab
 - [x] Bridge page: form with mono-font inputs, Connect button, Developer Guide + GitHub links — already in SettingsPage bridge tab
 - [x] Error page: "Something went wrong" with triangle warning, mono code block detail, Try Again + Reload Page buttons — already in ErrorBoundary.tsx
+
+## Pass 51: Fix PDF Generation + Citation Hyperlinks
+- [x] Fix PDF generation: content truncated on right edge, no multi-page pagination, everything on single page — rewrote with ensureSpace() page-break helper, proper margins, multi-page support
+- [x] Fix PDF generation: proper page breaks, margins, and content wrapping — tables, code blocks, blockquotes all check page boundaries; added "Page X of Y" footers
+- [x] Investigate citation rendering code — LLM outputs plain-text citations (Source: Name) instead of markdown links; Streamdown correctly renders <a> tags but prose CSS needed explicit link styling
+- [x] Fix citation hyperlinks: (1) strengthened system prompt, (2) added explicit CSS link styling in prose-themed, (3) added linkifyCitations post-processor converting plain-text citations to clickable links using source URLs from tool results
+- [x] Write/update tests — 19 citation tests + 11 PDF pagination tests + 18 existing doc gen tests = 48 total, all passing

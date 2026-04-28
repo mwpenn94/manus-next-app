@@ -192,6 +192,26 @@ function parseInlineMarkdown(text: string): TextRun[] {
 
 // ── PDF Generation ──
 
+/** Usable height on a single page (A4 minus top+bottom margins) */
+const PAGE_TOP = 72;
+const PAGE_BOTTOM = 72;
+const PAGE_LEFT = 72;
+const PAGE_RIGHT = 72;
+const A4_HEIGHT = 841.89;
+const A4_WIDTH = 595.28;
+const PAGE_WIDTH = A4_WIDTH - PAGE_LEFT - PAGE_RIGHT; // ~451.28
+const USABLE_BOTTOM = A4_HEIGHT - PAGE_BOTTOM; // y must stay above this
+
+/**
+ * Ensure there is at least `needed` points of vertical space remaining on the
+ * current page.  If not, add a new page and return the new y position.
+ */
+function ensureSpace(doc: PDFKit.PDFDocument, needed: number): void {
+  if (doc.y + needed > USABLE_BOTTOM) {
+    doc.addPage();
+  }
+}
+
 /**
  * Generate a PDF buffer from markdown content
  */
@@ -200,12 +220,16 @@ export async function generatePDF(title: string, markdownContent: string): Promi
     try {
       const doc = new PDFDocument({
         size: "A4",
-        margins: { top: 72, bottom: 72, left: 72, right: 72 },
+        margins: { top: PAGE_TOP, bottom: PAGE_BOTTOM, left: PAGE_LEFT, right: PAGE_RIGHT },
         info: {
           Title: title,
           Author: "Manus",
           Creator: "Manus",
         },
+        // Enable auto first page — PDFKit creates the first page automatically
+        autoFirstPage: true,
+        // Enable buffering for proper page count
+        bufferPages: true,
       });
 
       const chunks: Buffer[] = [];
@@ -214,78 +238,172 @@ export async function generatePDF(title: string, markdownContent: string): Promi
       doc.on("error", reject);
 
       const blocks = parseMarkdownBlocks(markdownContent);
-      const pageWidth = 595.28 - 144; // A4 width minus margins
 
       for (const block of blocks) {
         switch (block.type) {
           case "heading": {
             const sizes: Record<number, number> = { 1: 24, 2: 20, 3: 16, 4: 14, 5: 12, 6: 11 };
             const size = sizes[block.level || 1] || 14;
+            // Reserve space for heading + a bit of following content
+            ensureSpace(doc, size + 30);
             doc.moveDown(block.level === 1 ? 0.5 : 0.3);
-            doc.font("Helvetica-Bold").fontSize(size).text(block.text, { width: pageWidth });
+            doc.font("Helvetica-Bold").fontSize(size).text(block.text, { width: PAGE_WIDTH });
             doc.moveDown(0.3);
             if (block.level === 1) {
-              doc.moveTo(72, doc.y).lineTo(72 + pageWidth, doc.y).stroke("#cccccc");
+              const lineY = doc.y;
+              doc.moveTo(PAGE_LEFT, lineY).lineTo(PAGE_LEFT + PAGE_WIDTH, lineY).stroke("#cccccc");
               doc.moveDown(0.3);
             }
             break;
           }
-          case "paragraph":
-            doc.font("Helvetica").fontSize(11).text(block.text, { width: pageWidth, lineGap: 4 });
+          case "paragraph": {
+            // Estimate height: ~14pt per line, rough estimate of lines
+            const estLines = Math.ceil((block.text.length * 6) / PAGE_WIDTH) + 1;
+            const estHeight = estLines * 15;
+            ensureSpace(doc, Math.min(estHeight, 60)); // at least ensure first few lines fit
+            doc.font("Helvetica").fontSize(11).text(block.text, {
+              width: PAGE_WIDTH,
+              lineGap: 4,
+            });
             doc.moveDown(0.5);
             break;
-          case "list_item":
-            doc.font("Helvetica").fontSize(11).text(`  •  ${block.text}`, { width: pageWidth - 20, lineGap: 3 });
+          }
+          case "list_item": {
+            ensureSpace(doc, 20);
+            doc.font("Helvetica").fontSize(11).text(`  \u2022  ${block.text}`, {
+              width: PAGE_WIDTH - 20,
+              lineGap: 3,
+            });
             doc.moveDown(0.2);
             break;
-          case "code":
-            doc.moveDown(0.2);
-            const codeY = doc.y;
-            doc.rect(72, codeY - 4, pageWidth, 14 + block.text.split("\n").length * 13).fill("#f5f5f5").stroke("#e0e0e0");
-            doc.fill("#333333").font("Courier").fontSize(9).text(block.text, 80, codeY, { width: pageWidth - 16 });
-            doc.moveDown(0.5);
+          }
+          case "code": {
+            const codeLines = block.text.split("\n");
+            const lineHeight = 13;
+            const padding = 12;
+            const totalHeight = codeLines.length * lineHeight + padding * 2;
+
+            // If the code block is very tall, we need to split it across pages
+            if (totalHeight > USABLE_BOTTOM - PAGE_TOP) {
+              // Large code block — render line by line, adding pages as needed
+              ensureSpace(doc, lineHeight + padding * 2);
+              doc.moveDown(0.2);
+              for (let li = 0; li < codeLines.length; li++) {
+                ensureSpace(doc, lineHeight + 4);
+                const bgY = doc.y - 2;
+                doc.save();
+                doc.rect(PAGE_LEFT, bgY, PAGE_WIDTH, lineHeight + 2).fill("#f5f5f5");
+                doc.restore();
+                doc.fill("#333333").font("Courier").fontSize(9)
+                  .text(codeLines[li], PAGE_LEFT + 8, doc.y, { width: PAGE_WIDTH - 16 });
+              }
+              doc.moveDown(0.5);
+            } else {
+              ensureSpace(doc, totalHeight + 8);
+              doc.moveDown(0.2);
+              const codeY = doc.y;
+              // Draw background rectangle
+              doc.save();
+              doc.roundedRect(PAGE_LEFT, codeY - 4, PAGE_WIDTH, totalHeight, 3)
+                .fill("#f5f5f5");
+              doc.restore();
+              // Draw border
+              doc.save();
+              doc.roundedRect(PAGE_LEFT, codeY - 4, PAGE_WIDTH, totalHeight, 3)
+                .stroke("#e0e0e0");
+              doc.restore();
+              // Render code text
+              doc.fill("#333333").font("Courier").fontSize(9)
+                .text(block.text, PAGE_LEFT + 8, codeY + padding - 4, { width: PAGE_WIDTH - 16 });
+              doc.y = codeY + totalHeight + 4;
+              doc.moveDown(0.5);
+            }
             break;
-          case "blockquote":
+          }
+          case "blockquote": {
+            const estLines = Math.ceil((block.text.length * 6) / (PAGE_WIDTH - 24)) + 1;
+            const estHeight = estLines * 15 + 8;
+            ensureSpace(doc, Math.min(estHeight, 40));
             doc.moveDown(0.2);
             const bqY = doc.y;
-            doc.rect(76, bqY - 2, 3, 14).fill("#3b82f6");
-            doc.fill("#555555").font("Helvetica-Oblique").fontSize(11).text(block.text, 88, bqY, { width: pageWidth - 24 });
+            // Draw accent bar
+            doc.save();
+            doc.rect(PAGE_LEFT + 4, bqY - 2, 3, Math.min(estHeight, 14)).fill("#3b82f6");
+            doc.restore();
+            doc.fill("#555555").font("Helvetica-Oblique").fontSize(11)
+              .text(block.text, PAGE_LEFT + 16, bqY, { width: PAGE_WIDTH - 24 });
             doc.moveDown(0.5);
             break;
-          case "table":
+          }
+          case "table": {
             if (block.rows && block.rows.length > 0) {
               const cols = block.rows[0].length;
-              const colWidth = pageWidth / cols;
+              const colWidth = PAGE_WIDTH / cols;
+              const rowHeight = 18;
               doc.moveDown(0.3);
+
               for (let r = 0; r < block.rows.length; r++) {
                 const row = block.rows[r];
-                const rowY = doc.y;
                 const isHeader = r === 0;
+
+                // Ensure space for this row
+                ensureSpace(doc, rowHeight + 4);
+
+                const rowY = doc.y;
+
                 if (isHeader) {
-                  doc.rect(72, rowY - 2, pageWidth, 16).fill("#f0f0f0");
-                  doc.fill("#000000");
+                  doc.save();
+                  doc.rect(PAGE_LEFT, rowY - 2, PAGE_WIDTH, rowHeight).fill("#f0f0f0");
+                  doc.restore();
                 }
+
+                // Reset fill color for text
+                doc.fill("#000000");
+
                 for (let c = 0; c < row.length; c++) {
                   doc.font(isHeader ? "Helvetica-Bold" : "Helvetica")
                     .fontSize(9)
-                    .text(row[c] || "", 72 + c * colWidth + 4, rowY, {
+                    .text(row[c] || "", PAGE_LEFT + c * colWidth + 4, rowY, {
                       width: colWidth - 8,
-                      height: 14,
+                      height: rowHeight - 2,
                       ellipsis: true,
                     });
                 }
-                doc.y = rowY + 16;
-                doc.moveTo(72, doc.y).lineTo(72 + pageWidth, doc.y).stroke("#e0e0e0");
+                doc.y = rowY + rowHeight;
+                // Draw row separator line
+                doc.save();
+                doc.moveTo(PAGE_LEFT, doc.y).lineTo(PAGE_LEFT + PAGE_WIDTH, doc.y).stroke("#e0e0e0");
+                doc.restore();
               }
               doc.moveDown(0.5);
             }
             break;
-          case "hr":
+          }
+          case "hr": {
+            ensureSpace(doc, 10);
             doc.moveDown(0.3);
-            doc.moveTo(72, doc.y).lineTo(72 + pageWidth, doc.y).stroke("#cccccc");
+            doc.save();
+            doc.moveTo(PAGE_LEFT, doc.y).lineTo(PAGE_LEFT + PAGE_WIDTH, doc.y).stroke("#cccccc");
+            doc.restore();
             doc.moveDown(0.3);
             break;
+          }
         }
+      }
+
+      // Add page numbers
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        doc.save();
+        doc.font("Helvetica").fontSize(8).fill("#999999")
+          .text(
+            `Page ${i + 1} of ${pageCount}`,
+            PAGE_LEFT,
+            A4_HEIGHT - PAGE_BOTTOM + 20,
+            { width: PAGE_WIDTH, align: "center" }
+          );
+        doc.restore();
       }
 
       doc.end();

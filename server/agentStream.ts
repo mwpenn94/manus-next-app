@@ -421,7 +421,7 @@ When the user gives you a list of items to produce or a specific item from a lis
 ## RESPONSE STYLE
 
 - Be thorough and grounded in evidence from your tool results
-- Cite sources with markdown links: [Source Name](url)
+- ALWAYS cite sources as clickable markdown links: [Source Name](url) — NEVER use plain text like "(Source: MIT News)". Every citation MUST be a markdown hyperlink with the actual URL from your search results. Example: "([MIT News](https://news.mit.edu/article))" not "(Source: MIT News)"
 - Present findings in well-structured markdown with clear sections
 - When comparing things, ALWAYS create a markdown comparison table with specific details from research
 - Show your reasoning process — don't just state conclusions
@@ -431,7 +431,7 @@ When the user gives you a list of items to produce or a specific item from a lis
 ## OUTPUT FORMATTING
 
 Structure your responses based on the task type:
-- **Research tasks**: Use sections with headers, bullet points for key findings, and a summary table. Cite all sources.
+- **Research tasks**: Use sections with headers, bullet points for key findings, and a summary table. Cite all sources as clickable markdown links [Source](url).
 - **Code tasks**: Include code in fenced blocks with language tags. Explain the approach before the code.
 - **Analysis tasks**: Lead with the key insight, then supporting evidence, then methodology.
 - **Creative/Generative tasks**: PRODUCE THE FULL CREATIVE OUTPUT. If asked for a guide, write the complete guide. If asked for a plan, write the complete plan. If asked for a script, write the complete script. Research first if needed, then DELIVER THE ACTUAL CONTENT. The user wants the output, not a summary of your research.

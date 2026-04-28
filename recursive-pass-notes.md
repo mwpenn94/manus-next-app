@@ -201,3 +201,24 @@ The optimization loop should re-open if:
 - Full suite: 4,641 passed, 1 flaky (gdpr.test.ts timeout in full suite, passes in isolation)
 - 0 TypeScript errors
 - Convergence: Confirmed. Replay mode is complete and integrated.
+
+## Pass 51 — PDF Generation + Citation Hyperlinks Fix — Score 9.6
+
+**PDF Generation Fix:**
+- Rewrote `documentGeneration.ts` with `ensureSpace()` helper that checks remaining page space before rendering any block element (table row, code block, blockquote, heading)
+- Tables: each row checks page boundary; header row re-renders on new page for continuity
+- Code blocks: calculated actual height including text wrapping before rendering; splits across pages if needed
+- Blockquotes: proper left-border rendering with page-break awareness
+- Added "Page X of Y" footers using PDFKit's `pageAdded` event + second-pass page count injection
+- 11 new pagination tests + 18 existing doc gen tests = 29 total, all passing
+
+**Citation Hyperlinks Fix (3-layer approach):**
+1. **System prompt**: Strengthened citation instruction to explicitly require `[Source Name](url)` markdown link format
+2. **CSS**: Added explicit link styling in `.prose-themed a` — `color: oklch(0.75 0.15 250)`, `text-decoration: underline`, `cursor: pointer`, `pointer-events: auto`
+3. **Post-processor**: Added `linkifyCitations()` function in `buildStreamCallbacks.ts` that converts plain-text citations like `(Source: MIT News)` to clickable markdown links by matching source names against URLs collected from `onToolResult` events during streaming
+   - Tracks `sourceUrls` array in `StreamState` populated from tool results
+   - Domain-based fuzzy matching (e.g., "MIT News" matches `news.mit.edu`)
+   - Supports multiple citation prefixes: Source, Sources, Via, From, Ref, Reference
+   - 19 new tests covering exact match, partial match, multi-source, case-insensitive, edge cases
+
+**Test results:** 4,670 tests passing, 0 TypeScript errors. 2 pre-existing flaky failures (worker OOM, GDPR timeout) unrelated to our changes.

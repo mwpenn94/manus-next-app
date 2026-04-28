@@ -259,6 +259,20 @@
   --tw-prose-quote-borders: oklch(0.55 0.12 65);
 }
 
+/* Ensure prose links are always visible, underlined, and clickable */
+.prose-themed a,
+.prose-themed a[data-streamdown="link"] {
+  color: var(--tw-prose-links) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+.prose-themed a:hover,
+.prose-themed a[data-streamdown="link"]:hover {
+  opacity: 0.8;
+}
+
 /* Prose styling for dark theme */
 .dark .prose-themed,
 .prose-invert {

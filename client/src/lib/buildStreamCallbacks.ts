@@ -11,6 +11,8 @@ export interface StreamState {
   accumulated: string;
   actions: any[];
   images: string[];
+  /** Source URLs collected from tool results (web_search, read_webpage) for citation linking */
+  sourceUrls: Array<{ name: string; url: string }>;
   _webappPreviewsSeen?: Set<string>;
   _previewRefreshCounter?: number;
 }
@@ -40,6 +42,74 @@ export interface StreamStateSetters {
   getTaskMessages?: () => Array<{ id: string; cardType?: string; cardData?: Record<string, unknown> }>;
   /** GAP A: Callback to trigger iframe refresh in WebappPreviewCard */
   onPreviewRefreshSignal?: () => void;
+}
+
+/**
+ * Post-process plain-text citations into clickable markdown links.
+ * Converts patterns like:
+ *   (Source: MIT News)  →  ([MIT News](https://news.mit.edu/...))
+ *   (Source: ScienceDaily)  →  ([ScienceDaily](https://sciencedaily.com/...))
+ *   (Sources: Name1, Name2)  →  ([Name1](url1), [Name2](url2))
+ */
+export function linkifyCitations(
+  content: string,
+  sourceUrls: Array<{ name: string; url: string }>,
+): string {
+  if (!sourceUrls.length || !content) return content;
+
+  // Build a lookup map: lowercase source name fragments → url
+  const urlMap = new Map<string, string>();
+  for (const src of sourceUrls) {
+    // Extract domain name as a key (e.g., "news.mit.edu" → "mit")
+    try {
+      const hostname = new URL(src.url).hostname.replace(/^www\./, "");
+      const parts = hostname.split(".");
+      // Use the main domain part (e.g., "sciencedaily" from "sciencedaily.com")
+      for (const part of parts) {
+        if (part.length > 2 && part !== "com" && part !== "org" && part !== "net" && part !== "edu" && part !== "gov" && part !== "io") {
+          urlMap.set(part.toLowerCase(), src.url);
+        }
+      }
+      // Also map the full hostname
+      urlMap.set(hostname.toLowerCase(), src.url);
+    } catch {
+      // Skip invalid URLs
+    }
+    // Map the tool name if it looks like a source name
+    if (src.name && src.name !== "Source" && src.name !== "web_search" && src.name !== "read_webpage") {
+      urlMap.set(src.name.toLowerCase(), src.url);
+    }
+  }
+
+  // Match patterns: (Source: Name) or (Sources: Name1, Name2) or [Source: Name]
+  return content.replace(
+    /[([](Sources?|Via|From|Ref|Reference):\s*([^)\]]+)[)\]]/gi,
+    (match, _prefix, namesPart) => {
+      // Split multiple sources: "MIT News, ScienceDaily"
+      const names = namesPart.split(/,\s*/).map((n: string) => n.trim()).filter(Boolean);
+      const linked = names.map((name: string) => {
+        const nameLower = name.toLowerCase();
+        // Try exact match first
+        if (urlMap.has(nameLower)) {
+          return `[${name}](${urlMap.get(nameLower)})`;
+        }
+        // Try partial match: check if any key is contained in the name or vice versa
+        for (const [key, url] of Array.from(urlMap.entries())) {
+          if (nameLower.includes(key) || key.includes(nameLower)) {
+            return `[${name}](${url})`;
+          }
+        }
+        // No match found — return as-is
+        return name;
+      });
+      // If at least one was linked, wrap in parens
+      const anyLinked = linked.some((l: string) => l.includes("](http"));
+      if (anyLinked) {
+        return `(${linked.join(", ")})`;
+      }
+      return match; // No matches found, return original
+    }
+  );
 }
 
 export function buildStreamCallbacks(
@@ -78,6 +148,11 @@ export function buildStreamCallbacks(
         };
         setters.actionsRef.current = [...state.actions];
         setters.setAgentActions([...state.actions]);
+      }
+      // Track source URLs from search/browse results for citation post-processing
+      if (toolResult.url && typeof toolResult.url === "string") {
+        const name = toolResult.name || "Source";
+        state.sourceUrls.push({ name, url: toolResult.url });
       }
     },
     onImage: (imageUrl: string) => {
@@ -126,6 +201,12 @@ export function buildStreamCallbacks(
         for (const img of state.images) {
           state.accumulated += `\n\n![Generated Image](${img})`;
         }
+        setters.accumulatedRef.current = state.accumulated;
+      }
+      // Post-process: Convert plain-text citations to clickable markdown links
+      // Matches patterns like (Source: Name), (Source: Name, Name2), [Source: Name]
+      if (state.sourceUrls.length > 0) {
+        state.accumulated = linkifyCitations(state.accumulated, state.sourceUrls);
         setters.accumulatedRef.current = state.accumulated;
       }
     },

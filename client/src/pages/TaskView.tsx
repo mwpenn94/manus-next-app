@@ -2435,7 +2435,7 @@ export default function TaskView() {
         const controller = new AbortController();
         abortControllerRef.current = controller;
 
-        const streamState: StreamState = { accumulated: "", actions, images };
+        const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
@@ -2651,7 +2651,7 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const streamState: StreamState = { accumulated: "", actions, images };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
@@ -2728,7 +2728,7 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const streamState: StreamState = { accumulated: "", actions, images };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
@@ -2816,7 +2816,7 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const streamState: StreamState = { accumulated: "", actions, images };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
@@ -2893,7 +2893,7 @@ export default function TaskView() {
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
       const controller = new AbortController();
       abortControllerRef.current = controller;
-      const streamState: StreamState = { accumulated: "", actions, images };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
