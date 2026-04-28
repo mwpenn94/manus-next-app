@@ -5786,3 +5786,11 @@
 - [x] Escalating prompts: soft nudge at 5 file ops, firm nudge at 8, hard limit at 12 (force deploy)
 - [x] Validated: Tip Calculator deployed in 15 turns (vs 48 without fix) — deploy nudge triggered at 6 file ops
 - [x] All 24 Pass 55 tests passing (including new deploy nudge tests)
+
+## Pass 56 — Next Steps Implementation
+- [ ] Deploy to production and retest webapp creation on live site (confirm "build me a calculator app" works)
+- [ ] Add webapp quality validation: post-deploy LLM self-check that verifies generated app interactivity
+- [ ] Tune deploy nudge thresholds: make them dynamic based on request complexity (simple=5, medium=8, complex=12 file ops)
+- [ ] Run full test suite to confirm no regressions
+- [ ] Comprehensive UI/UX review pass (recursive convergence)
+- [ ] Update all documentation including platform guide

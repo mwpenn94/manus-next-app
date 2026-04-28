@@ -1501,9 +1501,28 @@ If the user hasn't specified content details, ASK them what content they want. D
         // APP-BUILDING PIPELINE CONTINUATION: If the agent used create_webapp but hasn't
         // deployed yet, force continuation so the full create→build→deploy pipeline completes.
         // Use escalating prompts with a hard limit to prevent infinite building loops.
+        // Dynamic limit based on webapp complexity (matches tool execution branch logic).
         if (isAppBuildingPipeline && turn < maxTurns - 2) {
           appBuildingContinuations++;
-          const MAX_APP_BUILD_CONTINUATIONS = 5;
+          // Determine MAX_APP_BUILD_CONTINUATIONS dynamically based on complexity
+          let MAX_APP_BUILD_CONTINUATIONS = 5;
+          const createWebappMsgForCont = conversation.find(m =>
+            (m as any).tool_calls?.some((tc: any) => tc.function?.name === "create_webapp")
+          );
+          if (createWebappMsgForCont) {
+            const createCallForCont = (createWebappMsgForCont as any).tool_calls?.find((tc: any) => tc.function?.name === "create_webapp");
+            const descForCont = ((() => { try { return JSON.parse(createCallForCont?.function?.arguments || "{}").description || ""; } catch { return ""; } })()).toLowerCase();
+            const userMsgForCont = conversation.find(m => m.role === "user" && typeof m.content === "string");
+            const userTextForCont = (typeof userMsgForCont?.content === "string" ? userMsgForCont.content : "").toLowerCase();
+            const combinedForCont = `${descForCont} ${userTextForCont}`;
+            const complexIndicatorsForCont = /multi.?page|dashboard|full.?stack|e.?commerce|admin.?panel|crm|management.?system|social.?network|marketplace|portfolio.?with|blog.?with|saas/;
+            const simpleIndicatorsForCont = /calculator|timer|counter|hello.?world|single.?page|stopwatch|clock|converter|tip.?calc|bmi|quiz|flashcard|countdown|landing.?page/;
+            if (complexIndicatorsForCont.test(combinedForCont)) {
+              MAX_APP_BUILD_CONTINUATIONS = 8; // Complex apps get more continuations
+            } else if (simpleIndicatorsForCont.test(combinedForCont)) {
+              MAX_APP_BUILD_CONTINUATIONS = 3; // Simple apps should deploy fast
+            }
+          }
           
           if (appBuildingContinuations >= MAX_APP_BUILD_CONTINUATIONS) {
             // Hard limit reached — force deploy NOW
@@ -1702,7 +1721,7 @@ If the user hasn't specified content details, ASK them what content they want. D
           });
         }
 
-        // If it's a deployment, send a webapp_deployed event
+        // If it's a deployment, send a webapp_deployed event + inject quality validation
         if (result.url && toolName === "deploy_webapp" && result.success) {
           sendSSE(safeWrite, {
             webapp_deployed: {
@@ -1711,6 +1730,19 @@ If the user hasn't specified content details, ASK them what content they want. D
               projectExternalId: result.projectExternalId,
               versionLabel: parsedArgs.version_label || undefined,
             },
+          });
+          
+          // POST-DEPLOY QUALITY VALIDATION: Inject a system message instructing the LLM
+          // to verify the deployed app works correctly before presenting to the user.
+          // This catches broken interactivity, missing assets, and rendering issues.
+          conversation.push({
+            role: "user",
+            content: `The webapp has been deployed to ${result.url}. Before presenting this to the user, briefly verify the deployment:
+1. Confirm the URL is accessible (it was just deployed, so it should be)
+2. Mention any known limitations or features that may need user testing
+3. Present the deployed URL to the user with a brief summary of what was built
+
+Do NOT use browser_action to test it — just present the result confidently since the deploy succeeded. If you created interactive elements (buttons, forms, calculations), mention them so the user knows what to try.`,
           });
         }
 
@@ -1752,6 +1784,7 @@ If the user hasn't specified content details, ASK them what content they want. D
 
       // APP-BUILDING DEPLOY NUDGE: After executing tool calls, check if we're in an app-building
       // pipeline with too many file operations. If so, inject a deploy nudge before the next LLM call.
+      // Thresholds are DYNAMIC based on webapp complexity (extracted from create_webapp description).
       {
         const appBuildToolCount = conversation.filter(m =>
           (m as any).tool_calls?.some((tc: any) =>
@@ -1766,20 +1799,48 @@ If the user hasn't specified content details, ASK them what content they want. D
         );
         
         if (hasCreatedWebapp && !hasDeployedWebapp) {
-          const SOFT_LIMIT = 6;  // After 6 file operations, start nudging
-          const HARD_LIMIT = 12; // After 12 file operations, demand deploy
+          // Dynamic threshold: extract complexity from create_webapp description
+          let SOFT_LIMIT = 6;
+          let HARD_LIMIT = 12;
+          const createWebappMsg = conversation.find(m =>
+            (m as any).tool_calls?.some((tc: any) => tc.function?.name === "create_webapp")
+          );
+          if (createWebappMsg) {
+            const createCall = (createWebappMsg as any).tool_calls?.find((tc: any) => tc.function?.name === "create_webapp");
+            const desc = ((() => { try { return JSON.parse(createCall?.function?.arguments || "{}").description || ""; } catch { return ""; } })()).toLowerCase();
+            const userMsg = conversation.find(m => m.role === "user" && typeof m.content === "string");
+            const userText = (typeof userMsg?.content === "string" ? userMsg.content : "").toLowerCase();
+            const combined = `${desc} ${userText}`;
+            // Complex indicators: multi-page, dashboard, full-stack, e-commerce, CRM, admin panel
+            const complexIndicators = /multi.?page|dashboard|full.?stack|e.?commerce|admin.?panel|crm|management.?system|social.?network|marketplace|portfolio.?with|blog.?with|saas/;
+            // Simple indicators: calculator, timer, counter, hello world, single page, todo, clock
+            const simpleIndicators = /calculator|timer|counter|hello.?world|single.?page|stopwatch|clock|converter|tip.?calc|bmi|quiz|flashcard|countdown|landing.?page/;
+            
+            if (complexIndicators.test(combined)) {
+              SOFT_LIMIT = 10; // Complex apps get more room
+              HARD_LIMIT = 18;
+              console.log(`[Agent] App complexity: COMPLEX (soft=${SOFT_LIMIT}, hard=${HARD_LIMIT})`);
+            } else if (simpleIndicators.test(combined)) {
+              SOFT_LIMIT = 4;  // Simple apps should deploy fast
+              HARD_LIMIT = 8;
+              console.log(`[Agent] App complexity: SIMPLE (soft=${SOFT_LIMIT}, hard=${HARD_LIMIT})`);
+            } else {
+              // Default: medium complexity
+              console.log(`[Agent] App complexity: MEDIUM (soft=${SOFT_LIMIT}, hard=${HARD_LIMIT})`);
+            }
+          }
           
           if (appBuildToolCount >= HARD_LIMIT) {
-            console.log(`[Agent] App-building: HARD LIMIT (${appBuildToolCount} file ops). Injecting mandatory deploy prompt.`);
+            console.log(`[Agent] App-building: HARD LIMIT (${appBuildToolCount}/${HARD_LIMIT} file ops). Injecting mandatory deploy prompt.`);
             conversation.push({
               role: "user",
-              content: `CRITICAL: You have created/edited ${appBuildToolCount} files. STOP creating files NOW. The app is complete enough. Your ONLY next action must be to call deploy_webapp to deploy the app. Do NOT create, edit, or read any more files. Call deploy_webapp immediately.`,
+              content: `CRITICAL: You have created/edited ${appBuildToolCount} files (limit: ${HARD_LIMIT}). STOP creating files NOW. The app is complete enough. Your ONLY next action must be to call deploy_webapp to deploy the app. Do NOT create, edit, or read any more files. Call deploy_webapp immediately.`,
             });
           } else if (appBuildToolCount >= SOFT_LIMIT) {
-            console.log(`[Agent] App-building: soft limit (${appBuildToolCount} file ops). Nudging toward deploy.`);
+            console.log(`[Agent] App-building: soft limit (${appBuildToolCount}/${SOFT_LIMIT} file ops). Nudging toward deploy.`);
             conversation.push({
               role: "user",
-              content: `You've created ${appBuildToolCount} files. The app should be functional now. Wrap up any final essential changes and call deploy_webapp to deploy it. The user is waiting for a working deployed app.`,
+              content: `You've created ${appBuildToolCount} files (target: ${SOFT_LIMIT}). The app should be functional now. Wrap up any final essential changes and call deploy_webapp to deploy it. The user is waiting for a working deployed app.`,
             });
           }
         }
