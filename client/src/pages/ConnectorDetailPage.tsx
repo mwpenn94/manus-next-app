@@ -461,7 +461,8 @@ export default function ConnectorDetailPage() {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [connectorId, completeOAuthMutation, utils]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [connectorId, completeOAuthMutation.mutate, utils]);
 
   // ── Same-window callback handling (query params) ──
   useEffect(() => {
@@ -551,7 +552,8 @@ export default function ConnectorDetailPage() {
       toast.error(`OAuth error: ${err.message}`);
       setConnecting(false);
     }
-  }, [connectorId, getOAuthUrlMutation, utils]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutateAsync is stable (tRPC)
+  }, [connectorId, getOAuthUrlMutation.mutateAsync, utils]);
 
   // ── Manus Verify handler ──
   const handleManusVerify = useCallback(() => {
@@ -559,7 +561,8 @@ export default function ConnectorDetailPage() {
       connectorId,
       origin: window.location.origin,
     });
-  }, [manusVerifyMutation, connectorId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [manusVerifyMutation.mutate, connectorId]);
 
   // ── Manual/PAT connect handler ──
   const handleManualConnect = useCallback(() => {
@@ -569,12 +572,14 @@ export default function ConnectorDetailPage() {
       name: connectorDef?.name || connectorId,
       config: configValues,
     });
-  }, [connectMutation, connectorId, connectorDef, configValues]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [connectMutation.mutate, connectorId, connectorDef, configValues]);
 
   // ── Disconnect handler ──
   const handleDisconnect = useCallback(() => {
     disconnectMutation.mutate({ connectorId });
-  }, [disconnectMutation, connectorId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [disconnectMutation.mutate, connectorId]);
 
   // ── Auth step completion status ──
   const getAuthStepCompleted = useCallback((stepId: string): boolean => {

@@ -170,7 +170,8 @@ echo "Installers are in src-tauri/target/release/bundle/"
       mobileProjectId: 0,
       version: version,
     });
-  }, [platforms, createBuildMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [platforms, createBuildMutation.mutate]);
 
   const copyToClipboard = useCallback((text: string, label: string) => {
     navigator.clipboard.writeText(text);

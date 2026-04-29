@@ -156,7 +156,8 @@ export function BranchButton({
     } catch (err: any) {
       toast.error(err.message || "Failed to create branch");
     }
-  }, [branchTitle, allMessages, messageIndex, taskExternalId, branchMutation, navigate, setActiveTask]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutateAsync is stable (tRPC)
+  }, [branchTitle, allMessages, messageIndex, taskExternalId, branchMutation.mutateAsync, navigate, setActiveTask]);
 
   return (
     <>

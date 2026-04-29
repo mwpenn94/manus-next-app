@@ -39,7 +39,8 @@ export function useAuth(options?: UseAuthOptions) {
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
-  }, [logoutMutation, utils]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutateAsync is stable (tRPC)
+  }, [logoutMutation.mutateAsync, utils]);
 
   const state = useMemo(() => {
     localStorage.setItem(

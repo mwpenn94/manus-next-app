@@ -1963,7 +1963,8 @@ function useVoiceRecorder(onTranscription: (text: string) => void) {
     } catch (err) {
       setVoiceError("Microphone access denied. Please allow microphone access in your browser settings.");
     }
-  }, [onTranscription, transcribeMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutateAsync is stable (tRPC)
+  }, [onTranscription, transcribeMutation.mutateAsync]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {

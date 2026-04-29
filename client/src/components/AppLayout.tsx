@@ -455,7 +455,8 @@ function SidebarProjectTree({
     (taskServerId: number, projectExternalId: string | null) => {
       assignMutation.mutate({ taskId: taskServerId, projectExternalId });
     },
-    [assignMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [assignMutation.mutate]
   );
 
   const allProjectsMeta = useMemo(
@@ -1001,7 +1002,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       updateTaskFavorite(taskId, fav);
       favoriteMutation.mutate({ externalId: taskId });
     },
-    [updateTaskFavorite, favoriteMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [updateTaskFavorite, favoriteMutation.mutate]
   );
 
   const handleRenameTask = useCallback(
@@ -1023,7 +1025,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     (taskServerId: number, projectExternalId: string | null) => {
       assignMutation.mutate({ taskId: taskServerId, projectExternalId });
     },
-    [assignMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [assignMutation.mutate]
   );
 
   const handleTaskClick = useCallback(

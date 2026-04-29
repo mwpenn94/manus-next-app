@@ -748,7 +748,8 @@ export default function ConnectorsPage() {
         toast.success(`Identity verified: ${verifiedIdentity}`);
       }
     }
-  }, [completeOAuthMutation, utils.connector.list]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [completeOAuthMutation.mutate, utils.connector.list]);
 
   useEffect(() => {
     window.addEventListener("message", handlePopupMessage);

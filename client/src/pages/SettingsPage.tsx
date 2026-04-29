@@ -319,7 +319,8 @@ export default function SettingsPage() {
       toast.success(`${String(key).replace(/([A-Z])/g, " $1").replace(/^./, (s: string) => s.toUpperCase())} ${updated[key] ? "enabled" : "disabled"}`);
       return updated;
     });
-  }, [isAuthenticated, savePrefsMutation, capabilityToggles]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [isAuthenticated, savePrefsMutation.mutate, capabilityToggles]);
 
   // Persist capability toggles
   const toggleCapability = useCallback((pkg: string) => {
@@ -332,7 +333,8 @@ export default function SettingsPage() {
       toast.success(`${CAPABILITY_DEFINITIONS.find(c => c.package === pkg)?.name} ${!current ? "enabled" : "disabled"}`);
       return updated;
     });
-  }, [isAuthenticated, savePrefsMutation, generalSettings]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [isAuthenticated, savePrefsMutation.mutate, generalSettings]);
 
   // Bridge config persistence
   const saveBridgeConfig = trpc.bridge.saveConfig.useMutation({

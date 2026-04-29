@@ -121,7 +121,8 @@ function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: bo
     } catch {
       console.error('Microphone access denied');
     }
-  }, [isAuthenticated, isListening, transcribeMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [isAuthenticated, isListening, transcribeMutation.mutate]);
 
   // Cleanup on unmount — stop recording and release microphone
   useEffect(() => {

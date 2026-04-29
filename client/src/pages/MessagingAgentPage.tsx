@@ -84,7 +84,8 @@ export default function MessagingAgentPage() {
         apiToken: newApiToken,
       },
     });
-  }, [newPlatform, newName, newWebhookUrl, newApiToken, addMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [newPlatform, newName, newWebhookUrl, newApiToken, addMutation.mutate]);
 
   const sendTestMessage = useCallback(async () => {
     if (!testMessage.trim() || !selectedId) return;

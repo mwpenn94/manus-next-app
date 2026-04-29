@@ -142,17 +142,20 @@ export default function TaskTemplates({
       });
     }
     setDialogOpen(false);
-  }, [editingId, formTitle, formPrompt, formIcon, formCategory, createMutation, updateMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutateAsync is stable (tRPC)
+  }, [editingId, formTitle, formPrompt, formIcon, formCategory, createMutation.mutateAsync, updateMutation.mutateAsync]);
 
   const handleDelete = useCallback(async (id: number) => {
     await deleteMutation.mutateAsync({ id });
     setMenuOpenId(null);
-  }, [deleteMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutateAsync is stable (tRPC)
+  }, [deleteMutation.mutateAsync]);
 
   const handleUse = useCallback((template: { id: number; prompt: string }) => {
     useMutation.mutate({ id: template.id });
     onUseTemplate?.(template.prompt);
-  }, [useMutation, onUseTemplate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [useMutation.mutate, onUseTemplate]);
 
   if (isLoading || templates.length === 0) {
     // In compact mode, show nothing if no templates

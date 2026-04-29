@@ -421,7 +421,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         );
       });
     },
-    [isAuthenticated, updateStatusMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [isAuthenticated, updateStatusMutation.mutate]
   );
 
   const renameTask = useCallback(
@@ -436,7 +437,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         );
       });
     },
-    [isAuthenticated, renameMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [isAuthenticated, renameMutation.mutate]
   );
 
   // ── Wire bridge events into task state ──
@@ -463,7 +465,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         url: data.url,
       });
     },
-    [isAuthenticated, resolveServerId, addArtifactMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [isAuthenticated, resolveServerId, addArtifactMutation.mutate]
   );
 
   // Helper to persist bridge-driven status updates to server
@@ -475,7 +478,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         updateStatusMutation.mutate({ externalId: task.id, status });
       }
     },
-    [isAuthenticated, tasks, updateStatusMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [isAuthenticated, tasks, updateStatusMutation.mutate]
   );
 
   const persistBridgeMessage = useCallback(

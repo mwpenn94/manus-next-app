@@ -5884,5 +5884,5 @@
 - [x] FIX 2: TaskView — Changed cleanup useEffect to use `addMessageRef` (ref) with empty dep array `[]` so it only runs on unmount
 - [x] Exhaustive virtual user validation: Playwright E2E confirms agent responds within 5s with "Hello there!", search actions visible, streaming works end-to-end
 - [x] 24/24 vitest tests passing, debug logging removed
-- [ ] Expert Manus parity+ assessment across all dimensions
-- [ ] Implement parity+ improvements
+- [x] Expert Manus parity+ assessment across all dimensions
+- [x] Implement parity+ improvements — Pass 65: Fixed 18 unstable tRPC mutation-object dependency bugs across 11 files (TaskContext, AppLayout, TaskView, useAuth, BranchIndicator, TaskTemplates, Home, DesktopAppPage, MessagingAgentPage, SettingsPage, ConnectorDetailPage, ConnectorsPage). All useCallback deps now reference `.mutate`/`.mutateAsync` (stable function) instead of the entire mutation object (unstable reference). TypeScript compiles clean, vitest passes.
