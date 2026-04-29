@@ -147,7 +147,6 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
     }
 
     try {
-      console.log("[streamWithRetry] Fetching /api/stream", { taskExternalId, mode, attempt });
       const response = await fetch("/api/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,8 +154,6 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
         body: JSON.stringify({ messages, taskExternalId, mode }),
         signal,
       });
-      console.log("[streamWithRetry] Response:", { status: response.status, ok: response.ok, hasBody: !!response.body });
-
       if (!response.ok || !response.body) {
         throw new Error(`Stream failed with status ${response.status}`);
       }

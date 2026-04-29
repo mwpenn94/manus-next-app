@@ -72,7 +72,7 @@ describe("Pass 62: Streaming persists on navigation", () => {
   it("saves partial content on unmount BEFORE aborting", () => {
     // The cleanup function should call savePartialContent() before abort
     expect(taskViewFile).toContain("savePartialContent()");
-    expect(taskViewFile).toContain("Cleanup on unmount: save partial content FIRST");
+    expect(taskViewFile).toContain("Cleanup on unmount ONLY: save partial content FIRST");
   });
 
   it("handles beforeunload event for tab close", () => {

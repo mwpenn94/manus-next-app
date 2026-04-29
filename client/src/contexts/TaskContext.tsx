@@ -308,7 +308,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }
 
     return id;
-  }, [isAuthenticated, createTaskMutation, addMessageMutation]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+  }, [isAuthenticated, createTaskMutation.mutate, addMessageMutation.mutate]);
 
   const setActiveTask = useCallback((id: string | null) => {
     // When switching away from a task, persist any unsaved messages to the server
@@ -380,7 +381,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         );
       });
     },
-    [isAuthenticated, addMessageMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- addMessageMutation.mutate is stable (tRPC)
+    [isAuthenticated, addMessageMutation.mutate]
   );
 
   /**
@@ -489,7 +491,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [isAuthenticated, tasks, addMessageMutation]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
+    [isAuthenticated, tasks, addMessageMutation.mutate]
   );
 
   useEffect(() => {

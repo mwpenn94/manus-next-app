@@ -5878,9 +5878,11 @@
 - [ ] Exhaustive virtual user validation
 
 ## Pass 64 — Agent Still Not Responding (Post-Publish) + Manus Parity+
-- [ ] BUG (CRITICAL): Agent still doesn't respond after publishing — bridge fix was insufficient, deeper root cause exists
-- [ ] Deep-trace: Home submit → createTask → navigate /task/:id → auto-stream useEffect → SSE fetch
-- [ ] Fix real root cause
+- [x] BUG (CRITICAL): Agent still doesn't respond after publishing → ROOT CAUSE: `addMessageMutation` (tRPC mutation object) is unstable → `addMessage` useCallback recreated every render → cleanup useEffect `[addMessage]` fires on every render → aborts in-flight SSE stream
+- [x] Deep-trace: Playwright E2E with auth cookie, intercepted fetch, captured SSE events → confirmed stream returns 200 but body never consumed (aborted by cleanup)
+- [x] FIX 1: TaskContext — Changed `addMessageMutation` to `addMessageMutation.mutate` (stable) in all useCallback deps
+- [x] FIX 2: TaskView — Changed cleanup useEffect to use `addMessageRef` (ref) with empty dep array `[]` so it only runs on unmount
+- [x] Exhaustive virtual user validation: Playwright E2E confirms agent responds within 5s with "Hello there!", search actions visible, streaming works end-to-end
+- [x] 24/24 vitest tests passing, debug logging removed
 - [ ] Expert Manus parity+ assessment across all dimensions
 - [ ] Implement parity+ improvements
-- [ ] Exhaustive virtual user validation

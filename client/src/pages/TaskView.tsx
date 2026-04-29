@@ -2370,6 +2370,11 @@ export default function TaskView() {
     inputRef.current?.focus();
   }, [task?.id]);
 
+  // Keep a ref to addMessage so the cleanup effect can call it without re-running
+  // when addMessage's reference changes (which would abort the in-flight stream).
+  const addMessageRef = useRef(addMessage);
+  useEffect(() => { addMessageRef.current = addMessage; }, [addMessage]);
+
   // Save partial streaming content on page unload or component unmount
   // This ensures in-progress assistant messages aren't lost when the user navigates away
   useEffect(() => {
@@ -2377,8 +2382,8 @@ export default function TaskView() {
       const taskId = streamingTaskIdRef.current;
       const content = accumulatedRef.current;
       if (taskId && content.trim()) {
-        // Use addMessage to persist the partial content
-        addMessage(taskId, {
+        // Use addMessage (via ref) to persist the partial content
+        addMessageRef.current(taskId, {
           role: "assistant",
           content: content + "\n\n*[Response interrupted — partial content saved]*",
           actions: actionsRef.current.length > 0 ? actionsRef.current : undefined,
@@ -2396,8 +2401,10 @@ export default function TaskView() {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Cleanup on unmount: save partial content FIRST, then abort the stream.
+    // Cleanup on unmount ONLY: save partial content FIRST, then abort the stream.
     // Order matters: savePartialContent reads refs that the abort's finally block would clear.
+    // CRITICAL: empty dependency array ensures this only runs on mount/unmount,
+    // NOT when addMessage changes (which would abort the in-flight stream).
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       savePartialContent();
@@ -2407,7 +2414,8 @@ export default function TaskView() {
         abortControllerRef.current = null;
       }
     };
-  }, [addMessage]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- must only run on unmount; addMessage accessed via ref
+  }, []);
 
   // Auto-stream for initial message in a newly created task
   // When navigating from Home, createTask adds the first user message but never calls /api/stream.
@@ -2417,26 +2425,14 @@ export default function TaskView() {
   // when the dependency array changes due to message dedup or state updates.
   const autoStreamedIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    // DEBUG: Log every guard condition to trace why auto-stream may not fire
-    console.log("[AutoStream] Guard check:", {
-      hasTask: !!task,
-      taskId: task?.id,
-      streaming,
-      autoStreamed: task?.autoStreamed,
-      inLocalRef: task ? autoStreamedIdsRef.current.has(task.id) : 'n/a',
-      messagesLength: task?.messages.length,
-      firstMsgRole: task?.messages[0]?.role,
-      bridgeStatus,
-    });
-    if (!task) { console.log("[AutoStream] BLOCKED: no task"); return; }
-    if (streaming) { console.log("[AutoStream] BLOCKED: already streaming"); return; }
-    if (task.autoStreamed) { console.log("[AutoStream] BLOCKED: task.autoStreamed=true"); return; }
-    if (autoStreamedIdsRef.current.has(task.id)) { console.log("[AutoStream] BLOCKED: already in autoStreamedIdsRef"); return; }
+    if (!task) return;
+    if (streaming) return;
+    if (task.autoStreamed) return;
+    if (autoStreamedIdsRef.current.has(task.id)) return;
     // Only trigger if: exactly 1 message, it's a user message, and no assistant response yet
-    if (task.messages.length !== 1) { console.log("[AutoStream] BLOCKED: messages.length =", task.messages.length, "(expected 1)"); return; }
+    if (task.messages.length !== 1) return;
     const firstMsg = task.messages[0];
-    if (firstMsg.role !== "user") { console.log("[AutoStream] BLOCKED: firstMsg.role =", firstMsg.role); return; }
-    console.log("[AutoStream] ✓ ALL GUARDS PASSED — starting stream for task", task.id);
+    if (firstMsg.role !== "user") return;
     // Mark as auto-streamed immediately — both in ref (instant) and context (persisted)
     autoStreamedIdsRef.current.add(task.id);
     markAutoStreamed(task.id);
