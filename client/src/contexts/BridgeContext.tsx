@@ -124,6 +124,7 @@ export function BridgeProvider({ children }: { children: ReactNode }) {
   const urlRef = useRef<string>("");
   const apiKeyRef = useRef<string | undefined>(undefined);
   const taskEventHandlersRef = useRef<Set<(event: BridgeMessage) => void>>(new Set());
+  const authVerifiedRef = useRef<boolean>(false);
 
   // Load saved config for auto-connect — only when authenticated
   const { isAuthenticated } = useAuth();
@@ -247,6 +248,7 @@ export function BridgeProvider({ children }: { children: ReactNode }) {
       }
       stopHeartbeat();
       stopUptimeTracker();
+      authVerifiedRef.current = false;
 
       setStatus("connecting");
 
@@ -288,15 +290,20 @@ export function BridgeProvider({ children }: { children: ReactNode }) {
             direction: "inbound",
           });
 
-          // After handshake sent, mark as connected
+          // After handshake sent, wait for auth:response.
+          // If no auth:response arrives within 3s, the bridge server likely doesn't
+          // support our protocol — stay in 'authenticating' state (NOT 'connected').
+          // This prevents silently routing messages to a non-responsive bridge.
           setTimeout(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              setStatus("connected");
-              reconnectAttemptsRef.current = 0;
+            if (ws.readyState === WebSocket.OPEN && !authVerifiedRef.current) {
+              // No auth:response received — the bridge may be a generic WS server.
+              // Start heartbeat but do NOT set connected — keep as 'authenticating'
+              // so TaskView won't route messages to it.
+              console.warn("[Bridge] No auth:response after 3s — bridge may not support task protocol");
               startHeartbeat(ws);
               startUptimeTracker();
             }
-          }, 500);
+          }, 3000);
         };
 
         ws.onmessage = (event) => {
@@ -318,8 +325,11 @@ export function BridgeProvider({ children }: { children: ReactNode }) {
             // Handle auth response
             if (data.type === "auth:response") {
               if (data.status === "ok") {
+                authVerifiedRef.current = true;
                 setStatus("connected");
                 reconnectAttemptsRef.current = 0;
+                startHeartbeat(ws);
+                startUptimeTracker();
               } else {
                 setStatus("error");
                 addEvent({

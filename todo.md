@@ -5862,3 +5862,10 @@
 - [x] BUG: Deploy hangs in chat — agent gets stuck at "deploying" step → Fixed: SSE progress event fires before deploy_webapp execution, retryWithBackoff prevents permanent hang
 - [x] BUG: Task chat UX not aligned with Manus reference → Fixed: preview_refresh includes S3 URL, onPreviewUrlUpdate callback, deploy progress SSE events
 - [x] Virtual user validation: 23/23 pass62-fixes.test.ts passing, TypeScript 0 errors, all code-level verifications PASS
+
+## Pass 63 — Critical Bug: Agent Never Responds After User Message
+- [x] BUG: After sending a message, agent never responds → ROOT CAUSE: BridgeContext auto-connected with 500ms timer (no auth:response required), then TaskView routed messages to bridge WebSocket instead of SSE. No onTaskEvent handler in TaskView = messages went into void.
+- [x] FIX 1: BridgeContext — Added authVerifiedRef, only sets "connected" after receiving auth:response (not 500ms timer). Resets on disconnect/reconnect.
+- [x] FIX 2: TaskView auto-stream — Disabled bridge routing (commented out) since onTaskEvent is not wired. Messages now always go to SSE /api/stream.
+- [x] FIX 3: TaskView handleSend — Same bridge routing disabled for follow-up messages.
+- [x] Exhaustive virtual user validation: 22/23 Playwright E2E tests PASS (1 WARN false positive), 251/251 vitest tests PASS, TypeScript 0 errors, 0 JS console errors

@@ -2431,15 +2431,13 @@ export default function TaskView() {
 
     // Trigger the SSE stream for the initial message
     (async () => {
-      // If bridge is connected, dispatch to the Manus Next agent instead
-      if (bridgeStatus === "connected") {
-        bridgeSend("task.message", {
-          taskId: task.id,
-          content: firstMsg.content,
-          files: [],
-        });
-        return;
-      }
+      // Bridge integration: only route to bridge if it's truly connected AND verified.
+      // Even then, add a timeout fallback — if bridge doesn't produce a task event
+      // within 5 seconds, fall back to SSE streaming.
+      // NOTE: For now, we always use SSE since bridge response handling (onTaskEvent)
+      // is not yet wired into TaskView. The bridge path will be re-enabled when
+      // full bridge ↔ TaskView event integration is implemented.
+      // if (bridgeStatus === "connected") { ... }
 
       setStreaming(true);
       setGenerationIncomplete(false);
@@ -2554,18 +2552,13 @@ export default function TaskView() {
       : input;
     addMessage(task.id, { role: "user", content: userContent });
 
-    // If bridge is connected, dispatch to the Manus Next agent
-    if (bridgeStatus === "connected") {
-      bridgeSend("task.message", {
-        taskId: task.id,
-        content: input,
-        files: files.map(f => ({ url: f.url, name: f.fileName })),
-      });
-      setInput("");
-      clearFiles();
-      inputRef.current?.focus();
-      return;
-    }
+    // Bridge integration: disabled until onTaskEvent is wired into TaskView.
+    // When bridge response handling is implemented, re-enable this block.
+    // if (bridgeStatus === "connected") {
+    //   bridgeSend("task.message", { taskId: task.id, content: input, files: files.map(f => ({ url: f.url, name: f.fileName })) });
+    //   setInput(""); clearFiles(); inputRef.current?.focus();
+    //   return;
+    // }
 
     // Otherwise, use SSE streaming from the LLM
     // C8-A2: Detect "continue" / "resume" commands and enrich with context
