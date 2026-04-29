@@ -42,6 +42,8 @@ export interface StreamStateSetters {
   getTaskMessages?: () => Array<{ id: string; cardType?: string; cardData?: Record<string, unknown> }>;
   /** GAP A: Callback to trigger iframe refresh in WebappPreviewCard */
   onPreviewRefreshSignal?: () => void;
+  /** Update the webapp preview URL when S3 re-upload provides a new URL */
+  onPreviewUrlUpdate?: (url: string) => void;
 }
 
 /**
@@ -406,12 +408,16 @@ export function buildStreamCallbacks(
         setters.setStreamContent(state.accumulated);
       }
     },
-    onPreviewRefresh: () => {
+    onPreviewRefresh: (data: { timestamp: number; url?: string }) => {
       // GAP A: Debounce preview refresh — only trigger every 2 seconds max
       const now = Date.now();
       const lastRefresh = state._previewRefreshCounter || 0;
       if (now - lastRefresh > 2000) {
         state._previewRefreshCounter = now;
+        // If a new S3 URL is provided, update the webapp preview URL
+        if (data.url && setters.onPreviewUrlUpdate) {
+          setters.onPreviewUrlUpdate(data.url);
+        }
         setters.onPreviewRefreshSignal?.();
       }
     },

@@ -1685,6 +1685,19 @@ If the user hasn't specified content details, ASK them what content they want. D
         console.log(`[Agent] Executing tool: ${toolName}`, parsedArgs);
         if (toolName === "web_search") usedWebSearch = true;
         if (toolName === "read_webpage" || toolName === "browse_web") usedReadWebpage = true;
+
+        // Send deploy progress events so the UI doesn't appear hung
+        if (toolName === "deploy_webapp") {
+          sendSSE(safeWrite, {
+            tool_action: {
+              id: toolCall.id,
+              name: "deploy_webapp",
+              type: "deploying",
+              label: "Building and uploading to cloud...",
+            },
+          });
+        }
+
         const result: ToolResult = await executeTool(toolName, toolArgs, { userId, taskExternalId });
 
         // Send tool_result event
@@ -1706,7 +1719,9 @@ If the user hasn't specified content details, ASK them what content they want. D
 
         // GAP A: Send preview_refresh after file-modifying tools so the iframe auto-refreshes
         if (getActiveProject().dir && (toolName === "edit_file" || toolName === "create_file" || toolName === "run_command" || toolName === "install_deps") && result.success) {
-          sendSSE(safeWrite, { preview_refresh: { timestamp: Date.now() } });
+          const { getActivePreviewUrl } = await import("./agentTools");
+          const previewUrl = getActivePreviewUrl();
+          sendSSE(safeWrite, { preview_refresh: { timestamp: Date.now(), url: previewUrl || undefined } });
         }
 
         // If it's a webapp, send a webapp_preview event

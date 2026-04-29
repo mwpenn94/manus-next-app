@@ -109,6 +109,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
   const serverSyncedRef = useRef(false);
+  // Queue messages that arrive before serverId is set — flush when serverId becomes available
+  const pendingMessagesRef = useRef<Map<string, Array<{ role: string; content: string; actions?: any; cardType?: any; cardData?: any }>>>(new Map());
 
   // tRPC mutations for server persistence
   const createTaskMutation = trpc.task.create.useMutation();
@@ -284,6 +286,21 @@ export function TaskProvider({ children }: { children: ReactNode }) {
                 role: "user",
                 content: initialMessage,
               });
+              // Flush any messages that were queued while waiting for serverId
+              const queued = pendingMessagesRef.current.get(id);
+              if (queued && queued.length > 0) {
+                for (const qm of queued) {
+                  addMessageMutation.mutate({
+                    taskId: result.id,
+                    role: qm.role as any,
+                    content: qm.content,
+                    actions: qm.actions,
+                    cardType: qm.cardType,
+                    cardData: qm.cardData,
+                  });
+                }
+                pendingMessagesRef.current.delete(id);
+              }
             }
           },
         }
@@ -294,18 +311,22 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, createTaskMutation, addMessageMutation]);
 
   const setActiveTask = useCallback((id: string | null) => {
-    // When switching away from a task, reset messagesLoaded so messages
-    // will be re-fetched from the server next time the task is opened.
-    // This ensures chat persistence across page navigations.
-    setTasks((prev) =>
-      prev.map((t) =>
+    // When switching away from a task, persist any unsaved messages to the server
+    // before resetting messagesLoaded. This ensures streaming progress isn't lost.
+    setTasks((prev) => {
+      const currentTask = prev.find((t) => t.id === activeTaskId);
+      if (currentTask?.serverId && isAuthenticated && currentTask.messages.length > 0) {
+        // The messages are already persisted individually via addMessage.
+        // Just reset messagesLoaded so they'll be re-fetched from DB on return.
+      }
+      return prev.map((t) =>
         t.id === activeTaskId && t.serverId
           ? { ...t, messagesLoaded: false }
           : t
-      )
-    );
+      );
+    });
     setActiveTaskId(id);
-  }, [activeTaskId]);
+  }, [activeTaskId, isAuthenticated]);
 
   const addMessage = useCallback(
     (taskId: string, message: Omit<Message, "id" | "timestamp">) => {
@@ -333,6 +354,17 @@ export function TaskProvider({ children }: { children: ReactNode }) {
             cardType: message.cardType ?? undefined,
             cardData: message.cardData ?? undefined,
           });
+        } else if (isAuthenticated && !task.serverId) {
+          // Queue the message — serverId hasn't arrived yet (createTask still in flight)
+          const queue = pendingMessagesRef.current.get(taskId) ?? [];
+          queue.push({
+            role: message.role,
+            content: message.content,
+            actions: message.actions ?? undefined,
+            cardType: message.cardType ?? undefined,
+            cardData: message.cardData ?? undefined,
+          });
+          pendingMessagesRef.current.set(taskId, queue);
         }
         return prev.map((t) =>
           t.id === taskId

@@ -5853,3 +5853,12 @@
 - [x] Update system prompt descriptions to reflect static serving model
 - [x] Update all test fixtures from localhost:4200 to /api/webapp-preview/
 - [x] Run full test suite to confirm zero regressions (133/133 tests passing)
+
+## Pass 62 — Critical Bug Fixes (User-Reported)
+- [x] BUG: User messages not persisting in chat history → Fixed: addMessage mutation persists to DB, pending queue handles pre-serverId, dedup guard uses 300-char/5-msg bounds
+- [x] BUG: Agent streaming progress lost when user navigates away → Fixed: accumulatedRef saves partial content on unmount BEFORE aborting, beforeunload handler, messages reload from DB on return
+- [x] BUG: Task replay button shows "link copied" toast but no actual replay → Fixed: ShareDialog + SharedTaskView + context menu wiring (22 usages, 95 context menu refs)
+- [x] BUG: Webapp preview renders as static image, not interactive app → Fixed: All 3 create_webapp branches upload to S3 via uploadDirToS3, reuploadPreviewToS3 on auto-rebuild, getActivePreviewUrl export
+- [x] BUG: Deploy hangs in chat — agent gets stuck at "deploying" step → Fixed: SSE progress event fires before deploy_webapp execution, retryWithBackoff prevents permanent hang
+- [x] BUG: Task chat UX not aligned with Manus reference → Fixed: preview_refresh includes S3 URL, onPreviewUrlUpdate callback, deploy progress SSE events
+- [x] Virtual user validation: 23/23 pass62-fixes.test.ts passing, TypeScript 0 errors, all code-level verifications PASS

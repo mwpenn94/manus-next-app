@@ -2710,9 +2710,14 @@ export async function executeTool(
 let activeProjectDir: string | null = null;
 let activeProjectServePath: string | null = null;
 let activeProjectType: "html" | "react" | null = null;
+let activeProjectPreviewUrl: string | null = null;
 
 export function getActiveProject() {
   return { dir: activeProjectDir, servePath: activeProjectServePath, type: activeProjectType };
+}
+
+export function getActivePreviewUrl(): string | null {
+  return activeProjectPreviewUrl;
 }
 
 /**
@@ -2732,6 +2737,109 @@ async function buildWebappProject(projectDir: string): Promise<string | null> {
     return null;
   } catch {
     return null;
+  }
+}
+
+// ── Upload a directory to S3 and return the index.html URL ──
+async function uploadDirToS3(
+  buildDir: string,
+  prefix: string,
+  storagePutFn: (key: string, data: Buffer | Uint8Array | string, contentType?: string) => Promise<{ key: string; url: string }>
+): Promise<string> {
+  const fs = await import("fs");
+  const pathMod = await import("path");
+
+  const mimeTypes: Record<string, string> = {
+    ".html": "text/html", ".css": "text/css", ".js": "application/javascript",
+    ".mjs": "application/javascript", ".json": "application/json", ".svg": "image/svg+xml",
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
+    ".webp": "image/webp", ".ico": "image/x-icon", ".woff": "font/woff",
+    ".woff2": "font/woff2", ".ttf": "font/ttf", ".map": "application/json",
+    ".txt": "text/plain", ".xml": "application/xml",
+  };
+
+  // Recursively collect all files
+  const collectFiles = (dir: string, base: string): { relPath: string; absPath: string }[] => {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    const files: { relPath: string; absPath: string }[] = [];
+    for (const entry of entries) {
+      const fullPath = pathMod.join(dir, entry.name);
+      const relPath = pathMod.relative(base, fullPath);
+      if (entry.isDirectory()) {
+        files.push(...collectFiles(fullPath, base));
+      } else {
+        files.push({ relPath, absPath: fullPath });
+      }
+    }
+    return files;
+  };
+
+  const allFiles = collectFiles(buildDir, buildDir);
+  const assetUrlMap = new Map<string, string>();
+
+  // Upload non-HTML files first
+  for (const file of allFiles) {
+    if (file.relPath === "index.html") continue;
+    const ext = pathMod.extname(file.absPath).toLowerCase();
+    const mime = mimeTypes[ext] || "application/octet-stream";
+    const fileData = fs.readFileSync(file.absPath);
+    const fileKey = `${prefix}/${file.relPath}`;
+    try {
+      const { url } = await storagePutFn(fileKey, fileData, mime);
+      assetUrlMap.set(file.relPath, url);
+    } catch (err: any) {
+      console.warn(`[uploadDirToS3] Failed to upload ${file.relPath}: ${err.message}`);
+    }
+  }
+
+  // Read and rewrite index.html with S3 URLs
+  let htmlContent = fs.readFileSync(pathMod.join(buildDir, "index.html"), "utf-8");
+  for (const [relPath, s3Url] of Array.from(assetUrlMap.entries())) {
+    const escapedPath = relPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    htmlContent = htmlContent.replace(
+      new RegExp(`(["'])(/?${escapedPath})(["'])`, 'g'),
+      `$1${s3Url}$3`
+    );
+    htmlContent = htmlContent.replace(
+      new RegExp(`(["'])/${escapedPath}(["'])`, 'g'),
+      `$1${s3Url}$2`
+    );
+  }
+
+  // Upload rewritten index.html
+  const { url: htmlUrl } = await storagePutFn(`${prefix}/index.html`, htmlContent, "text/html");
+  return htmlUrl;
+}
+
+// ── Re-upload current project to S3 after file edits ──
+async function reuploadPreviewToS3(): Promise<void> {
+  if (!activeProjectDir) return;
+  const fs = await import("fs");
+  const pathMod = await import("path");
+  const projectName = pathMod.basename(activeProjectDir);
+
+  try {
+    if (activeProjectType === "react") {
+      // Rebuild first, then upload dist/
+      const newServePath = await buildWebappProject(activeProjectDir);
+      if (newServePath) {
+        activeProjectServePath = newServePath;
+        const { storagePut } = await import("./storage");
+        const ts = Date.now();
+        const prefix = `webapp-previews/${projectName}-${ts}`;
+        const newUrl = await uploadDirToS3(newServePath, prefix, storagePut);
+        activeProjectPreviewUrl = newUrl;
+      }
+    } else if (activeProjectType === "html") {
+      // Upload HTML files directly
+      const { storagePut } = await import("./storage");
+      const ts = Date.now();
+      const prefix = `webapp-previews/${projectName}-${ts}`;
+      const newUrl = await uploadDirToS3(activeProjectDir, prefix, storagePut);
+      activeProjectPreviewUrl = newUrl;
+    }
+  } catch (err: any) {
+    console.warn("[reuploadPreviewToS3] Failed:", err.message);
   }
 }
 
@@ -2776,10 +2884,31 @@ async function executeCreateWebapp(args: {
       fs.writeFileSync(path.join(projectDir, "styles.css"), `* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2rem; font-weight: 600; }`);
       fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
 
-      // Serve directly via Express static middleware (no localhost dev server)
+      // Serve via Express static middleware for local dev AND immediately upload to S3 for production
       activeProjectDir = projectDir;
       activeProjectServePath = projectDir;
       activeProjectType = "html";
+
+      // Upload initial scaffold to S3 so preview works in production (no /tmp dependency)
+      const { storagePut } = await import("./storage");
+      const deployTs = Date.now();
+      const previewPrefix = `webapp-previews/${projectName}-${deployTs}`;
+      const htmlData = fs.readFileSync(path.join(projectDir, "index.html"), "utf-8");
+      const cssData = fs.readFileSync(path.join(projectDir, "styles.css"), "utf-8");
+      const jsData = fs.readFileSync(path.join(projectDir, "main.js"), "utf-8");
+
+      // Upload CSS and JS first to get URLs
+      const { url: cssUrl } = await storagePut(`${previewPrefix}/styles.css`, Buffer.from(cssData), "text/css");
+      const { url: jsUrl } = await storagePut(`${previewPrefix}/main.js`, Buffer.from(jsData), "application/javascript");
+
+      // Rewrite HTML to use absolute S3 URLs for assets
+      let rewrittenHtml = htmlData
+        .replace('href="styles.css"', `href="${cssUrl}"`)
+        .replace('src="main.js"', `src="${jsUrl}"`);
+      const { url: htmlUrl } = await storagePut(`${previewPrefix}/index.html`, Buffer.from(rewrittenHtml), "text/html");
+
+      // Store the preview URL for later updates
+      activeProjectPreviewUrl = htmlUrl;
 
       // Persist to DB so WebAppProjectPage can manage it
       let projectExternalId: string | undefined;
@@ -2806,8 +2935,8 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created HTML project "${projectName}" at ${projectDir}. Preview is ready.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
-        url: `/api/webapp-preview/`,
+        result: `Created HTML project "${projectName}". Preview is live.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
+        url: htmlUrl,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
         projectExternalId,
@@ -2899,10 +3028,28 @@ async function executeCreateWebapp(args: {
         fs.writeFileSync(path.join(projectDir, "styles.css"), `/* Additional custom styles */\n* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }\np { color: #a3a3a3; font-size: 1.125rem; line-height: 1.75; }`);
         fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
 
-        // Serve directly via Express static middleware (no localhost dev server)
+        // Serve via Express static middleware for local dev AND upload to S3 for production
         activeProjectDir = projectDir;
         activeProjectServePath = projectDir;
         activeProjectType = "html";
+
+        // Upload fallback HTML scaffold to S3
+        const { storagePut: storagePutFallback } = await import("./storage");
+        const fallbackTs = Date.now();
+        const fallbackPrefix = `webapp-previews/${projectName}-${fallbackTs}`;
+        const fallbackHtml = fs.readFileSync(path.join(projectDir, "index.html"), "utf-8");
+        const fallbackCss = fs.readFileSync(path.join(projectDir, "styles.css"), "utf-8");
+        const fallbackJs = fs.readFileSync(path.join(projectDir, "main.js"), "utf-8");
+
+        const { url: fbCssUrl } = await storagePutFallback(`${fallbackPrefix}/styles.css`, Buffer.from(fallbackCss), "text/css");
+        const { url: fbJsUrl } = await storagePutFallback(`${fallbackPrefix}/main.js`, Buffer.from(fallbackJs), "application/javascript");
+
+        let fbRewrittenHtml = fallbackHtml
+          .replace('href="styles.css"', `href="${fbCssUrl}"`)
+          .replace('src="main.js"', `src="${fbJsUrl}"`);
+        const { url: fbHtmlUrl } = await storagePutFallback(`${fallbackPrefix}/index.html`, Buffer.from(fbRewrittenHtml), "text/html");
+
+        activeProjectPreviewUrl = fbHtmlUrl;
 
         let projectExternalId: string | undefined;
         if (context?.userId) {
@@ -2928,8 +3075,8 @@ async function executeCreateWebapp(args: {
 
         return {
           success: true,
-          result: `Created HTML project "${projectName}" (React scaffold failed, using HTML fallback). Preview is ready.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
-          url: `/api/webapp-preview/`,
+          result: `Created HTML project "${projectName}" (using HTML fallback). Preview is live.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
+          url: fbHtmlUrl,
           artifactType: "webapp_preview",
           artifactLabel: projectName,
           projectExternalId,
@@ -2941,6 +3088,20 @@ async function executeCreateWebapp(args: {
       activeProjectDir = projectDir;
       activeProjectServePath = buildOutput || projectDir;
       activeProjectType = "react";
+
+      // Upload built dist/ to S3 so preview works in production
+      let reactPreviewUrl = `/api/webapp-preview/`; // fallback for local dev
+      if (buildOutput) {
+        try {
+          const { storagePut: storagePutReact } = await import("./storage");
+          const reactTs = Date.now();
+          const reactPrefix = `webapp-previews/${projectName}-${reactTs}`;
+          reactPreviewUrl = await uploadDirToS3(buildOutput, reactPrefix, storagePutReact);
+          activeProjectPreviewUrl = reactPreviewUrl;
+        } catch (s3Err: any) {
+          console.warn("[create_webapp] S3 upload failed, using local preview:", s3Err.message);
+        }
+      }
 
       // Persist to DB so WebAppProjectPage can manage it
       let projectExternalId: string | undefined;
@@ -2967,8 +3128,8 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Preview is ${buildOutput ? "ready" : "building"}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
-        url: `/api/webapp-preview/`,
+        result: `Created React+Vite+Tailwind project "${projectName}". Preview is live.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
+        url: reactPreviewUrl,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
         projectExternalId,
@@ -3003,11 +3164,8 @@ async function executeCreateFile(args: {
     fs.mkdirSync(pathMod.dirname(fullPath), { recursive: true });
     fs.writeFileSync(fullPath, args.content);
 
-    // Auto-rebuild for React projects so preview updates
-    if (activeProjectType === "react" && activeProjectDir) {
-      const newServePath = await buildWebappProject(activeProjectDir);
-      if (newServePath) activeProjectServePath = newServePath;
-    }
+    // Auto-rebuild and re-upload to S3 so preview updates
+    await reuploadPreviewToS3();
 
     return {
       success: true,
@@ -3048,11 +3206,8 @@ async function executeEditFile(args: {
     const updated = content.replace(args.find, args.replace);
     fs.writeFileSync(fullPath, updated);
 
-    // Auto-rebuild for React projects so preview updates
-    if (activeProjectType === "react" && activeProjectDir) {
-      const newServePath = await buildWebappProject(activeProjectDir);
-      if (newServePath) activeProjectServePath = newServePath;
-    }
+    // Auto-rebuild and re-upload to S3 so preview updates
+    await reuploadPreviewToS3();
 
     return {
       success: true,

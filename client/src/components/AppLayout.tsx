@@ -102,6 +102,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ConnectorsSheet, { ConnectorsBadge } from "@/components/ConnectorsSheet";
+import ShareDialog from "@/components/ShareDialog";
 
 /* ─── Helper: format relative time ─── */
 function formatTimeAgo(date: Date): string {
@@ -174,6 +175,7 @@ interface TaskContextMenuProps {
   onRename: (id: string, title: string) => void;
   onAssignProject: (taskServerId: number, projectExternalId: string | null) => void;
   taskServerId?: number;
+  onShare?: (taskId: string, taskTitle: string) => void;
 }
 
 function TaskContextMenu({
@@ -187,6 +189,7 @@ function TaskContextMenu({
   onRename,
   onAssignProject,
   taskServerId,
+  onShare,
 }: TaskContextMenuProps) {
   return (
     <DropdownMenu>
@@ -203,8 +206,12 @@ function TaskContextMenu({
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            navigator.clipboard.writeText(`${window.location.origin}/task/${taskId}`);
-            toast.success("Link copied to clipboard");
+            if (onShare) {
+              onShare(taskId, taskTitle);
+            } else {
+              navigator.clipboard.writeText(`${window.location.origin}/task/${taskId}`);
+              toast.success("Link copied to clipboard");
+            }
           }}
         >
           <Share2 className="w-4 h-4 mr-2" />
@@ -293,7 +300,7 @@ function TaskContextMenu({
 /* ─── Project Tree Node (collapsible folder with nested tasks) ─── */
 interface ProjectTreeNodeProps {
   project: { id: number; externalId: string; name: string; icon: string | null; pinned: number };
-  tasks: Array<{
+  projectTasks: Array<{
     id: string;
     title: string;
     status: string;
@@ -308,21 +315,23 @@ interface ProjectTreeNodeProps {
   onDeleteTask: (taskId: string) => void;
   onFavoriteTask: (taskId: string, fav: number) => void;
   onRenameTask: (taskId: string, title: string) => void;
+  onShareTask?: (taskId: string, taskTitle: string) => void;
   onAssignProject: (taskServerId: number, projectExternalId: string | null) => void;
-  onProjectClick: (externalId: string) => void;
+  onProjectClick?: (projectId: number) => void;
 }
 
 function ProjectTreeNode({
   project,
-  tasks: projectTasks,
+  projectTasks,
   activeTaskId,
-  allProjects,
   onTaskClick,
   onDeleteTask,
   onFavoriteTask,
   onRenameTask,
+  onShareTask,
   onAssignProject,
   onProjectClick,
+  allProjects,
 }: ProjectTreeNodeProps) {
   // Auto-expand if any child task is active
   const hasActiveChild = projectTasks.some((t) => t.id === activeTaskId);
@@ -380,6 +389,7 @@ function ProjectTreeNode({
                 onDelete={onDeleteTask}
                 onFavorite={onFavoriteTask}
                 onRename={onRenameTask}
+                onShare={onShareTask}
                 onAssignProject={onAssignProject}
                 taskServerId={task.serverId}
               />
@@ -414,6 +424,7 @@ interface SidebarProjectTreeProps {
   onDeleteTask: (taskId: string) => void;
   onFavoriteTask: (taskId: string, fav: number) => void;
   onRenameTask: (taskId: string, title: string) => void;
+  onShareTask?: (taskId: string, taskTitle: string) => void;
   navigate: (path: string) => void;
 }
 
@@ -424,6 +435,7 @@ function SidebarProjectTree({
   onDeleteTask,
   onFavoriteTask,
   onRenameTask,
+  onShareTask,
   navigate,
 }: SidebarProjectTreeProps) {
   const projectsQuery = trpc.project.list.useQuery(undefined, { staleTime: 30000 });
@@ -538,13 +550,14 @@ function SidebarProjectTree({
             <ProjectTreeNode
               key={project.externalId}
               project={project}
-              tasks={tasksByProject.get(project.id) ?? []}
+              projectTasks={tasksByProject.get(project.id) ?? []}
               activeTaskId={activeTaskId}
               allProjects={allProjectsMeta}
               onTaskClick={onTaskClick}
               onDeleteTask={onDeleteTask}
               onFavoriteTask={onFavoriteTask}
               onRenameTask={onRenameTask}
+              onShareTask={onShareTask}
               onAssignProject={handleAssignProject}
               onProjectClick={(eid) => navigate(`/project/${eid}`)}
             />
@@ -572,6 +585,7 @@ interface AllTasksSectionProps {
   onDeleteTask: (taskId: string) => void;
   onFavoriteTask: (taskId: string, fav: number) => void;
   onRenameTask: (taskId: string, title: string) => void;
+  onShareTask?: (taskId: string, taskTitle: string) => void;
   onAssignProject: (taskServerId: number, projectExternalId: string | null) => void;
   statusFilter: string;
   onStatusFilterChange: (filter: string) => void;
@@ -585,6 +599,7 @@ function AllTasksSection({
   onDeleteTask,
   onFavoriteTask,
   onRenameTask,
+  onShareTask,
   onAssignProject,
   statusFilter,
   onStatusFilterChange,
@@ -697,6 +712,7 @@ function AllTasksSection({
                 onDelete={onDeleteTask}
                 onFavorite={onFavoriteTask}
                 onRename={onRenameTask}
+                onShare={onShareTask}
                 onAssignProject={onAssignProject}
                 taskServerId={task.serverId}
               />
@@ -800,6 +816,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [connectorsSheetOpen, setConnectorsSheetOpen] = useState(false);
+  const [shareDialogState, setShareDialogState] = useState<{ open: boolean; taskId: string; taskTitle: string }>({ open: false, taskId: "", taskTitle: "" });
   const [selectedModelId, setSelectedModelId] = useState(() => {
     try {
       // Primary: read the model ID directly
@@ -995,6 +1012,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     [renameTask]
   );
 
+  const handleShareTask = useCallback(
+    (taskId: string, taskTitle: string) => {
+      setShareDialogState({ open: true, taskId, taskTitle });
+    },
+    []
+  );
+
   const handleAssignProject = useCallback(
     (taskServerId: number, projectExternalId: string | null) => {
       assignMutation.mutate({ taskId: taskServerId, projectExternalId });
@@ -1100,6 +1124,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onDeleteTask={handleDeleteTask}
             onFavoriteTask={handleFavoriteTask}
             onRenameTask={handleRenameTask}
+            onShareTask={handleShareTask}
             navigate={(path) => {
               navigate(path);
               setMobileDrawerOpen(false);
@@ -1117,6 +1142,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onDeleteTask={handleDeleteTask}
             onFavoriteTask={handleFavoriteTask}
             onRenameTask={handleRenameTask}
+            onShareTask={handleShareTask}
             onAssignProject={handleAssignProject}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
@@ -1514,6 +1540,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <ConnectorsSheet
         open={connectorsSheetOpen}
         onOpenChange={setConnectorsSheetOpen}
+      />
+      <ShareDialog
+        open={shareDialogState.open}
+        onOpenChange={(open) => setShareDialogState((s) => ({ ...s, open }))}
+        taskExternalId={shareDialogState.taskId}
+        taskTitle={shareDialogState.taskTitle}
       />
     </div>
   );

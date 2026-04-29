@@ -2396,10 +2396,16 @@ export default function TaskView() {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Cleanup on unmount: save partial content if still streaming
+    // Cleanup on unmount: save partial content FIRST, then abort the stream.
+    // Order matters: savePartialContent reads refs that the abort's finally block would clear.
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       savePartialContent();
+      // Abort any in-flight stream so it doesn't continue running in the background
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     };
   }, [addMessage]);
 
