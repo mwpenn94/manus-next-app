@@ -731,50 +731,20 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           <WebappPreviewCard
             appName={(message.cardData?.appName as string) ?? "App"}
             domain={message.cardData?.domain as string}
-            status={(message.cardData?.status as any) ?? "not_published"}
-            screenshotUrl={message.cardData?.screenshotUrl as string}
+            status={(message.cardData?.status as any) ?? "running"}
             previewUrl={message.cardData?.previewUrl as string}
             publishedUrl={message.cardData?.publishedUrl as string}
-            onSettings={() => {
-              const eid = message.cardData?.projectExternalId as string;
-              if (eid) window.location.href = `/projects/webapp/${eid}`;
-              else toast.info("Project settings not available yet.");
-            }}
-            onPublish={() => {
-              const eid = message.cardData?.projectExternalId as string;
-              const currentStatus = message.cardData?.status as string;
-              if (currentStatus === "published") {
-                toast.info("Already published! Use 'Re-deploy' to update.");
-              } else if (eid) {
-                toast.info("To deploy, ask the agent: 'Deploy my webapp to production'");
-              } else {
-                toast.info("Build the app first before publishing.");
-              }
-            }}
-            onVisit={() => {
-              // If published, open the published URL; otherwise open the proxy preview
-              const publishedUrl = message.cardData?.publishedUrl as string;
-              const domain = message.cardData?.domain as string;
-              if (publishedUrl) {
-                window.open(publishedUrl, "_blank");
-              } else if (domain) {
-                window.open(domain.startsWith("http") ? domain : `https://${domain}`, "_blank");
-              } else {
-                const proxyUrl = `/api/webapp-preview/`;
-                window.open(proxyUrl, "_blank");
-              }
-            }}
             hasUnpublishedChanges={!!message.cardData?.hasUnpublishedChanges}
             projectExternalId={message.cardData?.projectExternalId as string}
-            refreshKey={previewRefreshKey}
           />
         ) : message.cardType === "webapp_deployed" ? (
-          <DeploymentCard
+          /* Pass 67: Legacy webapp_deployed cards render as compact WebappPreviewCard */
+          <WebappPreviewCard
             appName={(message.cardData?.appName as string) ?? "App"}
-            deployedUrl={(message.cardData?.deployedUrl as string) ?? ""}
+            domain={(message.cardData?.deployedUrl as string)?.replace(/^https?:\/\//, "")}
+            status="published"
+            publishedUrl={(message.cardData?.deployedUrl as string) ?? ""}
             projectExternalId={message.cardData?.projectExternalId as string}
-            versionLabel={message.cardData?.versionLabel as string}
-            status={(message.cardData?.status as any) ?? "live"}
           />
         ) : message.cardType === "checkpoint" ? (
           <CheckpointCard

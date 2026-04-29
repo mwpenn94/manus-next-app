@@ -243,12 +243,10 @@ export function buildStreamCallbacks(
       }
     },
     onReconnecting: (attempt: number, maxRetries: number) => {
-      // Signal reconnecting state to the presence indicator
+      // Pass 67: Signal reconnecting state to presence indicator only.
+      // Do NOT inject visible text into the stream — the ActiveToolIndicator
+      // already shows a reconnecting state. This prevents ugly mid-chat error text.
       setters.setIsReconnecting?.(true);
-      // Show a subtle reconnecting indicator in the stream content
-      setters.setStreamContent(
-        state.accumulated + `\n\n*Reconnecting... (attempt ${attempt}/${maxRetries})*`
-      );
     },
     onWebappPreview: (preview: { name: string; url: string; description?: string; projectExternalId?: string }) => {
       // Create a webapp preview card message in the chat — but only once per app name.
@@ -262,7 +260,7 @@ export function buildStreamCallbacks(
 
         setters.addMessage(setters.taskId, {
           role: "assistant",
-          content: `🌐 **${preview.name}** is ready! [Open Preview](${preview.url})${preview.description ? `\n\n${preview.description}` : ""}`,
+          content: "", // Card renders visually; no text content needed
           cardType: "webapp_preview" as const,
           cardData: {
             appName: preview.name,
@@ -272,12 +270,8 @@ export function buildStreamCallbacks(
             projectExternalId: preview.projectExternalId,
           },
         });
-      } else {
-        // Fallback: append as markdown link
-        state.accumulated += `\n\n🌐 **${preview.name}** — [Open Preview](${preview.url})\n\n`;
-        setters.accumulatedRef.current = state.accumulated;
-        setters.setStreamContent(state.accumulated);
       }
+      // No fallback text injection — the card IS the message
     },
     onConfirmationGate: () => {
       // Gate system removed — tools execute autonomously
@@ -386,27 +380,28 @@ export function buildStreamCallbacks(
             hasUnpublishedChanges: false,
             projectExternalId: deployment.projectExternalId || previewMsg.cardData?.projectExternalId,
           });
+          return; // Done — card updated in-place, no new message needed
         }
       }
 
+      // Fallback: If no existing preview card found, create one (shouldn't normally happen)
       if (setters.addMessage) {
         setters.addMessage(setters.taskId, {
           role: "assistant",
-          content: `\u{1F680} **${deployment.name}** has been deployed! [Visit Live Site](${deployment.url})${deployment.versionLabel ? ` (${deployment.versionLabel})` : ""}`,
-          cardType: "webapp_deployed" as const,
+          content: "", // Card renders visually
+          cardType: "webapp_preview" as const,
           cardData: {
             appName: deployment.name,
-            deployedUrl: deployment.url,
+            previewUrl: deployment.url,
+            publishedUrl: deployment.url,
+            status: "published",
+            domain: deployment.url.replace(/^https?:\/\//, ""),
+            hasUnpublishedChanges: false,
             projectExternalId: deployment.projectExternalId,
-            versionLabel: deployment.versionLabel,
-            status: "live",
           },
         });
-      } else {
-        state.accumulated += `\n\n\u{1F680} **${deployment.name}** deployed! [Visit Live Site](${deployment.url})\n\n`;
-        setters.accumulatedRef.current = state.accumulated;
-        setters.setStreamContent(state.accumulated);
       }
+      // No raw URL injection into accumulated text
     },
     onPreviewRefresh: (data: { timestamp: number; url?: string }) => {
       // GAP A: Debounce preview refresh — only trigger every 2 seconds max

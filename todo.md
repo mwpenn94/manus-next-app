@@ -5894,3 +5894,19 @@
 - [x] BUG: DataControlsPage same status mismatch — FIXED
 - [x] Vitest: 8 new tests for pipeline stuck exemption and status filter logic — ALL PASS
 - [x] TypeScript compiles clean, dev server healthy
+## Pass 67 — Chat Rendering Manus Parity (Convergence)
+- [x] BUG: WebappPreviewCard renders 670-line iframe with device toggles in narrow chat column → causes vertical text overflow
+- [x] BUG: onWebappPreview injects raw markdown URL into accumulated text → visible as plain text in final message
+- [x] BUG: onWebappDeployed creates SEPARATE webapp_deployed message → duplicate cards in chat
+- [x] BUG: onReconnecting injects visible "Reconnecting..." text into stream content
+- [x] BUG: webapp_deployed renders as DeploymentCard (different component) instead of evolving the existing preview card
+- [x] FIX: WebappPreviewCard rewritten as compact Manus-style card — status badge, URL bar with copy, Visit/Manage buttons, max-w-md, truncate, min-w-0
+- [x] FIX: onWebappPreview — empty content for card messages, deduplication via _webappPreviewsSeen set, no fallback text injection
+- [x] FIX: onWebappDeployed — updates existing webapp_preview card in-place via updateMessageCard (no separate message)
+- [x] FIX: onReconnecting — only signals state via setIsReconnecting, no stream content modification
+- [x] FIX: TaskView webapp_deployed branch now renders WebappPreviewCard (not DeploymentCard)
+- [x] FIX: TaskView webapp_preview uses simplified props (no onSettings/onPublish/onVisit callbacks)
+- [x] Updated e2e-webapp-flow.test.ts and e2e-new-features.test.ts to match new compact card design
+- [x] 15/15 pass67-chat-rendering.test.ts assertions pass
+- [x] 106/106 total assertions pass across 4 test files (pass67, e2e-webapp-flow, e2e-new-features, deploy)
+- [x] TypeScript compiles clean (0 errors)

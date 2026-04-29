@@ -45,48 +45,63 @@ describe("E2E: Create new task → agent creates webapp", () => {
     expect(callbacks).toContain("webapp_preview");
   });
 
-  it("buildStreamCallbacks handles webapp_deployed events", () => {
+  it("buildStreamCallbacks handles webapp_deployed events by updating existing card", () => {
     const callbacks = readFile(path.resolve(CLIENT_SRC, "lib/buildStreamCallbacks.ts"));
     expect(callbacks).toContain("onWebappDeployed");
-    expect(callbacks).toContain("webapp_deployed");
-    // Should update the webapp_preview card with publishedUrl
+    // Pass 67: Updates existing card in-place rather than creating separate message
+    expect(callbacks).toContain("updateMessageCard");
     expect(callbacks).toContain("publishedUrl");
   });
 });
 
-describe("E2E: WebappPreviewCard appears with live iframe", () => {
-  it("WebappPreviewCard component exists and renders an iframe", () => {
+describe("E2E: WebappPreviewCard — compact Manus-style card (no iframe)", () => {
+  it("WebappPreviewCard component exists", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    expect(card).toContain("<iframe");
-    expect(card).toContain("iframeSrc");
+    expect(card.length).toBeGreaterThan(100);
+  });
+
+  it("WebappPreviewCard does NOT render an iframe (Manus parity)", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    expect(card).not.toContain("<iframe");
   });
 
   it("WebappPreviewCard accepts required props", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    // Must accept previewUrl, port, appName
     expect(card).toContain("previewUrl");
-    expect(card).toContain("port");
     expect(card).toContain("appName");
-    // Must accept publishedUrl for deployed sites
     expect(card).toContain("publishedUrl");
   });
 
-  it("WebappPreviewCard has device preview toggles (desktop/tablet/mobile)", () => {
+  it("WebappPreviewCard shows a status badge (Published/Running/Deploying)", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    expect(card).toContain("Monitor");
-    expect(card).toContain("Tablet");
-    expect(card).toContain("Smartphone");
+    expect(card).toContain("Published");
+    expect(card).toContain("Running");
+    expect(card).toContain("Deploying");
   });
 
-  it("WebappPreviewCard uses proxy URL for localhost", () => {
+  it("WebappPreviewCard has a URL bar with copy button", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    expect(card).toContain("/api/webapp-preview/");
+    expect(card).toContain("Copy URL");
+    expect(card).toContain("displayUrl");
   });
 
-  it("WebappPreviewCard has expandable fullscreen mode", () => {
+  it("WebappPreviewCard has Visit/Open button", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    expect(card).toContain("expanded");
-    expect(card).toContain("Maximize");
+    expect(card).toContain("Visit Site");
+    expect(card).toContain("Open Preview");
+  });
+
+  it("WebappPreviewCard has a Manage button for project navigation", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    expect(card).toContain("Manage");
+    expect(card).toContain("projectExternalId");
+  });
+
+  it("WebappPreviewCard prevents vertical text overflow", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    expect(card).toContain("truncate");
+    expect(card).toContain("min-w-0");
+    expect(card).toContain("max-w-md");
   });
 
   it("TaskView renders WebappPreviewCard for webapp_preview message cards", () => {
@@ -143,18 +158,18 @@ describe("E2E: Visit Site opens working page (not 404)", () => {
     expect(card).toContain("!deployedUrl");
   });
 
-  it("WebappPreviewCard external link uses publishedUrl when available", () => {
+  it("WebappPreviewCard uses publishedUrl for Visit button", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    // Should prefer publishedUrl for external link
+    // Pass 67: Compact card uses publishedUrl for Visit Site button
     expect(card).toContain("publishedUrl");
-    expect(card).toContain("effectiveUrl");
+    expect(card).toContain("handleVisit");
   });
 
-  it("WebappPreviewCard iframe falls back to deployed URL when dev server stops", () => {
+  it("WebappPreviewCard falls back to previewUrl when no publishedUrl", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    // Should have fallback logic for when dev server is unavailable
-    expect(card).toContain("publishedUrl");
-    expect(card).toContain("effectiveUrl");
+    // Should have fallback to previewUrl
+    expect(card).toContain("previewUrl");
+    expect(card).toContain("liveUrl");
   });
 });
 

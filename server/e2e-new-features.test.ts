@@ -326,14 +326,15 @@ describe("WebappPreviewCard publishedUrl", () => {
     expect(content).toContain("publishedUrl");
   });
 
-  it("WebappPreviewCard prioritizes publishedUrl for iframe src", () => {
+  it("WebappPreviewCard uses publishedUrl for Visit Site button (no iframe)", () => {
     const content = fs.readFileSync(
       path.resolve("client/src/components/WebappPreviewCard.tsx"),
       "utf-8"
     );
-    // Should have logic to choose between publishedUrl and proxy URL
+    // Pass 67: No iframe — compact card uses publishedUrl for Visit button
     expect(content).toContain("publishedUrl");
-    expect(content).toContain("iframeSrc");
+    expect(content).toContain("Visit Site");
+    expect(content).not.toContain("<iframe");
   });
 
   it("WebappPreviewCard shows deployed URL in URL bar", () => {
