@@ -5940,3 +5940,9 @@
 - [x] Manus-aligned: Server-side message reconstruction from DB when client sends <= 2 messages (prevents context loss on reconnect)
 - [x] Manus-aligned: ManusNextChat component fixed to send `messages[]` instead of `message` + `history`
 - [x] Vitest: 8 tests in message-persistence.test.ts covering all fix scenarios (all passing)
+
+## Pass 71 — Compounding Errors: 103-124 tRPC Errors, Stream 502
+- [x] tRPC returning HTML instead of JSON (103-124 client errors) — ROOT CAUSE: React hooks violation in TaskView.tsx (useMutation after early return)
+- [x] "Rendered more hooks than during the previous render" — FIXED: moved createShareMutation hook BEFORE the `if (!task) return` early exit
+- [x] Stream 502 on deployed site — CAUSE: npm install timeout during create_webapp (infrastructure constraint, not code bug). Existing fallback to HTML template already handles this gracefully.
+- [x] Verified: TypeScript compiles clean (0 errors), all 9 tests pass

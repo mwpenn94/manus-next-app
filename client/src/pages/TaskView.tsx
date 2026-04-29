@@ -3045,6 +3045,14 @@ export default function TaskView() {
     }
   }, [upload]);
 
+  // Hook: createShareMutation (MUST be before early returns — Rules of Hooks)
+  const createShareMutation = trpc.share.create.useMutation({
+    onError: (err) => {
+      toast.error("Failed to create share link");
+      console.error("[Share] create error:", err.message);
+    },
+  });
+
   if (!task) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -3052,15 +3060,7 @@ export default function TaskView() {
       </div>
     );
   }
-
   // ── Header button handlers ──
-
-  const createShareMutation = trpc.share.create.useMutation({
-    onError: (err) => {
-      toast.error("Failed to create share link");
-      console.error("[Share] create error:", err.message);
-    },
-  });
 
   const handleShareUrl = async () => {
     // Auto-create a share link and copy the share URL (not the task URL)
