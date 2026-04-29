@@ -405,7 +405,7 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "create_webapp",
       description:
-        "Create a new web application project. Scaffolds a React + Vite + Tailwind project with the specified name, creates initial files, installs dependencies, and starts a dev server. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project.",
+        "Create a new web application project. Scaffolds a React + Vite + Tailwind project with the specified name, creates initial files, installs dependencies, and builds the project for preview. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project.",
       parameters: {
         type: "object",
         properties: {
@@ -2708,45 +2708,31 @@ export async function executeTool(
 
 // ── Webapp Project State ──
 let activeProjectDir: string | null = null;
-let activeProjectPort: number | null = null;
+let activeProjectServePath: string | null = null;
+let activeProjectType: "html" | "react" | null = null;
 
 export function getActiveProject() {
-  return { dir: activeProjectDir, port: activeProjectPort };
+  return { dir: activeProjectDir, servePath: activeProjectServePath, type: activeProjectType };
 }
 
-/** Find an available port starting from `start`, checking up to 50 ports */
-async function findWebappPort(start: number): Promise<number> {
-  const net = await import("net");
-  for (let p = start; p < start + 50; p++) {
-    const available = await new Promise<boolean>((resolve) => {
-      const srv = net.createServer();
-      srv.listen(p, () => srv.close(() => resolve(true)));
-      srv.on("error", () => resolve(false));
-    });
-    if (available) return p;
+/**
+ * Build a React/Vite project and return the dist directory path.
+ * Returns null if build fails.
+ */
+async function buildWebappProject(projectDir: string): Promise<string | null> {
+  const fs = await import("fs");
+  const path = await import("path");
+  const { execSync } = await import("child_process");
+  try {
+    execSync(`cd ${projectDir} && npm run build 2>&1`, { timeout: 120000 });
+    const distDir = path.join(projectDir, "dist");
+    const buildDir = path.join(projectDir, "build");
+    if (fs.existsSync(distDir)) return distDir;
+    if (fs.existsSync(buildDir)) return buildDir;
+    return null;
+  } catch {
+    return null;
   }
-  // Fallback: random port in range
-  return start + Math.floor(Math.random() * 900);
-}
-
-/** Poll a port until it responds to HTTP or timeout is reached */
-async function waitForPort(port: number, timeoutMs: number = 12000): Promise<boolean> {
-  const http = await import("http");
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const ok = await new Promise<boolean>((resolve) => {
-      const req = http.request({ hostname: "127.0.0.1", port, path: "/", method: "GET", timeout: 2000 }, (res) => {
-        res.resume();
-        resolve(true);
-      });
-      req.on("error", () => resolve(false));
-      req.on("timeout", () => { req.destroy(); resolve(false); });
-      req.end();
-    });
-    if (ok) return true;
-    await new Promise((r) => setTimeout(r, 800));
-  }
-  return false;
 }
 
 // ── create_webapp ──
@@ -2790,16 +2776,10 @@ async function executeCreateWebapp(args: {
       fs.writeFileSync(path.join(projectDir, "styles.css"), `* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2rem; font-weight: 600; }`);
       fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
 
-      // Find available port dynamically
-      const port = await findWebappPort(4100);
-      try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
-      execSync(`cd ${projectDir} && nohup npx -y serve -l ${port} -s . > /dev/null 2>&1 &`, { timeout: 15000 });
-
-      // Wait for server to be reachable
-      const ready = await waitForPort(port, 8000);
-
+      // Serve directly via Express static middleware (no localhost dev server)
       activeProjectDir = projectDir;
-      activeProjectPort = port;
+      activeProjectServePath = projectDir;
+      activeProjectType = "html";
 
       // Persist to DB so WebAppProjectPage can manage it
       let projectExternalId: string | undefined;
@@ -2826,7 +2806,7 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created HTML project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting"} on port ${port}.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
+        result: `Created HTML project "${projectName}" at ${projectDir}. Preview is ready.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
         url: `/api/webapp-preview/`,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
@@ -2834,8 +2814,6 @@ async function executeCreateWebapp(args: {
       };
     } else {
       // React + Vite + Tailwind scaffold
-      // Find available port dynamically (avoid hardcoded 4200 which may conflict)
-      const port = await findWebappPort(4200);
       let usedFallback = false;
 
       const packageJson = {
@@ -2843,7 +2821,7 @@ async function executeCreateWebapp(args: {
         private: true,
         version: "0.0.1",
         type: "module",
-        scripts: { dev: `vite --host --port ${port}`, build: "vite build", preview: "vite preview" },
+        scripts: { dev: "vite --host", build: "vite build", preview: "vite preview" },
         dependencies: { react: "^19.0.0", "react-dom": "^19.0.0" },
         devDependencies: {
           "@vitejs/plugin-react": "^4.3.0",
@@ -2921,13 +2899,10 @@ async function executeCreateWebapp(args: {
         fs.writeFileSync(path.join(projectDir, "styles.css"), `/* Additional custom styles */\n* { margin: 0; padding: 0; box-sizing: border-box; }\nbody { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }\n#app { text-align: center; padding: 2rem; }\nh1 { font-size: 2.25rem; font-weight: 700; margin-bottom: 1rem; }\np { color: #a3a3a3; font-size: 1.125rem; line-height: 1.75; }`);
         fs.writeFileSync(path.join(projectDir, "main.js"), `console.log('${projectName} loaded');`);
 
-        const htmlPort = await findWebappPort(4100);
-        try { execSync(`fuser -k ${htmlPort}/tcp 2>/dev/null || true`); } catch {}
-        execSync(`cd ${projectDir} && nohup npx -y serve -l ${htmlPort} -s . > /dev/null 2>&1 &`, { timeout: 15000 });
-        const ready = await waitForPort(htmlPort, 8000);
-
+        // Serve directly via Express static middleware (no localhost dev server)
         activeProjectDir = projectDir;
-        activeProjectPort = htmlPort;
+        activeProjectServePath = projectDir;
+        activeProjectType = "html";
 
         let projectExternalId: string | undefined;
         if (context?.userId) {
@@ -2953,7 +2928,7 @@ async function executeCreateWebapp(args: {
 
         return {
           success: true,
-          result: `Created HTML project "${projectName}" (React scaffold failed, using HTML+Tailwind CDN fallback). Dev server ${ready ? "running" : "starting"} on port ${htmlPort}.\n\nFiles created:\n- index.html (with Tailwind CDN)\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
+          result: `Created HTML project "${projectName}" (React scaffold failed, using HTML fallback). Preview is ready.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
           url: `/api/webapp-preview/`,
           artifactType: "webapp_preview",
           artifactLabel: projectName,
@@ -2961,26 +2936,11 @@ async function executeCreateWebapp(args: {
         };
       }
 
-      // Kill any process on the target port
-      try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
-
-      // Start dev server
-      execSync(`cd ${projectDir} && nohup npm run dev > /tmp/${projectName}-dev.log 2>&1 &`, { timeout: 10000 });
-
-      // Health-check polling loop — wait up to 15s for Vite to be ready
-      const ready = await waitForPort(port, 15000);
-
-      if (!ready) {
-        // Check the dev log for errors
-        let logTail = "";
-        try {
-          logTail = execSync(`tail -10 /tmp/${projectName}-dev.log 2>/dev/null || echo 'no log'`).toString();
-        } catch {}
-        console.warn(`[create_webapp] Vite dev server may not be ready on port ${port}. Log: ${logTail}`);
-      }
-
+      // Build the project and serve via Express static middleware
+      const buildOutput = await buildWebappProject(projectDir);
       activeProjectDir = projectDir;
-      activeProjectPort = port;
+      activeProjectServePath = buildOutput || projectDir;
+      activeProjectType = "react";
 
       // Persist to DB so WebAppProjectPage can manage it
       let projectExternalId: string | undefined;
@@ -3007,7 +2967,7 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Dev server ${ready ? "running" : "starting (may take a moment)"} on port ${port}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
+        result: `Created React+Vite+Tailwind project "${projectName}" at ${projectDir}. Preview is ${buildOutput ? "ready" : "building"}.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview is available via the embedded preview panel.`,
         url: `/api/webapp-preview/`,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
@@ -3042,6 +3002,13 @@ async function executeCreateFile(args: {
     }
     fs.mkdirSync(pathMod.dirname(fullPath), { recursive: true });
     fs.writeFileSync(fullPath, args.content);
+
+    // Auto-rebuild for React projects so preview updates
+    if (activeProjectType === "react" && activeProjectDir) {
+      const newServePath = await buildWebappProject(activeProjectDir);
+      if (newServePath) activeProjectServePath = newServePath;
+    }
+
     return {
       success: true,
       result: `File created: ${args.path} (${args.content.length} bytes)`,
@@ -3080,6 +3047,13 @@ async function executeEditFile(args: {
     }
     const updated = content.replace(args.find, args.replace);
     fs.writeFileSync(fullPath, updated);
+
+    // Auto-rebuild for React projects so preview updates
+    if (activeProjectType === "react" && activeProjectDir) {
+      const newServePath = await buildWebappProject(activeProjectDir);
+      if (newServePath) activeProjectServePath = newServePath;
+    }
+
     return {
       success: true,
       result: `File edited: ${args.path} — replaced ${args.find.length} chars with ${args.replace.length} chars`,

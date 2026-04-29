@@ -36,12 +36,12 @@ describe("WebappPreviewCard URL resolution", () => {
 
   describe("effectiveUrl", () => {
     it("uses publishedUrl when available (post-deploy)", () => {
-      expect(resolveEffectiveUrl("https://cdn.example.com/app/index.html", "http://localhost:4200"))
+      expect(resolveEffectiveUrl("https://cdn.example.com/app/index.html", "/api/webapp-preview/"))
         .toBe("https://cdn.example.com/app/index.html");
     });
 
     it("uses proxy for localhost previewUrl when no publishedUrl", () => {
-      expect(resolveEffectiveUrl(undefined, "http://localhost:4200"))
+      expect(resolveEffectiveUrl(undefined, "/api/webapp-preview/"))
         .toBe("/api/webapp-preview/");
     });
 
@@ -215,7 +215,7 @@ describe("onWebappDeployed preview card matching", () => {
   }
 
   const baseMessages: MockMessage[] = [
-    { id: "msg-1", cardType: "webapp_preview", cardData: { appName: "My App", projectExternalId: "proj-123", previewUrl: "http://localhost:4200" } },
+    { id: "msg-1", cardType: "webapp_preview", cardData: { appName: "My App", projectExternalId: "proj-123", previewUrl: "/api/webapp-preview/" } },
     { id: "msg-2", cardType: undefined, cardData: undefined },
     { id: "msg-3", cardType: "task_completed", cardData: {} },
   ];
@@ -313,7 +313,7 @@ describe("TaskView WebappPreviewCard prop wiring", () => {
     // Simulate the cardData that would be set by onWebappDeployed
     const cardData: Record<string, unknown> = {
       appName: "My App",
-      previewUrl: "http://localhost:4200",
+      previewUrl: "/api/webapp-preview/",
       status: "published",
       publishedUrl: "https://cdn.example.com/app/index.html",
       domain: "cdn.example.com/app/index.html",
@@ -334,7 +334,7 @@ describe("TaskView WebappPreviewCard prop wiring", () => {
     expect(props.publishedUrl).toBe("https://cdn.example.com/app/index.html");
     expect(props.status).toBe("published");
     expect(props.domain).toBe("cdn.example.com/app/index.html");
-    expect(props.previewUrl).toBe("http://localhost:4200");
+    expect(props.previewUrl).toBe("/api/webapp-preview/");
   });
 
   it("onVisit handler uses publishedUrl when available", () => {

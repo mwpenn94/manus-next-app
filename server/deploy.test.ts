@@ -28,7 +28,7 @@ describe("webapp_deployed SSE event", () => {
     const line = `data: ${JSON.stringify({
       webapp_preview: {
         name: "my-app",
-        url: "http://localhost:4200",
+        url: "/api/webapp-preview/",
       },
     })}`;
 

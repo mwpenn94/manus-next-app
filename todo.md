@@ -5839,3 +5839,17 @@
 - [x] Verified: 104/104 targeted tests passing, TypeScript 0 errors, dev server 200 OK
 - [x] Verified: 0 unchecked items in todo.md
 - [x] **CONVERGENCE CONFIRMED: Two consecutive clean passes (Pass 59 + Pass 60) — no new fixes needed**
+
+## Pass 61 — Fix Webapp Deploy: Static Partition Serving (No Localhost Dev Server)
+- [x] Replace activeProjectPort with activeProjectServePath + activeProjectType in agentTools.ts
+- [x] Remove findWebappPort() and waitForPort() — no longer needed
+- [x] Add buildWebappProject() helper for React/Vite build → dist serving
+- [x] Update HTML template branch: set activeProjectServePath = projectDir (no dev server)
+- [x] Update React branch: npm install → npm run build → serve dist/ (no dev server)
+- [x] Update HTML fallback branch: same as HTML template (no dev server)
+- [x] Replace localhost proxy in _core/index.ts with Express static file serving from activeProjectServePath
+- [x] Add SPA fallback (serve index.html for non-file routes) and path traversal security check
+- [x] Add auto-rebuild after create_file/edit_file for React projects
+- [x] Update system prompt descriptions to reflect static serving model
+- [x] Update all test fixtures from localhost:4200 to /api/webapp-preview/
+- [x] Run full test suite to confirm zero regressions (133/133 tests passing)

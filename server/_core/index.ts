@@ -1330,67 +1330,43 @@ async function startServer() {
     }
   });
 
-  // Webapp preview proxy — forwards /api/webapp-preview/* to the agent's dev server
-  // Includes retry logic for when the dev server is still starting up
-  app.use("/api/webapp-preview", async (req, res) => {
+  // Webapp preview — serves generated webapp files via Express static middleware
+  // Serve generated webapp files via Express static middleware
+  // No localhost dev server needed — files are served directly from the build output
+  app.use("/api/webapp-preview", async (req, res, next) => {
     try {
       const { getActiveProject } = await import("../agentTools");
-      const { port } = getActiveProject();
-      if (!port) {
+      const { servePath } = getActiveProject();
+      if (!servePath) {
         return res.status(503).json({ error: "No active webapp project. The agent hasn't created a webapp yet." });
       }
 
-      const http = await import("http");
-      const maxRetries = 3;
-      let lastError = "";
+      const path = await import("path");
+      const fs = await import("fs");
+      const express = await import("express");
 
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const success = await new Promise<boolean>((resolve) => {
-          const targetUrl = `http://127.0.0.1:${port}${req.url}`;
-          const proxyReq = http.request(
-            targetUrl,
-            {
-              method: req.method,
-              headers: { ...req.headers, host: `127.0.0.1:${port}` },
-              timeout: 5000,
-            },
-            (proxyRes) => {
-              res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
-              proxyRes.pipe(res, { end: true });
-              resolve(true);
-            }
-          );
-          proxyReq.on("error", (err) => {
-            lastError = err.message;
-            resolve(false);
-          });
-          proxyReq.on("timeout", () => {
-            proxyReq.destroy();
-            lastError = "Connection timed out";
-            resolve(false);
-          });
-          if (req.method !== "GET" && req.method !== "HEAD") {
-            req.pipe(proxyReq, { end: true });
-          } else {
-            proxyReq.end();
-          }
-        });
+      // Determine the file to serve
+      let requestedPath = req.url === "/" || req.url === "" ? "/index.html" : req.url;
+      // Strip query strings
+      requestedPath = requestedPath.split("?")[0];
+      const filePath = path.join(servePath, requestedPath);
 
-        if (success) return;
-
-        // Wait before retry (only if not last attempt)
-        if (attempt < maxRetries - 1) {
-          await new Promise((r) => setTimeout(r, 1500));
-        }
+      // Security: prevent path traversal
+      if (!filePath.startsWith(servePath)) {
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      // All retries failed
-      if (!res.headersSent) {
-        res.status(502).json({
-          error: `Webapp dev server on port ${port} is not reachable after ${maxRetries} attempts. ${lastError}`,
-          hint: "The dev server may still be starting. Try refreshing in a few seconds.",
-        });
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        return res.sendFile(filePath);
       }
+
+      // SPA fallback: serve index.html for non-file routes
+      const indexPath = path.join(servePath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+      }
+
+      return res.status(404).json({ error: "File not found in webapp preview" });
     } catch (err: any) {
       if (!res.headersSent) res.status(500).json({ error: err.message });
     }
