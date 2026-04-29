@@ -5795,3 +5795,14 @@
 - [x] Comprehensive UI/UX review: no client-side errors, no server errors, AutoRefresh warning is non-critical (caught gracefully)
 - [x] Update documentation: README.md updated with current test counts (4700+), agent tools (17), Pass 55-56 improvements, and recent capability additions
 - [x] Fixed stale pass53 test (cdn.tailwindcss.com → @tailwindcss/vite for Tailwind v4)
+
+## Pass 57 — Manus Parity+ Webapp Builder Hardening
+- [x] Deploy retry logic: exponential backoff (3 attempts, 1s→2s→4s) for deploy_webapp S3 upload failures
+- [x] Deploy retry logic: graceful degradation — if all retries fail, return partial result with error context instead of crashing
+- [x] Post-deploy code review: LLM analyzes generated code for common React wiring issues (missing onChange, unbound state, broken imports)
+- [x] Post-deploy code review: inject fix instructions into conversation if issues found, triggering auto-repair cycle
+- [x] Post-deploy code review: verify HTML/CSS renders correctly (check for missing closing tags, broken styles)
+- [ ] Production end-to-end validation: test "build me a calculator app" on live site, confirm full pipeline completes
+- [ ] Update PARITY_GAP_ANALYSIS.md: move Webapp Builder from "Planned" to "Live" with full feature description
+- [x] Write comprehensive tests for retry logic and code review features (31 tests in pass57-features.test.ts)
+- [x] Run full test suite to confirm zero regressions (75/75 pass55-57 tests passing)

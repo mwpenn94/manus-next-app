@@ -90,8 +90,8 @@ describe("Post-deploy quality validation", () => {
   });
 
   it("should instruct LLM to present the result to the user", () => {
-    expect(agentStreamSource).toContain("Present the deployed URL to the user");
-    expect(agentStreamSource).toContain("brief summary of what was built");
+    expect(agentStreamSource).toContain("Share the deployed URL");
+    expect(agentStreamSource).toContain("summarize what was built");
   });
 
   it("should instruct LLM to mention interactive elements", () => {

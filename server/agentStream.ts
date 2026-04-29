@@ -1732,18 +1732,39 @@ If the user hasn't specified content details, ASK them what content they want. D
             },
           });
           
-          // POST-DEPLOY QUALITY VALIDATION: Inject a system message instructing the LLM
-          // to verify the deployed app works correctly before presenting to the user.
-          // This catches broken interactivity, missing assets, and rendering issues.
-          conversation.push({
-            role: "user",
-            content: `The webapp has been deployed to ${result.url}. Before presenting this to the user, briefly verify the deployment:
-1. Confirm the URL is accessible (it was just deployed, so it should be)
-2. Mention any known limitations or features that may need user testing
-3. Present the deployed URL to the user with a brief summary of what was built
+          // POST-DEPLOY QUALITY VALIDATION (Manus Parity+): Inject a message based on
+          // the static code review results. If issues found → instruct LLM to fix and redeploy.
+          // If clean → present confidently.
+          const codeIssues = result.codeIssues || [];
+          const hasCodeIssues = codeIssues.length > 0;
+          
+          if (hasCodeIssues) {
+            console.log(`[Agent] Post-deploy code review found ${codeIssues.length} issue(s) — instructing auto-fix`);
+            conversation.push({
+              role: "user",
+              content: `The webapp has been deployed to ${result.url}, but the automated code review found ${codeIssues.length} issue(s) that may affect functionality:
 
-Do NOT use browser_action to test it — just present the result confidently since the deploy succeeded. If you created interactive elements (buttons, forms, calculations), mention them so the user knows what to try.`,
-          });
+${codeIssues.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}
+
+IMPORTANT: Fix these issues NOW before presenting to the user:
+1. Use edit_file to fix each issue (add missing onChange handlers, connect state setters, fix broken imports, etc.)
+2. After fixing, call deploy_webapp again to publish the corrected version
+3. Then present the updated URL to the user with a summary of what was built
+
+Do NOT present the broken version — fix first, then present.`,
+            });
+          } else {
+            console.log(`[Agent] Post-deploy code review: clean — no issues found`);
+            conversation.push({
+              role: "user",
+              content: `The webapp has been deployed to ${result.url}. The automated code review found no issues. Present the result to the user:
+1. Share the deployed URL
+2. Briefly summarize what was built and its key features
+3. If you created interactive elements (buttons, forms, calculations), mention them so the user knows what to try
+
+Do NOT use browser_action to test it — present confidently since the deploy succeeded and code review passed.`,
+            });
+          }
         }
 
         // If it's a document, send a document event so client can surface download link

@@ -951,6 +951,8 @@ export interface ToolResult {
   artifactLabel?: string;
   /** Optional project external ID for webapp projects (links to WebAppProjectPage) */
   projectExternalId?: string;
+  /** Optional code review issues found during post-deploy analysis */
+  codeIssues?: string[];
 }
 
 // ── Web Search: Multi-Source Pipeline ──
@@ -3317,6 +3319,34 @@ async function executeGitOperation(args: {
 
 
 // ── deploy_webapp ──
+
+/**
+ * Retry a function with exponential backoff.
+ * Manus parity: resilient tool execution — transient S3/network failures
+ * should not crash the entire deploy pipeline.
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  opts: { maxAttempts?: number; baseDelayMs?: number; label?: string } = {}
+): Promise<T> {
+  const maxAttempts = opts.maxAttempts ?? 3;
+  const baseDelayMs = opts.baseDelayMs ?? 1000;
+  const label = opts.label ?? "operation";
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        console.warn(`[deploy_webapp] ${label} failed (attempt ${attempt}/${maxAttempts}): ${err.message}. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError!;
+}
 async function executeDeployWebapp(args: {
   version_label?: string;
 }, context?: ToolContext): Promise<ToolResult> {
@@ -3437,15 +3467,25 @@ async function executeDeployWebapp(args: {
     // Upload all files, rewriting asset paths in HTML to use S3 URLs
     const assetUrlMap = new Map<string, string>();
 
-    // Upload non-HTML files first to get their URLs
+    // Upload non-HTML files first to get their URLs (with retry + graceful degradation)
+    const failedAssets: string[] = [];
     for (const file of allFiles) {
       if (file.relPath === "index.html") continue;
       const ext = path.extname(file.absPath).toLowerCase();
       const mime = mimeTypes[ext] || "application/octet-stream";
       const fileData = fs.readFileSync(file.absPath);
       const fileKey = `${deployPrefix}/${file.relPath}`;
-      const { url } = await storagePut(fileKey, fileData, mime);
-      assetUrlMap.set(file.relPath, url);
+      try {
+        const { url } = await retryWithBackoff(
+          () => storagePut(fileKey, fileData, mime),
+          { maxAttempts: 3, baseDelayMs: 1000, label: `upload ${file.relPath}` }
+        );
+        assetUrlMap.set(file.relPath, url);
+      } catch (uploadErr: any) {
+        // Graceful degradation: non-critical assets can fail without killing the deploy
+        console.error(`[deploy_webapp] Failed to upload ${file.relPath} after 3 attempts: ${uploadErr.message}`);
+        failedAssets.push(file.relPath);
+      }
     }
 
     // Rewrite asset references in index.html to use absolute S3 URLs
@@ -3463,9 +3503,21 @@ async function executeDeployWebapp(args: {
       );
     }
 
-    // Upload the rewritten index.html
+    // Upload the rewritten index.html (with retry — this is critical, no graceful degradation)
     const indexKey = `${deployPrefix}/index.html`;
-    const { url: publishedUrl } = await storagePut(indexKey, htmlContent, "text/html");
+    let publishedUrl: string;
+    try {
+      const result = await retryWithBackoff(
+        () => storagePut(indexKey, htmlContent, "text/html"),
+        { maxAttempts: 3, baseDelayMs: 1000, label: "upload index.html" }
+      );
+      publishedUrl = result.url;
+    } catch (indexUploadErr: any) {
+      return {
+        success: false,
+        result: `Deploy failed: could not upload index.html after 3 attempts. Error: ${indexUploadErr.message}\n\nThis is likely a transient network issue. Please try deploying again.`,
+      };
+    }
 
     console.log(`[deploy_webapp] Deployed ${allFiles.length} files to ${deployPrefix}/`);
 
@@ -3508,13 +3560,91 @@ async function executeDeployWebapp(args: {
       } catch { /* ignore */ }
     }
 
+    // ── POST-DEPLOY CODE REVIEW (Manus Parity+) ──
+    // Static analysis of the source files to catch common React/HTML wiring issues
+    // before presenting the result to the user.
+    const codeIssues: string[] = [];
+    try {
+      const srcFiles = collectFiles(activeProjectDir, activeProjectDir)
+        .filter(f => /\.(html|jsx?|tsx?|css)$/.test(f.relPath) && !f.relPath.includes("node_modules"));
+      for (const file of srcFiles.slice(0, 20)) { // Cap at 20 files for performance
+        const content = fs.readFileSync(file.absPath, "utf-8");
+        // Check 1: onChange handlers missing on input/select elements with value prop
+        if (/value=\{/.test(content) && !/onChange/.test(content) && /\.(jsx|tsx)$/.test(file.relPath)) {
+          codeIssues.push(`${file.relPath}: Input has \`value\` prop but no \`onChange\` handler — form inputs will be read-only`);
+        }
+        // Check 2: useState setter never called (state defined but never updated)
+        const stateMatches = content.match(/const \[(\w+),\s*set(\w+)\]/g);
+        if (stateMatches) {
+          for (const match of stateMatches) {
+            const setterMatch = match.match(/set(\w+)/);
+            if (setterMatch) {
+              const setter = `set${setterMatch[1]}`;
+              // Count occurrences — should appear at least twice (declaration + usage)
+              const setterCount = (content.match(new RegExp(setter, "g")) || []).length;
+              if (setterCount < 2) {
+                codeIssues.push(`${file.relPath}: State setter \`${setter}\` is declared but never called — state will never update`);
+              }
+            }
+          }
+        }
+        // Check 3: Missing closing tags in HTML (unclosed div, section, main)
+        if (/\.html$/.test(file.relPath)) {
+          const openDivs = (content.match(/<div[\s>]/g) || []).length;
+          const closeDivs = (content.match(/<\/div>/g) || []).length;
+          if (openDivs > closeDivs + 2) {
+            codeIssues.push(`${file.relPath}: ${openDivs - closeDivs} unclosed <div> tags detected`);
+          }
+        }
+        // Check 4: Broken imports (import from path that doesn't exist)
+        const importMatches = content.match(/import .+ from ['"](\.\/.+?)['"];?/g);
+        if (importMatches) {
+          for (const imp of importMatches) {
+            const pathMatch = imp.match(/from ['"](\.\/.+?)['"]/);
+            if (pathMatch) {
+              const importPath = pathMatch[1];
+              const resolvedDir = path.dirname(file.absPath);
+              const candidates = [
+                path.join(resolvedDir, importPath),
+                path.join(resolvedDir, importPath + ".ts"),
+                path.join(resolvedDir, importPath + ".tsx"),
+                path.join(resolvedDir, importPath + ".js"),
+                path.join(resolvedDir, importPath + ".jsx"),
+                path.join(resolvedDir, importPath, "index.ts"),
+                path.join(resolvedDir, importPath, "index.tsx"),
+                path.join(resolvedDir, importPath, "index.js"),
+              ];
+              if (!candidates.some(c => fs.existsSync(c))) {
+                codeIssues.push(`${file.relPath}: Broken import \`${importPath}\` — file not found`);
+              }
+            }
+          }
+        }
+        // Check 5: Empty event handlers (onClick={() => {}} or onClick={})
+        if (/onClick=\{\s*\(\)\s*=>\s*\{?\s*\}?\s*\}/.test(content)) {
+          codeIssues.push(`${file.relPath}: Empty onClick handler — button/element will do nothing when clicked`);
+        }
+      }
+    } catch (reviewErr) {
+      console.warn("[deploy_webapp] Code review failed (non-critical):", reviewErr);
+    }
+
+    // Build the result message, noting any failed assets and code issues
+    const failedNote = failedAssets.length > 0
+      ? `\n\nNote: ${failedAssets.length} asset(s) failed to upload and may be missing: ${failedAssets.join(", ")}`
+      : "";
+    const codeReviewNote = codeIssues.length > 0
+      ? `\n\n⚠️ Code Review (${codeIssues.length} issue${codeIssues.length > 1 ? "s" : ""} found):\n${codeIssues.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}\n\nThese issues may affect the app's interactivity. Consider fixing them and redeploying.`
+      : "\n\n✅ Code review: No common issues detected.";
+
     return {
       success: true,
-      result: `Successfully deployed "${projectName}"!\n\nLive URL: ${publishedUrl}\n\nThe app is now publicly accessible. Share this URL with anyone to view the app.`,
+      result: `Successfully deployed "${projectName}"!\n\nLive URL: ${publishedUrl}\n\nThe app is now publicly accessible. Share this URL with anyone to view the app.${failedNote}${codeReviewNote}`,
       url: publishedUrl,
       artifactType: "webapp_deployed",
       artifactLabel: projectName,
       projectExternalId,
+      codeIssues, // Pass to agentStream for quality validation
     };
   } catch (err: any) {
     return {
