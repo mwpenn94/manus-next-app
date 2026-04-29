@@ -5920,3 +5920,11 @@
 - [x] Write vitest tests for message ordering fix (15 assertions in pass68-message-ordering.test.ts)
 - [x] Recursive convergence pass 1: re-check all three areas (found 3 issues, fixed all)
 - [x] Recursive convergence pass 2: confirm no further actions needed (zero issues, convergence confirmed)
+
+## Pass 69 — Critical Production MIME Type + Message Ordering (CONVERGED)
+- [x] Fix 'text/html' is not a valid JavaScript MIME type error on deployed site
+- [x] Server returning HTML for JS/CSS asset requests — asset guard confirmed present in built dist/index.js (line 28774)
+- [x] Root cause: deployed version is stale (older checkpoint without asset guard) — re-publish needed
+- [x] Fix message ordering to match real Manus: webapp card → steps accordion → text summary (confirmed correct)
+- [x] Validate both fixes work — all 66 tests pass, TypeScript clean, build successful
+- [x] User must re-publish from latest checkpoint (196047eb or newer) to resolve MIME crash
