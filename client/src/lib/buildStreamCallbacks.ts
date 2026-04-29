@@ -40,7 +40,7 @@ export interface StreamStateSetters {
   updateMessageCard?: (taskId: string, messageId: string, cardData: Record<string, unknown>) => void;
   /** Get current task messages for cross-card updates */
   getTaskMessages?: () => Array<{ id: string; cardType?: string; cardData?: Record<string, unknown> }>;
-  /** GAP A: Callback to trigger iframe refresh in WebappPreviewCard */
+  /** GAP A: Callback to signal preview state change (legacy — iframe removed in Pass 67) */
   onPreviewRefreshSignal?: () => void;
   /** Update the webapp preview URL when S3 re-upload provides a new URL */
   onPreviewUrlUpdate?: (url: string) => void;
@@ -404,7 +404,7 @@ export function buildStreamCallbacks(
       // No raw URL injection into accumulated text
     },
     onPreviewRefresh: (data: { timestamp: number; url?: string }) => {
-      // GAP A: Debounce preview refresh — only trigger every 2 seconds max
+      // GAP A: Debounce preview signal — only trigger every 2 seconds max (legacy — iframe removed in Pass 67)
       const now = Date.now();
       const lastRefresh = state._previewRefreshCounter || 0;
       if (now - lastRefresh > 2000) {

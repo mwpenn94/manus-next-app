@@ -144,9 +144,9 @@ describe("E2E: Deploy creates DeploymentCard with working URL", () => {
     expect(card).toContain("Publish");
   });
 
-  it("TaskView renders DeploymentCard for webapp_deployed message cards", () => {
+  it("TaskView renders WebappPreviewCard for webapp_deployed message cards (Pass 67 compact card)", () => {
     const taskView = readFile(path.join(PAGES, "TaskView.tsx"));
-    expect(taskView).toContain("DeploymentCard");
+    expect(taskView).toContain("WebappPreviewCard");
     expect(taskView).toContain("webapp_deployed");
   });
 });

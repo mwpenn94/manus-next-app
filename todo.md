@@ -5910,3 +5910,13 @@
 - [x] 15/15 pass67-chat-rendering.test.ts assertions pass
 - [x] 106/106 total assertions pass across 4 test files (pass67, e2e-webapp-flow, e2e-new-features, deploy)
 - [x] TypeScript compiles clean (0 errors)
+## Pass 68 — Step Indicator Polish + Message Ordering + E2E Validation (Recursive Convergence)
+- [x] Live E2E test: verify compact WebappPreviewCard renders correctly in browser during real pipeline
+- [x] Step indicator polish: verify icon/label format matches Manus exactly
+- [x] Step indicator polish: ensure "N steps completed" text matches Manus format
+- [x] Step indicator polish: verify animation timing is smooth
+- [x] Message ordering fix: swap actions accordion ABOVE text content in completed MessageBubble
+- [x] Message ordering fix: verify during streaming, actions render above text (already correct)
+- [x] Write vitest tests for message ordering fix (15 assertions in pass68-message-ordering.test.ts)
+- [x] Recursive convergence pass 1: re-check all three areas (found 3 issues, fixed all)
+- [x] Recursive convergence pass 2: confirm no further actions needed (zero issues, convergence confirmed)

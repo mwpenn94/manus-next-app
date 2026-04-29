@@ -115,7 +115,6 @@ import BrowserAuthCard from "@/components/BrowserAuthCard";
 import TaskPauseCard from "@/components/TaskPauseCard";
 import TakeControlCard from "@/components/TakeControlCard";
 import WebappPreviewCard from "@/components/WebappPreviewCard";
-import DeploymentCard from "@/components/DeploymentCard";
 import CheckpointCard from "@/components/CheckpointCard";
 import TaskCompletedCard from "@/components/TaskCompletedCard";
 import ConvergenceIndicator from "@/components/ConvergenceIndicator";
@@ -700,6 +699,38 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           </div>
         )}
 
+        {/* Actions accordion — rendered BEFORE text content for Manus parity */}
+        {hasActions && !isUser && (
+          <div className="mb-2.5">
+            <button
+              onClick={() => setActionsExpanded(!actionsExpanded)}
+              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1.5 group"
+            >
+              {actionsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              <span>
+                {doneCount === totalCount ? (
+                  <span className="text-muted-foreground">{totalCount} steps completed</span>
+                ) : (
+                  <span>{doneCount} of {totalCount} steps</span>
+                )}
+              </span>
+            </button>
+            <AnimatePresence>
+              {actionsExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden py-1"
+                >
+                  <GroupedActionsList actions={message.actions!} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
         {/* Card-type messages render special inline cards */}
         {message.cardType === "browser_auth" ? (
           <BrowserAuthCard
@@ -883,7 +914,8 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           </div>
         )}
 
-        {hasActions && (
+        {/* User message actions accordion — rendered after text for user messages */}
+        {hasActions && isUser && (
           <div className="mt-2.5">
             <button
               onClick={() => setActionsExpanded(!actionsExpanded)}
