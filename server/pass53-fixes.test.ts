@@ -71,11 +71,13 @@ describe("Pass 53 — Webapp Creation Fallback", () => {
     expect(content).toContain("usedFallback");
   });
 
-  it("should use Tailwind CDN in HTML fallback", () => {
+  it("should use Tailwind CSS in webapp creation", () => {
     const agentToolsPath = path.join(__dirname, "agentTools.ts");
     const content = fs.readFileSync(agentToolsPath, "utf-8");
 
-    expect(content).toContain("cdn.tailwindcss.com");
+    // Tailwind v4 uses @tailwindcss/vite plugin instead of CDN
+    expect(content).toContain("tailwindcss");
+    expect(content).toContain("@tailwindcss/vite");
   });
 
   it("should handle npm install failure gracefully", () => {

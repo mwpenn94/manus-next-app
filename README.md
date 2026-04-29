@@ -127,7 +127,10 @@ drizzle/
 | `transcribe_audio` | Audio transcription via Whisper |
 | `send_notification` | Push notifications to connectors |
 | `manage_files` | File upload/download/management |
-| `build_webapp` | Web application scaffolding |
+| `create_webapp` | Web application scaffolding with React/Vite/Tailwind |
+| `deploy_webapp` | Deploy webapp to CDN with versioning and quality validation |
+| `create_file` | Create files within webapp projects |
+| `edit_file` | Edit existing files within webapp projects |
 | `design_compose` | Visual composition with AI |
 
 ---
@@ -158,11 +161,11 @@ drizzle/
 ## Testing
 
 ```bash
-pnpm test                    # Run all 1231 tests
+pnpm test                    # Run all 4700+ tests
 npx tsc --noEmit             # TypeScript type check
 ```
 
-**Test coverage:** 1231 tests across 53 test files covering routers, agent tools, streaming, features, bridge, preferences, parity, Stripe integration, connector OAuth, agent behavior, voice streaming, scheduling, design studio, app builder, and more.
+**Test coverage:** 4700+ tests across 170 test files covering routers, agent tools, streaming, features, bridge, preferences, parity, Stripe integration, connector OAuth, agent behavior, voice streaming, scheduling, design studio, app builder, PDF generation, webapp deployment pipeline, dynamic complexity thresholds, and more.
 
 ---
 
@@ -180,6 +183,12 @@ npx tsc --noEmit             # TypeScript type check
 
 ### Live (50+ capabilities)
 Chat Mode, Agent Mode, Speed/Quality Mode, Cost Visibility, Cross-Session Memory, Memory Auto-Extraction, Task Sharing, Task Scheduling, Session Replay, Conversation Regenerate, Notifications, Data Analysis, Image Generation, Web Search, Wide Research, Enhanced Browsing, Auth, SEO, Code Execution, Voice STT, Document Generation, Task Management, Workspace Artifacts, Bridge Integration, Preferences, Identity Rule, Research Nudge, GitHub Integration, Mobile Responsive, System Prompt Customization, Keyboard Shortcuts, PWA Installability, Stripe Payments, Connector Ecosystem, Skills Library, App Builder, Design Studio, Meeting Notes, Slides Generator, Figma Import, Desktop App Builder, Virtual Desktop, Team Collaboration, Mobile Projects, Electron Companion, Security Hardening, Rate Limiting
+
+### Recent Improvements (Pass 55-56)
+- **PDF Generation:** Fixed extra blank page issue — footer rendering no longer triggers auto-pagination
+- **Webapp Creation Pipeline:** Fixed agent hang — deploy nudge ensures apps are deployed within reasonable turn limits
+- **Dynamic Complexity Thresholds:** Webapp deploy nudge adapts to request complexity (simple/medium/complex)
+- **Post-Deploy Quality Validation:** LLM self-check verifies deployed webapp functionality before presenting to user
 
 ### Planned
 Client Inference, Sync/Collaboration
