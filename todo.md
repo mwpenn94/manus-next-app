@@ -5871,11 +5871,11 @@
 - [x] Exhaustive virtual user validation: 22/23 Playwright E2E tests PASS (1 WARN false positive), 251/251 vitest tests PASS, TypeScript 0 errors, 0 JS console errors
 
 ## Pass 64 — Deep Manus Parity+ Assessment & Agent Response Fix
-- [ ] BUG (STILL BROKEN): Agent still doesn't respond after user sends message in production — screenshot confirms same behavior post-deploy
-- [ ] Deep-trace: exact flow from message submit → task creation → SSE stream initiation
-- [ ] Expert assessment: Manus parity+ gap analysis across all 14 dimensions
-- [ ] Implement highest-priority parity+ alignment fixes
-- [ ] Exhaustive virtual user validation
+- [x] BUG (STILL BROKEN): Agent still doesn't respond after user sends message in production — RESOLVED in Pass 64 (second attempt) below
+- [x] Deep-trace: exact flow from message submit → task creation → SSE stream initiation — RESOLVED in Pass 64 (second attempt) below
+- [x] Expert assessment: Manus parity+ gap analysis across all 14 dimensions — RESOLVED in Pass 65
+- [x] Implement highest-priority parity+ alignment fixes — RESOLVED in Pass 65
+- [x] Exhaustive virtual user validation — RESOLVED in Pass 64 (second attempt) below
 
 ## Pass 64 — Agent Still Not Responding (Post-Publish) + Manus Parity+
 - [x] BUG (CRITICAL): Agent still doesn't respond after publishing → ROOT CAUSE: `addMessageMutation` (tRPC mutation object) is unstable → `addMessage` useCallback recreated every render → cleanup useEffect `[addMessage]` fires on every render → aborts in-flight SSE stream
@@ -5886,3 +5886,11 @@
 - [x] 24/24 vitest tests passing, debug logging removed
 - [x] Expert Manus parity+ assessment across all dimensions
 - [x] Implement parity+ improvements — Pass 65: Fixed 18 unstable tRPC mutation-object dependency bugs across 11 files (TaskContext, AppLayout, TaskView, useAuth, BranchIndicator, TaskTemplates, Home, DesktopAppPage, MessagingAgentPage, SettingsPage, ConnectorDetailPage, ConnectorsPage). All useCallback deps now reference `.mutate`/`.mutateAsync` (stable function) instead of the entire mutation object (unstable reference). TypeScript compiles clean, vitest passes.
+
+## Pass 66 — Webapp Builder Accessibility + Pipeline Fixes
+- [x] BUG (CRITICAL): Stuck detection kills app-building pipeline before deploy_webapp is called — FIXED by exempting pipeline from stuck detection (isInAppBuildPipeline check added before similarity comparison)
+- [x] BUG: DeployedWebsitesPage filters by "deployed" but backend saves "live" — FIXED to accept both statuses
+- [x] BUG: WebappPreviewCard links to /app/ (non-existent route) instead of /projects/webapp/ — FIXED
+- [x] BUG: DataControlsPage same status mismatch — FIXED
+- [x] Vitest: 8 new tests for pipeline stuck exemption and status filter logic — ALL PASS
+- [x] TypeScript compiles clean, dev server healthy

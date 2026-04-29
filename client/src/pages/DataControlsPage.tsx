@@ -68,7 +68,7 @@ export default function DataControlsPage() {
   // Deployed websites from webapp projects
   const webappProjects = trpc.webappProject.list.useQuery(undefined, { enabled: isAuthenticated });
   const deployedSites = useMemo(
-    () => (webappProjects.data || []).filter((p: any) => p.deployStatus === "deployed"),
+    () => (webappProjects.data || []).filter((p: any) => p.deployStatus === "live" || p.deployStatus === "deployed"),
     [webappProjects.data]
   );
 

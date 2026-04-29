@@ -1202,8 +1202,19 @@ When performing recursive optimization passes, use the report_convergence tool t
         // ═══════════════════════════════════════════════════════════════════
         // Track text-only responses and detect when the agent is repeating
         // itself (e.g., "Conducting deeper research..." loop from the bug report).
+        // EXCEPTION: Skip stuck detection during app-building pipeline — the pipeline
+        // injects continuation prompts that naturally produce similar responses.
+        const usedAppBuildingToolsForStuck = conversation.some(m =>
+          (m as any).tool_calls?.some((tc: any) =>
+            ["create_webapp", "create_file", "edit_file", "install_deps", "run_command"].includes(tc.function?.name)
+          )
+        );
+        const hasDeployedForStuck = conversation.some(m =>
+          (m as any).tool_calls?.some((tc: any) => tc.function?.name === "deploy_webapp")
+        );
+        const isInAppBuildPipeline = usedAppBuildingToolsForStuck && !hasDeployedForStuck;
         const normalizedText = (textContent || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 500);
-        if (normalizedText.length > 20) {
+        if (normalizedText.length > 20 && !isInAppBuildPipeline) {
           // Check similarity against recent text responses
           const isSimilarToRecent = recentTextResponses.some(prev => {
             // Simple Jaccard-like similarity: shared words / total words

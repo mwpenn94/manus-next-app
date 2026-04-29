@@ -19,7 +19,7 @@ export default function DeployedWebsitesPage() {
   const webappProjects = trpc.webappProject.list.useQuery(undefined, { enabled: isAuthenticated });
 
   const projects = useMemo(() => webappProjects.data || [], [webappProjects.data]);
-  const deployedProjects = useMemo(() => projects.filter((p: any) => p.deployStatus === "deployed"), [projects]);
+  const deployedProjects = useMemo(() => projects.filter((p: any) => p.deployStatus === "live" || p.deployStatus === "deployed"), [projects]);
   const totalViews = useMemo(() => deployedProjects.reduce((sum: number, p: any) => sum + (p.totalPageViews || 0), 0), [deployedProjects]);
   const totalVisitors = useMemo(() => deployedProjects.reduce((sum: number, p: any) => sum + (p.totalUniqueVisitors || 0), 0), [deployedProjects]);
 
@@ -115,14 +115,14 @@ export default function DeployedWebsitesPage() {
             ) : (
               <div className="space-y-4">
                 {projects.map((project: any) => (
-                  <Card key={project.id} className={`hover:border-primary/30 transition-colors cursor-pointer ${project.deployStatus === "deployed" ? "border-green-500/20" : ""}`}
+                  <Card key={project.id} className={`hover:border-primary/30 transition-colors cursor-pointer ${(project.deployStatus === "deployed" || project.deployStatus === "live") ? "border-green-500/20" : ""}`}
                     onClick={() => navigate(`/projects/webapp/${project.externalId}`)}
                   >
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${project.deployStatus === "deployed" ? "bg-green-500/10" : "bg-muted"}`}>
-                            <Globe className={`w-5 h-5 ${project.deployStatus === "deployed" ? "text-green-500" : "text-muted-foreground"}`} />
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${(project.deployStatus === "deployed" || project.deployStatus === "live") ? "bg-green-500/10" : "bg-muted"}`}>
+                            <Globe className={`w-5 h-5 ${(project.deployStatus === "deployed" || project.deployStatus === "live") ? "text-green-500" : "text-muted-foreground"}`} />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-foreground">{project.name}</p>
@@ -136,8 +136,8 @@ export default function DeployedWebsitesPage() {
                             <p className="text-xs text-muted-foreground">{(project.totalPageViews || 0).toLocaleString()} views</p>
                             <p className="text-xs text-muted-foreground">{(project.totalUniqueVisitors || 0).toLocaleString()} visitors</p>
                           </div>
-                          <Badge variant={project.deployStatus === "deployed" ? "default" : "secondary"} className="text-xs">
-                            {project.deployStatus === "deployed" ? "Live" : project.deployStatus || "Draft"}
+                          <Badge variant={(project.deployStatus === "deployed" || project.deployStatus === "live") ? "default" : "secondary"} className="text-xs">
+                            {(project.deployStatus === "deployed" || project.deployStatus === "live") ? "Live" : project.deployStatus || "Draft"}
                           </Badge>
                           <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                         </div>

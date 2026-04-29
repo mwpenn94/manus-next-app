@@ -625,7 +625,7 @@ export default function WebappPreviewCard({
       <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border">
         {projectExternalId ? (
           <a
-            href={`/app/${projectExternalId}`}
+            href={`/projects/webapp/${projectExternalId}`}
             className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <Settings className="w-3.5 h-3.5" />
