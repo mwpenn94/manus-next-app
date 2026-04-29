@@ -2417,14 +2417,26 @@ export default function TaskView() {
   // when the dependency array changes due to message dedup or state updates.
   const autoStreamedIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!task) return;
-    if (streaming) return; // Already streaming
-    if (task.autoStreamed) return; // Already auto-streamed for this task (persisted in context)
-    if (autoStreamedIdsRef.current.has(task.id)) return; // Already attempted in this mount
+    // DEBUG: Log every guard condition to trace why auto-stream may not fire
+    console.log("[AutoStream] Guard check:", {
+      hasTask: !!task,
+      taskId: task?.id,
+      streaming,
+      autoStreamed: task?.autoStreamed,
+      inLocalRef: task ? autoStreamedIdsRef.current.has(task.id) : 'n/a',
+      messagesLength: task?.messages.length,
+      firstMsgRole: task?.messages[0]?.role,
+      bridgeStatus,
+    });
+    if (!task) { console.log("[AutoStream] BLOCKED: no task"); return; }
+    if (streaming) { console.log("[AutoStream] BLOCKED: already streaming"); return; }
+    if (task.autoStreamed) { console.log("[AutoStream] BLOCKED: task.autoStreamed=true"); return; }
+    if (autoStreamedIdsRef.current.has(task.id)) { console.log("[AutoStream] BLOCKED: already in autoStreamedIdsRef"); return; }
     // Only trigger if: exactly 1 message, it's a user message, and no assistant response yet
-    if (task.messages.length !== 1) return;
+    if (task.messages.length !== 1) { console.log("[AutoStream] BLOCKED: messages.length =", task.messages.length, "(expected 1)"); return; }
     const firstMsg = task.messages[0];
-    if (firstMsg.role !== "user") return;
+    if (firstMsg.role !== "user") { console.log("[AutoStream] BLOCKED: firstMsg.role =", firstMsg.role); return; }
+    console.log("[AutoStream] ✓ ALL GUARDS PASSED — starting stream for task", task.id);
     // Mark as auto-streamed immediately — both in ref (instant) and context (persisted)
     autoStreamedIdsRef.current.add(task.id);
     markAutoStreamed(task.id);

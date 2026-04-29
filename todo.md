@@ -5869,3 +5869,18 @@
 - [x] FIX 2: TaskView auto-stream — Disabled bridge routing (commented out) since onTaskEvent is not wired. Messages now always go to SSE /api/stream.
 - [x] FIX 3: TaskView handleSend — Same bridge routing disabled for follow-up messages.
 - [x] Exhaustive virtual user validation: 22/23 Playwright E2E tests PASS (1 WARN false positive), 251/251 vitest tests PASS, TypeScript 0 errors, 0 JS console errors
+
+## Pass 64 — Deep Manus Parity+ Assessment & Agent Response Fix
+- [ ] BUG (STILL BROKEN): Agent still doesn't respond after user sends message in production — screenshot confirms same behavior post-deploy
+- [ ] Deep-trace: exact flow from message submit → task creation → SSE stream initiation
+- [ ] Expert assessment: Manus parity+ gap analysis across all 14 dimensions
+- [ ] Implement highest-priority parity+ alignment fixes
+- [ ] Exhaustive virtual user validation
+
+## Pass 64 — Agent Still Not Responding (Post-Publish) + Manus Parity+
+- [ ] BUG (CRITICAL): Agent still doesn't respond after publishing — bridge fix was insufficient, deeper root cause exists
+- [ ] Deep-trace: Home submit → createTask → navigate /task/:id → auto-stream useEffect → SSE fetch
+- [ ] Fix real root cause
+- [ ] Expert Manus parity+ assessment across all dimensions
+- [ ] Implement parity+ improvements
+- [ ] Exhaustive virtual user validation
