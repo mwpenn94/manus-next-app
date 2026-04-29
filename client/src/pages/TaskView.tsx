@@ -2607,10 +2607,15 @@ export default function TaskView() {
 
     try {
       // Build conversation history (system prompt is handled server-side)
-      const conversationMessages = task.messages.slice(-10).map(m => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      }));
+      // Send up to 50 messages for full context — server has a 200-message limit guard.
+      // Filter out card-only messages (empty content with cardType) since they're UI-only.
+      const conversationMessages = task.messages
+        .filter(m => m.content.trim() || m.role === "user") // Keep all user msgs + non-empty assistant msgs
+        .slice(-50)
+        .map(m => ({
+          role: m.role as "user" | "assistant" | "system",
+          content: m.content,
+        }));
 
       // Build user message with multimodal content if files or media are attached
       const currentMedia = [...mediaAttachments];
@@ -2750,10 +2755,13 @@ export default function TaskView() {
     const images: string[] = [];
 
     try {
-      const conversationMessages = task.messages.slice(-10).map(m => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      }));
+      const conversationMessages = task.messages
+        .filter(m => m.content.trim() || m.role === "user")
+        .slice(-50)
+        .map(m => ({
+          role: m.role as "user" | "assistant" | "system",
+          content: m.content,
+        }));
       const messages = [
         ...conversationMessages,
         { role: "user" as const, content: spokenText },
@@ -2844,7 +2852,8 @@ export default function TaskView() {
       // Build conversation from remaining messages
       const conversationMessages = task.messages
         .filter(m => m.id !== removed.id) // Exclude the removed message
-        .slice(-10)
+        .filter(m => m.content.trim() || m.role === "user")
+        .slice(-50)
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
 
       const controller = new AbortController();
@@ -2923,7 +2932,8 @@ export default function TaskView() {
         i === msgIndex ? { ...m, content: newContent } : m
       );
       const conversationMessages = truncatedMessages
-        .slice(-10)
+        .filter(m => m.content.trim() || m.role === "user")
+        .slice(-50)
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
       const controller = new AbortController();
       abortControllerRef.current = controller;

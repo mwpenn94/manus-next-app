@@ -106,7 +106,7 @@ export default function DesignView() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: `Generate an image: ${prompt}. Style: ${template.id} design, professional quality.`,
+          messages: [{ role: "user", content: `Generate an image: ${prompt}. Style: ${template.id} design, professional quality.` }],
           mode: "quality",
         }),
       });

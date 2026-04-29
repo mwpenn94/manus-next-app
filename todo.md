@@ -5928,3 +5928,15 @@
 - [x] Fix message ordering to match real Manus: webapp card → steps accordion → text summary (confirmed correct)
 - [x] Validate both fixes work — all 66 tests pass, TypeScript clean, build successful
 - [x] User must re-publish from latest checkpoint (196047eb or newer) to resolve MIME crash
+
+## Pass 70 — Critical: Messages Disappearing, AI Losing Context, App Never Created
+- [x] Messages disappearing on page reload/reconnect — FIXED: removed server-side dual-persist (only client persists via tRPC addMessage)
+- [x] AI forgets conversation context — FIXED: changed slice(-10) to slice(-50) across all 4 streaming paths in TaskView
+- [x] App never gets created — FIXED: WebAppBuilderPage, ComputerUsePage, DesignView, MessagingAgentPage, FigmaImportPage all now send `messages[]` array instead of `prompt` string
+- [x] "No active webapp project" error — FIXED: added restoreActiveProject() rehydration at stream start, recovers project state from DB
+- [x] Investigate message persistence layer — DONE: traced full flow (TaskContext.addMessage → tRPC → DB)
+- [x] Investigate agent stream context passing — DONE: traced streamWithRetry → /api/stream → runAgentStream
+- [x] Fix all root causes — DONE: 4 root causes identified and fixed
+- [x] Manus-aligned: Server-side message reconstruction from DB when client sends <= 2 messages (prevents context loss on reconnect)
+- [x] Manus-aligned: ManusNextChat component fixed to send `messages[]` instead of `message` + `history`
+- [x] Vitest: 8 tests in message-persistence.test.ts covering all fix scenarios (all passing)

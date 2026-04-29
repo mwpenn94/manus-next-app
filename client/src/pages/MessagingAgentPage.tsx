@@ -102,7 +102,7 @@ export default function MessagingAgentPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: `Send this message via the ${platform} messaging integration "${config.name}": "${testMessage}". ${webhookUrl ? `Webhook URL: ${webhookUrl}` : ""} Respond with the delivery status.`,
+          messages: [{ role: "user", content: `Send this message via the ${platform} messaging integration "${config.name}": "${testMessage}". ${webhookUrl ? `Webhook URL: ${webhookUrl}` : ""} Respond with the delivery status.` }],
           mode: "speed",
         }),
       });

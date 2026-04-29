@@ -2721,6 +2721,68 @@ export function getActivePreviewUrl(): string | null {
 }
 
 /**
+ * Restore active project state from DB when the process-local globals are lost.
+ * Called at the start of each agent stream if the user has webapp projects.
+ * This allows webapp tools (create_file, edit_file, etc.) to work across
+ * stream requests without requiring the user to call create_webapp again.
+ */
+export async function restoreActiveProject(userId: number): Promise<boolean> {
+  // If already active, nothing to do
+  if (activeProjectDir) return true;
+
+  try {
+    const { getUserWebappProjects } = await import("./db");
+    const projects = await getUserWebappProjects(userId);
+    if (!projects || projects.length === 0) return false;
+
+    // Use the most recently updated project
+    const project = projects[0];
+    const fs = await import("fs");
+    const path = await import("path");
+
+    const projectName = project.name.replace(/[^a-z0-9-]/g, "-").toLowerCase();
+    const projectDir = path.join("/tmp", "webapp-projects", projectName);
+
+    // If the directory still exists (same process, not restarted), just reactivate
+    if (fs.existsSync(projectDir)) {
+      activeProjectDir = projectDir;
+      activeProjectType = (project.framework === "static" ? "html" : "react") as "html" | "react";
+      activeProjectServePath = activeProjectType === "react"
+        ? (fs.existsSync(path.join(projectDir, "dist")) ? path.join(projectDir, "dist") : projectDir)
+        : projectDir;
+      activeProjectPreviewUrl = (project as any).publishedUrl || null;
+      console.log(`[restoreActiveProject] Restored from existing dir: ${projectDir}`);
+      return true;
+    }
+
+    // Directory doesn't exist — recreate a minimal scaffold so tools can work
+    fs.mkdirSync(projectDir, { recursive: true });
+    if (project.framework === "static") {
+      fs.writeFileSync(path.join(projectDir, "index.html"), `<!DOCTYPE html><html><head><title>${projectName}</title></head><body><div id="app"></div><script src="main.js"></script></body></html>`);
+      fs.writeFileSync(path.join(projectDir, "styles.css"), "");
+      fs.writeFileSync(path.join(projectDir, "main.js"), "");
+      activeProjectDir = projectDir;
+      activeProjectServePath = projectDir;
+      activeProjectType = "html";
+    } else {
+      // React scaffold
+      fs.mkdirSync(path.join(projectDir, "src"), { recursive: true });
+      fs.writeFileSync(path.join(projectDir, "package.json"), JSON.stringify({ name: projectName, private: true, type: "module" }, null, 2));
+      fs.writeFileSync(path.join(projectDir, "src", "App.jsx"), `export default function App() { return <div>Restored project</div>; }`);
+      activeProjectDir = projectDir;
+      activeProjectServePath = projectDir;
+      activeProjectType = "react";
+    }
+    activeProjectPreviewUrl = (project as any).publishedUrl || null;
+    console.log(`[restoreActiveProject] Recreated scaffold for: ${projectDir}`);
+    return true;
+  } catch (err: any) {
+    console.warn(`[restoreActiveProject] Failed:`, err.message);
+    return false;
+  }
+}
+
+/**
  * Build a React/Vite project and return the dist directory path.
  * Returns null if build fails.
  */

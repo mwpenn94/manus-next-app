@@ -138,7 +138,9 @@ export default function WebAppBuilderPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: `Build a complete single-page web application based on this description: "${prompt}". 
+          messages: [{
+            role: "user",
+            content: `Build a complete single-page web application based on this description: "${prompt}". 
 App name: ${appName || "My App"}
 Requirements:
 1. Generate a complete, self-contained HTML file with embedded CSS and JavaScript
@@ -147,6 +149,7 @@ Requirements:
 4. Include all necessary functionality described
 5. Return the complete HTML code wrapped in \`\`\`html code fences
 Generate the complete HTML code now.`,
+          }],
           mode: "quality",
         }),
       });

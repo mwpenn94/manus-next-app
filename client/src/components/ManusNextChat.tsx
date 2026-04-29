@@ -148,13 +148,14 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
         setMessages((prev) => [...prev, assistantMessage]);
 
         const streamUrl = config.apiUrl?.replace(/\/trpc$/, "/stream") ?? "/api/stream";
+        // Build messages array matching server contract (body.messages)
+        const historyMsgs = messages.slice(-50).map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
         const body = JSON.stringify({
-          message: text,
+          messages: [...historyMsgs, { role: "user", content: text }],
           mode,
-          history: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
         });
 
         const controller = new AbortController();

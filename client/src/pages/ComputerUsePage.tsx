@@ -101,7 +101,7 @@ export default function ComputerUsePage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: `Execute this command in the sandbox and return the output: ${cmd}`,
+          messages: [{ role: "user", content: `Execute this command in the sandbox and return the output: ${cmd}` }],
           mode: "speed",
         }),
       });
@@ -145,7 +145,7 @@ export default function ComputerUsePage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          prompt: `Take a screenshot of the current desktop state and describe what you see. The user has ${windows.length} windows open: ${windows.map((w) => w.title).join(", ")}`,
+          messages: [{ role: "user", content: `Take a screenshot of the current desktop state and describe what you see. The user has ${windows.length} windows open: ${windows.map((w) => w.title).join(", ")}` }],
           mode: "speed",
         }),
       });

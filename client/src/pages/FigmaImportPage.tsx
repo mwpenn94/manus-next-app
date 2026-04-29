@@ -78,7 +78,7 @@ export default function FigmaImportPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ prompt, mode: "quality" }),
+        body: JSON.stringify({ messages: [{ role: "user", content: prompt }], mode: "quality" }),
       });
 
       if (!response.ok) throw new Error("Import failed");

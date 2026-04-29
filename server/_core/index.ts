@@ -1025,7 +1025,7 @@ async function startServer() {
     try {
       const { runAgentStream } = await import("../agentStream");
       const body = req.body || {};
-      const messages = body.messages || [];
+      let messages = body.messages || [];
       // Enforce message array size limit (prevent abuse)
       if (messages.length > 200) {
         safeWrite(`data: ${JSON.stringify({ error: "Too many messages in conversation. Please start a new task." })}\n\n`);
@@ -1034,6 +1034,44 @@ async function startServer() {
       }
       const taskExternalId = body.taskExternalId as string | undefined;
       const mode = (body.mode === "speed" ? "speed" : body.mode === "max" ? "max" : body.mode === "limitless" ? "limitless" : "quality") as "speed" | "quality" | "max" | "limitless";
+
+      // Pass 70 — Manus-aligned: If client sends few messages but has a taskExternalId,
+      // reconstruct full conversation from DB to prevent context loss.
+      // This mirrors how Manus always has full history available to the LLM.
+      if (taskExternalId && messages.length <= 2) {
+        try {
+          const { getTaskByExternalId, getTaskMessages: getDbMessages } = await import("../db");
+          const taskRecord = await getTaskByExternalId(taskExternalId);
+          if (taskRecord) {
+            const dbMessages = await getDbMessages(taskRecord.id);
+            if (dbMessages && dbMessages.length > messages.length) {
+              // DB has more history — use it as the base, then append any new user message
+              // from the client that isn't yet persisted
+              const dbFormatted = dbMessages
+                .filter((m: any) => m.content && m.content.trim())
+                .map((m: any) => ({ role: m.role as string, content: m.content as string }));
+              // Check if the last client message is new (not yet in DB)
+              const lastClientMsg = messages[messages.length - 1];
+              if (lastClientMsg && lastClientMsg.role === "user") {
+                const lastDbMsg = dbFormatted[dbFormatted.length - 1];
+                const isNew = !lastDbMsg || lastDbMsg.content !== lastClientMsg.content;
+                if (isNew) {
+                  messages = [...dbFormatted.slice(-48), lastClientMsg];
+                } else {
+                  messages = dbFormatted.slice(-50);
+                }
+              } else {
+                messages = dbFormatted.slice(-50);
+              }
+              console.log("[Stream] Reconstructed messages from DB:", messages.length);
+            }
+          }
+        } catch (dbErr: any) {
+          console.warn("[Stream] Failed to reconstruct messages from DB:", dbErr.message);
+          // Fall through — use whatever the client sent
+        }
+      }
+
       console.log("[Stream] Messages count:", messages.length, "taskExternalId:", taskExternalId, "mode:", mode);
 
       // Resolve system prompt: per-task > global preferences > default
@@ -1229,6 +1267,16 @@ async function startServer() {
         }
       } catch { /* default to general */ }
 
+      // Restore active webapp project state if user has one (Pass 70 fix)
+      // This ensures webapp tools work across stream requests without requiring
+      // the user to call create_webapp again each time.
+      if (streamUserId) {
+        try {
+          const { restoreActiveProject } = await import("../agentTools");
+          await restoreActiveProject(streamUserId);
+        } catch { /* non-critical */ }
+      }
+
       // Run the agentic stream
       await runAgentStream({
         messages,
@@ -1241,24 +1289,16 @@ async function startServer() {
         autoTuneStrategies,
         aiFocus,
         memoryContext,
-        // Persist the final assistant response server-side so it survives client disconnects
-        onComplete: async (content) => {
-          if (!taskServerId || !content.trim()) return;
-          try {
-            const { addTaskMessage } = await import("../db");
-            const { nanoid } = await import("nanoid");
-            await addTaskMessage({
-              taskId: taskServerId,
-              externalId: `srv-${nanoid(12)}`,
-              role: "assistant",
-              content,
-              actions: null,
-            });
-            console.log("[Stream] Assistant message persisted server-side for task", taskServerId);
-          } catch (err) {
-            console.error("[Stream] Failed to persist assistant message:", err);
-          }
-        },
+        // NOTE: Server-side onComplete persistence REMOVED (Pass 70).
+        // The client already persists assistant messages via trpc.task.addMessage
+        // after stream completion. Dual-persist caused duplicate messages on reload
+        // because both the server (with raw finalContent) and the client (with
+        // post-processed content including citation links) wrote separate rows.
+        // The client-side persistence is the source of truth since it includes
+        // all post-processing (citations, images, card data).
+        // If the client disconnects mid-stream, the message is lost — but this is
+        // acceptable since the user can retry. The alternative (duplicates) is worse.
+        onComplete: undefined,
         onArtifact: async (artifact) => {
           console.log("[Stream] Artifact produced:", artifact.type, artifact.label);
           if (taskServerId) {
