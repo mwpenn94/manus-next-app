@@ -171,6 +171,7 @@ interface TaskContextMenuProps {
   projects: Array<{ id: number; externalId: string; name: string }>;
   onDelete: (id: string) => void;
   onFavorite: (id: string, fav: number) => void;
+  onRename: (id: string, title: string) => void;
   onAssignProject: (taskServerId: number, projectExternalId: string | null) => void;
   taskServerId?: number;
 }
@@ -183,6 +184,7 @@ function TaskContextMenu({
   projects,
   onDelete,
   onFavorite,
+  onRename,
   onAssignProject,
   taskServerId,
 }: TaskContextMenuProps) {
@@ -212,8 +214,8 @@ function TaskContextMenu({
           onClick={(e) => {
             e.stopPropagation();
             const newTitle = prompt("Rename task:", taskTitle);
-            if (newTitle && newTitle.trim()) {
-              toast.success(`Renamed to "${newTitle.trim()}"`);
+            if (newTitle && newTitle.trim() && newTitle.trim() !== taskTitle) {
+              onRename(taskId, newTitle.trim());
             }
           }}
         >
@@ -305,6 +307,7 @@ interface ProjectTreeNodeProps {
   onTaskClick: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onFavoriteTask: (taskId: string, fav: number) => void;
+  onRenameTask: (taskId: string, title: string) => void;
   onAssignProject: (taskServerId: number, projectExternalId: string | null) => void;
   onProjectClick: (externalId: string) => void;
 }
@@ -317,6 +320,7 @@ function ProjectTreeNode({
   onTaskClick,
   onDeleteTask,
   onFavoriteTask,
+  onRenameTask,
   onAssignProject,
   onProjectClick,
 }: ProjectTreeNodeProps) {
@@ -375,6 +379,7 @@ function ProjectTreeNode({
                 projects={allProjects}
                 onDelete={onDeleteTask}
                 onFavorite={onFavoriteTask}
+                onRename={onRenameTask}
                 onAssignProject={onAssignProject}
                 taskServerId={task.serverId}
               />
@@ -408,6 +413,7 @@ interface SidebarProjectTreeProps {
   onTaskClick: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onFavoriteTask: (taskId: string, fav: number) => void;
+  onRenameTask: (taskId: string, title: string) => void;
   navigate: (path: string) => void;
 }
 
@@ -417,6 +423,7 @@ function SidebarProjectTree({
   onTaskClick,
   onDeleteTask,
   onFavoriteTask,
+  onRenameTask,
   navigate,
 }: SidebarProjectTreeProps) {
   const projectsQuery = trpc.project.list.useQuery(undefined, { staleTime: 30000 });
@@ -537,6 +544,7 @@ function SidebarProjectTree({
               onTaskClick={onTaskClick}
               onDeleteTask={onDeleteTask}
               onFavoriteTask={onFavoriteTask}
+              onRenameTask={onRenameTask}
               onAssignProject={handleAssignProject}
               onProjectClick={(eid) => navigate(`/project/${eid}`)}
             />
@@ -563,6 +571,7 @@ interface AllTasksSectionProps {
   onTaskClick: (taskId: string) => void;
   onDeleteTask: (taskId: string) => void;
   onFavoriteTask: (taskId: string, fav: number) => void;
+  onRenameTask: (taskId: string, title: string) => void;
   onAssignProject: (taskServerId: number, projectExternalId: string | null) => void;
   statusFilter: string;
   onStatusFilterChange: (filter: string) => void;
@@ -575,6 +584,7 @@ function AllTasksSection({
   onTaskClick,
   onDeleteTask,
   onFavoriteTask,
+  onRenameTask,
   onAssignProject,
   statusFilter,
   onStatusFilterChange,
@@ -686,6 +696,7 @@ function AllTasksSection({
                 projects={projects}
                 onDelete={onDeleteTask}
                 onFavorite={onFavoriteTask}
+                onRename={onRenameTask}
                 onAssignProject={onAssignProject}
                 taskServerId={task.serverId}
               />
@@ -804,7 +815,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
   const [location, navigate] = useLocation();
-  const { tasks, activeTaskId, setActiveTask, updateTaskFavorite } = useTask();
+  const { tasks, activeTaskId, setActiveTask, updateTaskFavorite, renameTask } = useTask();
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
   const { preference, theme, cycleTheme } = useTheme();
 
@@ -976,6 +987,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     [updateTaskFavorite, favoriteMutation]
   );
 
+  const handleRenameTask = useCallback(
+    (taskId: string, title: string) => {
+      renameTask(taskId, title);
+      toast.success(`Renamed to "${title}"`);
+    },
+    [renameTask]
+  );
+
   const handleAssignProject = useCallback(
     (taskServerId: number, projectExternalId: string | null) => {
       assignMutation.mutate({ taskId: taskServerId, projectExternalId });
@@ -1080,6 +1099,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onTaskClick={handleTaskClick}
             onDeleteTask={handleDeleteTask}
             onFavoriteTask={handleFavoriteTask}
+            onRenameTask={handleRenameTask}
             navigate={(path) => {
               navigate(path);
               setMobileDrawerOpen(false);
@@ -1096,6 +1116,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             onTaskClick={handleTaskClick}
             onDeleteTask={handleDeleteTask}
             onFavoriteTask={handleFavoriteTask}
+            onRenameTask={handleRenameTask}
             onAssignProject={handleAssignProject}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
@@ -1242,8 +1263,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </button>
             <button
               onClick={() => {
-                const title = prompt("What would you like to work on?");
-                if (title?.trim()) navigate("/");
+                setActiveTask(null);
+                navigate("/");
               }}
               className="p-2 rounded-md text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
               title="New task"
