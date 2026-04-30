@@ -79,6 +79,7 @@ export interface Task {
   autoStreamed?: boolean; // Whether the initial auto-stream has been triggered for this task
   favorite?: number; // 0 = not favorited, 1 = favorited (synced from server)
   projectId?: number | null; // Associated project ID
+  staleCompleted?: number; // 1 = task was auto-completed due to stale running state
 }
 
 interface TaskContextValue {
@@ -148,6 +149,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         messagesLoaded: false,
         favorite: st.favorite ?? 0,
         projectId: st.projectId ?? null,
+        staleCompleted: st.staleCompleted ?? 0,
       }));
       setTasks((prev) => {
         const existingIds = new Set(prev.map((t) => t.id));

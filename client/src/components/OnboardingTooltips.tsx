@@ -350,8 +350,7 @@ const PAGE_HINTS: Record<string, { title: string; message: string }> = {
   "/projects": { title: "Projects", message: "Organize related tasks into projects. Each project maintains its own context and knowledge base." },
   "/memory": { title: "Memory", message: "The agent remembers facts you add here across all tasks. Add key context about your work." },
   "/skills": { title: "Skills", message: "Skills extend what the agent can do. Browse and enable skills to unlock new capabilities." },
-  "/schedule": { title: "Schedules", message: "Set up recurring tasks that run automatically on a schedule — like a cron job for AI." },
-  "/analytics": { title: "Analytics", message: "Track your usage, task completion rates, and agent performance over time." },
+  "/schedule": { title: "Schedules", message: "Set up recurring tasks that run automatically on a schedule \u2014 like a cron job for AI." },
 };
 
 /**

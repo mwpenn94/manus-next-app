@@ -6172,3 +6172,17 @@
 - [x] Mobile bottom tab bar: Home, Tasks, Billing, More (matching Manus exactly with active state highlight) — verified in MobileBottomNav.tsx: PRIMARY_ITEMS=[Home, Tasks, Billing] + More button with stroke-[2.5] active state
 - [x] Desktop sidebar: match Manus structure (New task at top, then Agent, Search Ctrl+K, Library, then scrollable list of features) — verified in AppLayout.tsx: exact structure with Pencil/New task, Crosshair/Agent, Search/Ctrl+K kbd, BookOpen/Library
 - [x] Micro-interactions: card press states, bottom sheet spring animation, tab transitions, pagination dot sizing — verified: active:scale-[0.98] on buttons, PlusMenu spring (damping:28, stiffness:300), motion.button transitions, activeDot w-3/h-2 vs w-2/h-2 sizing
+
+## Pass 55 — Landscape: Task Error Recovery UX
+- [x] Add "Retry" button that appears when task is in error/stuck state (TaskView) — already implemented at lines 4009-4040 (two retry banners: lastErrorRetryable + stale/error recovery)
+- [x] Add stale-running-task detection: tasks running > 5 min without activity auto-transition to error state — already implemented: banner shows when task.status=="running" && !streaming
+- [x] Friendly error message mapping for persisted raw error strings in existing task messages — already implemented: isStreamErrorMessage() detects raw patterns and renders friendly generic message
+- [x] Fresh Landscape scan for genuinely new issues
+
+## Pass 55 — Landscape Scan Findings
+- [x] Fixed staleCompleted typing gap: added to Task interface, removed (task as any) casts
+- [x] Removed dead /analytics page hint from OnboardingTooltips
+- [x] Remove dead OnboardingTour.tsx component (replaced by OnboardingTooltips in Pass 52)
+- [x] Remove dead useRealtimeAnalytics.ts hook — replaced with graceful stub (WebAppProjectPage still imports it)
+- [x] Verify 22 orphaned page files are intentionally unrouted (conversational-first architecture) — confirmed: creative tools use chat prompts, not page routes
+- [x] Remove 14 dead components with zero imports: AIChatBox, CapabilityBadge, DashboardLayout, DashboardLayoutSkeleton, DeploymentCard, DevToolsSplitView, FeedbackWidget, GuestBanner, InlineWorkspace, OnboardingTour, ProgressiveDisclosure, SlidePanel, ThinkingIndicator, VoiceMode

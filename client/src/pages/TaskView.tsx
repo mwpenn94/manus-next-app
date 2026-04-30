@@ -2604,7 +2604,7 @@ export default function TaskView() {
       const lastAssistant = [...task.messages].reverse().find(m => m.role === "assistant");
       const wasInterrupted = lastAssistant?.content?.includes("[Response interrupted") ||
         lastAssistant?.content?.includes("[Generation stopped") ||
-        generationIncomplete || (task as any).staleCompleted === 1;
+        generationIncomplete || task.staleCompleted === 1;
       if (wasInterrupted && lastAssistant) {
         // Enrich the continue command with context about what was interrupted
         const truncatedPrev = lastAssistant.content.slice(-500);
@@ -3900,26 +3900,26 @@ export default function TaskView() {
               <div className="flex items-center gap-2">
                 <div className={cn(
                   "flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
-                  (generationIncomplete || (task as any).staleCompleted === 1)
+                  (generationIncomplete || task.staleCompleted === 1)
                     ? "bg-amber-500/10 border-amber-500/30"
                     : "bg-muted border-border"
                 )}>
                   <CheckCircle2 className={cn(
                     "w-3.5 h-3.5",
-                    (generationIncomplete || (task as any).staleCompleted === 1) ? "text-amber-400" : "text-muted-foreground"
+                    (generationIncomplete || task.staleCompleted === 1) ? "text-amber-400" : "text-muted-foreground"
                   )} />
                   <span className={cn(
                     "text-xs font-medium",
-                    (generationIncomplete || (task as any).staleCompleted === 1) ? "text-amber-400" : "text-muted-foreground"
+                    (generationIncomplete || task.staleCompleted === 1) ? "text-amber-400" : "text-muted-foreground"
                   )}>
                     {generationIncomplete
                     ? "Generation incomplete — no artifact produced"
-                    : (task as any).staleCompleted === 1
+                    : task.staleCompleted === 1
                       ? "Auto-completed (inactive)"
                       : "Task completed"}
                   </span>
                 </div>
-                {(task as any).staleCompleted === 1 && (
+                {task.staleCompleted === 1 && (
                   <button
                     onClick={async () => {
                       try {
