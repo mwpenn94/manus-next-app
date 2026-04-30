@@ -6099,3 +6099,4 @@
 - [x] Validate task list sidebar and navigation
 - [x] Validate overall UX stability (no console errors, no broken layouts)
 - [x] Fix any issues found during browser validation (CSS contrast, test alignment — no runtime issues)
+- [x] GAP G: iOS inline specialized input bars for PlusMenu actions (SpecializedInputBar component in Home + TaskView)

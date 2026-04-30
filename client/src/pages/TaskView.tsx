@@ -106,6 +106,7 @@ import ActiveToolIndicator from "@/components/ActiveToolIndicator";
 import SandboxViewer from "@/components/SandboxViewer";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
+import SpecializedInputBar, { type SpecializedMode } from "@/components/SpecializedInputBar";
 import GitHubBadge from "@/components/GitHubBadge";
 import ConnectorsSheet, { ConnectorsBadge } from "@/components/ConnectorsSheet";
 import ResizableDivider, { useWorkspaceDivider } from "@/components/ResizableDivider";
@@ -2112,6 +2113,7 @@ export default function TaskView() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sandboxOpen, setSandboxOpen] = useState(false);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [specializedMode, setSpecializedMode] = useState<SpecializedMode>(null);
   const [connectorsSheetOpen, setConnectorsSheetOpen] = useState(false);
   const [mediaPanelOpen, setMediaPanelOpen] = useState(false);
   const [mediaPanelMode, setMediaPanelMode] = useState<"screen" | "camera" | "upload" | null>(null);
@@ -3987,7 +3989,22 @@ export default function TaskView() {
               </button>
             </div>
           )}
-          <div className="relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors">
+          {/* Specialized input bar — iOS-style guided input for PlusMenu actions */}
+          <SpecializedInputBar
+            mode={specializedMode}
+            onClose={() => setSpecializedMode(null)}
+            onSubmit={(composedPrompt) => {
+              setInput(composedPrompt);
+              setSpecializedMode(null);
+              // Auto-submit the composed prompt
+              setTimeout(() => {
+                const form = document.querySelector('form');
+                if (form) form.requestSubmit();
+              }, 50);
+            }}
+            className="rounded-t-xl"
+          />
+          <div className={cn("relative bg-card border border-border rounded-xl focus-within:border-primary/30 transition-colors", specializedMode && "rounded-t-none border-t-0")}>
             {/* Attached files preview — above textarea */}
             {files.length > 0 && (
               <div className="flex flex-wrap gap-2 px-4 pt-3">
@@ -4096,7 +4113,26 @@ export default function TaskView() {
                     onShareScreen={() => { setMediaPanelMode("screen"); setMediaPanelOpen(true); }}
                     onRecordVideo={() => { setMediaPanelMode("camera"); setMediaPanelOpen(true); }}
                     onUploadVideo={() => { setMediaPanelMode("upload"); setMediaPanelOpen(true); }}
-                    onInjectPrompt={(prompt) => { setInput(prompt); setTimeout(() => { const ta = document.querySelector('textarea'); if (ta) ta.focus(); }, 100); }}
+                    onInjectPrompt={(prompt) => {
+                      // Map prompt prefixes to specialized modes
+                      const modeMap: Record<string, SpecializedMode> = {
+                        "Build a website for ": "build-website",
+                        "Create a slide deck about ": "create-slides",
+                        "Generate an image of ": "create-image",
+                        "Edit this image: ": "edit-image",
+                        "Create a spreadsheet for ": "create-spreadsheet",
+                        "Create a video about ": "create-video",
+                        "Generate audio for ": "generate-audio",
+                        "Do wide research on ": "wide-research",
+                      };
+                      const matchedMode = modeMap[prompt];
+                      if (matchedMode) {
+                        setSpecializedMode(matchedMode);
+                      } else {
+                        setInput(prompt);
+                        setTimeout(() => { const ta = document.querySelector('textarea'); if (ta) ta.focus(); }, 100);
+                      }
+                    }}
                     onToggleHandsFree={() => handsFree.isActive ? handsFree.deactivate() : handsFree.activate()}
                     onOpenConnectorsSheet={() => setConnectorsSheetOpen(true)}
                     anchorRef={plusButtonRef}

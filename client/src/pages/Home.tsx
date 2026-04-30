@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import ModelSelector from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
+import SpecializedInputBar, { type SpecializedMode } from "@/components/SpecializedInputBar";
 import TaskTemplates from "@/components/TaskTemplates";
 import { Menu } from "lucide-react";
 
@@ -162,6 +163,7 @@ export default function Home() {
     return "manus-next-max";
   });
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [specializedMode, setSpecializedMode] = useState<SpecializedMode>(null);
   const [, navigate] = useLocation();
   const { createTask } = useTask();
 
@@ -407,9 +409,22 @@ export default function Home() {
               })}
             </div>
           )}
+          {/* Specialized input bar — iOS-style guided input for PlusMenu actions */}
+          <SpecializedInputBar
+            mode={specializedMode}
+            onClose={() => setSpecializedMode(null)}
+            onSubmit={(composedPrompt) => {
+              setInput(composedPrompt);
+              setSpecializedMode(null);
+              // Auto-submit
+              setTimeout(() => handleSubmit(), 50);
+            }}
+            className="rounded-t-2xl mb-0"
+          />
           <div className={cn(
             "relative bg-card border border-border shadow-md shadow-black/20 focus-within:border-foreground/20 transition-colors",
-            pendingFiles.length > 0 ? "rounded-2xl" : "rounded-full"
+            pendingFiles.length > 0 ? "rounded-2xl" : "rounded-full",
+            specializedMode && "rounded-t-none border-t-0"
           )}>
             <textarea
               ref={textareaRef}
@@ -463,7 +478,24 @@ export default function Home() {
                     const id = createTask("Video upload", "Upload a video.");
                     navigate(`/task/${id}`);
                   }}
-                  onInjectPrompt={(prompt) => setInput(prompt)}
+                  onInjectPrompt={(prompt) => {
+                    const modeMap: Record<string, SpecializedMode> = {
+                      "Build a website for ": "build-website",
+                      "Create a slide deck about ": "create-slides",
+                      "Generate an image of ": "create-image",
+                      "Edit this image: ": "edit-image",
+                      "Create a spreadsheet for ": "create-spreadsheet",
+                      "Create a video about ": "create-video",
+                      "Generate audio for ": "generate-audio",
+                      "Do wide research on ": "wide-research",
+                    };
+                    const matchedMode = modeMap[prompt];
+                    if (matchedMode) {
+                      setSpecializedMode(matchedMode);
+                    } else {
+                      setInput(prompt);
+                    }
+                  }}
                   anchorRef={plusButtonRef}
                 />
               </div>
