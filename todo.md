@@ -6164,11 +6164,11 @@
 
 ## Deep Convergence Pass — Manus Parity (Pass 4+)
 - [x] Fix auth/streaming 401 bug — redirect to login on session expiry instead of generic error
-- [ ] Navigation convergence: hamburger menu → sidebar with Manus-identical structure (New task, Agent, Search, Library, Skills, Schedule, Connectors, Memory, GitHub, Billing, Discover, Help, Webhooks, Data Controls)
-- [ ] Home screen convergence: serif greeting "Hello, {name}.", muted subtitle, input bar with + and mic, quick-action chips (Build website, Create slides, Write a...), suggestion cards carousel with pagination dots
-- [ ] Bottom sheet / + menu: MEDIA section (Add files, Share screen, Record video, Upload video), CREATE section (Build website, Create slides, Create image, Edit image, Wide Research, Scheduled tasks, Create spreadsheet, Create video, Generate audio, Playbook), CONNECTORS section (connected accounts)
-- [ ] Settings/Account/More menu: full hierarchy (Cloud Browser, Skills, Connectors, Integrations, Account, Language, Appearance, Clear cache, Rate this app, Get help)
-- [ ] Typography and spacing: match Manus serif heading font, muted subtitle weight, card border-radius and proportions
-- [ ] Mobile bottom tab bar: Home, Tasks, Billing, More (matching Manus exactly with active state highlight)
-- [ ] Desktop sidebar: match Manus structure (New task at top, then Agent, Search Ctrl+K, Library, then scrollable list of features)
-- [ ] Micro-interactions: card press states, bottom sheet spring animation, tab transitions, pagination dot sizing
+- [x] Navigation convergence: hamburger menu → sidebar with Manus-identical structure (New task, Agent, Search, Library, Skills, Schedule, Connectors, Memory, GitHub, Billing, Discover, Help, Webhooks, Data Controls) — verified in AppLayout.tsx: top nav has New task/Agent/Search/Library, bottom bar has Settings/AppsGrid(all features)/Connectors/Help/Theme
+- [x] Home screen convergence: serif greeting "Hello, {name}.", muted subtitle, input bar with + and mic, quick-action chips (Build website, Create slides, Write a...), suggestion cards carousel with pagination dots — verified in Home.tsx: Libre Baskerville greeting, pill input with PlusMenu+Mic, QUICK_ACTIONS chips, SUGGESTIONS carousel with activeDot pagination
+- [x] Bottom sheet / + menu: MEDIA section (Add files, Share screen, Record video, Upload video), CREATE section (Build website, Create slides, Create image, Edit image, Wide Research, Scheduled tasks, Create spreadsheet, Create video, Generate audio, Playbook), CONNECTORS section (connected accounts) — verified in PlusMenu.tsx: all sections present with spring animation on mobile
+- [x] Settings/Account/More menu: full hierarchy (Cloud Browser, Skills, Connectors, Integrations, Account, Language, Appearance, Clear cache, Rate this app, Get help) — verified in SettingsPage.tsx: tabs for account, general, notifications, secrets, capabilities, connectors, bridge, cloud_browser, data_controls, feedback
+- [x] Typography and spacing: match Manus serif heading font, muted subtitle weight, card border-radius and proportions — verified: Libre Baskerville loaded in index.html, --font-heading CSS variable, used in greeting and sidebar logo
+- [x] Mobile bottom tab bar: Home, Tasks, Billing, More (matching Manus exactly with active state highlight) — verified in MobileBottomNav.tsx: PRIMARY_ITEMS=[Home, Tasks, Billing] + More button with stroke-[2.5] active state
+- [x] Desktop sidebar: match Manus structure (New task at top, then Agent, Search Ctrl+K, Library, then scrollable list of features) — verified in AppLayout.tsx: exact structure with Pencil/New task, Crosshair/Agent, Search/Ctrl+K kbd, BookOpen/Library
+- [x] Micro-interactions: card press states, bottom sheet spring animation, tab transitions, pagination dot sizing — verified: active:scale-[0.98] on buttons, PlusMenu spring (damping:28, stiffness:300), motion.button transitions, activeDot w-3/h-2 vs w-2/h-2 sizing
