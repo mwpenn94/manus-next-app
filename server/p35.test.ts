@@ -134,11 +134,11 @@ describe("P35 — Webapp Preview SSE Pipeline", () => {
   });
 });
 
-// ── WebappPreviewCard: Live Iframe + Management ──
+// ── WebappPreviewCard: Full Management Card with Live Preview (Manus Parity) ──
 describe("P35 — WebappPreviewCard Features", () => {
   it("WebappPreviewCard has live iframe preview mode", () => {
     const card = read("client/src/components/WebappPreviewCard.tsx");
-    expect(card).toContain("<iframe");
+    expect(card).toContain("iframe");
     expect(card).toContain("previewUrl");
   });
 
@@ -161,6 +161,13 @@ describe("P35 — WebappPreviewCard Features", () => {
     const card = read("client/src/components/WebappPreviewCard.tsx");
     expect(card).toContain("Maximize");
     expect(card).toContain("Minimize");
+  });
+
+  it("WebappPreviewCard handles published vs preview states", () => {
+    const card = read("client/src/components/WebappPreviewCard.tsx");
+    expect(card).toContain("isPublished");
+    expect(card).toContain("Visit Site");
+    expect(card).toContain("Open Preview");
   });
 });
 

@@ -104,9 +104,9 @@ describe("Pass 68 — Message Ordering (Manus Parity)", () => {
     });
   });
 
-  describe("WebappPreviewCard is compact (no iframe)", () => {
-    it("does not contain iframe element", () => {
-      expect(WEBAPP_CARD_SRC).not.toContain("<iframe");
+  describe("WebappPreviewCard has full management features", () => {
+    it("contains live iframe preview", () => {
+      expect(WEBAPP_CARD_SRC).toContain("iframe");
     });
 
     it("has Visit Site button", () => {

@@ -162,6 +162,22 @@ vi.mock("./promptCache", () => ({
   getCacheMetrics: vi.fn(() => ({ hits: 0, misses: 0, ratio: 0 })),
 }));
 
+// Mock AEGIS LLM wrapper — the dynamic import in agentStream.ts resolves to this.
+// We pass through to the already-mocked invokeLLM so the test's LLM behavior controls still work.
+vi.mock("./services/aegisLlm", () => ({
+  invokeWithAegis: vi.fn(async (params: any) => {
+    // Import the already-mocked invokeLLM and call it directly
+    const { invokeLLM } = await import("./_core/llm");
+    const result = await invokeLLM(params);
+    return {
+      result,
+      cached: false,
+      sessionId: 1,
+      classification: { taskType: "conversation", complexity: "simple", novelty: "routine", confidence: 0.5 },
+    };
+  }),
+}));
+
 import { runAgentStream, getTierConfig, type TierConfig } from "./agentStream";
 
 // ─── Helper: Collect SSE events from a mock response ─────────────────────────

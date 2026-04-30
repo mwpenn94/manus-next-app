@@ -614,7 +614,7 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "report_convergence",
       description:
-        "Report the progress of a recursive optimization/convergence pass. Call at the START of each pass with status 'running' and at the END with 'converged' or 'needs_more'. This creates visual progress indicators in the chat for the user.",
+        "Report the progress of a recursive optimization/convergence pass. Call at the START of each pass with status 'running' and at the END with 'converged' or 'needs_more'. This creates visual progress indicators in the chat for the user. Supports configurable reasoning modes (convergent for refinement, divergent for exploration) and temperature-based adaptive behavior.",
       parameters: {
         type: "object",
         properties: {
@@ -624,13 +624,26 @@ export const AGENT_TOOLS: Tool[] = [
           },
           pass_type: {
             type: "string",
-            enum: ["landscape", "depth", "adversarial", "future_state", "synthesis", "fundamental_redesign"],
-            description: "Type of analysis pass being performed",
+            enum: ["landscape", "depth", "adversarial", "future_state", "synthesis", "exploration", "fundamental_redesign"],
+            description: "Type of analysis pass being performed. 'exploration' is for divergent reasoning.",
           },
           status: {
             type: "string",
             enum: ["running", "converged", "needs_more"],
             description: "Current status of this pass",
+          },
+          reasoning_mode: {
+            type: "string",
+            enum: ["convergent", "divergent", "adaptive"],
+            description: "Reasoning mode: 'convergent' narrows toward optimal solution, 'divergent' explores alternatives and novel approaches, 'adaptive' switches based on temperature and signals.",
+          },
+          temperature: {
+            type: "number",
+            description: "Current temperature (0.0-1.0). High = explore/diverge, Low = exploit/converge. Decays naturally as passes accumulate without improvement.",
+          },
+          signal_assessment: {
+            type: "string",
+            description: "One-sentence assessment of signals present for each pass type (what triggered this pass type selection).",
           },
           description: {
             type: "string",
@@ -638,11 +651,23 @@ export const AGENT_TOOLS: Tool[] = [
           },
           rating: {
             type: "number",
-            description: "Quality rating 1-10 for the current state",
+            description: "Quality rating 1-10 for the current state. Note: models overrate own outputs by 0.5-1.0 points — calibrate accordingly.",
+          },
+          score_delta: {
+            type: "number",
+            description: "Change in rating from previous pass. Positive = improving, negative = regressing, zero = stagnating. Used to adjust temperature.",
           },
           convergence_count: {
             type: "number",
             description: "Number of consecutive clean passes (need 100 for full convergence, max 1280 total passes)",
+          },
+          failure_log: {
+            type: "string",
+            description: "What was tried and didn't work this pass. Critical for avoiding repeated failures and preserving institutional knowledge.",
+          },
+          divergence_budget_used: {
+            type: "number",
+            description: "Percentage (0-100) of divergence budget consumed. Budget is 15% at temp<0.3, 40% at temp 0.3-0.6, 60% at temp>0.6.",
           },
         },
         required: ["pass_number", "pass_type", "status"],
@@ -2659,7 +2684,7 @@ export async function executeTool(
       // We just return success so the agent loop continues
       return {
         success: true,
-        result: `Convergence pass ${args.pass_number} (${args.pass_type}): ${args.status}${args.description ? " — " + args.description : ""}${args.rating ? " [" + args.rating + "/10]" : ""}`,
+        result: `Convergence pass ${args.pass_number} (${args.pass_type}${args.reasoning_mode ? "/" + args.reasoning_mode : ""}): ${args.status}${args.temperature !== undefined ? " [temp=" + args.temperature.toFixed(2) + "]" : ""}${args.description ? " — " + args.description : ""}${args.rating ? " [" + args.rating + "/10]" : ""}${args.score_delta !== undefined ? " (Δ" + (args.score_delta >= 0 ? "+" : "") + args.score_delta.toFixed(1) + ")" : ""}${args.failure_log ? "\nFailed: " + args.failure_log : ""}`,
       };
     case "github_edit": {
       const { executeGitHubEdit } = await import("./githubEditTool");
@@ -2997,7 +3022,7 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created HTML project "${projectName}". Preview is live.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
+        result: `Created HTML project "${projectName}". The live preview is available via the iframe in your chat. Files created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
         url: htmlUrl,
         artifactType: "webapp_preview",
         artifactLabel: projectName,
@@ -3137,7 +3162,7 @@ async function executeCreateWebapp(args: {
 
         return {
           success: true,
-          result: `Created HTML project "${projectName}" (using HTML fallback). Preview is live.\n\nFiles created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
+          result: `Created HTML project "${projectName}" (using HTML fallback). The live preview is available via the iframe in your chat. Files created:\n- index.html\n- styles.css\n- main.js\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
           url: fbHtmlUrl,
           artifactType: "webapp_preview",
           artifactLabel: projectName,
@@ -3190,7 +3215,7 @@ async function executeCreateWebapp(args: {
 
       return {
         success: true,
-        result: `Created React+Vite+Tailwind project "${projectName}". Preview is live.\n\nFiles created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
+        result: `Created React+Vite+Tailwind project "${projectName}". The live preview is available via the iframe in your chat. Files created:\n- package.json\n- vite.config.js\n- index.html\n- src/main.jsx\n- src/App.jsx\n- src/index.css\n\nYou can now use create_file and edit_file to modify the project files. The preview updates automatically after each edit.`,
         url: reactPreviewUrl,
         artifactType: "webapp_preview",
         artifactLabel: projectName,

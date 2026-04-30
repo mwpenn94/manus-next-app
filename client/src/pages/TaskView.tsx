@@ -800,6 +800,12 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             description={message.cardData?.description as string}
             rating={message.cardData?.rating as number}
             convergenceCount={(message.cardData?.convergenceCount as number) ?? 0}
+            reasoningMode={message.cardData?.reasoningMode as any}
+            temperature={message.cardData?.temperature as number}
+            scoreDelta={message.cardData?.scoreDelta as number}
+            signalAssessment={message.cardData?.signalAssessment as string}
+            failureLog={message.cardData?.failureLog as string}
+            divergenceBudgetUsed={message.cardData?.divergenceBudgetUsed as number}
           />
         ) : message.cardType === "interactive_output" ? (
           <InteractiveOutputCard

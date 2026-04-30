@@ -12,14 +12,14 @@ import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 
-describe("Pass 67: WebappPreviewCard — compact Manus-style card (no iframe)", () => {
+describe("Pass 67: WebappPreviewCard — full management card with live preview", () => {
   const cardContent = fs.readFileSync(
     path.resolve("client/src/components/WebappPreviewCard.tsx"),
     "utf-8"
   );
 
-  it("does NOT contain an iframe element", () => {
-    expect(cardContent).not.toContain("<iframe");
+  it("contains a live iframe preview", () => {
+    expect(cardContent).toContain("iframe");
   });
 
   it("has Visit Site button", () => {
@@ -42,8 +42,8 @@ describe("Pass 67: WebappPreviewCard — compact Manus-style card (no iframe)", 
     expect(cardContent).toContain("min-w-0");
   });
 
-  it("constrains max width with max-w-md", () => {
-    expect(cardContent).toContain("max-w-md");
+  it("constrains max width with max-w-lg", () => {
+    expect(cardContent).toContain("max-w-lg");
   });
 });
 

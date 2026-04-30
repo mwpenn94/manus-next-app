@@ -11,33 +11,31 @@ import { describe, expect, it, vi } from "vitest";
 
 // ── 1. Webapp Preview Proxy ──
 describe("Webapp preview proxy", () => {
-  it("proxy route is registered at /api/webapp-preview", async () => {
-    // Verify the proxy route exists in the server index
+  it("preview route is registered at /api/webapp-preview", async () => {
     const fs = await import("fs");
     const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
     expect(indexContent).toContain('"/api/webapp-preview"');
     expect(indexContent).toContain("getActiveProject");
-    expect(indexContent).toContain("127.0.0.1");
   });
 
-  it("proxy imports getActiveProject from agentTools", async () => {
+  it("preview imports getActiveProject from agentTools", async () => {
     const fs = await import("fs");
     const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
     expect(indexContent).toContain('import("../agentTools")');
   });
 
-  it("proxy returns 503 when no active project", async () => {
+  it("preview returns 503 when no active project", async () => {
     const fs = await import("fs");
     const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
     expect(indexContent).toContain("No active webapp project");
     expect(indexContent).toContain("503");
   });
 
-  it("proxy returns 502 when dev server not reachable", async () => {
+  it("preview serves files from build output (file-serving approach)", async () => {
     const fs = await import("fs");
     const indexContent = fs.readFileSync("server/_core/index.ts", "utf-8");
-    expect(indexContent).toContain("Webapp dev server on port");
-    expect(indexContent).toContain("502");
+    expect(indexContent).toContain("servePath");
+    expect(indexContent).toContain("sendFile");
   });
 });
 
@@ -120,12 +118,12 @@ describe("Mode selection and Limitless mode", () => {
     expect(appLayout).toContain("MODEL_TO_MODE");
   });
 
-  it("WebappPreviewCard uses proxy URL instead of localhost", async () => {
+  it("WebappPreviewCard resolves URLs via liveUrl fallback chain", async () => {
     const fs = await import("fs");
     const card = fs.readFileSync("client/src/components/WebappPreviewCard.tsx", "utf-8");
-    expect(card).toContain("/api/webapp-preview/");
-    // Uses effectiveUrl which resolves publishedUrl > previewUrl > proxy
-    expect(card).toContain("effectiveUrl");
+    // Uses liveUrl which resolves publishedUrl > domain > previewUrl
+    expect(card).toContain("liveUrl");
+    expect(card).toContain("iframeSrc");
   });
 
   it("WebappPreviewCard does not show raw localhost URLs to user", async () => {

@@ -6074,3 +6074,28 @@
 - [x] Pass 111-115: Performance sweep — large components code-split via React.lazy()
 - [x] Pass 116-120: Accessibility sweep — all images have alt (decorative use alt=""), proper ARIA
 - [x] Pass 121-140: NO CHANGES — 20 consecutive clean passes confirmed
+
+## Deep Optimization Passes — Genuine Gaps (Framework Applied as Process Methodology)
+
+- [x] GAP C: ATLAS parallel execution — Promise.allSettled for same-order independent tasks
+- [x] GAP D: Route main agent loop through Sovereign/AEGIS for quality + routing
+- [x] GAP B: Make convergence system configurable (convergent vs divergent, custom thresholds, dimension selection)
+- [x] GAP E: Richer convergence UI (temperature, pass type, score trajectory as optional visualization)
+- [x] GAP F: Context compression preserving high-value tool results and failure logs
+- [ ] GAP G: iOS inline specialized input bars for PlusMenu actions
+
+## CRITICAL: Webapp Builder Broken (App Development & Production)
+- [x] FIX: Diagnose and restore create_webapp tool — app development capability broken
+- [x] FIX: Restore webapp preview pipeline (WebappPreviewCard, iframe preview)
+- [x] FIX: Restore webapp deployment flow (publish, domain assignment)
+- [x] FIX: p35.test.ts failures — WebappPreviewCard features broken (live iframe, device selector, management tabs, expand/minimize)
+- [x] PARITY: Full-scope assessment across all Manus dimensions (UI/UX, reasoning, tasks, connectors, production)
+
+## Browser Validation (Production User Experience)
+- [x] Validate Home page loads correctly, task input works
+- [x] Validate Settings page with new convergence/reasoning controls
+- [x] Validate webapp builder flow (create, preview card, deploy)
+- [x] Validate connector management UI
+- [x] Validate task list sidebar and navigation
+- [x] Validate overall UX stability (no console errors, no broken layouts)
+- [x] Fix any issues found during browser validation (CSS contrast, test alignment — no runtime issues)

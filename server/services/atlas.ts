@@ -368,14 +368,27 @@ export async function executeGoal(goalId: number, userId: number, maxBudget?: nu
       continue;
     }
 
-    // Execute batch (sequentially for now)
-    for (const task of batch) {
-      const result = await executeTask(
+    // Execute batch in parallel — same-order tasks are independent by definition
+    const batchSnapshot = [...previousOutputs]; // Snapshot context before parallel execution
+    const batchPromises = batch.map((task) =>
+      executeTask(
         { id: task.id, description: task.description, taskType: task.taskType, executionOrder: task.executionOrder },
         goalRow.description,
         userId,
-        previousOutputs
-      );
+        batchSnapshot // All parallel tasks see the same prior context
+      ).then((result) => ({ task, result, error: null as Error | null }))
+       .catch((error: Error) => ({ task, result: null as any, error }))
+    );
+
+    const batchResults = await Promise.allSettled(batchPromises);
+
+    for (const settled of batchResults) {
+      if (settled.status === "rejected") continue; // Shouldn't happen due to .catch above
+      const { task, result, error } = settled.value;
+      if (error || !result) {
+        outputs.push({ taskDescription: task.description, output: `Failed: ${error?.message || "unknown error"}`, status: "failed" });
+        continue;
+      }
       totalCost += result.cost;
       outputs.push({ taskDescription: task.description, output: result.output.slice(0, 2000), status: result.status });
       if (result.status === "completed") {

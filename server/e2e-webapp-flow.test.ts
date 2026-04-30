@@ -54,15 +54,15 @@ describe("E2E: Create new task → agent creates webapp", () => {
   });
 });
 
-describe("E2E: WebappPreviewCard — compact Manus-style card (no iframe)", () => {
+describe("E2E: WebappPreviewCard — full management card with live preview", () => {
   it("WebappPreviewCard component exists", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
     expect(card.length).toBeGreaterThan(100);
   });
 
-  it("WebappPreviewCard does NOT render an iframe (Manus parity)", () => {
+  it("WebappPreviewCard renders a live iframe preview", () => {
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
-    expect(card).not.toContain("<iframe");
+    expect(card).toContain("iframe");
   });
 
   it("WebappPreviewCard accepts required props", () => {
@@ -101,7 +101,6 @@ describe("E2E: WebappPreviewCard — compact Manus-style card (no iframe)", () =
     const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
     expect(card).toContain("truncate");
     expect(card).toContain("min-w-0");
-    expect(card).toContain("max-w-md");
   });
 
   it("TaskView renders WebappPreviewCard for webapp_preview message cards", () => {

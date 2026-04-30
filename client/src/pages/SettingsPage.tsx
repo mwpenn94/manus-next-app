@@ -107,6 +107,10 @@ interface GeneralSettings {
   ttsLanguage: string; // ISO 639-1 language code for TTS voice catalog
   ttsRate: number; // 0.5 to 2.0, default 1.0
   aiFocus: "general" | "financial" | "technical" | "creative" | "custom";
+  reasoningMode: "convergent" | "divergent" | "adaptive";
+  convergenceThreshold: number; // 0.1-0.5, temperature below which convergence is declared
+  maxDivergenceBudget: number; // 15-60%, how much exploration is allowed
+  initialTemperature: number; // 0.0-1.0, starting temperature for optimization passes
 }
 
 const DEFAULT_GENERAL: GeneralSettings = {
@@ -124,6 +128,10 @@ const DEFAULT_GENERAL: GeneralSettings = {
   ttsLanguage: "en",
   ttsRate: 1.0,
   aiFocus: "general" as const,
+  reasoningMode: "adaptive" as const,
+  convergenceThreshold: 0.2,
+  maxDivergenceBudget: 40,
+  initialTemperature: 0.7,
 };
 
 // TTS voices are now loaded dynamically from the server based on selected language
@@ -807,6 +815,84 @@ export default function SettingsPage() {
                       </div>
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* ── Reasoning & Convergence Settings ── */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-muted-foreground" />
+                  Reasoning & Convergence
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Configure how the AI approaches recursive optimization. Convergent mode narrows toward optimal solutions; Divergent mode explores alternatives; Adaptive switches based on signals.
+                </p>
+                <div className="space-y-4">
+                  {/* Reasoning Mode */}
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Reasoning Mode</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["convergent", "divergent", "adaptive"] as const).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => {
+                            setGeneralSettings((prev) => ({ ...prev, reasoningMode: mode }));
+                            toast.success(`Reasoning: ${mode}`);
+                          }}
+                          className={cn(
+                            "px-3 py-2 rounded-lg border text-xs font-medium capitalize transition-all",
+                            generalSettings.reasoningMode === mode
+                              ? "border-primary/50 bg-primary/10 text-primary"
+                              : "border-border bg-card text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Temperature & Thresholds */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Initial Temperature</label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={generalSettings.initialTemperature}
+                        onChange={(e) => setGeneralSettings((prev) => ({ ...prev, initialTemperature: parseFloat(e.target.value) }))}
+                        className="w-full accent-primary"
+                      />
+                      <span className="text-[10px] text-muted-foreground">{generalSettings.initialTemperature.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Convergence Threshold</label>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="0.5"
+                        step="0.05"
+                        value={generalSettings.convergenceThreshold}
+                        onChange={(e) => setGeneralSettings((prev) => ({ ...prev, convergenceThreshold: parseFloat(e.target.value) }))}
+                        className="w-full accent-primary"
+                      />
+                      <span className="text-[10px] text-muted-foreground">{generalSettings.convergenceThreshold.toFixed(2)}</span>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Divergence Budget</label>
+                      <input
+                        type="range"
+                        min="15"
+                        max="60"
+                        step="5"
+                        value={generalSettings.maxDivergenceBudget}
+                        onChange={(e) => setGeneralSettings((prev) => ({ ...prev, maxDivergenceBudget: parseInt(e.target.value) }))}
+                        className="w-full accent-primary"
+                      />
+                      <span className="text-[10px] text-muted-foreground">{generalSettings.maxDivergenceBudget}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

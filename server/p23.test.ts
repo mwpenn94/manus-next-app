@@ -141,8 +141,8 @@ describe("P23-2: buildStreamCallbacks module structure", () => {
     expect(src).toContain("[Download Document]");
   });
 
-  it("shows reconnecting message in stream content", () => {
-    expect(src).toContain("*Reconnecting...");
+  it("signals reconnecting state without text injection (Pass 67)", () => {
+    expect(src).toContain("setIsReconnecting");
   });
 
   it("restores clean content on reconnected", () => {

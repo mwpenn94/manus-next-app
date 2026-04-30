@@ -45,15 +45,34 @@ async function refreshDueConnectors(): Promise<{
   const now = new Date();
 
   // Find all health records with auto-refresh enabled and nextRefreshAt <= now
-  const dueRecords = await db
-    .select()
-    .from(connectorHealth)
-    .where(
-      and(
-        eq(connectorHealth.autoRefreshEnabled, true),
-        lte(connectorHealth.nextRefreshAt, now)
-      )
-    );
+  // Retry once on connection failure (handles stale connections after hibernation)
+  let dueRecords;
+  try {
+    dueRecords = await db
+      .select()
+      .from(connectorHealth)
+      .where(
+        and(
+          eq(connectorHealth.autoRefreshEnabled, true),
+          lte(connectorHealth.nextRefreshAt, now)
+        )
+      );
+  } catch (queryErr: any) {
+    // Retry once — stale connection after sandbox hibernation
+    console.log("[AutoRefresh] First query failed, retrying after 2s...", queryErr.message?.slice(0, 80));
+    await new Promise(r => setTimeout(r, 2000));
+    const retryDb = await getDb();
+    if (!retryDb) return { processed: 0, refreshed: 0, failed: 0, skipped: 0 };
+    dueRecords = await retryDb
+      .select()
+      .from(connectorHealth)
+      .where(
+        and(
+          eq(connectorHealth.autoRefreshEnabled, true),
+          lte(connectorHealth.nextRefreshAt, now)
+        )
+      );
+  }
 
   if (dueRecords.length === 0) {
     return { processed: 0, refreshed: 0, failed: 0, skipped: 0 };

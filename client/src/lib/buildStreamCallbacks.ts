@@ -279,11 +279,11 @@ export function buildStreamCallbacks(
     onGateResolved: () => {
       // Gate system removed — no-op
     },
-    onConvergence: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number }) => {
+    onConvergence: (data: { passNumber: number; passType: string; status: string; description?: string; rating?: number; convergenceCount?: number; reasoningMode?: string; temperature?: number; scoreDelta?: number; signalAssessment?: string; failureLog?: string; divergenceBudgetUsed?: number }) => {
       if (setters.addMessage) {
         setters.addMessage(setters.taskId, {
           role: "assistant",
-          content: `Pass ${data.passNumber} — ${data.passType}`,
+          content: `Pass ${data.passNumber} — ${data.passType}${data.reasoningMode ? ` (${data.reasoningMode})` : ""}`,
           cardType: "convergence" as const,
           cardData: data,
         });

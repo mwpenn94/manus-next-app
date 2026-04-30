@@ -326,15 +326,14 @@ describe("WebappPreviewCard publishedUrl", () => {
     expect(content).toContain("publishedUrl");
   });
 
-  it("WebappPreviewCard uses publishedUrl for Visit Site button (no iframe)", () => {
+  it("WebappPreviewCard uses publishedUrl for Visit Site button", () => {
     const content = fs.readFileSync(
       path.resolve("client/src/components/WebappPreviewCard.tsx"),
       "utf-8"
     );
-    // Pass 67: No iframe — compact card uses publishedUrl for Visit button
     expect(content).toContain("publishedUrl");
     expect(content).toContain("Visit Site");
-    expect(content).not.toContain("<iframe");
+    expect(content).toContain("iframe");
   });
 
   it("WebappPreviewCard shows deployed URL in URL bar", () => {

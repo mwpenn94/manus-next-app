@@ -574,6 +574,109 @@ async function invokeLLMWithRetry(
 }
 
 /**
+ * AEGIS metadata returned alongside the LLM response.
+ * Surfaced as optional SSE events for quality tracking and cache visibility.
+ */
+export interface AegisStreamMeta {
+  cached: boolean;
+  sessionId?: number;
+  costSaved?: number;
+  classification?: { taskType: string; complexity: string; novelty: string; confidence: number };
+  quality?: { completeness: number; accuracy: number; relevance: number; clarity: number; efficiency: number; overall: number };
+  improvements?: string[];
+}
+
+/**
+ * Invoke LLM through the AEGIS pipeline with retry.
+ * Routes through pre-flight (cache check, prompt optimization) and post-flight
+ * (quality scoring, fragment extraction, lesson extraction) for quality tracking.
+ *
+ * For tool-calling turns, skipPostFlight=true is recommended for performance.
+ * Post-flight is most valuable on final text responses.
+ *
+ * Falls back to raw invokeLLM if AEGIS is unavailable (graceful degradation).
+ */
+async function invokeWithAegisRetry(
+  invokeLLM: (params: any) => Promise<InvokeResult>,
+  params: any,
+  aegisOpts: { userId?: number; taskExternalId?: string; skipPostFlight?: boolean; skipCache?: boolean },
+  maxRetries = 3,
+  baseDelayMs = 1000
+): Promise<{ response: InvokeResult; aegisMeta?: AegisStreamMeta }> {
+  // If no userId, fall back to raw invokeLLM (AEGIS requires userId)
+  if (!aegisOpts.userId) {
+    const response = await invokeLLMWithRetry(invokeLLM, params, maxRetries, baseDelayMs);
+    return { response };
+  }
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { invokeWithAegis } = await import("./services/aegisLlm");
+      const aegisResult = await invokeWithAegis({
+        ...params,
+        userId: aegisOpts.userId,
+        taskExternalId: aegisOpts.taskExternalId,
+        skipCache: aegisOpts.skipCache ?? false,
+        skipPostFlight: aegisOpts.skipPostFlight ?? false,
+      });
+
+      const meta: AegisStreamMeta = {
+        cached: aegisResult.cached,
+        sessionId: aegisResult.sessionId,
+        costSaved: aegisResult.costSaved,
+        classification: aegisResult.classification ? {
+          taskType: aegisResult.classification.taskType,
+          complexity: aegisResult.classification.complexity,
+          novelty: aegisResult.classification.novelty,
+          confidence: aegisResult.classification.confidence,
+        } : undefined,
+        quality: aegisResult.quality ? {
+          completeness: aegisResult.quality.completeness,
+          accuracy: aegisResult.quality.accuracy,
+          relevance: aegisResult.quality.relevance,
+          clarity: aegisResult.quality.clarity,
+          efficiency: aegisResult.quality.efficiency,
+          overall: aegisResult.quality.overall,
+        } : undefined,
+        improvements: aegisResult.improvements,
+      };
+
+      return { response: aegisResult.result, aegisMeta: meta };
+    } catch (err: any) {
+      const status = err.status || err.statusCode || 0;
+      const msg = err.message || "";
+      const isTransient = (
+        (status >= 500 && status < 600) ||
+        msg.includes("bad response from upstream") ||
+        msg.includes("Internal Server Error") ||
+        msg.includes("502") ||
+        msg.includes("503") ||
+        msg.includes("504") ||
+        msg.includes("ETIMEDOUT") ||
+        msg.includes("ECONNRESET")
+      );
+
+      // If AEGIS itself fails (not a transient LLM error), fall back to raw invokeLLM
+      if (msg.includes("AEGIS") || msg.includes("aegis") || msg.includes("pre-flight") || msg.includes("post-flight")) {
+        console.warn(`[Agent] AEGIS pipeline error, falling back to raw LLM: ${msg.slice(0, 150)}`);
+        const response = await invokeLLMWithRetry(invokeLLM, params, maxRetries, baseDelayMs);
+        return { response };
+      }
+
+      if (!isTransient || attempt >= maxRetries) {
+        throw err;
+      }
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      console.warn(
+        `[Agent] AEGIS+LLM transient error (attempt ${attempt + 1}/${maxRetries + 1}): ${msg}. Retrying in ${delay}ms...`
+      );
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw new Error("AEGIS+LLM invocation failed after retries");
+}
+
+/**
  * Run the agentic streaming loop.
  *
  * Executes a multi-turn LLM conversation with tool calling over SSE.
@@ -965,7 +1068,33 @@ When performing recursive optimization passes, use the report_convergence tool t
         llmParams.maxTokens = tierConfig.maxTokensPerCall;
       }
       // else: omit maxTokens entirely — model uses its full output window (Max tier)
-      const response: InvokeResult = await invokeLLMWithRetry(invokeLLM, llmParams);
+      // GAP D: Route through AEGIS pipeline for caching, prompt optimization, and quality scoring.
+      // Tool-calling turns skip post-flight for performance; only final text responses get scored.
+      // Falls back gracefully to raw invokeLLM if AEGIS is unavailable.
+      const hasToolCalls = turn > 1; // After first turn, likely tool-calling — skip post-flight
+      const { response, aegisMeta } = await invokeWithAegisRetry(invokeLLM, llmParams, {
+        userId,
+        taskExternalId,
+        skipPostFlight: hasToolCalls, // Full quality scoring only on likely-final responses
+        skipCache: turn > 1, // Only cache-check on first turn (subsequent turns have tool results)
+      });
+
+      // Emit AEGIS metadata as optional SSE event for quality tracking visibility
+      if (aegisMeta) {
+        sendSSE(safeWrite, {
+          aegis_meta: {
+            cached: aegisMeta.cached,
+            sessionId: aegisMeta.sessionId,
+            costSaved: aegisMeta.costSaved,
+            classification: aegisMeta.classification,
+            quality: aegisMeta.quality,
+            improvements: aegisMeta.improvements,
+          },
+        });
+        if (aegisMeta.cached) {
+          console.log(`[Agent] AEGIS cache hit — saved ${aegisMeta.costSaved ?? 0} credits`);
+        }
+      }
 
       // ── Accumulate and stream token usage (Session 23) ──
       if (response.usage) {
@@ -990,7 +1119,12 @@ When performing recursive optimization passes, use the report_convergence tool t
           sendSSE(safeWrite, { status: `LLM returned empty response, retrying (${emptyRetry}/${emptyRetryMax})...` });
           await new Promise(r => setTimeout(r, emptyRetry * 2000));
           try {
-            const retryResponse = await invokeLLMWithRetry(invokeLLM, llmParams);
+            const { response: retryResponse } = await invokeWithAegisRetry(invokeLLM, llmParams, {
+              userId,
+              taskExternalId,
+              skipPostFlight: true, // Retry path — skip quality scoring
+              skipCache: true, // Retry path — don't use cache
+            });
             if (retryResponse.choices?.[0]) {
               effectiveChoice = retryResponse.choices[0];
               // Accumulate retry usage
@@ -1118,6 +1252,12 @@ When performing recursive optimization passes, use the report_convergence tool t
                   description: pa.description,
                   rating: pa.rating,
                   convergenceCount: pa.convergence_count ?? 0,
+                  reasoningMode: pa.reasoning_mode,
+                  temperature: pa.temperature,
+                  scoreDelta: pa.score_delta,
+                  signalAssessment: pa.signal_assessment,
+                  failureLog: pa.failure_log,
+                  divergenceBudgetUsed: pa.divergence_budget_used,
                 },
               });
             }
@@ -2064,20 +2204,43 @@ function estimateConversationTokens(conversation: Message[]): number {
 function compressConversationContext(conversation: Message[]): number {
   const KEEP_RECENT = 20; // Keep last N messages uncompressed
   const TOOL_RESULT_MAX = 200; // Max chars for compressed tool results
+  const HIGH_VALUE_TOOL_MAX = 600; // Higher limit for artifact-producing tool results
   
   if (conversation.length <= KEEP_RECENT + 1) return 0; // +1 for system prompt
+  
+  // Patterns indicating high-value tool results that should be preserved more fully
+  const HIGH_VALUE_PATTERNS = [
+    /(?:created|generated|uploaded|deployed|published)/i, // Artifact creation
+    /(?:url|https?:\/\/)/i, // Contains URLs (images, documents, deployments)
+    /(?:error|failed|exception|cannot)/i, // Failure information (Rule 3: preserve what didn't work)
+    /(?:\.pdf|\.docx|\.png|\.jpg|\.svg|\.html)/i, // File artifacts
+    /(?:preview is available|Preview is live|deployed to)/i, // Deployment results
+  ];
   
   // Find the boundary: everything before (length - KEEP_RECENT) gets compressed
   const compressBoundary = conversation.length - KEEP_RECENT;
   let compressedCount = 0;
+  let failureLog: string[] = []; // Collect failure information for preservation
   
   for (let i = 1; i < compressBoundary; i++) { // Skip index 0 (system prompt)
     const msg = conversation[i];
     if (msg.role === "tool" && typeof msg.content === "string" && msg.content.length > TOOL_RESULT_MAX) {
-      // Truncate old tool results but keep enough for context
-      const truncated = msg.content.slice(0, TOOL_RESULT_MAX) + "\n... [truncated for context efficiency]";
-      conversation[i] = { ...msg, content: truncated };
-      compressedCount++;
+      // Check if this is a high-value result
+      const isHighValue = HIGH_VALUE_PATTERNS.some(p => p.test(msg.content as string));
+      const maxLen = isHighValue ? HIGH_VALUE_TOOL_MAX : TOOL_RESULT_MAX;
+      
+      // Extract failure information before truncating
+      if (/(?:error|failed|exception|cannot|rejected)/i.test(msg.content as string)) {
+        const failSnippet = (msg.content as string).slice(0, 150);
+        failureLog.push(failSnippet);
+      }
+      
+      if ((msg.content as string).length > maxLen) {
+        const truncated = (msg.content as string).slice(0, maxLen) + 
+          (isHighValue ? "\n... [high-value result preserved at reduced detail]" : "\n... [truncated for context efficiency]");
+        conversation[i] = { ...msg, content: truncated };
+        compressedCount++;
+      }
     }
     // Also compress very long assistant messages that aren't the most recent
     if (msg.role === "assistant" && typeof msg.content === "string" && msg.content.length > 1000) {
@@ -2087,7 +2250,16 @@ function compressConversationContext(conversation: Message[]): number {
     }
   }
   
-  console.log(`[Agent] Compressed ${compressedCount} older messages, keeping ${KEEP_RECENT} recent`);
+  // If we collected failure information, inject a summary into the system prompt
+  // so the agent remembers what was tried and didn't work (Rule 3 of convergence framework)
+  if (failureLog.length > 0 && conversation[0]?.role === "system") {
+    const failureSummary = `\n\n[Context Compression Note] The following approaches were tried and failed in earlier turns:\n${failureLog.slice(-5).map((f, i) => `${i + 1}. ${f}`).join("\n")}\nAvoid repeating these approaches.`;
+    if (typeof conversation[0].content === "string" && !conversation[0].content.includes("[Context Compression Note]")) {
+      conversation[0] = { ...conversation[0], content: conversation[0].content + failureSummary };
+    }
+  }
+  
+  console.log(`[Agent] Compressed ${compressedCount} older messages, keeping ${KEEP_RECENT} recent${failureLog.length > 0 ? `, preserved ${failureLog.length} failure records` : ""}`);
   return compressedCount;
 }
 
