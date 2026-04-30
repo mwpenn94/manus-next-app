@@ -131,6 +131,7 @@ import { streamWithRetry, getStreamErrorMessage } from "@/lib/streamWithRetry";
 import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
 import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
 import TaskReplayOverlay from "@/components/TaskReplayOverlay";
+import ExecutionPlanDisplay from "@/components/ExecutionPlanDisplay";
 import { useSearch } from "wouter";
 
 // ── Suggested Follow-ups (Gap 4) ──
@@ -2069,6 +2070,7 @@ export default function TaskView() {
   const [stepProgress, setStepProgress] = useState<{ completed: number; total: number; turn: number } | null>(null);
   const [tokenUsage, setTokenUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null>(null);
   const [knowledgeRecalled, setKnowledgeRecalled] = useState<{ count: number; keys: string[] } | null>(null);
+  const [aegisMeta, setAegisMeta] = useState<{ classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [desktopWorkspaceOpen, setDesktopWorkspaceOpen] = useState(() => {
     try { return localStorage.getItem("manus-workspace-panel") !== "closed"; } catch { return true; }
@@ -2487,7 +2489,7 @@ export default function TaskView() {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-          updateMessageCard,
+          updateMessageCard, setAegisMeta,
           getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         });
@@ -2525,6 +2527,8 @@ export default function TaskView() {
             role: "assistant",
             content: getStreamErrorMessage(err),
           });
+          // Ensure task doesn't stay stuck in "running" after a stream error
+          updateTaskStatus(task.id, "error");
         }
       } finally {
         abortControllerRef.current = null;
@@ -2536,9 +2540,10 @@ export default function TaskView() {
         setAgentActions([]);
         setStreamImages([]);
         setStepProgress(null);
+        setAegisMeta(null);
       }
     })();
-  }, [task?.id, task?.messages.length, task?.autoStreamed, streaming, bridgeStatus, bridgeSend, addMessage, markAutoStreamed, agentMode]);
+  }, [task?.id, task?.messages.length, task?.autoStreamed, streaming, bridgeStatus, bridgeSend, addMessage, markAutoStreamed, agentMode, updateTaskStatus]);
 
   const isTyping = useMemo(() => {
     if (!task) return false;
@@ -2560,10 +2565,16 @@ export default function TaskView() {
       setInput("");
       clearFiles();
       inputRef.current?.focus();
-      // Abort the current stream — the finally block will reset streaming state,
-      // and the user can send again (or we could auto-trigger, but matching Manus
-      // behavior: the new message appears and the agent picks it up on next interaction)
+      // Abort the current stream — the finally block will reset streaming state
       abortControllerRef.current.abort();
+      // Auto-trigger a new stream after a short delay to pick up the user's message.
+      // This prevents the "stuck running" state where the user sends a message but
+      // the agent never responds because streaming was still true.
+      setTimeout(() => {
+        // The finally block from the abort should have reset streaming by now.
+        // If not, force-reset it so the user can interact.
+        setStreaming(false);
+      }, 500);
       return;
     }
     const userContent = files.length > 0
@@ -2703,7 +2714,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard,
+        updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
@@ -2728,6 +2739,8 @@ export default function TaskView() {
           role: "assistant",
           content: getStreamErrorMessage(err),
         });
+        // Ensure task doesn't stay stuck in "running" after a stream error
+        updateTaskStatus(task.id, "error");
       }
     } finally {
       abortControllerRef.current = null;
@@ -2783,7 +2796,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard,
+        updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
@@ -2872,7 +2885,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard,
+        updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
@@ -2950,7 +2963,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard,
+        updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
       });
@@ -3831,6 +3844,15 @@ export default function TaskView() {
                   isReconnecting={isReconnecting}
                   knowledgeRecalled={knowledgeRecalled}
                 />
+                {/* AEGIS Execution Plan Display */}
+                {aegisMeta && aegisMeta.planSteps && aegisMeta.planSteps.length > 0 && (
+                  <ExecutionPlanDisplay
+                    aegisMeta={aegisMeta}
+                    completedSteps={stepProgress?.completed || 0}
+                    isStreaming={streaming}
+                    className="mb-2"
+                  />
+                )}
                 {/* Inline action step pills (Manus-style compact tool pills) */}
                 {agentActions.length > 0 && (
                   <div className="mb-2 space-y-0.5">

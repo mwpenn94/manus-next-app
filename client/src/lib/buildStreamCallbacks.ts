@@ -44,6 +44,8 @@ export interface StreamStateSetters {
   onPreviewRefreshSignal?: () => void;
   /** Update the webapp preview URL when S3 re-upload provides a new URL */
   onPreviewUrlUpdate?: (url: string) => void;
+  /** AEGIS metadata state setter (classification, plan steps, quality) */
+  setAegisMeta?: (meta: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null) => void;
 }
 
 /**
@@ -225,6 +227,9 @@ export function buildStreamCallbacks(
           setters.setGenerationIncomplete(true);
         }
       }
+      if (status === "error") {
+        setters.updateTaskStatus(setters.taskId, "error");
+      }
     },
     onStepProgress: (progress: any) => {
       setters.setStepProgress(progress);
@@ -241,6 +246,9 @@ export function buildStreamCallbacks(
       if (retryable && setters.setLastErrorRetryable) {
         setters.setLastErrorRetryable(true);
       }
+      // CRITICAL: Reset task status from "running" to "error" so the task doesn't
+      // appear permanently stuck. This allows the user to send follow-up messages.
+      setters.updateTaskStatus(setters.taskId, "error");
     },
     onReconnecting: (attempt: number, maxRetries: number) => {
       // Pass 67: Signal reconnecting state to presence indicator only.
@@ -414,6 +422,18 @@ export function buildStreamCallbacks(
           setters.onPreviewUrlUpdate(data.url);
         }
         setters.onPreviewRefreshSignal?.();
+      }
+    },
+    onAegisMeta: (data: any) => {
+      if (setters.setAegisMeta) {
+        setters.setAegisMeta({
+          classification: data.classification ? {
+            taskType: data.classification.taskType,
+            complexity: data.classification.complexity,
+          } : undefined,
+          planSteps: data.planSteps,
+          quality: data.quality,
+        });
       }
     },
   };

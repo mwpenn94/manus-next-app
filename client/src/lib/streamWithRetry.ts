@@ -44,6 +44,8 @@ export interface StreamCallbacks {
   onAgentThinking?: (data: { content: string; turn: number }) => void;
   /** Knowledge recalled badge — emitted when cross-session memory is injected */
   onKnowledgeRecalled?: (data: { count: number; keys: string[] }) => void;
+  /** AEGIS metadata — classification, quality, plan steps */
+  onAegisMeta?: (data: { classification?: { taskType: string; complexity: string; novelty: string; confidence: number }; quality?: { completeness: number; accuracy: number; relevance: number; clarity: number; efficiency: number; overall: number }; planSteps?: string[]; cached?: boolean; improvements?: string[] }) => void;
 }
 
 export interface StreamOptions {
@@ -105,6 +107,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.type === "context_compressed" && callbacks.onContextCompressed) callbacks.onContextCompressed(data.detail);
     if (data.agent_thinking && callbacks.onAgentThinking) callbacks.onAgentThinking(data.agent_thinking);
     if (data.knowledge_recalled && callbacks.onKnowledgeRecalled) callbacks.onKnowledgeRecalled(data.knowledge_recalled);
+    if (data.aegis_meta && callbacks.onAegisMeta) callbacks.onAegisMeta(data.aegis_meta);
     if (data.error) {
       // Detect credit exhaustion errors and dispatch global event for the banner
       const errMsg = (data.error || "").toLowerCase();
@@ -217,6 +220,9 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
 export function getStreamErrorMessage(err: any): string {
   if (isRetryableError(err)) {
     return "Connection was interrupted after several attempts. This usually resolves on its own \u2014 try sending your message again in a moment.";
+  }
+  if (err.message?.includes("Cannot read properties of") || err.message?.includes("undefined is not an object") || err.message?.includes("null is not an object")) {
+    return "A temporary processing error occurred. This usually resolves on its own \u2014 try sending your message again.";
   }
   if (err.message?.includes("timeout")) {
     return "The response took longer than expected. Try breaking your request into smaller parts, or simply try again.";

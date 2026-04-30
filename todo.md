@@ -6127,3 +6127,21 @@
 ## Parity Gap: Scheduling
 - [x] Scheduled task agent spawning (cron triggers full agent execution)
 - [x] Schedule management UI (list, edit, delete, pause scheduled tasks)
+
+## Critical Bug: Agent Stream Crash (Cannot read properties of undefined reading 'length') — FIXED
+- [x] Fix 'Cannot read properties of undefined (reading length)' runtime error in agent streaming pipeline
+- [x] Add error recovery so tasks don't get stuck in 'Running' state after stream crash
+- [x] Show user-friendly error messages instead of raw exception text in chat
+- [x] Add 'error' status SSE event from server so client properly transitions out of 'running'
+- [x] Auto-trigger new stream when user sends message after error (prevents permanent stuck state)
+- [x] Enhanced ErrorBoundary with user-friendly messages and collapsible technical details
+- [x] Improved getStreamErrorMessage to map common errors to friendly descriptions
+- [ ] Prevent agent from losing context and producing generic "lost track" recovery messages (requires session persistence)
+
+## Task Execution UX — Plan Display & Progress
+- [x] Add ExecutionPlanDisplay component (shows AEGIS plan steps during streaming)
+- [x] Emit planSteps in aegis_meta SSE event from server
+- [x] Wire onAegisMeta callback through streamWithRetry → buildStreamCallbacks → TaskView state
+- [x] Display plan steps with progress indicators (completed/active/pending) during streaming
+- [x] Add task classification badge (taskType + complexity) in plan header
+- [x] Connector catalog UI with action listing and inline tester (ConnectorActionsSection)

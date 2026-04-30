@@ -584,6 +584,7 @@ export interface AegisStreamMeta {
   classification?: { taskType: string; complexity: string; novelty: string; confidence: number };
   quality?: { completeness: number; accuracy: number; relevance: number; clarity: number; efficiency: number; overall: number };
   improvements?: string[];
+  planSteps?: string[];
 }
 
 /**
@@ -620,6 +621,19 @@ async function invokeWithAegisRetry(
         skipPostFlight: aegisOpts.skipPostFlight ?? false,
       });
 
+      // Generate plan steps for the client display
+      let planSteps: string[] | undefined;
+      if (aegisResult.classification) {
+        const { generateExecutionPlan } = await import("./services/aegis");
+        const plan = generateExecutionPlan(
+          params.messages?.find((m: any) => m.role === "user")?.content || "",
+          aegisResult.classification as any
+        );
+        if (plan) {
+          planSteps = plan.split("\n").filter((l: string) => /^\d+\./.test(l.trim()));
+        }
+      }
+
       const meta: AegisStreamMeta = {
         cached: aegisResult.cached,
         sessionId: aegisResult.sessionId,
@@ -639,6 +653,7 @@ async function invokeWithAegisRetry(
           overall: aegisResult.quality.overall,
         } : undefined,
         improvements: aegisResult.improvements,
+        planSteps,
       };
 
       return { response: aegisResult.result, aegisMeta: meta };
@@ -1089,6 +1104,7 @@ When performing recursive optimization passes, use the report_convergence tool t
             classification: aegisMeta.classification,
             quality: aegisMeta.quality,
             improvements: aegisMeta.improvements,
+            planSteps: aegisMeta.planSteps,
           },
         });
         if (aegisMeta.cached) {
@@ -1145,8 +1161,34 @@ When performing recursive optimization passes, use the report_convergence tool t
       }
 
       const assistantMessage = effectiveChoice.message;
-      const toolCalls = assistantMessage.tool_calls;
-      const textContent = typeof assistantMessage.content === "string" ? assistantMessage.content : "";
+      // Guard: If the LLM returns a malformed response where message is undefined,
+      // treat it as an empty response and retry once before giving up.
+      if (!assistantMessage) {
+        console.warn("[Agent] effectiveChoice.message is undefined — malformed LLM response. Retrying...");
+        // Attempt one retry with a short delay
+        await new Promise(r => setTimeout(r, 1500));
+        try {
+          const { response: retryResp } = await invokeWithAegisRetry(invokeLLM, llmParams, {
+            userId,
+            taskExternalId,
+            skipPostFlight: true,
+            skipCache: true,
+          });
+          const retryChoice = retryResp.choices?.[0];
+          if (retryChoice?.message) {
+            // Use the retry response — fall through to normal processing below
+            Object.assign(effectiveChoice, retryChoice);
+          } else {
+            sendSSE(safeWrite, { error: "The AI returned an invalid response. Please try again.", retryable: true });
+            break;
+          }
+        } catch (retryErr) {
+          sendSSE(safeWrite, { error: "The AI returned an invalid response. Please try again.", retryable: true });
+          break;
+        }
+      }
+      const toolCalls = assistantMessage?.tool_calls;
+      const textContent = typeof assistantMessage?.content === "string" ? assistantMessage.content : "";
 
       // ═══════════════════════════════════════════════════════════════════════
       // MANUS-PARITY AUTO-CONTINUATION SYSTEM
@@ -2155,13 +2197,14 @@ Do NOT use browser_action to test it — present confidently since the deploy su
         retryable = true;
       }
     }
+    // Send error status BEFORE the error message so the client resets from "running"
+    sendSSE(safeWrite, { status: "error" });
     sendSSE(safeWrite, { error: userMessage, retryable });
     safeEnd();
   }
 }
-
 // ═══════════════════════════════════════════════════════════════════════
-// MANUS-PARITY HELPER FUNCTIONS
+// MANUS-PARITY HELPER FUNCTIONSS
 // ═══════════════════════════════════════════════════════════════════════
 
 /**

@@ -40,6 +40,7 @@ import {
   Key,
   Globe,
   ChevronDown,
+  ChevronRight,
   BadgeCheck,
   ShieldCheck,
   Info,
@@ -47,7 +48,13 @@ import {
   RefreshCw,
   Activity,
   Clock,
+  Play,
+  Zap,
+  Terminal,
+  Copy,
+  Check,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { CONNECTOR_DEFS, ConnectorIcon } from "@/components/ConnectorsSheet";
 import type { ConnectorDef } from "@/components/ConnectorsSheet";
 
@@ -1223,6 +1230,14 @@ export default function ConnectorDetailPage() {
             </div>
           )}
 
+          {/* ══════════════════════════════════════════════════════════
+             AVAILABLE ACTIONS SECTION (for connectors with API support)
+             ══════════════════════════════════════════════════════════ */}
+          <ConnectorActionsSection
+            connectorId={connectorId}
+            isConnected={isConnected}
+          />
+
           {/* ── Details section ── */}
           <div className="mb-8">
             <h2 className="text-lg font-bold text-foreground mb-3" style={{ fontFamily: "var(--font-heading)" }}>
@@ -1467,4 +1482,290 @@ function DetailLinkRow({ label, href }: { label: string; href: string }) {
 
 function DetailDivider() {
   return <div className="h-px bg-border/50 mx-4" />;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONNECTOR ACTIONS SECTION — shows available API actions per connector
+   with inline action tester for connected connectors
+   ═══════════════════════════════════════════════════════════════════ */
+
+interface ActionParam {
+  type: string;
+  required?: boolean;
+  description: string;
+}
+
+interface ActionDef {
+  id: string;
+  name: string;
+  description: string;
+  parameters?: Record<string, ActionParam>;
+}
+
+function ConnectorActionsSection({
+  connectorId,
+  isConnected,
+}: {
+  connectorId: string;
+  isConnected: boolean;
+}) {
+  const { data: actionsData, isLoading } = trpc.connector.listActions.useQuery(
+    { connectorId },
+    { staleTime: 300_000 }
+  );
+
+  const executeMutation = trpc.connector.execute.useMutation();
+
+  const [expandedAction, setExpandedAction] = useState<string | null>(null);
+  const [testParams, setTestParams] = useState<Record<string, string>>({});
+  const [testResult, setTestResult] = useState<{ success: boolean; data: string } | null>(null);
+  const [copiedResult, setCopiedResult] = useState(false);
+
+  if (!actionsData?.supported || actionsData.actions.length === 0) {
+    return null;
+  }
+
+  const actions = actionsData.actions as ActionDef[];
+
+  const handleTestAction = async (actionId: string) => {
+    setTestResult(null);
+    try {
+      // Convert string params to appropriate types
+      const payload: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(testParams)) {
+        if (val.trim() === "") continue;
+        // Try to parse as number or JSON, otherwise keep as string
+        if (/^\d+$/.test(val)) {
+          payload[key] = parseInt(val, 10);
+        } else {
+          try {
+            payload[key] = JSON.parse(val);
+          } catch {
+            payload[key] = val;
+          }
+        }
+      }
+      const result = await executeMutation.mutateAsync({
+        connectorId,
+        action: actionId,
+        payload,
+      });
+      setTestResult({
+        success: result.success,
+        data: typeof result.result === "string" ? result.result : JSON.stringify(result.result, null, 2),
+      });
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        data: err.message || "Action failed",
+      });
+    }
+  };
+
+  const handleCopyResult = () => {
+    if (testResult?.data) {
+      navigator.clipboard.writeText(testResult.data);
+      setCopiedResult(true);
+      setTimeout(() => setCopiedResult(false), 2000);
+    }
+  };
+
+  const toggleAction = (actionId: string) => {
+    if (expandedAction === actionId) {
+      setExpandedAction(null);
+      setTestParams({});
+      setTestResult(null);
+    } else {
+      setExpandedAction(actionId);
+      setTestParams({});
+      setTestResult(null);
+    }
+  };
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <Zap className="w-4 h-4 text-primary" />
+        <h2 className="text-lg font-bold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+          Available Actions
+        </h2>
+        <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+          {actions.length}
+        </span>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 py-4 text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm">Loading actions...</span>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border/40 bg-muted/10 overflow-hidden divide-y divide-border/30">
+          {actions.map((action) => {
+            const isExpanded = expandedAction === action.id;
+            const params = action.parameters ? Object.entries(action.parameters) : [];
+            const requiredParams = params.filter(([, p]) => p.required);
+
+            return (
+              <div key={action.id}>
+                {/* Action header row */}
+                <button
+                  onClick={() => toggleAction(action.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/20 transition-colors text-left group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                    <Terminal className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground leading-tight">
+                      {action.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                      {action.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {params.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground">
+                        {params.length} param{params.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                    {isExpanded ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expanded action detail + tester */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 pt-1 bg-muted/5">
+                        {/* Parameters list */}
+                        {params.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                              Parameters
+                            </p>
+                            <div className="space-y-2">
+                              {params.map(([key, param]) => (
+                                <div key={key}>
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <code className="text-[11px] font-mono text-foreground bg-muted/40 px-1.5 py-0.5 rounded">
+                                      {key}
+                                    </code>
+                                    <span className="text-[10px] text-muted-foreground/60">{param.type}</span>
+                                    {param.required && (
+                                      <span className="text-[9px] px-1 py-0 rounded bg-destructive/10 text-destructive font-medium">
+                                        required
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground mb-1.5 pl-0.5">
+                                    {param.description}
+                                  </p>
+                                  {/* Input for testing (only when connected) */}
+                                  {isConnected && (
+                                    <Input
+                                      placeholder={param.description}
+                                      value={testParams[key] ?? ""}
+                                      onChange={(e) =>
+                                        setTestParams((prev) => ({ ...prev, [key]: e.target.value }))
+                                      }
+                                      className="h-7 text-xs font-mono"
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Test button (only when connected) */}
+                        {isConnected && (
+                          <div className="space-y-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleTestAction(action.id)}
+                              disabled={
+                                executeMutation.isPending ||
+                                requiredParams.some(([key]) => !testParams[key]?.trim())
+                              }
+                              className="h-7 text-xs gap-1.5"
+                            >
+                              {executeMutation.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Play className="w-3 h-3" />
+                              )}
+                              Test Action
+                            </Button>
+
+                            {/* Test result */}
+                            {testResult && (
+                              <div
+                                className={cn(
+                                  "rounded-lg border p-3 relative",
+                                  testResult.success
+                                    ? "border-emerald-500/20 bg-emerald-500/5"
+                                    : "border-destructive/20 bg-destructive/5"
+                                )}
+                              >
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span
+                                    className={cn(
+                                      "text-[11px] font-semibold",
+                                      testResult.success ? "text-emerald-400" : "text-destructive"
+                                    )}
+                                  >
+                                    {testResult.success ? "Success" : "Error"}
+                                  </span>
+                                  <button
+                                    onClick={handleCopyResult}
+                                    className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
+                                    title="Copy result"
+                                  >
+                                    {copiedResult ? (
+                                      <Check className="w-3 h-3 text-emerald-400" />
+                                    ) : (
+                                      <Copy className="w-3 h-3" />
+                                    )}
+                                  </button>
+                                </div>
+                                <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+                                  {testResult.data}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Not connected hint */}
+                        {!isConnected && (
+                          <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-muted/30 border border-border/30">
+                            <Info className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <p className="text-[11px] text-muted-foreground">
+                              Connect this service to test actions directly from here.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
