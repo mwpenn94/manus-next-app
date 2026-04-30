@@ -67,7 +67,7 @@ const ACTION_TYPE_META: Record<string, StepMeta> = {
   thinking: { icon: Brain, label: "Thinking", color: "text-purple-400", bgColor: "bg-purple-500/10" },
   analyzing: { icon: Brain, label: "Analyzing", color: "text-indigo-400", bgColor: "bg-indigo-500/10" },
   designing: { icon: ImageIcon, label: "Designing", color: "text-rose-400", bgColor: "bg-rose-500/10" },
-  versioning: { icon: Code, label: "Versioning", color: "text-gray-400", bgColor: "bg-gray-500/10" },
+  versioning: { icon: Code, label: "Versioning", color: "text-muted-foreground", bgColor: "bg-muted/50" },
   deploying: { icon: Globe, label: "Deploying", color: "text-green-400", bgColor: "bg-green-500/10" },
   sending: { icon: MessageSquare, label: "Sending", color: "text-blue-400", bgColor: "bg-blue-500/10" },
 };

@@ -83,6 +83,7 @@ import {
   Maximize,
   FolderOpen,
   Link2 as LinkIcon,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ImageLightbox from "@/components/ImageLightbox";
@@ -521,6 +522,68 @@ function GroupedActionsList({ actions }: { actions: AgentAction[] }) {
   );
 }
 
+/**
+ * StreamingStepsCollapsible — Manus dual display pattern
+ * Shows a collapsible timeline of completed steps with the latest active step visible.
+ * Text content always renders below the steps (bottom position).
+ */
+function StreamingStepsCollapsible({ actions, stepProgress }: { actions: AgentAction[]; stepProgress: { completed: number; total: number; turn: number } | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const completedActions = actions.filter(a => a.status === "done");
+  const activeActions = actions.filter(a => a.status === "active");
+  const hasCompletedSteps = completedActions.length > 0;
+
+  return (
+    <div className="mb-2">
+      {/* Collapsible completed steps */}
+      {hasCompletedSteps && (
+        <div className="mb-1">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors py-0.5"
+          >
+            <ChevronRight className={cn("w-3 h-3 transition-transform", expanded && "rotate-90")} />
+            <span>{completedActions.length} step{completedActions.length !== 1 ? "s" : ""} completed</span>
+            {stepProgress && stepProgress.total > 0 && (
+              <span className="font-mono tabular-nums ml-1">({stepProgress.completed}/{stepProgress.total})</span>
+            )}
+          </button>
+          {expanded && (
+            <div className="ml-2 mt-1 border-l border-border/50 pl-2">
+              <GroupedActionsList actions={completedActions} />
+            </div>
+          )}
+        </div>
+      )}
+      {/* Active step always visible */}
+      {activeActions.length > 0 && (
+        <div className="space-y-0.5">
+          <GroupedActionsList actions={activeActions} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Elapsed timer for active tool steps — shows MM:SS matching Manus production */
+function StepElapsedTimer() {
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  return (
+    <span className="text-[10px] font-mono text-muted-foreground tabular-nums ml-1.5">
+      {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+    </span>
+  );
+}
+
 function ActionStep({ action, index, total }: { action: AgentAction; index: number; total: number }) {
   const isActive = action.status === "active";
   const isDone = action.status === "done";
@@ -549,6 +612,7 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
       <div className="flex-1 min-w-0 text-xs text-foreground leading-relaxed pt-0.5">
         <div className="flex items-center gap-1">
           <ActionLabel action={action} />
+          {isActive && <StepElapsedTimer />}
           {isDone && action.preview && (
             <button
               onClick={() => setPreviewExpanded(!previewExpanded)}
@@ -694,6 +758,9 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
               Manus
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              Max
             </span>
             <span className="text-[10px] text-muted-foreground">
               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -2063,7 +2130,7 @@ export default function TaskView() {
   const searchString = useSearch();
   const replayRequested = useMemo(() => new URLSearchParams(searchString).get("replay") === "1", [searchString]);
   const [replayOpen, setReplayOpen] = useState(false);
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite, editMessageAndTruncate } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, replaceLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite, editMessageAndTruncate } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -2129,6 +2196,7 @@ export default function TaskView() {
   const [renameDraft, setRenameDraft] = useState("");
   const [lastErrorRetryable, setLastErrorRetryable] = useState(false);
   const [generationIncomplete, setGenerationIncomplete] = useState(false);
+  const [agentFollowUps, setAgentFollowUps] = useState<string[]>([]);
 
   // In-conversation search (Pass 5 Step 1)
   const { searchOpen, closeSearch } = useConversationSearch();
@@ -2495,6 +2563,7 @@ export default function TaskView() {
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard, setAegisMeta,
+          setFollowUpSuggestions: setAgentFollowUps,
           getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
           onPreviewUrlUpdate: (url: string) => {
@@ -2729,6 +2798,7 @@ export default function TaskView() {
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta,
+        setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -2814,6 +2884,7 @@ export default function TaskView() {
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta,
+        setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -2873,11 +2944,14 @@ export default function TaskView() {
    */
   const handleRegenerate = useCallback(async () => {
     if (!task || streaming) return;
-    // Remove the last assistant message
-    const removed = removeLastMessage(task.id);
-    if (!removed || removed.role !== "assistant") return;
+    // Check the last message is an assistant message (error or otherwise)
+    const lastMsg = task.messages[task.messages.length - 1];
+    if (!lastMsg || lastMsg.role !== "assistant") return;
 
-    // Re-send the conversation (minus the removed assistant message)
+    // Replace with a placeholder while regenerating
+    replaceLastMessage(task.id, { role: "assistant", content: "" });
+
+    // Re-send the conversation (minus the last assistant message)
     setStreaming(true);
     setGenerationIncomplete(false);
     setStreamContent("");
@@ -2889,12 +2963,12 @@ export default function TaskView() {
     actionsRef.current = [];
     let accumulated = "";
     const actions: AgentAction[] = [];
-    const images: string[] = [];
+    const images: string[]= [];
 
     try {
-      // Build conversation from remaining messages
+      // Build conversation from remaining messages (exclude last assistant msg)
       const conversationMessages = task.messages
-        .filter(m => m.id !== removed.id) // Exclude the removed message
+        .filter(m => m.id !== lastMsg.id) // Exclude the message being regenerated
         .filter(m => m.content.trim() || m.role === "user")
         .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
         .slice(-50)
@@ -2909,6 +2983,7 @@ export default function TaskView() {
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta,
+        setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -2947,7 +3022,7 @@ export default function TaskView() {
       setStreamImages([]);
       setStepProgress(null);
     }
-  }, [task, streaming, removeLastMessage, addMessage, agentMode, updateTaskStatus]);
+  }, [task, streaming, removeLastMessage, replaceLastMessage, addMessage, agentMode, updateTaskStatus]);
 
   /**
    * Edit & Re-send: modify a user message, truncate everything after it,
@@ -2993,6 +3068,7 @@ export default function TaskView() {
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta,
+        setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -3887,23 +3963,9 @@ export default function TaskView() {
                     className="mb-2"
                   />
                 )}
-                {/* Inline action step pills (Manus-style compact tool pills) */}
+                {/* Manus dual display: collapsible steps timeline + active step */}
                 {agentActions.length > 0 && (
-                  <div className="mb-2 space-y-0.5">
-                    <GroupedActionsList actions={agentActions} />
-                  </div>
-                )}
-                {/* Task Progress — step counter (compact inline) */}
-                {stepProgress && stepProgress.total > 0 && (
-                  <div className="flex items-center gap-2 mb-2 text-[11px] text-muted-foreground">
-                    <span className="font-mono tabular-nums">{stepProgress.completed}/{stepProgress.total} steps</span>
-                    <div className="flex-1 h-0.5 bg-muted rounded-full overflow-hidden max-w-[120px]">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((stepProgress.completed / stepProgress.total) * 100, 100)}%` }}
-                      />
-                    </div>
-                  </div>
+                  <StreamingStepsCollapsible actions={agentActions} stepProgress={stepProgress} />
                 )}
                 {/* Streaming text content */}
                 {streamContent && (
@@ -3967,11 +4029,13 @@ export default function TaskView() {
               </div>
               <TaskRating taskId={task.id} />
             </div>
-            {/* Suggested follow-ups — override with generation_incomplete when server signals it */}
+            {/* Suggested follow-ups — prefer agent-generated, fallback to heuristic */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
               {(generationIncomplete
                 ? FOLLOW_UP_SUGGESTIONS.generation_incomplete
-                : getFollowUpSuggestions(task?.messages ?? [])
+                : agentFollowUps.length > 0
+                  ? agentFollowUps
+                  : getFollowUpSuggestions(task?.messages ?? [])
               ).map((suggestion, i) => (
                 <button
                   key={i}

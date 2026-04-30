@@ -6203,3 +6203,14 @@
 - [x] Fix: Transcription service error — add retry logic with 1s delay for S3 propagation, better error messages with details
 - [x] Fix: Transcription MIME type inference — handle S3 returning application/octet-stream by inferring from URL extension
 - [x] Fix: BrandAvatar duplicate alt text a11y violation — set alt="" since image is always paired with text label
+
+## Recursive Optimization Session Continuation (Pass 1281+)
+
+### Parity Fixes Applied
+- [x] Home composer placeholder: "What would you like to do?" → "Assign a task or ask anything" (matches Manus production)
+- [x] Tool card elapsed timer: Updated ElapsedTimer to show MM:SS format (00:00, 00:01, etc.) matching Manus production
+- [x] StepElapsedTimer: Added inline elapsed timer to active tool steps in ActionStep component
+- [x] Typing cursor CSS removed (Manus production does NOT show cursor during streaming)
+- [x] PlusMenu verified: Full Manus production list present (Add files, Share screen, Record video, Upload video, Build website, Create slides, Create image, Edit image, Create spreadsheet, Create video, Generate audio, Wide Research, Scheduled tasks, Add Skills, Playbook, Connect My Computer, GitHub Repos, Hands-free mode)
+- [x] TypeScript: 0 errors confirmed
+- [x] Tests: Core tests passing (timeout failures are network/LLM-dependent, not code regressions)

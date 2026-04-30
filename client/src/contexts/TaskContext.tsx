@@ -90,6 +90,7 @@ interface TaskContextValue {
   setActiveTask: (id: string | null) => void;
   addMessage: (taskId: string, message: Omit<Message, "id" | "timestamp">) => void;
   removeLastMessage: (taskId: string) => Message | null;
+  replaceLastMessage: (taskId: string, newMessage: Omit<Message, "id" | "timestamp">) => void;
   updateTaskStatus: (taskId: string, status: Task["status"]) => void;
   renameTask: (taskId: string, title: string) => void;
   markAutoStreamed: (taskId: string) => void;
@@ -407,6 +408,27 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         })
       );
       return removed;
+    },
+    []
+  );
+
+  const replaceLastMessage = useCallback(
+    (taskId: string, newMessage: Omit<Message, "id" | "timestamp">) => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId || t.messages.length === 0) return t;
+          const replaced: Message = {
+            ...newMessage,
+            id: String(nextMsgId++),
+            timestamp: new Date(),
+          };
+          return {
+            ...t,
+            updatedAt: new Date(),
+            messages: [...t.messages.slice(0, -1), replaced],
+          };
+        })
+      );
     },
     []
   );
@@ -751,6 +773,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         setActiveTask,
         addMessage,
         removeLastMessage,
+        replaceLastMessage,
         updateTaskStatus,
         renameTask,
         markAutoStreamed,

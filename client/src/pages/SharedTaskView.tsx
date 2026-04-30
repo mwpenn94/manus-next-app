@@ -612,16 +612,35 @@ export default function SharedTaskView() {
         )}
       </div>
 
+      {/* ═══ Task Replay Completed Footer ═══ */}
+      {task?.status === "completed" && messages.length > 0 && (
+        <div className="max-w-[800px] mx-auto px-6 pb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <span className="text-sm text-muted-foreground">Manus task replay completed</span>
+          </div>
+        </div>
+      )}
+
       {/* ═══ Sticky Bottom CTA ═══ */}
       <div className="sticky bottom-0 z-10 pb-3 pt-2 px-4 bg-gradient-to-t from-background via-background to-transparent">
-        <div className="max-w-[800px] mx-auto">
+        <div className="max-w-[800px] mx-auto flex gap-2">
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex items-center justify-center gap-2 flex-1 py-3 bg-card border border-border text-foreground rounded-xl text-sm font-medium hover:bg-accent transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            Watch again
+          </button>
           <a
             href="/"
-            className="flex items-center justify-center gap-2 w-full py-3 bg-foreground text-background rounded-xl text-sm font-medium hover:opacity-90 transition-opacity shadow-lg"
+            className="flex items-center justify-center gap-2 flex-1 py-3 bg-foreground text-background rounded-xl text-sm font-medium hover:opacity-90 transition-opacity shadow-lg"
           >
             <BrandAvatar size="sm" />
-            Try Manus Next
-            <ArrowUp className="w-4 h-4 rotate-45" />
+            Try it yourself
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </a>
         </div>
       </div>

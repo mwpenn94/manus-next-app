@@ -140,7 +140,7 @@ function TaskStatusDot({ status }: { status: string }) {
     <div
       className={cn(
         "w-2 h-2 rounded-full shrink-0 mt-[5px]",
-        status === "running" && "bg-blue-500 animate-pulse",
+        status === "running" && "bg-primary animate-pulse",
         status === "completed" && "bg-muted-foreground/60",
         status === "error" && "bg-red-400",
         status !== "running" && status !== "completed" && status !== "error" && "bg-muted-foreground/30"
@@ -153,7 +153,7 @@ function TaskStatusDot({ status }: { status: string }) {
 function TaskStatusIcon({ status }: { status: string }) {
   switch (status) {
     case "running":
-      return <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />;
+      return <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />;
     case "completed":
       return <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
     case "error":
@@ -736,9 +736,9 @@ function AppsGridMenu({ location }: { location: string }) {
       { href: "/library", label: "Library", Icon: BookOpen, color: "text-emerald-400" },
       { href: "/skills", label: "Skills", Icon: Sparkles, color: "text-yellow-400" },
       { href: "/schedule", label: "Schedule", Icon: Clock, color: "text-red-400" },
-      { href: "/connectors", label: "Connectors", Icon: Plug, color: "text-slate-400" },
+      { href: "/connectors", label: "Connectors", Icon: Plug, color: "text-muted-foreground" },
       { href: "/memory", label: "Memory", Icon: Brain, color: "text-pink-400" },
-      { href: "/github", label: "GitHub", Icon: ExternalLink, color: "text-gray-400" },
+      { href: "/github", label: "GitHub", Icon: ExternalLink, color: "text-muted-foreground" },
       { href: "/billing", label: "Billing", Icon: BarChart3, color: "text-yellow-400" },
       { href: "/discover", label: "Discover", Icon: Globe, color: "text-red-400" },
       { href: "/help", label: "Help", Icon: HelpCircle, color: "text-red-400" },
@@ -1259,7 +1259,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div
           role="presentation"
           aria-hidden="true"
-          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-[2px]"
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setMobileDrawerOpen(false)}
         />
       )}
@@ -1470,7 +1470,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     }}
                   >
                     {t.status === "running" ? (
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-blue-400" />
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin text-primary" />
                     ) : t.status === "completed" ? (
                       <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-400" />
                     ) : t.status === "error" ? (

@@ -44,6 +44,8 @@ export interface StreamStateSetters {
   onPreviewRefreshSignal?: () => void;
   /** Update the webapp preview URL when S3 re-upload provides a new URL */
   onPreviewUrlUpdate?: (url: string) => void;
+  /** Follow-up suggestion chips extracted from agent response */
+  setFollowUpSuggestions?: (suggestions: string[]) => void;
   /** AEGIS metadata state setter (classification, plan steps, quality) */
   setAegisMeta?: (meta: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null) => void;
 }
@@ -215,6 +217,19 @@ export function buildStreamCallbacks(
       // Matches patterns like (Source: Name), (Source: Name, Name2), [Source: Name]
       if (state.sourceUrls.length > 0) {
         state.accumulated = linkifyCitations(state.accumulated, state.sourceUrls);
+        setters.accumulatedRef.current = state.accumulated;
+      }
+      // Extract follow-up suggestions from <!--follow-ups:[...]-->  marker
+      const followUpMatch = state.accumulated.match(/<!--follow-ups:(\[.*?\])-->/);
+      if (followUpMatch) {
+        try {
+          const suggestions = JSON.parse(followUpMatch[1]);
+          if (Array.isArray(suggestions) && suggestions.length > 0 && setters.setFollowUpSuggestions) {
+            setters.setFollowUpSuggestions(suggestions);
+          }
+        } catch { /* ignore parse errors */ }
+        // Strip the marker from displayed content
+        state.accumulated = state.accumulated.replace(/<!--follow-ups:\[.*?\]-->/, "").trimEnd();
         setters.accumulatedRef.current = state.accumulated;
       }
     },

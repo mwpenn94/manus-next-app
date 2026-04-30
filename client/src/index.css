@@ -42,7 +42,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
   /* Manus typography: system sans for UI, Libre Baskerville serif for display */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-heading: "Libre Baskerville", Georgia, Cambria, ui-serif, "Times New Roman", Times, serif;
+  --font-heading: "Instrument Serif", "Libre Baskerville", Georgia, "Noto Serif SC", ui-serif, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -56,8 +56,8 @@
    Verified via CSS Color 4 oklch→sRGB conversion.
    ═════════════════════════════════════════════════════════════════ */
 :root {
-  --background: oklch(0.9821 0 0);        /* #f9f9f9 */
-  --foreground: oklch(0.2178 0 0);        /* #1a1a1a */
+  --background: oklch(0.98 0.003 80);      /* #f8f8f7 warm editorial */
+  --foreground: oklch(0.25 0.01 70);       /* #34322d warm dark */
   --card: oklch(1.0 0 0);                 /* #ffffff */
   --card-foreground: oklch(0.2178 0 0);   /* #1a1a1a */
   --popover: oklch(1.0 0 0);             /* #ffffff */
@@ -267,7 +267,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: thinking-shimmer 3s linear infinite;
+  animation: thinking-shimmer 2s linear infinite;
 }
 .dark .thinking-shimmer {
   background: linear-gradient(
@@ -280,7 +280,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: thinking-shimmer 3s linear infinite;
+  animation: thinking-shimmer 2s linear infinite;
 }
 
 /* Typewriter cursor */
@@ -289,15 +289,7 @@
   50% { opacity: 0; }
 }
 
-.typing-cursor::after {
-  content: '▊';
-  animation: typewriter-cursor 1s infinite;
-  color: oklch(0.6565 0.1863 251.8);
-  margin-left: 2px;
-}
-.dark .typing-cursor::after {
-  color: oklch(0.6565 0.1863 251.8);
-}
+/* typing-cursor removed — Manus production streams text without visible cursor */
 
 /* ═══════════════════════════════════════════════════════════════════
    PROSE — Manus editorial styling
@@ -370,7 +362,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 button, a, [role="button"], input, textarea, select, [tabindex] {
   transition-property: color, background-color, border-color, box-shadow, opacity;
-  transition-duration: 150ms;
+  transition-duration: 200ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 button:active:not(:disabled), a:active, [role="button"]:active {
@@ -387,7 +379,7 @@ button:active:not(:disabled), a:active, [role="button"]:active {
 }
 .disclosure-content {
   overflow: hidden;
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .disclosure-content[data-state="closed"] {
   max-height: 0;
@@ -406,7 +398,7 @@ button:active:not(:disabled), a:active, [role="button"]:active {
   height: 100vh;
   z-index: 50;
   transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: var(--card);
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 24px oklch(0 0 0 / 0.3);
@@ -422,7 +414,7 @@ button:active:not(:disabled), a:active, [role="button"]:active {
   backdrop-filter: blur(50px);
   -webkit-backdrop-filter: blur(50px);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 .slide-panel-backdrop[data-state="open"] {
@@ -433,7 +425,7 @@ button:active:not(:disabled), a:active, [role="button"]:active {
 /* Contextual hover actions */
 .hover-actions {
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 .group:hover .hover-actions,

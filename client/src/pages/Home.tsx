@@ -80,13 +80,16 @@ function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: bo
     onError: () => setIsTranscribing(false),
   });
 
-  const toggleRecording = useCallback(async () => {
-    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
-    if (isListening) {
-      mediaRecorderRef.current?.stop();
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
       setIsListening(false);
-      return;
     }
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+    if (isListening || isTranscribing) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
@@ -123,7 +126,7 @@ function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: bo
       console.error('Microphone access denied');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)
-  }, [isAuthenticated, isListening, transcribeMutation.mutate]);
+  }, [isAuthenticated, isListening, isTranscribing, transcribeMutation.mutate]);
 
   // Cleanup on unmount — stop recording and release microphone
   useEffect(() => {
@@ -137,14 +140,18 @@ function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: bo
 
   return (
     <button
-      onClick={toggleRecording}
+      onMouseDown={startRecording}
+      onMouseUp={stopRecording}
+      onMouseLeave={stopRecording}
+      onTouchStart={startRecording}
+      onTouchEnd={stopRecording}
       disabled={isTranscribing}
       className={cn(
-        "p-2 rounded-full transition-colors",
+        "p-2 rounded-full transition-colors select-none",
         isListening ? "text-red-400 bg-red-500/10 animate-pulse" : isTranscribing ? "text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
       )}
-      title={isListening ? "Stop recording" : "Voice input"}
-      aria-label={isListening ? "Stop recording" : "Voice input"}
+      title={isListening ? "Release to stop" : "Hold to speak"}
+      aria-label={isListening ? "Release to stop recording" : "Hold to speak"}
     >
       {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
     </button>
@@ -437,7 +444,7 @@ export default function Home() {
                 }
               }}
               onPaste={handlePaste}
-              placeholder="What would you like to do?"
+              placeholder="Assign a task or ask anything"
               aria-label="Task input"
               rows={1}
               className={cn(

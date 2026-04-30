@@ -155,7 +155,7 @@ function ElapsedTimer() {
   const secs = elapsed % 60;
   return (
     <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
-      {mins > 0 ? `${mins}m ${secs}s` : `${secs}s`}
+      {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
     </span>
   );
 }
@@ -188,11 +188,8 @@ function ThinkingPresence({ knowledgeRecalled }: { knowledgeRecalled?: { count: 
       transition={{ duration: 0.2 }}
       className="flex items-center gap-3 px-3 py-2"
     >
-      <div className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-        "bg-purple-500/15 ring-1 ring-purple-500/20"
-      )}>
-        <Brain className="w-4 h-4 text-purple-400 animate-pulse" />
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-card ring-1 ring-border animate-pulse">
+        <img src="/manus-storage/white_marble_hero_29fc0d2e.png" alt="" className="w-5 h-5 rounded-full" />
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm text-foreground">

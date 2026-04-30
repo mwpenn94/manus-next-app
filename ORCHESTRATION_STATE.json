@@ -1,0 +1,19 @@
+{
+  "tasks": [
+    {"id": "task-1", "description": "CRITICAL: Fix light theme warm palette (#f8f8f7 bg, #34322d fg, Instrument Serif heading)", "dependencies": [], "status": "pending", "assigned_branch": "opt/design-tokens", "retry_count": 0},
+    {"id": "task-2", "description": "CRITICAL: Fix thinking shimmer speed 3s→2s", "dependencies": [], "status": "pending", "assigned_branch": "opt/shimmer-speed", "retry_count": 0},
+    {"id": "task-3", "description": "CRITICAL: Home screen hero - canonical 'What can I do for you?' serif headline", "dependencies": ["task-1"], "status": "pending", "assigned_branch": "opt/home-hero", "retry_count": 0},
+    {"id": "task-4", "description": "HIGH: Agent persona - Trusted Colleague tone in system prompt", "dependencies": [], "status": "pending", "assigned_branch": "opt/agent-persona", "retry_count": 0},
+    {"id": "task-5", "description": "HIGH: Suggested follow-ups after task completion (2-3 contextual prompts)", "dependencies": ["task-4"], "status": "pending", "assigned_branch": "opt/follow-ups", "retry_count": 0},
+    {"id": "task-6", "description": "HIGH: Interactive error handling - UserChoiceErrorHandler component", "dependencies": [], "status": "pending", "assigned_branch": "opt/error-handler", "retry_count": 0},
+    {"id": "task-7", "description": "HIGH: Action badges - collapsible tool call display matching Manus", "dependencies": [], "status": "pending", "assigned_branch": "opt/action-badges", "retry_count": 0},
+    {"id": "task-8", "description": "HIGH: Voice input press-and-hold pattern (not tap-toggle)", "dependencies": [], "status": "pending", "assigned_branch": "opt/voice-hold", "retry_count": 0},
+    {"id": "task-9", "description": "HIGH: Task complete state - feedback row + star rating + follow-ups", "dependencies": ["task-5"], "status": "pending", "assigned_branch": "opt/task-complete", "retry_count": 0},
+    {"id": "task-10", "description": "MEDIUM: Dark theme overlay/mask tokens", "dependencies": ["task-1"], "status": "pending", "assigned_branch": "opt/dark-tokens", "retry_count": 0},
+    {"id": "task-11", "description": "MEDIUM: Motion timing standardization (200ms micro, 350ms page, 600ms emphasis)", "dependencies": [], "status": "pending", "assigned_branch": "opt/motion-timing", "retry_count": 0},
+    {"id": "task-12", "description": "MEDIUM: Knowledge recall badges in thread", "dependencies": ["task-7"], "status": "pending", "assigned_branch": "opt/knowledge-badges", "retry_count": 0},
+    {"id": "task-13", "description": "MEDIUM: Plan rollups with step counter (3/3 progress)", "dependencies": ["task-7"], "status": "pending", "assigned_branch": "opt/plan-rollups", "retry_count": 0},
+    {"id": "task-14", "description": "MEDIUM: Model badge per-turn (Max badge)", "dependencies": [], "status": "pending", "assigned_branch": "opt/model-badge", "retry_count": 0}
+  ],
+  "global_temperature": 0.5
+}
