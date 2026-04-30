@@ -11,15 +11,34 @@ export const voiceRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { transcribeAudio } = await import("../_core/voiceTranscription");
-        const result = await transcribeAudio({
-          audioUrl: input.audioUrl,
-          language: input.language,
-          prompt: input.prompt,
-        });
-        if ("error" in result) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: result.error });
+        
+        // Retry logic: transcription can fail transiently (S3 propagation, network)
+        let lastError: any = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          if (attempt > 0) {
+            // Brief delay before retry to allow S3 URL propagation
+            await new Promise(r => setTimeout(r, 1000));
+          }
+          const result = await transcribeAudio({
+            audioUrl: input.audioUrl,
+            language: input.language,
+            prompt: input.prompt,
+          });
+          if ("error" in result) {
+            lastError = result;
+            // Only retry on service errors, not format/size errors
+            if (result.code === "INVALID_FORMAT" || result.code === "FILE_TOO_LARGE") {
+              throw new TRPCError({ code: "BAD_REQUEST", message: `${result.error}${result.details ? ` (${result.details})` : ""}` });
+            }
+            continue; // Retry on SERVICE_ERROR or TRANSCRIPTION_FAILED
+          }
+          return { text: result.text, language: result.language };
         }
-        return { text: result.text, language: result.language };
+        // All retries exhausted
+        throw new TRPCError({ 
+          code: "INTERNAL_SERVER_ERROR", 
+          message: `${lastError?.error || "Transcription failed"}${lastError?.details ? ` (${lastError.details})` : ""}` 
+        });
       }),
 
     /** Synthesize text to speech using Edge TTS */

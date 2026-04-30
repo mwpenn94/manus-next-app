@@ -23,7 +23,12 @@ async function autoRegisterWebhook(token: string, fullName: string): Promise<voi
     const { ensureWebhook } = await import("../githubApi");
     const [owner, repo] = fullName.split("/");
     // Use the deployed domain if available, otherwise fall back to env
-    const baseUrl = process.env.VITE_APP_URL || `https://${process.env.VITE_APP_DOMAIN || "localhost:3000"}`;
+    // Use deployed URL — never fall back to localhost in production
+    const baseUrl = process.env.VITE_APP_URL || (process.env.VITE_APP_DOMAIN ? `https://${process.env.VITE_APP_DOMAIN}` : "");
+    if (!baseUrl) {
+      console.warn(`[AutoWebhook] Skipping webhook registration — no VITE_APP_URL or VITE_APP_DOMAIN configured`);
+      return;
+    }
     const webhookUrl = `${baseUrl}/api/github/webhook`;
     const secret = process.env.GITHUB_WEBHOOK_SECRET || "";
     const { created } = await ensureWebhook(token, owner, repo, webhookUrl, secret || undefined, ["push"]);

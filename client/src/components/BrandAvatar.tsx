@@ -52,7 +52,7 @@ export default function BrandAvatar({
   const img = (
     <img
       src={BRAND_IMAGE_URL}
-      alt="Manus"
+      alt=""
       className={cn(SIZE_MAP[size], "rounded-md object-cover", className)}
       loading="lazy"
     />

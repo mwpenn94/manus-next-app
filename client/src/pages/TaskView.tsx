@@ -2497,6 +2497,14 @@ export default function TaskView() {
           updateMessageCard, setAegisMeta,
           getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+          onPreviewUrlUpdate: (url: string) => {
+            // Update the webapp_preview card's previewUrl when S3 re-upload provides a new URL
+            const msgs = task?.messages || [];
+            const previewMsg = msgs.find((m) => m.cardType === "webapp_preview");
+            if (previewMsg?.id) {
+              updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
+            }
+          },
         });
 
         await streamWithRetry({
@@ -2722,16 +2730,18 @@ export default function TaskView() {
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
-        onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+          onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+        onPreviewUrlUpdate: (url: string) => {
+          const msgs = task?.messages || [];
+          const previewMsg = msgs.find((m) => m.cardType === "webapp_preview");
+          if (previewMsg?.id) updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
+        },
       });
-
       await streamWithRetry({
         messages, taskExternalId: task.id, mode: agentMode,
         signal: controller.signal, callbacks,
       });
-
       accumulated = streamState.accumulated;
-
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
@@ -2806,6 +2816,11 @@ export default function TaskView() {
         updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+        onPreviewUrlUpdate: (url: string) => {
+          const msgs = task?.messages || [];
+          const previewMsg = msgs.find((m) => m.cardType === "webapp_preview");
+          if (previewMsg?.id) updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
+        },
       });
 
       await streamWithRetry({
@@ -2896,6 +2911,11 @@ export default function TaskView() {
         updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+        onPreviewUrlUpdate: (url: string) => {
+          const msgs = task?.messages || [];
+          const previewMsg = msgs.find((m) => m.cardType === "webapp_preview");
+          if (previewMsg?.id) updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
+        },
       });
 
       await streamWithRetry({
@@ -2975,6 +2995,11 @@ export default function TaskView() {
         updateMessageCard, setAegisMeta,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+        onPreviewUrlUpdate: (url: string) => {
+          const msgs = task?.messages || [];
+          const previewMsg = msgs.find((m) => m.cardType === "webapp_preview");
+          if (previewMsg?.id) updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
+        },
       });
       await streamWithRetry({
         messages: conversationMessages, taskExternalId: task.id, mode: agentMode,

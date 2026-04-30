@@ -94,8 +94,10 @@ export async function transcribeAudio(
     let audioBuffer: Buffer;
     let mimeType: string;
     try {
+      console.log(`[Transcription] Downloading audio from: ${options.audioUrl.substring(0, 80)}...`);
       const response = await fetch(options.audioUrl);
       if (!response.ok) {
+        console.error(`[Transcription] Download failed: ${response.status} ${response.statusText}`);
         return {
           error: "Failed to download audio file",
           code: "INVALID_FORMAT",
@@ -104,7 +106,20 @@ export async function transcribeAudio(
       }
       
       audioBuffer = Buffer.from(await response.arrayBuffer());
-      mimeType = response.headers.get('content-type') || 'audio/mpeg';
+      let rawContentType = response.headers.get('content-type') || '';
+      
+      // S3 may return application/octet-stream — infer from URL extension
+      if (!rawContentType || rawContentType === 'application/octet-stream' || rawContentType === 'binary/octet-stream') {
+        const urlPath = new URL(options.audioUrl).pathname.toLowerCase();
+        if (urlPath.endsWith('.webm')) rawContentType = 'audio/webm';
+        else if (urlPath.endsWith('.mp3')) rawContentType = 'audio/mpeg';
+        else if (urlPath.endsWith('.wav')) rawContentType = 'audio/wav';
+        else if (urlPath.endsWith('.m4a') || urlPath.endsWith('.mp4')) rawContentType = 'audio/mp4';
+        else if (urlPath.endsWith('.ogg')) rawContentType = 'audio/ogg';
+        else rawContentType = 'audio/webm'; // Default for browser recordings
+      }
+      mimeType = rawContentType;
+      console.log(`[Transcription] Downloaded ${audioBuffer.length} bytes, type: ${mimeType}`);
       
       // Check file size (16MB limit)
       const sizeMB = audioBuffer.length / (1024 * 1024);
@@ -163,6 +178,7 @@ export async function transcribeAudio(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
+      console.error(`[Transcription] Whisper API failed: ${response.status} ${response.statusText} — ${errorText.substring(0, 200)}`);
       return {
         error: "Transcription service request failed",
         code: "TRANSCRIPTION_FAILED",

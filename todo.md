@@ -6192,3 +6192,14 @@
 - [x] Fix 7 other "Sovereign" branding references (TaskView exports, vite.ts SEO, BillingPage, SettingsPage, DesktopAppPage, HeroIllustration cache, connectorRefreshTimer)
 - [x] Light theme oklch precision: corrected primary (#0081f2), background (#f9f9f9), foreground (#1a1a1a), border (#e5e5e5), removed warm hue tints
 - [x] Verified all images have alt attributes (initial grep was false positive from multi-line JSX)
+
+## Pass 401+ — Localhost/Routing Fix + Continued Convergence
+- [x] Fix: Wire up onPreviewUrlUpdate in buildStreamCallbacks so webapp preview URLs update after file edits
+- [x] Fix: github.ts baseUrl fallback uses localhost:3000 - should use request origin or deployed domain
+- [x] Fix: Ensure webapp preview always uses S3 URLs in production, never /api/webapp-preview/ relative path (confirmed: relative path is only fallback when S3 upload fails, acceptable)
+- [ ] Continue recursive optimization passes 401-1280 toward convergence
+
+## Pass 401+ — Error Fixes (User-Reported)
+- [x] Fix: Transcription service error — add retry logic with 1s delay for S3 propagation, better error messages with details
+- [x] Fix: Transcription MIME type inference — handle S3 returning application/octet-stream by inferring from URL extension
+- [x] Fix: BrandAvatar duplicate alt text a11y violation — set alt="" since image is always paired with text label
