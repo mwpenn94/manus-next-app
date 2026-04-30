@@ -329,7 +329,7 @@ export default function OnboardingTooltips() {
               </div>
 
               {/* Keyboard hint */}
-              <p className="text-[10px] text-muted-foreground/50 text-center mt-3">
+              <p className="text-[10px] text-muted-foreground text-center mt-3">
                 Use ← → arrow keys to navigate, Esc to dismiss
               </p>
             </div>

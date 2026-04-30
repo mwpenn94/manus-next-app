@@ -143,7 +143,7 @@ class ErrorBoundary extends Component<Props, State> {
             {/* Collapsible technical details — hidden by default for cleaner UX */}
             <button
               onClick={() => this.setState({ showDetails: !this.state.showDetails })}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-muted-foreground transition-colors"
             >
               {this.state.showDetails ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               Technical details
@@ -151,7 +151,7 @@ class ErrorBoundary extends Component<Props, State> {
 
             {this.state.showDetails && (
               <div className="mt-3 p-3 w-full rounded-lg bg-muted/50 border border-border overflow-auto relative group max-h-48">
-                <pre className="text-[11px] text-muted-foreground/80 whitespace-break-spaces font-mono leading-relaxed">
+                <pre className="text-[11px] text-muted-foreground whitespace-break-spaces font-mono leading-relaxed">
                   {this.state.error?.stack || this.state.error?.message}
                 </pre>
                 <button

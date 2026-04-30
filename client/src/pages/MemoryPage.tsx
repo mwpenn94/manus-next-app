@@ -499,7 +499,7 @@ export default function MemoryPage() {
                           <span className="text-sm font-medium text-foreground/70">{m.key}</span>
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500">archived</span>
                         </div>
-                        <p className="text-sm text-muted-foreground/70 leading-relaxed">{m.value}</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{m.value}</p>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <Clock className="w-2.5 h-2.5" />Created {formatDistanceToNow(new Date(m.createdAt), { addSuffix: true })}

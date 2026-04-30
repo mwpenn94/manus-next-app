@@ -569,7 +569,7 @@ export default function TaskReplayOverlay({ messages, onClose, scrollToMessage }
 
         {/* Keyboard hint */}
         <div className="px-4 pb-2 text-center">
-          <p className="text-[9px] text-muted-foreground/50">
+          <p className="text-[9px] text-muted-foreground">
             <kbd className="px-1 py-0.5 rounded bg-muted text-[8px] font-mono">Space</kbd> play/pause
             {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[8px] font-mono">←→</kbd> step
             {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[8px] font-mono">Esc</kbd> close

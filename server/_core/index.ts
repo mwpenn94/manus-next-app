@@ -1047,8 +1047,25 @@ async function startServer() {
             if (dbMessages && dbMessages.length > messages.length) {
               // DB has more history — use it as the base, then append any new user message
               // from the client that isn't yet persisted
+              // Filter out error/system messages that would confuse the LLM during reconstruction
+              const ERROR_MSG_PATTERNS = [
+                "Connection was interrupted",
+                "A temporary processing error occurred",
+                "Something went wrong on our end",
+                "Something unexpected happened",
+                "Something went wrong. Please try again",
+                "The response took longer than expected",
+                "The system is handling a lot of requests",
+                "There seems to be a network issue",
+                "This conversation has grown quite long",
+                "[Response interrupted",
+                "[Generation stopped by user]",
+              ];
+              const isErrorMessage = (content: string) =>
+                ERROR_MSG_PATTERNS.some(p => content.includes(p));
               const dbFormatted = dbMessages
                 .filter((m: any) => m.content && m.content.trim())
+                .filter((m: any) => !(m.role === "assistant" && isErrorMessage(m.content)))
                 .map((m: any) => ({ role: m.role as string, content: m.content as string }));
               // Check if the last client message is new (not yet in DB)
               const lastClientMsg = messages[messages.length - 1];

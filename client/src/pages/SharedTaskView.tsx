@@ -539,7 +539,7 @@ export default function SharedTaskView() {
                 manus
               </span>
             </a>
-            <span className="text-[11px] text-muted-foreground/60 font-medium ml-1">
+            <span className="text-[11px] text-muted-foreground font-medium ml-1">
               next
             </span>
           </div>

@@ -652,7 +652,7 @@ export default function ReplayPage() {
 
                 {/* Keyboard shortcut hint */}
                 <div className="mt-2 text-center">
-                  <p className="text-[10px] text-muted-foreground/60">
+                  <p className="text-[10px] text-muted-foreground">
                     Keyboard: <kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Space</kbd> play/pause
                     {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">←→</kbd> step
                     {" "}<kbd className="px-1 py-0.5 rounded bg-muted text-[9px] font-mono">Shift+←→</kbd> skip 10

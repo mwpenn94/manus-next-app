@@ -257,7 +257,7 @@ export default function SpecializedInputBar({
                 if (e.key === "Escape") onClose();
               }}
               placeholder={config.placeholder}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none py-1.5"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none py-1.5"
             />
             <button
               onClick={handleSubmit}
@@ -292,7 +292,7 @@ export default function SpecializedInputBar({
         {config.secondaryField && (
           <div className="px-3 pb-2">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-              <Wand2 className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+              <Wand2 className="w-3 h-3 text-muted-foreground shrink-0" />
               {config.secondaryField.chips.map((chip) => (
                 <button
                   key={chip}
@@ -301,7 +301,7 @@ export default function SpecializedInputBar({
                     "shrink-0 text-[10px] px-2 py-0.5 rounded-full border transition-colors whitespace-nowrap",
                     secondaryValue === chip
                       ? "border-primary/50 bg-primary/10 text-primary font-medium"
-                      : "border-border/60 text-muted-foreground/70 hover:text-foreground hover:border-border"
+                      : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
                   )}
                 >
                   {chip}

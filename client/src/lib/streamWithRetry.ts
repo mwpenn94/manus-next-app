@@ -245,3 +245,35 @@ export function getStreamErrorMessage(err: any): string {
   }
   return "Something went wrong. Please try again \u2014 if the issue persists, try starting a new task.";
 }
+
+/**
+ * Check if a message content string is an error/system message that should be
+ * excluded from conversation context sent to the LLM.
+ */
+const ERROR_MSG_PATTERNS = [
+  "Connection was interrupted",
+  "A temporary processing error occurred",
+  "Something went wrong on our end",
+  "Something unexpected happened",
+  "Something went wrong. Please try again",
+  "The response took longer than expected",
+  "The system is handling a lot of requests",
+  "There seems to be a network issue",
+  "This conversation has grown quite long",
+  "[Response interrupted",
+  "[Generation stopped by user]",
+  "Cannot read properties of undefined",
+  "Cannot read properties of null",
+  "is not a function",
+  "Unexpected token",
+  "TypeError:",
+  "ReferenceError:",
+  "SyntaxError:",
+  "Internal Server Error",
+];
+
+export function isStreamErrorMessage(content: string): boolean {
+  // Strip common emoji prefixes (like ⚠️) and whitespace before matching
+  const cleaned = content.replace(/^[^a-zA-Z0-9[(\/]+/, "");
+  return ERROR_MSG_PATTERNS.some(p => content.includes(p) || cleaned.includes(p));
+}

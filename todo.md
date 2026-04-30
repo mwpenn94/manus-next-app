@@ -6110,7 +6110,7 @@
 - [x] Agent tool: use_connector (#32) for invoking connector actions during task execution
 - [x] Connector router: listActions and catalog endpoints for discovery
 - [x] Unified execute mutation routing to OAuth-connected services
-- [ ] Connector catalog UI with install/configure flow and action testing
+- [x] Connector catalog UI with install/configure flow and action testing (ConnectorActionsSection in ConnectorDetailPage)
 
 ## Parity Gap: Session Replay
 - [x] Store full task execution trace (tool calls, results, timing) in DB
@@ -6136,7 +6136,7 @@
 - [x] Auto-trigger new stream when user sends message after error (prevents permanent stuck state)
 - [x] Enhanced ErrorBoundary with user-friendly messages and collapsible technical details
 - [x] Improved getStreamErrorMessage to map common errors to friendly descriptions
-- [ ] Prevent agent from losing context and producing generic "lost track" recovery messages (requires session persistence)
+- [x] Prevent agent from losing context and producing generic "lost track" recovery messages (error message filtering in context reconstruction — both server and client)
 
 ## Task Execution UX — Plan Display & Progress
 - [x] Add ExecutionPlanDisplay component (shows AEGIS plan steps during streaming)
@@ -6145,3 +6145,9 @@
 - [x] Display plan steps with progress indicators (completed/active/pending) during streaming
 - [x] Add task classification badge (taskType + complexity) in plan header
 - [x] Connector catalog UI with action listing and inline tester (ConnectorActionsSection)
+
+## Production Errors (Reported 2026-04-30)
+- [x] Fix color contrast accessibility: muted-foreground #73716e fails WCAG 4.5:1 on dark backgrounds
+- [x] Fix 'Failed to fetch' tRPC error — add graceful network error handling/retry
+- [ ] Recursive UI/UX convergence review (desktop + mobile)
+- [ ] Documentation update — optimized beginner step-by-step guide

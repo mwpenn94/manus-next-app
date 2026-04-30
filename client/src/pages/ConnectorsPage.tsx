@@ -347,7 +347,7 @@ function TieredAuthDialog({
                               </p>
                               <p>OAuth credentials for {connector.name} have not been set up. To enable:</p>
                               <OAuthSetupGuide connectorId={connector.id} />
-                              <p className="text-muted-foreground/70 mt-1">Use another method below to connect now.</p>
+                              <p className="text-muted-foreground mt-1">Use another method below to connect now.</p>
                             </div>
                           )}
                         </div>
@@ -433,7 +433,7 @@ function TieredAuthDialog({
                                 )}
                                 Verify via Manus
                               </Button>
-                              <p className="text-[10px] text-muted-foreground/60 text-center">
+                              <p className="text-[10px] text-muted-foreground text-center">
                                 Opens Manus portal in a popup. No passwords are shared with this app.
                               </p>
                             </div>
@@ -545,7 +545,7 @@ function TieredAuthDialog({
 
       {/* Footer */}
       <div className="px-6 py-3 border-t border-border/60 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <Layers className="w-3 h-3" />
           <span>{availableTiers.length} auth {availableTiers.length === 1 ? "method" : "methods"} available</span>
         </div>
@@ -919,7 +919,7 @@ export default function ConnectorsPage() {
     if (OAUTH_CAPABLE_CONNECTORS.has(id)) {
       return (
         <span title="OAuth available (needs setup)">
-          <Shield className="w-3.5 h-3.5 text-muted-foreground/40" />
+          <Shield className="w-3.5 h-3.5 text-muted-foreground" />
         </span>
       );
     }

@@ -113,7 +113,7 @@ export function BranchCompareView({ taskExternalId, open, onOpenChange }: Branch
                           <p className="mt-0.5 text-foreground/80 line-clamp-4">{msgA.content}</p>
                         </>
                       ) : (
-                        <span className="text-muted-foreground/50 italic">No message</span>
+                        <span className="text-muted-foreground italic">No message</span>
                       )}
                     </div>
                     <div className={cn(
@@ -131,7 +131,7 @@ export function BranchCompareView({ taskExternalId, open, onOpenChange }: Branch
                           <p className="mt-0.5 text-foreground/80 line-clamp-4">{msgB.content}</p>
                         </>
                       ) : (
-                        <span className="text-muted-foreground/50 italic">No message</span>
+                        <span className="text-muted-foreground italic">No message</span>
                       )}
                     </div>
                   </div>

@@ -150,7 +150,7 @@ export default function HeroIllustration({
 
         {/* Generation status */}
         {isGenerating && (
-          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground/70">
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <RefreshCw className="w-3 h-3 animate-spin" />
             <span>Generating custom illustration...</span>
           </div>

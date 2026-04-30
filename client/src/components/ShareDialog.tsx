@@ -149,14 +149,14 @@ export default function ShareDialog({ open, onOpenChange, taskExternalId, taskTi
                             Public
                           </span>
                         )}
-                        <span className="text-muted-foreground/40">·</span>
+                        <span className="text-muted-foreground">·</span>
                         <Eye className="w-3 h-3" />
                         <span>{share.viewCount}</span>
-                        <span className="text-muted-foreground/40">·</span>
+                        <span className="text-muted-foreground">·</span>
                         <span>{formatDistanceToNow(new Date(share.createdAt), { addSuffix: true })}</span>
                         {share.expiresAt && (
                           <>
-                            <span className="text-muted-foreground/40">·</span>
+                            <span className="text-muted-foreground">·</span>
                             <Clock className="w-3 h-3" />
                             <span>{formatDistanceToNow(new Date(share.expiresAt), { addSuffix: true })}</span>
                           </>

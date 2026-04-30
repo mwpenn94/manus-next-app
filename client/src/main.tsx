@@ -37,9 +37,16 @@ const queryClient = new QueryClient({
         if (error instanceof TRPCClientError && error.message === UNAUTHED_ERR_MSG) {
           return false;
         }
+        // Retry network failures ("Failed to fetch") up to 3 times with backoff
+        if (error instanceof TRPCClientError && error.message === 'Failed to fetch') {
+          return failureCount < 3;
+        }
         return failureCount < 2; // Max 2 retries for other errors
       },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
       refetchOnWindowFocus: false,
+      // Suppress error state for transient network failures during refetch
+      refetchOnReconnect: true,
     },
     mutations: {
       retry: false,
@@ -61,6 +68,11 @@ const queryClient = new QueryClient({
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
+    // Suppress logging for transient network errors (retries will handle them)
+    if (error instanceof TRPCClientError && error.message === 'Failed to fetch') {
+      console.warn("[API] Network unavailable — retrying...");
+      return;
+    }
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Query Error]", error);
     }

@@ -176,11 +176,11 @@ export default function DiffViewer({ original, modified, filename, className }: 
                   )}
                 >
                   {/* Old line number */}
-                  <td className="w-10 px-2 py-0.5 text-right text-muted-foreground/50 select-none border-r border-border/20 shrink-0">
+                  <td className="w-10 px-2 py-0.5 text-right text-muted-foreground select-none border-r border-border/20 shrink-0">
                     {line.oldLineNum ?? ""}
                   </td>
                   {/* New line number */}
-                  <td className="w-10 px-2 py-0.5 text-right text-muted-foreground/50 select-none border-r border-border/20 shrink-0">
+                  <td className="w-10 px-2 py-0.5 text-right text-muted-foreground select-none border-r border-border/20 shrink-0">
                     {line.newLineNum ?? ""}
                   </td>
                   {/* Indicator */}
@@ -189,7 +189,7 @@ export default function DiffViewer({ original, modified, filename, className }: 
                       "w-5 px-1 py-0.5 text-center select-none shrink-0",
                       line.type === "addition" && "text-emerald-400",
                       line.type === "deletion" && "text-red-400",
-                      line.type === "context" && "text-muted-foreground/30"
+                      line.type === "context" && "text-muted-foreground"
                     )}
                   >
                     {line.type === "addition" ? "+" : line.type === "deletion" ? "−" : " "}

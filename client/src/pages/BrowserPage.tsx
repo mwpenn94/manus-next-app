@@ -1004,7 +1004,7 @@ export default function BrowserPage() {
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center space-y-3">
-                <Globe className="w-16 h-16 mx-auto text-muted-foreground/30" />
+                <Globe className="w-16 h-16 mx-auto text-muted-foreground" />
                 <div>
                   <h3 className="text-lg font-medium text-foreground">No page loaded</h3>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -1233,7 +1233,7 @@ export default function BrowserPage() {
                   {qaSuites.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
                       <div className="text-center space-y-2">
-                        <Eye className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <Eye className="w-8 h-8 mx-auto text-muted-foreground" />
                         <p>No QA test suites loaded.</p>
                         <p>Use "Load Scenario" to add pre-built or custom tests.</p>
                       </div>
@@ -1366,7 +1366,7 @@ export default function BrowserPage() {
                   {!a11yResults ? (
                     <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
                       <div className="text-center space-y-2">
-                        <Eye className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <Eye className="w-8 h-8 mx-auto text-muted-foreground" />
                         <p>Click "Run Audit" to check accessibility.</p>
                         <p className="text-[10px]">Checks WCAG rules: alt text, labels, headings, ARIA, contrast, skip links.</p>
                       </div>
@@ -1430,7 +1430,7 @@ export default function BrowserPage() {
                   {!perfMetrics ? (
                     <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
                       <div className="text-center space-y-2">
-                        <BarChart3 className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <BarChart3 className="w-8 h-8 mx-auto text-muted-foreground" />
                         <p>Click "Measure" to capture Core Web Vitals.</p>
                         <p className="text-[10px]">LCP, CLS, FCP, TTFB, JS heap, layout counts via CDP.</p>
                       </div>
@@ -1527,7 +1527,7 @@ export default function BrowserPage() {
                   {!coverageData ? (
                     <div className="flex items-center justify-center h-full text-xs text-muted-foreground py-8">
                       <div className="text-center space-y-2">
-                        <Code className="w-8 h-8 mx-auto text-muted-foreground/30" />
+                        <Code className="w-8 h-8 mx-auto text-muted-foreground" />
                         <p>{coverageRunning ? "Recording coverage... navigate and interact, then click Stop." : "Click \"Start Recording\" to begin coverage collection."}</p>
                         <p className="text-[10px]">Tracks JS and CSS usage via CDP Profiler.</p>
                       </div>

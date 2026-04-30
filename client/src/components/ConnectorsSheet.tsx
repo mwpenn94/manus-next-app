@@ -384,7 +384,7 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
               {availableDefs.length > 0 && (
                 <div className="space-y-2.5">
                   {connectedDefs.length > 0 && (
-                    <p className="text-xs text-muted-foreground/60 uppercase tracking-wider px-1 pt-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider px-1 pt-2">
                       Available
                     </p>
                   )}
@@ -402,7 +402,7 @@ export default function ConnectorsSheet({ open, onOpenChange, highlightId }: Con
               {/* Empty state */}
               {CONNECTOR_DEFS.length === 0 && (
                 <div className="text-center py-12">
-                  <Plug className="w-8 h-8 text-muted-foreground/40 mx-auto mb-3" />
+                  <Plug className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">No connectors available</p>
                 </div>
               )}
@@ -471,7 +471,7 @@ function ConnectorCard({
       </div>
 
       {/* Chevron */}
-      <ChevronRight className="w-5 h-5 text-muted-foreground/60 shrink-0" />
+      <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
     </button>
   );
 }

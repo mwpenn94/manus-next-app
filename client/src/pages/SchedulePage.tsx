@@ -242,7 +242,7 @@ export default function SchedulePage() {
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     6-field format: seconds minutes hours day-of-month month day-of-week
-                    <span className="ml-1 text-muted-foreground/60">
+                    <span className="ml-1 text-muted-foreground">
                       (times are in your local timezone: {timezone})
                     </span>
                   </p>

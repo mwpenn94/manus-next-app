@@ -159,7 +159,7 @@ function TaskStatusIcon({ status }: { status: string }) {
     case "error":
       return <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
     default:
-      return <Clock className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />;
+      return <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
   }
 }
 
@@ -354,7 +354,7 @@ function ProjectTreeNode({
           {project.name}
         </span>
         {project.pinned === 1 && (
-          <Pin className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+          <Pin className="w-3 h-3 text-muted-foreground shrink-0" />
         )}
         <ChevronRight
           className={cn(
@@ -401,7 +401,7 @@ function ProjectTreeNode({
       {/* Empty project — show hint */}
       {expanded && projectTasks.length === 0 && (
         <div className="ml-7 py-1.5">
-          <span className="text-[11px] text-muted-foreground/50 italic">No tasks yet</span>
+          <span className="text-[11px] text-muted-foreground italic">No tasks yet</span>
         </div>
       )}
     </div>
@@ -506,7 +506,7 @@ function SidebarProjectTree({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <p className="text-[11px] text-muted-foreground/50 italic px-1">No projects yet</p>
+        <p className="text-[11px] text-muted-foreground italic px-1">No projects yet</p>
       </div>
     );
   }
@@ -677,11 +677,11 @@ function AllTasksSection({
       {/* Task list */}
       {filteredTasks.length === 0 ? (
         <div className="px-3 py-4 text-center">
-          <p className="text-xs text-muted-foreground/60">
+          <p className="text-xs text-muted-foreground">
             {statusFilter !== "all" ? `No ${statusFilter} tasks` : "No tasks yet"}
           </p>
           {statusFilter === "all" && (
-            <p className="text-[11px] text-muted-foreground/40 mt-1">
+            <p className="text-[11px] text-muted-foreground mt-1">
               Start a new task from the input above
             </p>
           )}

@@ -818,11 +818,11 @@ export default function ConnectorDetailPage() {
                     {completed ? (
                       <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                     ) : (
-                      <Circle className="w-5 h-5 text-muted-foreground/50 shrink-0" />
+                      <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
                     )}
                     <span className={cn(
                       "text-[15px]",
-                      completed ? "text-muted-foreground" : "text-muted-foreground/70"
+                      completed ? "text-muted-foreground" : "text-muted-foreground"
                     )}>
                       {step.label}
                     </span>
@@ -986,7 +986,7 @@ export default function ConnectorDetailPage() {
                                               <li>Add secrets: <code className="bg-muted px-1 rounded text-[10px]">{oauthSetupGuide.secretPrefix}_CLIENT_ID</code> and <code className="bg-muted px-1 rounded text-[10px]">{oauthSetupGuide.secretPrefix}_CLIENT_SECRET</code></li>
                                             </ol>
                                           )}
-                                          <p className="text-muted-foreground/70">Use another method below to connect now.</p>
+                                          <p className="text-muted-foreground">Use another method below to connect now.</p>
                                         </div>
                                       )}
                                     </div>
@@ -1071,7 +1071,7 @@ export default function ConnectorDetailPage() {
                                             )}
                                             Verify via Manus
                                           </Button>
-                                          <p className="text-[10px] text-muted-foreground/60 text-center">
+                                          <p className="text-[10px] text-muted-foreground text-center">
                                             Opens Manus portal in a popup. No passwords are shared.
                                           </p>
                                         </div>
@@ -1182,7 +1182,7 @@ export default function ConnectorDetailPage() {
 
                   {/* Footer */}
                   <div className="px-4 py-2.5 border-t border-border/50 flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                       <Layers className="w-3 h-3" />
                       <span>{availableTiers.length} auth {availableTiers.length === 1 ? "method" : "methods"}</span>
                     </div>
@@ -1662,7 +1662,7 @@ function ConnectorActionsSection({
                                     <code className="text-[11px] font-mono text-foreground bg-muted/40 px-1.5 py-0.5 rounded">
                                       {key}
                                     </code>
-                                    <span className="text-[10px] text-muted-foreground/60">{param.type}</span>
+                                    <span className="text-[10px] text-muted-foreground">{param.type}</span>
                                     {param.required && (
                                       <span className="text-[9px] px-1 py-0 rounded bg-destructive/10 text-destructive font-medium">
                                         required

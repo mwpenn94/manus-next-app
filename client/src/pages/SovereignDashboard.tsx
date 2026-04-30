@@ -41,7 +41,7 @@ function MetricCard({ label, value, icon: Icon, trend, className }: {
     <div className={cn("p-4 rounded-xl bg-card border border-border", className)}>
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
-        <Icon className="w-4 h-4 text-muted-foreground/60" />
+        <Icon className="w-4 h-4 text-muted-foreground" />
       </div>
       <div className="text-2xl font-semibold text-foreground tabular-nums">{value}</div>
       {trend && <span className="text-xs text-muted-foreground mt-1">{trend}</span>}
@@ -155,7 +155,7 @@ function AegisPanel() {
                   <span className="text-sm font-medium text-foreground">{stage.name}</span>
                   <span className="text-xs text-muted-foreground ml-2">{stage.desc}</span>
                 </div>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
             ))}
           </div>

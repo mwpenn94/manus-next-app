@@ -459,7 +459,7 @@ function PipelineCard({ pipeline, onSelect }: { pipeline: Pipeline; onSelect: ()
             <div key={step.id} className="flex items-center gap-1">
               <StepChip step={step} />
               {i < pipeline.steps.length - 1 && (
-                <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
               )}
             </div>
           ))}
@@ -895,13 +895,13 @@ export default function DataPipelinesPage() {
             {filteredPipelines.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <GitBranch className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+                  <GitBranch className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground mb-1">
                     {searchQuery || statusFilter !== "all"
                       ? "No pipelines match your filters"
                       : "No pipelines yet"}
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">
+                  <p className="text-xs text-muted-foreground mb-4">
                     {searchQuery || statusFilter !== "all"
                       ? "Try adjusting your search or filter criteria."
                       : "Create your first data pipeline or start from a runbook template."}
@@ -1001,7 +1001,7 @@ export default function DataPipelinesPage() {
                                 {op.label}
                               </div>
                               {i < rb.steps.length - 1 && (
-                                <ArrowRight className="w-2.5 h-2.5 text-muted-foreground/30" />
+                                <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
                               )}
                             </div>
                           );
@@ -1047,7 +1047,7 @@ export default function DataPipelinesPage() {
                           <p className="text-sm font-semibold">{t.label}</p>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">{t.description}</p>
-                        <p className="text-[10px] text-muted-foreground/70 italic">Use case: {t.useCase}</p>
+                        <p className="text-[10px] text-muted-foreground italic">Use case: {t.useCase}</p>
                       </CardContent>
                     </Card>
                   );
@@ -1247,7 +1247,7 @@ export default function DataPipelinesPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs text-muted-foreground">{run.duration}</p>
-                        <p className="text-[10px] text-muted-foreground/70">{run.time}</p>
+                        <p className="text-[10px] text-muted-foreground">{run.time}</p>
                       </div>
                     </div>
                   ))}
@@ -1293,7 +1293,7 @@ export default function DataPipelinesPage() {
                           </div>
                         </div>
                         {idx < arr.length - 1 && (
-                          <ArrowRight className="w-5 h-5 text-muted-foreground/40 mx-2 shrink-0" />
+                          <ArrowRight className="w-5 h-5 text-muted-foreground mx-2 shrink-0" />
                         )}
                       </div>
                     ))}
@@ -1382,7 +1382,7 @@ export default function DataPipelinesPage() {
                     { event: "Retention applied", detail: "Tier 1 sandbox, 7-day TTL", time: "1d ago" },
                   ].map((e, i) => (
                     <div key={i} className="flex items-center gap-3 text-xs">
-                      <span className="text-muted-foreground/60 w-12 shrink-0">{e.time}</span>
+                      <span className="text-muted-foreground w-12 shrink-0">{e.time}</span>
                       <span className="font-medium text-foreground">{e.event}</span>
                       <span className="text-muted-foreground truncate">{e.detail}</span>
                     </div>

@@ -167,7 +167,7 @@ export default function InConversationSearch({
             "p-1 rounded transition-colors",
             matches.length > 0
               ? "text-muted-foreground hover:text-foreground hover:bg-accent"
-              : "text-muted-foreground/30 cursor-not-allowed"
+              : "text-muted-foreground cursor-not-allowed"
           )}
           title="Previous match (Shift+Enter)"
           aria-label="Previous match"
@@ -181,7 +181,7 @@ export default function InConversationSearch({
             "p-1 rounded transition-colors",
             matches.length > 0
               ? "text-muted-foreground hover:text-foreground hover:bg-accent"
-              : "text-muted-foreground/30 cursor-not-allowed"
+              : "text-muted-foreground cursor-not-allowed"
           )}
           title="Next match (Enter)"
           aria-label="Next match"

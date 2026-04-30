@@ -231,7 +231,7 @@ export default function ConvergenceIndicator({
       {/* Signal assessment row (if provided) */}
       {signalAssessment && (
         <div className="px-3.5 py-1.5 border-t border-border/20">
-          <p className="text-[10px] text-muted-foreground/80 italic truncate">
+          <p className="text-[10px] text-muted-foreground italic truncate">
             Signal: {signalAssessment}
           </p>
         </div>

@@ -599,7 +599,7 @@ export default function SettingsPage() {
                       className="w-full accent-primary cursor-pointer"
                       aria-label="Memory decay half-life in days"
                     />
-                    <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                       <span>3 days (aggressive)</span>
                       <span>90 days (conservative)</span>
                     </div>
@@ -637,7 +637,7 @@ export default function SettingsPage() {
                       className="w-full accent-primary cursor-pointer"
                       aria-label="Memory archive threshold"
                     />
-                    <div className="flex justify-between text-[10px] text-muted-foreground/60 mt-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                       <span>0.01 (keep almost everything)</span>
                       <span>0.50 (archive aggressively)</span>
                     </div>
@@ -1252,9 +1252,9 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">Saved cookies</p>
                   <div className="bg-muted/30 rounded-lg p-4 text-center">
-                    <Globe className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
+                    <Globe className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                     <p className="text-xs text-muted-foreground">No saved cookies yet</p>
-                    <p className="text-[10px] text-muted-foreground/70 mt-1">
+                    <p className="text-[10px] text-muted-foreground mt-1">
                       Cookies will appear here after the agent logs into websites
                     </p>
                   </div>

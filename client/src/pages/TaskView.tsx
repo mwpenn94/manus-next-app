@@ -127,7 +127,7 @@ import HandsFreeOverlay from "@/components/HandsFreeOverlay";
 import { useHandsFreeMode } from "@/hooks/useHandsFreeMode";
 import { useEdgeTTS, splitSentences } from "@/hooks/useEdgeTTS";
 import { Headphones } from "lucide-react";
-import { streamWithRetry, getStreamErrorMessage } from "@/lib/streamWithRetry";
+import { streamWithRetry, getStreamErrorMessage, isStreamErrorMessage } from "@/lib/streamWithRetry";
 import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
 import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
 import TaskReplayOverlay from "@/components/TaskReplayOverlay";
@@ -914,6 +914,11 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                   </div>
                 )}
               </>
+            ) : isStreamErrorMessage(message.content) ? (
+              <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
+                <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                <span className="text-sm text-destructive">Something went wrong while processing this request. You can retry or send a new message.</span>
+              </div>
             ) : (
               <div className="prose prose-sm prose-themed max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0">
                 <Streamdown>{message.content}</Streamdown>
@@ -2630,6 +2635,7 @@ export default function TaskView() {
       // Filter out card-only messages (empty content with cardType) since they're UI-only.
       const conversationMessages = task.messages
         .filter(m => m.content.trim() || m.role === "user") // Keep all user msgs + non-empty assistant msgs
+        .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content))) // Skip error messages from context
         .slice(-50)
         .map(m => ({
           role: m.role as "user" | "assistant" | "system",
@@ -2778,6 +2784,7 @@ export default function TaskView() {
     try {
       const conversationMessages = task.messages
         .filter(m => m.content.trim() || m.role === "user")
+        .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
         .slice(-50)
         .map(m => ({
           role: m.role as "user" | "assistant" | "system",
@@ -2874,6 +2881,7 @@ export default function TaskView() {
       const conversationMessages = task.messages
         .filter(m => m.id !== removed.id) // Exclude the removed message
         .filter(m => m.content.trim() || m.role === "user")
+        .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
         .slice(-50)
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
 
@@ -2954,6 +2962,7 @@ export default function TaskView() {
       );
       const conversationMessages = truncatedMessages
         .filter(m => m.content.trim() || m.role === "user")
+        .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
         .slice(-50)
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
       const controller = new AbortController();
@@ -4005,6 +4014,24 @@ export default function TaskView() {
               <button
                 onClick={() => { setLastErrorRetryable(false); handleRegenerate(); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity active:scale-95"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry
+              </button>
+            </div>
+          )}
+          {/* Stale/error task recovery — shown when task is in error state or stuck running without active stream */}
+          {!streaming && !lastErrorRetryable && (task.status === "error" || (task.status === "running" && !streaming)) && task.messages.length > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-sm text-amber-200 flex-1">
+                {task.status === "error"
+                  ? "This task encountered an error. You can retry or send a new message to continue."
+                  : "This task appears to be stalled. Send a message to resume it."}
+              </span>
+              <button
+                onClick={() => handleRegenerate()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-medium hover:opacity-90 transition-opacity active:scale-95"
               >
                 <RefreshCw className="w-3 h-3" />
                 Retry

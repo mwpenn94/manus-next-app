@@ -430,7 +430,7 @@ export default function WebAppProjectPage() {
                           {f.isDir ? (
                             <ChevronRight className="w-3 h-3 text-primary/60" />
                           ) : (
-                            <FileCode className="w-3 h-3 text-muted-foreground/60" />
+                            <FileCode className="w-3 h-3 text-muted-foreground" />
                           )}
                           <span className={f.isDir ? "text-primary/80" : ""}>{f.name}</span>
                         </div>
@@ -1617,7 +1617,7 @@ function SeoAnalysisPanel({ projectId }: { projectId: string }) {
       {!seoResult && !analyzeMut.isPending && (
         <Card className="border-border">
           <CardContent className="py-8 text-center">
-            <Search className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+            <Search className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">Click "Run SEO Analysis" to get AI-powered insights</p>
           </CardContent>
         </Card>
@@ -1743,7 +1743,7 @@ function SslProvisioningPanel({ projectExternalId, customDomain, publishedUrl }:
               )}
             </Button>
             {ssl?.provider === "simulated" && (
-              <p className="text-[10px] text-muted-foreground/60">
+              <p className="text-[10px] text-muted-foreground">
                 Running in simulation mode (no AWS credentials configured)
               </p>
             )}

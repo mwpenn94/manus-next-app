@@ -114,7 +114,7 @@ export default function ExecutionPlanDisplay({
                     ) : isActive ? (
                       <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0 mt-0.5" />
                     ) : (
-                      <Circle className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
+                      <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
                     )}
                     <span className={cn(
                       "text-[11px] leading-relaxed",
