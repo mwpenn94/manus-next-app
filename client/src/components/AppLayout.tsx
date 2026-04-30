@@ -730,25 +730,25 @@ function AppsGridMenu({ location }: { location: string }) {
   const { user } = useAuth();
   const userRole = user?.role || "user";
 
-  const items = useMemo(() => {
-    const all = [
-      { href: "/projects", label: "Projects", icon: "📁" },
-      { href: "/library", label: "Library", icon: "📚" },
-      { href: "/skills", label: "Skills", icon: "⚡" },
-      { href: "/schedule", label: "Schedule", icon: "📅" },
-      { href: "/connectors", label: "Connectors", icon: "🔌" },
-      { href: "/memory", label: "Memory", icon: "🧠" },
-      { href: "/github", label: "GitHub", icon: "🔗" },
-      { href: "/billing", label: "Billing", icon: "💳" },
-      { href: "/discover", label: "Discover", icon: "🧭" },
-      { href: "/help", label: "Help", icon: "❓" },
-      ...(userRole === "admin"
-        ? [
-            { href: "/webhooks", label: "Webhooks", icon: "🪝" },
-            { href: "/data-controls", label: "Data Controls", icon: "🛡️" },
-          ]
-        : []),
+  const items: Array<{ href: string; label: string; Icon: typeof FolderOpen; color: string }> = useMemo(() => {
+    const all: Array<{ href: string; label: string; Icon: typeof FolderOpen; color: string }> = [
+      { href: "/projects", label: "Projects", Icon: FolderOpen, color: "text-amber-400" },
+      { href: "/library", label: "Library", Icon: BookOpen, color: "text-emerald-400" },
+      { href: "/skills", label: "Skills", Icon: Sparkles, color: "text-yellow-400" },
+      { href: "/schedule", label: "Schedule", Icon: Clock, color: "text-red-400" },
+      { href: "/connectors", label: "Connectors", Icon: Plug, color: "text-slate-400" },
+      { href: "/memory", label: "Memory", Icon: Brain, color: "text-pink-400" },
+      { href: "/github", label: "GitHub", Icon: ExternalLink, color: "text-gray-400" },
+      { href: "/billing", label: "Billing", Icon: BarChart3, color: "text-yellow-400" },
+      { href: "/discover", label: "Discover", Icon: Globe, color: "text-red-400" },
+      { href: "/help", label: "Help", Icon: HelpCircle, color: "text-red-400" },
     ];
+    if (userRole === "admin") {
+      all.push(
+        { href: "/webhooks", label: "Webhooks", Icon: ExternalLink, color: "text-indigo-400" },
+        { href: "/data-controls", label: "Data Controls", Icon: AlertCircle, color: "text-orange-400" },
+      );
+    }
     return all;
   }, [userRole]);
 
@@ -772,7 +772,7 @@ function AppsGridMenu({ location }: { location: string }) {
                 location === item.href && "bg-accent"
               )}
             >
-              <span className="text-sm">{item.icon}</span>
+              <item.Icon className={cn("w-4 h-4", item.color)} />
               <span>{item.label}</span>
             </Link>
           </DropdownMenuItem>

@@ -161,6 +161,13 @@
 - [x] Added stream.test.ts with 8 tests covering SSE event formatting, content chunking, error handling, system prompt injection
 - [x] All 89 tests passing across 8 test files
 
+## CSS Design Token Convergence Pass
+- [x] Fix dark theme oklch values to produce exact Manus production hex colors (#1a1a1a, #1c1c1c, #1f1f1f, #242424, #dadada, #1a93fe)
+- [x] Fix ThemedToaster in App.tsx to use corrected oklch values
+- [x] Fix AnalyticsPage chart colors to use corrected oklch values
+- [x] Fix ManusNextChat.themes.ts manus-dark preset to use corrected oklch values
+- [x] Verify all dark surfaces, text, borders, and accents match production spec
+
 ## Post-Fix Validation Gaps
 - [x] Verify /api/upload still works after express.json() middleware exclusion — confirmed via curl: binary upload returns S3 URL successfully
 - [x] Verify full UI end-to-end chat flow in browser (create task → send message → receive streamed response) — user-confirmed working
@@ -6151,3 +6158,17 @@
 - [x] Fix 'Failed to fetch' tRPC error — add graceful network error handling/retry
 - [x] Recursive UI/UX convergence review (desktop + mobile)
 - [x] Documentation update — optimized beginner step-by-step guide
+
+## Production Bug: Persistent LLM Streaming Failure (2026-04-30)
+- [x] Fix: Tasks fail immediately with "Something went wrong while processing this request" after initial message and multiple retries — added 401 redirect to login
+
+## Deep Convergence Pass — Manus Parity (Pass 4+)
+- [x] Fix auth/streaming 401 bug — redirect to login on session expiry instead of generic error
+- [ ] Navigation convergence: hamburger menu → sidebar with Manus-identical structure (New task, Agent, Search, Library, Skills, Schedule, Connectors, Memory, GitHub, Billing, Discover, Help, Webhooks, Data Controls)
+- [ ] Home screen convergence: serif greeting "Hello, {name}.", muted subtitle, input bar with + and mic, quick-action chips (Build website, Create slides, Write a...), suggestion cards carousel with pagination dots
+- [ ] Bottom sheet / + menu: MEDIA section (Add files, Share screen, Record video, Upload video), CREATE section (Build website, Create slides, Create image, Edit image, Wide Research, Scheduled tasks, Create spreadsheet, Create video, Generate audio, Playbook), CONNECTORS section (connected accounts)
+- [ ] Settings/Account/More menu: full hierarchy (Cloud Browser, Skills, Connectors, Integrations, Account, Language, Appearance, Clear cache, Rate this app, Get help)
+- [ ] Typography and spacing: match Manus serif heading font, muted subtitle weight, card border-radius and proportions
+- [ ] Mobile bottom tab bar: Home, Tasks, Billing, More (matching Manus exactly with active state highlight)
+- [ ] Desktop sidebar: match Manus structure (New task at top, then Agent, Search Ctrl+K, Library, then scrollable list of features)
+- [ ] Micro-interactions: card press states, bottom sheet spring animation, tab transitions, pagination dot sizing

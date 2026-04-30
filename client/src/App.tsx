@@ -177,13 +177,13 @@ function ThemedToaster() {
       theme={theme}
       toastOptions={{
         style: theme === 'dark' ? {
-          background: 'oklch(0.18 0.005 260)',
-          border: '1px solid oklch(0.22 0.003 260)',
-          color: 'oklch(0.87 0.005 80)',
+          background: 'oklch(0.2603 0 0)',
+          border: '1px solid oklch(0.2768 0 0)',
+          color: 'oklch(0.8884 0 0)',
         } : {
-          background: 'oklch(0.98 0.003 80)',
-          border: '1px solid oklch(0.90 0.005 80)',
-          color: 'oklch(0.20 0.01 80)',
+          background: 'oklch(0.98 0.001 80)',
+          border: '1px solid oklch(0.88 0.002 80)',
+          color: 'oklch(0.24 0.01 70)',
         },
       }}
     />

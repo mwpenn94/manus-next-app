@@ -1,7 +1,8 @@
 /**
  * MobileBottomNav — Fixed bottom navigation bar for mobile devices.
- * Matches Manus mobile: Home, Tasks, Billing, More.
- * More menu shows: Projects, Library, Skills, Schedule, Connectors, Settings, Help.
+ * Matches Manus v26.3.5 mobile exactly:
+ * - Bottom tab bar: Home (house), Tasks (list), Billing (card), More (•••)
+ * - More menu: full-screen dark list with Search at top, Help highlighted at bottom
  */
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -50,6 +51,16 @@ export default function MobileBottomNav() {
     setMoreOpen(false);
   }, [location]);
 
+  // Prevent body scroll when More menu is open
+  useEffect(() => {
+    if (moreOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [moreOpen]);
+
   const isActive = (item: NavItem) => {
     if (item.matchPrefix) return location.startsWith("/task");
     return location === item.path;
@@ -69,46 +80,47 @@ export default function MobileBottomNav() {
 
   return (
     <>
-      {/* More menu overlay */}
-      {moreOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px]"
-          onClick={() => setMoreOpen(false)}
-        />
-      )}
-
-      {/* More menu panel */}
+      {/* Full-screen More menu — matches Manus dark full-screen list */}
       {moreOpen && (
         <div
           role="dialog"
           aria-label="More navigation options"
-          className="md:hidden fixed left-0 right-0 z-50 bg-card border-t border-border rounded-t-xl shadow-2xl"
-          style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))" }}
+          className="md:hidden fixed inset-0 z-50 bg-background flex flex-col"
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingBottom: "calc(3.5rem + env(safe-area-inset-bottom, 0px))",
+          }}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <span className="text-sm font-medium text-foreground">More</span>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 h-14 shrink-0">
+            <span className="text-base font-semibold text-foreground">More</span>
             <button
               onClick={() => setMoreOpen(false)}
-              className="p-2 -mr-1 rounded-md text-muted-foreground hover:text-foreground active:scale-95"
+              className="p-2 -mr-2 rounded-md text-muted-foreground hover:text-foreground active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Close menu"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="p-3 space-y-0.5">
+
+          {/* Scrollable list */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
             {/* Search button */}
             <button
               onClick={() => {
                 setMoreOpen(false);
                 window.dispatchEvent(new CustomEvent("open-search-dialog"));
               }}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-colors active:scale-[0.98] text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              className="flex items-center gap-4 w-full px-3 py-3.5 rounded-lg transition-colors active:scale-[0.98] text-foreground hover:bg-accent/30"
             >
-              <Search className="w-5 h-5" />
-              <span className="text-sm font-medium">Search</span>
+              <Search className="w-5 h-5 text-muted-foreground" />
+              <span className="text-[15px] font-medium">Search</span>
             </button>
+
+            {/* Navigation items */}
             {MORE_ITEMS.map((item) => {
               const active = location === item.path;
+              const isHelp = item.path === "/help";
               return (
                 <button
                   key={item.path}
@@ -117,14 +129,22 @@ export default function MobileBottomNav() {
                     setMoreOpen(false);
                   }}
                   className={cn(
-                    "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-colors active:scale-[0.98]",
-                    active
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    "flex items-center gap-4 w-full px-3 py-3.5 rounded-lg transition-colors active:scale-[0.98]",
+                    isHelp
+                      ? "bg-primary/10 text-primary"
+                      : active
+                      ? "text-primary bg-primary/5"
+                      : "text-foreground hover:bg-accent/30"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5", active && "stroke-[2.5]")} />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <item.icon className={cn(
+                    "w-5 h-5",
+                    isHelp ? "text-primary" : active ? "text-primary" : "text-muted-foreground"
+                  )} />
+                  <span className={cn(
+                    "text-[15px] font-medium",
+                    isHelp && "text-primary"
+                  )}>{item.label}</span>
                 </button>
               );
             })}

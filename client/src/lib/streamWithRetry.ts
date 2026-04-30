@@ -158,6 +158,13 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
         signal,
       });
       if (!response.ok || !response.body) {
+        // 401 = session expired or invalid cookie — redirect to login
+        if (response.status === 401) {
+          const { getLoginUrl } = await import("@/const");
+          window.location.href = getLoginUrl();
+          // Throw a specific error so the caller knows auth failed
+          throw new Error("Session expired. Redirecting to login...");
+        }
         throw new Error(`Stream failed with status ${response.status}`);
       }
 
