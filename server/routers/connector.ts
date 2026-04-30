@@ -65,19 +65,32 @@ export const connectorRouter = router({
         payload: z.record(z.string().max(128), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const connectors = await getUserConnectors(ctx.user.id);
-        const conn = connectors.find(c => c.connectorId === input.connectorId && c.status === "connected");
+        const userConns = await getUserConnectors(ctx.user.id);
+        const conn = userConns.find(c => c.connectorId === input.connectorId && c.status === "connected");
         if (!conn) throw new TRPCError({ code: "BAD_REQUEST", message: "Connector not found or not connected" });
         const config = (conn.config || {}) as Record<string, string>;
-        // Route by connector type
+
+        // For OAuth-connected services with access tokens, use the unified API executor
+        if (conn.accessToken && ["google-drive", "slack", "notion", "linear", "github", "microsoft-365"].includes(input.connectorId)) {
+          const { executeConnectorAction } = await import("../connectorApis");
+          const result = await executeConnectorAction(
+            input.connectorId,
+            conn.accessToken,
+            input.action,
+            (input.payload || {}) as Record<string, unknown>
+          );
+          return { success: result.success, result: result.success ? JSON.stringify(result.data) : result.error || "Action failed" };
+        }
+
+        // Fallback: webhook-based connectors and email
         switch (input.connectorId) {
           case "slack": {
             const webhookUrl = config.webhookUrl;
-            if (!webhookUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Slack webhook URL not configured" });
+            if (!webhookUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Slack webhook URL not configured. Connect via OAuth for full API access." });
             const resp = await fetch(webhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: input.payload?.message || "Hello from Manus" }),
+              body: JSON.stringify({ text: (input.payload?.message as string) || "Hello from Manus" }),
             });
             return { success: resp.ok, result: resp.ok ? "Message sent to Slack" : "Slack delivery failed" };
           }
@@ -100,7 +113,7 @@ export const connectorRouter = router({
             return { success: sent, result: sent ? "Email sent" : "Email delivery failed" };
           }
           default:
-            return { success: false, result: `Connector action not implemented for: ${input.connectorId}` };
+            return { success: false, result: `Connector ${input.connectorId} requires OAuth connection for API access. Please connect via Settings > Connectors.` };
         }
       }),
     /** Test a connector's configuration */
@@ -112,6 +125,28 @@ export const connectorRouter = router({
         if (!conn) throw new TRPCError({ code: "NOT_FOUND", message: "Connector not found" });
         return { success: true, result: `Connector ${conn.name} is ${conn.status}` };
       }),
+    /** List available actions for a connector */
+    listActions: protectedProcedure
+      .input(z.object({ connectorId: z.string() }))
+      .query(async ({ input }) => {
+        const { CONNECTOR_CATALOG } = await import("../connectorApis");
+        const entry = CONNECTOR_CATALOG.find(c => c.id === input.connectorId);
+        if (!entry) return { actions: [], supported: false };
+        return { actions: entry.actions, supported: true };
+      }),
+    /** Get the full connector catalog with available actions */
+    catalog: publicProcedure.query(async () => {
+      const { CONNECTOR_CATALOG } = await import("../connectorApis");
+      return CONNECTOR_CATALOG.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        icon: c.icon,
+        category: c.category,
+        actionCount: c.actions.length,
+        actions: c.actions.map(a => ({ id: a.id, name: a.name, description: a.description })),
+      }));
+    }),
     /** Get OAuth authorization URL for a connector */
     getOAuthUrl: protectedProcedure
       .input(z.object({

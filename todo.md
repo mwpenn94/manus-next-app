@@ -6082,7 +6082,7 @@
 - [x] GAP B: Make convergence system configurable (convergent vs divergent, custom thresholds, dimension selection)
 - [x] GAP E: Richer convergence UI (temperature, pass type, score trajectory as optional visualization)
 - [x] GAP F: Context compression preserving high-value tool results and failure logs
-- [ ] GAP G: iOS inline specialized input bars for PlusMenu actions
+- [x] GAP G: iOS inline specialized input bars for PlusMenu actions
 
 ## CRITICAL: Webapp Builder Broken (App Development & Production)
 - [x] FIX: Diagnose and restore create_webapp tool — app development capability broken
@@ -6100,3 +6100,30 @@
 - [x] Validate overall UX stability (no console errors, no broken layouts)
 - [x] Fix any issues found during browser validation (CSS contrast, test alignment — no runtime issues)
 - [x] GAP G: iOS inline specialized input bars for PlusMenu actions (SpecializedInputBar component in Home + TaskView)
+
+## Parity Gap: Connectors Ecosystem
+- [x] Add Google Drive connector (OAuth2, file list/read/write, folder navigation)
+- [x] Add Slack connector (OAuth2, channel list, send message, read history)
+- [x] Add Notion connector (OAuth2, page list/read/create, database query)
+- [x] Add Linear connector (OAuth2, issue list/create/update, project navigation)
+- [x] Connector API execution layer (connectorApis.ts) with 40+ operations for 6 providers
+- [x] Agent tool: use_connector (#32) for invoking connector actions during task execution
+- [x] Connector router: listActions and catalog endpoints for discovery
+- [x] Unified execute mutation routing to OAuth-connected services
+- [ ] Connector catalog UI with install/configure flow and action testing
+
+## Parity Gap: Session Replay
+- [x] Store full task execution trace (tool calls, results, timing) in DB
+- [x] Session replay viewer (TaskReplayOverlay — timeline scrubber, step-by-step playback)
+- [x] Share replay link (public read-only view of task execution)
+
+## Parity Gap: Task Execution Quality
+- [x] Integrate ATLAS planning into main agent loop for complex multi-step tasks
+- [x] AEGIS pre-flight execution plan generation for moderate+ complexity tasks (6 templates)
+- [x] Enhanced output validation (non-answers, incomplete code, missing citations)
+- [x] Self-verification step for expert-level tasks
+- [x] Improve system prompt for reasoning depth and structured output
+
+## Parity Gap: Scheduling
+- [x] Scheduled task agent spawning (cron triggers full agent execution)
+- [x] Schedule management UI (list, edit, delete, pause scheduled tasks)

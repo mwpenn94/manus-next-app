@@ -283,6 +283,29 @@ export function validateOutput(output: string, taskType: string): { isValid: boo
     issues.push("Research output seems too brief");
   }
 
+  if (taskType === "research" && !output.includes("http") && !output.includes("[") && output.length > 500) {
+    issues.push("Research output lacks citations or source references");
+  }
+
+  if (taskType === "writing" && output.length < 100) {
+    issues.push("Writing output seems too brief for the task type");
+  }
+
+  // Check for self-referential non-answers
+  const nonAnswerPatterns = [
+    "I cannot", "I'm unable", "I don't have access",
+    "I apologize", "My apologies", "I fell short",
+  ];
+  const hasNonAnswer = nonAnswerPatterns.some(p => output.toLowerCase().includes(p.toLowerCase()));
+  if (hasNonAnswer && output.length < 300) {
+    issues.push("Response appears to be a refusal rather than a deliverable");
+  }
+
+  // Check for incomplete code implementations
+  if (taskType === "code" && output.includes("...") && !output.includes("```")) {
+    issues.push("Contains ellipsis suggesting incomplete implementation");
+  }
+
   return { isValid: issues.length === 0, issues };
 }
 
@@ -381,6 +404,100 @@ function normalizeQualityScore(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+// ── Execution Plan Generation ──
+
+/**
+ * Generate a lightweight execution plan for complex tasks.
+ * Only triggers for moderate+ complexity — trivial/simple tasks don't need planning overhead.
+ * Returns a structured plan string to inject into the prompt, or null if no plan needed.
+ */
+export function generateExecutionPlan(prompt: string, classification: TaskClassification): string | null {
+  // Only plan for moderate+ complexity
+  if (classification.complexity === "trivial" || classification.complexity === "simple") {
+    return null;
+  }
+
+  const lower = prompt.toLowerCase();
+  const steps: string[] = [];
+
+  // Task-type-specific planning templates
+  switch (classification.taskType) {
+    case "code":
+      steps.push("1. Understand requirements and constraints");
+      if (lower.includes("test") || lower.includes("bug") || lower.includes("fix")) {
+        steps.push("2. Reproduce the issue or identify the failing test");
+        steps.push("3. Implement the fix with proper error handling");
+        steps.push("4. Verify the fix doesn't introduce regressions");
+      } else {
+        steps.push("2. Design the solution architecture (interfaces, data flow)");
+        steps.push("3. Implement core logic with proper types and error handling");
+        steps.push("4. Add edge case handling and input validation");
+      }
+      steps.push("5. Self-test: review output for correctness, completeness, and style");
+      break;
+
+    case "research":
+      steps.push("1. Identify key research questions and sub-topics");
+      steps.push("2. Search multiple sources (web_search + read_webpage on 3+ URLs)");
+      steps.push("3. Cross-reference findings and identify consensus vs disagreement");
+      steps.push("4. Synthesize into structured deliverable with citations");
+      steps.push("5. Verify claims against sources; flag any unverified assertions");
+      break;
+
+    case "writing":
+      steps.push("1. Determine audience, tone, and format requirements");
+      steps.push("2. Create outline with key sections and arguments");
+      steps.push("3. Draft each section with supporting evidence");
+      steps.push("4. Review for coherence, flow, and completeness");
+      steps.push("5. Polish: tighten prose, fix transitions, ensure consistent voice");
+      break;
+
+    case "data":
+      steps.push("1. Understand data structure and identify quality issues");
+      steps.push("2. Clean and normalize data (handle nulls, duplicates, types)");
+      steps.push("3. Perform requested analysis or transformation");
+      steps.push("4. Validate results against expected patterns");
+      steps.push("5. Present findings with appropriate visualizations");
+      break;
+
+    case "design":
+      steps.push("1. Clarify design requirements and constraints");
+      steps.push("2. Establish design system (colors, typography, spacing)");
+      steps.push("3. Create layout structure with responsive breakpoints");
+      steps.push("4. Implement component details and interactions");
+      steps.push("5. Review for accessibility, consistency, and visual polish");
+      break;
+
+    case "planning":
+      steps.push("1. Define scope, objectives, and success criteria");
+      steps.push("2. Break down into phases with dependencies");
+      steps.push("3. Identify risks, constraints, and resource requirements");
+      steps.push("4. Create timeline with milestones and checkpoints");
+      steps.push("5. Document assumptions and decision rationale");
+      break;
+
+    default:
+      // Generic plan for conversation/other
+      if (classification.complexity === "complex" || classification.complexity === "expert") {
+        steps.push("1. Parse the request into distinct sub-questions");
+        steps.push("2. Address each sub-question with appropriate tools");
+        steps.push("3. Synthesize sub-answers into a coherent response");
+        steps.push("4. Verify completeness against original request");
+      } else {
+        return null; // Moderate conversation doesn't need a plan
+      }
+  }
+
+  if (steps.length === 0) return null;
+
+  // Add self-verification step for expert-level tasks
+  if (classification.complexity === "expert") {
+    steps.push(`${steps.length + 1}. SELF-VERIFY: Re-read the original request and confirm every aspect is addressed`);
+  }
+
+  return `## EXECUTION PLAN (Auto-generated for ${classification.complexity} ${classification.taskType} task)\n${steps.join("\n")}\n\nFollow this plan sequentially. If a step reveals new information that changes the approach, adapt but document why.`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // Main Pipeline Functions
 // ═══════════════════════════════════════════════════════════════════════
@@ -427,11 +544,18 @@ export async function runPreFlight(prompt: string, userId: number, taskExternalI
   // Optimize prompt
   const { optimizedPrompt, improvements } = optimizePrompt(prompt, classification.taskType);
 
+  // Inject execution plan for complex tasks
+  const planInjection = generateExecutionPlan(prompt, classification);
+  const promptWithPlan = planInjection
+    ? `${optimizedPrompt}\n\n${planInjection}`
+    : optimizedPrompt;
+  if (planInjection) improvements.push("Injected execution plan for complex task");
+
   // Estimate cost
   const costEstimate = estimateCost(classification);
 
   // Assemble context
-  const context = await assembleContext(optimizedPrompt, relevantPatterns, relevantFragments);
+  const context = await assembleContext(promptWithPlan, relevantPatterns, relevantFragments);
 
   // Create session record
   const sessionId = await db.createAegisSession({

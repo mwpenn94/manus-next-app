@@ -961,6 +961,35 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "use_connector",
+      description:
+        "Execute an action on a connected service (Google Drive, Slack, Notion, Linear, GitHub, Microsoft 365). Use this when the user asks to interact with their connected services — read files from Drive, send Slack messages, create Notion pages, manage Linear issues, etc. Check available connectors and actions first.",
+      parameters: {
+        type: "object",
+        properties: {
+          connector_id: {
+            type: "string",
+            enum: ["google-drive", "slack", "notion", "linear", "github", "microsoft-365"],
+            description: "The connector service to use",
+          },
+          action: {
+            type: "string",
+            description: "The action to perform (e.g., list_files, send_message, create_issue, read_page)",
+          },
+          params: {
+            type: "object",
+            description: "Action-specific parameters (varies by connector and action)",
+            additionalProperties: true,
+          },
+        },
+        required: ["connector_id", "action"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -2725,6 +2754,34 @@ export async function executeTool(
     case "github_ops": {
       const { executeGitHubOps } = await import("./githubOpsTool");
       return executeGitHubOps(args, context);
+    }
+    case "use_connector": {
+      const { executeConnectorAction } = await import("./connectorApis");
+      const { getUserConnectors } = await import("./db");
+      const connectorId = args.connector_id as string;
+      const action = args.action as string;
+      const params = (args.params || {}) as Record<string, unknown>;
+      if (!connectorId || !action) {
+        return { success: false, result: "connector_id and action are required" };
+      }
+      // Get user's connectors to find the access token
+      if (!context?.userId) {
+        return { success: false, result: "Authentication required to use connectors" };
+      }
+      const userConns = await getUserConnectors(context.userId);
+      const conn = userConns.find(c => c.connectorId === connectorId && c.status === "connected");
+      if (!conn) {
+        return { success: false, result: `Connector '${connectorId}' is not connected. The user needs to connect it via Settings > Connectors first.` };
+      }
+      if (!conn.accessToken) {
+        return { success: false, result: `Connector '${connectorId}' is connected but has no access token. It may need to be reconnected via OAuth.` };
+      }
+      const result = await executeConnectorAction(connectorId, conn.accessToken, action, params);
+      if (result.success) {
+        return { success: true, result: typeof result.data === "string" ? result.data : JSON.stringify(result.data, null, 2) };
+      } else {
+        return { success: false, result: result.error || "Connector action failed" };
+      }
     }
     default:
       return { success: false, result: `Unknown tool: ${name}` };

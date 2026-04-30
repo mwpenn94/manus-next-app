@@ -753,9 +753,9 @@ describe("Pass 38.5: github_ops tool", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("Pass 38: Tool Registration", () => {
-  it("all 31 tools are registered in AGENT_TOOLS", async () => {
+  it("all 32 tools are registered in AGENT_TOOLS", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(31);
+    expect(AGENT_TOOLS).toHaveLength(32);
     
     const toolNames = AGENT_TOOLS.map((t: any) => t.function.name);
     
@@ -773,6 +773,7 @@ describe("Pass 38: Tool Registration", () => {
     expect(toolNames).toContain("web_search");
     expect(toolNames).toContain("github_edit");
     expect(toolNames).toContain("report_convergence");
+    expect(toolNames).toContain("use_connector");
   });
 
   it("all tool names are unique", async () => {
