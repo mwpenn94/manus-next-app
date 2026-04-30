@@ -40,7 +40,7 @@ interface ConvergenceIndicatorProps {
   description?: string;
   /** Quality rating (1-10) */
   rating?: number;
-  /** Consecutive convergence confirmations (need 3 for full convergence) */
+  /** Consecutive convergence confirmations (need 100 for full convergence) */
   convergenceCount?: number;
 }
 
@@ -123,19 +123,17 @@ export default function ConvergenceIndicator({
           )}
         </div>
 
-        {/* Convergence dots */}
-        <div className="flex items-center gap-1 shrink-0">
-          {[0, 1, 2].map((i) => (
+        {/* Convergence progress */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="w-16 h-1.5 rounded-full bg-muted-foreground/20 overflow-hidden">
             <div
-              key={i}
-              className={cn(
-                "w-2 h-2 rounded-full transition-colors",
-                i < convergenceCount
-                  ? "bg-green-400"
-                  : "bg-muted-foreground/20"
-              )}
+              className="h-full rounded-full bg-green-400 transition-all duration-300"
+              style={{ width: `${Math.min((convergenceCount / 100) * 100, 100)}%` }}
             />
-          ))}
+          </div>
+          <span className="text-[9px] text-muted-foreground tabular-nums">
+            {convergenceCount}/100
+          </span>
         </div>
       </div>
 

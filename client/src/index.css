@@ -208,7 +208,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.75 0.002 80) transparent;
+  scrollbar-color: oklch(0.75 0.002 260) transparent;
 }
 .dark * {
   scrollbar-color: oklch(0.3 0.005 260) transparent;
@@ -221,11 +221,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.75 0.002 80);
+  background: oklch(0.75 0.002 260);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.65 0.002 80);
+  background: oklch(0.65 0.002 260);
 }
 .dark ::-webkit-scrollbar-thumb {
   background: oklch(0.3 0.005 260);

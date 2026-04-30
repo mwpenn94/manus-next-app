@@ -642,7 +642,7 @@ export const AGENT_TOOLS: Tool[] = [
           },
           convergence_count: {
             type: "number",
-            description: "Number of consecutive clean passes (need 3 for full convergence)",
+            description: "Number of consecutive clean passes (need 100 for full convergence, max 1280 total passes)",
           },
         },
         required: ["pass_number", "pass_type", "status"],
