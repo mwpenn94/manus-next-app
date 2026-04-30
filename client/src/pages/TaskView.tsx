@@ -3474,7 +3474,7 @@ export default function TaskView() {
                           lines.push(`---\n`);
                         }
                         
-                        lines.push(`\n*Exported from Sovereign AI on ${new Date().toLocaleString()}*\n`);
+                        lines.push(`\n*Exported from Manus on ${new Date().toLocaleString()}*\n`);
                         
                         const mdContent = lines.join("\n");
                         
@@ -3562,7 +3562,7 @@ export default function TaskView() {
                           }
                           lines.push(`</div>`);
                         }
-                        lines.push(`<div class="footer">Exported from Sovereign AI on ${new Date().toLocaleString()}</div>`);
+                        lines.push(`<div class="footer">Exported from Manus on ${new Date().toLocaleString()}</div>`);
                         lines.push(`</body></html>`);
                         const htmlContent = lines.join("");
                         const blob = new Blob([htmlContent], { type: "text/html" });

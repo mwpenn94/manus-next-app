@@ -4,5 +4,5 @@ Disallow: /api/
 Disallow: /share/
 Disallow: /shared/
 
-# Manus Next — Sovereign AI Agent
+# Manus Next — Autonomous AI Agent
 # https://manusnext-mlromfub.manus.space

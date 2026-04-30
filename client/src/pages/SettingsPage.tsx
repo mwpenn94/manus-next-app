@@ -780,7 +780,7 @@ export default function SettingsPage() {
                   AI Focus Domain
                 </h3>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Set the Sovereign AI's primary expertise area. This shapes how the agent approaches tasks, prioritizes tools, and frames responses.
+                  Set the AI agent's primary expertise area. This shapes how the agent approaches tasks, prioritizes tools, and frames responses.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {([

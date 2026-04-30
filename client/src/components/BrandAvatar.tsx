@@ -1,8 +1,8 @@
 /**
  * BrandAvatar — Reusable brand avatar component
  *
- * Renders the Sovereign AI hand+coins brand image at configurable sizes.
- * Replaces all paw emoji (🐾) instances across the app.
+ * Renders the Manus brand image at configurable sizes.
+ * Used as the primary brand mark throughout the app.
  *
  * Sizes:
  *  - "xs"  → 16×16 (inline text)
@@ -52,7 +52,7 @@ export default function BrandAvatar({
   const img = (
     <img
       src={BRAND_IMAGE_URL}
-      alt="Sovereign AI"
+      alt="Manus"
       className={cn(SIZE_MAP[size], "rounded-md object-cover", className)}
       loading="lazy"
     />

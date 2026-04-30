@@ -27,7 +27,7 @@ interface HeroIllustrationProps {
   className?: string;
 }
 
-const CACHE_PREFIX = "sovereign-hero-";
+const CACHE_PREFIX = "manus-hero-";
 
 function getCachedUrl(type: string): string | null {
   try {

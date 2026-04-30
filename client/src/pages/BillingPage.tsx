@@ -252,7 +252,7 @@ export default function BillingPage() {
             </div>
             <div className="mt-3 pt-3 border-t border-border/60/50">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground">Sovereign routing saves ~18% vs single-provider</span>
+                <span className="text-[10px] text-muted-foreground">Multi-provider routing saves ~18% vs single-provider</span>
                 <span className="text-[10px] font-medium text-primary">-${((stats?.totalTasks ?? 0) * 0.12 * 0.18).toFixed(2)}</span>
               </div>
             </div>

@@ -2,7 +2,7 @@
  * In-App Connector Token Auto-Refresh Timer
  *
  * Runs within the Express server process — no external cron dependency.
- * The app is sovereign: it manages its own token lifecycle.
+ * The app manages its own token lifecycle.
  *
  * Checks every 30 minutes for connectors with auto-refresh enabled
  * and tokens approaching expiry. Refreshes them proactively.

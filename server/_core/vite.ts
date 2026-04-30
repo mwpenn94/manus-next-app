@@ -28,7 +28,7 @@ async function injectShareMeta(template: string, token: string): Promise<string>
       // Get task details for richer meta tags
       const task = await getTaskByExternalId(share.taskExternalId);
       const taskTitle = task?.title || "Shared Task";
-      const title = `${taskTitle} — Sovereign AI`;
+      const title = `${taskTitle} — Manus`;
       
       // Count steps for description
       let stepCount = 0;
@@ -45,8 +45,8 @@ async function injectShareMeta(template: string, token: string): Promise<string>
       }
       
       const desc = stepCount > 0
-        ? `AI agent task with ${stepCount} steps completed. View the full execution on Sovereign AI.`
-        : `View a shared AI agent task on Sovereign AI.`;
+        ? `AI agent task with ${stepCount} steps completed. View the full execution on Manus.`
+        : `View a shared AI agent task on Manus.`;
 
       // Generate OG image URL (non-blocking — use tRPC endpoint URL)
       // The actual image generation happens lazily when the URL is fetched
