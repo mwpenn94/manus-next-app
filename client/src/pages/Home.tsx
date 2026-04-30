@@ -633,7 +633,7 @@ export default function Home() {
                   "rounded-full transition-all duration-200",
                   activeDot === i
                     ? "bg-foreground w-3 h-2"
-                    : "bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2 h-2"
+                    : "bg-muted-foreground hover:bg-foreground/60 w-2 h-2 opacity-40 hover:opacity-60"
                 )} />
               </button>
             ))}
