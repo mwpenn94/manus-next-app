@@ -5946,3 +5946,25 @@
 - [x] "Rendered more hooks than during the previous render" — FIXED: moved createShareMutation hook BEFORE the `if (!task) return` early exit
 - [x] Stream 502 on deployed site — CAUSE: npm install timeout during create_webapp (infrastructure constraint, not code bug). Existing fallback to HTML template already handles this gracefully.
 - [x] Verified: TypeScript compiles clean (0 errors), all 9 tests pass
+
+## Pass 72-90 — Manus-Parity Design System Convergence
+- [x] Rewrite index.css with exact Manus production tokens (DESIGN_TOKENS.md reference)
+- [x] Dark theme: --background oklch(0.145) = #1a1a1a, --foreground oklch(0.87) = #dadada
+- [x] Primary accent: oklch(0.62 0.17 245) = #1a93fe azure blue (was amber)
+- [x] Sidebar surface: oklch(0.16) = #1f1f1f, card: oklch(0.155) = #1c1c1c, popover: oklch(0.18) = #242424
+- [x] Border: oklch(0.22) = #ffffff0f equivalent (6% white overlay)
+- [x] Semantic colors: destructive #eb4d4d, success #5eb92d, warning #ffbf36
+- [x] Typography: Libre Baskerville serif for --font-heading, system sans for body
+- [x] Letter-spacing: -0.01em body, -0.02em headings (Manus tight tracking)
+- [x] Thinking shimmer: 3-stop gradient animation, 2s cycle
+- [x] Update font loading in index.html (Libre Baskerville instead of Sora/Source Sans)
+- [x] Fix ModeToggle: amber accent -> primary blue
+- [x] Fix OnboardingTour: amber sparkle -> primary blue
+- [x] Fix App.tsx toast styles: warm amber oklch -> neutral cool oklch matching Manus tokens
+- [x] Fix AnalyticsPage chart colors: aligned with Manus blue/green/red/amber semantic palette
+- [x] Fix TaskView terminal background: hardcoded oklch -> bg-card semantic token
+- [x] Verified AppLayout uses semantic color classes throughout (no hardcoded colors)
+- [x] Verified Home page greeting uses var(--font-heading) = Libre Baskerville
+- [x] Verified ThinkingPresence uses purple for cognitive state (intentional semantic distinction)
+- [x] Verified remaining amber usages are semantic warning colors (correct per Manus #ffbf36)
+- [x] All 9 core tests pass (message-persistence + auth)

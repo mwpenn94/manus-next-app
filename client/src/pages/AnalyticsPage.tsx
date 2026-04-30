@@ -34,14 +34,14 @@ import {
 } from "recharts";
 
 const CHART_COLORS = {
-  primary: "oklch(0.72 0.19 250)",
-  completed: "#22c55e",
-  error: "#ef4444",
-  pending: "#f59e0b",
-  running: "oklch(0.72 0.19 250)",
-  muted: "oklch(0.40 0.01 250)",
-  grid: "oklch(0.25 0.01 250)",
-  tooltipBg: "oklch(0.18 0.01 250)",
+  primary: "oklch(0.62 0.17 245)",    /* #1a93fe azure blue */
+  completed: "#5eb92d",               /* Manus success green */
+  error: "#eb4d4d",                   /* Manus error red */
+  pending: "#ffbf36",                 /* Manus warning amber */
+  running: "oklch(0.62 0.17 245)",    /* azure blue */
+  muted: "oklch(0.40 0.005 260)",
+  grid: "oklch(0.22 0.003 260)",      /* matches --border */
+  tooltipBg: "oklch(0.18 0.005 260)", /* matches --popover */
 };
 
 function formatDuration(ms: number): string {

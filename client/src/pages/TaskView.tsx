@@ -1430,7 +1430,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
         )}
 
         {activeTab === "terminal" && (
-          <div className="p-4 h-full overflow-y-auto bg-[oklch(0.1_0.005_60)]">
+          <div className="p-4 h-full overflow-y-auto bg-card">
             {latestTerminal ? (
               <pre className="text-xs font-mono leading-relaxed whitespace-pre-wrap text-foreground">
                 {latestTerminal.content}

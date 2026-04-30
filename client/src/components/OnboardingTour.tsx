@@ -27,7 +27,7 @@ const TOUR_STEPS: TourStep[] = [
     id: "welcome",
     title: "Welcome to Sovereign AI",
     description: "Your personal AI command center. Every capability you need — research, creation, analysis, automation — unified under one intelligent roof.",
-    icon: <Sparkles className="w-6 h-6 text-amber-400" />,
+    icon: <Sparkles className="w-6 h-6 text-primary" />,
     position: "center",
   },
   {

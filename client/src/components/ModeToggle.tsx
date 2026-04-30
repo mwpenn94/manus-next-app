@@ -44,7 +44,7 @@ const MODES: { id: AgentMode; label: string; icon: typeof Zap; title: string; ac
     label: "Limitless",
     icon: Infinity,
     title: "Limitless mode: no constraints — recursive optimization until convergence",
-    activeClass: "bg-amber-500/20 text-amber-400 shadow-sm",
+    activeClass: "bg-primary/20 text-primary shadow-sm",
   },
 ];
 
