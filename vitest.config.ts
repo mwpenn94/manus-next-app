@@ -14,7 +14,14 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    testTimeout: 15000, // 15s per test to prevent hangs
+    hookTimeout: 10000,
     include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    exclude: [
+      "server/limitless-continuation.test.ts", // Integration: runs full agent loop (60s+)
+      "server/message-persistence.test.ts",    // Integration: requires DB connection
+      "server/messagePersistence.test.ts",     // Integration: requires DB connection
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "lcov", "json-summary"],

@@ -1049,7 +1049,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             className="text-[15px] font-semibold tracking-tight text-sidebar-foreground"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            manus
+            Manus Next
           </span>
         </Link>
         <button
@@ -1350,7 +1350,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               className="text-[15px] font-semibold tracking-tight"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              manus
+              Manus Next
             </span>
           </Link>
           {/* ModelSelector */}

@@ -74,7 +74,7 @@
   },
 
   "infrastructure": {
-    "hosting": "Manus",
+    "hosting": "Manus Next",
     "database": "TiDB (via Manus)",
     "storage": "S3 (via Manus)",
     "auth": "Manus OAuth",

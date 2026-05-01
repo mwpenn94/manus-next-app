@@ -6275,3 +6275,32 @@
 - [x] Fixed session25.test.ts: branding text Manus
 - [x] Added onError to deleteLastMsgsMutation in TaskView
 - [x] Full test suite: 172 files, 4824 tests, 0 failures
+
+## Convergence Pass 4 — Critical Parity+ Fixes
+
+- [ ] Fix thinking steps leaking into message content (agentStream.ts)
+- [ ] Fix create_webapp element ID validation (agentTools.ts)
+- [ ] Fix agent apologetic loop pattern (system prompt in agentStream.ts)
+- [ ] Fix deploy_webapp pre-deploy validation (agentTools.ts)
+- [x] Fix screenshot_verify graceful degradation — validate URL, add timeout, provide fallback
+- [x] Fix scheduled_tasks table — run pnpm db:push
+- [ ] Fix hanging integration tests with proper mocking
+- [x] Unify all branding to "Manus Next" — updated HTML, manifest, system prompt, OG images, documents, connectors, tests
+- [ ] Verify GitHub CRUD production alignment
+- [x] Fix PDF export for task chats — use window.print() for exact-as-viewed print-to-PDF
+- [ ] Add GitHub repo creation capability (create new repos from app, like Manus production)
+- [ ] Add GitHub project connection/sync (connect existing repos, bidirectional sync)
+- [ ] Fix session25 test failures (HTML export tests reference removed code)
+- [ ] Fix 3rd failing test from test suite run
+
+## GitHub Parity+ — Agent Repo Creation Tool
+
+- [x] Add `create_github_repo` tool definition to AGENT_TOOLS (tool #33)
+- [x] Implement `githubCreateTool.ts` execution handler (creates repo, connects DB, registers webhook, pushes initial files, creates linked webapp project)
+- [x] Add `create_github_repo` case in executeTool switch dispatch
+- [x] Add intent detection in system prompt for repo creation commands
+- [x] Add GitHub Repository Creation section to agent instructions
+- [x] Update test assertions for new tool count (32 → 33)
+- [x] Fix branding consistency: AppLayout sidebar "manus" → "Manus Next"
+- [x] Fix branding consistency: vite.ts OG meta tags "Manus" → "Manus Next"
+- [x] All 173 test files passing (4841 tests)

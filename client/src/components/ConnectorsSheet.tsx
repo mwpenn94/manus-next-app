@@ -70,7 +70,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Install and enable a Chrome extension so that Manus uses your local browser instead. This may allow access to sites that require logins or have heightened security.",
     connectorType: "Browser extension",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://manus.im",
     privacyPolicy: "https://manus.im/privacy",
     warningCallout:
@@ -85,7 +85,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Access, search, and organize repos, track issues, review pull requests, and automate workflows directly in Manus.",
     connectorType: "App",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://github.com",
     privacyPolicy: "https://manus.im/privacy",
     actionLabel: "Add Repositories",
@@ -102,7 +102,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Read, compose, and manage your Gmail messages directly within Manus for seamless email workflows.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://mail.google.com",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],
@@ -114,7 +114,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "View, create, and manage calendar events. Let Manus help schedule meetings and organize your time.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://calendar.google.com",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],
@@ -126,7 +126,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Access, search, and manage files in Google Drive. Upload, download, and organize documents with Manus.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://drive.google.com",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],
@@ -138,7 +138,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Read, compose, and manage Outlook emails. Integrate your Microsoft email workflow with Manus.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://outlook.live.com",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],
@@ -150,7 +150,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Connect Microsoft 365 apps including Word, Excel, PowerPoint, and OneDrive for productivity workflows.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://www.microsoft.com/microsoft-365",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],
@@ -162,7 +162,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Send and receive messages, manage channels, and automate Slack workflows directly from Manus.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://slack.com",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],
@@ -174,7 +174,7 @@ export const CONNECTOR_DEFS: ConnectorDef[] = [
     description:
       "Access and manage Notion workspaces, pages, and databases. Organize knowledge and projects with Manus.",
     connectorType: "OAuth",
-    author: "Manus",
+    author: "Manus Next",
     website: "https://notion.so",
     privacyPolicy: "https://manus.im/privacy",
     authSteps: [{ id: "authorize-account", label: "Authorize Account" }],

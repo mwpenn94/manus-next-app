@@ -164,7 +164,7 @@ describe("OG Image: SVG generation", () => {
 
   it("ogImage.ts includes brand text in SVG", () => {
     const src = readServerFile("routers/ogImage.ts");
-    expect(src).toContain("Sovereign AI");
+    expect(src).toContain("Manus Next");
   });
 
   it("ogImage.ts includes status badge rendering", () => {
@@ -194,7 +194,7 @@ describe("OG Image: Meta tag injection in vite.ts", () => {
   it("vite.ts enriches title with task title", () => {
     const src = readServerFile("_core/vite.ts");
     expect(src).toContain("taskTitle");
-    expect(src).toContain("Manus");
+    expect(src).toContain("Manus Next");
   });
 
   it("vite.ts counts steps for description", () => {

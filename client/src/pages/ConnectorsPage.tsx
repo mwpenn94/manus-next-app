@@ -742,7 +742,7 @@ export default function ConnectorsPage() {
       if (connectorId && verifiedIdentity) {
         setVerifiedIdentities(prev => ({
           ...prev,
-          [connectorId]: { identity: verifiedIdentity, method: loginMethod || "Manus" },
+          [connectorId]: { identity: verifiedIdentity, method: loginMethod || "Manus Next" },
         }));
         utils.connector.list.invalidate();
         toast.success(`Identity verified: ${verifiedIdentity}`);
@@ -774,7 +774,7 @@ export default function ConnectorsPage() {
     if (manusVerified && identity) {
       setVerifiedIdentities(prev => ({
         ...prev,
-        [manusVerified]: { identity, method: method || "Manus" },
+        [manusVerified]: { identity, method: method || "Manus Next" },
       }));
       // Auto-open the connector dialog
       const connector = AVAILABLE_CONNECTORS.find(c => c.id === manusVerified);

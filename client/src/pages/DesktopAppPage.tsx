@@ -44,7 +44,7 @@ interface BuildRecord {
 export default function DesktopAppPage() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
-  const [appName, setAppName] = useState("Manus");
+  const [appName, setAppName] = useState("Manus Next");
   const [appId, setAppId] = useState("com.manus.next");
   const [version, setVersion] = useState("1.0.0");
   const [platforms, setPlatforms] = useState<Platform[]>(["windows", "macos", "linux"]);

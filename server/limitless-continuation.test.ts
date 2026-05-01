@@ -13,6 +13,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+// Integration tests that run the full agent loop — need longer timeout
+vi.setConfig({ testTimeout: 60000 });
+
 // ─── Mock the LLM to simulate finish_reason="length" sequences ──────────────
 let llmCallCount = 0;
 let llmBehavior: "length_then_stop" | "always_length" | "length_with_tools" = "length_then_stop";

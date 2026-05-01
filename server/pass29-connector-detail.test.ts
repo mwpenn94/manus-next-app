@@ -195,8 +195,8 @@ describe("Pass 29: CONNECTOR_DEFS Data Integrity", () => {
   });
 
   it("all connectors have author set to Manus", () => {
-    // Count occurrences of author: "Manus"
-    const matches = sheetCode.match(/author: "Manus"/g);
+    // Count occurrences of author: "Manus Next"
+    const matches = sheetCode.match(/author: "Manus Next"/g);
     expect(matches).not.toBeNull();
     expect(matches!.length).toBeGreaterThanOrEqual(9);
   });

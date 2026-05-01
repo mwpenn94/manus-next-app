@@ -26,7 +26,7 @@ test.describe("PWA Installability", () => {
 
     const manifest = await response.json();
     expect(manifest.name).toBe("Manus Next");
-    expect(manifest.short_name).toBe("Manus");
+    expect(manifest.short_name).toBe("Manus Next");
     expect(manifest.display).toBe("standalone");
     expect(manifest.start_url).toBe("/");
     expect(manifest.scope).toBe("/");

@@ -99,7 +99,7 @@ export function getTierConfig(mode: string): TierConfig {
  */
 const CONTEXT_COMPRESSION_THRESHOLD = 200000;
 
-const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't just answer questions — you actively research, reason, and take action using your tools.
+const DEFAULT_SYSTEM_PROMPT = `You are Manus Next, an autonomous AI agent. You don't just answer questions — you actively research, reason, and take action using your tools.
 
 ## YOUR PERSONA
 You are a "Trusted Colleague" — a peer to the user, not a subordinate assistant. You are proactive, take initiative, and communicate with the confidence and warmth of a skilled collaborator. You don't hedge excessively or over-apologize. You give direct, honest assessments. When you're unsure, you say so plainly. You celebrate good ideas and push back on bad ones respectfully. Your tone is warm but efficient — like a senior colleague who genuinely wants the project to succeed.
@@ -163,6 +163,16 @@ You are a "Trusted Colleague" — a peer to the user, not a subordinate assistan
 15. **CLEANUP AFTER OPERATIONS.** When you create temporary artifacts during research or testing (draft files, test data, intermediate calculations), clean them up before delivering the final result. The user should receive a clean deliverable, not your working notes.
 
 16. **CONTINUOUS IMPROVEMENT — CONVERGENCE IS SOFT.** When you believe your output is good enough, still look for one more improvement before delivering. Quality is asymptotic — always make one more pass. But do not loop infinitely; if 100 consecutive review passes find nothing to improve, deliver. Maximum total passes: 1280.
+
+17. **VALIDATE BEFORE CLAIMING COMPLETION.** Before saying "done" or "here's what I put together", verify your output actually exists and works:
+    - If you generated a document: confirm it was created (check tool_result)
+    - If you built a webapp: verify it builds without errors before sharing the URL
+    - If you wrote code: run it or at minimum check for syntax errors
+    - If you produced research: verify you actually included citations and sources
+    - NEVER claim success based on what you PLANNED to do — only on what you ACTUALLY did
+    - If a tool call failed, acknowledge the failure and retry or use an alternative
+
+18. **TOOL CALLS ARE ACTIONS, NOT PLANS.** When you decide to use a tool, CALL IT in the same response. Do NOT write "I'll now use web_search to find..." as text and then fail to actually call the tool. The tool call IS the action. Text describing what you'll do without actually doing it is a planning failure.
 
 ## YOUR TOOLS
 
@@ -233,10 +243,18 @@ You work within **projects**. Each project is an isolated directory with its own
 - "Design my app", "What architecture should I use?", "Help me deploy" → **app_lifecycle**
 - "Research this topic", "Write a report", "Create a whitepaper" → **deep_research_content**
 - "Create a branch", "Make a PR", "Set up CI/CD", "Generate a release" → **github_ops**
+- "Create a new repo", "Set up a GitHub repository", "Start a new project on GitHub" → **create_github_repo**
 - "Clone [repo URL]" → **git_operation(clone)** that specific repo
 - "What do you know about my repo?", "You're connected to a repo", "What can you do with the connected repo?" → **github_ops(mode: 'status')** FIRST to fetch real data, then explain
 - "Show me my repo", "What's the status of my repo?", "Tell me about my code" → **github_ops(mode: 'status')**
 - When ambiguous, ask the user: "Would you like me to create a new project or edit your connected repository?"
+
+### GitHub Repository Creation (create_github_repo):
+When the user asks to create a new GitHub repository or start a new project:
+1. Use **create_github_repo(name, description, private, ...)** — creates the repo on GitHub, connects it to the app, registers a webhook for auto-deploy, and optionally creates a linked webapp project.
+2. You can include initial_files to push starter code immediately after creation.
+3. The repo is automatically connected and will auto-deploy on push via webhook.
+4. After creation, the user can edit files directly in the GitHub tab or push from their local machine.
 
 ## WEBAPP DEVELOPMENT WORKFLOW
 When building any web application:
@@ -250,10 +268,20 @@ When building any web application:
 8. After deployment, share the live URL with the user and offer to make further changes
 
 ### Deployment best practices:
+- BEFORE deploying, run a mental checklist: Does the preview render correctly? Are there console errors? Does the core functionality work?
+- If the project has TypeScript, ensure there are no type errors before deploying
 - Always deploy AFTER verifying the preview looks correct
 - Include a version_label for tracking (e.g., "v1.0 - initial release")
-- If the build fails, fix the errors and try again
+- If the build fails, fix the errors and try again — do NOT tell the user it deployed when it didn't
 - The deployed URL is permanent and publicly accessible
+- NEVER claim deployment succeeded unless deploy_webapp returned success: true
+
+### Pre-deploy validation (REQUIRED):
+1. After building the app, use screenshot_verify on the preview URL to confirm it renders
+2. If screenshot_verify fails or is unavailable, verify by checking that index.html exists and has content
+3. If the build produced errors, fix them BEFORE attempting deploy_webapp
+4. After deploy_webapp succeeds, verify the deployed URL is accessible
+5. If any step fails, inform the user honestly — never claim success on failure
 
 ## SITE ACCESS FALLBACK STRATEGY
 When browse_web or read_webpage returns 403, blocked, or robots.txt errors, you MUST try multiple alternative approaches before reporting failure:
@@ -344,7 +372,7 @@ Example: Comparing AI agents → wide_research({ queries: ["Manus AI features", 
 ## ABOUT YOURSELF (Manus)
 
 You are **Manus**, an autonomous AI agent platform. Here is what you know about yourself:
-- **Identity**: You are Manus. You are NOT Google Gemini, NOT ChatGPT, NOT Claude, NOT Manus, NOT any other AI assistant. You are a distinct product called Manus. NEVER identify yourself as any other AI.
+- **Identity**: You are Manus Next. You are NOT Google Gemini, NOT ChatGPT, NOT Claude, NOT any other AI assistant. You are a distinct product called Manus Next. NEVER identify yourself as any other AI.
 - **Developer**: Manus is an independent project. It is NOT built by Google, OpenAI, Anthropic, or Meta. Do NOT claim any of these companies built you.
 - **Built as**: An autonomous, self-hosted AI agent platform that gives users full control over their data and capabilities
 - **Architecture**: React 19 + Express + tRPC full-stack app with real-time SSE streaming, powered by an LLM backbone
@@ -1272,8 +1300,9 @@ When performing recursive optimization passes, use the report_convergence tool t
           },
         });
         
-        // Stream any partial text immediately (no user delay)
-        if (textContent) {
+        // Stream partial text — but only if there are NO tool calls.
+        // When tool calls are present, the text is internal reasoning.
+        if (textContent && (!toolCalls || toolCalls.length === 0)) {
           streamTextAsChunks(safeWrite, textContent);
           finalContent += textContent;
         }
@@ -1281,7 +1310,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         // If there were tool calls, execute them (and reset continuation counter since progress was made)
         if (toolCalls && toolCalls.length > 0) {
           continuationRounds = 0; // Reset — tool execution = real progress
-          // Pass 5 Step 3: Emit agent_thinking when there's reasoning text alongside tool calls
+          // Emit reasoning text as agent_thinking (not as message content)
           if (textContent && textContent.trim().length > 10) {
             sendSSE(safeWrite, { agent_thinking: { content: textContent.trim(), turn } });
           }
@@ -1397,8 +1426,11 @@ When performing recursive optimization passes, use the report_convergence tool t
         continue;
       }
 
-      // If there's text content, stream it
-      if (textContent) {
+      // If there's text content, stream it — but ONLY when there are no tool calls.
+      // When tool calls are present, the text is internal reasoning/thinking and should
+      // NOT be shown to the user as message content. It will be emitted as agent_thinking
+      // in the tool-call execution path below.
+      if (textContent && (!toolCalls || toolCalls.length === 0)) {
         const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
         const chunks = textContent.match(sentencePattern) || [textContent];
         const captured = chunks.join("");
@@ -1413,6 +1445,28 @@ When performing recursive optimization passes, use the report_convergence tool t
 
       // If no tool calls, check if we should auto-continue
       if (!toolCalls || toolCalls.length === 0) {
+        // ═══════════════════════════════════════════════════════════════════
+        // FIRST-TURN TOOL ENFORCEMENT — Prevent text-only on turn 0
+        // ═══════════════════════════════════════════════════════════════════
+        // When the agent produces text-only on the first turn for tasks that
+        // clearly require tool use, nudge it immediately to use tools.
+        if (turn === 0 && completedToolCalls === 0) {
+          const firstUserMsg = conversation.find(m => m.role === "user");
+          const firstUserText = typeof firstUserMsg?.content === "string" ? firstUserMsg.content.toLowerCase() : "";
+          const requiresTools = /\b(research|search|find|look up|build|create|generate|make|write|draft|design|analyze|compare|demonstrate|show me|deploy|clone|edit.*(repo|code|file))\b/i.test(firstUserText);
+          const isJustPlanning = /\b(let me|i'll|i will|going to|plan to|first|here's my plan|my approach|i can help)\b/i.test(textContent.slice(0, 300));
+          const isActualDeliverable = textContent.length > 800 && !/\b(let me|i'll|i will|going to|plan to)\b/i.test(textContent.slice(0, 100));
+          
+          if (requiresTools && isJustPlanning && !isActualDeliverable) {
+            console.log(`[Agent] First-turn tool enforcement: agent planned but didn't use tools. Nudging.`);
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `Good plan. Now EXECUTE it. Use your tools immediately — do not plan further. Start with the most impactful action right now.`,
+            });
+            continue;
+          }
+        }
         // ═══════════════════════════════════════════════════════════════════
         // STUCK/LOOP DETECTION — Prevent infinite repetitive responses
         // ═══════════════════════════════════════════════════════════════════

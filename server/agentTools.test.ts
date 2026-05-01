@@ -46,7 +46,7 @@ describe("Agent Tools", () => {
 
   it("AGENT_TOOLS defines the expected tool set", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(32);
+    expect(AGENT_TOOLS).toHaveLength(33);
     const toolNames = AGENT_TOOLS.map((t) => t.function.name);
     expect(toolNames).toContain("web_search");
     expect(toolNames).toContain("read_webpage");
@@ -82,6 +82,7 @@ describe("Agent Tools", () => {
     expect(toolNames).toContain("app_lifecycle");
     expect(toolNames).toContain("deep_research_content");
     expect(toolNames).toContain("github_ops");
+    expect(toolNames).toContain("create_github_repo");
   });
 
   it("each tool has proper function calling schema", async () => {

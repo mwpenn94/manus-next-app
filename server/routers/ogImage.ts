@@ -5,7 +5,7 @@
  *  - Dark gradient background with subtle grid pattern
  *  - Task title (word-wrapped, max 3 lines)
  *  - Step count and status badge
- *  - "Sovereign AI" brand mark
+ *  - "Manus Next" brand mark
  *  - Timestamp
  *
  * Uses sharp for server-side SVG-to-PNG conversion.
@@ -188,7 +188,7 @@ function buildOgSvg(
   <g transform="translate(60, 48)">
     <circle cx="20" cy="20" r="20" fill="rgba(200,169,126,0.15)"/>
     <text x="20" y="27" text-anchor="middle" fill="#c8a97e" font-size="18" font-family="system-ui, -apple-system, sans-serif" font-weight="600">S</text>
-    <text x="52" y="28" fill="#c8a97e" font-size="18" font-family="system-ui, -apple-system, sans-serif" font-weight="600" letter-spacing="0.5">Sovereign AI</text>
+    <text x="52" y="28" fill="#c8a97e" font-size="18" font-family="system-ui, -apple-system, sans-serif" font-weight="600" letter-spacing="0.5">Manus Next</text>
   </g>
 
   <!-- Status badge (top-right) -->
@@ -219,7 +219,7 @@ function buildOgSvg(
 
   <!-- Bottom bar -->
   <rect x="0" y="590" width="1200" height="40" fill="rgba(0,0,0,0.3)"/>
-  <text x="60" y="616" fill="#71717a" font-size="13" font-family="system-ui, -apple-system, sans-serif">Shared via Sovereign AI — Autonomous Agent</text>
+  <text x="60" y="616" fill="#71717a" font-size="13" font-family="system-ui, -apple-system, sans-serif">Shared via Manus Next — Autonomous Agent</text>
   <text x="1140" y="616" text-anchor="end" fill="#52525b" font-size="12" font-family="monospace">sovereign.ai</text>
 </svg>`;
 }

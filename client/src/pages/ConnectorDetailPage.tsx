@@ -457,7 +457,7 @@ export default function ConnectorDetailPage() {
       if (data.type === "connector-manus-verified" && data.connectorId === connectorId) {
         setVerifiedIdentity({
           identity: data.verifiedIdentity,
-          method: data.loginMethod || "Manus",
+          method: data.loginMethod || "Manus Next",
         });
         utils.connector.list.invalidate();
         toast.success(`Identity verified: ${data.verifiedIdentity}`);
@@ -489,7 +489,7 @@ export default function ConnectorDetailPage() {
     const identity = params.get("identity");
     const method = params.get("method");
     if (manusVerified && manusVerified === connectorId && identity) {
-      setVerifiedIdentity({ identity, method: method || "Manus" });
+      setVerifiedIdentity({ identity, method: method || "Manus Next" });
       setShowAuthSection(true);
       setExpandedTier(3);
       toast.success(`Identity verified: ${identity}`);

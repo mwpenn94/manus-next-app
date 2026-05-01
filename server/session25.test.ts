@@ -341,7 +341,7 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
     expect(source).toContain("Artifacts:");
   });
 
-  it("Export includes Sovereign AI branding in footer", async () => {
+  it("Export includes Manus Next branding in footer", async () => {
     const fs = await import("fs");
     const path = await import("path");
     const source = fs.readFileSync(
@@ -414,30 +414,31 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
     expect(source).toContain("Large export");
   });
 
-  // Pass 3: HTML export upgraded with tool actions and artifacts
-  it("HTML export includes tool actions in collapsible details blocks", async () => {
+  // Pass 3: PDF export uses window.print() for exact-as-viewed output
+  it("PDF export uses window.print() for exact-as-viewed output", async () => {
     const fs = await import("fs");
     const path = await import("path");
     const source = fs.readFileSync(
       path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
       "utf-8"
     );
-    // HTML export should have actions-block class and details/summary
-    expect(source).toContain("actions-block");
-    expect(source).toContain("tool action");
+    // PDF export uses window.print() instead of re-rendered HTML
+    expect(source).toContain("window.print()");
+    expect(source).toContain("data-print-container");
   });
 
-  // Pass 3: HTML export has proper CSS styling
-  it("HTML export has professional dark-theme CSS", async () => {
+  // Pass 3: Print CSS handles dark-theme styling via @media print
+  it("Print CSS has proper dark-theme styling via @media print", async () => {
     const fs = await import("fs");
     const path = await import("path");
     const source = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
+      path.resolve(__dirname, "../client/src/index.css"),
       "utf-8"
     );
-    expect(source).toContain("role-label");
-    expect(source).toContain("artifact-link");
-    expect(source).toContain("img.embedded");
+    // @media print rules handle PDF export styling
+    expect(source).toContain("@media print");
+    expect(source).toContain("data-print-container");
+    expect(source).toContain("data-print-hide");
   });
 
   // Pass 3: HTML export guards empty tasks

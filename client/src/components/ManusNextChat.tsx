@@ -60,7 +60,7 @@ const ManusNextChat = forwardRef<ManusNextChatHandle, ManusNextChatProps>(
       style,
       showHeader = true,
       headerContent,
-      placeholder = "Give Manus a task to work on...",
+      placeholder = "Give Manus Next a task to work on...",
       loading = false,
       disabled = false,
     },

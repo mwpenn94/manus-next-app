@@ -3326,7 +3326,7 @@ export default function TaskView() {
           }
         `}</style>
         {/* Task Header */}
-        <div className="h-12 flex items-center justify-between px-3 md:px-5 border-b border-border shrink-0 gap-2">
+        <div data-print-hide className="h-12 flex items-center justify-between px-3 md:px-5 border-b border-border shrink-0 gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <h2 className="text-sm font-medium text-foreground truncate max-w-[40vw]" style={{ fontFamily: "var(--font-heading)" }}>
               {task.title}
@@ -3661,77 +3661,19 @@ export default function TaskView() {
                           setShowMoreMenu(false);
                           return;
                         }
-                        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        const lines = [`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(task.title)}</title><style>
-                          body{font-family:system-ui,-apple-system,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#e0e0e0;background:#111;line-height:1.6;}
-                          h1{color:#d4a574;border-bottom:2px solid #333;padding-bottom:12px;}
-                          .meta-block{font-size:12px;color:#888;margin-bottom:24px;}
-                          hr{border:none;border-top:1px solid #333;margin:24px 0;}
-                          .msg{margin:16px 0;padding:16px;border-radius:8px;}
-                          .user{background:#1a1a2e;border-left:3px solid #d4a574;}
-                          .assistant{background:#1a2e1a;border-left:3px solid #74d4a5;}
-                          .role-label{font-size:12px;color:#888;margin-bottom:8px;font-weight:600;}
-                          .actions-block{margin-top:8px;padding:8px 12px;background:#0a0a0a;border-radius:6px;font-size:11px;color:#aaa;}
-                          .actions-block summary{cursor:pointer;color:#888;font-weight:600;}
-                          .artifact-link{display:inline-block;margin:4px 8px 4px 0;padding:4px 10px;background:#222;border-radius:4px;color:#74d4a5;text-decoration:none;font-size:12px;}
-                          .artifact-link:hover{background:#333;}
-                          img.embedded{max-width:100%;border-radius:6px;margin:8px 0;}
-                          pre{background:#0a0a0a;padding:12px;border-radius:6px;overflow-x:auto;}
-                          code{font-family:'SF Mono',Consolas,monospace;}
-                          .footer{margin-top:40px;padding-top:16px;border-top:1px solid #333;font-size:11px;color:#555;text-align:center;}
-                        </style></head><body>`];
-                        lines.push(`<h1>${esc(task.title)}</h1>`);
-                        lines.push(`<div class="meta-block">Created: ${task.createdAt.toLocaleString()} | Status: ${task.status} | Messages: ${task.messages.length}</div><hr>`);
-                        for (const msg of task.messages) {
-                          if (msg.role === "system") continue;
-                          const label = msg.role === "user" ? "👤 You" : "🤖 Assistant";
-                          const cls = msg.role === "user" ? "user" : "assistant";
-                          // Convert markdown code blocks to HTML pre/code
-                          let content = esc(msg.content)
-                            .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="$1">$2</code></pre>')
-                            .replace(/\n/g, "<br>");
-                          // Embed images inline
-                          content = content.replace(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g, '<br><img class="embedded" src="$2" alt="$1"><br>');
-                          lines.push(`<div class="msg ${cls}"><div class="role-label">${label} — ${msg.timestamp.toLocaleString()}</div>${content}`);
-                          // Tool actions
-                          if (msg.actions && msg.actions.length > 0) {
-                            lines.push(`<div class="actions-block"><details><summary>🛠️ ${msg.actions.length} tool action${msg.actions.length > 1 ? "s" : ""}</summary>`);
-                            for (const action of msg.actions) {
-                              const actionDetail = 'url' in action ? action.url : 'command' in action ? action.command : 'file' in action ? action.file : 'query' in action ? action.query : 'description' in action ? action.description : 'element' in action ? action.element : ('label' in action ? (action.label || '') : '');
-                              lines.push(`<div style="margin:4px 0;">• <strong>${esc(action.type || "action")}</strong>: ${esc(actionDetail || "")}</div>`);
-                            }
-                            lines.push(`</details></div>`);
-                          }
-                          // Extract artifact URLs
-                          const urlMatches = msg.content.match(/https?:\/\/[^\s)]+\.(pdf|docx?|xlsx?|pptx?|csv|zip|png|jpe?g|gif|webp|svg|mp[34]|wav)/gi);
-                          if (urlMatches && urlMatches.length > 0) {
-                            const uniqueUrls = Array.from(new Set(urlMatches));
-                            lines.push(`<div style="margin-top:8px;">`);
-                            for (const u of uniqueUrls) {
-                              const ext = u.split(".").pop()?.toUpperCase() || "FILE";
-                              lines.push(`<a class="artifact-link" href="${u}" target="_blank">📎 ${ext}</a>`);
-                            }
-                            lines.push(`</div>`);
-                          }
-                          lines.push(`</div>`);
-                        }
-                        lines.push(`<div class="footer">Exported from Manus on ${new Date().toLocaleString()}</div>`);
-                        lines.push(`</body></html>`);
-                        const htmlContent = lines.join("");
-                        const blob = new Blob([htmlContent], { type: "text/html" });
-                        const url = URL.createObjectURL(blob);
-                        const printWin = window.open(url, "_blank");
-                        if (printWin) {
-                          printWin.onload = () => { printWin.print(); };
-                        }
-                        setTimeout(() => URL.revokeObjectURL(url), 10000);
+                        // Print-to-PDF: prints the current chat view exactly as the user sees it
                         setShowMoreMenu(false);
+                        // Small delay to let the menu close before printing
+                        setTimeout(() => {
+                          window.print();
+                        }, 150);
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-accent transition-colors text-left"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       Export as PDF (Print)
                     </button>
+                    {/* Old re-rendered HTML export removed — using window.print() for exact-as-viewed PDF */}
                     <button
                       onClick={() => {
                         if (!task) return;
@@ -3946,7 +3888,12 @@ export default function TaskView() {
           scrollRef={scrollRef}
         />
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain" role="log" aria-live="polite" aria-label="Chat messages" aria-relevant="additions">
+        <div ref={scrollRef} data-print-container className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain" role="log" aria-live="polite" aria-label="Chat messages" aria-relevant="additions">
+          {/* Print header — only visible when printing */}
+          <div className="print-header">
+            <h1>{task?.title || "Task Chat"}</h1>
+            <div className="meta">{task?.createdAt?.toLocaleString()} • {task?.messages?.length || 0} messages</div>
+          </div>
           {/* During streaming, hide card-type messages that were added mid-stream
               (convergence, system_notice, context_compressed) to prevent scattered
               progress indicators. They stay in the message list for history. */}
@@ -3957,6 +3904,7 @@ export default function TaskView() {
             <motion.div
               key={msg.id}
               data-message-index={i}
+              data-message={msg.role}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15, delay: Math.min(i * 0.02, 0.3) }}
@@ -4103,6 +4051,7 @@ export default function TaskView() {
 
         {/* Input */}
         <div
+          data-chat-input
           className="px-3 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0 relative"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
           onDragEnter={handleDragEnter}
@@ -4429,6 +4378,7 @@ export default function TaskView() {
             className="hidden md:block"
           />
           <div
+            data-workspace-panel
             className="hidden md:flex flex-col min-w-0 min-h-0"
             style={{ flex: `0 0 ${(1 - workspaceRatio) * 100}%`, maxWidth: `${(1 - workspaceRatio) * 100}%` }}
           >

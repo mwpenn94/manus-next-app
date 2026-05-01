@@ -1,7 +1,7 @@
 /**
  * Failover & Error Recovery Service
  * 
- * Provides resilient execution patterns for all Sovereign AI operations:
+ * Provides resilient execution patterns for all Manus Next operations:
  * - Retry with exponential backoff for transient failures
  * - Circuit breaker pattern for provider health tracking
  * - Graceful degradation when primary services are unavailable

@@ -233,11 +233,11 @@ describe("P35 — UI/UX Manus Alignment", () => {
 describe("P35 — Branding Consistency", () => {
   it("HTML title contains Manus", () => {
     const html = read("client/index.html");
-    expect(html).toContain("Manus");
+    expect(html).toContain("Manus Next");
   });
 
   it("AppLayout sidebar shows Manus branding", () => {
     const layout = read("client/src/components/AppLayout.tsx");
-    expect(layout).toContain("Manus");
+    expect(layout).toContain("Manus Next");
   });
 });

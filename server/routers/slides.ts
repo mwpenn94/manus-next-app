@@ -78,7 +78,7 @@ export const slidesRouter = router({
         const slides = (deck.slides as Array<{ title: string; content: string; notes?: string }>) || [];
         const pptx = new PptxGenJS();
         pptx.title = deck.title || "Presentation";
-        pptx.author = "Sovereign AI";
+        pptx.author = "Manus Next";
         for (const slide of slides) {
           const s = pptx.addSlide();
           s.addText(slide.title || "", {

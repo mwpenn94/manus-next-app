@@ -28,7 +28,7 @@ async function injectShareMeta(template: string, token: string): Promise<string>
       // Get task details for richer meta tags
       const task = await getTaskByExternalId(share.taskExternalId);
       const taskTitle = task?.title || "Shared Task";
-      const title = `${taskTitle} — Manus`;
+      const title = `${taskTitle} — Manus Next`;
       
       // Count steps for description
       let stepCount = 0;
@@ -45,8 +45,8 @@ async function injectShareMeta(template: string, token: string): Promise<string>
       }
       
       const desc = stepCount > 0
-        ? `AI agent task with ${stepCount} steps completed. View the full execution on Manus.`
-        : `View a shared AI agent task on Manus.`;
+        ? `AI agent task with ${stepCount} steps completed. View the full execution on Manus Next.`
+        : `View a shared AI agent task on Manus Next.`;
 
       // Generate OG image URL (non-blocking — use tRPC endpoint URL)
       // The actual image generation happens lazily when the URL is fetched
@@ -54,7 +54,7 @@ async function injectShareMeta(template: string, token: string): Promise<string>
 
       let result = template
         .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(title)}</title>`)
-        .replace(/content="Manus — Your Autonomous AI Agent"/, `content="${escapeHtml(title)}"`)
+        .replace(/content="Manus Next — Your Autonomous AI Agent"/, `content="${escapeHtml(title)}"`)
         .replace(/content="Autonomous AI agent for research, coding, analysis, and document generation. Free, open-source, and privacy-first."/, `content="${escapeHtml(desc)}"`)
         .replace(/content="Autonomous AI agent for research, coding, analysis, and document generation."/, `content="${escapeHtml(desc)}"`)
         .replace(/content="\/og-image.png"/, `content="${ogImageUrl}"`);

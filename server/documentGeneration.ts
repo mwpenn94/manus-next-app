@@ -223,8 +223,8 @@ export async function generatePDF(title: string, markdownContent: string): Promi
         margins: { top: PAGE_TOP, bottom: PAGE_BOTTOM, left: PAGE_LEFT, right: PAGE_RIGHT },
         info: {
           Title: title,
-          Author: "Manus",
-          Creator: "Manus",
+          Author: "Manus Next",
+          Creator: "Manus Next",
         },
         // Enable auto first page — PDFKit creates the first page automatically
         autoFirstPage: true,
@@ -660,7 +660,7 @@ export function generateCSV(title: string, markdownContent: string): Buffer {
 export async function generateXLSX(title: string, markdownContent: string): Promise<Buffer> {
   const ExcelJS = await import("exceljs");
   const workbook = new ExcelJS.default.Workbook();
-  workbook.creator = "Manus";
+  workbook.creator = "Manus Next";
   workbook.created = new Date();
 
   const blocks = parseMarkdownBlocks(markdownContent);
