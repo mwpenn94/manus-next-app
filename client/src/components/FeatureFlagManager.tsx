@@ -363,7 +363,7 @@ export default function FeatureFlagManager() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-56">
-                                    <p className="text-sm text-muted-foreground">Filter options coming soon.</p>
+                                    <p className="text-sm text-muted-foreground">Use the search field to filter flags by name or description.</p>
                                 </PopoverContent>
                             </Popover>
                         </div>

@@ -132,7 +132,7 @@ const InfiniteScrollTimeline: React.FC = () => {
                 <DialogTitle>Jump to Date</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <p className="text-sm text-muted-foreground text-center">Date picker functionality coming soon.</p>
+                <input type="date" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" aria-label="Jump to date" />
               </div>
             </DialogContent>
           </Dialog>

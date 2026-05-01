@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
 
 interface Notification {
   id: string;
@@ -18,12 +19,12 @@ interface Notification {
 }
 
 interface NotificationCenterProps {
-  notifications: Notification[];
-  onMarkRead: (id: string) => void;
-  onMarkAllRead: () => void;
-  onDismiss: (id: string) => void;
-  onClearAll: () => void;
-  unreadCount: number;
+  notifications?: Notification[];
+  onMarkRead?: (id: string) => void;
+  onMarkAllRead?: () => void;
+  onDismiss?: (id: string) => void;
+  onClearAll?: () => void;
+  unreadCount?: number;
 }
 
 const typeConfig = {
@@ -75,14 +76,55 @@ const groupNotifications = (notifications: Notification[]) => {
   return groups;
 };
 
-export const NotificationCenter: React.FC<NotificationCenterProps> = ({ 
-  notifications, 
-  onMarkRead, 
-  onMarkAllRead, 
-  onDismiss, 
-  onClearAll, 
-  unreadCount 
-}) => {
+// Poll for notifications every 30 seconds
+const NOTIFICATION_POLL_INTERVAL = 30_000;
+
+export default function NotificationCenter({
+  notifications: externalNotifications,
+  onMarkRead: externalMarkRead,
+  onMarkAllRead: externalMarkAllRead,
+  onDismiss: externalDismiss,
+  onClearAll: externalClearAll,
+  unreadCount: externalUnreadCount,
+}: NotificationCenterProps) {
+  // Use tRPC polling if no external notifications are provided
+  const notificationsQuery = trpc.notification.list.useQuery(
+    { limit: 50 },
+    { refetchInterval: NOTIFICATION_POLL_INTERVAL, enabled: !externalNotifications }
+  );
+  const unreadCountQuery = trpc.notification.unreadCount.useQuery(
+    undefined,
+    { refetchInterval: NOTIFICATION_POLL_INTERVAL, enabled: externalUnreadCount === undefined }
+  );
+  const markReadMutation = trpc.notification.markRead.useMutation({
+    onSuccess: () => {
+      notificationsQuery.refetch();
+      unreadCountQuery.refetch();
+    },
+  });
+  const markAllReadMutation = trpc.notification.markAllRead.useMutation({
+    onSuccess: () => {
+      notificationsQuery.refetch();
+      unreadCountQuery.refetch();
+    },
+  });
+
+  // Resolve data sources — map DB shape to component shape
+  const notifications: Notification[] = externalNotifications ?? (notificationsQuery.data?.map((n: any) => ({
+    id: String(n.id),
+    title: n.title,
+    message: n.content ?? '',
+    type: (n.type === 'task_error' ? 'error' : n.type === 'task_completed' ? 'success' : 'info') as Notification['type'],
+    read: Boolean(n.read),
+    timestamp: new Date(n.createdAt).getTime(),
+  })) ?? []);
+  const unreadCount = externalUnreadCount ?? (unreadCountQuery.data as number ?? 0);
+
+  const onMarkRead = externalMarkRead ?? ((id: string) => markReadMutation.mutate({ id: Number(id) }));
+  const onMarkAllRead = externalMarkAllRead ?? (() => markAllReadMutation.mutate());
+  const onDismiss = externalDismiss ?? ((id: string) => markReadMutation.mutate({ id: Number(id) }));
+  const onClearAll = externalClearAll ?? (() => markAllReadMutation.mutate());
+
   const groupedNotifications = useMemo(() => groupNotifications(notifications), [notifications]);
 
   const renderNotificationGroup = (title: string, group: Notification[]) => {
@@ -106,8 +148,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               )}
               onClick={() => !notification.read && onMarkRead(notification.id)}
             >
-              <div className={cn('mt-1', typeConfig[notification.type].color)}>
-                {React.createElement(typeConfig[notification.type].icon, { className: 'h-5 w-5' })}
+              <div className={cn('mt-1', typeConfig[notification.type]?.color ?? 'text-muted-foreground')}>
+                {React.createElement(typeConfig[notification.type]?.icon ?? Info, { className: 'h-5 w-5' })}
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-foreground">{notification.title}</p>
@@ -185,4 +227,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       </PopoverContent>
     </Popover>
   );
-};
+}
+
+// Also export as named for backward compatibility
+export { NotificationCenter };

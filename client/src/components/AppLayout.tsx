@@ -21,7 +21,7 @@ import { trpc } from "@/lib/trpc";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import BrandAvatar from "@/components/BrandAvatar";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
-import { NotificationCenter } from "@/components/NotificationCenter";
+import NotificationCenter from "@/components/NotificationCenter";
 import NetworkBanner from "@/components/NetworkBanner";
 import { CreditWarningBanner } from "@/components/CreditWarningBanner";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -1385,7 +1385,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <Moon className="w-4 h-4" />
               )}
             </button>
-            {isAuthenticated && <NotificationCenter notifications={[]} onMarkRead={() => {}} onMarkAllRead={() => {}} onDismiss={() => {}} onClearAll={() => {}} unreadCount={0} />}
+            {isAuthenticated && <NotificationCenter />}
           </div>
         </header>
 
