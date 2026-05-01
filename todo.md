@@ -6381,10 +6381,10 @@
 - [ ] Performance: Virtualized message list for 1000+ message conversations
 - [ ] Performance: Code splitting with React.lazy for heavy components (OrchestrationGraph, ReplayPage)
 - [ ] Performance: Debounced search input with AbortController for stale requests
-- [ ] Animation: Page transition animations between routes (fade/slide)
-- [ ] Animation: Message entry animations (slide-up with stagger)
-- [ ] Animation: Workspace tab switch transitions (crossfade)
-- [ ] Polish: Consistent loading skeletons across all data-fetching components
+- [x] Animation: Page transition animations between routes (fade/slide) — PageTransition component
+- [x] Animation: Message entry animations (slide-up with stagger) — MessageEntryAnimation component
+- [x] Animation: Workspace tab switch transitions (crossfade) — WorkspaceTabTransition component
+- [x] Polish: Consistent loading skeletons across all data-fetching components — LoadingSkeletons component
 - [ ] Polish: Empty state illustrations for no-tasks, no-results, no-artifacts
 - [ ] Polish: Keyboard focus ring styling consistent across all interactive elements
 - [ ] Polish: Scroll shadows on overflow containers (sidebar, message list)
@@ -6393,3 +6393,37 @@
 - [ ] Integration: Wire AutoTitleRefiner into task creation flow
 - [ ] Integration: Wire TaskDependencyGraph into Atlas/goal decomposition view
 - [ ] Integration: Wire WorkspaceMinimap into code tab as optional overlay
+
+## Convergence Pass 152+ — Deep Parity Integration & New Features
+- [ ] Integration: Wire PageTransition into App.tsx route wrapper
+- [ ] Integration: Wire MessageEntryAnimation into TaskView message rendering
+- [ ] Integration: Wire WorkspaceTabTransition into workspace panel
+- [ ] Integration: Wire LoadingSkeletons into TaskView/Home loading states
+- [ ] Integration: Wire useAutoTitle into TaskView (auto-generate title from first response)
+- [ ] Integration: Wire NotificationSoundToggle into settings panel
+- [ ] Integration: Wire TaskHandoffDialog into model selector area
+- [ ] Integration: Wire ConversationBookmarks into message action buttons
+- [ ] Integration: Wire WorkspaceMinimap into code tab
+- [ ] Integration: Wire DragToReorderList into sidebar pinned tasks
+- [ ] Integration: Wire TaskDependencyGraph into task detail view
+- [ ] Feature: Real-time artifact streaming — live code preview updates as agent writes files
+- [ ] Feature: Task continuation — auto-resume interrupted tasks on page reload
+- [ ] Feature: Multi-modal response rendering — inline image/chart display in messages
+- [ ] Feature: Agent introspection panel — show raw tool call JSON in collapsible debug view
+- [ ] Feature: Search-within-task — Cmd+F to search message history
+- [ ] Feature: Task export — download conversation as markdown/PDF
+- [ ] Feature: Response regeneration — re-run from any message checkpoint
+- [ ] Feature: Context window visualization — show token budget bar in header
+- [ ] Feature: Collaborative editing — multiple users can view same task in real-time
+- [ ] Feature: Task templates — save and reuse common task configurations
+- [ ] Feature: Agent capability matrix — visual grid showing which tools are available
+- [ ] Feature: Workspace split view — side-by-side code + browser panels
+- [ ] Feature: Smart suggestions — context-aware follow-up prompts after agent response
+- [ ] Feature: Task branching — fork a conversation at any point to explore alternatives
+- [ ] Feature: Artifact versioning — track changes to generated files across iterations
+- [ ] Feature: Agent tool approval — require user confirmation before destructive operations
+- [ ] Feature: Session recording — export full session as video/GIF for sharing
+- [ ] Feature: Custom agent personas — configure agent behavior/tone per workspace
+- [ ] Feature: Webhook integrations — trigger external services on task events
+- [ ] Feature: Batch task execution — queue multiple tasks for sequential processing
+- [ ] Feature: Task priority queue — urgent tasks preempt lower-priority ones
