@@ -6535,3 +6535,21 @@
 - [x] Feature: Rich text editor — WYSIWYG editor with formatting toolbar and markdown toggle (RichTextEditor)
 - [x] Feature: Tag input — autocomplete tag input with categories and color coding (TagInput)
 - [x] Feature: Notification toast stack — stacked toasts with progress bars and actions (NotificationToastStack)
+
+## Batch 11 — Data Visualization Components (Passes 264-279)
+- [x] Pass 264: HeatmapCalendar — GitHub-style contribution heatmap with year navigation, color intensity scale, tooltips
+- [x] Pass 265: RadarChartBuilder — Multi-axis radar/spider chart with overlapping datasets, interactive legend
+- [x] Pass 266: SankeyDiagram — Flow/allocation diagram with hover-highlighted paths, proportional link widths
+- [x] Pass 267: TreemapVisualization — Hierarchical area chart with drill-down, breadcrumb trail, zoom animation
+- [x] Pass 268: NetworkGraph — Force-directed graph with draggable nodes, community coloring, spring physics
+- [x] Pass 269: SparklineCollection — Inline micro-charts (line/bar/area) with reference lines, min/max markers
+- [x] Pass 270: FunnelChart — Conversion funnel with orientation toggle, drop-off indicators, comparison mode
+- [x] Pass 271: ScatterPlotMatrix — Grid of scatter plots with correlation coefficients, zoom into individual plots
+- [x] Pass 272: HistogramBuilder — Frequency distribution with adjustable bins, density curve overlay, statistics panel
+- [x] Pass 273: WaterfallChart — Cumulative effect visualization with positive/negative/total bars, connecting lines
+- [x] Pass 274: GaugeMeter — Circular progress gauge with animated needle, color zones, tick marks
+- [x] Pass 275: ChoroplethMap — Geographic data visualization with color scale, hover tooltips, gradient legend
+- [x] Pass 276: ParallelCoordinates — Multi-dimensional data exploration with vertical axes, brushing, opacity control
+- [x] Pass 277: BoxPlot — Statistical distribution with IQR, whiskers, outliers, grouped comparison
+- [x] Pass 278: BubbleChart — Three-variable scatter plot with size encoding, zoom/pan, category coloring
+- [x] Pass 279: DonutChartBuilder — Segmented ring chart with animated arcs, center statistics, interactive legend
