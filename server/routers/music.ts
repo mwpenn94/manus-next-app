@@ -28,10 +28,10 @@ export const musicRouter = router({
   generate: protectedProcedure
     .input(z.object({
       prompt: z.string().min(3).max(500),
-      genre: z.string().default("ambient"),
-      mood: z.string().default("calm"),
+      genre: z.string().max(10000).default("ambient"),
+      mood: z.string().max(10000).default("calm"),
       duration: z.number().min(15).max(300).default(60),
-      instruments: z.array(z.string()).optional(),
+      instruments: z.array(z.string().max(10000)).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const id = `track-${ctx.user.id}-${Date.now()}`;
@@ -94,7 +94,7 @@ Format as structured markdown. Be specific about musical elements.`,
 
   /** Get a specific track */
   get: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(500) }))
     .query(({ input }) => {
       return musicLibrary.get(input.id) || null;
     }),
@@ -110,7 +110,7 @@ Format as structured markdown. Be specific about musical elements.`,
 
   /** Delete a track */
   delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(500) }))
     .mutation(async ({ ctx, input }) => {
       const track = musicLibrary.get(input.id);
       if (!track || track.userId !== ctx.user.id) {

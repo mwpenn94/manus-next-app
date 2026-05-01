@@ -25,8 +25,8 @@ export const webappRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        generatedHtml: z.string().optional(),
-        sourceCode: z.string().optional(),
+        generatedHtml: z.string().max(50000).optional(),
+        sourceCode: z.string().max(50000).optional(),
         status: z.enum(["draft", "generating", "ready", "published", "error"]).optional(),
         title: z.string().max(200).optional(),
       }))

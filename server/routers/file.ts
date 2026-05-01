@@ -15,7 +15,7 @@ export const fileRouter = router({
       fileName: z.string().max(500),
       fileKey: z.string().max(500),
       url: z.string().url(),
-      mimeType: z.string().optional(),
+      mimeType: z.string().max(1000).optional(),
       size: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {

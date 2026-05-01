@@ -179,7 +179,7 @@ function CacheMetricsSection() {
   if (metricsQuery.isLoading) return (
     <div className="mt-6">
       <div className="h-4 w-32 bg-muted rounded animate-pulse mb-3" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-card border border-border rounded-xl p-4 h-20 animate-pulse" />
         <div className="bg-card border border-border rounded-xl p-4 h-20 animate-pulse" />
       </div>
@@ -203,7 +203,7 @@ function CacheMetricsSection() {
       <p className="text-xs text-muted-foreground mb-3">
         LLM prompt prefix and memory extraction cache metrics.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Prefix Cache</p>
           <p className="text-lg font-semibold text-foreground">{prefixHitRate}%</p>
@@ -831,7 +831,7 @@ export default function SettingsPage() {
                   {/* Reasoning Mode */}
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Reasoning Mode</label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {(["convergent", "divergent", "adaptive"] as const).map((mode) => (
                         <button
                           key={mode}

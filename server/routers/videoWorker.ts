@@ -139,7 +139,7 @@ export const videoWorkerRouter = router({
 
   /** Get video job status */
   getStatus: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(500) }))
     .query(({ input }) => {
       return videoJobs.get(input.id) || null;
     }),

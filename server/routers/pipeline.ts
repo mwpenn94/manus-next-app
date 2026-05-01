@@ -35,16 +35,16 @@ export const pipelineRouter = router({
       name: z.string().min(1).max(256),
       description: z.string().max(5000).optional(),
       pipelineType: z.string().max(50).default("etl"),
-      sourceConfig: z.record(z.string(), z.unknown()).optional(),
+      sourceConfig: z.record(z.string().max(10000), z.unknown()).optional(),
       transformSteps: z.array(z.object({
-        name: z.string(),
-        type: z.string(),
-        config: z.record(z.string(), z.unknown()).optional(),
+        name: z.string().max(1000),
+        type: z.string().max(1000),
+        config: z.record(z.string().max(10000), z.unknown()).optional(),
       })).optional(),
-      destinationConfig: z.record(z.string(), z.unknown()).optional(),
+      destinationConfig: z.record(z.string().max(10000), z.unknown()).optional(),
       schedule: z.string().max(100).optional(),
       accessTier: z.string().max(50).default("internal"),
-      tags: z.array(z.string()).optional(),
+      tags: z.array(z.string().max(10000)).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const result = await db.createDataPipeline({
@@ -72,17 +72,17 @@ export const pipelineRouter = router({
       name: z.string().min(1).max(256).optional(),
       description: z.string().max(5000).optional(),
       pipelineType: z.string().max(50).optional(),
-      sourceConfig: z.record(z.string(), z.unknown()).optional(),
+      sourceConfig: z.record(z.string().max(10000), z.unknown()).optional(),
       transformSteps: z.array(z.object({
-        name: z.string(),
-        type: z.string(),
-        config: z.record(z.string(), z.unknown()).optional(),
+        name: z.string().max(1000),
+        type: z.string().max(1000),
+        config: z.record(z.string().max(10000), z.unknown()).optional(),
       })).optional(),
-      destinationConfig: z.record(z.string(), z.unknown()).optional(),
+      destinationConfig: z.record(z.string().max(10000), z.unknown()).optional(),
       schedule: z.string().max(100).optional(),
       accessTier: z.string().max(50).optional(),
       status: z.enum(["draft", "active", "paused", "error", "archived"]).optional(),
-      tags: z.array(z.string()).optional(),
+      tags: z.array(z.string().max(10000)).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const pipeline = await db.getDataPipelineById(input.id);

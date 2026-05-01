@@ -24,7 +24,7 @@ export const webappProjectRouter = router({
       return getUserWebappProjects(ctx.user.id);
     }),
     get: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -33,15 +33,15 @@ export const webappProjectRouter = router({
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(256),
-        description: z.string().optional(),
-        framework: z.string().optional(),
+        description: z.string().max(50000).optional(),
+        framework: z.string().max(10000).optional(),
         githubRepoId: z.number().optional(),
         webappBuildId: z.number().optional(),
         deployTarget: z.enum(["manus", "github_pages", "vercel", "netlify"]).optional(),
-        buildCommand: z.string().optional(),
-        outputDir: z.string().optional(),
-        installCommand: z.string().optional(),
-        nodeVersion: z.string().optional(),
+        buildCommand: z.string().max(10000).optional(),
+        outputDir: z.string().max(10000).optional(),
+        installCommand: z.string().max(10000).optional(),
+        nodeVersion: z.string().max(10000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await createWebappProject({
@@ -63,24 +63,24 @@ export const webappProjectRouter = router({
       }),
     update: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        framework: z.string().optional(),
+        externalId: z.string().max(500),
+        name: z.string().max(1000).optional(),
+        description: z.string().max(50000).optional(),
+        framework: z.string().max(10000).optional(),
         githubRepoId: z.number().nullable().optional(),
         customDomain: z.string().regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i, "Invalid domain format").nullable().optional(),
-        subdomainPrefix: z.string().optional(),
-        envVars: z.record(z.string(), z.string()).optional(),
-        buildCommand: z.string().optional(),
-        outputDir: z.string().optional(),
-        installCommand: z.string().optional(),
-        nodeVersion: z.string().optional(),
+        subdomainPrefix: z.string().max(10000).optional(),
+        envVars: z.record(z.string().max(10000), z.string().max(10000)).optional(),
+        buildCommand: z.string().max(10000).optional(),
+        outputDir: z.string().max(10000).optional(),
+        installCommand: z.string().max(10000).optional(),
+        nodeVersion: z.string().max(10000).optional(),
         deployTarget: z.enum(["manus", "github_pages", "vercel", "netlify"]).optional(),
         visibility: z.enum(["public", "private"]).optional(),
-        faviconUrl: z.string().nullable().optional(),
+        faviconUrl: z.string().max(2048).nullable().optional(),
         metaDescription: z.string().max(500).nullable().optional(),
-        ogImageUrl: z.string().nullable().optional(),
-        canonicalUrl: z.string().nullable().optional(),
+        ogImageUrl: z.string().max(2048).nullable().optional(),
+        canonicalUrl: z.string().max(2048).nullable().optional(),
         ogTitle: z.string().max(256).nullable().optional(),
         keywords: z.string().max(500).nullable().optional(),
       }))
@@ -92,7 +92,7 @@ export const webappProjectRouter = router({
         return { success: true };
       }),
     delete: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -102,10 +102,10 @@ export const webappProjectRouter = router({
     /** Deploy a project (create deployment record) */
     deploy: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
-        versionLabel: z.string().optional(),
-        commitSha: z.string().optional(),
-        commitMessage: z.string().optional(),
+        externalId: z.string().max(500),
+        versionLabel: z.string().max(1000).optional(),
+        commitSha: z.string().max(10000).optional(),
+        commitMessage: z.string().max(50000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
@@ -223,9 +223,9 @@ export const webappProjectRouter = router({
     /** Deploy a project from its linked GitHub repo (fetches index.html + assets from repo) */
     deployFromGitHub: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
-        branch: z.string().optional(),
-        versionLabel: z.string().optional(),
+        externalId: z.string().max(500),
+        branch: z.string().max(10000).optional(),
+        versionLabel: z.string().max(1000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
@@ -481,7 +481,7 @@ export const webappProjectRouter = router({
       }),
     /** Analyze SEO for a project using LLM */
     analyzeSeo: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -546,7 +546,7 @@ Provide a JSON response with this exact structure:
       }),
     /** List deployments for a project */
     deployments: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -554,7 +554,7 @@ Provide a JSON response with this exact structure:
       }),
     /** Poll latest deployment build log for real-time streaming */
     deployBuildLog: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -565,7 +565,7 @@ Provide a JSON response with this exact structure:
       }),
     /** Get real analytics data for a project */
     analytics: protectedProcedure
-      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .input(z.object({ externalId: z.string().max(500), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -574,7 +574,7 @@ Provide a JSON response with this exact structure:
       }),
     /** Geographic analytics — views by country */
     geoAnalytics: protectedProcedure
-      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .input(z.object({ externalId: z.string().max(500), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -583,7 +583,7 @@ Provide a JSON response with this exact structure:
       }),
     /** Device analytics — mobile/tablet/desktop breakdown */
     deviceAnalytics: protectedProcedure
-      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .input(z.object({ externalId: z.string().max(500), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -593,7 +593,7 @@ Provide a JSON response with this exact structure:
 
     /** Analytics with peak tracking and historical comparison */
     analyticsWithPeaks: protectedProcedure
-      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .input(z.object({ externalId: z.string().max(500), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -602,7 +602,7 @@ Provide a JSON response with this exact structure:
       }),
     /** Export analytics data as CSV-ready format */
     exportAnalytics: protectedProcedure
-      .input(z.object({ externalId: z.string(), days: z.number().min(1).max(365).optional() }))
+      .input(z.object({ externalId: z.string().max(500), days: z.number().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -612,7 +612,7 @@ Provide a JSON response with this exact structure:
 
     /** Generate sitemap.xml for a project */
     generateSitemap: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -633,7 +633,7 @@ Provide a JSON response with this exact structure:
 
     /** Request SSL certificate for custom domain */
     requestSsl: protectedProcedure
-      .input(z.object({ externalId: z.string(), domain: z.string().min(1).max(256).regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i, "Invalid domain format") }))
+      .input(z.object({ externalId: z.string().max(500), domain: z.string().min(1).max(256).regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i, "Invalid domain format") }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -658,7 +658,7 @@ Provide a JSON response with this exact structure:
 
     /** Get SSL certificate status */
     sslStatus: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -696,7 +696,7 @@ Provide a JSON response with this exact structure:
 
     /** Delete SSL certificate */
     deleteSsl: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -717,7 +717,7 @@ Provide a JSON response with this exact structure:
     /** Rollback to a previous deployment */
     rollbackDeployment: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
+        externalId: z.string().max(500),
         deploymentId: z.number(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -742,7 +742,7 @@ Provide a JSON response with this exact structure:
     /** Add or update environment variables */
     addEnvVar: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
+        externalId: z.string().max(500),
         key: z.string().min(1).max(256).regex(/^[A-Z_][A-Z0-9_]*$/i, "Invalid env var name"),
         value: z.string().max(10000),
       }))
@@ -757,8 +757,8 @@ Provide a JSON response with this exact structure:
     /** Delete an environment variable */
     deleteEnvVar: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
-        key: z.string(),
+        externalId: z.string().max(500),
+        key: z.string().max(500),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
@@ -778,7 +778,7 @@ Provide a JSON response with this exact structure:
       }),
     /** Post-deploy health check */
     healthCheck: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const project = await getWebappProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
@@ -802,10 +802,10 @@ Provide a JSON response with this exact structure:
         url: z.string().url(),
         browsers: z.array(z.enum(["chromium", "firefox", "webkit"])).default(["chromium"]),
         steps: z.array(z.object({
-          action: z.string(),
-          selector: z.string().optional(),
-          value: z.string().optional(),
-          description: z.string(),
+          action: z.string().max(10000),
+          selector: z.string().max(10000).optional(),
+          value: z.string().max(10000).optional(),
+          description: z.string().max(50000),
         })).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -822,15 +822,15 @@ Provide a JSON response with this exact structure:
     /** Save QA report */
     saveQAReport: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
+        externalId: z.string().max(500),
         report: z.object({
-          url: z.string(),
-          browsers: z.array(z.string()),
+          url: z.string().max(2048),
+          browsers: z.array(z.string().max(10000)),
           results: z.array(z.object({
-            browser: z.string(),
+            browser: z.string().max(10000),
             passed: z.boolean(),
             tests: z.number(),
-            errors: z.array(z.string()),
+            errors: z.array(z.string().max(10000)),
           })),
           timestamp: z.number(),
         }),

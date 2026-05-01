@@ -24,7 +24,7 @@ export const projectRouter = router({
       return getUserProjects(ctx.user.id);
     }),
     get: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) return null;
@@ -48,7 +48,7 @@ export const projectRouter = router({
       }),
     update: protectedProcedure
       .input(z.object({
-        externalId: z.string(),
+        externalId: z.string().max(500),
         name: z.string().min(1).max(500).optional(),
         description: z.string().max(5000).optional(),
         systemPrompt: z.string().max(10000).optional(),
@@ -66,7 +66,7 @@ export const projectRouter = router({
         return { success: true };
       }),
     delete: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const project = await getProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -74,7 +74,7 @@ export const projectRouter = router({
         return { success: true };
       }),
     pin: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const project = await getProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -82,7 +82,7 @@ export const projectRouter = router({
         return { success: true };
       }),
     reorder: protectedProcedure
-      .input(z.object({ orderedExternalIds: z.array(z.string()) }))
+      .input(z.object({ orderedExternalIds: z.array(z.string().max(10000)) }))
       .mutation(async ({ ctx, input }) => {
         const userProjects = await getUserProjects(ctx.user.id);
         const idMap = new Map(userProjects.map(p => [p.externalId, p.id]));
@@ -91,14 +91,14 @@ export const projectRouter = router({
         return { success: true };
       }),
     tasks: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) return [];
         return getProjectTasks(project.id);
       }),
     assignTask: protectedProcedure
-      .input(z.object({ taskId: z.number(), projectExternalId: z.string().nullable() }))
+      .input(z.object({ taskId: z.number(), projectExternalId: z.string().max(500).nullable() }))
       .mutation(async ({ ctx, input }) => {
         if (input.projectExternalId) {
           const project = await getProjectByExternalId(input.projectExternalId);
@@ -112,7 +112,7 @@ export const projectRouter = router({
     /** Project knowledge base */
     knowledge: router({
       list: protectedProcedure
-        .input(z.object({ projectExternalId: z.string() }))
+        .input(z.object({ projectExternalId: z.string().max(500) }))
         .query(async ({ ctx, input }) => {
           const project = await getProjectByExternalId(input.projectExternalId);
           if (!project || project.userId !== ctx.user.id) return [];
@@ -120,7 +120,7 @@ export const projectRouter = router({
         }),
       add: protectedProcedure
         .input(z.object({
-          projectExternalId: z.string(),
+          projectExternalId: z.string().max(500),
           type: z.enum(["instruction", "file", "note"]),
           title: z.string().min(1).max(500),
           content: z.string().max(50000),

@@ -5,7 +5,7 @@ export const browserRouter = router({
     /** Launch/navigate to a URL */
     navigate: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
+        sessionId: z.string().max(500).optional(),
         url: z.string().url(),
         waitUntil: z.enum(["load", "domcontentloaded", "networkidle"]).optional(),
         browserType: z.enum(["chromium", "firefox", "webkit"]).optional(),
@@ -18,8 +18,8 @@ export const browserRouter = router({
     /** Click on an element */
     click: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
-        selector: z.string(),
+        sessionId: z.string().max(500).optional(),
+        selector: z.string().max(10000),
       }))
       .mutation(async ({ input }) => {
         const { click } = await import("../browserAutomation");
@@ -29,9 +29,9 @@ export const browserRouter = router({
     /** Type text into an element */
     type: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
-        selector: z.string(),
-        text: z.string(),
+        sessionId: z.string().max(500).optional(),
+        selector: z.string().max(10000),
+        text: z.string().max(50000),
         clear: z.boolean().optional(),
         pressEnter: z.boolean().optional(),
       }))
@@ -46,9 +46,9 @@ export const browserRouter = router({
     /** Take a screenshot */
     screenshot: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
+        sessionId: z.string().max(500).optional(),
         fullPage: z.boolean().optional(),
-        selector: z.string().optional(),
+        selector: z.string().max(10000).optional(),
       }))
       .mutation(async ({ input }) => {
         const { screenshot } = await import("../browserAutomation");
@@ -58,7 +58,7 @@ export const browserRouter = router({
     /** Scroll the page */
     scroll: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
+        sessionId: z.string().max(500).optional(),
         direction: z.enum(["up", "down", "left", "right"]),
         amount: z.number().optional(),
       }))
@@ -70,8 +70,8 @@ export const browserRouter = router({
     /** Evaluate JavaScript in the page */
     evaluate: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
-        code: z.string(),
+        sessionId: z.string().max(500).optional(),
+        code: z.string().max(50000),
       }))
       .mutation(async ({ input }) => {
         const { evaluate } = await import("../browserAutomation");
@@ -81,8 +81,8 @@ export const browserRouter = router({
     /** Wait for a selector */
     waitForSelector: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
-        selector: z.string(),
+        sessionId: z.string().max(500).optional(),
+        selector: z.string().max(10000),
         state: z.enum(["attached", "detached", "visible", "hidden"]).optional(),
         timeout: z.number().optional(),
       }))
@@ -97,8 +97,8 @@ export const browserRouter = router({
     /** Press a keyboard key */
     pressKey: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
-        key: z.string(),
+        sessionId: z.string().max(500).optional(),
+        key: z.string().max(500),
       }))
       .mutation(async ({ input }) => {
         const { pressKey } = await import("../browserAutomation");
@@ -107,7 +107,7 @@ export const browserRouter = router({
 
     /** Get interactive elements on the page */
     getElements: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .query(async ({ input }) => {
         const { getInteractiveElements } = await import("../browserAutomation");
         return getInteractiveElements(input.sessionId);
@@ -115,7 +115,7 @@ export const browserRouter = router({
 
     /** Get console logs from the session */
     consoleLogs: protectedProcedure
-      .input(z.object({ sessionId: z.string() }))
+      .input(z.object({ sessionId: z.string().max(500) }))
       .query(async ({ input }) => {
         const { getConsoleLogs } = await import("../browserAutomation");
         return getConsoleLogs(input.sessionId);
@@ -123,7 +123,7 @@ export const browserRouter = router({
 
     /** Get network requests from the session */
     networkRequests: protectedProcedure
-      .input(z.object({ sessionId: z.string() }))
+      .input(z.object({ sessionId: z.string().max(500) }))
       .query(async ({ input }) => {
         const { getNetworkRequests } = await import("../browserAutomation");
         return getNetworkRequests(input.sessionId);
@@ -137,7 +137,7 @@ export const browserRouter = router({
 
     /** Close a session */
     close: protectedProcedure
-      .input(z.object({ sessionId: z.string() }))
+      .input(z.object({ sessionId: z.string().max(500) }))
       .mutation(async ({ input }) => {
         const { closeSession } = await import("../browserAutomation");
         await closeSession(input.sessionId);
@@ -146,7 +146,7 @@ export const browserRouter = router({
 
     /** Go back in browser history */
     goBack: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { goBack } = await import("../browserAutomation");
         return goBack(input.sessionId);
@@ -154,7 +154,7 @@ export const browserRouter = router({
 
     /** Go forward in browser history */
     goForward: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { goForward } = await import("../browserAutomation");
         return goForward(input.sessionId);
@@ -162,7 +162,7 @@ export const browserRouter = router({
 
     /** Reload the current page */
     reload: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { reload } = await import("../browserAutomation");
         return reload(input.sessionId);
@@ -170,7 +170,7 @@ export const browserRouter = router({
 
     /** Get accessibility tree */
     accessibilityTree: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .query(async ({ input }) => {
         const { getAccessibilityTree } = await import("../browserAutomation");
         return getAccessibilityTree(input.sessionId);
@@ -178,10 +178,10 @@ export const browserRouter = router({
     /** Set viewport size for responsive testing */
     setViewport: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
+        sessionId: z.string().max(500).optional(),
         width: z.number().min(320).max(3840),
         height: z.number().min(480).max(2160),
-        deviceName: z.string().optional(),
+        deviceName: z.string().max(1000).optional(),
       }))
       .mutation(async ({ input }) => {
         const { setViewport } = await import("../browserAutomation");
@@ -193,9 +193,9 @@ export const browserRouter = router({
         baseUrl: z.string().url(),
         steps: z.array(z.object({
           action: z.enum(["navigate", "click", "type", "screenshot", "assert", "wait", "scroll", "evaluate", "pressKey", "setViewport"]),
-          selector: z.string().optional(),
-          value: z.string().optional(),
-          description: z.string(),
+          selector: z.string().max(10000).optional(),
+          value: z.string().max(10000).optional(),
+          description: z.string().max(50000),
         })),
       }))
       .mutation(async ({ input }) => {
@@ -209,14 +209,14 @@ export const browserRouter = router({
     }),
     /** Get performance metrics via CDP */
     performanceMetrics: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .query(async ({ input }) => {
         const { getPerformanceMetrics } = await import("../browserAutomation");
         return getPerformanceMetrics(input.sessionId);
       }),
     /** Run accessibility audit */
     accessibilityAudit: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { runAccessibilityAudit } = await import("../browserAutomation");
         return runAccessibilityAudit(input.sessionId);
@@ -224,7 +224,7 @@ export const browserRouter = router({
     /** Screenshot diff / visual regression */
     screenshotDiff: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
+        sessionId: z.string().max(500).optional(),
         baselineUrl: z.string().url(),
         threshold: z.number().min(0).max(1).optional(),
       }))
@@ -235,13 +235,13 @@ export const browserRouter = router({
     /** Add network route interception */
     interceptRoute: protectedProcedure
       .input(z.object({
-        sessionId: z.string().optional(),
-        urlPattern: z.string(),
+        sessionId: z.string().max(500).optional(),
+        urlPattern: z.string().max(2048),
         action: z.enum(["block", "modify", "log"]),
         modifyOptions: z.object({
           status: z.number().optional(),
-          body: z.string().optional(),
-          contentType: z.string().optional(),
+          body: z.string().max(50000).optional(),
+          contentType: z.string().max(1000).optional(),
         }).optional(),
       }))
       .mutation(async ({ input }) => {
@@ -250,21 +250,21 @@ export const browserRouter = router({
       }),
     /** Clear all network interceptions */
     clearInterceptions: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { clearInterceptions } = await import("../browserAutomation");
         return clearInterceptions(input.sessionId);
       }),
     /** Start code coverage collection */
     startCoverage: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { startCoverage } = await import("../browserAutomation");
         return startCoverage(input.sessionId);
       }),
     /** Stop code coverage and return results */
     stopCoverage: protectedProcedure
-      .input(z.object({ sessionId: z.string().optional() }))
+      .input(z.object({ sessionId: z.string().max(500).optional() }))
       .mutation(async ({ input }) => {
         const { stopCoverage } = await import("../browserAutomation");
         return stopCoverage(input.sessionId);

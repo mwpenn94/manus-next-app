@@ -13,7 +13,7 @@ export const mobileProjectRouter = router({
       return getUserMobileProjects(ctx.user.id);
     }),
     get: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const project = await getMobileProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) return null;
@@ -24,8 +24,8 @@ export const mobileProjectRouter = router({
         name: z.string().min(1).max(256),
         framework: z.enum(["pwa", "capacitor", "expo"]),
         platforms: z.array(z.enum(["ios", "android", "web"])).min(1),
-        bundleId: z.string().optional(),
-        displayName: z.string().optional(),
+        bundleId: z.string().max(500).optional(),
+        displayName: z.string().max(1000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const bundleId = input.bundleId || `com.manus.${input.name.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
@@ -42,15 +42,15 @@ export const mobileProjectRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string().optional(),
-        bundleId: z.string().optional(),
-        displayName: z.string().optional(),
-        version: z.string().optional(),
-        iconUrl: z.string().optional(),
-        splashUrl: z.string().optional(),
-        pwaManifest: z.record(z.string(), z.unknown()).optional(),
-        capacitorConfig: z.record(z.string(), z.unknown()).optional(),
-        expoConfig: z.record(z.string(), z.unknown()).optional(),
+        name: z.string().max(1000).optional(),
+        bundleId: z.string().max(500).optional(),
+        displayName: z.string().max(1000).optional(),
+        version: z.string().max(10000).optional(),
+        iconUrl: z.string().max(2048).optional(),
+        splashUrl: z.string().max(2048).optional(),
+        pwaManifest: z.record(z.string().max(10000), z.unknown()).optional(),
+        capacitorConfig: z.record(z.string().max(10000), z.unknown()).optional(),
+        expoConfig: z.record(z.string().max(10000), z.unknown()).optional(),
         status: z.enum(["draft", "configured", "building", "ready"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -67,16 +67,16 @@ export const mobileProjectRouter = router({
     /** Generate PWA manifest JSON */
     generatePwaManifest: protectedProcedure
       .input(z.object({
-        projectId: z.string(),
-        name: z.string(),
-        shortName: z.string().optional(),
-        description: z.string().optional(),
-        themeColor: z.string().optional(),
-        backgroundColor: z.string().optional(),
+        projectId: z.string().max(500),
+        name: z.string().max(1000),
+        shortName: z.string().max(1000).optional(),
+        description: z.string().max(50000).optional(),
+        themeColor: z.string().max(10000).optional(),
+        backgroundColor: z.string().max(10000).optional(),
         display: z.enum(["standalone", "fullscreen", "minimal-ui", "browser"]).optional(),
         orientation: z.enum(["portrait", "landscape", "any"]).optional(),
-        startUrl: z.string().optional(),
-        iconUrl: z.string().optional(),
+        startUrl: z.string().max(2048).optional(),
+        iconUrl: z.string().max(2048).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const manifest = {
@@ -103,10 +103,10 @@ export const mobileProjectRouter = router({
     /** Generate Capacitor config */
     generateCapacitorConfig: protectedProcedure
       .input(z.object({
-        projectId: z.string(),
-        appId: z.string(),
-        appName: z.string(),
-        webDir: z.string().optional(),
+        projectId: z.string().max(500),
+        appId: z.string().max(500),
+        appName: z.string().max(1000),
+        webDir: z.string().max(10000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const config = {
@@ -127,11 +127,11 @@ export const mobileProjectRouter = router({
     /** Generate Expo config */
     generateExpoConfig: protectedProcedure
       .input(z.object({
-        projectId: z.string(),
-        slug: z.string(),
-        sdkVersion: z.string().optional(),
-        iosBundleId: z.string().optional(),
-        androidPackage: z.string().optional(),
+        projectId: z.string().max(500),
+        slug: z.string().max(500),
+        sdkVersion: z.string().max(10000).optional(),
+        iosBundleId: z.string().max(500).optional(),
+        androidPackage: z.string().max(10000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const config = {
@@ -148,7 +148,7 @@ export const mobileProjectRouter = router({
       }),
     /** Generate service worker for PWA */
     generateServiceWorker: protectedProcedure
-      .input(z.object({ cacheName: z.string().optional(), offlinePage: z.string().optional() }))
+      .input(z.object({ cacheName: z.string().max(1000).optional(), offlinePage: z.string().max(1000).optional() }))
       .query(async ({ input }) => {
         const cacheName = input.cacheName || "manus-pwa-v1";
         const offlinePage = input.offlinePage || "/offline.html";

@@ -234,7 +234,7 @@ export default function BillingPage() {
             Credit Estimator
           </h3>
           <div className="bg-card border border-border/60 rounded-xl p-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-[10px] text-muted-foreground mb-1">Tasks/month</p>
                 <p className="text-lg font-semibold text-foreground tabular-nums">{stats?.totalTasks ?? 0}</p>

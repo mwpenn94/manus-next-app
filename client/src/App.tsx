@@ -43,6 +43,30 @@ const HelpPage = lazy(() => import("./pages/HelpPage"));
 const DeployedWebsitesPage = lazy(() => import("./pages/DeployedWebsitesPage"));
 const DesignView = lazy(() => import("./pages/DesignView"));
 
+// Extended capability surfaces
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const AppPublishPage = lazy(() => import("./pages/AppPublishPage"));
+const BrowserPage = lazy(() => import("./pages/BrowserPage"));
+const ClientInferencePage = lazy(() => import("./pages/ClientInferencePage"));
+const ComputerUsePage = lazy(() => import("./pages/ComputerUsePage"));
+const ConnectDevicePage = lazy(() => import("./pages/ConnectDevicePage"));
+const DataAnalysisPage = lazy(() => import("./pages/DataAnalysisPage"));
+const DataPipelinesPage = lazy(() => import("./pages/DataPipelinesPage"));
+const DeepResearchPage = lazy(() => import("./pages/DeepResearchPage"));
+const DesktopAppPage = lazy(() => import("./pages/DesktopAppPage"));
+const DocumentStudioPage = lazy(() => import("./pages/DocumentStudioPage"));
+const FigmaImportPage = lazy(() => import("./pages/FigmaImportPage"));
+const MailManusPage = lazy(() => import("./pages/MailManusPage"));
+const MeetingsPage = lazy(() => import("./pages/MeetingsPage"));
+const MessagingAgentPage = lazy(() => import("./pages/MessagingAgentPage"));
+const MobileProjectsPage = lazy(() => import("./pages/MobileProjectsPage"));
+const MusicStudioPage = lazy(() => import("./pages/MusicStudioPage"));
+const QATestingPage = lazy(() => import("./pages/QATestingPage"));
+const SlidesPage = lazy(() => import("./pages/SlidesPage"));
+const SovereignDashboard = lazy(() => import("./pages/SovereignDashboard"));
+const VideoGeneratorPage = lazy(() => import("./pages/VideoGeneratorPage"));
+const WebAppBuilderPage = lazy(() => import("./pages/WebAppBuilderPage"));
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
@@ -162,6 +186,74 @@ function Router() {
       </Route>
       <Route path="/data-controls">
         <SuspenseRoute><AdminRoute><DataControlsPage /></AdminRoute></SuspenseRoute>
+      </Route>
+
+      {/* Extended capability surfaces */}
+      <Route path="/analytics">
+        <SuspenseRoute><AnalyticsPage /></SuspenseRoute>
+      </Route>
+      <Route path="/publish">
+        <SuspenseRoute><AppPublishPage /></SuspenseRoute>
+      </Route>
+      <Route path="/browser">
+        <SuspenseRoute><BrowserPage /></SuspenseRoute>
+      </Route>
+      <Route path="/inference">
+        <SuspenseRoute><ClientInferencePage /></SuspenseRoute>
+      </Route>
+      <Route path="/computer-use">
+        <SuspenseRoute><ComputerUsePage /></SuspenseRoute>
+      </Route>
+      <Route path="/devices">
+        <SuspenseRoute><ConnectDevicePage /></SuspenseRoute>
+      </Route>
+      <Route path="/data-analysis">
+        <SuspenseRoute><DataAnalysisPage /></SuspenseRoute>
+      </Route>
+      <Route path="/data-pipelines">
+        <SuspenseRoute><DataPipelinesPage /></SuspenseRoute>
+      </Route>
+      <Route path="/deep-research">
+        <SuspenseRoute><DeepResearchPage /></SuspenseRoute>
+      </Route>
+      <Route path="/desktop">
+        <SuspenseRoute><DesktopAppPage /></SuspenseRoute>
+      </Route>
+      <Route path="/documents">
+        <SuspenseRoute><DocumentStudioPage /></SuspenseRoute>
+      </Route>
+      <Route path="/figma">
+        <SuspenseRoute><FigmaImportPage /></SuspenseRoute>
+      </Route>
+      <Route path="/mail">
+        <SuspenseRoute><MailManusPage /></SuspenseRoute>
+      </Route>
+      <Route path="/meetings">
+        <SuspenseRoute><MeetingsPage /></SuspenseRoute>
+      </Route>
+      <Route path="/messaging">
+        <SuspenseRoute><MessagingAgentPage /></SuspenseRoute>
+      </Route>
+      <Route path="/mobile-projects">
+        <SuspenseRoute><MobileProjectsPage /></SuspenseRoute>
+      </Route>
+      <Route path="/music">
+        <SuspenseRoute><MusicStudioPage /></SuspenseRoute>
+      </Route>
+      <Route path="/qa-testing">
+        <SuspenseRoute><QATestingPage /></SuspenseRoute>
+      </Route>
+      <Route path="/slides">
+        <SuspenseRoute><SlidesPage /></SuspenseRoute>
+      </Route>
+      <Route path="/sovereign">
+        <SuspenseRoute><SovereignDashboard /></SuspenseRoute>
+      </Route>
+      <Route path="/video">
+        <SuspenseRoute><VideoGeneratorPage /></SuspenseRoute>
+      </Route>
+      <Route path="/webapp-builder">
+        <SuspenseRoute><WebAppBuilderPage /></SuspenseRoute>
       </Route>
 
       <Route path="/404" component={NotFound} />

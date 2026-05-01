@@ -19,7 +19,7 @@ export const designRouter = router({
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(200),
-        canvasState: z.record(z.string(), z.unknown()).optional(),
+        canvasState: z.record(z.string().max(10000), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return createDesign({ userId: ctx.user.id, name: input.name, canvasState: input.canvasState });
@@ -28,7 +28,7 @@ export const designRouter = router({
       .input(z.object({
         id: z.number(),
         name: z.string().max(200).optional(),
-        canvasState: z.record(z.string(), z.unknown()).optional(),
+        canvasState: z.record(z.string().max(10000), z.unknown()).optional(),
         thumbnailUrl: z.string().max(2000).optional(),
         exportUrl: z.string().max(2000).optional(),
       }))

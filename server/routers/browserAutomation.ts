@@ -20,8 +20,8 @@ export const browserAutomationRouter = router({
     .input(z.object({
       url: z.string().url(),
       extractType: z.enum(["text", "html", "markdown", "structured"]).default("markdown"),
-      selector: z.string().optional(),
-      waitForSelector: z.string().optional(),
+      selector: z.string().max(10000).optional(),
+      waitForSelector: z.string().max(10000).optional(),
     }))
     .mutation(async ({ input }) => {
       return withResilience("browser-scrape", async () => {

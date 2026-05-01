@@ -6,8 +6,8 @@ export const voiceRouter = router({
     transcribe: protectedProcedure
       .input(z.object({
         audioUrl: z.string().url(),
-        language: z.string().optional(),
-        prompt: z.string().optional(),
+        language: z.string().max(1000).optional(),
+        prompt: z.string().max(50000).optional(),
       }))
       .mutation(async ({ input }) => {
         const { transcribeAudio } = await import("../_core/voiceTranscription");
@@ -45,10 +45,10 @@ export const voiceRouter = router({
     synthesize: protectedProcedure
       .input(z.object({
         text: z.string().min(1).max(10000),
-        voice: z.string().optional(),
-        rate: z.string().optional(),
-        pitch: z.string().optional(),
-        volume: z.string().optional(),
+        voice: z.string().max(10000).optional(),
+        rate: z.string().max(10000).optional(),
+        pitch: z.string().max(10000).optional(),
+        volume: z.string().max(10000).optional(),
       }))
       .mutation(async ({ input }) => {
         const { synthesizeSpeech } = await import("../tts");
@@ -70,7 +70,7 @@ export const voiceRouter = router({
     /** List available TTS voices, optionally filtered by language */
     listVoices: protectedProcedure
       .input(z.object({
-        language: z.string().optional(),
+        language: z.string().max(1000).optional(),
       }).optional())
       .query(async ({ input }) => {
         const { getVoicesByLanguage } = await import("../tts");

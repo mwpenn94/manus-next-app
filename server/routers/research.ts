@@ -30,7 +30,7 @@ export const researchRouter = router({
     .input(z.object({
       topic: z.string().min(3).max(500),
       depth: z.enum(["quick", "standard", "deep"]).default("standard"),
-      focusAreas: z.array(z.string()).optional(),
+      focusAreas: z.array(z.string().max(10000)).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const id = `research-${ctx.user.id}-${Date.now()}`;
@@ -144,7 +144,7 @@ export const researchRouter = router({
 
   /** Get research results */
   get: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(500) }))
     .query(({ input }) => {
       const result = researchCache.get(input.id);
       if (!result) return null;

@@ -14,9 +14,9 @@ export const preferencesRouter = router({
 
   save: protectedProcedure
     .input(z.object({
-      generalSettings: z.record(z.string(), z.unknown()).optional(),
-      capabilities: z.record(z.string(), z.boolean()).optional(),
-      systemPrompt: z.string().nullable().optional(),
+      generalSettings: z.record(z.string().max(10000), z.unknown()).optional(),
+      capabilities: z.record(z.string().max(10000), z.boolean()).optional(),
+      systemPrompt: z.string().max(50000).nullable().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       return upsertUserPreferences({

@@ -70,7 +70,7 @@ describe("Panel 13: Ownership checks (IDOR prevention)", () => {
     const routerBlock = routerCode.slice(updateStart, updateStart + 2000);
     // Find the update mutation
     const updatePos = routerBlock.indexOf("update: protectedProcedure");
-    const updateBlock = routerBlock.slice(updatePos, updatePos + 500);
+    const updateBlock = routerBlock.slice(updatePos, updatePos + 700);
     expect(updateBlock).toContain("design.userId !== ctx.user.id");
     expect(updateBlock).toContain("FORBIDDEN");
   });

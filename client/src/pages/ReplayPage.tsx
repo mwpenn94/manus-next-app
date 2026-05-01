@@ -574,7 +574,7 @@ export default function ReplayPage() {
         ) : (
           <>
             {/* Summary Stats */}
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               {[
                 { label: "Events", value: stepSummary.totalEvents, icon: Zap },
                 { label: "Tool Calls", value: stepSummary.toolCalls, icon: Terminal },

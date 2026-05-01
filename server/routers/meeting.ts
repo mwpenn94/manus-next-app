@@ -20,7 +20,7 @@ export const meetingRouter = router({
     /** Generate meeting notes from a text transcript (no audio required) */
     generateFromTranscript: protectedProcedure
       .input(z.object({
-        title: z.string().optional(),
+        title: z.string().max(1000).optional(),
         transcript: z.string().min(10),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -64,8 +64,8 @@ export const meetingRouter = router({
       }),
     create: protectedProcedure
       .input(z.object({
-        title: z.string().optional(),
-        audioUrl: z.string(),
+        title: z.string().max(1000).optional(),
+        audioUrl: z.string().max(2048),
         taskId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {

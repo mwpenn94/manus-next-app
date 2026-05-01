@@ -18,7 +18,7 @@ import {
 export const branchesRouter = router({
     create: protectedProcedure
       .input(z.object({
-        parentTaskExternalId: z.string(),
+        parentTaskExternalId: z.string().max(500),
         branchPointMessageId: z.number(),
         label: z.string().max(256).optional(),
         newTaskTitle: z.string().min(1).max(500),
@@ -64,7 +64,7 @@ export const branchesRouter = router({
       }),
     /** Get branches (children) of a task */
     children: protectedProcedure
-      .input(z.object({ parentTaskExternalId: z.string() }))
+      .input(z.object({ parentTaskExternalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const parentTask = await getTaskByExternalId(input.parentTaskExternalId);
         if (!parentTask || parentTask.userId !== ctx.user.id) return [];
@@ -72,7 +72,7 @@ export const branchesRouter = router({
       }),
     /** Get the parent branch info for a task */
     parent: protectedProcedure
-      .input(z.object({ childTaskExternalId: z.string() }))
+      .input(z.object({ childTaskExternalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const childTask = await getTaskByExternalId(input.childTaskExternalId);
         if (!childTask || childTask.userId !== ctx.user.id) return null;
@@ -87,8 +87,8 @@ export const branchesRouter = router({
     /** Compare messages between two branches */
     compare: protectedProcedure
       .input(z.object({
-        taskAExternalId: z.string(),
-        taskBExternalId: z.string(),
+        taskAExternalId: z.string().max(500),
+        taskBExternalId: z.string().max(500),
       }))
       .query(async ({ ctx, input }) => {
         const taskA = await getTaskByExternalId(input.taskAExternalId);
@@ -116,7 +116,7 @@ export const branchesRouter = router({
       }),
     /** Get full branch tree for a task (walks up to root, then down to all descendants) */
     tree: protectedProcedure
-      .input(z.object({ taskExternalId: z.string() }))
+      .input(z.object({ taskExternalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const task = await getTaskByExternalId(input.taskExternalId);
         if (!task || task.userId !== ctx.user.id) return null;

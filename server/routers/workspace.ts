@@ -14,9 +14,9 @@ export const workspaceRouter = router({
       .input(z.object({
         taskId: z.number(),
         artifactType: z.enum(ARTIFACT_TYPES),
-        label: z.string().optional(),
-        content: z.string().optional(),
-        url: z.string().optional(),
+        label: z.string().max(1000).optional(),
+        content: z.string().max(50000).optional(),
+        url: z.string().max(2048).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await verifyTaskOwnershipById(input.taskId, ctx.user.id);
@@ -33,7 +33,7 @@ export const workspaceRouter = router({
     list: protectedProcedure
       .input(z.object({
         taskId: z.number(),
-        type: z.string().optional(),
+        type: z.string().max(1000).optional(),
       }))
       .query(async ({ ctx, input }) => {
         await verifyTaskOwnershipById(input.taskId, ctx.user.id);

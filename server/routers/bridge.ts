@@ -10,7 +10,7 @@ export const bridgeRouter = router({
   saveConfig: protectedProcedure
     .input(z.object({
       bridgeUrl: z.string().min(1).optional().nullable(),
-      apiKey: z.string().optional().nullable(),
+      apiKey: z.string().max(500).optional().nullable(),
       enabled: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -78,8 +78,8 @@ export const bridgeRouter = router({
   /** Execute a tool via bridge relay */
   execute: protectedProcedure
     .input(z.object({
-      tool: z.string(),
-      args: z.record(z.string(), z.unknown()).optional(),
+      tool: z.string().max(10000),
+      args: z.record(z.string().max(10000), z.unknown()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const config = await getBridgeConfig(ctx.user.id);

@@ -34,7 +34,7 @@ export const teamRouter = router({
         return getTeamMembers(input.teamId);
       }),
     join: protectedProcedure
-      .input(z.object({ inviteCode: z.string() }))
+      .input(z.object({ inviteCode: z.string().max(50000) }))
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamByInviteCode(input.inviteCode);
         if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid invite code" });
@@ -58,7 +58,7 @@ export const teamRouter = router({
         return getTeamSessions(input.teamId);
       }),
     shareSession: protectedProcedure
-      .input(z.object({ teamId: z.number(), taskExternalId: z.string() }))
+      .input(z.object({ teamId: z.number(), taskExternalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         await createTeamSession({ teamId: input.teamId, taskExternalId: input.taskExternalId, createdBy: ctx.user.id });
         return { success: true };

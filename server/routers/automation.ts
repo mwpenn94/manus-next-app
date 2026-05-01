@@ -56,12 +56,12 @@ export const automationRouter = router({
   create: protectedProcedure
     .input(z.object({
       name: z.string().min(1).max(255),
-      description: z.string().optional(),
-      mode: z.string().default("schedule"),
+      description: z.string().max(50000).optional(),
+      mode: z.string().max(10000).default("schedule"),
       triggerType: z.enum(["cron", "interval"]).default("cron"),
-      cronExpression: z.string().optional(),
+      cronExpression: z.string().max(10000).optional(),
       intervalSeconds: z.number().min(300).optional(),
-      workflowDefinition: z.record(z.string(), z.unknown()).optional(),
+      workflowDefinition: z.record(z.string().max(10000), z.unknown()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
@@ -87,11 +87,11 @@ export const automationRouter = router({
     .input(z.object({
       id: z.number(),
       name: z.string().min(1).max(255).optional(),
-      description: z.string().optional(),
+      description: z.string().max(50000).optional(),
       status: z.enum(["active", "paused"]).optional(),
-      cronExpression: z.string().optional(),
+      cronExpression: z.string().max(10000).optional(),
       intervalSeconds: z.number().min(300).optional(),
-      workflowDefinition: z.record(z.string(), z.unknown()).optional(),
+      workflowDefinition: z.record(z.string().max(10000), z.unknown()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();

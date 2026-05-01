@@ -252,7 +252,7 @@ export default function ComputerUsePage() {
               <p className="text-sm text-muted-foreground">
                 Open an application from the taskbar to get started
               </p>
-              <div className="grid grid-cols-4 gap-6 mt-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
                 {DESKTOP_APPS.map((app) => (
                   <button
                     key={app.type}

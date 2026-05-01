@@ -1437,7 +1437,7 @@ export default function BrowserPage() {
                     </div>
                   ) : (
                     <div className="p-2">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {[
                           { label: "LCP", value: perfMetrics.lcp, unit: "ms", good: 2500 },
                           { label: "CLS", value: perfMetrics.cls, unit: "", good: 0.1 },

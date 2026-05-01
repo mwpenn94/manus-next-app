@@ -9,7 +9,7 @@ export const paymentRouter = router({
     }),
     createCheckout: protectedProcedure
       .input(z.object({
-        productId: z.string(),
+        productId: z.string().max(500),
         origin: z.string().url(),
       }))
       .mutation(async ({ ctx, input }) => {

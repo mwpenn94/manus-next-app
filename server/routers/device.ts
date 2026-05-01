@@ -24,7 +24,7 @@ export const deviceRouter = router({
       return getUserDevices(ctx.user.id);
     }),
     get: protectedProcedure
-      .input(z.object({ externalId: z.string() }))
+      .input(z.object({ externalId: z.string().max(500) }))
       .query(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.externalId);
         if (!device || device.userId !== ctx.user.id) return null;
@@ -51,8 +51,8 @@ export const deviceRouter = router({
       .input(z.object({
         pairingCode: z.string().min(1),
         tunnelUrl: z.string().min(1).url().refine(url => /^https?:\/\//.test(url), { message: "Tunnel URL must use http:// or https://" }).refine(url => validateTunnelUrl(url).valid, { message: "Tunnel URL targets a restricted address" }),
-        osInfo: z.string().optional(),
-        capabilities: z.record(z.string(), z.unknown()).optional(),
+        osInfo: z.string().max(10000).optional(),
+        capabilities: z.record(z.string().max(10000), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByPairingCode(input.pairingCode);
@@ -61,7 +61,7 @@ export const deviceRouter = router({
         return { success: true, deviceId: device.externalId };
       }),
     updateConnection: protectedProcedure
-      .input(z.object({ externalId: z.string(), tunnelUrl: z.string().min(1).url().refine(url => /^https?:\/\//.test(url), { message: "Tunnel URL must use http:// or https://" }).refine(url => validateTunnelUrl(url).valid, { message: "Tunnel URL targets a restricted address" }) }))
+      .input(z.object({ externalId: z.string().max(2048), tunnelUrl: z.string().min(1).url().refine(url => /^https?:\/\//.test(url), { message: "Tunnel URL must use http:// or https://" }).refine(url => validateTunnelUrl(url).valid, { message: "Tunnel URL targets a restricted address" }) }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.externalId);
         if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });
@@ -69,7 +69,7 @@ export const deviceRouter = router({
         return { success: true };
       }),
     updateStatus: protectedProcedure
-      .input(z.object({ externalId: z.string(), status: z.enum(["online", "offline", "pairing", "error"]), lastError: z.string().optional() }))
+      .input(z.object({ externalId: z.string().max(500), status: z.enum(["online", "offline", "pairing", "error"]), lastError: z.string().max(500).optional() }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.externalId);
         if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });
@@ -85,9 +85,9 @@ export const deviceRouter = router({
     /** Execute a command on a connected device via its relay/tunnel */
     execute: protectedProcedure
       .input(z.object({
-        deviceExternalId: z.string(),
+        deviceExternalId: z.string().max(500),
         action: z.enum(["screenshot", "click", "type", "scroll", "keypress", "launch_app", "navigate", "accessibility_tree"]),
-        params: z.record(z.string(), z.unknown()).optional(),
+        params: z.record(z.string().max(10000), z.unknown()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.deviceExternalId);
@@ -128,7 +128,7 @@ export const deviceRouter = router({
       }),
     /** Start a control session on a device */
     startSession: protectedProcedure
-      .input(z.object({ deviceExternalId: z.string() }))
+      .input(z.object({ deviceExternalId: z.string().max(500) }))
       .mutation(async ({ ctx, input }) => {
         const device = await getDeviceByExternalId(input.deviceExternalId);
         if (!device || device.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Device not found" });

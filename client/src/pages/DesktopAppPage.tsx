@@ -319,7 +319,7 @@ echo "Installers are in src-tauri/target/release/bundle/"
 
               {/* Quick Stats */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { label: "Total Builds", value: builds.length, icon: Package, color: "text-primary" },
                     { label: "Completed", value: builds.filter((b) => b.status === "completed").length, icon: CheckCircle2, color: "text-muted-foreground" },

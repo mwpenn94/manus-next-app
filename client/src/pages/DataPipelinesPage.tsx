@@ -577,7 +577,7 @@ function CreatePipelineDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Pipeline Name</label>
               <Input
@@ -611,7 +611,7 @@ function CreatePipelineDialog({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Topology</label>
               <Select value={topology} onValueChange={(v) => setTopology(v as PipelineTopology)}>
@@ -1436,7 +1436,7 @@ export default function DataPipelinesPage() {
                   <p className="text-[11px] text-muted-foreground">{selectedPipeline.convergenceRule}</p>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Schedule</p>
                   <p className="font-medium capitalize">{selectedPipeline.schedule}</p>

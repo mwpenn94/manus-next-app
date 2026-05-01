@@ -38,7 +38,7 @@ export const illustrationsRouter = router({
     }));
   }),
   generate: protectedProcedure
-    .input(z.object({ type: z.string().min(1), customPrompt: z.string().optional() }))
+    .input(z.object({ type: z.string().min(1), customPrompt: z.string().max(1000).optional() }))
     .mutation(async ({ input }) => {
       const prompt = input.customPrompt || ILLUSTRATION_PROMPTS[input.type];
       if (!prompt) throw new Error(`Unknown illustration type: ${input.type}`);

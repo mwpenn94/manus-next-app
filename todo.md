@@ -6304,3 +6304,21 @@
 - [x] Fix branding consistency: AppLayout sidebar "manus" → "Manus Next"
 - [x] Fix branding consistency: vite.ts OG meta tags "Manus" → "Manus Next"
 - [x] All 173 test files passing (4841 tests)
+
+## Recursive Optimization — Phase D Continuation (Pass 104+)
+
+- [x] Landscape pass: Wide scan of all pages, components, interactions across desktop + mobile
+- [ ] Depth pass: Edge cases, data integrity, runtime behavior deep dive
+- [x] Adversarial pass: Security, failure modes, dead code, regressions (22 orphan pages wired, 340 z.string() bounded, input validation hardened)
+- [ ] Future-State/Synthesis pass: System coherence, parity+ gaps, architecture review
+- [ ] Convergence verification: 2 consecutive clean passes (reset counter on any fix)
+- [ ] Phase D Class F VUs: Set up continuous validator scheduled tasks
+
+## Landscape Pass Findings — Fix Items (Pass 104)
+
+- [x] F1: Write tests for 24 untested routers (all 24 covered, 196 test files, 4908 tests passing)
+- [x] F2: Add mobile responsiveness — 17 pages fixed (grid-cols responsive breakpoints)
+- [ ] F3: Replace 20+ `as any` casts in agentStream.ts with proper types
+- [ ] F4: Improve accessibility — add aria-labels and focus management across pages
+- [ ] F5: Replace 6 hardcoded colors with CSS variable tokens
+- [ ] F6: Add mobile breakpoints to 6 components (ActiveToolIndicator, BranchCompareView, BranchIndicator, BranchTreeView, HandsFreeOverlay, ShareDialog)
