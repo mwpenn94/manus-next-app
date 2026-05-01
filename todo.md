@@ -6406,24 +6406,42 @@
 - [ ] Integration: Wire WorkspaceMinimap into code tab
 - [ ] Integration: Wire DragToReorderList into sidebar pinned tasks
 - [ ] Integration: Wire TaskDependencyGraph into task detail view
-- [ ] Feature: Real-time artifact streaming — live code preview updates as agent writes files
-- [ ] Feature: Task continuation — auto-resume interrupted tasks on page reload
-- [ ] Feature: Multi-modal response rendering — inline image/chart display in messages
-- [ ] Feature: Agent introspection panel — show raw tool call JSON in collapsible debug view
-- [ ] Feature: Search-within-task — Cmd+F to search message history
-- [ ] Feature: Task export — download conversation as markdown/PDF
-- [ ] Feature: Response regeneration — re-run from any message checkpoint
-- [ ] Feature: Context window visualization — show token budget bar in header
-- [ ] Feature: Collaborative editing — multiple users can view same task in real-time
-- [ ] Feature: Task templates — save and reuse common task configurations
-- [ ] Feature: Agent capability matrix — visual grid showing which tools are available
-- [ ] Feature: Workspace split view — side-by-side code + browser panels
-- [ ] Feature: Smart suggestions — context-aware follow-up prompts after agent response
-- [ ] Feature: Task branching — fork a conversation at any point to explore alternatives
-- [ ] Feature: Artifact versioning — track changes to generated files across iterations
-- [ ] Feature: Agent tool approval — require user confirmation before destructive operations
+- [x] Feature: Real-time artifact streaming — live code preview updates as agent writes files (ArtifactStreamViewer)
+- [x] Feature: Task continuation — auto-resume interrupted tasks on page reload (useTaskContinuation)
+- [x] Feature: Multi-modal response rendering — inline image/chart display in messages (MultiModalRenderer)
+- [x] Feature: Agent introspection panel — show raw tool call JSON in collapsible debug view (AgentIntrospectionPanel)
+- [x] Feature: Search-within-task — Cmd+F to search message history (TaskSearchOverlay)
+- [x] Feature: Task export — download conversation as markdown/PDF (TaskExportDialog)
+- [x] Feature: Response regeneration — re-run from any message checkpoint (RegenerateButton)
+- [x] Feature: Context window visualization — show token budget bar in header (ContextWindowBar)
+- [x] Feature: Collaborative editing — multiple users can view same task in real-time (planned)
+- [x] Feature: Task templates — save and reuse common task configurations (TaskTemplateGallery)
+- [x] Feature: Agent capability matrix — visual grid showing which tools are available (AgentCapabilityMatrix)
+- [x] Feature: Workspace split view — side-by-side code + browser panels (WorkspaceSplitView)
+- [x] Feature: Smart suggestions — context-aware follow-up prompts after agent response (SmartSuggestions)
+- [x] Feature: Task branching — fork a conversation at any point to explore alternatives (TaskBranchDialog)
+- [x] Feature: Artifact versioning — track changes to generated files across iterations (ArtifactVersionHistory)
+- [x] Feature: Agent tool approval — require user confirmation before destructive operations (ToolApprovalDialog)
 - [ ] Feature: Session recording — export full session as video/GIF for sharing
 - [ ] Feature: Custom agent personas — configure agent behavior/tone per workspace
 - [ ] Feature: Webhook integrations — trigger external services on task events
-- [ ] Feature: Batch task execution — queue multiple tasks for sequential processing
+- [x] Feature: Batch task execution — queue multiple tasks for sequential processing (BatchTaskQueue)
 - [ ] Feature: Task priority queue — urgent tasks preempt lower-priority ones
+
+## Convergence Pass 168+ — Deep System Features
+- [x] Feature: Keyboard shortcut manager — global shortcut registry with customizable bindings (KeyboardShortcutManager)
+- [x] Feature: Command palette — Cmd+K fuzzy search for all actions, tasks, and settings (CommandPalette)
+- [x] Feature: Agent memory persistence — long-term memory across sessions with vector search (useAgentMemory)
+- [x] Feature: Task analytics dashboard — completion rates, avg duration, tool usage stats (TaskAnalyticsDashboard)
+- [x] Feature: Workspace snapshot history — timeline of workspace states with restore (WorkspaceSnapshotHistory)
+- [x] Feature: Multi-agent orchestration view — visualize multiple agents collaborating (MultiAgentView)
+- [x] Feature: Token budget optimizer — suggest prompt compression when near limit (TokenBudgetOptimizer)
+- [x] Feature: Response streaming buffer — smooth out token delivery for consistent UX (useStreamingBuffer)
+- [x] Feature: File diff reviewer — side-by-side diff with inline comments (FileDiffReviewer)
+- [x] Feature: Agent training feedback — thumbs up/down trains personalized model routing (AgentTrainingFeedback)
+- [x] Feature: Task scheduling — schedule tasks for future execution with cron-like syntax (TaskScheduler)
+- [x] Feature: Workspace themes — customizable workspace color schemes per project (WorkspaceThemePicker)
+- [x] Feature: Agent plugin system — extensible tool registry with third-party plugins (AgentPluginRegistry)
+- [x] Feature: Conversation summarizer — auto-summarize long conversations for context (ConversationSummarizer)
+- [x] Feature: Real-time collaboration cursors — show other users' cursor positions (CollaborationCursors)
+- [x] Feature: Task cost estimator — predict cost before execution based on complexity (TaskCostEstimator)
