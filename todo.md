@@ -6630,3 +6630,10 @@
 - [x] AOV Pass 1: Verify full app build, load, and core navigation works end-to-end
 - [x] AOV Pass 2: Test component imports and rendering — identify broken components
 - [x] AOV Pass 3: Fix identified issues, optimize key paths, validate stability
+
+## Batch 16 — Communication & Content Management (Passes 344-359)
+- [x] Pass 344: TagManager — full tag CRUD with grouping, merge, recolor
+- [x] Pass 345: BookmarkCollection — folder tree, drag-reorder, reading list
+- [x] Pass 346: ContentCalendar — monthly grid, category colors, reschedule
+- [x] Pass 347: CommentAnnotation — overlay pins, threaded comments, resolve
+- [x] Pass 348-359: Additional communication/content components
