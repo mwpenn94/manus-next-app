@@ -1225,6 +1225,14 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { taskId: serverId, type: "slides" },
     { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
   );
+  const xlsxArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "document_xlsx" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
+  const csvArtifacts = trpc.workspace.list.useQuery(
+    { taskId: serverId, type: "document_csv" },
+    { enabled: hasServerId, refetchInterval: isRunning ? 5000 : false }
+  );
 
   // When serverId transitions from undefined to a value (new task synced to server),
   // force an immediate refetch of all artifact queries
@@ -1241,6 +1249,8 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
       documentPdfArtifacts.refetch();
       documentDocxArtifacts.refetch();
       slidesArtifacts.refetch();
+      xlsxArtifacts.refetch();
+      csvArtifacts.refetch();
     }
   }, [hasServerId, serverId]);
 
@@ -1258,8 +1268,10 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     for (const d of documentPdfArtifacts.data ?? []) docs.push({ ...d, docType: "pdf" });
     for (const d of documentDocxArtifacts.data ?? []) docs.push({ ...d, docType: "docx" });
     for (const d of slidesArtifacts.data ?? []) docs.push({ ...d, docType: "slides" });
+    for (const d of xlsxArtifacts.data ?? []) docs.push({ ...d, docType: "xlsx" });
+    for (const d of csvArtifacts.data ?? []) docs.push({ ...d, docType: "csv" });
     return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [documentArtifacts.data, documentPdfArtifacts.data, documentDocxArtifacts.data, slidesArtifacts.data]);
+  }, [documentArtifacts.data, documentPdfArtifacts.data, documentDocxArtifacts.data, slidesArtifacts.data, xlsxArtifacts.data, csvArtifacts.data]);
 
   // Collect links from messages (URLs in assistant responses)
   const extractedLinks = useMemo(() => {

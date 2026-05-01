@@ -4,8 +4,8 @@
  * Full-screen overlay showing the agent's sandbox environment.
  * Features:
  * - Header: close (X) button, title "Manus's computer", takeover button
- * - Code viewer with file name header + syntax-aware display
- * - Diff/Original/Modified tab switcher (segmented control)
+ * - Code viewer with file name header + syntax highlighting (react-syntax-highlighter)
+ * - Diff/Original/Modified tab switcher (segmented control) with proper diff (diff library)
  * - Browser preview mode when agent is browsing
  * - Active tool indicator ("Manus is using Editor")
  * - Progress scrubber with Live indicator
@@ -32,6 +32,9 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AgentAction } from "@/contexts/TaskContext";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { diffLines as computeDiffLines, Change } from "diff";
 
 // ── Types ──
 
@@ -56,91 +59,173 @@ interface SandboxViewerProps {
   stepProgress?: { completed: number; total: number; turn: number } | null;
 }
 
-// ── Diff Highlighting ──
+// ── File Extension to Language Mapping ──
 
-function DiffLine({ line, type, lineNum }: { line: string; type: "added" | "removed" | "unchanged"; lineNum: number }) {
+function getLanguageFromFile(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() || "";
+  const map: Record<string, string> = {
+    ts: "typescript",
+    tsx: "tsx",
+    js: "javascript",
+    jsx: "jsx",
+    py: "python",
+    rb: "ruby",
+    rs: "rust",
+    go: "go",
+    java: "java",
+    kt: "kotlin",
+    swift: "swift",
+    c: "c",
+    cpp: "cpp",
+    h: "c",
+    hpp: "cpp",
+    cs: "csharp",
+    php: "php",
+    html: "html",
+    htm: "html",
+    css: "css",
+    scss: "scss",
+    less: "less",
+    json: "json",
+    yaml: "yaml",
+    yml: "yaml",
+    toml: "toml",
+    xml: "xml",
+    sql: "sql",
+    sh: "bash",
+    bash: "bash",
+    zsh: "bash",
+    fish: "bash",
+    ps1: "powershell",
+    md: "markdown",
+    mdx: "mdx",
+    graphql: "graphql",
+    gql: "graphql",
+    dockerfile: "docker",
+    makefile: "makefile",
+    vue: "markup",
+    svelte: "markup",
+    env: "bash",
+    ini: "ini",
+    conf: "nginx",
+    tf: "hcl",
+    proto: "protobuf",
+    r: "r",
+    dart: "dart",
+    lua: "lua",
+    zig: "zig",
+    wasm: "wasm",
+  };
+  return map[ext] || "text";
+}
+
+// ── Diff View with proper diff library ──
+
+interface DiffViewProps {
+  original: string;
+  modified: string;
+}
+
+function DiffView({ original, modified }: DiffViewProps) {
+  const changes = useMemo(() => computeDiffLines(original, modified), [original, modified]);
+
+  let lineNum = 0;
   return (
-    <div
-      className={cn(
-        "flex font-mono text-xs leading-6 whitespace-pre-wrap break-all",
-        type === "added" && "bg-muted/50",
-        type === "removed" && "bg-red-500/10"
-      )}
-    >
-      <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground border-r border-border/30">
-        {lineNum}
-      </span>
-      <span
-        className={cn(
-          "w-5 shrink-0 text-center select-none",
-          type === "added" && "text-muted-foreground",
-          type === "removed" && "text-red-400",
-          type === "unchanged" && "text-muted-foreground"
-        )}
-      >
-        {type === "added" ? "+" : type === "removed" ? "-" : " "}
-      </span>
-      <span
-        className={cn(
-          "flex-1 px-3",
-          type === "added" && "text-muted-foreground",
-          type === "removed" && "text-red-300 line-through opacity-70",
-          type === "unchanged" && "text-muted-foreground"
-        )}
-      >
-        {line || " "}
-      </span>
+    <div className="py-2 font-mono text-xs">
+      {changes.map((change: Change, idx: number) => {
+        const lines = change.value.split("\n");
+        // Remove trailing empty string from split
+        if (lines[lines.length - 1] === "") lines.pop();
+
+        return lines.map((line, lineIdx) => {
+          lineNum++;
+          const type = change.added ? "added" : change.removed ? "removed" : "unchanged";
+          return (
+            <div
+              key={`${idx}-${lineIdx}`}
+              className={cn(
+                "flex leading-6 whitespace-pre-wrap break-all",
+                type === "added" && "bg-green-500/10",
+                type === "removed" && "bg-red-500/10"
+              )}
+            >
+              <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground border-r border-border/30">
+                {lineNum}
+              </span>
+              <span
+                className={cn(
+                  "w-5 shrink-0 text-center select-none",
+                  type === "added" && "text-green-400",
+                  type === "removed" && "text-red-400",
+                  type === "unchanged" && "text-muted-foreground"
+                )}
+              >
+                {type === "added" ? "+" : type === "removed" ? "-" : " "}
+              </span>
+              <span
+                className={cn(
+                  "flex-1 px-3",
+                  type === "added" && "text-green-300",
+                  type === "removed" && "text-red-300 line-through opacity-70",
+                  type === "unchanged" && "text-muted-foreground"
+                )}
+              >
+                {line || " "}
+              </span>
+            </div>
+          );
+        });
+      })}
     </div>
   );
 }
 
-function computeSimpleDiff(
-  original: string,
-  modified: string
-): Array<{ line: string; type: "added" | "removed" | "unchanged" }> {
-  const origLines = original.split("\n");
-  const modLines = modified.split("\n");
-  const origSet = new Set(origLines);
-  const modSet = new Set(modLines);
+// ── Syntax Highlighted Code View ──
 
-  const result: Array<{ line: string; type: "added" | "removed" | "unchanged" }> = [];
+const syntaxThemeOverrides: Record<string, React.CSSProperties> = {
+  'code[class*="language-"]': {
+    background: "transparent",
+    fontSize: "12px",
+    lineHeight: "1.5rem",
+  },
+  'pre[class*="language-"]': {
+    background: "transparent",
+    margin: 0,
+    padding: "0.5rem 0",
+  },
+};
 
-  for (const line of modLines) {
-    if (!origSet.has(line)) {
-      result.push({ line, type: "added" });
-    } else {
-      result.push({ line, type: "unchanged" });
-    }
-  }
+// Merge oneDark with our overrides
+const customStyle = { ...oneDark, ...syntaxThemeOverrides };
 
-  const removedLines = origLines.filter((l) => !modSet.has(l));
-  const finalResult: typeof result = [];
-  let removedIdx = 0;
-  for (const item of result) {
-    if (item.type === "added" && removedIdx < removedLines.length) {
-      finalResult.push({ line: removedLines[removedIdx], type: "removed" });
-      removedIdx++;
-    }
-    finalResult.push(item);
-  }
-  while (removedIdx < removedLines.length) {
-    finalResult.push({ line: removedLines[removedIdx], type: "removed" });
-    removedIdx++;
-  }
+function CodeView({ content, filename }: { content: string; filename?: string }) {
+  const language = filename ? getLanguageFromFile(filename) : "text";
 
-  return finalResult;
-}
-
-// ── Code Line Numbers ──
-
-function CodeLine({ line, lineNum }: { line: string; lineNum: number }) {
   return (
-    <div className="flex font-mono text-xs leading-6 whitespace-pre-wrap break-all">
-      <span className="w-12 shrink-0 text-right pr-3 select-none text-muted-foreground border-r border-border/30">
-        {lineNum}
-      </span>
-      <span className="flex-1 px-3 text-foreground">{line || " "}</span>
-    </div>
+    <SyntaxHighlighter
+      language={language}
+      style={customStyle}
+      showLineNumbers
+      lineNumberStyle={{
+        minWidth: "3rem",
+        paddingRight: "1rem",
+        textAlign: "right",
+        color: "var(--color-muted-foreground)",
+        borderRight: "1px solid oklch(0.3 0 0 / 0.3)",
+        marginRight: "0.75rem",
+        userSelect: "none",
+      }}
+      customStyle={{
+        background: "transparent",
+        margin: 0,
+        padding: "0.5rem 0",
+        fontSize: "12px",
+        lineHeight: "1.5rem",
+      }}
+      wrapLongLines
+    >
+      {content}
+    </SyntaxHighlighter>
   );
 }
 
@@ -257,17 +342,6 @@ export default function SandboxViewer({
     return active?.type === "browsing" || active?.type === "scrolling" || active?.type === "clicking";
   }, [actions]);
 
-  const diffLines = useMemo(() => {
-    if (viewMode !== "diff" || !originalContent || !codeContent) return [];
-    return computeSimpleDiff(originalContent, codeContent);
-  }, [viewMode, originalContent, codeContent]);
-
-  const displayContent = useMemo(() => {
-    if (viewMode === "original") return originalContent || "";
-    if (viewMode === "modified") return codeContent || "";
-    return "";
-  }, [viewMode, originalContent, codeContent]);
-
   const progressPercent = stepProgress
     ? Math.min(100, (stepProgress.completed / Math.max(1, stepProgress.total)) * 100)
     : streaming
@@ -374,18 +448,13 @@ export default function SandboxViewer({
 
                 {/* Code content */}
                 <div className="flex-1 overflow-auto">
-                  {viewMode === "diff" && diffLines.length > 0 ? (
-                    <div className="py-2">
-                      {diffLines.map((dl, i) => (
-                        <DiffLine key={i} line={dl.line} type={dl.type} lineNum={i + 1} />
-                      ))}
-                    </div>
-                  ) : displayContent ? (
-                    <div className="py-2">
-                      {displayContent.split("\n").map((line, i) => (
-                        <CodeLine key={i} line={line} lineNum={i + 1} />
-                      ))}
-                    </div>
+                  {viewMode === "diff" && originalContent && codeContent ? (
+                    <DiffView original={originalContent} modified={codeContent} />
+                  ) : (codeContent || originalContent) ? (
+                    <CodeView
+                      content={viewMode === "original" ? (originalContent || "") : (codeContent || "")}
+                      filename={activeFile}
+                    />
                   ) : (
                     <div className="flex-1 flex items-center justify-center h-full text-muted-foreground p-12">
                       <div className="text-center">

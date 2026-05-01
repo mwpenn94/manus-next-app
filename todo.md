@@ -6255,3 +6255,6 @@
 - [x] Database schema: added document_xlsx and document_csv to workspaceArtifacts enum, migration pushed
 - [x] WebappPreviewCard Code tab: shows file list when projectFiles available
 - [x] Remaining SSE buffer: final chunk processed after stream loop ends
+## Convergence Pass 2 — Syntax Highlighting & Diff
+- [x] SandboxViewer syntax highlighting: react-syntax-highlighter with oneDark theme, 40+ file extension mappings
+- [x] SandboxViewer proper diff: replaced naive set comparison with `diff` library diffLines for accurate line-by-line diffs

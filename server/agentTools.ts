@@ -2661,6 +2661,7 @@ export async function executeTool(
     return { success: false, result: `Invalid tool arguments: ${argsJson}` };
   }
 
+  try {
   switch (name) {
     case "web_search":
       return executeWebSearch(args);
@@ -2785,6 +2786,10 @@ export async function executeTool(
     }
     default:
       return { success: false, result: `Unknown tool: ${name}` };
+  }
+  } catch (toolErr: any) {
+    console.error(`[executeTool] Unhandled error in tool "${name}":`, toolErr.message);
+    return { success: false, result: `Tool execution failed: ${toolErr.message || "Unknown error"}` };
   }
 }
 
