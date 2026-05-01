@@ -54,6 +54,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
+import NotificationSoundToggle from "@/components/NotificationSoundToggle";
 
 type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "connectors" | "bridge" | "cloud_browser" | "data_controls" | "feedback";
 
@@ -1022,6 +1023,14 @@ export default function SettingsPage() {
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* Sound Effects Toggle */}
+              <div className="mt-4 bg-card border border-border rounded-xl p-4">
+                <NotificationSoundToggle
+                  enabled={generalSettings.soundEffects}
+                  onToggle={() => updateGeneralSetting("soundEffects")}
+                />
               </div>
 
               <div className="mt-6 bg-card border border-border rounded-xl p-5">

@@ -79,18 +79,22 @@ describe("Step 2: Context Window Token Usage Indicator", () => {
     expect(taskViewSrc).toContain("const [tokenUsage, setTokenUsage]");
   });
 
-  it("TaskView displays token count in header with human-readable format", () => {
-    // Should format large numbers as "12.4k"
-    expect(taskViewSrc).toContain("tokenUsage.total_tokens >= 1000");
-    expect(taskViewSrc).toContain("tokens");
+  it("SessionCostPanel displays token count with human-readable format", () => {
+    // Token formatting is now in SessionCostPanel component
+    const costPanelPath = path.resolve(__dirname, "../client/src/components/SessionCostPanel.tsx");
+    const costPanelSrc = fs.readFileSync(costPanelPath, "utf-8");
+    expect(costPanelSrc).toContain("total_tokens");
+    expect(costPanelSrc).toContain("formatTokens");
   });
 
-  it("TaskView shows context pressure indicator for high token counts", () => {
-    // Color-coded dot: green > amber > red based on prompt_tokens thresholds
-    expect(taskViewSrc).toContain("tokenUsage.prompt_tokens > 100000");
-    expect(taskViewSrc).toContain("bg-red-500");
-    expect(taskViewSrc).toContain("bg-amber-500");
-    expect(taskViewSrc).toContain("bg-emerald-500");
+  it("SessionCostPanel shows context pressure indicator with color-coded bar", () => {
+    // Color-coded bar: green > amber > red based on context pressure
+    const costPanelPath = path.resolve(__dirname, "../client/src/components/SessionCostPanel.tsx");
+    const costPanelSrc = fs.readFileSync(costPanelPath, "utf-8");
+    expect(costPanelSrc).toContain("contextPressure");
+    expect(costPanelSrc).toContain("bg-red-500");
+    expect(costPanelSrc).toContain("bg-amber-500");
+    expect(costPanelSrc).toContain("bg-emerald-500");
   });
 
   it("TaskView resets tokenUsage to null when starting a new stream", () => {

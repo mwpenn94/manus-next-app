@@ -5,11 +5,11 @@
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp, Sparkles, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles, CheckCircle2, Circle, Loader2, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AegisMeta {
-  classification?: { taskType: string; complexity: string };
+  classification?: { taskType: string; complexity: string; confidence?: number };
   planSteps?: string[];
   quality?: Record<string, number>;
 }
@@ -75,6 +75,9 @@ export default function ExecutionPlanDisplay({
         {classification && (
           <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium", complexityColor)}>
             {taskIcon} {classification.taskType} · {classification.complexity}
+            {classification.confidence != null && (
+              <span className="ml-1 opacity-70">{Math.round(classification.confidence * 100)}%</span>
+            )}
           </span>
         )}
         {expanded ? (
@@ -126,6 +129,34 @@ export default function ExecutionPlanDisplay({
                 );
               })}
             </div>
+
+            {/* Quality scores — shown after completion */}
+            {aegisMeta.quality && Object.keys(aegisMeta.quality).length > 0 && !isStreaming && (
+              <div className="px-3 pb-3 pt-1 border-t border-border/40">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <BarChart3 className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[10px] font-medium text-muted-foreground">Quality Assessment</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {Object.entries(aegisMeta.quality).map(([key, value]) => (
+                    <div key={key} className="flex flex-col items-center gap-0.5">
+                      <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-700",
+                            value >= 0.8 ? "bg-emerald-500" : value >= 0.6 ? "bg-amber-500" : "bg-red-500"
+                          )}
+                          style={{ width: `${Math.min(value * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground capitalize truncate w-full text-center">
+                        {key}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -47,7 +47,7 @@ export interface StreamStateSetters {
   /** Follow-up suggestion chips extracted from agent response */
   setFollowUpSuggestions?: (suggestions: string[]) => void;
   /** AEGIS metadata state setter (classification, plan steps, quality) */
-  setAegisMeta?: (meta: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null) => void;
+  setAegisMeta?: (meta: { classification?: { taskType: string; complexity: string; confidence?: number }; planSteps?: string[]; quality?: Record<string, number> } | null) => void;
   /** Connector context state setter (which services were injected into agent context) */
   setConnectorContext?: (data: { id: string; name: string; relevanceScore: number }[] | null) => void;
 }
@@ -447,6 +447,7 @@ export function buildStreamCallbacks(
           classification: data.classification ? {
             taskType: data.classification.taskType,
             complexity: data.classification.complexity,
+            confidence: data.classification.confidence,
           } : undefined,
           planSteps: data.planSteps,
           quality: data.quality,

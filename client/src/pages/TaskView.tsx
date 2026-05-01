@@ -110,6 +110,8 @@ import {
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import ActiveToolIndicator from "@/components/ActiveToolIndicator";
+import AgentMemoryIndicator from "@/components/AgentMemoryIndicator";
+import ResponseQualityBadge from "@/components/ResponseQualityBadge";
 import SandboxViewer from "@/components/SandboxViewer";
 import ModelSelector, { MODE_TO_MODEL, MODEL_TO_MODE } from "@/components/ModelSelector";
 import PlusMenu from "@/components/PlusMenu";
@@ -141,6 +143,11 @@ import InConversationSearch, { useConversationSearch } from "@/components/InConv
 import TaskReplayOverlay from "@/components/TaskReplayOverlay";
 import ExecutionPlanDisplay from "@/components/ExecutionPlanDisplay";
 import LiveOrchestrationGraph from "@/components/LiveOrchestrationGraph";
+import SessionCostPanel from "@/components/SessionCostPanel";
+import useInputHistory from "@/hooks/useInputHistory";
+import useOfflineQueue from "@/hooks/useOfflineQueue";
+import ParallelToolIndicator from "@/components/ParallelToolIndicator";
+import AdaptiveModelBadge from "@/components/AdaptiveModelBadge";
 import { useSearch } from "wouter";
 
 // ── Suggested Follow-ups (Gap 4) ──
@@ -541,6 +548,25 @@ function StreamingStepsCollapsible({ actions, stepProgress }: { actions: AgentAc
   const completedActions = actions.filter(a => a.status === "done");
   const activeActions = actions.filter(a => a.status === "active");
   const hasCompletedSteps = completedActions.length > 0;
+  // ETA estimation based on step completion rate
+  const streamStartRef = useRef(Date.now());
+  const [eta, setEta] = useState<string | null>(null);
+  useEffect(() => {
+    if (stepProgress && stepProgress.completed > 0 && stepProgress.total > 0) {
+      const elapsed = (Date.now() - streamStartRef.current) / 1000;
+      const rate = stepProgress.completed / elapsed;
+      const remaining = stepProgress.total - stepProgress.completed;
+      if (rate > 0 && remaining > 0) {
+        const etaSec = Math.round(remaining / rate);
+        if (etaSec < 60) setEta(`~${etaSec}s`);
+        else setEta(`~${Math.round(etaSec / 60)}m`);
+      } else {
+        setEta(null);
+      }
+    } else {
+      setEta(null);
+    }
+  }, [stepProgress]);
 
   return (
     <div className="mb-2">
@@ -556,6 +582,7 @@ function StreamingStepsCollapsible({ actions, stepProgress }: { actions: AgentAc
             {stepProgress && stepProgress.total > 0 && (
               <span className="font-mono tabular-nums ml-1">({stepProgress.completed}/{stepProgress.total})</span>
             )}
+            {eta && <span className="font-mono text-[10px] text-primary/70 ml-1">{eta} remaining</span>}
           </button>
           {expanded && (
             <div className="ml-2 mt-1 border-l border-border/50 pl-2">
@@ -1251,6 +1278,28 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
   const [deviceFrame, setDeviceFrame] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [codeViewMode, setCodeViewMode] = useState<"code" | "diff" | "tree">("code");
 
+  // Auto-tab switching: focus workspace tab based on active agent tool
+  const userManualTabRef = useRef(false);
+  const autoTabTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!isStreaming || userManualTabRef.current) return;
+    const activeAction = agentActions?.find(a => a.status === "active");
+    if (!activeAction) return;
+    let targetTab: WorkspaceTab | null = null;
+    if (activeAction.type === "browsing" || activeAction.type === "scrolling" || activeAction.type === "clicking") targetTab = "browser";
+    else if (activeAction.type === "creating" || activeAction.type === "editing" || activeAction.type === "writing") targetTab = "code";
+    else if (activeAction.type === "executing" || activeAction.type === "installing" || activeAction.type === "building") targetTab = "terminal";
+    else if (activeAction.type === "generating" && activeAction.preview?.match(/\.(png|jpg|svg|webp)/i)) targetTab = "images";
+    if (targetTab && targetTab !== activeTab) {
+      if (autoTabTimeoutRef.current) clearTimeout(autoTabTimeoutRef.current);
+      autoTabTimeoutRef.current = setTimeout(() => setActiveTab(targetTab!), 300);
+    }
+  }, [agentActions, isStreaming, activeTab]);
+  // Reset manual override when streaming ends
+  useEffect(() => {
+    if (!isStreaming) userManualTabRef.current = false;
+  }, [isStreaming]);
+
   // Fetch user-uploaded files for this task (for image gallery)
   const userFiles = trpc.file.list.useQuery(
     { taskExternalId: task?.id || "" },
@@ -1431,7 +1480,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => { userManualTabRef.current = true; setActiveTab(tab.id); }}
             className={cn(
               "flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap",
               activeTab === tab.id
@@ -2394,6 +2443,7 @@ export default function TaskView() {
   const [aegisMeta, setAegisMeta] = useState<{ classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null>(null);
   const [connectorContext, setConnectorContext] = useState<{ id: string; name: string; relevanceScore: number }[] | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
+
   const [desktopWorkspaceOpen, setDesktopWorkspaceOpen] = useState(() => {
     try { return localStorage.getItem("manus-workspace-panel") !== "closed"; } catch { return true; }
   });
@@ -2447,6 +2497,25 @@ export default function TaskView() {
   const [lastErrorRetryable, setLastErrorRetryable] = useState(false);
   const [generationIncomplete, setGenerationIncomplete] = useState(false);
   const [agentFollowUps, setAgentFollowUps] = useState<string[]>([]);
+
+  // Input history (shell-style arrow-up recall)
+  const [sentHistory, setSentHistory] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("manus-input-history") || "[]"); } catch { return []; }
+  });
+  const { handleKeyDown: historyKeyDown } = useInputHistory({
+    history: sentHistory,
+    currentInput: input,
+    onRecall: setInput,
+  });
+  // Offline message queue
+  const { isOffline, addToQueue, flush: flushOfflineQueue, queueLength } = useOfflineQueue();
+
+  // Persist input history to localStorage
+  useEffect(() => {
+    if (sentHistory.length > 0) {
+      try { localStorage.setItem("manus-input-history", JSON.stringify(sentHistory.slice(-50))); } catch {}
+    }
+  }, [sentHistory]);
 
   // In-conversation search (Pass 5 Step 1)
   const { searchOpen, closeSearch } = useConversationSearch();
@@ -2894,6 +2963,8 @@ export default function TaskView() {
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || !task) return;
+    // Track input history for shell-style recall
+    setSentHistory(prev => [...prev.slice(-50), input.trim()]);
     // If currently streaming, queue the follow-up: add user message, abort current stream,
     // and let the user's new message trigger a fresh stream with full conversation history.
     if (streaming && abortControllerRef.current) {
@@ -3421,7 +3492,18 @@ export default function TaskView() {
       }
     }
 
-    if (filesToUpload.length === 0) return; // No files — let normal text paste proceed
+    if (filesToUpload.length === 0) {
+      // Smart URL detection: if pasted text is a URL, show a hint
+      const text = e.clipboardData?.getData("text/plain") || "";
+      const urlMatch = text.trim().match(/^https?:\/\/[^\s]+$/);
+      if (urlMatch) {
+        // Don't prevent default — let the URL paste into the input
+        setTimeout(() => {
+          toast.info("URL detected — the agent can browse, summarize, or analyze it", { duration: 3000 });
+        }, 100);
+      }
+      return;
+    }
 
     // Prevent default only when we have files to handle
     // (allow normal text paste to work unimpeded)
@@ -3569,6 +3651,13 @@ export default function TaskView() {
                 </span>
               </span>
             )}
+            {/* Adaptive Model Badge */}
+            {aegisMeta?.classification && (
+              <AdaptiveModelBadge
+                model={agentMode}
+                reason={aegisMeta.classification.taskType}
+              />
+            )}
             {/* Tool turn counter — VU-02 fix */}
             {streaming && agentActions.length > 0 && (
               <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0" title={`${agentActions.length} tool calls executed`}>
@@ -3577,23 +3666,10 @@ export default function TaskView() {
               </span>
             )}
             {/* Token usage indicator — Session 23 */}
-            {tokenUsage && tokenUsage.total_tokens > 0 && (
-              <span
-                className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 whitespace-nowrap shrink-0"
-                title={`Prompt: ${tokenUsage.prompt_tokens.toLocaleString()} | Completion: ${tokenUsage.completion_tokens.toLocaleString()} | Turn ${tokenUsage.turn}`}
-              >
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {tokenUsage.total_tokens >= 1000
-                    ? `${(tokenUsage.total_tokens / 1000).toFixed(1)}k`
-                    : tokenUsage.total_tokens}
-                </span>
-                <span className="text-[9px] text-muted-foreground">tokens</span>
-                {/* Visual context pressure indicator */}
-                {tokenUsage.prompt_tokens > 100000 && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${tokenUsage.prompt_tokens > 180000 ? 'bg-red-500 animate-pulse' : tokenUsage.prompt_tokens > 140000 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-                )}
-              </span>
-            )}
+            {/* Session cost panel — replaces inline token counter */}
+            <div className="hidden md:block shrink-0">
+              <SessionCostPanel tokenUsage={tokenUsage} agentMode={agentMode} isStreaming={streaming} />
+            </div>
             {/* ModelSelector — Manus-style left-aligned in header */}
             <ModelSelector
               compact
@@ -4166,6 +4242,20 @@ export default function TaskView() {
                   knowledgeRecalled={knowledgeRecalled}
                   connectorContext={connectorContext}
                 />
+                {/* Parallel Tool Execution Indicator */}
+                {agentActions.filter(a => a.status === "active").length > 1 && (
+                  <ParallelToolIndicator
+                    activeTools={agentActions.filter(a => a.status === "active").map((a, i) => ({ id: `${a.type}-${i}`, name: a.type, startedAt: Date.now() }))}
+                    className="mb-2"
+                  />
+                )}
+                {/* Agent Memory Indicator */}
+                {knowledgeRecalled && knowledgeRecalled.keys.length > 0 && (
+                  <AgentMemoryIndicator
+                    recalledItems={knowledgeRecalled.keys.map((k, i) => ({ key: k, relevance: Math.max(0.5, 1 - i * 0.1) }))}
+                    className="mb-2"
+                  />
+                )}
                 {/* AEGIS Execution Plan Display */}
                 {aegisMeta && aegisMeta.planSteps && aegisMeta.planSteps.length > 0 && (
                   <ExecutionPlanDisplay
@@ -4179,10 +4269,13 @@ export default function TaskView() {
                 {agentActions.length > 0 && (
                   <StreamingStepsCollapsible actions={agentActions} stepProgress={stepProgress} />
                 )}
-                {/* Streaming text content */}
+                {/* Streaming text content with cursor */}
                 {streamContent && (
-                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none">
+                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none relative">
                     <Streamdown>{streamContent}</Streamdown>
+                    {streaming && (
+                      <span className="inline-block w-[2px] h-[1.1em] bg-primary ml-0.5 align-text-bottom animate-pulse" aria-hidden="true" />
+                    )}
                   </div>
                 )}
               </div>
@@ -4418,11 +4511,17 @@ export default function TaskView() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSend();
+                  if (isOffline) {
+                    addToQueue(input);
+                    setInput("");
+                  } else {
+                    handleSend();
+                  }
                 }
+                historyKeyDown(e);
               }}
               onPaste={handlePaste}
-              placeholder={streaming ? "Type a follow-up message..." : "Message Manus..."}
+              placeholder={isOffline ? `Offline — ${queueLength} queued message${queueLength !== 1 ? 's' : ''}` : streaming ? "Type a follow-up message..." : "Message Manus..."}
               aria-label="Chat message input"
               rows={1}
               className="w-full resize-none bg-transparent px-4 pt-3 pb-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"

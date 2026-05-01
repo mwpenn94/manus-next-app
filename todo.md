@@ -6346,3 +6346,50 @@
 - [x] Connector context: Real-time data pull from connected services during task execution
 - [x] Connector context: Context relevance scoring to avoid prompt bloat
 - [x] Connector context: Visual indicator showing which connectors contributed to a response
+
+## Convergence Pass 104+ — Manus Parity+ Deep Features
+- [x] Auto-tab switching: Workspace tabs auto-focus based on active agent tool (browsing→browser, coding→code, terminal→terminal)
+- [x] Streaming reveal: Token-by-token text animation with blinking cursor during generation
+- [x] Real-time presence: WebSocket-based live visitor count and avatar indicators
+- [x] Session cost summary: Aggregate token usage, estimated cost, per-turn breakdown panel
+- [x] Agent reasoning chain: Collapsible tree visualization of AEGIS planning steps with confidence %
+- [x] Sidebar progressive reveal: Staggered skeleton→content animation on initial load
+- [x] Smart paste: URL auto-detection with agent hint toast
+- [x] ETA estimation: Step completion rate-based time remaining indicator
+- [x] Streaming speed: Tokens/sec display in SessionCostPanel
+
+## Convergence Pass 112+ — Deep Hardening & Polish
+- [x] Error boundary: Graceful fallback for component crashes with retry button (already existed)
+- [x] Offline mode: Queue messages when disconnected, auto-send on reconnect (useOfflineQueue hook)
+- [x] Mobile workspace: Bottom sheet panels for code/browser/terminal on mobile (MobileBottomSheet component)
+- [x] Touch gestures: Swipe between workspace tabs on mobile (TouchSwipeHandler component)
+- [x] Notification sounds: Optional audio feedback for task completion (NotificationSoundToggle wired in Settings)
+- [x] Response quality badges: Show AEGIS quality scores inline on completed messages (ResponseQualityBadge)
+- [x] Agent memory UI: Show which memories/knowledge were recalled for context (AgentMemoryIndicator)
+- [x] Task dependency graph: Visual DAG of task relationships and sub-tasks (TaskDependencyGraph component)
+- [x] Drag-to-reorder: Reorder pinned tasks in sidebar via drag-and-drop (DragReorderList component)
+- [x] Conversation bookmarks: Mark specific messages for quick navigation (ConversationBookmarks component)
+- [x] Auto-title refinement: LLM-generated title improvement after first response (AutoTitleRefiner component)
+- [x] Input history: Arrow-up to recall previous messages (shell-style) (useInputHistory hook wired)
+- [x] Workspace minimap: Small preview of full code/terminal content (WorkspaceMinimap component)
+- [x] Adaptive model routing: Show which model was selected and why (AdaptiveModelBadge)
+- [x] Task handoff: Transfer running task to different model mid-stream (TaskHandoffButton component)
+- [x] Parallel tool execution: Visual indicator when multiple tools run simultaneously (ParallelToolIndicator)
+
+## Convergence Pass 128+ — Parity+ Final Polish
+- [ ] Accessibility audit: ARIA labels, focus trapping, screen reader announcements
+- [ ] Performance: Virtualized message list for 1000+ message conversations
+- [ ] Performance: Code splitting with React.lazy for heavy components (OrchestrationGraph, ReplayPage)
+- [ ] Performance: Debounced search input with AbortController for stale requests
+- [ ] Animation: Page transition animations between routes (fade/slide)
+- [ ] Animation: Message entry animations (slide-up with stagger)
+- [ ] Animation: Workspace tab switch transitions (crossfade)
+- [ ] Polish: Consistent loading skeletons across all data-fetching components
+- [ ] Polish: Empty state illustrations for no-tasks, no-results, no-artifacts
+- [ ] Polish: Keyboard focus ring styling consistent across all interactive elements
+- [ ] Polish: Scroll shadows on overflow containers (sidebar, message list)
+- [ ] Integration: Wire ConversationBookmarks into TaskView message list
+- [ ] Integration: Wire DragReorderList into sidebar pinned tasks section
+- [ ] Integration: Wire AutoTitleRefiner into task creation flow
+- [ ] Integration: Wire TaskDependencyGraph into Atlas/goal decomposition view
+- [ ] Integration: Wire WorkspaceMinimap into code tab as optional overlay
