@@ -12,7 +12,7 @@ export const aegisRouter = router({
   preFlight: protectedProcedure
     .input(z.object({
       prompt: z.string().min(1).max(50000),
-      taskExternalId: z.string().max(500).optional(),
+      taskExternalId: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const result = await aegis.runPreFlight(input.prompt, ctx.user.id, input.taskExternalId);
@@ -23,8 +23,8 @@ export const aegisRouter = router({
   postFlight: protectedProcedure
     .input(z.object({
       sessionId: z.number(),
-      output: z.string().max(10000),
-      taskType: z.string().max(1000),
+      output: z.string(),
+      taskType: z.string(),
       costCredits: z.number().default(0),
     }))
     .mutation(async ({ input }) => {

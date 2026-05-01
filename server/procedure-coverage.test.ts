@@ -72,7 +72,7 @@ describe("Procedure Coverage — WebApp Project Router", () => {
     expect(src).toContain("requestSsl: protectedProcedure");
     // Should have domain validation regex
     const requestSslIdx = src.indexOf("requestSsl:");
-    const requestSslBlock = src.slice(requestSslIdx, requestSslIdx + 700);
+    const requestSslBlock = src.slice(requestSslIdx, requestSslIdx + 500);
     expect(requestSslBlock).toContain(".regex(");
     expect(requestSslBlock).toContain("requestCertificate");
   });
@@ -109,9 +109,9 @@ describe("Procedure Coverage — AppPublish Router", () => {
 
   it("updateStoreMetadata uses protectedProcedure with optional fields", () => {
     expect(src).toContain("updateStoreMetadata: protectedProcedure");
-    expect(src).toContain("title: z.string().max(1000).optional()");
-    expect(src).toContain("shortDescription: z.string().max(50000).optional()");
-    expect(src).toContain("keywords: z.array(z.string().max(10000)).optional()");
+    expect(src).toContain("title: z.string().optional()");
+    expect(src).toContain("shortDescription: z.string().optional()");
+    expect(src).toContain("keywords: z.array(z.string()).optional()");
   });
 });
 
@@ -141,7 +141,7 @@ describe("Procedure Coverage — Browser Router", () => {
 describe("Procedure Coverage — Project Router", () => {
   it("reorder uses protectedProcedure with orderedExternalIds array input", () => {
     expect(src).toContain("reorder: protectedProcedure");
-    expect(src).toContain("orderedExternalIds: z.array(z.string().max(10000))");
+    expect(src).toContain("orderedExternalIds: z.array(z.string())");
   });
 
   it("reorder maps external IDs to internal IDs and calls reorderProjects", () => {

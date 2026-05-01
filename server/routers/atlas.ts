@@ -33,7 +33,7 @@ export const atlasRouter = router({
 
   /** Get status of a goal by external ID */
   getGoal: protectedProcedure
-    .input(z.object({ externalId: z.string().max(500) }))
+    .input(z.object({ externalId: z.string() }))
     .query(async ({ ctx, input }) => {
       const result = await atlas.getGoalStatus(input.externalId, ctx.user.id);
       if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Goal not found" });
@@ -44,7 +44,7 @@ export const atlasRouter = router({
   listGoals: protectedProcedure
     .input(z.object({
       limit: z.number().min(1).max(100).optional(),
-      status: z.string().max(1000).optional(),
+      status: z.string().optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
       return db.getUserGoals(ctx.user.id, { limit: input?.limit, status: input?.status });

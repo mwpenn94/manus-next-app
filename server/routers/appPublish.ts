@@ -20,7 +20,7 @@ export const appPublishRouter = router({
       return getUserBuilds(ctx.user.id);
     }),
     getBuild: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const build = await getBuildByExternalId(input.externalId);
         if (!build || build.userId !== ctx.user.id) return null;
@@ -31,7 +31,7 @@ export const appPublishRouter = router({
         mobileProjectId: z.number(),
         platform: z.enum(["ios", "android", "web_pwa"]),
         buildMethod: z.enum(["pwa_manifest", "capacitor_local", "github_actions", "expo_eas", "manual_xcode", "manual_android_studio"]),
-        version: z.string().max(10000).optional(),
+        version: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return createAppBuild({
@@ -47,9 +47,9 @@ export const appPublishRouter = router({
       .input(z.object({
         id: z.number(),
         status: z.enum(["queued", "building", "success", "failed", "cancelled"]),
-        artifactUrl: z.string().max(2048).optional(),
-        buildLog: z.string().max(10000).optional(),
-        errorMessage: z.string().max(50000).optional(),
+        artifactUrl: z.string().optional(),
+        buildLog: z.string().optional(),
+        errorMessage: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, status, ...extras } = input;
@@ -59,14 +59,14 @@ export const appPublishRouter = router({
     updateStoreMetadata: protectedProcedure
       .input(z.object({
         buildId: z.number(),
-        title: z.string().max(1000).optional(),
-        shortDescription: z.string().max(50000).optional(),
-        fullDescription: z.string().max(50000).optional(),
-        category: z.string().max(1000).optional(),
-        keywords: z.array(z.string().max(10000)).optional(),
-        screenshotUrls: z.array(z.string().max(2048)).optional(),
-        privacyPolicyUrl: z.string().max(2048).optional(),
-        supportUrl: z.string().max(2048).optional(),
+        title: z.string().optional(),
+        shortDescription: z.string().optional(),
+        fullDescription: z.string().optional(),
+        category: z.string().optional(),
+        keywords: z.array(z.string()).optional(),
+        screenshotUrls: z.array(z.string()).optional(),
+        privacyPolicyUrl: z.string().optional(),
+        supportUrl: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const { buildId, ...metadata } = input;
@@ -75,7 +75,7 @@ export const appPublishRouter = router({
       }),
     /** Generate Tauri project scaffold and store as artifact */
     generateTauriScaffold: protectedProcedure
-      .input(z.object({ appName: z.string().min(1).max(100), bundleId: z.string().min(1).max(200), version: z.string().max(500).default("1.0.0"), windowTitle: z.string().max(500).optional(), width: z.number().default(1024), height: z.number().default(768) }))
+      .input(z.object({ appName: z.string().min(1).max(100), bundleId: z.string().min(1).max(200), version: z.string().default("1.0.0"), windowTitle: z.string().optional(), width: z.number().default(1024), height: z.number().default(768) }))
       .mutation(async ({ ctx, input }) => {
         const tauriConf = { build: { distDir: "../dist", devPath: "http://localhost:3000", beforeDevCommand: "pnpm dev", beforeBuildCommand: "pnpm build" }, package: { productName: input.appName, version: input.version }, tauri: { bundle: { active: true, identifier: input.bundleId, icon: ["icons/32x32.png", "icons/128x128.png", "icons/icon.icns", "icons/icon.ico"], targets: "all" }, security: { csp: null }, windows: [{ title: input.windowTitle || input.appName, width: input.width, height: input.height, resizable: true, fullscreen: false }] } };
         const cargoToml = `[package]\nname = "${input.appName.toLowerCase().replace(/[^a-z0-9]/g, "-")}"\nversion = "${input.version}"\nedition = "2021"\n\n[build-dependencies]\ntauri-build = { version = "1", features = [] }\n\n[dependencies]\ntauri = { version = "1", features = ["shell-open"] }\nserde = { version = "1", features = ["derive"] }\nserde_json = "1"\n`;

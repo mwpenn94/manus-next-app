@@ -28,7 +28,7 @@ import {
 export const taskRouter = router({
   list: protectedProcedure
     .input(z.object({
-      statusFilter: z.string().max(10000).optional(),
+      statusFilter: z.string().optional(),
       includeArchived: z.boolean().optional(),
       limit: z.number().min(1).max(200).optional(),
       cursor: z.number().optional(),
@@ -185,9 +185,9 @@ export const taskRouter = router({
   search: protectedProcedure
     .input(z.object({
       query: z.string().min(1),
-      dateFrom: z.string().max(10000).optional(),
-      dateTo: z.string().max(10000).optional(),
-      statusFilter: z.string().max(10000).optional(),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+      statusFilter: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       return searchTasks(ctx.user.id, input.query, {
@@ -209,9 +209,9 @@ export const taskRouter = router({
       taskId: z.number(),
       role: z.enum(["user", "assistant", "system"]),
       content: z.string().max(100000),
-      actions: z.array(z.record(z.string().max(10000), z.unknown())).optional(),
+      actions: z.array(z.record(z.string(), z.unknown())).optional(),
       cardType: z.string().max(64).optional(),
-      cardData: z.record(z.string().max(10000), z.unknown()).optional(),
+      cardData: z.record(z.string(), z.unknown()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await verifyTaskOwnershipById(input.taskId, ctx.user.id);

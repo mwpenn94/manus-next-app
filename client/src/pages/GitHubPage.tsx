@@ -1082,7 +1082,7 @@ export default function GitHubPage() {
                   onChange={(e) => setPrTitle(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Head branch (source)</Label>
                   <Select value={prHead} onValueChange={setPrHead}>

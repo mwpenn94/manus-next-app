@@ -18,7 +18,7 @@ export const slidesRouter = router({
     generate: protectedProcedure
       .input(z.object({
         prompt: z.string().min(1),
-        template: z.string().max(10000).default("blank"),
+        template: z.string().default("blank"),
         slideCount: z.number().min(3).max(30).default(8),
       }))
       .mutation(async ({ ctx, input }) => {

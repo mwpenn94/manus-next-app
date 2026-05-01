@@ -614,7 +614,7 @@ export default function QATestingPage() {
                   <div className="space-y-3">
                     {perfResult.note && <p className="text-sm text-muted-foreground">{perfResult.note}</p>}
                     {perfResult.metrics && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-3">
                         {Object.entries(perfResult.metrics).map(([key, val]: [string, any]) => (
                           <div key={key} className="p-3 bg-muted/50 rounded-lg">
                             <p className="text-xs text-muted-foreground">{key}</p>
@@ -686,7 +686,7 @@ export default function QATestingPage() {
                     </div>
                     {/* Before/After side-by-side */}
                     {(diffResult.baselineScreenshotUrl || diffResult.currentScreenshotUrl) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
                           <p className="text-[10px] font-medium text-muted-foreground mb-1">Baseline</p>
                           {diffResult.baselineScreenshotUrl ? (

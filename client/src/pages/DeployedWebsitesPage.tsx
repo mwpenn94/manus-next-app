@@ -286,7 +286,7 @@ export default function DeployedWebsitesPage() {
                             <Settings className="w-3.5 h-3.5 mr-1" /> Configure
                           </Button>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div className="grid grid-cols-2 gap-3 text-xs">
                           <div>
                             <p className="text-muted-foreground">Title</p>
                             <p className="text-foreground font-medium">{project.name}</p>

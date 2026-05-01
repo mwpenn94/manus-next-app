@@ -11,13 +11,13 @@ export const sovereignRouter = router({
   route: protectedProcedure
     .input(z.object({
       messages: z.array(z.object({
-        role: z.string().max(1000),
-        content: z.string().max(50000),
+        role: z.string(),
+        content: z.string(),
       })),
-      requiredCapabilities: z.array(z.string().max(10000)).optional(),
+      requiredCapabilities: z.array(z.string()).optional(),
       maxCost: z.number().optional(),
-      preferredProvider: z.string().max(10000).optional(),
-      taskType: z.string().max(1000).optional(),
+      preferredProvider: z.string().optional(),
+      taskType: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       return sovereign.routeRequest({
@@ -72,8 +72,8 @@ export const sovereignRouter = router({
   compare: protectedProcedure
     .input(z.object({
       prompt: z.string().min(1).max(10000),
-      providers: z.array(z.string().max(10000)).min(1).max(5),
-      systemPrompt: z.string().max(50000).optional(),
+      providers: z.array(z.string()).min(1).max(5),
+      systemPrompt: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const messages = [

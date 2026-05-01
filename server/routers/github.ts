@@ -50,7 +50,7 @@ export const githubRouter = router({
     }),
     /** Get a single repo by externalId */
     getRepo: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -59,15 +59,15 @@ export const githubRouter = router({
     /** Import/connect a GitHub repo from the user's GitHub account */
     connectRepo: protectedProcedure
       .input(z.object({
-        fullName: z.string().max(1000),
-        name: z.string().max(1000),
-        description: z.string().max(50000).optional(),
-        htmlUrl: z.string().max(2048),
-        cloneUrl: z.string().max(2048).optional(),
-        sshUrl: z.string().max(2048).optional(),
-        defaultBranch: z.string().max(10000).optional(),
+        fullName: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        htmlUrl: z.string(),
+        cloneUrl: z.string().optional(),
+        sshUrl: z.string().optional(),
+        defaultBranch: z.string().optional(),
         isPrivate: z.boolean().optional(),
-        language: z.string().max(1000).optional(),
+        language: z.string().optional(),
         starCount: z.number().optional(),
         forkCount: z.number().optional(),
         openIssuesCount: z.number().optional(),
@@ -113,11 +113,11 @@ export const githubRouter = router({
     createRepo: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(100),
-        description: z.string().max(50000).optional(),
+        description: z.string().optional(),
         isPrivate: z.boolean().optional(),
         autoInit: z.boolean().optional(),
-        gitignoreTemplate: z.string().max(10000).optional(),
-        licenseTemplate: z.string().max(10000).optional(),
+        gitignoreTemplate: z.string().optional(),
+        licenseTemplate: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Get GitHub token from connector
@@ -158,7 +158,7 @@ export const githubRouter = router({
       }),
     /** Disconnect a repo */
     disconnectRepo: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -167,7 +167,7 @@ export const githubRouter = router({
       }),
     /** Sync repo metadata from GitHub API */
     syncRepo: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -208,7 +208,7 @@ export const githubRouter = router({
       }),
     /** Get file tree for a repo */
     fileTree: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500), branch: z.string().max(500).optional() }))
+      .input(z.object({ externalId: z.string(), branch: z.string().optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -224,7 +224,7 @@ export const githubRouter = router({
       }),
     /** Get file content */
     fileContent: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500), path: z.string().max(500), ref: z.string().max(500).optional() }))
+      .input(z.object({ externalId: z.string(), path: z.string(), ref: z.string().optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -240,12 +240,12 @@ export const githubRouter = router({
     /** Commit a file change */
     commitFile: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        path: z.string().max(10000),
-        content: z.string().max(50000), // base64
-        message: z.string().max(50000),
-        sha: z.string().max(10000).optional(),
-        branch: z.string().max(10000).optional(),
+        externalId: z.string(),
+        path: z.string(),
+        content: z.string(), // base64
+        message: z.string(),
+        sha: z.string().optional(),
+        branch: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -267,11 +267,11 @@ export const githubRouter = router({
     /** Delete a file */
     deleteFile: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        path: z.string().max(10000),
-        message: z.string().max(50000),
-        sha: z.string().max(10000),
-        branch: z.string().max(10000).optional(),
+        externalId: z.string(),
+        path: z.string(),
+        message: z.string(),
+        sha: z.string(),
+        branch: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -292,10 +292,10 @@ export const githubRouter = router({
     /** Create an issue */
     createIssue: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        title: z.string().max(1000),
-        body: z.string().max(50000).optional(),
-        labels: z.array(z.string().max(10000)).optional(),
+        externalId: z.string(),
+        title: z.string(),
+        body: z.string().optional(),
+        labels: z.array(z.string()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -312,7 +312,7 @@ export const githubRouter = router({
     /** Merge a pull request */
     mergePR: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
+        externalId: z.string(),
         pullNumber: z.number(),
         mergeMethod: z.enum(["merge", "squash", "rebase"]).optional(),
       }))
@@ -330,7 +330,7 @@ export const githubRouter = router({
       }),
     /** List branches */
     branches: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -345,7 +345,7 @@ export const githubRouter = router({
       }),
     /** Create a branch */
     createBranch: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500), branchName: z.string().max(500), fromSha: z.string().max(500) }))
+      .input(z.object({ externalId: z.string(), branchName: z.string(), fromSha: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -360,7 +360,7 @@ export const githubRouter = router({
       }),
     /** List commits */
     commits: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500), branch: z.string().max(500).optional(), perPage: z.number().optional() }))
+      .input(z.object({ externalId: z.string(), branch: z.string().optional(), perPage: z.number().optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -375,7 +375,7 @@ export const githubRouter = router({
       }),
     /** List pull requests */
     pullRequests: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500), state: z.enum(["open", "closed", "all"]).optional() }))
+      .input(z.object({ externalId: z.string(), state: z.enum(["open", "closed", "all"]).optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -391,11 +391,11 @@ export const githubRouter = router({
     /** Create a pull request */
     createPR: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        title: z.string().max(1000),
-        body: z.string().max(50000).optional(),
-        head: z.string().max(10000),
-        base: z.string().max(10000),
+        externalId: z.string(),
+        title: z.string(),
+        body: z.string().optional(),
+        head: z.string(),
+        base: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -411,7 +411,7 @@ export const githubRouter = router({
       }),
     /** List issues */
     issues: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500), state: z.enum(["open", "closed", "all"]).optional() }))
+      .input(z.object({ externalId: z.string(), state: z.enum(["open", "closed", "all"]).optional() }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
         if (!repo || repo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Repo not found" });
@@ -428,12 +428,12 @@ export const githubRouter = router({
     /** Multi-file commit via Git Trees API — atomic batch commit */
     multiCommit: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        branch: z.string().max(10000),
-        message: z.string().max(50000),
+        externalId: z.string(),
+        branch: z.string(),
+        message: z.string(),
         files: z.array(z.object({
-          path: z.string().max(10000),
-          content: z.string().max(50000).nullable(), // null = delete
+          path: z.string(),
+          content: z.string().nullable(), // null = delete
         })).min(1).max(100),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -458,9 +458,9 @@ export const githubRouter = router({
     /** Compare two branches — ahead/behind counts and file diffs */
     compareBranches: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        base: z.string().max(10000),
-        head: z.string().max(10000),
+        externalId: z.string(),
+        base: z.string(),
+        head: z.string(),
       }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -478,8 +478,8 @@ export const githubRouter = router({
     /** Get detailed diff for a single commit */
     commitDiff: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        commitSha: z.string().max(10000),
+        externalId: z.string(),
+        commitSha: z.string(),
       }))
       .query(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -497,14 +497,14 @@ export const githubRouter = router({
     /** Commit multiple files and trigger deploy in one action */
     commitAndDeploy: protectedProcedure
       .input(z.object({
-        externalId: z.string().max(500),
-        branch: z.string().max(10000),
-        message: z.string().max(50000),
+        externalId: z.string(),
+        branch: z.string(),
+        message: z.string(),
         files: z.array(z.object({
-          path: z.string().max(10000),
-          content: z.string().max(50000).nullable(),
+          path: z.string(),
+          content: z.string().nullable(),
         })).min(1).max(100),
-        webappProjectExternalId: z.string().max(500).optional(),
+        webappProjectExternalId: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const repo = await getGitHubRepoByExternalId(input.externalId);
@@ -564,9 +564,9 @@ export const githubRouter = router({
     /** Fork a repository to the authenticated user's account */
     forkRepo: protectedProcedure
       .input(z.object({
-        owner: z.string().max(10000),
-        repo: z.string().max(10000),
-        organization: z.string().max(10000).optional(),
+        owner: z.string(),
+        repo: z.string(),
+        organization: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const conns = await getUserConnectors(ctx.user.id);

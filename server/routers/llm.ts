@@ -6,7 +6,7 @@ export const llmRouter = router({
       .input(z.object({
         messages: z.array(z.object({
           role: z.enum(["system", "user", "assistant"]),
-          content: z.string().max(50000),
+          content: z.string(),
         })).min(1),
       }))
       .mutation(async ({ input }) => {

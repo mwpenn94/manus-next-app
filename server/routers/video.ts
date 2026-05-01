@@ -36,14 +36,14 @@ export const videoRouter = router({
         return { externalId, status: "pending" };
       }),
     get: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .query(async ({ ctx, input }) => {
         const project = await getVideoProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Not found" });
         return project;
       }),
     delete: protectedProcedure
-      .input(z.object({ externalId: z.string().max(500) }))
+      .input(z.object({ externalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const project = await getVideoProjectByExternalId(input.externalId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Not found" });

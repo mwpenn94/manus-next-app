@@ -26,13 +26,13 @@ export const skillRouter = router({
         return { success: true };
       }),
     uninstall: protectedProcedure
-      .input(z.object({ skillId: z.string().max(500) }))
+      .input(z.object({ skillId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         await uninstallSkill(ctx.user.id, input.skillId);
         return { success: true };
       }),
     toggle: protectedProcedure
-      .input(z.object({ skillId: z.string().max(500), enabled: z.boolean() }))
+      .input(z.object({ skillId: z.string(), enabled: z.boolean() }))
       .mutation(async ({ ctx, input }) => {
         await toggleSkill(ctx.user.id, input.skillId, input.enabled);
         return { success: true };
@@ -40,9 +40,9 @@ export const skillRouter = router({
     /** Execute a skill by running its instructions through the LLM */
     execute: protectedProcedure
       .input(z.object({
-        skillId: z.string().max(500),
+        skillId: z.string(),
         prompt: z.string().min(1),
-        context: z.string().max(50000).optional(),
+        context: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const skills = await getUserSkills(ctx.user.id);

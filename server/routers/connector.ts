@@ -127,7 +127,7 @@ export const connectorRouter = router({
       }),
     /** List available actions for a connector */
     listActions: protectedProcedure
-      .input(z.object({ connectorId: z.string().max(500) }))
+      .input(z.object({ connectorId: z.string() }))
       .query(async ({ input }) => {
         const { CONNECTOR_CATALOG } = await import("../connectorApis");
         const entry = CONNECTOR_CATALOG.find(c => c.id === input.connectorId);
@@ -150,9 +150,9 @@ export const connectorRouter = router({
     /** Get OAuth authorization URL for a connector */
     getOAuthUrl: protectedProcedure
       .input(z.object({
-        connectorId: z.string().max(500),
-        origin: z.string().max(10000),
-        returnPath: z.string().max(10000).optional(),
+        connectorId: z.string(),
+        origin: z.string(),
+        returnPath: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { getOAuthProvider, isOAuthSupported } = await import("../connectorOAuth");
@@ -176,9 +176,9 @@ export const connectorRouter = router({
     /** Complete OAuth flow — exchange code for tokens and save connector */
     completeOAuth: protectedProcedure
       .input(z.object({
-        connectorId: z.string().max(500),
-        code: z.string().max(50000),
-        origin: z.string().max(10000),
+        connectorId: z.string(),
+        code: z.string(),
+        origin: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { getOAuthProvider } = await import("../connectorOAuth");
@@ -212,7 +212,7 @@ export const connectorRouter = router({
       }),
     /** Refresh an expired OAuth token */
     refreshOAuth: protectedProcedure
-      .input(z.object({ connectorId: z.string().max(500) }))
+      .input(z.object({ connectorId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const { getOAuthProvider } = await import("../connectorOAuth");
         const userConns = await getUserConnectors(ctx.user.id);
@@ -230,7 +230,7 @@ export const connectorRouter = router({
       }),
     /** Check if OAuth is available for a connector (no credentials needed) */
     checkOAuthSupport: protectedProcedure
-      .input(z.object({ connectorId: z.string().max(500) }))
+      .input(z.object({ connectorId: z.string() }))
       .query(async ({ input }) => {
         const { isOAuthSupported } = await import("../connectorOAuth");
         return { supported: isOAuthSupported(input.connectorId) };
@@ -294,8 +294,8 @@ export const connectorRouter = router({
      */
     verifyViaManus: protectedProcedure
       .input(z.object({
-        connectorId: z.string().max(500),
-        origin: z.string().max(10000),
+        connectorId: z.string(),
+        origin: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
         const verifiable = MANUS_VERIFIABLE_CONNECTORS[input.connectorId];
@@ -341,10 +341,10 @@ export const connectorRouter = router({
      */
     completeManusVerification: protectedProcedure
       .input(z.object({
-        connectorId: z.string().max(500),
+        connectorId: z.string(),
         verifiedIdentity: z.string().min(1).max(256),
-        verifiedEmail: z.string().max(10000).optional(),
-        loginMethod: z.string().max(10000).optional(),
+        verifiedEmail: z.string().optional(),
+        loginMethod: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const verifiable = MANUS_VERIFIABLE_CONNECTORS[input.connectorId];
@@ -440,7 +440,7 @@ export const connectorRouter = router({
 
     /** Get health details for a single connector */
     getHealthDetail: protectedProcedure
-      .input(z.object({ connectorId: z.string().max(500) }))
+      .input(z.object({ connectorId: z.string() }))
       .query(async ({ ctx, input }) => {
         const health = await getOrCreateConnectorHealth(ctx.user.id, input.connectorId);
         const logs = await getConnectorHealthLogs(ctx.user.id, input.connectorId, 20);
@@ -466,7 +466,7 @@ export const connectorRouter = router({
     /** Toggle auto-refresh for a connector */
     updateAutoRefresh: protectedProcedure
       .input(z.object({
-        connectorId: z.string().max(500),
+        connectorId: z.string(),
         enabled: z.boolean(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -500,7 +500,7 @@ export const connectorRouter = router({
 
     /** Manual token refresh trigger */
     manualRefresh: protectedProcedure
-      .input(z.object({ connectorId: z.string().max(500) }))
+      .input(z.object({ connectorId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const { getOAuthProvider } = await import("../connectorOAuth");
         const userConns = await getUserConnectors(ctx.user.id);
@@ -558,7 +558,7 @@ export const connectorRouter = router({
 
     /** Get health event logs for a connector */
     getHealthLogs: protectedProcedure
-      .input(z.object({ connectorId: z.string().max(500), limit: z.number().min(1).max(100).default(20) }))
+      .input(z.object({ connectorId: z.string(), limit: z.number().min(1).max(100).default(20) }))
       .query(async ({ ctx, input }) => {
         const logs = await getConnectorHealthLogs(ctx.user.id, input.connectorId, input.limit);
         return logs.map(l => ({

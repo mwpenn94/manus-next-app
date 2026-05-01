@@ -1668,7 +1668,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                   ) : (
                     /* Gallery grid view */
                     <div className="flex-1 overflow-y-auto p-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {allImages.map((img, i) => (
                           <button
                             key={`gallery-${img.source}-${i}`}

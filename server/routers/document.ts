@@ -19,17 +19,17 @@ import { storagePut } from "../storage";
 const docSectionSchema = z.object({
   type: z.enum(["heading", "paragraph", "table", "list"]),
   level: z.number().min(1).max(3).optional(),
-  text: z.string().max(50000).optional(),
-  items: z.array(z.string().max(10000)).optional(),
-  rows: z.array(z.array(z.string().max(10000))).optional(),
-  headers: z.array(z.string().max(10000)).optional(),
+  text: z.string().optional(),
+  items: z.array(z.string()).optional(),
+  rows: z.array(z.array(z.string())).optional(),
+  headers: z.array(z.string()).optional(),
   bold: z.boolean().optional(),
 });
 
 const sheetSchema = z.object({
-  name: z.string().max(1000),
-  headers: z.array(z.string().max(10000)),
-  rows: z.array(z.array(z.union([z.string().max(10000), z.number(), z.boolean(), z.null()]))),
+  name: z.string(),
+  headers: z.array(z.string()),
+  rows: z.array(z.array(z.union([z.string(), z.number(), z.boolean(), z.null()]))),
   columnWidths: z.array(z.number()).optional(),
 });
 
@@ -48,7 +48,7 @@ export const documentRouter = router({
       z.object({
         title: z.string().min(1).max(200),
         sections: z.array(docSectionSchema),
-        author: z.string().max(10000).optional(),
+        author: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {

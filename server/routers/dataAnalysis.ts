@@ -10,7 +10,7 @@ export const dataAnalysisRouter = router({
   parseCSV: protectedProcedure
     .input(z.object({
       csvText: z.string().max(500000),
-      delimiter: z.string().max(10000).default(","),
+      delimiter: z.string().default(","),
       hasHeader: z.boolean().default(true),
     }))
     .mutation(({ input }) => {
@@ -32,8 +32,8 @@ export const dataAnalysisRouter = router({
   /** Generate statistical summary of parsed data */
   summarize: protectedProcedure
     .input(z.object({
-      headers: z.array(z.string().max(10000)),
-      rows: z.array(z.array(z.string().max(10000))),
+      headers: z.array(z.string()),
+      rows: z.array(z.array(z.string())),
     }))
     .mutation(({ input }) => {
       const { headers, rows } = input;
@@ -88,12 +88,12 @@ export const dataAnalysisRouter = router({
   /** Generate chart configuration from data */
   chartConfig: protectedProcedure
     .input(z.object({
-      headers: z.array(z.string().max(10000)),
-      rows: z.array(z.array(z.string().max(10000))).max(200),
+      headers: z.array(z.string()),
+      rows: z.array(z.array(z.string())).max(200),
       chartType: z.enum(["bar", "line", "pie", "scatter"]),
-      xColumn: z.string().max(10000),
-      yColumn: z.string().max(10000),
-      title: z.string().max(1000).optional(),
+      xColumn: z.string(),
+      yColumn: z.string(),
+      title: z.string().optional(),
     }))
     .mutation(({ input }) => {
       const xIdx = input.headers.indexOf(input.xColumn);
@@ -130,8 +130,8 @@ export const dataAnalysisRouter = router({
   /** AI-powered data analysis */
   analyze: protectedProcedure
     .input(z.object({
-      headers: z.array(z.string().max(10000)),
-      sampleRows: z.array(z.array(z.string().max(10000))).max(20),
+      headers: z.array(z.string()),
+      sampleRows: z.array(z.array(z.string())).max(20),
       question: z.string().max(500),
       totalRows: z.number(),
     }))
