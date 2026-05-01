@@ -48,6 +48,8 @@ export interface StreamStateSetters {
   setFollowUpSuggestions?: (suggestions: string[]) => void;
   /** AEGIS metadata state setter (classification, plan steps, quality) */
   setAegisMeta?: (meta: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null) => void;
+  /** Connector context state setter (which services were injected into agent context) */
+  setConnectorContext?: (data: { id: string; name: string; relevanceScore: number }[] | null) => void;
 }
 
 /**
@@ -450,6 +452,9 @@ export function buildStreamCallbacks(
           quality: data.quality,
         });
       }
+    },
+    onConnectorContext: (data: { id: string; name: string; relevanceScore: number }[]) => {
+      setters.setConnectorContext?.(data);
     },
   };
 }

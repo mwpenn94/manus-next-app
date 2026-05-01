@@ -18,7 +18,7 @@ import {
   Globe, Search, Terminal, PenLine,
   FileCode, Image, Brain, MousePointerClick,
   Package, Hammer, BookOpen, GitBranch,
-  BarChart3, Palette, Send, WifiOff, Loader2,
+  BarChart3, Palette, Send, WifiOff, Loader2, Plug,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,8 @@ interface PresenceProps {
   isReconnecting?: boolean;
   /** Knowledge recalled badge — shows count of cross-session memories injected */
   knowledgeRecalled?: { count: number; keys: string[] } | null;
+  /** Connector context — which connected services were injected into agent context */
+  connectorContext?: { id: string; name: string; relevanceScore: number }[] | null;
 }
 
 function deriveState(props: PresenceProps): AgentPresenceState {
@@ -179,7 +181,7 @@ function LivePulseDot({ color }: { color: string }) {
 
 // ── Thinking State ──
 
-function ThinkingPresence({ knowledgeRecalled }: { knowledgeRecalled?: { count: number; keys: string[] } | null }) {
+function ThinkingPresence({ knowledgeRecalled, connectorContext }: { knowledgeRecalled?: { count: number; keys: string[] } | null; connectorContext?: { id: string; name: string; relevanceScore: number }[] | null }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
@@ -201,6 +203,12 @@ function ThinkingPresence({ knowledgeRecalled }: { knowledgeRecalled?: { count: 
         {knowledgeRecalled && knowledgeRecalled.count > 0 && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-medium" title={knowledgeRecalled.keys.join(", ")}>
             Knowledge recalled({knowledgeRecalled.count})
+          </span>
+        )}
+        {connectorContext && connectorContext.length > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium flex items-center gap-1" title={connectorContext.map(c => `${c.name} (${Math.round(c.relevanceScore * 100)}%)`).join(", ")}>
+            <Plug className="w-2.5 h-2.5" />
+            {connectorContext.length} service{connectorContext.length > 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -312,6 +320,7 @@ export default function ActiveToolIndicator({
   hasStreamContent = false,
   isReconnecting = false,
   knowledgeRecalled = null,
+  connectorContext = null,
 }: PresenceProps) {
   const state = deriveState({ actions, streaming, hasStreamContent, isReconnecting });
   const activeAction = actions.find((a) => a.status === "active");
@@ -320,7 +329,7 @@ export default function ActiveToolIndicator({
 
   return (
     <AnimatePresence mode="wait">
-      {state === "thinking" && <ThinkingPresence key="thinking" knowledgeRecalled={knowledgeRecalled} />}
+      {state === "thinking" && <ThinkingPresence key="thinking" knowledgeRecalled={knowledgeRecalled} connectorContext={connectorContext} />}
       {state === "tool_active" && activeAction && (
         <ToolActivePresence key={`tool-${activeAction.type}`} action={activeAction} />
       )}

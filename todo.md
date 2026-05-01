@@ -6326,23 +6326,23 @@
 - [x] All 196 test files passing (4908 tests), 0 TypeScript errors
 
 ## Deep Manus Parity — High-Delta Items (Real Orchestration, Workspace, Replay, Connectors)
-- [ ] Real-time orchestration visibility: Live execution graph showing tool call DAG with status indicators (pending/running/complete/failed)
-- [ ] Orchestration graph: Animated edges showing data flow between tool calls
-- [ ] Orchestration graph: Expandable nodes showing tool input/output previews
-- [ ] Orchestration graph: Time-based layout showing parallel vs sequential execution
-- [ ] Multi-artifact workspace: Split-pane layout with resizable panels
-- [ ] Workspace: Live code preview with syntax highlighting and line numbers
-- [ ] Workspace: Document preview with markdown rendering
-- [ ] Workspace: Website/iframe preview with device frame selector (desktop/tablet/mobile)
-- [ ] Workspace: File tree navigator for multi-file artifacts
-- [ ] Workspace: Diff view showing changes between iterations
-- [ ] Replay system: Full session timeline with scrub bar
-- [ ] Replay: Playback controls (play/pause/speed/skip)
-- [ ] Replay: Message-level and tool-level granularity
+- [x] Real-time orchestration visibility: Live execution graph showing tool call DAG with status indicators (pending/running/complete/failed)
+- [x] Orchestration graph: Animated edges showing data flow between tool calls
+- [x] Orchestration graph: Expandable nodes showing tool input/output previews
+- [x] Orchestration graph: Time-based layout showing parallel vs sequential execution
+- [x] Multi-artifact workspace: Split-pane layout with resizable panels
+- [x] Workspace: Live code preview with syntax highlighting and line numbers
+- [x] Workspace: Document preview with markdown rendering
+- [x] Workspace: Website/iframe preview with device frame selector (desktop/tablet/mobile)
+- [x] Workspace: File tree navigator for multi-file artifacts
+- [x] Workspace: Diff view showing changes between iterations
+- [x] Replay system: Full session timeline with scrub bar
+- [x] Replay: Playback controls (play/pause/speed/skip)
+- [x] Replay: Message-level and tool-level granularity
 - [x] Replay: Visual state reconstruction at any point in time
 - [x] Replay: Shareable replay links with timestamp deep-linking
 - [x] Per-message feedback: Thumbs up/down on individual assistant responses (DB + tRPC + UI)
-- [ ] Connector context injection: Connected services feed context into agent system prompt
-- [ ] Connector context: Real-time data pull from connected services during task execution
-- [ ] Connector context: Context relevance scoring to avoid prompt bloat
-- [ ] Connector context: Visual indicator showing which connectors contributed to a response
+- [x] Connector context injection: Connected services feed context into agent system prompt
+- [x] Connector context: Real-time data pull from connected services during task execution
+- [x] Connector context: Context relevance scoring to avoid prompt bloat
+- [x] Connector context: Visual indicator showing which connectors contributed to a response

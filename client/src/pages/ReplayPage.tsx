@@ -348,6 +348,7 @@ export default function ReplayPage() {
   });
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showStatePanel, setShowStatePanel] = useState(true);
+  const [granularity, setGranularity] = useState<"all" | "messages" | "tools">("all");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeCardRef = useRef<HTMLDivElement>(null);
 
@@ -816,18 +817,42 @@ export default function ReplayPage() {
 
             {/* Event Timeline — Rich Cards */}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5" />
-                Step-by-Step Timeline
-              </h3>
-              {events.map((event, i) => (
-                <div key={event.id} ref={i === currentIndex ? activeCardRef : undefined}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" />
+                  Step-by-Step Timeline
+                </h3>
+                <div className="flex items-center gap-1">
+                  {(["all", "messages", "tools"] as const).map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => setGranularity(g)}
+                      className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-medium transition-colors",
+                        granularity === g ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {g === "all" ? "All" : g === "messages" ? "Messages" : "Tools"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {events
+                .map((event, i) => ({ event, originalIndex: i }))
+                .filter(({ event }) => {
+                  if (granularity === "all") return true;
+                  if (granularity === "messages") return event.eventType.includes("text") || event.eventType.includes("message") || event.eventType === "thinking";
+                  if (granularity === "tools") return event.eventType.includes("tool") || event.eventType.includes("code") || event.eventType.includes("browser") || event.eventType.includes("terminal") || event.eventType.includes("search");
+                  return true;
+                })
+                .map(({ event, originalIndex }) => (
+                <div key={event.id} ref={originalIndex === currentIndex ? activeCardRef : undefined}>
                   <EventCard
                     event={event}
-                    index={i}
-                    isActive={i === currentIndex}
+                    index={originalIndex}
+                    isActive={originalIndex === currentIndex}
                     onClick={() => {
-                      setCurrentIndex(i);
+                      setCurrentIndex(originalIndex);
                       setIsPlaying(false);
                     }}
                   />

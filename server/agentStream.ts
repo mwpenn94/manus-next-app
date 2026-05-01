@@ -1121,22 +1121,63 @@ When performing recursive optimization passes, use the report_convergence tool t
     }
 
     // ── Inject connected services (connectors) into system prompt ──
-    // This allows the agent to proactively use connected services without being asked
+    // Includes relevance scoring to avoid prompt bloat when many connectors are connected
+    let injectedConnectors: { id: string; name: string; relevanceScore: number }[] = [];
     if (userId) {
       try {
         const { getUserConnectors } = await import("./db");
         const userConns = await getUserConnectors(userId);
         const activeConns = userConns.filter((c: any) => c.status === "connected");
         if (activeConns.length > 0) {
-          const connList = activeConns.map((c: any) => {
+          // Relevance scoring: score each connector based on user message keywords
+          const lastUserMsg = conversation.filter(m => m.role === "user").pop();
+          const userText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content.toLowerCase() : "";
+          const CONNECTOR_KEYWORDS: Record<string, string[]> = {
+            github: ["code", "repo", "commit", "pr", "pull request", "branch", "git", "repository"],
+            slack: ["message", "channel", "slack", "notify", "team", "dm"],
+            notion: ["note", "page", "database", "wiki", "notion", "document"],
+            google_drive: ["file", "drive", "document", "sheet", "spreadsheet", "folder"],
+            linear: ["issue", "ticket", "task", "project", "linear", "sprint", "backlog"],
+            gmail: ["email", "mail", "send", "inbox", "compose"],
+            calendar: ["meeting", "calendar", "schedule", "event", "appointment"],
+            jira: ["jira", "ticket", "issue", "sprint", "board"],
+          };
+          const scoredConns = activeConns.map((c: any) => {
+            let score = 0.3; // Base relevance for all connected services
+            const connKey = c.name?.toLowerCase().replace(/\s+/g, "_") || "";
+            // Check direct name mention
+            if (userText.includes(connKey) || userText.includes(c.name?.toLowerCase() || "")) score = 1.0;
+            // Check keyword relevance
+            for (const [key, keywords] of Object.entries(CONNECTOR_KEYWORDS)) {
+              if (connKey.includes(key)) {
+                for (const kw of keywords) {
+                  if (userText.includes(kw)) { score = Math.max(score, 0.8); break; }
+                }
+              }
+            }
+            return { ...c, relevanceScore: score };
+          });
+          // Sort by relevance; inject top 5 to avoid prompt bloat
+          const sortedConns = scoredConns.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
+          const topConns = sortedConns.slice(0, 5);
+          injectedConnectors = topConns.map((c: any) => ({ id: c.connectorId, name: c.name, relevanceScore: c.relevanceScore }));
+          const connList = topConns.map((c: any) => {
             const identity = c.manusVerifiedIdentity ? ` (${c.manusVerifiedIdentity})` : "";
-            return `- **${c.name}**${identity} — use \`use_connector(connector_id: "${c.connectorId}", action: ...)\``;
+            const relevanceTag = c.relevanceScore >= 0.8 ? " ⚡ HIGHLY RELEVANT" : "";
+            return `- **${c.name}**${identity}${relevanceTag} — use \`use_connector(connector_id: "${c.connectorId}", action: ...)\``;
           }).join("\n");
           systemPrompt += `\n\n## CONNECTED SERVICES\nThe user has ${activeConns.length} service(s) connected and ready to use:\n\n${connList}\n\n### Usage guidelines:\n- When the user's request involves any connected service, use it PROACTIVELY without asking permission\n- For file operations: prefer Google Drive/OneDrive if connected\n- For messaging: use Slack if connected\n- For project management: use Linear/Notion if connected\n- Call \`use_connector\` with the appropriate connector_id and action\n- If unsure which actions are available, call \`use_connector(connector_id, action: "list_actions")\` first`;
+          if (sortedConns.length > 5) {
+            systemPrompt += `\n\nNote: ${sortedConns.length - 5} additional service(s) are connected but not shown. Ask the user if they need access to other services.`;
+          }
         }
       } catch (err) {
         console.warn("[Agent] Failed to load connectors for context:", err);
       }
+    }
+    // Emit connector context metadata for frontend visual indicator
+    if (injectedConnectors.length > 0) {
+      sendSSE(safeWrite, { connectorContext: injectedConnectors });
     }
 
     // Register prefix for caching (system prompt + tool definitions)

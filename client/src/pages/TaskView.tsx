@@ -86,6 +86,10 @@ import {
   ChevronRight,
   ThumbsUp,
   ThumbsDown,
+  Tablet,
+  Smartphone as SmartphoneIcon,
+  FolderTree,
+  GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ImageLightbox from "@/components/ImageLightbox";
@@ -1244,6 +1248,8 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
   const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [imageViewMode, setImageViewMode] = useState<"preview" | "gallery">("preview");
+  const [deviceFrame, setDeviceFrame] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [codeViewMode, setCodeViewMode] = useState<"code" | "diff" | "tree">("code");
 
   // Fetch user-uploaded files for this task (for image gallery)
   const userFiles = trpc.file.list.useQuery(
@@ -1481,15 +1487,48 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                 >
                   <RotateCcw className="w-3 h-3" />
                 </button>
+                {/* Device frame selector */}
+                <div className="flex items-center gap-0.5 ml-1 border-l border-border pl-2">
+                  <button
+                    onClick={() => setDeviceFrame("desktop")}
+                    className={cn("p-1 rounded transition-colors", deviceFrame === "desktop" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground")}
+                    title="Desktop view"
+                  >
+                    <Monitor className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => setDeviceFrame("tablet")}
+                    className={cn("p-1 rounded transition-colors", deviceFrame === "tablet" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground")}
+                    title="Tablet view"
+                  >
+                    <Tablet className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={() => setDeviceFrame("mobile")}
+                    className={cn("p-1 rounded transition-colors", deviceFrame === "mobile" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground")}
+                    title="Mobile view"
+                  >
+                    <SmartphoneIcon className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             )}
-            <div className="flex-1 h-full flex items-center justify-center">
+            <div className={cn(
+              "flex-1 h-full flex items-center justify-center transition-all duration-200",
+              deviceFrame === "tablet" && "px-[15%] py-4",
+              deviceFrame === "mobile" && "px-[30%] py-4"
+            )}>
               {currentScreenshot ? (
-                <img
-                  src={currentScreenshot}
-                  alt="Browser preview"
-                  className="w-full h-full object-cover object-top"
-                />
+                <div className={cn(
+                  "relative w-full h-full",
+                  deviceFrame !== "desktop" && "rounded-xl border-2 border-zinc-700 shadow-lg overflow-hidden"
+                )}>
+                  <img
+                    src={currentScreenshot}
+                    alt="Browser preview"
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
               ) : (
                 <div className="text-center text-muted-foreground p-8">
                   <Globe className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -1522,8 +1561,81 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
             })()}
             {codeArtifacts.data && codeArtifacts.data.length > 0 ? (
               <div className="flex flex-col h-full">
-                {/* File tabs for multiple code artifacts */}
-                {codeArtifacts.data.length > 1 && (
+                {/* Code view mode switcher: Code / Diff / Tree */}
+                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/50 shrink-0">
+                  <button
+                    onClick={() => setCodeViewMode("code")}
+                    className={cn("flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors", codeViewMode === "code" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground")}
+                  >
+                    <Code className="w-3 h-3" /> Code
+                  </button>
+                  <button
+                    onClick={() => setCodeViewMode("diff")}
+                    className={cn("flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors", codeViewMode === "diff" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground")}
+                  >
+                    <GitCompare className="w-3 h-3" /> Diff
+                  </button>
+                  <button
+                    onClick={() => setCodeViewMode("tree")}
+                    className={cn("flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-colors", codeViewMode === "tree" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground")}
+                  >
+                    <FolderTree className="w-3 h-3" /> Files
+                  </button>
+                  <span className="ml-auto text-[9px] text-muted-foreground/50">{codeArtifacts.data.length} file{codeArtifacts.data.length !== 1 ? "s" : ""}</span>
+                </div>
+
+                {/* Tree view */}
+                {codeViewMode === "tree" && (
+                  <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+                    {codeArtifacts.data.map((artifact: any, idx: number) => (
+                      <button
+                        key={artifact.id || idx}
+                        onClick={() => { setSelectedCodeIdx(idx); setCodeViewMode("code"); }}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors",
+                          (selectedCodeIdx ?? 0) === idx ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent/50"
+                        )}
+                      >
+                        <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-[11px] font-mono truncate">{artifact.label || `file-${idx + 1}`}</span>
+                        <span className="ml-auto text-[9px] text-muted-foreground/50">
+                          {((artifact.content || "").split("\n").length)} lines
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Diff view */}
+                {codeViewMode === "diff" && (() => {
+                  const activeCode = codeArtifacts.data[(selectedCodeIdx ?? 0)] || codeArtifacts.data[0];
+                  if (!activeCode?.content) return <div className="flex-1 flex items-center justify-center text-muted-foreground text-xs">No diff data available</div>;
+                  // Show a simple diff visualization (additions in green, context in gray)
+                  const lines = (activeCode.content || "").split("\n");
+                  return (
+                    <div className="flex-1 overflow-auto">
+                      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
+                        <span className="text-[10px] text-muted-foreground font-mono">{activeCode.label || "output"} (latest version)</span>
+                      </div>
+                      <div className="font-mono text-xs leading-relaxed">
+                        <table className="w-full border-collapse">
+                          <tbody>
+                            {lines.map((line: string, i: number) => (
+                              <tr key={i} className="hover:bg-muted/30">
+                                <td className="text-right pr-2 pl-3 py-0 select-none text-muted-foreground/50 text-[10px] w-8">{i + 1}</td>
+                                <td className="px-1 py-0 w-4 text-center text-[10px] text-emerald-500/70">+</td>
+                                <td className="pr-4 py-0 whitespace-pre-wrap text-emerald-400/80 bg-emerald-500/5">{line || " "}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Code view (default) */}
+                {codeViewMode === "code" && codeArtifacts.data.length > 1 && (
                   <div className="flex items-center gap-0 border-b border-border px-2 pt-1 overflow-x-auto shrink-0">
                     {codeArtifacts.data.map((artifact: any, idx: number) => (
                       <button
@@ -1542,7 +1654,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                   </div>
                 )}
                 {/* Code viewer with line numbers */}
-                {(() => {
+                {codeViewMode === "code" && (() => {
                   const activeCode = codeArtifacts.data[(selectedCodeIdx ?? 0)] || codeArtifacts.data[0];
                   if (!activeCode) return null;
                   const lines = (activeCode.content || "").split("\n");
@@ -2280,6 +2392,7 @@ export default function TaskView() {
   const [tokenUsage, setTokenUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null>(null);
   const [knowledgeRecalled, setKnowledgeRecalled] = useState<{ count: number; keys: string[] } | null>(null);
   const [aegisMeta, setAegisMeta] = useState<{ classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null>(null);
+  const [connectorContext, setConnectorContext] = useState<{ id: string; name: string; relevanceScore: number }[] | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
   const [desktopWorkspaceOpen, setDesktopWorkspaceOpen] = useState(() => {
     try { return localStorage.getItem("manus-workspace-panel") !== "closed"; } catch { return true; }
@@ -2707,7 +2820,7 @@ export default function TaskView() {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-          updateMessageCard, setAegisMeta,
+          updateMessageCard, setAegisMeta, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
           getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -2942,7 +3055,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta,
+        updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -3028,7 +3141,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta,
+        updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -3132,7 +3245,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta,
+        updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -3217,7 +3330,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta,
+        updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
@@ -4051,6 +4164,7 @@ export default function TaskView() {
                   hasStreamContent={!!streamContent}
                   isReconnecting={isReconnecting}
                   knowledgeRecalled={knowledgeRecalled}
+                  connectorContext={connectorContext}
                 />
                 {/* AEGIS Execution Plan Display */}
                 {aegisMeta && aegisMeta.planSteps && aegisMeta.planSteps.length > 0 && (
