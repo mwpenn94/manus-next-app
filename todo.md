@@ -6571,3 +6571,21 @@
 - [x] Pass 293: DataExportManager — Data export with format selector, date range, progress bar, scheduled exports
 - [x] Pass 294: APIRateLimitViewer — API rate limit visualization with gauges, usage timeline, top consumers
 - [x] Pass 295: PlatformAnalytics — Platform analytics with key metrics, user growth chart, feature adoption funnel
+
+## Batch 13 — AI/ML Pipeline & Workflow (Passes 296-311)
+- [x] Pass 296: PromptPlayground — Interactive prompt engineering workspace with model selector, variable interpolation, compare mode
+- [x] Pass 297: ModelComparisonTable — AI model comparison table with sortable dimensions, color-coded ratings, radar chart
+- [x] Pass 298: PipelineBuilder — Visual pipeline/workflow builder with draggable nodes, connection lines, config panel
+- [x] Pass 299: TrainingMonitor — Training job monitoring with loss curves, GPU utilization, hyperparameter summary
+- [x] Pass 300: DatasetExplorer — Dataset browsing with column statistics, distribution histograms, filter builder
+- [x] Pass 301: FeatureStore — Feature engineering management with lineage graph, version history, usage stats
+- [x] Pass 302: ExperimentTracker — ML experiment tracking with metric comparison, tag filter, reproduce button
+- [x] Pass 303: EmbeddingVisualizer — 2D embedding visualization with cluster coloring, zoom/pan, search highlight
+- [x] Pass 304: AnnotationWorkbench — Data annotation/labeling interface with label palette, progress bar, keyboard shortcuts
+- [x] Pass 305: ModelRegistry — Model versioning and deployment registry with promote/rollback, A/B test config
+- [x] Pass 306: AutoMLWizard — Step-by-step AutoML configuration wizard with data preview, recommended settings
+- [x] Pass 307: CostOptimizer — AI infrastructure cost analysis with breakdown charts, optimization recommendations
+- [x] Pass 308: RAGPipelineViewer — RAG pipeline visualization with retrieval step, source attribution, latency breakdown
+- [x] Pass 309: EvalDashboard — LLM evaluation metrics dashboard with score distributions, failure case browser
+- [x] Pass 310: AgentMemoryViewer — Agent memory visualization with timeline, search, capacity gauge, decay visualization
+- [x] Pass 311: ToolChainEditor — Tool/function chain editor with parameter mapping, conditional branching, execution trace
