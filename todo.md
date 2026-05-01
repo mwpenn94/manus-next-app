@@ -6589,3 +6589,21 @@
 - [x] Pass 309: EvalDashboard — LLM evaluation metrics dashboard with score distributions, failure case browser
 - [x] Pass 310: AgentMemoryViewer — Agent memory visualization with timeline, search, capacity gauge, decay visualization
 - [x] Pass 311: ToolChainEditor — Tool/function chain editor with parameter mapping, conditional branching, execution trace
+
+## Batch 14 — Developer Tools & Infrastructure (Passes 312-327)
+- [x] Pass 312: CodeDiffViewer — Side-by-side code diff viewer with line numbers, added/removed highlighting, expand/collapse
+- [x] Pass 313: TerminalEmulator — Terminal/console emulator with command history, ANSI color simulation, auto-scroll
+- [x] Pass 314: GitBranchVisualizer — Git branch graph with SVG commit dots, merge arrows, branch labels, time axis
+- [x] Pass 315: LogViewer — Structured log viewer with level filtering, text search, auto-scroll, stack trace expansion
+- [x] Pass 316: EnvironmentManager — Environment variable manager with edit-in-place, secret masking, env diff
+- [x] Pass 317: CICDPipelineView — CI/CD pipeline visualization with stage status, job cards, retry, artifacts
+- [x] Pass 318: ContainerOrchestrator — Container/service management dashboard with CPU/memory bars, scale controls
+- [x] Pass 319: SchemaDesigner — Database schema designer with entity boxes, relationship lines, drag to reposition
+- [x] Pass 320: APIPlayground — API testing interface with method selector, headers editor, response panel
+- [x] Pass 321: DependencyGraph — Force-directed package dependency graph with circular dependency detection
+- [x] Pass 322: FeatureFlagManager — Feature flag management with percentage rollout, user segments, audit log
+- [x] Pass 323: InfrastructureDiagram — Infrastructure/architecture diagram with layered layout, connection lines
+- [x] Pass 324: QueueMonitor — Message queue monitoring with depth sparklines, throughput, dead letter counts
+- [x] Pass 325: SecretVault — Secrets/credentials vault with rotation schedule, access audit, reveal/copy
+- [x] Pass 326: IncidentTimeline — Incident management timeline with severity badges, status progression
+- [x] Pass 327: PerformanceProfiler — Performance flame chart viewer with stacked function calls, hot path highlighting

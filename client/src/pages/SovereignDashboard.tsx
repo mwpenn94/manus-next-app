@@ -301,7 +301,7 @@ function AtlasPanel() {
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <DependencyGraph tasks={goalDetailQuery.data.tasks as any} />
+              <DependencyGraph />
             )}
           </CardContent>
         </Card>
