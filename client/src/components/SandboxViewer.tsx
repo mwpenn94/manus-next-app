@@ -204,6 +204,12 @@ function FloatingToolbar() {
     { icon: XCircle, label: "Close" },
   ];
 
+  const handleToolClick = (label: string) => {
+    // These are visual-only controls for the sandbox viewer
+    // In production Manus, these control the remote desktop session
+    console.log(`[SandboxViewer] Toolbar action: ${label}`);
+  };
+
   return (
     <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex">
       <div className="flex flex-col items-center gap-0 bg-muted/80 backdrop-blur-sm rounded-2xl border border-border/50 py-2 px-1.5 shadow-xl">
@@ -212,6 +218,7 @@ function FloatingToolbar() {
             <button
               className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
               title={tool.label}
+              onClick={() => handleToolClick(tool.label)}
             >
               <tool.icon className="w-5 h-5" />
             </button>
@@ -330,8 +337,15 @@ export default function SandboxViewer({
                     </span>
                   </div>
                 )}
-                <div className="flex-1 overflow-auto bg-white">
-                  {browserScreenshot ? (
+                <div className="flex-1 overflow-auto bg-white relative">
+                  {browserUrl ? (
+                    <iframe
+                      src={browserUrl}
+                      className="w-full h-full border-0 absolute inset-0"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      title="Browser preview"
+                    />
+                  ) : browserScreenshot ? (
                     <img
                       src={browserScreenshot}
                       alt="Browser preview"
@@ -448,6 +462,7 @@ export default function SandboxViewer({
               className="text-muted-foreground hover:text-foreground transition-colors"
               title="Previous step"
               aria-label="Previous step"
+              onClick={() => console.log('[SandboxViewer] Previous step')}
             >
               <SkipBack className="w-6 h-6" />
             </button>
@@ -466,6 +481,7 @@ export default function SandboxViewer({
               className="text-muted-foreground hover:text-foreground transition-colors"
               title="Next step"
               aria-label="Next step"
+              onClick={() => console.log('[SandboxViewer] Next step')}
             >
               <SkipForward className="w-6 h-6" />
             </button>

@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, gt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -374,6 +374,41 @@ export async function getTaskMessages(taskId: number) {
     .where(eq(taskMessages.taskId, taskId))
     .orderBy(asc(taskMessages.createdAt))
     .limit(500);
+}
+
+/**
+ * Delete all messages in a task after a given message ID (exclusive).
+ * Used by regenerate/retry to remove the old assistant response from the DB
+ * before re-streaming.
+ */
+export async function deleteMessagesAfter(taskId: number, afterMessageId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(taskMessages).where(
+    and(
+      eq(taskMessages.taskId, taskId),
+      gt(taskMessages.id, afterMessageId)
+    )
+  );
+}
+
+/**
+ * Delete the last N messages from a task.
+ * Used by regenerate to remove the last assistant response.
+ */
+export async function deleteLastMessages(taskId: number, count: number = 1) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Get the IDs of the last N messages
+  const lastMsgs = await db.select({ id: taskMessages.id })
+    .from(taskMessages)
+    .where(eq(taskMessages.taskId, taskId))
+    .orderBy(desc(taskMessages.createdAt))
+    .limit(count);
+  if (lastMsgs.length > 0) {
+    const ids = lastMsgs.map(m => m.id);
+    await db.delete(taskMessages).where(inArray(taskMessages.id, ids));
+  }
 }
 
 // ── Bridge Config Queries ──

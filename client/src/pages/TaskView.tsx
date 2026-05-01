@@ -742,9 +742,9 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
     <ContextMenu>
       <ContextMenuTrigger asChild>
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={cn("flex gap-3 mb-5", isUser ? "flex-row-reverse" : "")}
     >
       {!isUser && (
@@ -1710,7 +1710,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 <div className="shrink-0 border-b border-border overflow-x-auto">
                   <div className="flex items-center gap-0 px-2 pt-1">
                     {allDocuments.map((doc, i) => {
-                      const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : doc.docType === "slides" ? "📊" : "📋";
+                      const icon = doc.docType === "pdf" ? "📄" : doc.docType === "docx" ? "📝" : doc.docType === "slides" ? "📊" : doc.docType === "xlsx" ? "📊" : doc.docType === "csv" ? "📈" : "📋";
                       return (
                         <button
                           key={doc.id || i}
@@ -1783,9 +1783,41 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                           title={doc.label || (doc.docType === "slides" ? "Slides Preview" : "PDF Preview")}
                           sandbox="allow-scripts allow-same-origin"
                         />
+                      ) : (doc.docType === "xlsx" || doc.docType === "csv" || doc.docType === "docx") && doc.url ? (
+                        <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                          <div className="space-y-3">
+                            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
+                              <span className="text-2xl">{doc.docType === "xlsx" ? "📊" : doc.docType === "csv" ? "📈" : "📝"}</span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{doc.label || "Document"}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">{doc.docType.toUpperCase()} file</p>
+                            </div>
+                            <button
+                              onClick={() => window.open(doc.url!, "_blank")}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity"
+                            >
+                              <Download className="w-3 h-3" />
+                              Download {doc.docType.toUpperCase()}
+                            </button>
+                          </div>
+                        </div>
                       ) : doc.content ? (
                         <div className="p-4 prose prose-sm dark:prose-invert max-w-none">
                           <Streamdown>{doc.content}</Streamdown>
+                        </div>
+                      ) : doc.url ? (
+                        <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                          <div className="space-y-3">
+                            <FileText className="w-10 h-10 mx-auto opacity-30" />
+                            <button
+                              onClick={() => window.open(doc.url!, "_blank")}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity"
+                            >
+                              <Download className="w-3 h-3" />
+                              Download File
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center h-full text-center text-muted-foreground">
@@ -2258,6 +2290,7 @@ export default function TaskView() {
     onSuccess: () => { toast.success("Saved as template"); },
     onError: () => { toast.error("Failed to save template"); },
   });
+  const deleteLastMsgsMutation = trpc.task.deleteLastMessages.useMutation();
   const resumeStaleMutation = trpc.task.resumeStale.useMutation({
     onSuccess: () => {
       toast.success("Task resumed — you can continue where you left off");
@@ -2947,6 +2980,11 @@ export default function TaskView() {
     // Check the last message is an assistant message (error or otherwise)
     const lastMsg = task.messages[task.messages.length - 1];
     if (!lastMsg || lastMsg.role !== "assistant") return;
+
+    // Delete the last assistant message from the server DB so it doesn't reappear on reload
+    if (task.serverId) {
+      deleteLastMsgsMutation.mutate({ taskExternalId: task.id, count: 1 });
+    }
 
     // Replace with a placeholder while regenerating
     replaceLastMessage(task.id, { role: "assistant", content: "" });
@@ -4428,6 +4466,10 @@ export default function TaskView() {
         actions={agentActions}
         streaming={streaming}
         stepProgress={stepProgress}
+        activeFile={(() => { const a = agentActions.find(x => x.status === "active" && (x.type === "creating" || x.type === "editing")); return a && "file" in a ? (a as any).file : undefined; })()}
+        codeContent={(() => { const a = agentActions.find(x => x.status === "active" && (x.type === "creating" || x.type === "editing" || x.type === "writing")); return a?.preview; })()}
+        browserUrl={(() => { const a = agentActions.find(x => x.status === "active" && x.type === "browsing"); return a && "url" in a ? (a as any).url : undefined; })()}
+        browserScreenshot={(() => { const a = agentActions.find(x => x.status === "active" && x.type === "browsing"); return a?.preview; })()}
       />
 
       {/* Rename Task Dialog */}

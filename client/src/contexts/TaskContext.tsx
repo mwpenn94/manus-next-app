@@ -155,7 +155,15 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       setTasks((prev) => {
         const existingIds = new Set(prev.map((t) => t.id));
         const newTasks = mapped.filter((t) => !existingIds.has(t.id));
-        return [...newTasks, ...prev];
+        // Update existing local tasks with server data (serverId, status, etc.)
+        const updated = prev.map((t) => {
+          const serverMatch = mapped.find((st) => st.id === t.id);
+          if (serverMatch && !t.serverId) {
+            return { ...t, serverId: serverMatch.serverId, status: serverMatch.status };
+          }
+          return t;
+        });
+        return [...newTasks, ...updated];
       });
     }
     serverSyncedRef.current = true;
@@ -191,9 +199,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           role: sm.role as Message["role"],
           content: sm.content,
           timestamp: new Date(sm.createdAt),
-          actions: sm.actions ? (typeof sm.actions === "string" ? JSON.parse(sm.actions) : sm.actions) : undefined,
+          actions: sm.actions ? (() => { try { return typeof sm.actions === "string" ? JSON.parse(sm.actions) : sm.actions; } catch { return undefined; } })() : undefined,
           cardType: sm.cardType ?? undefined,
-          cardData: sm.cardData ? (typeof sm.cardData === "string" ? JSON.parse(sm.cardData) : sm.cardData) : undefined,
+          cardData: sm.cardData ? (() => { try { return typeof sm.cardData === "string" ? JSON.parse(sm.cardData) : sm.cardData; } catch { return undefined; } })() : undefined,
         }));
 
         // SERVER-SIDE DEDUP: Remove duplicate rows that exist in the server DB.

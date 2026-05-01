@@ -176,16 +176,25 @@ export async function streamWithRetry(options: StreamOptions): Promise<void> {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let receivedDone = false;
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // Keep the last (potentially incomplete) line in the buffer
+        buffer = lines.pop() || "";
         for (const line of lines) {
           if (line.includes('"done"')) receivedDone = true;
           parseSSELine(line, callbacks);
         }
+      }
+
+      // Process any remaining data in the buffer
+      if (buffer.trim()) {
+        if (buffer.includes('"done"')) receivedDone = true;
+        parseSSELine(buffer, callbacks);
       }
 
       // If the stream ended without a done event, the server may have closed prematurely.

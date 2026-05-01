@@ -185,7 +185,7 @@ function ThinkingPresence({ knowledgeRecalled }: { knowledgeRecalled?: { count: 
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="flex items-center gap-3 px-3 py-2"
     >
       <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-card ring-1 ring-border animate-pulse">
@@ -216,7 +216,7 @@ function GeneratingPresence() {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(
@@ -249,7 +249,7 @@ function ToolActivePresence({ action }: { action: AgentAction }) {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(
@@ -284,7 +284,7 @@ function ReconnectingPresence() {
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="flex items-center gap-3 px-3 py-2"
     >
       <div className={cn(

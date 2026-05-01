@@ -405,7 +405,7 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "create_webapp",
       description:
-        "Create a new web application project. Scaffolds a React + Vite + Tailwind project with the specified name, creates initial files, installs dependencies, and builds the project for preview. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project.",
+        "Create a new web application project. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project. IMPORTANT: Default to 'html' template for fast, reliable results. Only use 'react' template if the user specifically needs React features (state management, components, routing). The 'html' template supports modern CSS, animations, and responsive design without build steps.",
       parameters: {
         type: "object",
         properties: {
@@ -1000,7 +1000,7 @@ export interface ToolResult {
   /** Optional URL for images or browser artifacts */
   url?: string;
   /** Optional artifact type for workspace persistence */
-  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx" | "slides" | "webapp_preview" | "webapp_deployed";
+  artifactType?: "browser_url" | "code" | "terminal" | "generated_image" | "document" | "document_pdf" | "document_docx" | "document_xlsx" | "document_csv" | "slides" | "webapp_preview" | "webapp_deployed";
   /** Optional label for the artifact */
   artifactLabel?: string;
   /** Optional project external ID for webapp projects (links to WebAppProjectPage) */
@@ -2045,7 +2045,7 @@ async function executeGenerateDocument(args: {
         buffer = generateCSV(args.title, args.content);
         fileName = `${safeTitle}-${nanoid(6)}.csv`;
         contentType = "text/csv";
-        artifactType = "document" as any;
+        artifactType = "document_csv";
         break;
       }
       case "xlsx": {
@@ -2053,7 +2053,7 @@ async function executeGenerateDocument(args: {
         buffer = await generateXLSX(args.title, args.content);
         fileName = `${safeTitle}-${nanoid(6)}.xlsx`;
         contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-        artifactType = "document" as any;
+        artifactType = "document_xlsx";
         break;
       }
       case "json": {
@@ -3008,7 +3008,7 @@ async function executeCreateWebapp(args: {
     }
     fs.mkdirSync(projectDir, { recursive: true });
 
-    if (template === "html") {
+    if (template === "html" || template === "landing") {
       // Plain HTML/CSS/JS scaffold
       fs.writeFileSync(path.join(projectDir, "index.html"), `<!DOCTYPE html>
 <html lang="en">
@@ -3129,15 +3129,16 @@ async function executeCreateWebapp(args: {
       // Install deps with error handling + fallback to HTML on total failure
       let installSuccess = false;
       try {
-        execSync(`cd ${projectDir} && npm install --prefer-offline 2>&1 | tail -5`, { timeout: 60000 });
+        // Use shorter timeout and suppress output to avoid hanging
+        execSync(`cd ${projectDir} && npm install --prefer-offline --no-audit --no-fund 2>&1 | tail -3`, { timeout: 45000, stdio: 'pipe' });
         installSuccess = true;
       } catch (installErr: any) {
-        console.warn(`[create_webapp] npm install --prefer-offline failed, retrying: ${installErr.message}`);
+        console.warn(`[create_webapp] npm install --prefer-offline failed, retrying with network: ${installErr.message?.slice(0, 100)}`);
         try {
-          execSync(`cd ${projectDir} && npm install 2>&1 | tail -5`, { timeout: 90000 });
+          execSync(`cd ${projectDir} && npm install --no-audit --no-fund 2>&1 | tail -3`, { timeout: 60000, stdio: 'pipe' });
           installSuccess = true;
         } catch (retryErr: any) {
-          console.warn(`[create_webapp] npm install retry also failed: ${retryErr.message}`);
+          console.warn(`[create_webapp] npm install retry also failed: ${retryErr.message?.slice(0, 100)}`);
         }
       }
 

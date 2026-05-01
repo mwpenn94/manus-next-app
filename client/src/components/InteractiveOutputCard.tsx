@@ -108,7 +108,9 @@ export default function InteractiveOutputCard({
   const triggerDownload = (url: string) => {
     const a = document.createElement("a");
     a.href = url;
-    a.download = title || "download";
+    // Sanitize filename: remove invalid chars, limit length
+    const safeName = (title || "download").replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").slice(0, 200);
+    a.download = safeName;
     a.rel = "noopener noreferrer";
     document.body.appendChild(a);
     a.click();

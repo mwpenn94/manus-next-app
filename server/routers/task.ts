@@ -21,6 +21,7 @@ import {
   getTaskRating,
   verifyTaskOwnership,
   verifyTaskOwnershipById,
+  deleteLastMessages,
   getDb,
 } from "../db";
 
@@ -282,5 +283,23 @@ export const taskRouter = router({
         });
       }
       return { externalId: newExternalId, title, messagesCopied: messagesToCopy.length };
+    }),
+
+  /**
+   * Delete the last N messages from a task (used by regenerate/retry).
+   * This ensures the server-side DB stays in sync with the client after retry.
+   */
+  deleteLastMessages: protectedProcedure
+    .input(z.object({
+      taskExternalId: z.string().min(1).max(64),
+      count: z.number().int().min(1).max(10).default(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const task = await getTaskByExternalId(input.taskExternalId);
+      if (!task || task.userId !== ctx.user.id) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
+      }
+      await deleteLastMessages(task.id, input.count);
+      return { success: true };
     }),
 });

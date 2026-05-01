@@ -281,6 +281,13 @@
       "when": 1777341804701,
       "tag": "0039_square_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1777600626694,
+      "tag": "0040_sharp_captain_midlands",
+      "breakpoints": true
     }
   ]
 }

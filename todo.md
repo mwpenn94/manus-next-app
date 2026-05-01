@@ -6214,3 +6214,44 @@
 - [x] PlusMenu verified: Full Manus production list present (Add files, Share screen, Record video, Upload video, Build website, Create slides, Create image, Edit image, Create spreadsheet, Create video, Generate audio, Wide Research, Scheduled tasks, Add Skills, Playbook, Connect My Computer, GitHub Repos, Hands-free mode)
 - [x] TypeScript: 0 errors confirmed
 - [x] Tests: Core tests passing (timeout failures are network/LLM-dependent, not code regressions)
+
+## Critical Bug Fixes & Deep Parity (User-Reported Session)
+
+### Bug Fixes
+- [x] Agent messages disappear on retry — added server-side deleteLastMessages procedure, wired into handleRegenerate
+- [x] File generation/viewing broken — added document_xlsx/document_csv to schema enum, workspace router, proper icons and download buttons
+- [x] App/website creation flow — updated tool description to prefer HTML template, added landing alias, React template fallback to HTML on install failure
+- [x] Deep parity gaps — added warm microcopy guidance to system prompt, SandboxViewer receives live file/browser data from agent actions
+
+### File Generation & Viewing
+- [x] Fix spreadsheet artifact rendering — XLSX/CSV artifacts show proper icons and download buttons in workspace panel
+- [x] Fix slides artifact rendering — slides render in iframe in workspace panel
+- [x] Fix document artifact rendering — PDF/DOCX artifacts render with proper type detection
+- [x] Ensure file artifacts are stored to S3 and retrievable — verified storagePut pipeline in agentTools.ts
+
+### Agent Message Stability
+- [x] Fix retry/regenerate — server-side deleteLastMessages deletes from DB, client replaceLastMessage handles local state
+- [x] Ensure message state doesn't get cleared on retry — deleteLastMsgsMutation.mutateAsync called before stream restart
+
+### App Creation Flow
+- [x] Fix "Build website" tool execution — prefer HTML template, added landing alias, improved error handling
+- [x] Ensure website artifacts render correctly — WebappPreviewCard iframe refresh, Code tab shows file list
+
+### Deep Parity+
+- [x] Agent tone: warm, casual phrasing added to system prompt persona guidance
+- [x] Expanded tool card: SandboxViewer now receives activeFile/codeContent/browserUrl from agent actions
+- [x] Message fade-and-rise animation (120ms) with production easing curve applied
+- [x] Step pulse indicator — LivePulseDot with animate-ping in ActiveToolIndicator
+
+## Convergence Pass 1 — Additional Fixes
+- [x] SSE buffer accumulation: streamWithRetry.ts now properly accumulates partial chunks before splitting into lines
+- [x] Task deduplication: TaskContext merges server tasks by externalId, prevents duplicate entries
+- [x] JSON.parse safety: TaskContext wraps all JSON.parse calls in try/catch with safe defaults
+- [x] SandboxViewer browser iframe: uses iframe when browserUrl available, falls back to screenshot
+- [x] onArtifact error handling: agentStream.ts wraps onArtifact callback in try/catch to prevent stream crashes
+- [x] WebappPreviewCard animation: updated from 300ms to 150ms (closer to 120ms production target)
+- [x] SandboxViewer toolbar buttons: added onClick handlers to floating toolbar and step navigation buttons
+- [x] InteractiveOutputCard download: sanitized filenames to prevent crashes from invalid characters
+- [x] Database schema: added document_xlsx and document_csv to workspaceArtifacts enum, migration pushed
+- [x] WebappPreviewCard Code tab: shows file list when projectFiles available
+- [x] Remaining SSE buffer: final chunk processed after stream loop ends

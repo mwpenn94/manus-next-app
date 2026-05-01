@@ -79,6 +79,7 @@ export default function WebappPreviewCard({
   hasUnpublishedChanges,
   className,
   projectExternalId,
+  projectFiles,
   refreshKey,
 }: WebappPreviewCardProps) {
   const [copied, setCopied] = useState(false);
@@ -134,7 +135,7 @@ export default function WebappPreviewCard({
           <div className="relative bg-muted/20 flex items-center justify-center overflow-hidden" style={{ height: isExpanded ? "70vh" : "320px" }}>
             {iframeSrc ? (
               <div
-                className="h-full transition-all duration-300 bg-white"
+                className="h-full transition-all duration-150 bg-white"
                 style={{ width: DEVICE_WIDTHS[device], maxWidth: "100%" }}
               >
                 <iframe
@@ -156,21 +157,32 @@ export default function WebappPreviewCard({
         );
       case "Code":
         return (
-          <div className="p-4 bg-muted/20" style={{ height: isExpanded ? "70vh" : "320px" }}>
-            <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-              <div className="text-center space-y-2">
-                <Code className="w-8 h-8 mx-auto opacity-50" />
-                <p>View and edit project files</p>
-                {projectExternalId && (
-                  <button
-                    onClick={() => navigate(`/projects/webapp/${projectExternalId}`)}
-                    className="text-primary hover:underline text-xs"
-                  >
-                    Open in project manager →
-                  </button>
-                )}
+          <div className="p-4 bg-muted/20 overflow-auto" style={{ height: isExpanded ? "70vh" : "320px" }}>
+            {projectFiles && projectFiles.length > 0 ? (
+              <div className="space-y-1">
+                {projectFiles.map((f) => (
+                  <div key={f.path} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent/50 text-xs font-mono text-muted-foreground">
+                    <span className="opacity-50">{f.type === "dir" ? "📁" : "📄"}</span>
+                    <span className="truncate">{f.path}</span>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                <div className="text-center space-y-2">
+                  <Code className="w-8 h-8 mx-auto opacity-50" />
+                  <p>View and edit project files</p>
+                  {projectExternalId && (
+                    <button
+                      onClick={() => navigate(`/projects/webapp/${projectExternalId}`)}
+                      className="text-primary hover:underline text-xs"
+                    >
+                      Open in project manager →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
       case "Dashboard":
@@ -217,7 +229,7 @@ export default function WebappPreviewCard({
   return (
     <div
       className={cn(
-        "bg-card border border-border rounded-xl overflow-hidden w-full transition-all duration-300",
+        "bg-card border border-border rounded-xl overflow-hidden w-full transition-all duration-150",
         isExpanded ? "max-w-4xl" : "max-w-lg",
         className
       )}

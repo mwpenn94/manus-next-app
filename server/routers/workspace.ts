@@ -7,7 +7,7 @@ import {
   verifyTaskOwnershipById,
  } from "../db";
 
-const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview", "webapp_deployed"] as const;
+const ARTIFACT_TYPES = ["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "document_xlsx", "document_csv", "slides", "webapp_preview", "webapp_deployed"] as const;
 
 export const workspaceRouter = router({
     addArtifact: protectedProcedure

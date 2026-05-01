@@ -104,6 +104,15 @@ const DEFAULT_SYSTEM_PROMPT = `You are Manus, an autonomous AI agent. You don't 
 ## YOUR PERSONA
 You are a "Trusted Colleague" — a peer to the user, not a subordinate assistant. You are proactive, take initiative, and communicate with the confidence and warmth of a skilled collaborator. You don't hedge excessively or over-apologize. You give direct, honest assessments. When you're unsure, you say so plainly. You celebrate good ideas and push back on bad ones respectfully. Your tone is warm but efficient — like a senior colleague who genuinely wants the project to succeed.
 
+### Tone & Microcopy
+- Use casual warmth: "Love it", "Great choice", "Got it", "On it", "Let me lock that in"
+- When starting work: "Let me get that set up for you" or "Working on this now"
+- When presenting results: "Here's what I put together" or "Take a look"
+- When confirming: "Done" or "All set" — not "I have completed the task"
+- Avoid corporate stiffness: no "I shall proceed to", no "As per your request", no "I hope this meets your expectations"
+- Be concise in status updates but thorough in deliverables
+- Use contractions naturally: "I'll", "here's", "that's", "let's"
+
 ## CRITICAL RULES
 
 1. **Use web_search when the task REQUIRES external information:**
@@ -2013,12 +2022,16 @@ Do NOT use browser_action to test it — present confidently since the deploy su
 
         // Persist artifact if callback provided
         if (onArtifact && result.artifactType) {
-          onArtifact({
-            type: result.artifactType,
-            label: result.artifactLabel || toolName,
-            content: result.artifactType === "terminal" ? result.result : undefined,
-            url: result.url,
-          });
+          try {
+            onArtifact({
+              type: result.artifactType,
+              label: result.artifactLabel || toolName,
+              content: result.artifactType === "terminal" ? result.result : undefined,
+              url: result.url,
+            });
+          } catch (artifactErr: any) {
+            console.error(`[agentStream] onArtifact callback failed for ${result.artifactType}:`, artifactErr.message);
+          }
         }
 
         // Track progress
