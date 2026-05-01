@@ -6553,3 +6553,21 @@
 - [x] Pass 277: BoxPlot — Statistical distribution with IQR, whiskers, outliers, grouped comparison
 - [x] Pass 278: BubbleChart — Three-variable scatter plot with size encoding, zoom/pan, category coloring
 - [x] Pass 279: DonutChartBuilder — Segmented ring chart with animated arcs, center statistics, interactive legend
+
+## Batch 12 — Collaboration & Platform Intelligence (Passes 280-295)
+- [x] Pass 280: CollaborativeEditor — Real-time collaborative text editor with presence awareness, toolbar, cursor positions
+- [x] Pass 281: LiveActivityStream — Real-time activity feed with event animations, type icons, auto-scroll
+- [x] Pass 282: PresenceIndicator — User presence with avatar stack, hover popover, status colors, typing indicator
+- [x] Pass 283: SharedWorkspace — Collaborative workspace with split view, viewport indicators, annotation layer
+- [x] Pass 284: TeamDashboard — Team management with member cards, activity sparklines, task distribution
+- [x] Pass 285: NotificationPreferences — Notification settings with channel toggles, per-event controls, quiet hours
+- [x] Pass 286: AgentOrchestrator — Multi-agent orchestration with status cards, resource sliders, communication graph
+- [x] Pass 287: TaskDelegationMatrix — Task delegation with assignee columns, workload balance, bulk assign
+- [x] Pass 288: RealtimeMetricsGrid — Real-time metric cards with sparklines, thresholds, configurable grid layout
+- [x] Pass 289: ConversationThread — Threaded conversations with nested replies, reactions, editing
+- [x] Pass 290: PermissionManager — RBAC management with role cards, permission matrix, user assignment
+- [x] Pass 291: WebhookManager — Webhook configuration with delivery log, test button, secret key management
+- [x] Pass 292: SystemHealthMonitor — System health with service status cards, incident timeline, dependency graph
+- [x] Pass 293: DataExportManager — Data export with format selector, date range, progress bar, scheduled exports
+- [x] Pass 294: APIRateLimitViewer — API rate limit visualization with gauges, usage timeline, top consumers
+- [x] Pass 295: PlatformAnalytics — Platform analytics with key metrics, user growth chart, feature adoption funnel
