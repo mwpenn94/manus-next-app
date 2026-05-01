@@ -1250,7 +1250,26 @@ When performing recursive optimization passes, use the report_convergence tool t
         }
       }
       const toolCalls = assistantMessage?.tool_calls;
-      const textContent = typeof assistantMessage?.content === "string" ? assistantMessage.content : "";
+      // Strip thinking/reasoning content that some models embed in message.content.
+      // Models may wrap internal reasoning in <think>...</think>, <thinking>...</thinking>,
+      // or return it in a separate `thinking` field. We extract it and emit as agent_thinking.
+      let rawContent = typeof assistantMessage?.content === "string" ? assistantMessage.content : "";
+      const thinkingMatch = rawContent.match(/^\s*<(?:think|thinking)>([\s\S]*?)<\/(?:think|thinking)>\s*/i);
+      let extractedThinking: string | null = null;
+      if (thinkingMatch) {
+        extractedThinking = thinkingMatch[1].trim();
+        rawContent = rawContent.slice(thinkingMatch[0].length);
+      }
+      // Also check for a separate `thinking` field in the response (Anthropic-style)
+      const thinkingField = (assistantMessage as any)?.thinking;
+      if (thinkingField && typeof thinkingField === "string" && thinkingField.trim()) {
+        extractedThinking = (extractedThinking ? extractedThinking + "\n" : "") + thinkingField.trim();
+      }
+      // Emit extracted thinking as agent_thinking event (not as user-visible content)
+      if (extractedThinking && extractedThinking.length > 10) {
+        sendSSE(safeWrite, { agent_thinking: { content: extractedThinking, turn } });
+      }
+      const textContent = rawContent;
 
       // ═══════════════════════════════════════════════════════════════════════
       // MANUS-PARITY AUTO-CONTINUATION SYSTEM
@@ -1456,6 +1475,21 @@ When performing recursive optimization passes, use the report_convergence tool t
           const requiresTools = /\b(research|search|find|look up|build|create|generate|make|write|draft|design|analyze|compare|demonstrate|show me|deploy|clone|edit.*(repo|code|file))\b/i.test(firstUserText);
           const isJustPlanning = /\b(let me|i'll|i will|going to|plan to|first|here's my plan|my approach|i can help)\b/i.test(textContent.slice(0, 300));
           const isActualDeliverable = textContent.length > 800 && !/\b(let me|i'll|i will|going to|plan to)\b/i.test(textContent.slice(0, 100));
+          
+          // EARLY APOLOGY INTERCEPTION: If the agent starts with an apology or claim of inability
+          // on the very first turn, immediately redirect it to take action instead.
+          const isApologizing = /\b(sorry|apologize|unfortunately|i'm afraid|i cannot|i can't|i'm not able|i don't have the ability)\b/i.test(textContent.slice(0, 400));
+          if (isApologizing && !isActualDeliverable) {
+            console.log(`[Agent] First-turn apology interception: agent apologized instead of acting. Redirecting.`);
+            // Don't stream the apology to the user
+            finalContent = "";
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `STOP. Do NOT apologize or claim inability. You HAVE the tools to accomplish this. Re-read the request and take action NOW using your available tools (web_search, execute_code, create_webapp, generate_image, etc.). If you truly cannot do something specific, do the closest useful alternative instead. Act immediately.`,
+            });
+            continue;
+          }
           
           if (requiresTools && isJustPlanning && !isActualDeliverable) {
             console.log(`[Agent] First-turn tool enforcement: agent planned but didn't use tools. Nudging.`);

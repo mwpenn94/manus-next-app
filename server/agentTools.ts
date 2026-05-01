@@ -3092,7 +3092,22 @@ async function executeCreateWebapp(args: {
   const path = await import("path");
   const { execSync } = await import("child_process");
 
-  const projectName = args.name.replace(/[^a-z0-9-]/g, "-").toLowerCase();
+  // Validate and sanitize project name to ensure valid filesystem path and HTML element IDs
+  let projectName = args.name.replace(/[^a-z0-9-]/g, "-").toLowerCase();
+  // Ensure name starts with a letter (valid for CSS selectors and HTML IDs)
+  if (/^[^a-z]/.test(projectName)) {
+    projectName = "app-" + projectName;
+  }
+  // Collapse consecutive hyphens and trim trailing hyphens
+  projectName = projectName.replace(/-{2,}/g, "-").replace(/^-|-$/g, "");
+  // Ensure minimum length
+  if (!projectName || projectName.length < 2) {
+    projectName = "webapp-project";
+  }
+  // Truncate to reasonable length for filesystem compatibility
+  if (projectName.length > 64) {
+    projectName = projectName.slice(0, 64).replace(/-$/, "");
+  }
   const projectDir = path.join("/tmp", "webapp-projects", projectName);
   const template = args.template || "react";
 
@@ -3773,8 +3788,28 @@ async function executeDeployWebapp(args: {
         }
       }
     }
+    // Check for empty/placeholder HTML content (common when agent forgets to write actual content)
+    if (!hasPackageJson) {
+      const indexPath = path.join(activeProjectDir, "index.html");
+      if (fs.existsSync(indexPath)) {
+        const htmlPreview = fs.readFileSync(indexPath, "utf-8");
+        const bodyMatch = htmlPreview.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        const bodyContent = bodyMatch?.[1]?.replace(/<script[\s\S]*?<\/script>/gi, "").trim() || "";
+        if (bodyContent.length < 50) {
+          preDeployIssues.push("index.html body is nearly empty — add content before deploying");
+        }
+      }
+    }
+    // Check for broken asset references (src="" or href="")
+    if (!hasPackageJson && fs.existsSync(path.join(activeProjectDir, "index.html"))) {
+      const htmlCheck = fs.readFileSync(path.join(activeProjectDir, "index.html"), "utf-8");
+      const emptyRefs = (htmlCheck.match(/(?:src|href)=["']\s*["']/g) || []).length;
+      if (emptyRefs > 0) {
+        preDeployIssues.push(`${emptyRefs} empty src/href attribute(s) found — assets will not load`);
+      }
+    }
     // Block on critical issues
-    if (preDeployIssues.some(i => i.includes("no 'build' script") || i.includes("node_modules/ not found"))) {
+    if (preDeployIssues.some(i => i.includes("no 'build' script") || i.includes("node_modules/ not found") || i.includes("body is nearly empty"))) {
       return {
         success: false,
         result: `Pre-deploy validation failed:\n\n${preDeployIssues.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}\n\nFix these issues before deploying.`,
