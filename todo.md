@@ -6304,3 +6304,23 @@
 - [x] Fix branding consistency: AppLayout sidebar "manus" → "Manus Next"
 - [x] Fix branding consistency: vite.ts OG meta tags "Manus" → "Manus Next"
 - [x] All 173 test files passing (4841 tests)
+
+## Convergence Optimization Pass — Manus Parity (Applied as Process Methodology)
+- [x] Motion timing: Home.tsx hero animations 0.5s → 0.35s with production easing [0.25, 0.46, 0.45, 0.94]
+- [x] Motion timing: Home.tsx category tab transitions 0.4s → 0.2s (micro-interaction tier)
+- [x] Motion timing: Home.tsx suggestion card stagger 0.3s+0.05s/card → 0.15s+0.04s/card
+- [x] Motion timing: TaskProgressCard 0.5s → 0.35s with production easing
+- [x] Motion timing: Quick action chips 0.4s → 0.25s
+- [x] Motion timing: Package badges 0.5s → 0.3s
+- [x] Dark theme overlay token: --overlay variable (oklch(0 0 0 / 0.6)) for modal backdrops
+- [x] Overlay usage: AppLayout mobile drawer, PublishSheet, OnboardingTooltips use --overlay
+- [x] Input focus ring: primary/40 ring + ring-primary/10 glow (Manus azure)
+- [x] Dynamic model badge: Reads agentMode from localStorage (Limitless/Max/Speed/Quality)
+- [x] UserChoiceErrorHandler: Wired into TaskView error recovery with correct refs (inputRef, handleSend)
+- [x] Time-of-day adaptive greeting: Good morning/afternoon/evening + user name (Manus production parity)
+- [x] Suggestion card micro-interactions: whileHover scale(1.02), whileTap scale(0.98)
+- [x] Send button haptic: active:scale-90 micro-interaction
+- [x] Scroll-to-bottom button: Floating ChevronDown button appears when user scrolls up in chat
+- [x] Recent tasks section: "Continue where you left off" showing last 3 tasks on Home page
+- [x] Test alignment: p18.test.ts updated for time-of-day greeting pattern
+- [x] All 196 test files passing (4908 tests), 0 TypeScript errors

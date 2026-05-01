@@ -147,7 +147,7 @@ function VoiceMicButton({ isAuthenticated, onTranscript }: { isAuthenticated: bo
       onTouchEnd={stopRecording}
       disabled={isTranscribing}
       className={cn(
-        "p-2 rounded-full transition-colors select-none",
+        "p-2 rounded-full transition-all select-none",
         isListening ? "text-red-400 bg-red-500/10 animate-pulse" : isTranscribing ? "text-muted-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
       )}
       title={isListening ? "Release to stop" : "Hold to speak"}
@@ -172,7 +172,7 @@ export default function Home() {
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [specializedMode, setSpecializedMode] = useState<SpecializedMode>(null);
   const [, navigate] = useLocation();
-  const { createTask } = useTask();
+  const { createTask, tasks } = useTask();
 
   // Connector count for the suggestion card
   const connectorsQuery = trpc.connector.list.useQuery(undefined, {
@@ -309,7 +309,7 @@ export default function Home() {
               // Dispatch custom event to open sidebar drawer on mobile
               window.dispatchEvent(new CustomEvent('open-mobile-drawer'));
             }}
-            className="p-2 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors active:scale-95 md:hidden"
+            className="p-2 -ml-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-all active:scale-95 md:hidden"
             aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
@@ -325,7 +325,7 @@ export default function Home() {
         </div>
         <button
           onClick={() => navigate("/billing")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all"
           aria-label="View credits"
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -340,13 +340,18 @@ export default function Home() {
           className="text-center mb-6 md:mb-10"
           initial={{ y: 16 }}
           animate={{ y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
           <h1
             className="text-3xl md:text-4xl font-semibold text-foreground mb-2 tracking-tight"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            {user ? `Hello, ${user.name?.split(" ")[0] || "there"}.` : "Hello."}
+            {(() => {
+              const hour = new Date().getHours();
+              const timeGreeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+              const name = user?.name?.split(" ")[0];
+              return name ? `${timeGreeting}, ${name}.` : `${timeGreeting}.`;
+            })()}
           </h1>
           <p className="text-sm text-muted-foreground">
             What can I do for you?
@@ -358,7 +363,7 @@ export default function Home() {
           className="w-full max-w-[640px] mb-6 md:mb-8"
           initial={{ y: 16 }}
           animate={{ y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+          transition={{ duration: 0.35, delay: 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -429,7 +434,7 @@ export default function Home() {
             className="rounded-t-2xl mb-0"
           />
           <div className={cn(
-            "relative bg-card border border-border shadow-md shadow-black/20 focus-within:border-foreground/20 transition-colors",
+            "relative bg-card border border-border shadow-md shadow-black/20 focus-within:border-primary/40 focus-within:ring-3 focus-within:ring-primary/10 transition-all",
             pendingFiles.length > 0 ? "rounded-2xl" : "rounded-full",
             specializedMode && "rounded-t-none border-t-0"
           )}>
@@ -458,7 +463,7 @@ export default function Home() {
                 <button
                   ref={plusButtonRef}
                   onClick={() => setPlusMenuOpen(!plusMenuOpen)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
                   title="More options"
                   aria-label="More options"
                 >
@@ -517,7 +522,7 @@ export default function Home() {
                 onClick={handleSubmit}
                 disabled={!input.trim() && pendingFiles.length === 0}
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90",
                   (input.trim() || pendingFiles.length > 0)
                     ? "bg-foreground text-background hover:opacity-80"
                     : "bg-muted text-muted-foreground"
@@ -575,7 +580,7 @@ export default function Home() {
           className="w-full max-w-4xl overflow-hidden"
           initial={{ y: 6 }}
           animate={{ y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ duration: 0.35, delay: 0.2 }}
         >
           <div
             ref={suggestionsRef}
@@ -588,7 +593,7 @@ export default function Home() {
                 key={suggestion.title}
                 initial={{ y: 8 }}
                 animate={{ y: 0 }}
-                transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
+                transition={{ duration: 0.2, delay: 0.15 + i * 0.04 }}
                 onClick={() => {
                   if ((suggestion as any).isLink && (suggestion as any).href) {
                     navigate((suggestion as any).href);
@@ -596,6 +601,8 @@ export default function Home() {
                     setInput(suggestion.title);
                   }
                 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className={cn(
                   "text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]",
                   (suggestion as any).isLink && "border-blue-500/20 hover:border-blue-500/40"
@@ -603,8 +610,8 @@ export default function Home() {
                 style={{ scrollSnapAlign: 'start' }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-accent transition-colors">
-                    <suggestion.icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-accent transition-all">
+                    <suggestion.icon className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-all" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground leading-tight">
@@ -647,12 +654,46 @@ export default function Home() {
           </div>
         </motion.div>
 
+        {/* Recent tasks — continue where you left off */}
+        {isAuthenticated && (() => {
+          const recentTasks = tasks.filter(t => t.messages.length > 0).slice(0, 3);
+          if (recentTasks.length === 0) return null;
+          return (
+            <motion.div
+              className="w-full max-w-[640px] mt-8"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.4 }}
+            >
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2 px-1">Continue where you left off</p>
+              <div className="space-y-1">
+                {recentTasks.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => navigate(`/task/${t.id}`)}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent/50 transition-colors group flex items-center gap-2"
+                  >
+                    <span className={cn(
+                      "w-1.5 h-1.5 rounded-full shrink-0",
+                      t.status === "running" ? "bg-primary animate-pulse" : t.status === "completed" ? "bg-emerald-500" : t.status === "error" ? "bg-destructive" : "bg-muted-foreground"
+                    )} />
+                    <span className="text-sm text-foreground truncate">{t.title}</span>
+                    <span className="text-[10px] text-muted-foreground ml-auto shrink-0">
+                      {t.updatedAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })()}
+
         {/* Package badges — subtle footer */}
         <motion.div
           className="mt-12 flex flex-wrap items-center justify-center gap-1.5 hidden md:flex"
           initial={{ y: 4 }}
           animate={{ y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
+          transition={{ duration: 0.35, delay: 0.5 }}
         >
           <span className="text-[10px] text-muted-foreground mr-1.5 uppercase tracking-wider">Powered by</span>
           {PACKAGES.map((pkg) => (

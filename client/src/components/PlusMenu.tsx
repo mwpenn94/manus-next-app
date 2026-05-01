@@ -242,7 +242,7 @@ export default function PlusMenu({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-[9999] bg-black/60"
+              className="fixed inset-0 z-[9999] bg-[var(--overlay)]"
               onClick={onClose}
             />
             <motion.div

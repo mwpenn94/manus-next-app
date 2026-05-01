@@ -148,7 +148,7 @@ export default function KeyboardShortcutsDialog({ open, onClose }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-[var(--overlay)] backdrop-blur-sm"
             onClick={onClose}
             aria-hidden="true"
           />

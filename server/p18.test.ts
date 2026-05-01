@@ -139,7 +139,7 @@ describe("P18-4: Offline mode indicator", () => {
 describe("P18: No regressions", () => {
   it("Home page still has Manus-aligned design", () => {
     const home = read("client/src/pages/Home.tsx");
-    expect(home).toMatch(/Hello/);
+    expect(home).toMatch(/Good morning|Good afternoon|Good evening/);
     expect(home).toMatch(/SUGGESTIONS/);
     expect(home).toMatch(/QUICK_ACTIONS/);
   });

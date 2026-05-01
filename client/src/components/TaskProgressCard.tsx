@@ -209,7 +209,7 @@ export default function TaskProgressCard({ actions, stepProgress, streaming }: T
           className="h-full bg-primary"
           initial={{ width: 0 }}
           animate={{ width: `${progressPercent}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
         />
       </div>
     </motion.div>

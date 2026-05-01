@@ -1259,7 +1259,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div
           role="presentation"
           aria-hidden="true"
-          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-[var(--overlay)] z-40 md:hidden backdrop-blur-sm"
           onClick={() => setMobileDrawerOpen(false)}
         />
       )}

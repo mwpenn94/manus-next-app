@@ -125,6 +125,7 @@ import PublishSheet from "@/components/PublishSheet";
 import SiteLiveSheet from "@/components/SiteLiveSheet";
 import { MediaCapturePanel } from "@/components/MediaCapturePanel";
 import HandsFreeOverlay from "@/components/HandsFreeOverlay";
+import { UserChoiceErrorHandler } from "@/components/UserChoiceErrorHandler";
 import { useHandsFreeMode } from "@/hooks/useHandsFreeMode";
 import { useEdgeTTS, splitSentences } from "@/hooks/useEdgeTTS";
 import { Headphones } from "lucide-react";
@@ -761,7 +762,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
               Manus
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              Max
+              {(() => { try { const m = localStorage.getItem("manus-agent-mode"); return m === "limitless" ? "Limitless" : m === "speed" ? "Speed" : m === "quality" ? "Quality" : "Max"; } catch { return "Max"; } })()}
             </span>
             <span className="text-[10px] text-muted-foreground">
               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -1996,7 +1997,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
                 className="h-full bg-primary rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${((task.completedSteps || 0) / task.totalSteps) * 100}%` }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
               />
             </div>
             <span className="text-[10px] text-muted-foreground font-mono tabular-nums">
@@ -2480,13 +2481,16 @@ export default function TaskView() {
 
   // Track whether user has scrolled up (to avoid forcing scroll during reading)
   const userScrolledUpRef = useRef(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const handleScroll = () => {
       // User is "scrolled up" if more than 150px from bottom
       const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      userScrolledUpRef.current = distFromBottom > 150;
+      const isUp = distFromBottom > 150;
+      userScrolledUpRef.current = isUp;
+      setShowScrollToBottom(isUp);
     };
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
@@ -4053,6 +4057,20 @@ export default function TaskView() {
           </div>
         )}
 
+        {/* Scroll to bottom button */}
+        {showScrollToBottom && (
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20">
+            <button
+              onClick={() => {
+                scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border shadow-lg text-xs text-muted-foreground hover:text-foreground transition-all active:scale-95"
+            >
+              <ChevronDown className="w-3 h-3" />
+              New messages
+            </button>
+          </div>
+        )}
         {/* Input */}
         <div
           data-chat-input
@@ -4114,23 +4132,19 @@ export default function TaskView() {
               </button>
             </div>
           )}
-          {/* Stale/error task recovery — shown when task is in error state or stuck running without active stream */}
+          {/* Stale/error task recovery — Manus-style interactive error recovery with options */}
           {!streaming && !lastErrorRetryable && (task.status === "error" || (task.status === "running" && !streaming)) && task.messages.length > 0 && (
-            <div className="flex items-center gap-3 px-4 py-2.5 mb-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="text-sm text-amber-200 flex-1">
-                {task.status === "error"
-                  ? "This task encountered an error. You can retry or send a new message to continue."
-                  : "This task appears to be stalled. Send a message to resume it."}
-              </span>
-              <button
-                onClick={() => handleRegenerate()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-black text-xs font-medium hover:opacity-90 transition-opacity active:scale-95"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Retry
-              </button>
-            </div>
+            <UserChoiceErrorHandler
+              errorMessage={task.status === "error"
+                ? "Something went wrong during execution. Here are your options:"
+                : "This task appears to be stalled. Here's how to proceed:"}
+              options={[
+                { label: "Retry the last step", description: "Re-run the most recent operation", action: () => handleRegenerate() },
+                { label: "Start fresh from here", description: "Send a new message to continue differently", action: () => { inputRef.current?.focus(); } },
+              ]}
+              onCustomSubmit={(instruction) => { setInput(instruction); setTimeout(() => handleSend(), 50); }}
+              className="mb-2"
+            />
           )}
           {/* Specialized input bar — iOS-style guided input for PlusMenu actions */}
           <SpecializedInputBar
