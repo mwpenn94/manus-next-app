@@ -46,7 +46,13 @@ const DesignView = lazy(() => import("./pages/DesignView"));
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="space-y-2 w-64">
+          <div className="h-3 bg-card rounded animate-pulse" />
+          <div className="h-3 bg-card rounded animate-pulse w-3/4" />
+        </div>
+      </div>
     </div>
   );
 }

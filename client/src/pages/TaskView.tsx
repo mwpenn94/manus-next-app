@@ -1505,8 +1505,10 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
         </div>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content — crossfade transition between tabs */}
       <div className="flex-1 overflow-hidden relative">
+        <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }} className="h-full">
         {activeTab === "browser" && (
           <>
             {currentBrowserUrl && (
@@ -2233,6 +2235,8 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
             className="h-full"
           />
         )}
+        </motion.div>
+        </AnimatePresence>
       </div>
       {/* Timeline / Progress */}
       <div className="h-10 flex items-center justify-between px-4 border-t border-border shrink-0">
@@ -4175,7 +4179,7 @@ export default function TaskView() {
           scrollRef={scrollRef}
         />
         {/* Messages */}
-        <div ref={scrollRef} data-print-container className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain" role="log" aria-live="polite" aria-label="Chat messages" aria-relevant="additions">
+        <div ref={scrollRef} data-print-container className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0px,black_12px,black_calc(100%-12px),transparent_100%)]" role="log" aria-live="polite" aria-label="Chat messages" aria-relevant="additions">
           {/* Print header — only visible when printing */}
           <div className="print-header">
             <h1>{task?.title || "Task Chat"}</h1>

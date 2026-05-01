@@ -1113,7 +1113,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* ═══ Scrollable Middle Section ═══ */}
       <div
-        className="flex-1 overflow-y-auto overscroll-contain min-h-0"
+        className="flex-1 overflow-y-auto overscroll-contain min-h-0 [mask-image:linear-gradient(to_bottom,transparent_0px,black_8px,black_calc(100%-8px),transparent_100%)]"
         tabIndex={0}
         role="region"
         aria-label="Task list"
