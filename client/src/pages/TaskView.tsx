@@ -84,6 +84,8 @@ import {
   FolderOpen,
   Link2 as LinkIcon,
   ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ImageLightbox from "@/components/ImageLightbox";
@@ -134,6 +136,7 @@ import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbac
 import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
 import TaskReplayOverlay from "@/components/TaskReplayOverlay";
 import ExecutionPlanDisplay from "@/components/ExecutionPlanDisplay";
+import LiveOrchestrationGraph from "@/components/LiveOrchestrationGraph";
 import { useSearch } from "wouter";
 
 // ── Suggested Follow-ups (Gap 4) ──
@@ -730,8 +733,64 @@ function TypingIndicator() {
   );
 }
 
-// ── Message bubble ──
+/// ── Per-Message Feedback Buttons ──
+function MessageFeedbackButtons({ taskExternalId, messageIndex }: { taskExternalId: string; messageIndex: number }) {
+  const [localFeedback, setLocalFeedback] = useState<"up" | "down" | null>(null);
+  const feedbackQuery = trpc.feedback.messageFeedback.useQuery(
+    { taskExternalId },
+    { staleTime: 30_000, enabled: !!taskExternalId }
+  );
+  const voteMutation = trpc.feedback.messageVote.useMutation({
+    onSuccess: (data) => {
+      setLocalFeedback(data.feedback as "up" | "down" | null);
+      feedbackQuery.refetch();
+    },
+  });
 
+  // Derive current feedback from query data
+  const currentFeedback = localFeedback ?? (() => {
+    const entry = feedbackQuery.data?.find(f => f.messageIndex === messageIndex);
+    return entry?.feedback ?? null;
+  })();
+
+  const handleVote = (vote: "up" | "down") => {
+    setLocalFeedback(currentFeedback === vote ? null : vote);
+    voteMutation.mutate({ taskExternalId, messageIndex, feedback: vote });
+  };
+
+  return (
+    <div className="flex items-center gap-0.5 ml-1">
+      <button
+        onClick={() => handleVote("up")}
+        className={cn(
+          "p-1 rounded transition-colors",
+          currentFeedback === "up"
+            ? "text-green-500 bg-green-500/10"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+        )}
+        title="Helpful"
+        aria-label="Mark as helpful"
+      >
+        <ThumbsUp className="w-3 h-3" />
+      </button>
+      <button
+        onClick={() => handleVote("down")}
+        className={cn(
+          "p-1 rounded transition-colors",
+          currentFeedback === "down"
+            ? "text-red-500 bg-red-500/10"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+        )}
+        title="Not helpful"
+        aria-label="Mark as not helpful"
+      >
+        <ThumbsDown className="w-3 h-3" />
+      </button>
+    </div>
+  );
+}
+
+// ── Message bubble ──
 function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey, onShare }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number; onShare?: () => void }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
@@ -1076,6 +1135,13 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                 Regenerate
               </button>
             )}
+             {/* Per-message feedback: thumbs up/down */}
+            {taskExternalId && messageIndex !== undefined && (
+              <MessageFeedbackButtons
+                taskExternalId={taskExternalId}
+                messageIndex={messageIndex}
+              />
+            )}
             {/* Fork from Here — creates a new task with messages up to this point */}
             {taskExternalId && messageIndex !== undefined && allMessages && (
               <BranchButton
@@ -1088,7 +1154,6 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             )}
           </div>
         )}
-
         {/* Branch button for user messages */}
         {isUser && taskExternalId && messageIndex !== undefined && allMessages && (
           <div className="mt-1 flex justify-end">
@@ -1168,9 +1233,9 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
 
 // ── Workspace Panel with real artifacts ──
 
-type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links";
+type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links" | "orchestration";
 
-function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string }) {
+function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, aegisMeta, isStreaming }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string; agentActions?: AgentAction[]; aegisMeta?: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null; isStreaming?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("browser");
   const [selectedCodeIdx, setSelectedCodeIdx] = useState(0);
@@ -1305,6 +1370,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
     { id: "images", label: "Images", icon: ImageIcon, count: (imageArtifacts.data?.length || 0) + (userFiles.data?.filter((f: any) => f.mimeType?.startsWith("image/")).length || 0) || undefined },
     { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
     { id: "links", label: "Links", icon: LinkIcon, count: extractedLinks.length || undefined },
+    ...(agentActions && agentActions.length > 0 ? [{ id: "orchestration" as WorkspaceTab, label: "Graph", icon: GitBranch, count: agentActions.length }] : []),
   ];
 
   return (
@@ -1437,6 +1503,23 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
 
         {activeTab === "code" && (
           <div className="h-full overflow-y-auto">
+            {/* Live streaming code preview */}
+            {isStreaming && agentActions && (() => {
+              const activeCodeAction = agentActions.find(a => a.status === "active" && (a.type === "creating" || a.type === "editing" || a.type === "writing"));
+              if (activeCodeAction?.preview) {
+                const fileName = (activeCodeAction as any).file || (activeCodeAction as any).label || "live";
+                return (
+                  <div className="border-b border-blue-500/30 bg-blue-500/5">
+                    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-[10px] font-mono text-blue-400">Writing: {fileName}</span>
+                    </div>
+                    <pre className="p-3 text-xs font-mono text-foreground/80 max-h-[200px] overflow-auto whitespace-pre-wrap">{activeCodeAction.preview}</pre>
+                  </div>
+                );
+              }
+              return null;
+            })()}
             {codeArtifacts.data && codeArtifacts.data.length > 0 ? (
               <div className="flex flex-col h-full">
                 {/* File tabs for multiple code artifacts */}
@@ -1981,8 +2064,15 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
             )}
           </div>
         )}
+        {activeTab === "orchestration" && (
+          <LiveOrchestrationGraph
+            actions={agentActions || []}
+            planSteps={aegisMeta?.planSteps}
+            isStreaming={isStreaming || false}
+            className="h-full"
+          />
+        )}
       </div>
-
       {/* Timeline / Progress */}
       <div className="h-10 flex items-center justify-between px-4 border-t border-border shrink-0">
         <div className="flex items-center gap-2">
@@ -4400,7 +4490,7 @@ export default function TaskView() {
             className="hidden md:flex flex-col min-w-0 min-h-0"
             style={{ flex: `0 0 ${(1 - workspaceRatio) * 100}%`, maxWidth: `${(1 - workspaceRatio) * 100}%` }}
           >
-            <ErrorBoundary><WorkspacePanel task={task} bridgeStatus={bridgeStatus} /></ErrorBoundary>
+            <ErrorBoundary><WorkspacePanel task={task} bridgeStatus={bridgeStatus} agentActions={agentActions} aegisMeta={aegisMeta} isStreaming={streaming} /></ErrorBoundary>
           </div>
         </>
       )}
@@ -4419,6 +4509,9 @@ export default function TaskView() {
               task={task}
               isMobile
               bridgeStatus={bridgeStatus}
+              agentActions={agentActions}
+              aegisMeta={aegisMeta}
+              isStreaming={streaming}
               onClose={() => setMobileWorkspaceOpen(false)}
             /></ErrorBoundary>
           </motion.div>

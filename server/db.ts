@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, gt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory, messageFeedback, type InsertMessageFeedback } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2695,4 +2695,37 @@ export async function updateScheduleExecution(id: number, data: Partial<InsertSc
   const db = await getDb();
   if (!db) return;
   await db.update(scheduleExecutionHistory).set(data).where(eq(scheduleExecutionHistory.id, id));
+}
+
+// ── Per-Message Feedback ──
+export async function upsertMessageFeedback(data: { taskExternalId: string; messageIndex: number; userId: number; feedback: "up" | "down"; comment?: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await db.select().from(messageFeedback)
+    .where(and(
+      eq(messageFeedback.taskExternalId, data.taskExternalId),
+      eq(messageFeedback.messageIndex, data.messageIndex),
+      eq(messageFeedback.userId, data.userId)
+    ))
+    .limit(1);
+  if (existing.length > 0) {
+    if (existing[0].feedback === data.feedback) {
+      await db.delete(messageFeedback).where(eq(messageFeedback.id, existing[0].id));
+      return null;
+    }
+    await db.update(messageFeedback).set({ feedback: data.feedback, comment: data.comment }).where(eq(messageFeedback.id, existing[0].id));
+    return { ...existing[0], feedback: data.feedback };
+  }
+  const [result] = await db.insert(messageFeedback).values(data);
+  return { id: result.insertId, ...data };
+}
+
+export async function getMessageFeedbackForTask(taskExternalId: string, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(messageFeedback)
+    .where(and(
+      eq(messageFeedback.taskExternalId, taskExternalId),
+      eq(messageFeedback.userId, userId)
+    ));
 }

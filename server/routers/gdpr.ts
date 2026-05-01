@@ -56,6 +56,7 @@ import {
   dataPipelineRuns,
   memoryEmbeddings,
   scheduleExecutionHistory,
+  messageFeedback,
  } from "../../drizzle/schema";
 
 export const gdprRouter = router({
@@ -196,7 +197,10 @@ export const gdprRouter = router({
       if (taskExternalIds.length > 0) {
         await db.delete(taskShares).where(inArray(taskShares.taskExternalId, taskExternalIds));
         await db.delete(taskRatings).where(inArray(taskRatings.taskExternalId, taskExternalIds));
+        await db.delete(messageFeedback).where(inArray(messageFeedback.taskExternalId, taskExternalIds));
       }
+      // Also delete messageFeedback by userId directly (covers edge cases)
+      await db.delete(messageFeedback).where(eq(messageFeedback.userId, userId));
 
       // ── Phase 3: Delete project-dependent tables ──
       if (projectIds.length > 0) {

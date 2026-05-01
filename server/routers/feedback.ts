@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, adminProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
+import { getDb, upsertMessageFeedback, getMessageFeedbackForTask } from "../db";
 import { appFeedback } from "../../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -63,6 +63,34 @@ export const feedbackRouter = router({
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(appFeedback.createdAt))
         .limit(input?.limit ?? 50);
+    }),
+
+  /** Per-message feedback: thumbs up/down on individual assistant responses */
+  messageVote: protectedProcedure
+    .input(
+      z.object({
+        taskExternalId: z.string().max(64),
+        messageIndex: z.number().int().min(0),
+        feedback: z.enum(["up", "down"]),
+        comment: z.string().max(2000).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await upsertMessageFeedback({
+        taskExternalId: input.taskExternalId,
+        messageIndex: input.messageIndex,
+        userId: ctx.user.id,
+        feedback: input.feedback,
+        comment: input.comment,
+      });
+      return { feedback: result?.feedback ?? null };
+    }),
+
+  /** Get all message feedback for a task */
+  messageFeedback: protectedProcedure
+    .input(z.object({ taskExternalId: z.string().max(64) }))
+    .query(async ({ ctx, input }) => {
+      return getMessageFeedbackForTask(input.taskExternalId, ctx.user.id);
     }),
 
   /** Admin: update feedback status and respond */

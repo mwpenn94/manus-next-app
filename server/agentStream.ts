@@ -1120,6 +1120,25 @@ When performing recursive optimization passes, use the report_convergence tool t
       }
     }
 
+    // ── Inject connected services (connectors) into system prompt ──
+    // This allows the agent to proactively use connected services without being asked
+    if (userId) {
+      try {
+        const { getUserConnectors } = await import("./db");
+        const userConns = await getUserConnectors(userId);
+        const activeConns = userConns.filter((c: any) => c.status === "connected");
+        if (activeConns.length > 0) {
+          const connList = activeConns.map((c: any) => {
+            const identity = c.manusVerifiedIdentity ? ` (${c.manusVerifiedIdentity})` : "";
+            return `- **${c.name}**${identity} — use \`use_connector(connector_id: "${c.connectorId}", action: ...)\``;
+          }).join("\n");
+          systemPrompt += `\n\n## CONNECTED SERVICES\nThe user has ${activeConns.length} service(s) connected and ready to use:\n\n${connList}\n\n### Usage guidelines:\n- When the user's request involves any connected service, use it PROACTIVELY without asking permission\n- For file operations: prefer Google Drive/OneDrive if connected\n- For messaging: use Slack if connected\n- For project management: use Linear/Notion if connected\n- Call \`use_connector\` with the appropriate connector_id and action\n- If unsure which actions are available, call \`use_connector(connector_id, action: "list_actions")\` first`;
+        }
+      } catch (err) {
+        console.warn("[Agent] Failed to load connectors for context:", err);
+      }
+    }
+
     // Register prefix for caching (system prompt + tool definitions)
     const toolsJson = JSON.stringify(AGENT_TOOLS);
     const prefixInfo = registerPrefix(systemPrompt, toolsJson);

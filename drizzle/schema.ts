@@ -1442,3 +1442,20 @@ export const scheduleExecutionHistory = mysqlTable("schedule_execution_history",
 }));
 export type ScheduleExecutionHistoryRow = typeof scheduleExecutionHistory.$inferSelect;
 export type InsertScheduleExecutionHistory = typeof scheduleExecutionHistory.$inferInsert;
+
+// ── Per-Message Feedback (thumbs up/down on individual assistant responses) ──
+export const messageFeedback = mysqlTable("message_feedback", {
+  id: int("id").primaryKey().autoincrement(),
+  taskExternalId: varchar("taskExternalId", { length: 64 }).notNull(),
+  messageIndex: int("messageIndex").notNull(),
+  userId: int("userId").notNull(),
+  feedback: mysqlEnum("feedback", ["up", "down"]).notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  taskMsgIdx: index("message_feedback_task_msg_idx").on(table.taskExternalId, table.messageIndex),
+  userIdx: index("message_feedback_user_idx").on(table.userId),
+}));
+export type MessageFeedbackRow = typeof messageFeedback.$inferSelect;
+export type InsertMessageFeedback = typeof messageFeedback.$inferInsert;

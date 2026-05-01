@@ -6324,3 +6324,25 @@
 - [x] Recent tasks section: "Continue where you left off" showing last 3 tasks on Home page
 - [x] Test alignment: p18.test.ts updated for time-of-day greeting pattern
 - [x] All 196 test files passing (4908 tests), 0 TypeScript errors
+
+## Deep Manus Parity — High-Delta Items (Real Orchestration, Workspace, Replay, Connectors)
+- [ ] Real-time orchestration visibility: Live execution graph showing tool call DAG with status indicators (pending/running/complete/failed)
+- [ ] Orchestration graph: Animated edges showing data flow between tool calls
+- [ ] Orchestration graph: Expandable nodes showing tool input/output previews
+- [ ] Orchestration graph: Time-based layout showing parallel vs sequential execution
+- [ ] Multi-artifact workspace: Split-pane layout with resizable panels
+- [ ] Workspace: Live code preview with syntax highlighting and line numbers
+- [ ] Workspace: Document preview with markdown rendering
+- [ ] Workspace: Website/iframe preview with device frame selector (desktop/tablet/mobile)
+- [ ] Workspace: File tree navigator for multi-file artifacts
+- [ ] Workspace: Diff view showing changes between iterations
+- [ ] Replay system: Full session timeline with scrub bar
+- [ ] Replay: Playback controls (play/pause/speed/skip)
+- [ ] Replay: Message-level and tool-level granularity
+- [x] Replay: Visual state reconstruction at any point in time
+- [x] Replay: Shareable replay links with timestamp deep-linking
+- [x] Per-message feedback: Thumbs up/down on individual assistant responses (DB + tRPC + UI)
+- [ ] Connector context injection: Connected services feed context into agent system prompt
+- [ ] Connector context: Real-time data pull from connected services during task execution
+- [ ] Connector context: Context relevance scoring to avoid prompt bloat
+- [ ] Connector context: Visual indicator showing which connectors contributed to a response

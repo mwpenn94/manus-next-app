@@ -6,6 +6,7 @@
  * 2. Session Replay (with taskId) — timeline viewer with playback controls
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -39,6 +40,8 @@ import {
   Copy,
   ExternalLink,
   Hash,
+  Share2,
+  Monitor,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 
@@ -335,11 +338,16 @@ export default function ReplayPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [, params] = useRoute("/replay/:taskId");
   const [, navigate] = useLocation();
-  const taskId = params?.taskId ? Number(params.taskId) : null;
-
+   const taskId = params?.taskId ? Number(params.taskId) : null;
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Read initial step from URL hash for deep-linking (e.g. #step=5)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const hash = window.location.hash;
+    const match = hash.match(/step=(\d+)/);
+    return match ? Math.max(0, Number(match[1]) - 1) : 0;
+  });
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showStatePanel, setShowStatePanel] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeCardRef = useRef<HTMLDivElement>(null);
 
@@ -350,6 +358,16 @@ export default function ReplayPage() {
   );
 
   const events = eventsQuery.data ?? [];
+
+  // Sync currentIndex to URL hash for shareable deep-links
+  useEffect(() => {
+    if (taskId && events.length > 0) {
+      const newHash = `#step=${currentIndex + 1}`;
+      if (window.location.hash !== newHash) {
+        window.history.replaceState(null, "", newHash);
+      }
+    }
+  }, [currentIndex, taskId, events.length]);
 
   // Auto-scroll to active card during playback
   useEffect(() => {
@@ -540,6 +558,34 @@ export default function ReplayPage() {
               Task #{taskId} — {events.length} events recorded
             </p>
           </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => setShowStatePanel(!showStatePanel)}
+              title="Toggle state reconstruction panel"
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              State
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={() => {
+                const url = `${window.location.origin}/replay/${taskId}#step=${currentIndex + 1}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Link copied to clipboard", {
+                  description: `Step ${currentIndex + 1} of ${events.length}`,
+                });
+              }}
+              title="Copy shareable link to current step"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </Button>
+          </div>
         </div>
 
         {eventsQuery.isLoading ? (
@@ -662,6 +708,111 @@ export default function ReplayPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Visual State Reconstruction Panel */}
+            {showStatePanel && currentEvent && (
+              <Card className="mb-4 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
+                  <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-foreground">Workspace State at Step {currentIndex + 1}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">{currentTime}</span>
+                </div>
+                <CardContent className="p-0">
+                  {(() => {
+                    const parsed = parsePayload(currentEvent.payload);
+                    const eventType = currentEvent.eventType;
+                    // Browser state
+                    if (eventType === "browser" || parsed.url) {
+                      return (
+                        <div className="p-3">
+                          <div className="rounded-lg border border-border overflow-hidden bg-background">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 border-b border-border">
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 rounded-full bg-red-400/60" />
+                                <div className="w-2 h-2 rounded-full bg-yellow-400/60" />
+                                <div className="w-2 h-2 rounded-full bg-green-400/60" />
+                              </div>
+                              <div className="flex-1 bg-background/50 rounded px-2 py-0.5 text-[10px] font-mono text-muted-foreground truncate">
+                                {parsed.url || "about:blank"}
+                              </div>
+                            </div>
+                            {parsed.imageUrl ? (
+                              <img src={parsed.imageUrl} alt="Browser state" className="w-full max-h-[200px] object-contain" />
+                            ) : (
+                              <div className="p-4 text-center text-xs text-muted-foreground">
+                                <Globe className="w-6 h-6 mx-auto mb-1 opacity-40" />
+                                Navigating to {parsed.url || "page"}...
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Code state
+                    if (eventType === "code" || parsed.codeContent) {
+                      return (
+                        <div className="p-3">
+                          <div className="rounded-lg border border-border overflow-hidden">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 border-b border-border">
+                              <Code className="w-3 h-3 text-cyan-400" />
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                {parsed.toolName || "code"}
+                              </span>
+                            </div>
+                            <pre className="p-3 text-[11px] font-mono bg-[#1e1e2e] text-foreground overflow-x-auto max-h-[180px] overflow-y-auto">
+                              {parsed.codeContent?.slice(0, 2000) || parsed.content?.slice(0, 2000) || ""}
+                            </pre>
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Terminal state
+                    if (eventType === "terminal") {
+                      return (
+                        <div className="p-3">
+                          <div className="rounded-lg border border-border overflow-hidden bg-[#0d1117]">
+                            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50">
+                              <Terminal className="w-3 h-3 text-green-400" />
+                              <span className="text-[10px] font-mono text-green-400/80">terminal</span>
+                            </div>
+                            <pre className="p-3 text-[11px] font-mono text-green-300/90 max-h-[160px] overflow-auto">
+                              {parsed.content?.slice(0, 1500) || parsed.raw.slice(0, 1500)}
+                            </pre>
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Image state
+                    if (eventType === "image" || parsed.imageUrl) {
+                      return (
+                        <div className="p-3 flex justify-center">
+                          <img
+                            src={parsed.imageUrl}
+                            alt="Generated image"
+                            className="max-h-[200px] rounded-lg border border-border object-contain"
+                          />
+                        </div>
+                      );
+                    }
+                    // Text/thinking/search — show content
+                    if (parsed.content) {
+                      return (
+                        <div className="p-3 max-h-[200px] overflow-y-auto text-xs">
+                          <Streamdown>{parsed.content.slice(0, 2000)}</Streamdown>
+                        </div>
+                      );
+                    }
+                    // Default: show raw payload summary
+                    return (
+                      <div className="p-4 text-center text-xs text-muted-foreground">
+                        <Zap className="w-5 h-5 mx-auto mb-1 opacity-40" />
+                        {getEventMeta(eventType).label} event
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Event Timeline — Rich Cards */}
             <div className="space-y-2">
