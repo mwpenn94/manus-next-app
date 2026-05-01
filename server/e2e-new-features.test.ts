@@ -355,31 +355,31 @@ describe("WebappPreviewCard publishedUrl", () => {
 
 // ── 8. DeploymentCard Improvements ──
 
-describe("DeploymentCard Improvements", () => {
-  it("DeploymentCard has empty URL guard", () => {
+describe("WebappPreviewCard Improvements (formerly DeploymentCard)", () => {
+  it("WebappPreviewCard has URL handling", () => {
     const content = fs.readFileSync(
-      path.resolve("client/src/components/DeploymentCard.tsx"),
+      path.resolve("client/src/components/WebappPreviewCard.tsx"),
       "utf-8"
     );
     // Should not open blank page when URL is empty
-    expect(content).toContain("deployedUrl");
+    expect(content).toContain("publishedUrl");
   });
 
-  it("DeploymentCard has Manage Project and Publish buttons", () => {
+  it("WebappPreviewCard has Manage and publish functionality", () => {
     const content = fs.readFileSync(
-      path.resolve("client/src/components/DeploymentCard.tsx"),
+      path.resolve("client/src/components/WebappPreviewCard.tsx"),
       "utf-8"
     );
-    expect(content).toContain("Manage Project");
+    expect(content).toContain("Manage");
     expect(content).toContain("Publish");
   });
 
-  it("DeploymentCard shows Live badge for deployed apps", () => {
+  it("WebappPreviewCard shows Published status for deployed apps", () => {
     const content = fs.readFileSync(
-      path.resolve("client/src/components/DeploymentCard.tsx"),
+      path.resolve("client/src/components/WebappPreviewCard.tsx"),
       "utf-8"
     );
-    expect(content).toContain("Live");
+    expect(content).toContain("Published");
   });
 });
 

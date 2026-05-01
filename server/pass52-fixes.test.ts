@@ -139,12 +139,13 @@ describe("streaming section — TaskProgressCard removed, inline step counter", 
   });
 
   it("has inline step counter with progress bar", () => {
-    expect(src).toContain("stepProgress.completed}/{stepProgress.total} steps");
+    // Step counter shows in header badge and collapsible
+    expect(src).toContain("stepProgress.completed}/{stepProgress.total}");
   });
 
   it("ActiveToolIndicator renders before action steps", () => {
     const toolIndicatorIdx = src.indexOf("<ActiveToolIndicator");
-    const actionStepsIdx = src.indexOf("GroupedActionsList actions={agentActions}");
+    const actionStepsIdx = src.indexOf("StreamingStepsCollapsible actions={agentActions}");
     // Both should exist in the streaming section
     expect(toolIndicatorIdx).toBeGreaterThan(-1);
     expect(actionStepsIdx).toBeGreaterThan(-1);

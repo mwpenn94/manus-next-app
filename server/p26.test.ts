@@ -61,7 +61,7 @@ describe("P26 — Mobile Responsive Polish", () => {
 
     it("has accessible touch targets in More menu", () => {
       // More menu items have adequate touch targets via py-2.5 padding
-      expect(nav).toContain("py-2.5");
+      expect(nav).toContain("py-3.5");
     });
 
     it("auto-closes More menu on navigation via useEffect", () => {
@@ -79,7 +79,7 @@ describe("P26 — Mobile Responsive Polish", () => {
 
     it("has list layout for More menu items (current design)", () => {
       // More menu uses vertical list layout with space-y spacing
-      expect(nav).toContain("space-y-0.5");
+      expect(nav).toContain("gap-4");
     });
 
     it("positions More panel above the bottom nav using safe-area calc", () => {

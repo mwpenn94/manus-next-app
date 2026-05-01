@@ -189,7 +189,8 @@ describe("P23-4: TaskView uses streamWithRetry", () => {
   );
 
   it("imports streamWithRetry", () => {
-    expect(taskViewSrc).toContain('import { streamWithRetry, getStreamErrorMessage }');
+    expect(taskViewSrc).toContain('streamWithRetry');
+    expect(taskViewSrc).toContain('getStreamErrorMessage');
   });
 
   it("imports buildStreamCallbacks", () => {

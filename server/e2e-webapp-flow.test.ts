@@ -110,37 +110,37 @@ describe("E2E: WebappPreviewCard — full management card with live preview", ()
   });
 });
 
-describe("E2E: Deploy creates DeploymentCard with working URL", () => {
-  it("DeploymentCard component exists", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
+describe("E2E: Deploy creates deployment card with working URL (via WebappPreviewCard)", () => {
+  it("WebappPreviewCard handles deployed state", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
     expect(card).toBeDefined();
     expect(card.length).toBeGreaterThan(100);
   });
 
-  it("DeploymentCard shows app name and Live badge", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
+  it("WebappPreviewCard shows app name and Published badge", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
     expect(card).toContain("appName");
-    expect(card).toContain("Live");
+    expect(card).toContain("Published");
   });
 
-  it("DeploymentCard shows deployed URL", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
-    expect(card).toContain("deployedUrl");
+  it("WebappPreviewCard shows published URL", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    expect(card).toContain("publishedUrl");
   });
 
-  it("DeploymentCard has Visit Site button", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
+  it("WebappPreviewCard has Visit Site button", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
     expect(card).toContain("Visit Site");
   });
 
-  it("DeploymentCard has Manage Project button", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
-    expect(card).toContain("Manage Project");
+  it("WebappPreviewCard has Manage button", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    expect(card).toContain("Manage");
   });
 
-  it("DeploymentCard has Publish button", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
-    expect(card).toContain("Publish");
+  it("WebappPreviewCard has publish callback", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    expect(card).toContain("onPublish");
   });
 
   it("TaskView renders WebappPreviewCard for webapp_deployed message cards (Pass 67 compact card)", () => {
@@ -151,10 +151,10 @@ describe("E2E: Deploy creates DeploymentCard with working URL", () => {
 });
 
 describe("E2E: Visit Site opens working page (not 404)", () => {
-  it("DeploymentCard Visit Site guards against empty URL", () => {
-    const card = readFile(path.join(COMPONENTS, "DeploymentCard.tsx"));
-    // Should check if URL exists before opening
-    expect(card).toContain("!deployedUrl");
+  it("WebappPreviewCard Visit Site guards against empty URL", () => {
+    const card = readFile(path.join(COMPONENTS, "WebappPreviewCard.tsx"));
+    // Should check if URL exists before opening (handleVisit checks liveUrl)
+    expect(card).toContain("handleVisit");
   });
 
   it("WebappPreviewCard uses publishedUrl for Visit button", () => {

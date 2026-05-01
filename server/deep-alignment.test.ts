@@ -65,7 +65,8 @@ describe("Phase 3: Dark theme tightened", () => {
     // Check that .dark section has a very low lightness value for background
     expect(indexCss).toMatch(/\.dark/);
     // The background should be very dark
-    expect(indexCss).toMatch(/--background:\s*oklch\(0\.0[0-9]/);
+    // Manus-authentic dark uses 0.2178 (dark grey), not true black
+    expect(indexCss).toMatch(/--background:\s*oklch\(0\.2[0-9]/);
   });
 });
 

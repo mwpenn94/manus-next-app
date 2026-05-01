@@ -2302,7 +2302,9 @@ export default function TaskView() {
     onSuccess: () => { toast.success("Saved as template"); },
     onError: () => { toast.error("Failed to save template"); },
   });
-  const deleteLastMsgsMutation = trpc.task.deleteLastMessages.useMutation();
+  const deleteLastMsgsMutation = trpc.task.deleteLastMessages.useMutation({
+    onError: () => { toast.error("Failed to delete messages"); },
+  });
   const resumeStaleMutation = trpc.task.resumeStale.useMutation({
     onSuccess: () => {
       toast.success("Task resumed — you can continue where you left off");

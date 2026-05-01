@@ -87,13 +87,13 @@ describe("Pass 68 — Message Ordering (Manus Parity)", () => {
   });
 
   describe("Streaming bubble ordering is correct", () => {
-    it("ActiveToolIndicator renders before GroupedActionsList in streaming bubble", () => {
+    it("ActiveToolIndicator renders before StreamingStepsCollapsible in streaming bubble", () => {
       // In the streaming section (after "streaming && ("), find the order
       const streamingSection = TASK_VIEW_SRC.slice(
         TASK_VIEW_SRC.indexOf("{streaming && (")
       );
       const toolIndicatorIdx = streamingSection.indexOf("ActiveToolIndicator");
-      const groupedActionsIdx = streamingSection.indexOf("GroupedActionsList");
+      const groupedActionsIdx = streamingSection.indexOf("StreamingStepsCollapsible");
       const streamContentIdx = streamingSection.indexOf("{streamContent && (");
       
       expect(toolIndicatorIdx).toBeGreaterThan(-1);

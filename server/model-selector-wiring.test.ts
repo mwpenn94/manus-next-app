@@ -229,7 +229,7 @@ describe("Color contrast — dark theme accessibility fixes", () => {
     // Find the .dark { ... } block (starts at '.dark {' line, not @custom-variant)
     const darkBlockStart = css.indexOf(".dark {\n");
     expect(darkBlockStart).toBeGreaterThan(0);
-    const darkBlock = css.slice(darkBlockStart, darkBlockStart + 1500);
+    const darkBlock = css.slice(darkBlockStart, darkBlockStart + 3000);
     const match = darkBlock.match(/--muted-foreground:\s*oklch\(([0-9.]+)/);
     expect(match).toBeTruthy();
     const lightness = parseFloat(match![1]);
@@ -238,7 +238,7 @@ describe("Color contrast — dark theme accessibility fixes", () => {
 
   it("dark theme secondary-foreground has lightness >= 0.75", () => {
     const darkBlockStart = css.indexOf(".dark {\n");
-    const darkBlock = css.slice(darkBlockStart, darkBlockStart + 1500);
+    const darkBlock = css.slice(darkBlockStart, darkBlockStart + 3000);
     const match = darkBlock.match(/--secondary-foreground:\s*oklch\(([0-9.]+)/);
     expect(match).toBeTruthy();
     const lightness = parseFloat(match![1]);
@@ -247,7 +247,7 @@ describe("Color contrast — dark theme accessibility fixes", () => {
 
   it("dark theme sidebar-foreground has lightness >= 0.75", () => {
     const darkBlockStart = css.indexOf(".dark {\n");
-    const darkBlock = css.slice(darkBlockStart, darkBlockStart + 1500);
+    const darkBlock = css.slice(darkBlockStart, darkBlockStart + 3000);
     const match = darkBlock.match(/--sidebar-foreground:\s*oklch\(([0-9.]+)/);
     expect(match).toBeTruthy();
     const lightness = parseFloat(match![1]);

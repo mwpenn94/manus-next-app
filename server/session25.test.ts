@@ -348,7 +348,7 @@ describe("Session 25 — Feature 5: Improved Task Export to Markdown", () => {
       path.resolve(__dirname, "../client/src/pages/TaskView.tsx"),
       "utf-8"
     );
-    expect(source).toContain("Exported from Sovereign AI");
+    expect(source).toContain("Exported from Manus");
   });
 
   // Convergence Pass 2: Depth — tool actions exported as collapsible summary
