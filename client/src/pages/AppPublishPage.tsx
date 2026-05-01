@@ -46,12 +46,15 @@ export default function AppPublishPage() {
   const [selectedMethod, setSelectedMethod] = useState<BuildMethod>("pwa_manifest");
   const [showWorkflow, setShowWorkflow] = useState(false);
 
-  const projects = trpc.mobileProject.list.useQuery(undefined, { enabled: isAuthenticated });
+  const projects = trpc.mobileProject.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const builds = trpc.appPublish.builds.useQuery(
     { mobileProjectId: selectedProjectId! },
-    { enabled: !!selectedProjectId }
+    {
+    staleTime: 30_000, enabled: !!selectedProjectId }
   );
-  const allBuilds = trpc.appPublish.userBuilds.useQuery(undefined, { enabled: isAuthenticated });
+  const allBuilds = trpc.appPublish.userBuilds.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const createBuild = trpc.appPublish.createBuild.useMutation({
     onSuccess: () => {
       toast.success("Build created!");
@@ -62,7 +65,8 @@ export default function AppPublishPage() {
   });
   const checklist = trpc.appPublish.getPublishChecklist.useQuery(
     { platform: selectedPlatform },
-    { enabled: isAuthenticated }
+    {
+    staleTime: 30_000, enabled: isAuthenticated }
   );
   const workflow = trpc.appPublish.generateGitHubWorkflow.useQuery(
     { framework: "capacitor", platform: selectedPlatform, buildOnPush: false },

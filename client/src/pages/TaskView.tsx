@@ -245,7 +245,8 @@ function TaskRating({ taskId, onRate }: { taskId: string; onRate?: (rating: numb
   // Load existing rating from DB
   const { data: existingRating } = trpc.task.getTaskRating.useQuery(
     { taskExternalId: taskId },
-    { enabled: !!taskId }
+    {
+    staleTime: 30_000, enabled: !!taskId }
   );
   const rateMutation = trpc.task.rateTask.useMutation({
     onError: (err) => { toast.error("Rating failed: " + err.message); },
@@ -1181,7 +1182,8 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus }: { task: Retur
   // Fetch user-uploaded files for this task (for image gallery)
   const userFiles = trpc.file.list.useQuery(
     { taskExternalId: task?.id || "" },
-    { enabled: !!task?.id, refetchInterval: task?.status === "running" ? 5000 : false }
+    {
+    staleTime: 30_000, enabled: !!task?.id, refetchInterval: task?.status === "running" ? 5000 : false }
   );
 
   // Fetch real artifacts from DB — queries auto-enable when serverId becomes available
@@ -2328,7 +2330,8 @@ export default function TaskView() {
   });
   const taskQuery = trpc.task.get.useQuery(
     { externalId: taskExternalId || "" },
-    { enabled: !!taskExternalId && isAuthenticated }
+    {
+    staleTime: 30_000, enabled: !!taskExternalId && isAuthenticated }
   );
 
   // Voice recording
@@ -2339,7 +2342,8 @@ export default function TaskView() {
   const { recording, transcribing, voiceError, startRecording, stopRecording, cancelRecording, clearVoiceError } = useVoiceRecorder(handleTranscription);
 
   // ── User Preferences for TTS (P15) ──
-  const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const userTTSVoice = (prefsQuery.data?.generalSettings as any)?.ttsVoice || "en-US-AriaNeural";
   const userTTSLanguage = (prefsQuery.data?.generalSettings as any)?.ttsLanguage || "en";
   const userTTSRate = (prefsQuery.data?.generalSettings as any)?.ttsRate || 1.0;

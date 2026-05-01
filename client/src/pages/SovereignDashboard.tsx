@@ -56,11 +56,13 @@ function AegisPanel() {
   const [cachePrompt, setCachePrompt] = useState<string | null>(null);
   const classifyQuery = trpc.aegis.classify.useQuery(
     { prompt: classifyPrompt ?? "" },
-    { enabled: !!classifyPrompt }
+    {
+    staleTime: 30_000, enabled: !!classifyPrompt }
   );
   const cacheCheckQuery = trpc.aegis.checkCache.useQuery(
     { prompt: cachePrompt ?? "" },
-    { enabled: !!cachePrompt }
+    {
+    staleTime: 30_000, enabled: !!cachePrompt }
   );
 
   return (
@@ -178,11 +180,13 @@ function AtlasPanel() {
     },
   });
   const goalsQuery = trpc.atlas.listGoals.useQuery(undefined, {
+    staleTime: 30_000,
     refetchInterval: 10000,
   });
   const goalDetailQuery = trpc.atlas.getGoal.useQuery(
     { externalId: selectedGoalId! },
-    { enabled: !!selectedGoalId, refetchInterval: 5000 }
+    {
+    staleTime: 30_000, enabled: !!selectedGoalId, refetchInterval: 5000 }
   );
 
   return (
@@ -309,9 +313,10 @@ function AtlasPanel() {
 // ── Sovereign Panel ──
 function SovereignPanel() {
   const circuitQuery = trpc.sovereign.circuitStatus.useQuery(undefined, {
+    staleTime: 30_000,
     refetchInterval: 5000,
   });
-  const providersQuery = trpc.sovereign.providers.useQuery();
+  const providersQuery = trpc.sovereign.providers.useQuery(undefined, { staleTime: 30_000 });
   const seedMutation = trpc.sovereign.seedProviders.useMutation({
     onSuccess: (data) => {
       toast.success("Default providers seeded");
@@ -530,6 +535,7 @@ function CompareModelsPanel() {
 /** Recent routing decisions table — shows provider selection transparency */
 function RoutingDecisionsTable() {
   const decisionsQuery = trpc.sovereign.recentDecisions.useQuery({ limit: 10 }, {
+    staleTime: 30_000,
     refetchInterval: 10000,
   });
 

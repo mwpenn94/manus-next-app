@@ -55,6 +55,7 @@ export default function DesktopAppPage() {
 
   // Build history from server
   const buildsQuery = trpc.appPublish.userBuilds.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });

@@ -247,7 +247,7 @@ function EventCard({
 // ── Session List Component ──
 
 function SessionList({ onSelect }: { onSelect: (taskId: number) => void }) {
-  const sessionsQuery = trpc.replay.sessions.useQuery();
+  const sessionsQuery = trpc.replay.sessions.useQuery(undefined, { staleTime: 30_000 });
   const sessions = sessionsQuery.data ?? [];
 
   if (sessionsQuery.isLoading) {
@@ -345,7 +345,8 @@ export default function ReplayPage() {
 
   const eventsQuery = trpc.replay.events.useQuery(
     { taskId: taskId! },
-    { enabled: !!taskId && isAuthenticated }
+    {
+    staleTime: 30_000, enabled: !!taskId && isAuthenticated }
   );
 
   const events = eventsQuery.data ?? [];

@@ -29,7 +29,8 @@ export default function SkillsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const { data: installedSkills = [], isLoading } = trpc.skill.list.useQuery(undefined, { enabled: !!user });
+  const { data: installedSkills = [], isLoading } = trpc.skill.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const utils = trpc.useUtils();
 
   const installMutation = trpc.skill.install.useMutation({

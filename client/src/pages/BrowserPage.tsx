@@ -211,10 +211,12 @@ export default function BrowserPage() {
 
   // ── tRPC queries ──
   const sessionsQuery = trpc.browser.sessions.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: !!user,
     refetchInterval: 10000,
   });
   const viewportPresetsQuery = trpc.browser.viewportPresets.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: !!user,
   });
 

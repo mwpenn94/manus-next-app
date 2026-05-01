@@ -55,29 +55,34 @@ export default function BillingPage() {
 
   // Real usage stats from the database
   const statsQuery = trpc.usage.stats.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });
 
   // Real task list for recent activity
   const tasksQuery = trpc.task.list.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });
 
   // Stripe products
   const productsQuery = trpc.payment.products.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
   });
 
   // Payment history
   const historyQuery = trpc.payment.history.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });
 
   // Subscription details
   const subQuery = trpc.payment.subscription.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });

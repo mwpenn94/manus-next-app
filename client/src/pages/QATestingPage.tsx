@@ -173,7 +173,8 @@ export default function QATestingPage() {
     onError: (err) => { setAuditRunning(false); toast.error(err.message); },
   });
 
-  const perfMut = trpc.browser.performanceMetrics.useQuery({}, { enabled: false });
+  const perfMut = trpc.browser.performanceMetrics.useQuery({}, {
+    staleTime: 30_000, enabled: false });
 
   const screenshotDiffMut = trpc.browser.screenshotDiff.useMutation({
     onSuccess: (data) => { setDiffResult(data); setDiffRunning(false); toast.success("Visual comparison complete"); },

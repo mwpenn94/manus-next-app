@@ -173,6 +173,7 @@ function Toggle({ checked, onChange, disabled, label }: { checked: boolean; onCh
 
 function CacheMetricsSection() {
   const metricsQuery = trpc.cache.metrics.useQuery(undefined, {
+    staleTime: 30_000,
     refetchInterval: 15000, // refresh every 15s
   });
   const m = metricsQuery.data;
@@ -245,12 +246,14 @@ export default function SettingsPage() {
 
   // ── Load persisted preferences from DB ──
   const prefsQuery = trpc.preferences.get.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });
 
   // ── Load persisted bridge config from DB ──
   const bridgeConfigQuery = trpc.bridge.getConfig.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     retry: false,
   });

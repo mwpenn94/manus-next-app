@@ -82,7 +82,8 @@ export default function ConnectDevicePage() {
   const [tunnelUrl, setTunnelUrl] = useState("");
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const devices = trpc.device.list.useQuery(undefined, { enabled: isAuthenticated });
+  const devices = trpc.device.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const createDevice = trpc.device.create.useMutation({
     onSuccess: () => {
       toast.success("Device created — follow the setup instructions to complete pairing");
@@ -109,7 +110,8 @@ export default function ConnectDevicePage() {
   });
   const setupInstructions = trpc.device.getSetupInstructions.useQuery(
     { connectionMethod: selectedMethod! },
-    { enabled: !!selectedMethod && view === "instructions" }
+    {
+    staleTime: 30_000, enabled: !!selectedMethod && view === "instructions" }
   );
 
   const [latestDevice] = useMemo(() => {

@@ -66,7 +66,8 @@ export default function DesignView() {
   const dragRef = useRef<{ layerId: string; startX: number; startY: number; origX: number; origY: number } | null>(null);
 
   // Real tRPC queries and mutations
-  const designsQuery = trpc.design.list.useQuery(undefined, { enabled: !!user });
+  const designsQuery = trpc.design.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const utils = trpc.useUtils();
 
   const createDesignMut = trpc.design.create.useMutation({

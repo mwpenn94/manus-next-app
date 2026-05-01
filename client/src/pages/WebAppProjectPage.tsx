@@ -59,12 +59,14 @@ export default function WebAppProjectPage() {
   // Queries
   const projectQuery = trpc.webappProject.get.useQuery(
     { externalId: projectId! },
-    { enabled: !!projectId && !!user }
+    {
+    staleTime: 30_000, enabled: !!projectId && !!user }
   );
 
   const deploymentsQuery = trpc.webappProject.deployments.useQuery(
     { externalId: projectId! },
-    { enabled: !!projectId && activePanel === "deployments" }
+    {
+    staleTime: 30_000, enabled: !!projectId && activePanel === "deployments" }
   );
 
   const analyticsQuery = trpc.webappProject.analytics.useQuery(
@@ -86,7 +88,8 @@ export default function WebAppProjectPage() {
   const project = projectQuery.data;
   const linkedBuildQuery = trpc.webapp.get.useQuery(
     { id: project?.webappBuildId ?? 0 },
-    { enabled: !!project?.webappBuildId && !project?.publishedUrl }
+    {
+    staleTime: 30_000, enabled: !!project?.webappBuildId && !project?.publishedUrl }
   );
   const linkedBuildHtml = linkedBuildQuery.data?.generatedHtml ?? null;
 
@@ -1467,7 +1470,8 @@ export default function WebAppProjectPage() {
 function BuildLogPanel({ externalId }: { externalId: string }) {
   const logQuery = trpc.webappProject.deployBuildLog.useQuery(
     { externalId },
-    { refetchInterval: 1500 }
+    {
+    staleTime: 30_000, refetchInterval: 1500 }
   );
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -1502,7 +1506,7 @@ function BuildLogPanel({ externalId }: { externalId: string }) {
 
 /** Clone command card that fetches actual repo URL */
 function CloneCommandCard({ githubRepoId }: { githubRepoId: number }) {
-  const reposQuery = trpc.github.repos.useQuery();
+  const reposQuery = trpc.github.repos.useQuery(undefined, { staleTime: 30_000 });
   const repo = reposQuery.data?.find((r: any) => r.id === githubRepoId);
   const cloneUrl = repo?.cloneUrl || repo?.htmlUrl ? `${repo.htmlUrl}.git` : null;
 
@@ -1682,7 +1686,8 @@ function SslProvisioningPanel({ projectExternalId, customDomain, publishedUrl }:
 
   const sslQuery = trpc.webappProject.sslStatus.useQuery(
     { externalId: projectExternalId },
-    { refetchInterval: (query) => {
+    {
+    staleTime: 30_000, refetchInterval: (query) => {
       const status = query.state.data?.status;
       // Poll every 10s while pending validation
       return status === "pending_validation" ? 10_000 : false;

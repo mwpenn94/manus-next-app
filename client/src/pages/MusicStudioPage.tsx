@@ -58,6 +58,7 @@ export default function MusicStudioPage() {
   const trackQuery = trpc.music.get.useQuery(
     { id: pollingId! },
     {
+    staleTime: 30_000,
       enabled: !!pollingId,
       refetchInterval: (query) => {
         const data = query.state.data;

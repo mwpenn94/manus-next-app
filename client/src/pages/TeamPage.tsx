@@ -24,14 +24,17 @@ export default function TeamPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
 
   // Real tRPC queries
-  const teamsQuery = trpc.team.list.useQuery(undefined, { enabled: !!user });
+  const teamsQuery = trpc.team.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const membersQuery = trpc.team.members.useQuery(
     { teamId: selectedTeamId! },
-    { enabled: !!selectedTeamId }
+    {
+    staleTime: 30_000, enabled: !!selectedTeamId }
   );
   const sessionsQuery = trpc.team.sessions.useQuery(
     { teamId: selectedTeamId! },
-    { enabled: !!selectedTeamId }
+    {
+    staleTime: 30_000, enabled: !!selectedTeamId }
   );
 
   // Real tRPC mutations

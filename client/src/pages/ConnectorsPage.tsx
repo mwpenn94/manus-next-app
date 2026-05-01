@@ -643,10 +643,12 @@ export default function ConnectorsPage() {
   const [verifiedIdentities, setVerifiedIdentities] = useState<Record<string, { identity: string; method: string }>>({});
 
   const utils = trpc.useUtils();
-  const { data: installed = [], isLoading } = trpc.connector.list.useQuery(undefined, { enabled: !!user });
-  const { data: oauthAvail = {} } = trpc.connector.oauthAvailability.useQuery();
-  const { data: tierStatus = {} } = trpc.connector.tieredAuthStatus.useQuery();
-  const { data: healthList = [] } = trpc.connector.getHealth.useQuery(undefined, { enabled: !!user });
+  const { data: installed = [], isLoading } = trpc.connector.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
+  const { data: oauthAvail = {} } = trpc.connector.oauthAvailability.useQuery(undefined, { staleTime: 30_000 });
+  const { data: tierStatus = {} } = trpc.connector.tieredAuthStatus.useQuery(undefined, { staleTime: 30_000 });
+  const { data: healthList = [] } = trpc.connector.getHealth.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const healthMap = useMemo(() => new Map(healthList.map((h: any) => [h.connectorId, h])), [healthList]);
 
   const connectMutation = trpc.connector.connect.useMutation({

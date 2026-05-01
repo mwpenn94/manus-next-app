@@ -51,7 +51,8 @@ export default function GitHubPage() {
   const utils = trpc.useUtils();
 
   // ── GitHub connector status ──
-  const connectorListQuery = trpc.connector.list.useQuery(undefined, { enabled: !!user });
+  const connectorListQuery = trpc.connector.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const githubConnected = useMemo(() => {
     if (!connectorListQuery.data) return null; // loading
     return connectorListQuery.data.some(
@@ -232,7 +233,8 @@ export default function GitHubPage() {
   const [prBase, setPrBase] = useState("");
 
   // Queries
-  const reposQuery = trpc.github.repos.useQuery(undefined, { enabled: !!user });
+  const reposQuery = trpc.github.repos.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const remoteReposQuery = trpc.github.listRemoteRepos.useQuery(
     { page: 1, perPage: 50 },
     { enabled: importOpen && !!user }
@@ -250,7 +252,8 @@ export default function GitHubPage() {
 
   const branchesQuery = trpc.github.branches.useQuery(
     { externalId: selectedRepoId! },
-    { enabled: !!selectedRepoId }
+    {
+    staleTime: 30_000, enabled: !!selectedRepoId }
   );
 
   const commitsQuery = trpc.github.commits.useQuery(
@@ -375,7 +378,8 @@ export default function GitHubPage() {
   });
 
   // Commit & Deploy: linked project detection + deploy chaining
-  const projectsQuery = trpc.webappProject.list.useQuery(undefined, { enabled: !!selectedRepoId });
+  const projectsQuery = trpc.webappProject.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!selectedRepoId });
   const linkedProject = useMemo(() => {
     if (!projectsQuery.data || !selectedRepo) return null;
     return projectsQuery.data.find(p => p.githubRepoId?.toString() === selectedRepo.id?.toString() || p.name === selectedRepo.name) ?? null;
@@ -1442,7 +1446,7 @@ function DeployTab({ repoId, repoFullName }: { repoId: string; repoFullName: str
   const [deployResult, setDeployResult] = useState<{ status: string; publishedUrl?: string; previewUrl?: string } | null>(null);
 
   // Check if there's already a webapp project linked to this repo
-  const projectsQuery = trpc.webappProject.list.useQuery();
+  const projectsQuery = trpc.webappProject.list.useQuery(undefined, { staleTime: 30_000 });
   const linkedProject = useMemo(() => {
     return projectsQuery.data?.find(p => p.githubRepoId?.toString() === repoId || p.name === repoFullName.split("/").pop());
   }, [projectsQuery.data, repoId, repoFullName]);

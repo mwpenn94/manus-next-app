@@ -34,7 +34,8 @@ export default function DataControlsPage() {
   const [confirmDeleteData, setConfirmDeleteData] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const savePrefsMutation = trpc.preferences.save.useMutation({
     onSuccess: () => { toast.success("Data controls updated"); },
     onError: (err) => { toast.error(`Failed: ${err.message}`); },
@@ -66,7 +67,8 @@ export default function DataControlsPage() {
   };
 
   // Deployed websites from webapp projects
-  const webappProjects = trpc.webappProject.list.useQuery(undefined, { enabled: isAuthenticated });
+  const webappProjects = trpc.webappProject.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const deployedSites = useMemo(
     () => (webappProjects.data || []).filter((p: any) => p.deployStatus === "live" || p.deployStatus === "deployed"),
     [webappProjects.data]

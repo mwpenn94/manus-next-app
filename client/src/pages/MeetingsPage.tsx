@@ -113,6 +113,7 @@ export default function MeetingsPage() {
 
   // Fetch meeting history from DB
   const meetingsQuery = trpc.meeting.list.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
   });
   const pastMeetings = meetingsQuery.data ?? [];

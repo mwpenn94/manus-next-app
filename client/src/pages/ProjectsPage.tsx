@@ -52,6 +52,7 @@ export default function ProjectsPage() {
 
   // Queries
   const projectsQuery = trpc.project.list.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
   });
 

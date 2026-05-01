@@ -34,7 +34,8 @@ export default function MailManusPage() {
   const [newSender, setNewSender] = useState("");
   const [addSenderDialog, setAddSenderDialog] = useState(false);
 
-  const prefsQuery = trpc.preferences.get.useQuery(undefined, { enabled: isAuthenticated });
+  const prefsQuery = trpc.preferences.get.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const savePrefsMutation = trpc.preferences.save.useMutation({
     onSuccess: () => { toast.success("Mail settings updated"); },
     onError: (err) => { toast.error(`Failed: ${err.message}`); },

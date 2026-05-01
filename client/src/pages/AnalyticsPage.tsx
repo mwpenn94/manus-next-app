@@ -106,10 +106,10 @@ function CustomTooltip({ active, payload, label }: any) {
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
 
-  const statsQuery = trpc.usage.stats.useQuery();
+  const statsQuery = trpc.usage.stats.useQuery(undefined, { staleTime: 30_000 });
   const trendsQuery = trpc.usage.taskTrends.useQuery({ days });
-  const perfQuery = trpc.usage.performance.useQuery();
-  const strategyQuery = trpc.usage.strategyStats.useQuery();
+  const perfQuery = trpc.usage.performance.useQuery(undefined, { staleTime: 30_000 });
+  const strategyQuery = trpc.usage.strategyStats.useQuery(undefined, { staleTime: 30_000 });
 
   const isLoading = statsQuery.isLoading || trendsQuery.isLoading || perfQuery.isLoading;
 

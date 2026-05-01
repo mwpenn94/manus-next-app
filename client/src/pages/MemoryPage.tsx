@@ -182,11 +182,13 @@ export default function MemoryPage() {
 
   const { data: memories = [], refetch, isLoading: memoriesLoading } = trpc.memory.list.useQuery(
     { limit: 100 },
-    { enabled: isAuthenticated }
+    {
+    staleTime: 30_000, enabled: isAuthenticated }
   );
   const { data: archivedMemories = [], refetch: refetchArchived } = trpc.memory.listArchived.useQuery(
     { limit: 200 },
-    { enabled: isAuthenticated && activeTab === "archived" }
+    {
+    staleTime: 30_000, enabled: isAuthenticated && activeTab === "archived" }
   );
   const { data: searchResults } = trpc.memory.search.useQuery(
     { query: searchQuery, limit: 20 },

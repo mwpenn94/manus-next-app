@@ -16,7 +16,8 @@ export default function DeployedWebsitesPage() {
   const [, navigate] = useLocation();
   const [tab, setTab] = useState<"overview" | "analytics" | "database" | "storage" | "seo">("overview");
 
-  const webappProjects = trpc.webappProject.list.useQuery(undefined, { enabled: isAuthenticated });
+  const webappProjects = trpc.webappProject.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
 
   const projects = useMemo(() => webappProjects.data || [], [webappProjects.data]);
   const deployedProjects = useMemo(() => projects.filter((p: any) => p.deployStatus === "live" || p.deployStatus === "deployed"), [projects]);

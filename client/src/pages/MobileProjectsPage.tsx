@@ -56,10 +56,12 @@ export default function MobileProjectsPage() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>(["web", "android"]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
-  const projects = trpc.mobileProject.list.useQuery(undefined, { enabled: isAuthenticated });
+  const projects = trpc.mobileProject.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: isAuthenticated });
   const activeProject = trpc.mobileProject.get.useQuery(
     { externalId: activeProjectId! },
-    { enabled: !!activeProjectId && view === "detail" }
+    {
+    staleTime: 30_000, enabled: !!activeProjectId && view === "detail" }
   );
   const createProject = trpc.mobileProject.create.useMutation({
     onSuccess: (data) => {
@@ -89,7 +91,8 @@ export default function MobileProjectsPage() {
   });
   const generateSw = trpc.mobileProject.generateServiceWorker.useQuery(
     { cacheName: `manus-pwa-v1` },
-    { enabled: false }
+    {
+    staleTime: 30_000, enabled: false }
   );
   const generateCapacitor = trpc.mobileProject.generateCapacitorConfig.useMutation({
     onSuccess: () => {

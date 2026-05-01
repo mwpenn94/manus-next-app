@@ -43,7 +43,7 @@ export default function MessagingAgentPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   // Use real tRPC queries for persistence via the connectors table
-  const { data: connectors = [], isLoading } = trpc.connector.list.useQuery();
+  const { data: connectors = [], isLoading } = trpc.connector.list.useQuery(undefined, { staleTime: 30_000 });
   const utils = trpc.useUtils();
 
   // Filter to messaging connectors only (connectorId starts with "msg-")

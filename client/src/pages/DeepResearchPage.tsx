@@ -47,6 +47,7 @@ export default function DeepResearchPage() {
   const researchQuery = trpc.research.get.useQuery(
     { id: pollingId! },
     {
+    staleTime: 30_000,
       enabled: !!pollingId,
       refetchInterval: (query) => {
         const data = query.state.data;

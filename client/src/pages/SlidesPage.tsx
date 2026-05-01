@@ -54,6 +54,7 @@ export default function SlidesPage() {
 
   const utils = trpc.useUtils();
   const { data: decks = [], isLoading } = trpc.slides.list.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: !!user,
     refetchInterval: 5000,
   });

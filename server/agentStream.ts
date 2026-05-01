@@ -1250,22 +1250,23 @@ When performing recursive optimization passes, use the report_convergence tool t
         }
       }
       const toolCalls = assistantMessage?.tool_calls;
-      // Strip thinking/reasoning content that some models embed in message.content.
-      // Models may wrap internal reasoning in <think>...</think>, <thinking>...</thinking>,
-      // or return it in a separate `thinking` field. We extract it and emit as agent_thinking.
+      // Manus Parity: Thinking/reasoning content is a VISIBLE feature, not hidden.
+      // Models may include reasoning in <think>...</think> tags or a separate `thinking` field.
+      // We emit it as agent_thinking for the UI to render visibly (like Manus shows reasoning steps).
       let rawContent = typeof assistantMessage?.content === "string" ? assistantMessage.content : "";
+      // Extract thinking from tags but keep full content visible
       const thinkingMatch = rawContent.match(/^\s*<(?:think|thinking)>([\s\S]*?)<\/(?:think|thinking)>\s*/i);
       let extractedThinking: string | null = null;
       if (thinkingMatch) {
         extractedThinking = thinkingMatch[1].trim();
-        rawContent = rawContent.slice(thinkingMatch[0].length);
+        // Keep rawContent intact — thinking is user-visible in Manus
       }
       // Also check for a separate `thinking` field in the response (Anthropic-style)
       const thinkingField = (assistantMessage as any)?.thinking;
       if (thinkingField && typeof thinkingField === "string" && thinkingField.trim()) {
         extractedThinking = (extractedThinking ? extractedThinking + "\n" : "") + thinkingField.trim();
       }
-      // Emit extracted thinking as agent_thinking event (not as user-visible content)
+      // Emit thinking as agent_thinking event for the UI to render visibly
       if (extractedThinking && extractedThinking.length > 10) {
         sendSSE(safeWrite, { agent_thinking: { content: extractedThinking, turn } });
       }

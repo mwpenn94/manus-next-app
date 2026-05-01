@@ -76,6 +76,7 @@ export default function SchedulePage() {
   const tzAbbr = useMemo(() => getTimezoneAbbr(), []);
 
   const schedulesQuery = trpc.schedule.list.useQuery(undefined, {
+    staleTime: 30_000,
     enabled: isAuthenticated,
     refetchInterval: 30_000, // Auto-refresh every 30s to show status updates
   });
@@ -465,7 +466,8 @@ export default function SchedulePage() {
 function ScheduleExecutionHistory({ scheduleId }: { scheduleId: number }) {
   const historyQuery = trpc.automation.getExecutionHistory.useQuery(
     { scheduleId },
-    { refetchInterval: 10_000 }
+    {
+    staleTime: 30_000, refetchInterval: 10_000 }
   );
 
   if (historyQuery.isLoading) {

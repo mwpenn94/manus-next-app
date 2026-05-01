@@ -45,7 +45,8 @@ export default function VideoGeneratorPage() {
   const [previewProject, setPreviewProject] = useState<any>(null);
 
   const utils = trpc.useUtils();
-  const { data: projects = [], isLoading } = trpc.video.list.useQuery(undefined, { enabled: !!user });
+  const { data: projects = [], isLoading } = trpc.video.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
 
   const createMutation = trpc.video.generate.useMutation({
     onSuccess: () => {

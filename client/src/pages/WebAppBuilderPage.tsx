@@ -74,8 +74,10 @@ export default function WebAppBuilderPage() {
   }, [currentBuildId, iterateFeedback, iterateMut]);
 
   // Real tRPC queries
-  const buildsQuery = trpc.webapp.list.useQuery(undefined, { enabled: !!user });
-  const projectsQuery = trpc.webappProject.list.useQuery(undefined, { enabled: !!user });
+  const buildsQuery = trpc.webapp.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
+  const projectsQuery = trpc.webappProject.list.useQuery(undefined, {
+    staleTime: 30_000, enabled: !!user });
   const utils = trpc.useUtils();
 
   // Create project mutation
@@ -684,7 +686,8 @@ Generate the complete HTML code now.`,
 function ImportFromGitHubButton({ onImport, isPending }: { onImport: (repoId: number, repoName: string) => void; isPending: boolean }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const remoteReposQuery = trpc.github.listRemoteRepos.useQuery({}, { enabled: open });
+  const remoteReposQuery = trpc.github.listRemoteRepos.useQuery({}, {
+    staleTime: 30_000, enabled: open });
   const connectRepoMut = trpc.github.connectRepo.useMutation({
     onError: (err) => { toast.error(err.message || "Failed to connect repository"); },
   });
