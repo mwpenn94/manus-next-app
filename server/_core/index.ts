@@ -1348,7 +1348,7 @@ async function startServer() {
               crossTaskContext = recentTasks.map((t, i) => {
                 const timeAgo = Math.round((Date.now() - new Date(t.createdAt).getTime()) / 60000);
                 const timeStr = timeAgo < 60 ? `${timeAgo}m ago` : timeAgo < 1440 ? `${Math.round(timeAgo / 60)}h ago` : `${Math.round(timeAgo / 1440)}d ago`;
-                return `${i + 1}. [${timeStr}] "${t.title}" (${t.status})\n   User: ${t.userQuery}${t.assistantSummary ? `\n   Result: ${t.assistantSummary}` : ""}`;
+                return `${i + 1}. [${timeStr}] "${t.title}" (${t.status})\n   User: ${t.userQuery}`;
               }).join("\n");
               console.log(`[Stream] Cross-task context: ${recentTasks.length} recent tasks injected`);
             }

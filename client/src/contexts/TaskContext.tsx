@@ -239,8 +239,11 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         }
         const dedupedServerMsgs = serverMsgs.filter((_, i) => !partialIndices.has(i));
 
-        // Merge: deduped server messages first, then any local messages not already in server set.
-        // Use full content for matching to prevent false dedup of messages with similar starts
+        // CRITICAL-2 FIX: Merge server + local messages, NEVER discarding local messages
+        // that the server hasn't persisted yet (race condition protection).
+        // Strategy: Use server messages as the base, then append any local messages
+        // that aren't in the server set. If local has MORE messages than server,
+        // the extras are preserved (they'll be in the server on next fetch).
         const serverMsgKeys = new Set(
           dedupedServerMsgs.map(m => `${m.role}:${m.content.trim()}`)
         );
@@ -254,6 +257,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           const tb = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
           return ta - tb;
         });
+
+        // Safety: If the merged result has FEWER messages than local state,
+        // it means the server is behind (race condition). Keep local state.
+        if (merged.length < t.messages.length) {
+          return { ...t, messagesLoaded: true }; // Keep local messages, mark as loaded
+        }
         return { ...t, messages: merged, messagesLoaded: true };
       })
     );
@@ -327,22 +336,19 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, createTaskMutation.mutate, addMessageMutation.mutate]);
 
   const setActiveTask = useCallback((id: string | null) => {
-    // When switching away from a task, persist any unsaved messages to the server
-    // before resetting messagesLoaded. This ensures streaming progress isn't lost.
-    setTasks((prev) => {
-      const currentTask = prev.find((t) => t.id === activeTaskId);
-      if (currentTask?.serverId && isAuthenticated && currentTask.messages.length > 0) {
-        // The messages are already persisted individually via addMessage.
-        // Just reset messagesLoaded so they'll be re-fetched from DB on return.
-      }
-      return prev.map((t) =>
+    // When switching away from a task, mark messagesLoaded=false so messages
+    // will be re-fetched from DB on return. IMPORTANT: We keep the existing
+    // messages array intact — it serves as a fallback if the server hasn't
+    // persisted all messages yet (race condition fix for CRITICAL-2).
+    setTasks((prev) =>
+      prev.map((t) =>
         t.id === activeTaskId && t.serverId
           ? { ...t, messagesLoaded: false }
           : t
-      );
-    });
+      )
+    );
     setActiveTaskId(id);
-  }, [activeTaskId, isAuthenticated]);
+  }, [activeTaskId]);
 
   const addMessage = useCallback(
     (taskId: string, message: Omit<Message, "id" | "timestamp">) => {

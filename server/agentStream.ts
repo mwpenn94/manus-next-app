@@ -893,7 +893,7 @@ ${memoryContext}
 
     // Inject cross-task context if available — enables referencing previous conversations
     if (crossTaskContext) {
-      systemPrompt += `\n\n## RECENT SESSION CONTEXT\n\nThe user has been working on these tasks recently (most recent first):\n\n${crossTaskContext}\n\n**RULES FOR SESSION CONTEXT:**\n1. This context helps you understand what the user has been working on — use it for continuity.\n2. If the user says "continue that", "do the same for X", or references a previous task, use this context to understand what they mean.\n3. Do NOT proactively bring up previous tasks unless the user references them.\n4. The CURRENT task message is always your primary directive — session context is supplementary.\n5. Do NOT repeat work already done in previous tasks unless explicitly asked.`;
+      systemPrompt += `\n\n## RECENT SESSION CONTEXT\n\nThe user has worked on these tasks recently (titles and queries only — for reference):\n\n${crossTaskContext}\n\n**STRICT RULES FOR SESSION CONTEXT:**\n1. This context ONLY tells you what topics the user has explored before. It does NOT mean you have done anything in THIS task.\n2. NEVER say "We've already covered X" or "As I demonstrated earlier" — each task starts fresh with zero prior actions.\n3. If the user says "continue that" or "do the same for X", use context to understand their intent, then execute from scratch.\n4. The CURRENT task message is your ONLY directive. Session context is background information only.\n5. NEVER skip actions because a previous task did something similar — always execute fully in the current task.`;
     }
 
     // Detect if the user has attached files/images in the latest message

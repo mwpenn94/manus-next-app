@@ -2631,6 +2631,8 @@ export default function TaskView() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // CRITICAL-3 FIX: Flag to trigger a new stream after aborting the current one (user follow-up)
+  const pendingRestreamRef = useRef(false);
   const dragCounterRef = useRef(0);
   const moreMenuRef = useRef<HTMLDivElement>(null);
   // Refs for saving partial content on navigation/unmount
@@ -2833,11 +2835,35 @@ export default function TaskView() {
     if (params?.id) {
       setActiveTask(params.id);
     }
-  }, [params?.id, setActiveTask]);
-
+   }, [params?.id, setActiveTask]);
   const task = activeTask || tasks.find((t) => t.id === params?.id);
 
-  // Auto-open replay mode when ?replay=1 is in URL
+  // CRITICAL-4 FIX: Clear all streaming/UI state when switching between tasks.
+  // Without this, streamInlineCards, agentActions, streamContent, stepProgress,
+  // agentFollowUps, and connectorContext from the previous task bleed into the new one.
+  const prevTaskIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const currentId = task?.id ?? null;
+    if (prevTaskIdRef.current && currentId !== prevTaskIdRef.current) {
+      // Task changed — clear all streaming state
+      setStreamContent("");
+      setAgentActions([]);
+      setStreamImages([]);
+      setStepProgress(null);
+      setStreamInlineCards([]);
+      setAgentFollowUps([]);
+      setConnectorContext(null);
+      setTokenUsage(null);
+      setKnowledgeRecalled(null);
+      setAegisMeta(null);
+      setGenerationIncomplete(false);
+      setLastErrorRetryable(false);
+      pendingRestreamRef.current = false;
+    }
+    prevTaskIdRef.current = currentId;
+  }, [task?.id]);
+
+  // Auto-open replay mode when ?replay=1 is in URLL
   useEffect(() => {
     if (replayRequested && task && task.messages.length > 0) {
       setReplayOpen(true);
@@ -3063,7 +3089,91 @@ export default function TaskView() {
         setStreamInlineCards([]);
       }
     })();
-  }, [task?.id, task?.messages.length, task?.autoStreamed, streaming, bridgeStatus, bridgeSend, addMessage, markAutoStreamed, agentMode, updateTaskStatus]);
+   }, [task?.id, task?.messages.length, task?.autoStreamed, streaming, bridgeStatus, bridgeSend, addMessage, markAutoStreamed, agentMode, updateTaskStatus]);
+
+  // CRITICAL-3 FIX: When streaming stops and a re-stream is pending (user sent follow-up),
+  // automatically trigger a new stream with the full conversation including the follow-up.
+  useEffect(() => {
+    if (streaming) return; // Still streaming, wait
+    if (!pendingRestreamRef.current) return; // No pending re-stream
+    if (!task || task.messages.length < 2) return; // Need at least user msg + follow-up
+    pendingRestreamRef.current = false;
+    // The last message should be the user's follow-up — trigger handleSend-like logic
+    const lastMsg = task.messages[task.messages.length - 1];
+    if (lastMsg?.role !== "user") return; // Safety: only re-stream if last msg is user
+    // Trigger a new stream with full conversation
+    (async () => {
+      setStreaming(true);
+      setGenerationIncomplete(false);
+      setStreamContent("");
+      setAgentActions([]);
+      setLastErrorRetryable(false);
+      setStreamImages([]);
+      setStreamInlineCards([]);
+      streamingTaskIdRef.current = task.id;
+      accumulatedRef.current = "";
+      actionsRef.current = [];
+      let accumulated = "";
+      const actions: AgentAction[] = [];
+      const images: string[] = [];
+      try {
+        const conversationMessages = task.messages
+          .filter(m => m.content.trim() || m.role === "user")
+          .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
+          .slice(-50)
+          .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
+        const callbacks = buildStreamCallbacks(streamState, {
+          setStreamContent, setAgentActions, setStreamImages, setStepProgress,
+          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+          addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
+          updateMessageCard, setAegisMeta, setConnectorContext,
+          setFollowUpSuggestions: setAgentFollowUps,
+          setStreamInlineCards,
+          getTaskMessages: () => task?.messages || [],
+          onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
+          onPreviewUrlUpdate: (url: string) => {
+            const msgs = task?.messages || [];
+            const previewMsg = msgs.find((m) => m.cardType === "webapp_preview");
+            if (previewMsg?.id) updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
+          },
+        });
+        await streamWithRetry({
+          messages: conversationMessages, taskExternalId: task.id, mode: agentMode,
+          signal: controller.signal, callbacks,
+        });
+        accumulated = streamState.accumulated;
+        setStepProgress(null);
+        const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+        addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
+        updateTaskStatus(task.id, "completed");
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          if (accumulated.trim()) {
+            addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+          }
+        } else {
+          addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
+          updateTaskStatus(task.id, "error");
+        }
+      } finally {
+        abortControllerRef.current = null;
+        streamingTaskIdRef.current = null;
+        accumulatedRef.current = "";
+        actionsRef.current = [];
+        setStreaming(false);
+        setStreamContent("");
+        setAgentActions([]);
+        setStreamImages([]);
+        setStepProgress(null);
+        setAegisMeta(null);
+        setStreamInlineCards([]);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [streaming, task?.messages.length]);
 
   const isTyping = useMemo(() => {
     if (!task) return false;
@@ -3077,7 +3187,9 @@ export default function TaskView() {
     // Track input history for shell-style recall
     setSentHistory(prev => [...prev.slice(-50), input.trim()]);
     // If currently streaming, queue the follow-up: add user message, abort current stream,
-    // and let the user's new message trigger a fresh stream with full conversation history.
+    // then automatically trigger a NEW stream with the full conversation (including follow-up).
+    // CRITICAL-3 FIX: Previously this only aborted and set streaming=false after 500ms,
+    // but never triggered a new stream — so the user's follow-up was ignored.
     if (streaming && abortControllerRef.current) {
       // Add the user message to the conversation immediately
       const userContent = files.length > 0
@@ -3089,12 +3201,10 @@ export default function TaskView() {
       inputRef.current?.focus();
       // Abort the current stream — the finally block will reset streaming state
       abortControllerRef.current.abort();
-      // Auto-trigger a new stream after a short delay to pick up the user's message.
-      // This prevents the "stuck running" state where the user sends a message but
-      // the agent never responds because streaming was still true.
+      // Signal that we need to re-stream after the abort completes
+      pendingRestreamRef.current = true;
+      // Wait for the abort to complete, then trigger a new stream
       setTimeout(() => {
-        // The finally block from the abort should have reset streaming by now.
-        // If not, force-reset it so the user can interact.
         setStreaming(false);
       }, 500);
       return;

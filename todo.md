@@ -7140,3 +7140,14 @@
 ### P6: Streaming UX
 - [x] Fix text appearing in massive instant chunks — this is LLM-side behavior (tokens arrive in bursts); SSE already flushes immediately on each delta
 - [x] Ensure SSE events are flushed properly — verified: res.flush() called after every write, no buffering
+
+## Production Crash (Session 34b)
+- [ ] Fix React runtime error in TaskView (render-phase crash at line 78:2516 in production bundle)
+
+## REAL Persistent Production Bugs (Session 34c - Video Evidence 2)
+- [x] CRITICAL-1: Agent hallucinating prior context in fresh tasks — FIXED: Removed assistantSummary from crossTaskContext injection, added strict rules against claiming prior work
+- [x] CRITICAL-2: Messages disappearing when user navigates away from task and back — FIXED: Race condition in merge logic now preserves local messages when server is behind
+- [x] CRITICAL-3: Agent ignoring user messages and performing irrelevant actions — FIXED: Added pendingRestreamRef + useEffect to auto-trigger new stream after abort when user sends follow-up mid-stream
+- [x] CRITICAL-4: UI state bleed between tasks — FIXED: Added prevTaskIdRef useEffect that clears all streaming/UI state on task switch
+- [x] CRITICAL-5: "Start over" command doesn't actually reset context — FIXED: crossTaskContext no longer carries assistantSummary, strict rules prevent claiming prior work
+- [x] CRITICAL-6: Agent meta-commentary about UI bugs instead of functioning correctly — FIXED: Removed assistantSummary that was causing the agent to reference prior conversation context
