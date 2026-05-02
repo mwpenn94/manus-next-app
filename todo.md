@@ -6883,3 +6883,12 @@
 - [x] Verified FALSE POSITIVE: joinTeam race (unique constraint prevents duplicates)
 - [x] Verified FALSE POSITIVE: music in-memory (by design for ephemeral demo data)
 - [x] Verified by-design: exportData covers 20+ tables (comprehensive)
+
+## Convergence Pass 13 — Cycle 2 Adversarial (Pass ~800)
+- [x] GENUINE: music.get IDOR — added userId ownership check
+- [x] Verified FALSE POSITIVE: deleteTeam/updateTeam/addMember (don't exist in router — hallucinated)
+- [x] Verified FALSE POSITIVE: cleanupBuildDir path traversal (walks up to manus-build- prefix, stops at /)
+- [x] Verified FALSE POSITIVE: executeCode vm (intentional agent tool with timeout)
+- [x] Verified FALSE POSITIVE: View as HTML XSS (creates blob from markdown, not raw HTML)
+- [x] Verified FALSE POSITIVE: useHandsFreeMode fetch auth (same-origin includes credentials)
+- [x] Verified FALSE POSITIVE: research.start prompt injection (inherent to LLM usage)

@@ -95,8 +95,10 @@ Format as structured markdown. Be specific about musical elements.`,
   /** Get a specific track */
   get: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) => {
-      return musicLibrary.get(input.id) || null;
+    .query(({ ctx, input }) => {
+      const track = musicLibrary.get(input.id);
+      if (!track || track.userId !== ctx.user.id) return null;
+      return track;
     }),
 
   /** List all tracks for current user */
