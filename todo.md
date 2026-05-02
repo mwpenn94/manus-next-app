@@ -6974,3 +6974,7 @@
 - [x] Fix aegis.ts runPostFlight(): added safeOutput guard before calling scoreQuality/validateOutput/fragmentOutput
 - [x] Fix aegis.ts fragmentOutput(): added early return if !output
 - [x] Verified fix on dev preview: "Show me what's in my connected repo" task completed successfully (5 steps, $0.217, 43.1k tokens)
+
+## Session 29: Accessibility Fix
+- [x] Fix color contrast error on home page: white text (#ffffff) on #1a93fe blue background has 3.15:1 ratio, needs 4.5:1 minimum (WCAG AA)
+- [x] Changed sidebar filter tabs (All/Running/Completed/Error/Favorites/Scheduled) from text-[10px] bg-primary to text-[11px] bg-[oklch(0.52_0.19_252)] — achieves ~5.6:1 contrast ratio

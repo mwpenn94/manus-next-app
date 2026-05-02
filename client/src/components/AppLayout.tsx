@@ -652,9 +652,9 @@ function AllTasksSection({
             key={f.id}
             onClick={() => onStatusFilterChange(f.id)}
             className={cn(
-              "px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all shrink-0",
+              "px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all shrink-0",
               statusFilter === f.id
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-[oklch(0.52_0.19_252)] text-white shadow-sm"
                 : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
           >
