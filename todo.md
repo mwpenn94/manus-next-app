@@ -7088,9 +7088,9 @@
 ### CRITICAL: GitHub/App Dev Features
 - [x] Fix GitHub features that are broken/failing in production — enhanced triggerAsyncDeploy to support build-required repos (React/Vite/Next.js)
 - [x] Fix git clone authentication — now uses getGitHubToken for authenticated cloning of private repos
-- [ ] Fix pass36 test: token exposure in result strings
-- [ ] Fix pass37b test: GitHub in MORE_ITEMS
-- [ ] Fix p20 test: window.open pattern match
+- [x] Fix pass36 test: token exposure in result strings — all 61 tests passing
+- [x] Fix pass37b test: GitHub in MORE_ITEMS — all 16 tests passing
+- [x] Fix p20 test: window.open pattern match — all 39 tests passing
 ### CRITICAL: Remove ALL Optimization Framework Traces from App
 - [x] REVISED: report_convergence tool KEPT as user-configurable feature (Settings > Reasoning & Convergence)
 - [x] REVISED: ConvergenceIndicator KEPT — only activates when user opts in via settings
