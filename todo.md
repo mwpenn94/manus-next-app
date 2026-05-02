@@ -6637,3 +6637,41 @@
 - [x] Pass 346: ContentCalendar — monthly grid, category colors, reschedule
 - [x] Pass 347: CommentAnnotation — overlay pins, threaded comments, resolve
 - [x] Pass 348-359: Additional communication/content components
+
+## Pivot: Highest-Value Manus Parity+ Items
+
+### Batch A: Task & App Development/Production Enhancements
+- [ ] WebAppBuilder: Add file tree panel with multi-file editing support
+- [ ] WebAppBuilder: Add real-time deployment status with progress indicators
+- [ ] WebAppBuilder: Add version history with diff view and rollback
+- [ ] WebAppBuilder: Add responsive preview (mobile/tablet/desktop toggle)
+- [ ] WebAppBuilder: Add dependency management panel (add/remove packages)
+- [ ] WebAppBuilder: Add terminal/console output panel for build logs
+- [ ] TaskView: Enhance tool execution display with collapsible tool cards showing inputs/outputs
+- [ ] TaskView: Add task branching (fork a task at any point to explore alternatives)
+
+### Batch B: Core Experience Enhancements
+- [ ] HandsFreeMode: Full audio pipeline with TTS playback, processing indicators, audible cues
+- [ ] HandsFreeMode: Voice command recognition with wake word and continuous listening
+- [ ] ConnectorsCRUD: Full OAuth connect/disconnect/test flow with status indicators
+- [ ] ConnectorsCRUD: Credential management with failover workarounds for missing API keys
+- [ ] KnowledgeBase: File CRUD with bulk upload (zip/folder), versioning, and access control
+- [ ] KnowledgeBase: Document training pipeline with progress and AI-driven recommendations
+
+### Batch C: Platform Intelligence
+- [ ] OnboardingEngine: Exponential AI-driven personalized onboarding based on user behavior
+- [ ] OnboardingEngine: Contextual help that adapts to user's skill level and usage patterns
+- [ ] DataIntegrationUI: Visual pipeline builder for configuring data sources and transformations
+- [ ] DataIntegrationUI: Real-time sync monitoring with error handling and retry controls
+- [ ] PersonalizationEngine: User preference learning from command history and interaction patterns
+- [ ] PersonalizationEngine: Adaptive UI that surfaces most-used features and hides unused ones
+
+## Batch C: Platform Intelligence — Components Written (Passes 360-367)
+- [x] Pass 360: PersonalizationEngine — preference learning, rules, learning log, insights
+- [x] Pass 361: DataIntegrationMonitor — pipeline stages, data source health, event log
+- [x] Pass 362: AgentSelfImprovementDashboard — metrics, learning cycles, improvement suggestions
+- [x] Pass 363: ContinuousActiveSelfMode — background task management, resource monitoring, config
+- [x] Pass 364: DynamicAIEnablementPanel — capability toggles with dependencies, tier filtering
+- [x] Pass 365: ProcessImprovementTracker — AOV cycles, initiative tracking, metric trends
+- [x] Pass 366: AudibleCuesManager — audio cue configuration, event mapping, volume control
+- [x] Pass 367: SeamlessQueryTransition — query-to-conversation flow, context preservation
