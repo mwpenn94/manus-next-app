@@ -59,7 +59,10 @@ export function verifyWebhookSignature(
  * Parse the branch name from a push event ref (refs/heads/main → main)
  */
 export function parseBranchFromRef(ref: string): string {
-  return ref.replace("refs/heads/", "");
+  const branch = ref.replace("refs/heads/", "");
+  // Defense-in-depth: strip any characters that shouldn't appear in git branch names
+  // Valid git ref chars: alphanumeric, /, -, _, . (no shell metacharacters)
+  return branch.replace(/[^a-zA-Z0-9/_\-.]/g, "");
 }
 
 /**

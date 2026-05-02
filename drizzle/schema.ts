@@ -759,7 +759,10 @@ export const githubRepos = mysqlTable("github_repos", {
   status: mysqlEnum("status", ["connected", "syncing", "error", "disconnected"]).default("connected").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("github_repos_userId_idx").on(table.userId),
+  fullNameIdx: index("github_repos_fullName_idx").on(table.fullName),
+}));
 export type GitHubRepo = typeof githubRepos.$inferSelect;
 export type InsertGitHubRepo = typeof githubRepos.$inferInsert;
 
