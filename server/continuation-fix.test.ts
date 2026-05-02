@@ -46,10 +46,10 @@ describe("Continuation Fix — Early Termination Bug", () => {
       expect(agentStreamSrc).not.toMatch(/wantsContinuous && \(asksUser \|\| turn <= 3\)/);
     });
 
-    it("continues based on undemonstrated capability groups remaining", () => {
-      // New logic: tracks 10 Manus-parity capability groups
+    it("continues based on undemonstrated capability groups remaining with retry limits", () => {
+      // Improved in session 34: per-group attempt tracking prevents infinite loops
       expect(agentStreamSrc).toContain("wantsContinuous && turn < maxTurns - 2");
-      expect(agentStreamSrc).toContain("undemonstrated.length > 0");
+      expect(agentStreamSrc).toContain("actuallyUndemonstrated.length > 0");
     });
 
     it("tracks used tools across the full conversation", () => {
@@ -68,9 +68,11 @@ describe("Continuation Fix — Early Termination Bug", () => {
       expect(agentStreamSrc).toContain("Do NOT ask what to do next");
     });
 
-    it("tracks 10 Manus-parity capability groups", () => {
+    it("tracks 10 Manus-parity capability groups with per-group retry limits", () => {
       expect(agentStreamSrc).toContain("CAPABILITY_GROUPS");
-      expect(agentStreamSrc).toContain("completing 9/10 is a FAILURE");
+      // Improved in session 34: per-group attempt tracking prevents infinite loops
+      expect(agentStreamSrc).toContain("groupAttempts");
+      expect(agentStreamSrc).toContain("MAX_CONTINUATIONS");
     });
   });
 

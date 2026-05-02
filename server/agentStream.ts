@@ -956,7 +956,13 @@ The user has EXPLICITLY asked you to demonstrate your capabilities. You MUST dem
 9. **Email** \u2014 Compose and send a professional email.
 10. **App Building** \u2014 Scaffold a web application and show the live preview.
 
-CRITICAL: Complete ALL 10 groups. Do NOT ask for permission between demonstrations. Number each clearly. If any tool fails, note it and move to the next.`;
+CRITICAL RULES:
+- Complete ALL 10 groups. Do NOT ask for permission between demonstrations.
+- Number each clearly.
+- If any tool fails, note it and move to the next.
+- DO NOT write introductory paragraphs like "I'll demonstrate each capability" or "Let me show you" — START with the first tool call immediately.
+- DO NOT list what you're going to do before doing it. ACT FIRST, narrate after.
+- Each demonstration should produce REAL output, not just describe what you could do.`;
     }
 
     // Mode-specific instructions — deeply aligned with Manus tiers
@@ -1015,7 +1021,10 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
 - **No apologies**: If you make a mistake, fix it silently. Never say "My apologies" or "I fell short".
 - **No unnecessary clarification**: If the user's intent is clear from context, proceed immediately.
 - **After research, DELIVER**: Always synthesize research into the requested deliverable.
-- **Respect format requests**: If the user asks for PDF, use output_format: "pdf".`;
+- **Respect format requests**: If the user asks for PDF, use output_format: "pdf".
+- **No meta-commentary**: NEVER describe what you're about to do before doing it. Don't say "I'll now search for..." or "Let me demonstrate...". Just DO it.
+- **No false claims**: NEVER claim you have completed something unless the tool result confirms success. If a tool hasn't been called yet, you haven't done it.
+- **Action over narration**: Your value is in DOING, not DESCRIBING. Every response should contain either a tool call or substantive content the user can use.`;
     } else if (mode === "limitless") {
       // Limitless: unlimited context depth and continuous operation
       systemPrompt += `\n\n## MODE: LIMITLESS (Unlimited Depth & Continuity)
@@ -1981,7 +1990,12 @@ If the user hasn't specified content details, ASK them what content they want. D
         }
 
         // Auto-continue if: user wants continuous work AND capability groups remain undemonstrated
-        if (wantsContinuous && turn < maxTurns - 2) {
+        // SAFETY: Count how many continuation injections we've done to prevent infinite loops
+        const continuationCount = conversation.filter(m => 
+          m.role === "user" && typeof m.content === "string" && m.content.startsWith("Continue demonstrating.")
+        ).length;
+        const MAX_CONTINUATIONS = 12; // Hard cap: 10 groups + 2 buffer
+        if (wantsContinuous && turn < maxTurns - 2 && continuationCount < MAX_CONTINUATIONS) {
           // Track which tools have been used so far
           const usedTools = new Set<string>();
           for (const msg of conversation) {
@@ -2013,14 +2027,29 @@ If the user hasn't specified content details, ASK them what content they want. D
             .filter(([_, tools]) => !tools.some(t => usedTools.has(t)))
             .map(([name]) => name);
           
-          const shouldContinue = asksUser || undemonstrated.length > 0;
+          // Also count how many times we've asked for EACH remaining group
+          // If we've asked for a group 2+ times and it's still not demonstrated, skip it
+          const groupAttempts: Record<string, number> = {};
+          for (const msg of conversation) {
+            if (msg.role === "user" && typeof msg.content === "string" && msg.content.includes("Remaining groups:")) {
+              for (const group of undemonstrated) {
+                if (msg.content.includes(group)) {
+                  groupAttempts[group] = (groupAttempts[group] || 0) + 1;
+                }
+              }
+            }
+          }
+          // Filter out groups that have been attempted 2+ times (they're stuck)
+          const actuallyUndemonstrated = undemonstrated.filter(g => (groupAttempts[g] || 0) < 2);
           
-          if (shouldContinue && undemonstrated.length > 0) {
-            console.log(`[Agent] Auto-continuing: ${demonstratedGroups.length}/10 groups done, ${undemonstrated.length} remaining, turn ${turn}/${maxTurns}`);
+          const shouldContinue = actuallyUndemonstrated.length > 0;
+          
+          if (shouldContinue) {
+            console.log(`[Agent] Auto-continuing: ${demonstratedGroups.length}/10 groups done, ${actuallyUndemonstrated.length} remaining (${undemonstrated.length - actuallyUndemonstrated.length} skipped as stuck), turn ${turn}/${maxTurns}`);
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({
               role: "user",
-              content: `Continue demonstrating. You have completed ${demonstratedGroups.length}/10 capability groups. Remaining groups: ${undemonstrated.join(", ")}. Demonstrate the next group now — completing 9/10 is a FAILURE, you MUST reach 10/10. Do NOT ask what to do next — just proceed immediately.`,
+              content: `Continue demonstrating. You have completed ${demonstratedGroups.length}/10 capability groups. Remaining groups: ${actuallyUndemonstrated.join(", ")}. Demonstrate the NEXT UNFINISHED group now. Do NOT repeat a group you already attempted. Do NOT ask what to do next \u2014 just proceed immediately.`,
             });
             sendSSE(safeWrite, { delta: "\n\n" });
             continue;
@@ -2051,7 +2080,10 @@ If the user hasn't specified content details, ASK them what content they want. D
         // QUALITY GATE: Prevent false-positive completion with shallow/empty responses
         // In max/limitless mode, if the final text is too short and doesn't contain substantive content,
         // force the agent to provide proper reasoning and context.
-        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0) {
+        // EXCEPTION: Don't fire for conversational questions that don't need tools
+        const isConversational = /\b(hello|hi|hey|what can you|who are you|how are you|thanks|thank you|help|capabilities|what do you|tell me about yourself|introduce)\b/i.test(userText);
+        const userAskedSimpleQuestion = userText.split(/\s+/).length <= 8;
+        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0 && !isConversational && !userAskedSimpleQuestion) {
           // Agent is trying to end with a very short response and no tool usage — this is a false positive
           const hasSubstance = /\b(here|result|found|analysis|summary|report|created|generated|built|deployed|completed|answer)\b/i.test(textContent);
           if (!hasSubstance) {

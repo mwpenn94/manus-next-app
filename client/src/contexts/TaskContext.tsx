@@ -214,7 +214,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         const serverMsgs: Message[] = [];
         const seenServerKeys = new Set<string>();
         for (const msg of rawServerMsgs) {
-          const key = `${msg.role}:${msg.content.slice(0, 300).trim()}`;
+          // Use full content for dedup to avoid falsely removing messages with similar starts
+          const key = `${msg.role}:${msg.content.trim()}`;
           if (seenServerKeys.has(key)) continue; // Skip duplicate server rows
           seenServerKeys.add(key);
           serverMsgs.push(msg);
@@ -239,11 +240,12 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         const dedupedServerMsgs = serverMsgs.filter((_, i) => !partialIndices.has(i));
 
         // Merge: deduped server messages first, then any local messages not already in server set.
+        // Use full content for matching to prevent false dedup of messages with similar starts
         const serverMsgKeys = new Set(
-          dedupedServerMsgs.map(m => `${m.role}:${m.content.slice(0, 300).trim()}`)
+          dedupedServerMsgs.map(m => `${m.role}:${m.content.trim()}`)
         );
         const uniqueLocalMsgs = t.messages.filter(
-          m => !serverMsgKeys.has(`${m.role}:${m.content.slice(0, 300).trim()}`)
+          m => !serverMsgKeys.has(`${m.role}:${m.content.trim()}`)
         );
         
         // Sort merged messages by timestamp to ensure correct ordering
@@ -351,11 +353,21 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         // LOCAL DEDUP GUARD: Prevent adding the same message content twice.
         // This catches the case where addMessage is called multiple times for the
         // same assistant response (e.g., from stream completion + bridge event).
-        const contentKey = `${message.role}:${message.content.slice(0, 300).trim()}`;
-        const lastFew = task.messages.slice(-5);
-        const isDuplicate = lastFew.some(
-          (m) => `${m.role}:${m.content.slice(0, 300).trim()}` === contentKey
-        );
+        // Use full content comparison to avoid false dedup when agent produces
+        // multiple messages with similar openings but different bodies.
+        const msgContent = message.content.trim();
+        const lastFew = task.messages.slice(-3);
+        const isDuplicate = lastFew.some((m) => {
+          const existingContent = m.content.trim();
+          if (m.role !== message.role) return false;
+          // Exact full-content match = definite duplicate
+          if (existingContent === msgContent) return true;
+          // For very short messages (< 200 chars), prefix match is safe
+          if (existingContent.length < 200 && msgContent.length < 200) {
+            return existingContent.slice(0, 150) === msgContent.slice(0, 150);
+          }
+          return false;
+        });
         if (isDuplicate) return prev; // Skip — already in the local message list
 
         // Persist to server if task has a serverId

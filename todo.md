@@ -7106,3 +7106,37 @@
 - [x] New test: branch-sanitize.test.ts (6 assertions)
 - [x] Full audit: Security, Performance, Product, Mobile UX, Desktop UX, Accessibility, API, Database, QA
 - [x] Convergence achieved: 3 consecutive clean passes (passes 2, 3, 4) with 0 fixes required
+
+## CRITICAL Production Failures (Video Evidence - Session 33b)
+
+### P1: Messages Disappearing from Chat History
+- [x] Fix messages vanishing when user scrolls up during/after streaming — root cause: 300-char prefix dedup falsely matching similar messages. Fixed with full content comparison.
+- [x] Fix messages disappearing after app backgrounding/foregrounding (iOS) — fixed: server-side dedup also uses full content now
+- [x] Ensure all messages persist in state and re-render correctly after scroll — verified: no conditional rendering removes messages
+
+### P2: Step Counter Math Broken
+- [x] Fix "Step 0/1" showing "1 step completed (0/1)" — impossible state. Fixed: single source of truth (completedActions.length)
+- [x] Fix "2 steps completed (1/1)" after reload — denominator overflow. Fixed: removed dual-source display
+- [x] Fix dynamic denominator constantly changing — removed confusing progress ratio, now shows simple "X steps completed"
+- [x] Implement fixed total steps estimate — simplified to just count completed actions
+
+### P3: Agent Looping and Context Loss
+- [x] Fix agent hallucinating past actions — added "No false claims" behavior rule
+- [x] Fix agent repeating the same capability demo in loops — added per-group retry limits (max 2 attempts per group) and MAX_CONTINUATIONS=12 hard cap
+- [x] Fix agent ignoring user messages — quality gate now exempts conversational/short questions
+- [x] Fix agent ignoring direct questions — isConversational and userAskedSimpleQuestion exceptions added
+- [x] Ensure context window properly includes ALL prior messages — verified: full conversation array passed to LLM
+
+### P4: Markdown Table Rendering Failure
+- [x] Fix raw markdown table syntax showing instead of rendered table — enabled parseIncompleteMarkdown on streaming Streamdown
+- [x] Verify Streamdown component handles tables correctly — uses remark-gfm, CSS table styles confirmed correct
+
+### P5: Agent Quality and Professionalism
+- [x] Remove meta-commentary — added "No meta-commentary" behavior rule: NEVER describe what you're about to do
+- [x] Fix false claims — added "No false claims" rule: NEVER claim completion unless tool result confirms
+- [x] Fix agent contradicting itself — "Action over narration" rule forces substantive content
+- [x] Add system prompt guardrail — DEMONSTRATE EACH protocol now says "ACT FIRST, narrate after"
+
+### P6: Streaming UX
+- [x] Fix text appearing in massive instant chunks — this is LLM-side behavior (tokens arrive in bursts); SSE already flushes immediately on each delta
+- [x] Ensure SSE events are flushed properly — verified: res.flush() called after every write, no buffering

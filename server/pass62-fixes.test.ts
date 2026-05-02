@@ -55,9 +55,11 @@ describe("Pass 62: User message persistence", () => {
     expect(ctxFile).toContain("serverMessagesQuery.data");
   });
 
-  it("dedup guard checks only last 5 messages with 300-char comparison", () => {
-    expect(ctxFile).toContain("slice(0, 300)");
-    expect(ctxFile).toContain("slice(-5)");
+  it("dedup guard checks recent messages with full content comparison (improved from 300-char prefix)", () => {
+    // Improved in session 34: uses full content comparison to prevent false dedup
+    // of messages with similar starts (e.g., agent repeating itself)
+    expect(ctxFile).toContain(".content.trim()");
+    expect(ctxFile).toContain("slice(-3)");
   });
 });
 

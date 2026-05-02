@@ -585,9 +585,6 @@ function StreamingStepsCollapsible({ actions, stepProgress }: { actions: AgentAc
           >
             <ChevronRight className={cn("w-3 h-3 transition-transform", expanded && "rotate-90")} />
             <span>{completedActions.length} step{completedActions.length !== 1 ? "s" : ""} completed</span>
-            {stepProgress && stepProgress.total > 0 && (
-              <span className="font-mono tabular-nums ml-1">({stepProgress.completed}/{stepProgress.total})</span>
-            )}
             {eta && <span className="font-mono text-[10px] text-primary/70 ml-1">{eta} remaining</span>}
           </button>
           {expanded && (
@@ -4424,7 +4421,7 @@ export default function TaskView() {
                 {/* Streaming text content with cursor */}
                 {streamContent && (
                   <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none relative" style={{ contain: 'layout style', willChange: 'contents' }}>
-                    <Streamdown>{streamContent}</Streamdown>
+                    <Streamdown parseIncompleteMarkdown>{streamContent}</Streamdown>
                     {streaming && (
                       <span className="inline-block w-[2px] h-[1.1em] bg-primary ml-0.5 align-text-bottom animate-pulse" aria-hidden="true" />
                     )}

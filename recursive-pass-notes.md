@@ -604,3 +604,41 @@ Final metrics:
 - **Quality:** strict TypeScript, all current dependency versions, 4,995 tests across 203 files
 
 **CONVERGENCE STATUS: TERMINAL — 3 consecutive clean passes confirmed.**
+
+---
+
+## Session 34: Production Video Audit + Critical Fixes
+
+**Date**: 2026-05-02
+**Trigger**: User provided video evidence of 6 critical production failures
+**Tests**: 203 files, 4995 tests, all passing
+**TypeScript**: 0 errors
+
+### Fixes Applied
+
+1. **Message Dedup (P1)**: Changed from 300-char prefix comparison to full content comparison in TaskContext. The 300-char prefix was causing false dedup when the agent produced multiple messages with similar openings but different bodies (common in demonstration mode). Server-side dedup also updated.
+
+2. **Step Counter (P2)**: Removed confusing dual-source display (`stepProgress.completed/stepProgress.total` from server vs `completedActions.length` from local UI). Now uses single source of truth: `completedActions.length` with simple "X steps completed" text.
+
+3. **Agent Looping (P3)**: Added per-group attempt tracking (`groupAttempts` map) with max 2 attempts per capability group. Groups that fail twice are marked as "stuck" and skipped. Added `MAX_CONTINUATIONS = 12` hard cap. Also added `MAX_CONSECUTIVE_TOOL_FAILURES = 5` circuit breaker.
+
+4. **Markdown Tables (P4)**: Enabled `parseIncompleteMarkdown` prop on the streaming Streamdown component. This allows Streamdown to render partial table markdown during streaming instead of showing raw pipe syntax.
+
+5. **Agent Quality (P5)**: Added 3 new behavior rules to the system prompt:
+   - "No meta-commentary": NEVER describe what you're about to do before doing it
+   - "No false claims": NEVER claim completion unless tool result confirms success
+   - "Action over narration": Every response should contain either a tool call or substantive content
+   Also strengthened DEMONSTRATE EACH protocol with "ACT FIRST, narrate after" and "DO NOT list what you're going to do before doing it"
+
+6. **Quality Gate (P6)**: Added exceptions to the anti-shallow quality gate for conversational questions (hello, what can you do, etc.) and short questions (<=8 words). Previously, the gate would force elaboration even for simple greetings in max/limitless mode.
+
+### Test Updates
+- `pass52-fixes.test.ts`: Updated to check for `completedActions.length` instead of `stepProgress.completed/total`
+- `pass62-fixes.test.ts`: Updated to check for `.content.trim()` and `slice(-3)` instead of `slice(0, 300)` and `slice(-5)`
+- `continuation-fix.test.ts`: Updated to check for `groupAttempts` and `MAX_CONTINUATIONS` instead of `completing 9/10 is a FAILURE`
+
+### Convergence Status
+These are behavioral fixes that require production testing to validate. The code changes are correct and all tests pass, but true convergence requires:
+1. Deploy and test the demonstration flow (does it complete all 10 groups without looping?)
+2. Test simple questions in max mode (does the quality gate stay silent?)
+3. Test long conversations (do messages persist without false dedup?)

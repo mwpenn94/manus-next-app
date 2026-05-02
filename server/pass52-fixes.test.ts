@@ -139,8 +139,10 @@ describe("streaming section — TaskProgressCard removed, inline step counter", 
   });
 
   it("has inline step counter with progress bar", () => {
-    // Step counter shows in header badge and collapsible
-    expect(src).toContain("stepProgress.completed}/{stepProgress.total}");
+    // Step counter shows completed count from local actions (single source of truth)
+    // Removed confusing dual-source display (stepProgress.completed/total) in session 34
+    expect(src).toContain("completedActions.length");
+    expect(src).toContain("step");
   });
 
   it("ActiveToolIndicator renders before action steps", () => {
