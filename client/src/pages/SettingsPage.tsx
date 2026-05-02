@@ -55,8 +55,17 @@ import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useBrowserNotifications } from "@/hooks/useBrowserNotifications";
 import NotificationSoundToggle from "@/components/NotificationSoundToggle";
+import HandsFreeMode from "@/components/HandsFreeMode";
+import AudibleCuesManager from "@/components/AudibleCuesManager";
+import KnowledgeBaseExplorer from "@/components/KnowledgeBaseExplorer";
+import PersonalizationEngine from "@/components/PersonalizationEngine";
+import AgentSelfImprovementDashboard from "@/components/AgentSelfImprovementDashboard";
+import DataIntegrationMonitor from "@/components/DataIntegrationMonitor";
+import ProcessImprovementTracker from "@/components/ProcessImprovementTracker";
+import ScheduledTaskManager from "@/components/ScheduledTaskManager";
+import ConnectorsCRUDPanel from "@/components/ConnectorsCRUDPanel";
 
-type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "connectors" | "bridge" | "cloud_browser" | "data_controls" | "feedback";
+type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "connectors" | "bridge" | "cloud_browser" | "data_controls" | "feedback" | "voice" | "knowledge_base" | "personalization" | "self_improvement" | "data_integration" | "process_improvement" | "scheduled_tasks";
 
 interface Capability {
   name: string;
@@ -407,6 +416,13 @@ export default function SettingsPage() {
     { id: "data_controls", label: "Data Controls", icon: Monitor },
     { id: "bridge", label: "Bridge", icon: Unplug },
     { id: "feedback", label: "Feedback", icon: MessageSquare },
+    { id: "voice" as SettingsTab, label: "Voice & Audio", icon: Headphones },
+    { id: "knowledge_base" as SettingsTab, label: "Knowledge Base", icon: Brain },
+    { id: "personalization" as SettingsTab, label: "Personalization", icon: Sparkles },
+    { id: "self_improvement" as SettingsTab, label: "AI Self-Improvement", icon: Activity },
+    { id: "data_integration" as SettingsTab, label: "Data Integration", icon: BarChart3 },
+    { id: "process_improvement" as SettingsTab, label: "Process Improvement", icon: Zap },
+    { id: "scheduled_tasks" as SettingsTab, label: "Scheduled Tasks", icon: Timer },
   ];
 
   return (
@@ -1617,6 +1633,100 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* Voice & Audio Settings */}
+          {activeTab === "voice" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Voice & Audio
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Configure hands-free mode, TTS voices, and audible cues.
+              </p>
+              <div className="space-y-6">
+                <HandsFreeMode />
+                <AudibleCuesManager />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Knowledge Base */}
+          {activeTab === "knowledge_base" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Knowledge Base
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Manage documents, skills, and training data for your personal AI.
+              </p>
+              <KnowledgeBaseExplorer />
+            </motion.div>
+          )}
+
+          {/* Personalization */}
+          {activeTab === "personalization" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Personalization
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                AI learns from your preferences and adapts to your workflow.
+              </p>
+              <PersonalizationEngine />
+            </motion.div>
+          )}
+
+          {/* AI Self-Improvement */}
+          {activeTab === "self_improvement" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                AI Self-Improvement
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Track agent learning cycles, performance metrics, and improvement history.
+              </p>
+              <AgentSelfImprovementDashboard />
+            </motion.div>
+          )}
+
+          {/* Data Integration */}
+          {activeTab === "data_integration" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Data Integration
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Monitor data pipelines, sync status, and integration health.
+              </p>
+              <DataIntegrationMonitor />
+            </motion.div>
+          )}
+
+          {/* Process Improvement */}
+          {activeTab === "process_improvement" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Process Improvement
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Track optimization cycles and continuous improvement metrics.
+              </p>
+              <ProcessImprovementTracker />
+            </motion.div>
+          )}
+
+          {/* Scheduled Tasks */}
+          {activeTab === "scheduled_tasks" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+              <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                Scheduled Tasks
+              </h2>
+              <p className="text-sm text-muted-foreground mb-5">
+                Create and manage recurring agent tasks with cron or interval schedules.
+              </p>
+              <ScheduledTaskManager />
             </motion.div>
           )}
         </div>

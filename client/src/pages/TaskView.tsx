@@ -141,6 +141,10 @@ import { streamWithRetry, getStreamErrorMessage, isStreamErrorMessage } from "@/
 import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
 import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
 import TaskReplayOverlay from "@/components/TaskReplayOverlay";
+import TaskStepProgressIndicator from "@/components/TaskStepProgressIndicator";
+import TaskArtifactGallery from "@/components/TaskArtifactGallery";
+import TaskReplayViewer from "@/components/TaskReplayViewer";
+import AgentMemoryTimeline from "@/components/AgentMemoryTimeline";
 import ExecutionPlanDisplay from "@/components/ExecutionPlanDisplay";
 import LiveOrchestrationGraph from "@/components/LiveOrchestrationGraph";
 import SessionCostPanel from "@/components/SessionCostPanel";
@@ -1264,7 +1268,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
 
 // ── Workspace Panel with real artifacts ──
 
-type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links" | "orchestration";
+type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links" | "orchestration" | "artifacts" | "replay" | "memory";
 
 function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, aegisMeta, isStreaming }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string; agentActions?: AgentAction[]; aegisMeta?: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null; isStreaming?: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -1426,6 +1430,9 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
     { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
     { id: "links", label: "Links", icon: LinkIcon, count: extractedLinks.length || undefined },
     ...(agentActions && agentActions.length > 0 ? [{ id: "orchestration" as WorkspaceTab, label: "Graph", icon: GitBranch, count: agentActions.length }] : []),
+    { id: "artifacts" as WorkspaceTab, label: "Artifacts", icon: FolderOpen },
+    { id: "replay" as WorkspaceTab, label: "Replay", icon: RotateCcw },
+    { id: "memory" as WorkspaceTab, label: "Memory", icon: Brain },
   ];
 
   return (
@@ -2235,31 +2242,56 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
             className="h-full"
           />
         )}
+
+        {/* Artifacts Gallery */}
+        {activeTab === "artifacts" && (
+          <div className="h-full overflow-auto p-4">
+            <TaskArtifactGallery />
+          </div>
+        )}
+
+        {/* Replay Viewer */}
+        {activeTab === "replay" && (
+          <div className="h-full overflow-auto p-4">
+            <TaskReplayViewer />
+          </div>
+        )}
+
+        {/* Memory Timeline */}
+        {activeTab === "memory" && (
+          <div className="h-full overflow-auto p-4">
+            <AgentMemoryTimeline />
+          </div>
+        )}
         </motion.div>
         </AnimatePresence>
       </div>
-      {/* Timeline / Progress */}
-      <div className="h-10 flex items-center justify-between px-4 border-t border-border shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground">
-            {task.status === "running" ? "Watching live" : "Session ended"}
-          </span>
-        </div>
-        {task.totalSteps && (
+
+      {/* Timeline / Progress — Enhanced with TaskStepProgressIndicator */}
+      <div className="border-t border-border shrink-0">
+        <TaskStepProgressIndicator />
+        <div className="h-10 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-primary rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${((task.completedSteps || 0) / task.totalSteps) * 100}%` }}
-                transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground font-mono tabular-nums">
-              {task.completedSteps || 0}/{task.totalSteps}
+            <span className="text-[10px] text-muted-foreground">
+              {task.status === "running" ? "Watching live" : "Session ended"}
             </span>
           </div>
-        )}
+          {task.totalSteps && (
+            <div className="flex items-center gap-2">
+              <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((task.completedSteps || 0) / task.totalSteps) * 100}%` }}
+                  transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+                />
+              </div>
+              <span className="text-[10px] text-muted-foreground font-mono tabular-nums">
+                {task.completedSteps || 0}/{task.totalSteps}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

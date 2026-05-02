@@ -26,16 +26,25 @@ import {
   Key, Bell, Link2, Server, Clock, CheckCircle, XCircle,
   Activity, Users, FileCode, Download, Upload, Shield, Zap,
   ChevronRight, MoreHorizontal, Copy, RotateCcw,
-  CreditCard, Search, AlertTriangle, Smartphone, Tablet, Monitor, MapPin
+  CreditCard, Search, AlertTriangle, Smartphone, Tablet, Monitor, MapPin,
+  Package, Terminal
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRealtimeAnalytics } from "@/hooks/useRealtimeAnalytics";
 import { useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import WebAppFileTreePanel from "@/components/WebAppFileTreePanel";
+import WebAppDeploymentStatus from "@/components/WebAppDeploymentStatus";
+import WebAppVersionDiffView from "@/components/WebAppVersionDiffView";
+import WebAppResponsivePreview from "@/components/WebAppResponsivePreview";
+import WebAppBuildConsole from "@/components/WebAppBuildConsole";
+import WebAppEnvironmentVariables from "@/components/WebAppEnvironmentVariables";
+import WebAppDependencyManager from "@/components/WebAppDependencyManager";
+import WebAppCollaborationPanel from "@/components/WebAppCollaborationPanel";
 
-type ManagementPanel = "preview" | "code" | "dashboard" | "settings" | "deployments";
-type SettingsTab = "general" | "domains" | "secrets" | "github" | "notifications" | "payment" | "seo";
+type ManagementPanel = "preview" | "code" | "dashboard" | "settings" | "deployments" | "collaboration";
+type SettingsTab = "general" | "domains" | "secrets" | "github" | "notifications" | "payment" | "seo" | "dependencies" | "build_console";
 
 export default function WebAppProjectPage() {
   const { user } = useAuth();
@@ -206,6 +215,7 @@ export default function WebAppProjectPage() {
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "deployments", label: "Deployments", icon: Rocket },
     { id: "settings", label: "Settings", icon: Settings },
+    { id: "collaboration", label: "Team", icon: Users },
   ];
 
   return (
@@ -306,6 +316,10 @@ export default function WebAppProjectPage() {
               <Button variant="ghost" size="sm" onClick={() => projectQuery.refetch()}>
                 <RefreshCw className="w-3.5 h-3.5" />
               </Button>
+            </div>
+            {/* Responsive Preview Controls */}
+            <div className="border-b border-border">
+              <WebAppResponsivePreview />
             </div>
             <div className="flex-1 bg-muted/20 flex items-center justify-center">
               {project.publishedUrl ? (
@@ -410,37 +424,8 @@ export default function WebAppProjectPage() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {/* Project file structure */}
-                <Card className="border-border">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Project Files</CardTitle>
-                    <CardDescription className="text-xs">Standard project structure</CardDescription>
-                  </CardHeader>
-                  <CardContent className="py-2">
-                    <div className="font-mono text-xs space-y-0.5 text-muted-foreground">
-                      {[
-                        { name: `${project.name.replace(/[^a-z0-9-]/gi, "-").toLowerCase()}/`, indent: 0, isDir: true },
-                        { name: "src/", indent: 1, isDir: true },
-                        { name: "index.html", indent: 2, isDir: false },
-                        { name: "styles.css", indent: 2, isDir: false },
-                        { name: "app.js", indent: 2, isDir: false },
-                        { name: "components/", indent: 2, isDir: true },
-                        { name: "public/", indent: 1, isDir: true },
-                        { name: "package.json", indent: 1, isDir: false },
-                        { name: "README.md", indent: 1, isDir: false },
-                      ].map((f, i) => (
-                        <div key={i} style={{ paddingLeft: `${f.indent * 16}px` }} className="flex items-center gap-1.5 py-0.5">
-                          {f.isDir ? (
-                            <ChevronRight className="w-3 h-3 text-primary/60" />
-                          ) : (
-                            <FileCode className="w-3 h-3 text-muted-foreground" />
-                          )}
-                          <span className={f.isDir ? "text-primary/80" : ""}>{f.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Interactive File Tree Panel */}
+                <WebAppFileTreePanel />
 
                 {/* Connect GitHub CTA */}
                 <Card className="border-border border-dashed">
@@ -772,6 +757,16 @@ export default function WebAppProjectPage() {
                 <Rocket className="w-3.5 h-3.5 mr-1" /> New Deployment
               </Button>
             </div>
+
+            {/* Real-time Deployment Status */}
+            <div className="mb-6">
+              <WebAppDeploymentStatus />
+            </div>
+
+            {/* Version History & Diff View */}
+            <div className="mb-6">
+              <WebAppVersionDiffView />
+            </div>
             <div className="space-y-3" aria-live="polite" aria-label="Deployment history">
               {deploymentsQuery.isLoading && (
                 <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" /></div>
@@ -863,6 +858,8 @@ export default function WebAppProjectPage() {
                 { id: "notifications" as const, label: "Notifications", icon: Bell },
                 { id: "payment" as const, label: "Payment", icon: CreditCard },
                 { id: "seo" as const, label: "SEO", icon: Search },
+                { id: "dependencies" as const, label: "Dependencies", icon: Package },
+                { id: "build_console" as const, label: "Build Console", icon: Terminal },
               ]).map((tab) => (
                 <button
                   key={tab.id}
@@ -1073,9 +1070,12 @@ export default function WebAppProjectPage() {
 
               {/* Secrets Settings */}
               {settingsTab === "secrets" && (
-                <div className="max-w-lg space-y-6">
+                <div className="max-w-2xl">
+                  <WebAppEnvironmentVariables />
+                  {/* Legacy inline env vars preserved below for backward compat */}
+                  <div className="max-w-lg space-y-6 mt-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Environment Variables</h3>
+                    <h3 className="text-lg font-semibold">Quick Add Variable</h3>
                     <Button size="sm" variant="outline" onClick={() => {
                       setEditingEnvKey(null);
                       setEnvVarKey("");
@@ -1124,6 +1124,7 @@ export default function WebAppProjectPage() {
                       )}
                     </CardContent>
                   </Card>
+                </div>
                 </div>
               )}
 
@@ -1314,7 +1315,28 @@ export default function WebAppProjectPage() {
               {settingsTab === "seo" && (
                 <SeoAnalysisPanel projectId={projectId!} />
               )}
+
+              {/* Dependencies Management */}
+              {settingsTab === "dependencies" && (
+                <div className="max-w-2xl">
+                  <WebAppDependencyManager />
+                </div>
+              )}
+
+              {/* Build Console */}
+              {settingsTab === "build_console" && (
+                <div className="max-w-3xl">
+                  <WebAppBuildConsole />
+                </div>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Collaboration Panel */}
+        {activePanel === "collaboration" && (
+          <div className="p-6 max-w-4xl mx-auto">
+            <WebAppCollaborationPanel />
           </div>
         )}
       </div>
