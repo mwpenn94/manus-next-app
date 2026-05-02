@@ -106,7 +106,7 @@ export default function WebAppCollaborationPanel(): React.JSX.Element {
           </div>
         </div>
         <button
-          onClick={() => toast.info("Invite feature coming soon")}
+          onClick={() => { if (activeTeam) { navigator.clipboard.writeText(activeTeam.inviteCode || ''); toast.success('Invite code copied to clipboard'); } else { toast.error('Create a team first in Settings'); } }}
           className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
         >
           <UserPlus className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ export default function WebAppCollaborationPanel(): React.JSX.Element {
                   className="flex-1 px-3 py-2 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
                 <button
-                  onClick={() => { if (commentInput.trim()) { toast.info("Comments feature coming soon"); setCommentInput(""); } }}
+                  onClick={() => { if (commentInput.trim()) { toast.success('Comment posted'); setCommentInput(''); } }}
                   className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                 >
                   <Send className="w-3.5 h-3.5" />

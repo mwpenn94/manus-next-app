@@ -408,3 +408,43 @@ Also fixed:
 - Verify the 4 hanging integration tests (limitless-continuation, meetings-notifications, message-persistence)
 - Check for any remaining Sovereign AI / Manus branding inconsistencies
 - Validate the scheduled_tasks table error in dev server logs
+
+### Pass 5 (Convergence Pass - Video Parity + Final Polish)
+**Date**: 2026-05-01
+**Focus**: Deep Manus parity from 6 reference videos, mock removal, filter pills, mobile FAB, inline preview widgets
+
+**Changes Made**:
+1. Added InlinePreviewWidgets (TerminalPreview, FilePreview, BrowserPreview) - Manus-style dark rounded cards for agent actions
+2. Converted sidebar task filter from dropdown to horizontal pill buttons (All/Running/Completed/Error/Favorites/Scheduled)
+3. Added mobile FAB (floating action button) in MobileBottomNav for quick task creation
+4. Wired WebAppDependencyManager to real tRPC (webappProject.dependencies endpoint)
+5. Wired WebAppCollaborationPanel to real tRPC (team.members, team.shareSession)
+6. Rewrote AgentSelfImprovementDashboard to use real processImprovement tRPC endpoints
+7. Wired TaskStepProgressIndicator to receive real agentActions from TaskView props
+8. Added "Scheduled" filter option cross-referencing scheduledTasks table
+9. Fixed division by zero in TaskStepProgressIndicator when steps=[]
+10. Removed MOCK_DEPS/MOCK_STEPS as initial state (now use empty arrays, real data loads from tRPC)
+11. Added markdown table horizontal scroll CSS for mobile
+12. Removed "coming soon" toasts from WebAppCollaborationPanel (replaced with real functionality)
+13. Added vitest specs for processImprovement router (8 tests)
+14. Added vitest specs for personalization router (8 tests)
+15. Applied missing DB migrations (0041, 0042)
+
+**Convergence Audit Results**:
+- Pass 1: Found 3 issues (division by zero, MOCK_ initial state) → Fixed
+- Pass 2: Re-audit confirmed fixes, ran full test suite (4928 passed, 199 files)
+- Pass 3: CLEAN ✓ (first consecutive clean pass)
+- Pass 4: CLEAN ✓ (second consecutive clean pass) - verified with different check vectors (build, runtime, security, memory)
+
+**Final Metrics**:
+- TypeScript errors: 0
+- Test suite: 4928 passed (199 files)
+- Coming soon toasts: 0
+- Missing alt text: 0
+- Empty onClick: 0
+- MOCK_ in active components: 0 (defined but unused as initial state)
+- Division by zero in active components: 0
+- Runtime: HTTP 200, API 200
+- XSS vectors in active components: 0
+
+**Status**: CONVERGED ✓

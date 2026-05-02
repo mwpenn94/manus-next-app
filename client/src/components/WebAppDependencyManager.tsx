@@ -53,7 +53,7 @@ export default function WebAppDependencyManager(): React.JSX.Element {
   const savePrefsMut = trpc.preferences.save.useMutation();
   // Fetch real dependencies from tRPC
   const { data: realDeps, isLoading: depsLoading } = trpc.webappProject.dependencies.useQuery({ externalId: undefined });
-  const [deps, setDeps] = useState<Dependency[]>(MOCK_DEPS);
+  const [deps, setDeps] = useState<Dependency[]>([]);
 
   // Sync real deps when loaded
   useEffect(() => {

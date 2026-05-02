@@ -122,7 +122,7 @@ interface TaskStepProgressIndicatorProps {
 }
 
 export default function TaskStepProgressIndicator({
-  steps = MOCK_STEPS,
+  steps = [],
   compact = false,
 }: TaskStepProgressIndicatorProps): React.JSX.Element {
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set(["s3"]));
@@ -138,7 +138,7 @@ export default function TaskStepProgressIndicator({
 
   const completedCount = steps.filter((s) => s.status === "completed").length;
   const totalCount = steps.length;
-  const progress = Math.round((completedCount / totalCount) * 100);
+  const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const currentStep = steps.find((s) => s.status === "running");
 
   return (
