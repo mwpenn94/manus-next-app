@@ -203,7 +203,7 @@ export function BrowserPreview({ url, title, screenshot, isActive = false, class
           <p className="text-[10px] font-mono text-[#777] truncate">{displayUrl}</p>
         </div>
         <button
-          onClick={() => window.open(url, "_blank")}
+          onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
           className="p-0.5 rounded text-[#666] hover:text-[#aaa] transition-colors shrink-0"
           title="Open in new tab"
         >
@@ -218,7 +218,7 @@ export function BrowserPreview({ url, title, screenshot, isActive = false, class
             src={screenshot}
             alt="Browser screenshot"
             className="w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => window.open(url, "_blank")}
+            onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
             loading="lazy"
           />
         </div>

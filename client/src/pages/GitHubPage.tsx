@@ -393,7 +393,7 @@ export default function GitHubPage() {
       if (data.status === "live") {
         toast.success("Deployed successfully!", {
           description: data.publishedUrl ? `Live at ${data.publishedUrl}` : undefined,
-          action: data.publishedUrl ? { label: "Open", onClick: () => window.open(data.publishedUrl!, "_blank") } : undefined,
+          action: data.publishedUrl ? { label: "Open", onClick: () => window.open(data.publishedUrl!, "_blank", "noopener,noreferrer") } : undefined,
         });
       } else {
         toast.error("Deploy failed");

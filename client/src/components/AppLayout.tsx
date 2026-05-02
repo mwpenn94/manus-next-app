@@ -262,7 +262,7 @@ function TaskContextMenu({
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            window.open(`/task/${taskId}`, "_blank");
+            window.open(`/task/${taskId}`, "_blank", "noopener,noreferrer");
           }}
         >
           <ExternalLink className="w-4 h-4 mr-2" />

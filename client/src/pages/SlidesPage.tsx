@@ -12,7 +12,7 @@ import HeroIllustration from "@/components/HeroIllustration";
 function ExportPdfButton({ deckId, title }: { deckId: number; title: string }) {
   const exportMutation = trpc.slides.exportPdf.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
       toast.success(`Exported ${data.filename} (print to PDF)`);
     },
     onError: (err) => { toast.error(`Export failed: ${err.message}`); },
@@ -28,7 +28,7 @@ function ExportPdfButton({ deckId, title }: { deckId: number; title: string }) {
 function ExportPptxButton({ deckId, title }: { deckId: number; title: string }) {
   const exportMutation = trpc.slides.exportPptx.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
       toast.success(`Exported ${data.filename}`);
     },
     onError: (err) => { toast.error(`Export failed: ${err.message}`); },

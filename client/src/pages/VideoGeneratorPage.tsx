@@ -229,7 +229,7 @@ export default function VideoGeneratorPage() {
                           variant="ghost"
                           className="h-7 w-7"
                           aria-label="Download video"
-                          onClick={(e) => { e.stopPropagation(); window.open(project.videoUrl, "_blank"); }}
+                          onClick={(e) => { e.stopPropagation(); window.open(project.videoUrl, "_blank", "noopener,noreferrer"); }}
                         >
                           <Download className="w-3.5 h-3.5" />
                         </Button>

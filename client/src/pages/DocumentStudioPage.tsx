@@ -141,7 +141,7 @@ export default function DocumentStudioPage() {
                   size="sm"
                   variant="outline"
                   className="gap-1.5"
-                  onClick={() => window.open(generatedUrl, "_blank")}
+                  onClick={() => window.open(generatedUrl, "_blank", "noopener,noreferrer")}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Open

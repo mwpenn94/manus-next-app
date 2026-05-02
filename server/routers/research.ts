@@ -21,8 +21,32 @@ interface ResearchResult {
   completedAt?: number;
 }
 
-// In-memory research cache (per-session)
+// In-memory research cache (per-session) with eviction policy
+const RESEARCH_CACHE_MAX = 200;
+const RESEARCH_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 const researchCache = new Map<string, ResearchResult>();
+
+/** Evict stale or overflow entries from researchCache */
+function evictResearchCache() {
+  const now = Date.now();
+  // Remove entries older than TTL
+  const keysToEvict: string[] = [];
+  researchCache.forEach((val, key) => {
+    const age = now - (val.completedAt ?? val.startedAt);
+    if (age > RESEARCH_CACHE_TTL_MS) {
+      keysToEvict.push(key);
+    }
+  });
+  keysToEvict.forEach(k => researchCache.delete(k));
+  // If still over max, remove oldest entries
+  if (researchCache.size > RESEARCH_CACHE_MAX) {
+    const sorted = Array.from(researchCache.entries()).sort(
+      (a, b) => (a[1].startedAt) - (b[1].startedAt)
+    );
+    const toRemove = sorted.slice(0, researchCache.size - RESEARCH_CACHE_MAX);
+    toRemove.forEach(([key]) => researchCache.delete(key));
+  }
+}
 
 export const researchRouter = router({
   /** Start a new research session */
@@ -43,6 +67,7 @@ export const researchRouter = router({
         summary: "",
         startedAt: Date.now(),
       };
+      evictResearchCache();
       researchCache.set(id, result);
 
       // Run research asynchronously

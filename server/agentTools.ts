@@ -3574,7 +3574,16 @@ async function executeInstallDeps(args: {
 
   try {
     const devFlag = args.dev ? " --save-dev" : "";
-    const sanitized = args.packages.replace(/[;&|`$]/g, ""); // Basic sanitization
+    // Strict sanitization: only allow valid npm package names (scoped and unscoped)
+    // Valid chars: alphanumeric, hyphens, dots, underscores, slashes (for scoped), @ (for scoped)
+    const packages = args.packages.split(/\s+/).filter(Boolean);
+    const validPkgPattern = /^(@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*(@[a-z0-9^~>=<.*-]+)?$/i;
+    for (const pkg of packages) {
+      if (!validPkgPattern.test(pkg)) {
+        return { success: false, result: `Invalid package name: ${pkg}` };
+      }
+    }
+    const sanitized = packages.join(" ");
     const output = execSync(
       `cd ${activeProjectDir} && npm install ${sanitized}${devFlag} 2>&1 | tail -10`,
       { timeout: 60000 }

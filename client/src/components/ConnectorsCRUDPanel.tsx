@@ -238,7 +238,7 @@ export default function ConnectorsCRUDPanel(): React.JSX.Element {
                         className="h-7 text-xs gap-1"
                         onClick={() => {
                           if (connector.authType === "oauth") {
-                            window.open(`/api/connectors/${connector.id}/oauth`, "_blank");
+                            window.open(`/api/connectors/${connector.id}/oauth`, "_blank", "noopener,noreferrer");
                           } else {
                             connectMutation.mutate({
                               connectorId: connector.id,

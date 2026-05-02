@@ -30,7 +30,7 @@ function ManageSubscriptionButton() {
   const portalMutation = trpc.payment.createPortalSession.useMutation({
     onSuccess: (data) => {
       toast.success("Opening subscription management...");
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
     },
     onError: (err) => { toast.error("Failed: " + err.message); },
   });
@@ -90,7 +90,7 @@ export default function BillingPage() {
   const checkoutMutation = trpc.payment.createCheckout.useMutation({
     onSuccess: (data) => {
       toast.success("Redirecting to checkout...");
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
     },
     onError: (err) => { toast.error("Checkout failed: " + err.message); },
   });

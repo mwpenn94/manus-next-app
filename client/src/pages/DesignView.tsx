@@ -90,7 +90,7 @@ export default function DesignView() {
   const exportDesign = trpc.design.export.useMutation({
     onSuccess: (data: any) => {
       toast.success("Exported! Opening in new tab...");
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
     },
     onError: (err: any) => { toast.error("Export failed: " + err.message); },
   });

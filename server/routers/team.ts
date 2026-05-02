@@ -48,7 +48,13 @@ export const teamRouter = router({
       }),
     addCredits: protectedProcedure
       .input(z.object({ teamId: z.number(), amount: z.number().min(1) }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        // Verify caller is team owner or admin before allowing credit modification
+        const team = await getTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        if (team.ownerId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only team owner or admin can add credits" });
+        }
         await updateTeamCredits(input.teamId, input.amount);
         return { success: true };
       }),

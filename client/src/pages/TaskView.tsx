@@ -702,7 +702,7 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                       </div>
                       {urlMatch && (
                         <button
-                          onClick={() => window.open(urlMatch[1], "_blank")}
+                          onClick={() => window.open(urlMatch[1], "_blank", "noopener,noreferrer")}
                           className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
                         >
                           <ExternalLink className="w-2.5 h-2.5" />
@@ -737,7 +737,7 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                     <div key={i} className="flex items-center gap-1.5">
                       <Globe className="w-2.5 h-2.5 shrink-0" />
                       <button
-                        onClick={() => window.open(urlMatch[1], "_blank")}
+                        onClick={() => window.open(urlMatch[1], "_blank", "noopener,noreferrer")}
                         className="text-[10px] text-blue-400 hover:underline truncate"
                       >
                         {line.replace(urlMatch[0], "").trim() || urlMatch[1]}
@@ -991,15 +991,15 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             statusLabel={message.cardData?.statusLabel as string}
             onPreview={() => {
               const url = message.cardData?.previewUrl as string;
-              if (url) window.open(url, "_blank");
+              if (url) window.open(url, "_blank", "noopener,noreferrer");
             }}
             onOpen={() => {
               const url = message.cardData?.openUrl as string;
-              if (url) window.open(url, "_blank");
+              if (url) window.open(url, "_blank", "noopener,noreferrer");
             }}
             onDownload={() => {
               const url = message.cardData?.downloadUrl as string;
-              if (url) window.open(url, "_blank");
+              if (url) window.open(url, "_blank", "noopener,noreferrer");
             }}
           />
         ) : (
@@ -1534,7 +1534,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                   </span>
                 </div>
                 <button
-                  onClick={() => currentBrowserUrl && window.open(currentBrowserUrl, "_blank")}
+                  onClick={() => currentBrowserUrl && window.open(currentBrowserUrl, "_blank", "noopener,noreferrer")}
                   className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
                   title="Open in new tab"
                   aria-label="Open in new tab"
@@ -1743,7 +1743,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                           </button>
                           {activeCode.url && (
                             <button
-                              onClick={() => activeCode.url && window.open(activeCode.url, "_blank")}
+                              onClick={() => activeCode.url && window.open(activeCode.url, "_blank", "noopener,noreferrer")}
                               className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
                               title="Open file"
                             >
@@ -1866,7 +1866,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                             />
                             <div className="absolute top-3 right-3 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                               <button
-                                onClick={() => window.open(selected.url, "_blank")}
+                                onClick={() => window.open(selected.url, "_blank", "noopener,noreferrer")}
                                 className="p-1.5 rounded-md bg-black/40 text-white hover:bg-black/60 transition-colors"
                                 title="Open full size"
                               >
@@ -2019,7 +2019,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                         <div className="flex items-center gap-1">
                           {doc.url && (
                             <button
-                              onClick={() => window.open(doc.url!, "_blank")}
+                              onClick={() => window.open(doc.url!, "_blank", "noopener,noreferrer")}
                               className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
                               title="Open in new tab"
                             >
@@ -2069,7 +2069,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                               <p className="text-[10px] text-muted-foreground mt-0.5">{doc.docType.toUpperCase()} file</p>
                             </div>
                             <button
-                              onClick={() => window.open(doc.url!, "_blank")}
+                              onClick={() => window.open(doc.url!, "_blank", "noopener,noreferrer")}
                               className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity"
                             >
                               <Download className="w-3 h-3" />
@@ -2086,7 +2086,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                           <div className="space-y-3">
                             <FileText className="w-10 h-10 mx-auto opacity-30" />
                             <button
-                              onClick={() => window.open(doc.url!, "_blank")}
+                              onClick={() => window.open(doc.url!, "_blank", "noopener,noreferrer")}
                               className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:opacity-90 transition-opacity"
                             >
                               <Download className="w-3 h-3" />

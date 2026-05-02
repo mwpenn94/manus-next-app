@@ -107,9 +107,9 @@ export default function WebappPreviewCard({
 
   const handleVisit = useCallback(() => {
     if (liveUrl) {
-      window.open(liveUrl, "_blank");
+      window.open(liveUrl, "_blank", "noopener,noreferrer");
     } else if (previewUrl) {
-      window.open(previewUrl, "_blank");
+      window.open(previewUrl, "_blank", "noopener,noreferrer");
     }
     onVisit?.();
   }, [liveUrl, previewUrl, onVisit]);

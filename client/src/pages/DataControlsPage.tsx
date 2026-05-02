@@ -76,7 +76,7 @@ export default function DataControlsPage() {
 
   const exportMutation = trpc.gdpr.exportData.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
       toast.success(`Data exported successfully (${data.exportedAt})`);
       setExporting(false);
     },

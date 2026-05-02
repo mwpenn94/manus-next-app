@@ -187,7 +187,7 @@ export default function InteractiveOutputCard({
                   if (shouldForceDownload) {
                     triggerDownload(openUrl);
                   } else {
-                    window.open(openUrl, "_blank");
+                    window.open(openUrl, "_blank", "noopener,noreferrer");
                   }
                 }
               }}

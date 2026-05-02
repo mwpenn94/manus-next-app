@@ -399,7 +399,7 @@ export default function WebAppProjectPage() {
                     URL.revokeObjectURL(url);
                     toast.success("Downloaded project HTML");
                   } catch {
-                    window.open(project.publishedUrl, "_blank");
+                    window.open(project.publishedUrl, "_blank", "noopener,noreferrer");
                     toast.info("Opened in new tab — right-click to save");
                   }
                 } else {
@@ -809,7 +809,7 @@ export default function WebAppProjectPage() {
                           variant="ghost"
                           size="sm"
                           className="text-xs h-6 px-2"
-                          onClick={() => window.open(dep.previewUrl!, "_blank")}
+                          onClick={() => window.open(dep.previewUrl!, "_blank", "noopener,noreferrer")}
                         >
                           <ExternalLink className="w-3 h-3 mr-1" /> Preview
                         </Button>

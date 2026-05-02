@@ -427,7 +427,7 @@ Generate the complete HTML code now.`,
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => {
                       const blob = new Blob([previewHtml], { type: "text/html" });
-                      window.open(URL.createObjectURL(blob), "_blank");
+                      window.open(URL.createObjectURL(blob), "_blank", "noopener,noreferrer");
                     }}>
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Open in New Tab

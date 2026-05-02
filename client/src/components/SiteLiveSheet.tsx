@@ -77,7 +77,7 @@ const SHARE_TARGETS = [
     icon: WhatsAppIcon,
     color: "bg-foreground text-background",
     action: (domain: string) => {
-      window.open(`https://wa.me/?text=${encodeURIComponent(`https://${domain}`)}`, "_blank");
+      window.open(`https://wa.me/?text=${encodeURIComponent(`https://${domain}`)}`, "_blank", "noopener,noreferrer");
     },
   },
   {
@@ -86,7 +86,7 @@ const SHARE_TARGETS = [
     icon: XIcon,
     color: "bg-black text-white",
     action: (domain: string) => {
-      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(`https://${domain}`)}`, "_blank");
+      window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(`https://${domain}`)}`, "_blank", "noopener,noreferrer");
     },
   },
   {
@@ -95,7 +95,7 @@ const SHARE_TARGETS = [
     icon: LinkedInIcon,
     color: "bg-blue-600 text-white",
     action: (domain: string) => {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://${domain}`)}`, "_blank");
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://${domain}`)}`, "_blank", "noopener,noreferrer");
     },
   },
   {
@@ -104,7 +104,7 @@ const SHARE_TARGETS = [
     icon: FacebookIcon,
     color: "bg-blue-500 text-white",
     action: (domain: string) => {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://${domain}`)}`, "_blank");
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://${domain}`)}`, "_blank", "noopener,noreferrer");
     },
   },
   {
@@ -113,7 +113,7 @@ const SHARE_TARGETS = [
     icon: RedditIcon,
     color: "bg-orange-500 text-white",
     action: (domain: string) => {
-      window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(`https://${domain}`)}`, "_blank");
+      window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(`https://${domain}`)}`, "_blank", "noopener,noreferrer");
     },
   },
 ];
@@ -185,7 +185,7 @@ export default function SiteLiveSheet({ open, onClose, domain, onVisit, onCustom
 
               {/* Visit button */}
               <button
-                onClick={onVisit || (() => window.open(`https://${domain}`, "_blank"))}
+                onClick={onVisit || (() => window.open(`https://${domain}`, "_blank", "noopener,noreferrer"))}
                 className="w-full py-3 rounded-xl border border-border bg-card text-foreground text-base font-medium hover:bg-accent transition-colors"
               >
                 Visit

@@ -178,7 +178,7 @@ export default function ShareDialog({ open, onOpenChange, taskExternalId, taskTi
                         )}
                       </button>
                       <button
-                        onClick={() => window.open(`/share/${share.shareToken}`, "_blank")}
+                        onClick={() => window.open(`/share/${share.shareToken}`, "_blank", "noopener,noreferrer")}
                         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                         title="Open"
                       >

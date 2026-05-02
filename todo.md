@@ -6819,3 +6819,15 @@
 - [x] Fix auth redirect loop (OAuth callback issue)
 - [x] DOMPurify sanitization added to all dangerouslySetInnerHTML components
 - [x] Remove dead MOCK_ constant definitions
+
+## Convergence Pass 7 — Landscape Pass Fixes (Pass ~450)
+- [x] CRITICAL: Add eviction policy to researchCache (max 200, 2hr TTL)
+- [x] HIGH: Add owner/admin authorization check to addCredits in team router
+- [x] HIGH: Strengthen executeInstallDeps package name sanitization (whitelist regex)
+- [x] MEDIUM: Add noopener,noreferrer to 37 window.open(_blank) calls across frontend
+- [x] Verified FALSE POSITIVE: deleteAllData teamIds IS defined (line 192)
+- [x] Verified FALSE POSITIVE: stddev division by zero guarded by length > 0 check
+- [x] Verified FALSE POSITIVE: JSON.parse on LLM output IS inside try-catch
+- [x] Verified FALSE POSITIVE: memoryEntries.lastAccessedAt IS updated via touchMemoryAccess
+- [x] Verified FALSE POSITIVE: projectDir command injection - projectName sanitized with [^a-z0-9-]
+- [x] Verified FALSE POSITIVE: generateImage race condition - code properly awaits stream
