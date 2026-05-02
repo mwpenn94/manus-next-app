@@ -1326,6 +1326,38 @@ async function startServer() {
         }
       } catch { /* default to general */ }
 
+      // ── Cross-Task Context: inject recent task summaries so agent can reference previous conversations ──
+      let crossTaskContext: string | undefined;
+      try {
+        if (streamUserId) {
+          // Check if cross-task context is enabled (default: true)
+          let crossTaskEnabled = true;
+          try {
+            const { getUserPreferences: gupCT } = await import("../db");
+            const ctPrefs = await gupCT(streamUserId);
+            if (ctPrefs?.generalSettings && typeof ctPrefs.generalSettings === "object") {
+              const gs = ctPrefs.generalSettings as Record<string, unknown>;
+              if (gs.crossTaskContext === false) crossTaskEnabled = false;
+            }
+          } catch { /* default to enabled */ }
+
+          if (crossTaskEnabled) {
+            const { getRecentTaskSummaries } = await import("../db");
+            const recentTasks = await getRecentTaskSummaries(streamUserId, taskExternalId, 5);
+            if (recentTasks.length > 0) {
+              crossTaskContext = recentTasks.map((t, i) => {
+                const timeAgo = Math.round((Date.now() - new Date(t.createdAt).getTime()) / 60000);
+                const timeStr = timeAgo < 60 ? `${timeAgo}m ago` : timeAgo < 1440 ? `${Math.round(timeAgo / 60)}h ago` : `${Math.round(timeAgo / 1440)}d ago`;
+                return `${i + 1}. [${timeStr}] "${t.title}" (${t.status})\n   User: ${t.userQuery}${t.assistantSummary ? `\n   Result: ${t.assistantSummary}` : ""}`;
+              }).join("\n");
+              console.log(`[Stream] Cross-task context: ${recentTasks.length} recent tasks injected`);
+            }
+          }
+        }
+      } catch (ctErr: any) {
+        console.warn("[Stream] Cross-task context loading failed:", ctErr.message?.slice(0, 100));
+      }
+
       // Restore active webapp project state if user has one (Pass 70 fix)
       // This ensures webapp tools work across stream requests without requiring
       // the user to call create_webapp again each time.
@@ -1348,6 +1380,7 @@ async function startServer() {
         autoTuneStrategies,
         aiFocus,
         memoryContext,
+        crossTaskContext,
         // NOTE: Server-side onComplete persistence REMOVED (Pass 70).
         // The client already persists assistant messages via trpc.task.addMessage
         // after stream completion. Dual-persist caused duplicate messages on reload

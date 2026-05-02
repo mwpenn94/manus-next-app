@@ -7001,3 +7001,10 @@
 - [x] Fix ACTION-FIRST PRINCIPLE exception for informational questions
 - [x] Fix 7 failing test files (60 tests) — validateGitHubToken mock missing, sidebar/nav alignment
 - [x] Full test suite: 4926 tests passing, 199 files, 0 failures, 0 TS errors
+
+## Session 30: Cross-Task Conversation Memory (Manus Parity)
+- [x] Add getRecentTaskSummaries db helper (last 5 completed tasks with title + first user message + first assistant message)
+- [x] Inject recent task summaries into agent context as "Session Context" (separate from Memory)
+- [x] Add session context section to agent system prompt with usage guidelines
+- [x] Add user preference toggle for cross-task context (default: enabled)
+- [x] Write tests for cross-task memory injection (18 tests passing)

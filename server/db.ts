@@ -2916,3 +2916,69 @@ export async function updateOptimizationCycle(id: number, userId: number, update
     .set(updates)
     .where(and(eq(optimizationCycles.id, id), eq(optimizationCycles.userId, userId)));
 }
+
+/**
+ * Get recent completed task summaries for cross-task context injection.
+ * Returns the last N tasks (excluding current) with their title and first user/assistant messages.
+ * This enables the agent to reference previous conversations in the same session.
+ */
+export async function getRecentTaskSummaries(userId: number, excludeTaskExternalId?: string, limit: number = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [
+    eq(tasks.userId, userId),
+    eq(tasks.archived, 0),
+  ];
+  
+  // Exclude the current task
+  if (excludeTaskExternalId) {
+    conditions.push(ne(tasks.externalId, excludeTaskExternalId));
+  }
+  
+  // Get recent completed/running tasks (most recent first)
+  const recentTasks = await db.select({
+    id: tasks.id,
+    externalId: tasks.externalId,
+    title: tasks.title,
+    status: tasks.status,
+    createdAt: tasks.createdAt,
+    updatedAt: tasks.updatedAt,
+  }).from(tasks)
+    .where(and(...conditions))
+    .orderBy(desc(tasks.updatedAt))
+    .limit(limit);
+  
+  if (recentTasks.length === 0) return [];
+  
+  // For each task, get the first user message and first assistant message
+  const summaries = await Promise.all(recentTasks.map(async (task) => {
+    const msgs = await db.select({
+      role: taskMessages.role,
+      content: taskMessages.content,
+    }).from(taskMessages)
+      .where(eq(taskMessages.taskId, task.id))
+      .orderBy(asc(taskMessages.createdAt))
+      .limit(10); // Get first 10 messages to find user + assistant pair
+    
+    const firstUser = msgs.find(m => m.role === "user");
+    const firstAssistant = msgs.find(m => m.role === "assistant");
+    
+    // Truncate long messages to keep context lean
+    const truncate = (text: string | null, maxLen: number = 200) => {
+      if (!text) return null;
+      return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
+    };
+    
+    return {
+      title: task.title,
+      status: task.status,
+      createdAt: task.createdAt,
+      userQuery: truncate(firstUser?.content ?? null, 300),
+      assistantSummary: truncate(firstAssistant?.content ?? null, 300),
+    };
+  }));
+  
+  // Only return tasks that have at least a user message
+  return summaries.filter(s => s.userQuery);
+}

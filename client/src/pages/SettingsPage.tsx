@@ -44,6 +44,7 @@ import {
   SlidersHorizontal,
   Plug,
   BarChart3,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -111,6 +112,7 @@ interface GeneralSettings {
   handsFreeAudio: boolean;
   offlineMode: boolean;
   autoTuneStrategies: boolean;
+  crossTaskContext: boolean; // enables recent task summaries in agent context for continuity
   memoryDecayHalfLife: number; // days, controls how fast memory importance decays (1-90)
   memoryArchiveThreshold: number; // 0.01-0.5, memories below this score get archived
   ttsVoice: string;
@@ -132,6 +134,7 @@ const DEFAULT_GENERAL: GeneralSettings = {
   handsFreeAudio: false,
   offlineMode: false,
   autoTuneStrategies: true,
+  crossTaskContext: true,
   memoryDecayHalfLife: 14,
   memoryArchiveThreshold: 0.1,
   ttsVoice: "en-US-AriaNeural",
@@ -590,6 +593,38 @@ export default function SettingsPage() {
                   Control how quickly memories decay and when they get auto-archived.
                 </p>
                 <div className="space-y-4">
+                  {/* Cross-Task Context Toggle */}
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-sm text-foreground">Cross-task context</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setGeneralSettings((prev) => {
+                            const updated = { ...prev, crossTaskContext: !prev.crossTaskContext };
+                            if (isAuthenticated) {
+                              savePrefsMutation.mutate({ generalSettings: updated, capabilities: capabilityToggles });
+                            }
+                            return updated;
+                          });
+                        }}
+                        className={`relative w-10 h-5 rounded-full transition-colors ${
+                          generalSettings.crossTaskContext ? "bg-primary" : "bg-muted"
+                        }`}
+                        aria-label="Toggle cross-task context"
+                      >
+                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                          generalSettings.crossTaskContext ? "translate-x-5" : ""
+                        }`} />
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      When enabled, the agent sees summaries of your recent tasks for continuity. Helps with "continue that" or "do the same for X" commands.
+                    </p>
+                  </div>
+
                   {/* Decay Half-Life Slider */}
                   <div className="bg-card border border-border rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">

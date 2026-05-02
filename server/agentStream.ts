@@ -611,6 +611,8 @@ export interface AgentStreamOptions {
   mode?: AgentMode;
   /** Cross-session memory entries to inject into context */
   memoryContext?: string;
+  /** Cross-task context: summaries of recent tasks for continuity */
+  crossTaskContext?: string;
   /** Optional callback when the stream completes with the final assistant content (for server-side message persistence) */
   onComplete?: (content: string, actions?: Array<{ type: string; label?: string; status: string }>) => void;
   /** Whether to use telemetry-based auto-tuning for stuck recovery strategies (default: true) */
@@ -805,7 +807,7 @@ async function invokeWithAegisRetry(
  * @returns Promise that resolves when the stream is complete
  */
 export async function runAgentStream(options: AgentStreamOptions): Promise<void> {
-  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, userId, taskExternalId, aiFocus = "general" } = options;
+  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, crossTaskContext, userId, taskExternalId, aiFocus = "general" } = options;
 
   try {
     const { invokeLLM } = await import("./_core/llm");
@@ -868,6 +870,11 @@ ${memoryContext}
 8b. EXCEPTION — RESUME COMMANDS: If the user says "continue", "keep going", "go on", "resume", "carry on", or similar continuation phrases, this means RESUME the previous task exactly where you left off. Do NOT ask what they mean. Look at the conversation history, identify the last incomplete action or response, and continue from that point. If the previous response was interrupted, pick up from where it stopped.
 9. NEVER assume you know what the user is referring to based on memory alone. If the request is ambiguous, ask for clarification.
 10. If the user has attached files or images, PROCESS THE ATTACHMENTS FIRST before responding. Do not assume the topic from memory — let the attachments inform your response.`;
+    }
+
+    // Inject cross-task context if available — enables referencing previous conversations
+    if (crossTaskContext) {
+      systemPrompt += `\n\n## RECENT SESSION CONTEXT\n\nThe user has been working on these tasks recently (most recent first):\n\n${crossTaskContext}\n\n**RULES FOR SESSION CONTEXT:**\n1. This context helps you understand what the user has been working on — use it for continuity.\n2. If the user says "continue that", "do the same for X", or references a previous task, use this context to understand what they mean.\n3. Do NOT proactively bring up previous tasks unless the user references them.\n4. The CURRENT task message is always your primary directive — session context is supplementary.\n5. Do NOT repeat work already done in previous tasks unless explicitly asked.`;
     }
 
     // Detect if the user has attached files/images in the latest message
