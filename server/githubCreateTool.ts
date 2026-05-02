@@ -180,9 +180,10 @@ export async function executeCreateGitHubRepo(
 
     return { success: true, result: results.join("\n") };
   } catch (err: any) {
-    if (err.message?.includes("422")) {
+    console.error('[GitHubCreate] Unhandled error:', err);
+    if (err?.message?.includes("422")) {
       return { success: false, result: `Repository "${name}" already exists or the name is invalid. Try a different name.` };
     }
-    return { success: false, result: `Failed to create repository: ${err.message}` };
+    return { success: false, result: `Failed to create repository: ${err?.message || 'Unknown error'}` };
   }
 }

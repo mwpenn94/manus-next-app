@@ -150,6 +150,7 @@ export async function executeGitHubEdit(args: {
   confirm?: boolean;
   edit_plan_id?: string;
 }, context?: { userId?: number }): Promise<ToolResult> {
+  try {
   const { invokeLLM } = await import("./_core/llm");
 
   if (!context?.userId) {
@@ -455,6 +456,10 @@ IMPORTANT:
     artifactType: "code",
     artifactLabel: `Edit plan: ${editPlan.summary.slice(0, 60)}`,
   };
+  } catch (err: any) {
+    console.error('[GitHubEdit] Unhandled error:', err);
+    return { success: false, result: `GitHub edit failed: ${err?.message || 'Unknown error'}` };
+  }
 }
 
 // ── Pending Edits Cache ──

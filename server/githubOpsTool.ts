@@ -633,9 +633,10 @@ export async function executeGitHubOps(
         return { success: false, result: `Unknown mode: ${args.mode}` };
     }
   } catch (err: any) {
+    console.error('[GitHubOps] Unhandled error:', err);
     return {
       success: false,
-      result: `GitHub operation failed: ${err.message}`,
+      result: `GitHub operation failed: ${err?.message || 'Unknown error'}`,
     };
   }
 }

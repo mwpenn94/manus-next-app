@@ -6959,3 +6959,13 @@
 - [x] Fix mobile input textarea: text overlaps action buttons (attachment, file count, voice) at bottom of input area — Increased textarea bottom padding to pb-14, added bg-card background to toolbar row so text doesn't show through
 - [x] Fix GitHub agent: creates new webapp projects instead of reading/rendering connected repo — Added explicit intent detection for preview/view/show/load repo, added CRITICAL anti-create-webapp guard in both static and dynamic system prompt sections
 - [x] Fix GitHub agent system prompt: instruct agent to read and display connected repo contents in workspace panel, not create new standalone HTML projects — Dynamic injection now includes anti-create-webapp rule and preview/view/show/load → github_ops + github_assess routing
+
+## Session 28 — GitHub Agent Persistent Crash
+- [x] Fix "Repo Content Undefined Error": agent crashes with undefined reference when executing github_ops or github_assess on connected repo — persistent failure across multiple retries
+- [x] Fix agentStream.ts line 1439: result.result.slice(0,500) crash — added null-safe String(result.result ?? 'Tool returned no output')
+- [x] Fix agentStream.ts line 1476: content: result.result pushing undefined to conversation — now uses safeResult
+- [x] Add outer try/catch to executeGitHubAssess (githubAssessTool.ts) — catches all unhandled exceptions between inner try/catches
+- [x] Improve outer catch in executeGitHubOps (githubOpsTool.ts) — null-safe err?.message
+- [x] Add outer try/catch to executeGitHubEdit (githubEditTool.ts) — wraps entire function body
+- [x] Improve outer catch in executeCreateGitHubRepo (githubCreateTool.ts) — null-safe err?.message
+- [x] Improve executeTool outer catch (agentTools.ts) — null-safe String(toolErr ?? 'Unknown error')

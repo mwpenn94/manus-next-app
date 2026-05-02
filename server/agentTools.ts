@@ -2912,8 +2912,8 @@ export async function executeTool(
       return { success: false, result: `Unknown tool: ${name}` };
   }
   } catch (toolErr: any) {
-    console.error(`[executeTool] Unhandled error in tool "${name}":`, toolErr.message);
-    return { success: false, result: `Tool execution failed: ${toolErr.message || "Unknown error"}` };
+    console.error(`[executeTool] Unhandled error in tool "${name}":`, toolErr);
+    return { success: false, result: `Tool execution failed: ${toolErr?.message || String(toolErr ?? 'Unknown error')}` };
   }
 }
 

@@ -490,6 +490,7 @@ export async function executeGitHubAssess(args: {
   focus?: string;
   target_phase?: string;
 }, context?: { userId?: number }): Promise<ToolResult> {
+  try {
   const { invokeLLM } = await import("./_core/llm");
 
   if (!context?.userId) {
@@ -809,4 +810,8 @@ Be thorough, honest, and specific. Avoid generic praise — cite specific files 
     artifactType: "document",
     artifactLabel: `Assessment: ${targetRepo.fullName} (${overallScore.toFixed(1)}/10)`,
   };
+  } catch (err: any) {
+    console.error('[GitHubAssess] Unhandled error:', err);
+    return { success: false, result: `GitHub assessment failed: ${err?.message || 'Unknown error'}` };
+  }
 }

@@ -1436,7 +1436,8 @@ When performing recursive optimization passes, use the report_convergence tool t
             sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
             const toolCtx = { userId, taskExternalId };
             const result: ToolResult = await executeTool(tn, ta, toolCtx);
-            sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: result.result.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
+            const safeResult = String(result.result ?? 'Tool returned no output');
+            sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: safeResult.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
 
             // Emit convergence SSE event when report_convergence tool is called
             if (tn === "report_convergence" && result.success) {
@@ -1473,7 +1474,7 @@ When performing recursive optimization passes, use the report_convergence tool t
 
             completedToolCalls++;
             sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
-            conversation.push({ role: "tool", content: result.result, tool_call_id: toolCall.id, name: tn } as any);
+            conversation.push({ role: "tool", content: safeResult, tool_call_id: toolCall.id, name: tn } as any);
           }
         } else {
           // No tool calls — just add the partial text
