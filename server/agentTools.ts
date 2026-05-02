@@ -3707,7 +3707,7 @@ async function executeGitOperation(args: {
         output = execSync(`cd ${dir} && git add -A && git commit -m "${safeMsg}"`, { timeout: 10000 }).toString();
         break;
       case "push":
-        const remote = args.remote_url ? `origin ${args.remote_url}` : "origin main";
+        const remote = args.remote_url ? `origin '${args.remote_url.replace(/'/g, "")}'` : "origin main";
         output = execSync(`cd ${dir} && git push ${remote} 2>&1`, { timeout: 30000 }).toString();
         break;
       case "status":
@@ -3719,17 +3719,25 @@ async function executeGitOperation(args: {
         break;
       case "clone":
         if (!args.remote_url) return { success: false, result: "Remote URL is required for clone." };
-        const cloneName = args.remote_url.split("/").pop()?.replace(".git", "") || "cloned-repo";
+        // Sanitize remote_url: only allow valid git URLs (https://, git://, ssh://)
+        if (!/^(https?:\/\/|git:\/\/|git@)[\w.\-\/:@]+$/.test(args.remote_url)) {
+          return { success: false, result: "Invalid remote URL format. Only https://, git://, and git@ URLs are allowed." };
+        }
+        const cloneName = args.remote_url.split("/").pop()?.replace(".git", "").replace(/[^a-zA-Z0-9_\-]/g, "") || "cloned-repo";
         const cloneDir = `/tmp/webapp-projects/${cloneName}`;
-        output = execSync(`git clone ${args.remote_url} ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+        output = execSync(`git clone '${args.remote_url.replace(/'/g, "")}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
         activeProjectDir = cloneDir;
         break;
       case "remote_add":
         if (!args.remote_url) return { success: false, result: "Remote URL is required." };
+        // Sanitize remote_url
+        if (!/^(https?:\/\/|git:\/\/|git@)[\w.\-\/:@]+$/.test(args.remote_url)) {
+          return { success: false, result: "Invalid remote URL format. Only https://, git://, and git@ URLs are allowed." };
+        }
         try {
           execSync(`cd ${dir} && git remote remove origin 2>/dev/null || true`, { timeout: 5000 });
         } catch {}
-        output = execSync(`cd ${dir} && git remote add origin ${args.remote_url}`, { timeout: 5000 }).toString();
+        output = execSync(`cd ${dir} && git remote add origin '${args.remote_url.replace(/'/g, "")}'`, { timeout: 5000 }).toString();
         output = output || `Remote origin set to ${args.remote_url}`;
         break;
       default:

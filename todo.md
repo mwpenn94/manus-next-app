@@ -6930,3 +6930,9 @@
 - [x] FALSE POSITIVE: exportPptx XSS (already fixed with esc())
 - [x] FALSE POSITIVE: focusAreas prompt injection (item #33)
 - 2/10 CLEAN, 8/10 flagged but only 2 genuine fixes needed
+
+## Convergence Pass 18 — Cycle 3 Validation (Pass ~1100)
+- [x] GENUINE HIGH: git_operation remote_url injection — added URL format regex validation + single-quote wrapping for clone, remote_add, and push operations
+- [x] FALSE POSITIVE: OAuth open redirect — worker checked stale aov10 file, fix is already in server/_core/index.ts
+- 8/10 CONVERGED, 2/10 flagged but only 1 genuine fix needed
+- Convergence trajectory: 2→1→1 genuine fixes per pass (approaching zero)
