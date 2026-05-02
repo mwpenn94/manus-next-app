@@ -1,6 +1,6 @@
 # Recursive Optimization — Convergence Pass Findings
 
-## Session 29 — Batch 2 Status Update (All Batch 1 findings resolved)
+## Session 29 — Final Status (All Batches Complete)
 
 ### CRITICAL-001: PDF Export Renders Black Page
 **Status:** FIXED ✓
@@ -12,7 +12,7 @@
 
 ### CRITICAL-003: Sidebar Explore Section Has Non-Manus Items
 **Status:** FIXED ✓
-**Current state:** Sidebar has Projects, Library, Skills, Schedule, Connectors, Memory, Billing, Help — all valid items. Discover removed.
+**Current state:** Sidebar has Projects, Library, Skills, Schedule, Connectors, Memory, Billing, Help — all valid items. Discover removed from sidebar (route still exists for direct access).
 
 ### HIGH-001: Agent Self-Awareness — Claims It Cannot Deploy/Render
 **Status:** FIXED ✓
@@ -21,6 +21,10 @@
 ### HIGH-002: GitHub Tool Response Quality — Generic Instead of Specific
 **Status:** FIXED ✓
 **Fix:** Enhanced github_ops(status) mode to return actual file tree, README, commits, language breakdown. Verified on production.
+
+### HIGH-003: Agent Over-Eagerness — Builds Webapps for Simple Questions
+**Status:** FIXED ✓
+**Fix:** Added proportional response rule (11b), Max mode exception for simple questions, and ACTION-FIRST PRINCIPLE exception for informational queries.
 
 ### MEDIUM-001: Mobile Sidebar Cramped
 **Status:** FIXED ✓
@@ -42,7 +46,27 @@
 **Status:** COSMETIC — ACCEPTED
 **Note:** "Powered by" badges are intentional branding showing platform capabilities.
 
+### TEST-001: 7 Test Files Failing (60 tests)
+**Status:** FIXED ✓
+**Root causes:**
+1. Missing `validateGitHubToken` mock in githubApi vi.mock() — added to pass37e, pass38
+2. Sidebar/mobile nav tests expected removed items (GitHub, Discover) — updated cycle7, pass37b, pass46
+3. p20 test expected exact `window.open` signature without `noopener,noreferrer` — relaxed assertion
+4. pass36 security test false-positived on the word "token" in error messages — made regex more precise
+
 ---
 
-## Convergence Counter: 0 (reset — print header fix was a genuine finding)
-## Next: Begin Batch 3 (REFINE) — deeper pass across all 10 expert dimensions
+## Final Convergence State
+
+| Metric | Value |
+|--------|-------|
+| Tests Passing | 4,926 |
+| Test Files | 199 |
+| Test Failures | 0 |
+| TypeScript Errors | 0 |
+| Score | 9.7/10 |
+| Convergence Count | 1 (reset from test fixes) |
+
+## Next Pass Required: Convergence Pass 2 (need 3 consecutive clean passes)
+- Pass type: Adversarial (probe for hidden failure modes)
+- Focus: Agent response quality, edge cases, error recovery

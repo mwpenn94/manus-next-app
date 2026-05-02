@@ -6989,3 +6989,15 @@
 - [x] Added "Platform Self-Awareness" section to agent system prompt
 - [x] Verified on dev preview: "Show me what's in my connected repo" now returns actual repo contents (file tree, README, commits)
 - [x] Validate all fixes on deployed production site — CONFIRMED: github_ops returns actual repo contents (file tree, README, commits) on manusnext-mlromfub.manus.space, no crash
+
+## Session 29: Recursive Optimization — Batch 2 (DEPTH)
+- [x] Enhanced print header with task metadata (status, message count, tool calls, estimated cost, model mode)
+- [x] Confirmed MEDIUM-002 (status indicators) is FALSE POSITIVE — all use proper lucide icons
+- [x] Confirmed CRITICAL-002 (mobile nav) already fixed — 8 items aligned with Manus
+
+## Session 29: Recursive Optimization — Batch 3 (AGENT QUALITY + TEST HEALTH)
+- [x] Fix agent proportional response — simple questions answered directly without tools
+- [x] Fix Max mode "5 tool calls" exception for simple factual questions
+- [x] Fix ACTION-FIRST PRINCIPLE exception for informational questions
+- [x] Fix 7 failing test files (60 tests) — validateGitHubToken mock missing, sidebar/nav alignment
+- [x] Full test suite: 4926 tests passing, 199 files, 0 failures, 0 TS errors

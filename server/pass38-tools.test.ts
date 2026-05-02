@@ -87,6 +87,7 @@ vi.mock("./githubApi", () => ({
     { sha: "def456", commit: { message: "fix: resolve crash" } },
     { sha: "ghi789", commit: { message: "docs: update readme" } },
   ]),
+  validateGitHubToken: vi.fn(async () => "testuser"),
 }));
 
 vi.mock("./db", () => ({

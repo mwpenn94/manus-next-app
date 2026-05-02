@@ -35,6 +35,7 @@ vi.mock("./githubApi", () => ({
   getRepoTree: vi.fn(),
   getFileContent: vi.fn(),
   createTreeCommit: vi.fn(),
+  validateGitHubToken: vi.fn().mockResolvedValue("testuser"),
 }));
 
 vi.mock("./db", () => ({

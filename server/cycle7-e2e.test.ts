@@ -129,9 +129,7 @@ describe("Cycle 7 Phase B: Sidebar Navigation", () => {
     { href: "/schedule", label: "Schedule" },
     { href: "/connectors", label: "Connectors" },
     { href: "/memory", label: "Memory" },
-    { href: "/github", label: "GitHub" },
     { href: "/billing", label: "Billing" },
-    { href: "/discover", label: "Discover" },
     { href: "/help", label: "Help" },
   ];
 

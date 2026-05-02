@@ -185,7 +185,7 @@ describe("P20 — BillingPage UI", () => {
   });
 
   it("opens checkout in new tab", () => {
-    expect(billing).toContain('window.open(data.url, "_blank")');
+    expect(billing).toContain('window.open(data.url, "_blank"');
   });
 
   it("shows test card hint", () => {

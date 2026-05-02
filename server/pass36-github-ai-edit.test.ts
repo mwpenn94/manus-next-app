@@ -541,8 +541,12 @@ describe("Pass 36 — Adversarial: VU3 — Security Auditor", () => {
       "/home/ubuntu/manus-next-app/server/githubEditTool.ts",
       "utf-8"
     );
-    // Token should only be used internally, never in result strings
-    const resultLines = source.split("\n").filter(l => l.includes("result:") && l.includes("token"));
+    // Token VALUES should never appear in result strings (the word 'token' in error messages is OK)
+    const resultLines = source.split("\n").filter(l => {
+      if (!l.includes("result:")) return false;
+      // Check for actual token variable interpolation, not the word 'token'
+      return l.includes("${token}") || l.includes("+ token") || l.match(/result:.*`.*\$\{.*token.*\}/);
+    });
     expect(resultLines.length).toBe(0);
   });
 

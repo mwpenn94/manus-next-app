@@ -103,7 +103,6 @@ describe("Pass 46 Completion: Mobile Navigation", () => {
     expect(content).toContain('"/library"');
     expect(content).toContain('"/skills"');
     expect(content).toContain('"/connectors"');
-    expect(content).toContain('"/github"');
     expect(content).toContain('"/memory"');
     expect(content).toContain('"/settings"');
   });
@@ -112,7 +111,6 @@ describe("Pass 46 Completion: Mobile Navigation", () => {
     const content = readFileSync(resolve(ROOT, "client/src/components/MobileBottomNav.tsx"), "utf-8");
     expect(content).toContain("FolderOpen");
     expect(content).toContain("BookOpen");
-    expect(content).toContain("Github");
     expect(content).toContain("Brain");
     expect(content).toContain("Settings");
   });
