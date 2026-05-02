@@ -324,6 +324,28 @@
   opacity: 0.8;
 }
 
+/* Markdown tables: horizontal scroll on mobile */
+.prose-themed table,
+.prose table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  white-space: nowrap;
+}
+.prose-themed table th,
+.prose-themed table td,
+.prose table th,
+.prose table td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid oklch(0.3 0 0 / 0.2);
+  white-space: normal;
+}
+.dark .prose-themed table th,
+.dark .prose-themed table td {
+  border-color: oklch(0.4 0 0 / 0.3);
+}
+
 /* Prose dark theme */
 .dark .prose-themed,
 .prose-invert {

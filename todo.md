@@ -6790,19 +6790,19 @@
 - [x] Add category filter tabs to home task list (All, Manual, Scheduled)
 - [x] Add FAB (+) button for new task on mobile (bottom-right floating action button)
 - [x] Add GitHub quick-action icon in chat input bar
-- [ ] Ensure markdown tables have horizontal scroll on mobile
-- [ ] Consistent agent avatar (stylized Manus logo) in all chat messages
+- [x] Ensure markdown tables have horizontal scroll on mobile
+- [x] Consistent agent avatar (stylized Manus logo) in all chat messages
 
 ### Next Steps Resolution: Wire Mock Components to Real tRPC
-- [ ] Wire ScheduledTaskManager to real tRPC (remove MOCK_ arrays)
-- [ ] Wire ConnectorsCRUDPanel to real tRPC (remove MOCK_ arrays)
-- [ ] Wire DataIntegrationMonitor to real tRPC (remove MOCK_ arrays)
+- [x] Wire ScheduledTaskManager to real tRPC (remove MOCK_ arrays)
+- [x] Wire ConnectorsCRUDPanel to real tRPC (remove MOCK_ arrays)
+- [x] Wire DataIntegrationMonitor to real tRPC (remove MOCK_ arrays)
 - [x] Wire AgentSelfImprovementDashboard to real tRPC (remove MOCK_ arrays)
-- [ ] Wire AgentMemoryTimeline to real tRPC (remove MOCK_ arrays)
-- [ ] Wire TaskArtifactGallery to real tRPC (remove MOCK_ arrays)
-- [ ] Wire TaskReplayViewer to real tRPC (remove MOCK_ arrays)
-- [ ] Wire HandsFreeMode to real tRPC (remove MOCK_ arrays)
-- [ ] Wire AudibleCuesManager to real tRPC (remove MOCK_ arrays)
+- [x] Wire AgentMemoryTimeline to real tRPC (remove MOCK_ arrays)
+- [x] Wire TaskArtifactGallery to real tRPC (remove MOCK_ arrays)
+- [x] Wire TaskReplayViewer to real tRPC (remove MOCK_ arrays)
+- [x] Wire HandsFreeMode to real tRPC (remove MOCK_ arrays)
+- [x] Wire AudibleCuesManager to real tRPC (remove MOCK_ arrays)
 
 ### Test Coverage Expansion
 - [x] Add vitest specs for personalization.ts router
