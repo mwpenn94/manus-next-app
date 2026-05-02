@@ -6954,3 +6954,8 @@
 - [x] Fix GitHub integration: agent hallucinates repo contents instead of actually reading repo — Added validateGitHubToken() to all 4 GitHub tools (edit, assess, ops, create); clear "reconnect" error on 401; improved error propagation in githubApi.ts
 - [x] Fix GitHub CRUD/preview/publish: app claims connection but cannot interact with repo — Token validation catches expired/revoked tokens; agent receives clear error message to inform user to reconnect
 - [x] Fix consistent agent response failure — Added consecutive tool failure breaker (5 max), expanded client-side ERROR_MSG_PATTERNS (10 new patterns), improved error categorization
+
+## Session 27 — Mobile Input Overlap + GitHub Agent Behavior
+- [x] Fix mobile input textarea: text overlaps action buttons (attachment, file count, voice) at bottom of input area — Increased textarea bottom padding to pb-14, added bg-card background to toolbar row so text doesn't show through
+- [x] Fix GitHub agent: creates new webapp projects instead of reading/rendering connected repo — Added explicit intent detection for preview/view/show/load repo, added CRITICAL anti-create-webapp guard in both static and dynamic system prompt sections
+- [x] Fix GitHub agent system prompt: instruct agent to read and display connected repo contents in workspace panel, not create new standalone HTML projects — Dynamic injection now includes anti-create-webapp rule and preview/view/show/load → github_ops + github_assess routing

@@ -4585,7 +4585,7 @@ export default function TaskView() {
               placeholder={isOffline ? `Offline — ${queueLength} queued message${queueLength !== 1 ? 's' : ''}` : streaming ? "Type a follow-up message..." : "Message Manus..."}
               aria-label="Chat message input"
               rows={1}
-              className="w-full resize-none bg-transparent px-4 pt-3 pb-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"
+              className="w-full resize-none bg-transparent px-4 pt-3 pb-14 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"
             />
             <VoiceWaveStyles />
             {/* Bottom toolbar: recording mode vs normal mode */}
@@ -4600,7 +4600,7 @@ export default function TaskView() {
                 />
               </div>
             ) : (
-            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 flex items-center justify-between bg-card rounded-b-xl">
               <div className="flex items-center gap-1">
                 <input
                   ref={fileInputRef}
