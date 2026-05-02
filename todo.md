@@ -6969,3 +6969,8 @@
 - [x] Add outer try/catch to executeGitHubEdit (githubEditTool.ts) — wraps entire function body
 - [x] Improve outer catch in executeCreateGitHubRepo (githubCreateTool.ts) — null-safe err?.message
 - [x] Improve executeTool outer catch (agentTools.ts) — null-safe String(toolErr ?? 'Unknown error')
+- [x] Fix ACTUAL ROOT CAUSE: aegis.ts scoreQuality() crashes on undefined output — added safeOutput = output ?? "" guard
+- [x] Fix aegisLlm.ts: outputText construction now handles undefined rawContent (LLM returns tool_calls with no text)
+- [x] Fix aegis.ts runPostFlight(): added safeOutput guard before calling scoreQuality/validateOutput/fragmentOutput
+- [x] Fix aegis.ts fragmentOutput(): added early return if !output
+- [x] Verified fix on dev preview: "Show me what's in my connected repo" task completed successfully (5 steps, $0.217, 43.1k tokens)

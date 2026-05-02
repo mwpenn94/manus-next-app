@@ -128,10 +128,13 @@ export async function invokeWithAegis(params: AegisInvokeParams): Promise<AegisI
   // ── Post-flight ──
   let quality: aegis.QualityScores | undefined;
   if (!skipPostFlight && preFlight.sessionId) {
-    const outputText =
-      typeof llmResult.choices[0]?.message?.content === "string"
-        ? llmResult.choices[0].message.content
-        : JSON.stringify(llmResult.choices[0]?.message?.content);
+    const rawContent = llmResult.choices[0]?.message?.content;
+    const outputText: string =
+      typeof rawContent === "string"
+        ? rawContent
+        : rawContent != null
+          ? JSON.stringify(rawContent)
+          : "";
 
     const postFlight = await aegis.runPostFlight(
       preFlight.sessionId,

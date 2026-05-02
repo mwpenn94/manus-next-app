@@ -219,25 +219,27 @@ export async function assembleContext(
 // ── Quality Scoring ──
 
 export function scoreQuality(output: string, taskType: string): QualityScores {
-  const length = output.length;
-  const words = output.split(/\s+/).length;
+  // Guard against undefined/null output (e.g., when LLM returns tool_calls with no text content)
+  const safeOutput = output ?? "";
+  const length = safeOutput.length;
+  const words = safeOutput.split(/\s+/).length;
 
   // Completeness: longer outputs tend to be more complete (with diminishing returns)
   const completeness = Math.min(Math.round((words / 200) * 100), 100);
 
   // Accuracy: presence of specific markers (code blocks, citations, numbers)
   let accuracy = 50;
-  if (taskType === "code" && (output.includes("```") || output.includes("function") || output.includes("const "))) accuracy += 30;
-  if (taskType === "research" && (output.includes("http") || output.includes("[") || /\d{4}/.test(output))) accuracy += 30;
-  if (output.includes("error") || output.includes("Error")) accuracy -= 10;
+  if (taskType === "code" && (safeOutput.includes("```") || safeOutput.includes("function") || safeOutput.includes("const "))) accuracy += 30;
+  if (taskType === "research" && (safeOutput.includes("http") || safeOutput.includes("[") || /\d{4}/.test(safeOutput))) accuracy += 30;
+  if (safeOutput.includes("error") || safeOutput.includes("Error")) accuracy -= 10;
   accuracy = Math.max(0, Math.min(accuracy, 100));
 
   // Relevance: hard to measure without the prompt, default to moderate
   const relevance = Math.min(70 + Math.round(words / 100), 100);
 
   // Clarity: sentence structure, paragraph breaks, formatting
-  const hasParagraphs = (output.match(/\n\n/g) || []).length > 0;
-  const hasFormatting = output.includes("**") || output.includes("##") || output.includes("- ");
+  const hasParagraphs = (safeOutput.match(/\n\n/g) || []).length > 0;
+  const hasFormatting = safeOutput.includes("**") || safeOutput.includes("##") || safeOutput.includes("- ");
   let clarity = 50;
   if (hasParagraphs) clarity += 20;
   if (hasFormatting) clarity += 15;
@@ -257,7 +259,7 @@ export function scoreQuality(output: string, taskType: string): QualityScores {
 export function validateOutput(output: string, taskType: string): { isValid: boolean; issues: string[] } {
   const issues: string[] = [];
 
-  if (!output || output.trim().length === 0) {
+  if (!output || (typeof output === 'string' && output.trim().length === 0)) {
     issues.push("Empty output");
     return { isValid: false, issues };
   }
@@ -313,6 +315,7 @@ export function validateOutput(output: string, taskType: string): { isValid: boo
 
 export function fragmentOutput(output: string, taskType: string): { fragments: Array<{ type: string; content: string; hash: string }> } {
   const fragments: Array<{ type: string; content: string; hash: string }> = [];
+  if (!output) return { fragments };
 
   // Extract code blocks
   const codeBlocks = output.match(/```[\s\S]*?```/g) || [];
@@ -589,9 +592,11 @@ export async function runPostFlight(
   taskType: string,
   costCredits: number
 ): Promise<PostFlightResult> {
-  const validation = validateOutput(output, taskType);
-  const quality = scoreQuality(output, taskType);
-  const fragResult = fragmentOutput(output, taskType);
+  // Guard against undefined/null output (e.g., when LLM returns tool_calls with no text content)
+  const safeOutput = output ?? "";
+  const validation = validateOutput(safeOutput, taskType);
+  const quality = scoreQuality(safeOutput, taskType);
+  const fragResult = fragmentOutput(safeOutput, taskType);
   const lessonsList = extractLessons({
     taskType,
     qualityScore: quality.overall,
