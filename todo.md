@@ -6908,3 +6908,14 @@
 - [x] FALSE POSITIVE: parseCSV delimiter ReDoS (string split, not regex)
 - [x] FALSE POSITIVE: upsertTaskRating (function doesn't exist — hallucinated)
 - 3/10 CLEAN, 7/10 flagged but only 1 genuine fix needed
+
+## Convergence Pass 16 — Cycle 3 Depth (Pass ~1000)
+- [x] GENUINE: searchMemories missing escapeLike — fixed (missed by earlier sed)
+- [x] FALSE POSITIVE: executeGenerateImage SSRF (URL from internal API, not user-controlled)
+- [x] FALSE POSITIVE: deleteProject ownership (already has userId check)
+- [x] FALSE POSITIVE: lookupCountry SSRF (isPrivateIP blocks internal IPs)
+- [x] FALSE POSITIVE: renameTaskFn toast XSS (sonner renders text, not HTML)
+- [x] FALSE POSITIVE: focusAreas prompt injection (inherent to LLM, item #33)
+- [x] FALSE POSITIVE: joinTeam race (unique constraint, item #31)
+- [x] FALSE POSITIVE: postMessage '*' origin (standard OAuth popup pattern)
+- 4/10 CLEAN, 6/10 flagged but only 1 genuine fix

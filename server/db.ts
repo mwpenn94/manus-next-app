@@ -684,7 +684,7 @@ export async function deleteMemoryEntry(id: number, userId: number) {
 export async function searchMemories(userId: number, query: string, limit = 10) {
   const db = await getDb();
   if (!db) return [];
-  const pattern = `%${query}%`;
+  const pattern = `%${escapeLike(query)}%`;
   return db.select().from(memoryEntries).where(
     and(
       eq(memoryEntries.userId, userId),
