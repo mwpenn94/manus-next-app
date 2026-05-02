@@ -423,8 +423,8 @@ describe("Manus-parity auto-continuation system", () => {
     expect(content).toContain("function compressConversationContext");
     expect(content).toContain("function estimateConversationTokens");
     expect(content).toContain("function streamTextAsChunks");
-    // Verify compression is triggered during continuation
-    expect(content).toContain("estimatedTokens > CONTEXT_COMPRESSION_THRESHOLD");
+    // Verify compression is triggered during continuation (tier-aware threshold)
+    expect(content).toContain("estimatedTokens > compressionThreshold");
     expect(content).toContain("compressConversationContext(conversation)");
   });
 

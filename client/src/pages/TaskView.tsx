@@ -155,6 +155,7 @@ import useOfflineQueue from "@/hooks/useOfflineQueue";
 import ParallelToolIndicator from "@/components/ParallelToolIndicator";
 import AdaptiveModelBadge from "@/components/AdaptiveModelBadge";
 import { useSearch } from "wouter";
+import { sanitizePaths } from "@/lib/sanitizePaths";
 
 // ── Suggested Follow-ups (Gap 4) ──
 
@@ -363,16 +364,16 @@ function ActionLabel({ action }: { action: AgentAction }) {
     case "browsing": return <span>Browsing <span className={cn(labelClass, "font-mono text-[11px] break-all")}>{action.url}</span></span>;
     case "scrolling": return <span>Scrolling page</span>;
     case "clicking": return <span>Clicking <span className={labelClass}>{action.element}</span></span>;
-    case "executing": return <span>Running <code className={codeClass}>{action.command}</code></span>;
-    case "creating": return <span>Creating <code className={codeClass}>{action.file}</code></span>;
+    case "executing": return <span>Running <code className={codeClass}>{sanitizePaths(action.command || "")}</code></span>;
+    case "creating": return <span>Creating <code className={codeClass}>{sanitizePaths(action.file || "")}</code></span>;
     case "searching": return <span>Searching <span className={cn(labelClass, "italic")}>"{action.query}"</span></span>;
     case "generating": return <span>Generating <span className={labelClass}>{action.description}</span></span>;
     case "thinking": return <span>Reasoning about next steps...</span>;
     case "writing": return <span>{action.label || "Writing document"}</span>;
     case "researching": return <span>{action.label || "Wide research"}</span>;
     case "building": return <span>{action.label || "Building project"}</span>;
-    case "editing": return <span>{action.label || (action.file ? <>Editing <code className={codeClass}>{action.file}</code></> : "Editing file")}</span>;
-    case "reading": return <span>{action.label || (action.file ? <>Reading <code className={codeClass}>{action.file}</code></> : "Reading file")}</span>;
+    case "editing": return <span>{action.label || (action.file ? <>Editing <code className={codeClass}>{sanitizePaths(action.file)}</code></> : "Editing file")}</span>;
+    case "reading": return <span>{action.label || (action.file ? <>Reading <code className={codeClass}>{sanitizePaths(action.file)}</code></> : "Reading file")}</span>;
     case "installing": return <span>{action.label || (action.packages ? <>Installing <code className={codeClass}>{action.packages}</code></> : "Installing dependencies")}</span>;
     case "versioning": return <span>{action.label || "Git operation"}</span>;
     case "analyzing": return <span>{action.label || "Analyzing data"}</span>;
@@ -846,7 +847,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={cn("flex gap-3 mb-5", isUser ? "flex-row-reverse" : "")}
+      className={cn("flex gap-3 mb-5")}
     >
       {!isUser && (
         <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
@@ -854,7 +855,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
         </div>
       )}
 
-      <div className={cn("max-w-[90%] md:max-w-[80%] overflow-hidden break-words", isUser ? "ml-auto" : "")}>
+      <div className={cn("max-w-[90%] md:max-w-[80%] overflow-hidden break-words")}>
         {!isUser && (
           <div className="flex items-center gap-2 mb-1.5">
             <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
@@ -1017,7 +1018,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             className={cn(
               "rounded-xl text-sm leading-relaxed",
               isUser
-                ? "bg-primary/12 border border-primary/20 text-foreground px-4 py-3"
+                ? "bg-muted/50 text-foreground px-4 py-3"
                 : "text-foreground"
             )}
           >
@@ -2589,6 +2590,8 @@ export default function TaskView() {
     } catch {}
     return "max";
   });
+  // Tier-aware conversation history limit: Limitless sends ALL messages, Max sends 100, others 50
+  const conversationHistoryLimit = agentMode === "limitless" ? Number.POSITIVE_INFINITY : agentMode === "max" ? 100 : 50;
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [sandboxOpen, setSandboxOpen] = useState(false);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
@@ -2899,11 +2902,17 @@ export default function TaskView() {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const lastScrollTimeRef = useRef(0);
   useEffect(() => {
     if (scrollRef.current && !replayOpen && !userScrolledUpRef.current) {
+      // During streaming, use instant scroll (no smooth) and throttle to 100ms to prevent jitter
+      const now = Date.now();
+      const isStreaming = !!streaming;
+      if (isStreaming && now - lastScrollTimeRef.current < 100) return;
+      lastScrollTimeRef.current = now;
       requestAnimationFrame(() => {
         if (scrollRef.current) {
-          scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+          scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: isStreaming ? 'instant' : 'smooth' });
         }
       });
     }
@@ -3120,7 +3129,7 @@ export default function TaskView() {
         const conversationMessages = task.messages
           .filter(m => m.content.trim() || m.role === "user")
           .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
-          .slice(-50)
+          .slice(isFinite(conversationHistoryLimit) ? -conversationHistoryLimit : undefined)
           .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
         const controller = new AbortController();
         abortControllerRef.current = controller;
@@ -3263,7 +3272,7 @@ export default function TaskView() {
       const conversationMessages = task.messages
         .filter(m => m.content.trim() || m.role === "user") // Keep all user msgs + non-empty assistant msgs
         .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content))) // Skip error messages from context
-        .slice(-50)
+        .slice(isFinite(conversationHistoryLimit) ? -conversationHistoryLimit : undefined)
         .map(m => ({
           role: m.role as "user" | "assistant" | "system",
           content: m.content,
@@ -3418,7 +3427,7 @@ export default function TaskView() {
       const conversationMessages = task.messages
         .filter(m => m.content.trim() || m.role === "user")
         .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
-        .slice(-50)
+        .slice(isFinite(conversationHistoryLimit) ? -conversationHistoryLimit : undefined)
         .map(m => ({
           role: m.role as "user" | "assistant" | "system",
           content: m.content,
@@ -3530,7 +3539,7 @@ export default function TaskView() {
         .filter(m => m.id !== lastMsg.id) // Exclude the message being regenerated
         .filter(m => m.content.trim() || m.role === "user")
         .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
-        .slice(-50)
+        .slice(isFinite(conversationHistoryLimit) ? -conversationHistoryLimit : undefined)
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
 
       const controller = new AbortController();
@@ -3618,7 +3627,7 @@ export default function TaskView() {
       const conversationMessages = truncatedMessages
         .filter(m => m.content.trim() || m.role === "user")
         .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content)))
-        .slice(-50)
+        .slice(isFinite(conversationHistoryLimit) ? -conversationHistoryLimit : undefined)
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -4528,13 +4537,10 @@ export default function TaskView() {
                 {agentActions.length > 0 && (
                   <StreamingStepsCollapsible actions={agentActions} stepProgress={stepProgress} />
                 )}
-                {/* Streaming text content with cursor */}
+                {/* Streaming text content — no cursor (Manus parity: text just populates) */}
                 {streamContent && (
-                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none relative" style={{ contain: 'layout style', willChange: 'contents' }}>
+                  <div className="text-sm text-foreground prose prose-sm prose-themed max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0">
                     <Streamdown parseIncompleteMarkdown>{streamContent}</Streamdown>
-                    {streaming && (
-                      <span className="inline-block w-[2px] h-[1.1em] bg-primary ml-0.5 align-text-bottom animate-pulse" aria-hidden="true" />
-                    )}
                   </div>
                 )}
                 {/* Inline streaming cards: rendered from streamState.inlineCards during streaming */}
@@ -4831,7 +4837,7 @@ export default function TaskView() {
                 historyKeyDown(e);
               }}
               onPaste={handlePaste}
-              placeholder={isOffline ? `Offline — ${queueLength} queued message${queueLength !== 1 ? 's' : ''}` : streaming ? "Type a follow-up message..." : "Message Manus..."}
+              placeholder={isOffline ? `Offline — ${queueLength} queued message${queueLength !== 1 ? 's' : ''}` : streaming ? "Type a follow-up..." : "Reply to Manus..."}
               aria-label="Chat message input"
               rows={1}
               className="w-full resize-none bg-transparent px-4 pt-3 pb-14 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-xl text-sm leading-relaxed"

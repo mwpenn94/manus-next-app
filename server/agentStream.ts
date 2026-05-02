@@ -77,13 +77,13 @@ const TIER_CONFIGS: Record<string, TierConfig> = {
     maxTurns: 200,                   // High but bounded — Manus 1.6 Max: "longer workflows"
     maxTokensPerCall: 65536,         // Full standard output window
     maxContinuationRounds: 100,      // Generous continuation — rarely hit in practice
-    thinkingBudget: 2048,
+    thinkingBudget: 4096,            // Deep reasoning for complex tasks
   },
   limitless: {
     maxTurns: Infinity,              // No turn cap — as many turns as needed
     maxTokensPerCall: Infinity,      // No token ceiling — model's full output window
     maxContinuationRounds: Infinity, // No continuation cap — runs until task completion
-    thinkingBudget: 4096,            // Maximum reasoning depth
+    thinkingBudget: 8192,            // Maximum reasoning depth — no constraints on thinking
   },
 };
 
@@ -1517,8 +1517,10 @@ will seamlessly continue you with full context. Write as extensively as the task
         
         // Context compression: if conversation is getting very long, summarize older tool results
         // to prevent context overflow while preserving recent context quality
+        // Tier-aware: Limitless uses higher threshold (80% of model context) to preserve more working memory
+        const compressionThreshold = mode === "limitless" ? 500000 : mode === "max" ? 300000 : CONTEXT_COMPRESSION_THRESHOLD;
         const estimatedTokens = estimateConversationTokens(conversation);
-        if (estimatedTokens > CONTEXT_COMPRESSION_THRESHOLD) {
+        if (estimatedTokens > compressionThreshold) {
           console.log(`[Agent] Context compression triggered: ~${estimatedTokens} tokens, compressing older tool results`);
           const compressedCount = compressConversationContext(conversation);
           // Notify the user that context was compressed (F1.1 visibility fix)
@@ -1994,7 +1996,8 @@ If the user hasn't specified content details, ASK them what content they want. D
         const continuationCount = conversation.filter(m => 
           m.role === "user" && typeof m.content === "string" && m.content.startsWith("Continue demonstrating.")
         ).length;
-        const MAX_CONTINUATIONS = 12; // Hard cap: 10 groups + 2 buffer
+        // Tier-aware continuation cap: Limitless has NO cap, Max gets generous limit, others bounded
+        const MAX_CONTINUATIONS = mode === "limitless" ? Infinity : mode === "max" ? 25 : 12;
         if (wantsContinuous && turn < maxTurns - 2 && continuationCount < MAX_CONTINUATIONS) {
           // Track which tools have been used so far
           const usedTools = new Set<string>();

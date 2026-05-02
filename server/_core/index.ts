@@ -1068,14 +1068,15 @@ async function startServer() {
       const { runAgentStream } = await import("../agentStream");
       const body = req.body || {};
       let messages = body.messages || [];
-      // Enforce message array size limit (prevent abuse)
-      if (messages.length > 200) {
+      const taskExternalId = body.taskExternalId as string | undefined;
+      const mode = (body.mode === "speed" ? "speed" : body.mode === "max" ? "max" : body.mode === "limitless" ? "limitless" : "quality") as "speed" | "quality" | "max" | "limitless";
+      // Enforce message array size limit (prevent abuse) — tier-aware: Limitless has no cap
+      const messageCap = mode === "limitless" ? Number.POSITIVE_INFINITY : mode === "max" ? 500 : 200;
+      if (messages.length > messageCap) {
         safeWrite(`data: ${JSON.stringify({ error: "Too many messages in conversation. Please start a new task." })}\n\n`);
         safeEnd();
         return;
       }
-      const taskExternalId = body.taskExternalId as string | undefined;
-      const mode = (body.mode === "speed" ? "speed" : body.mode === "max" ? "max" : body.mode === "limitless" ? "limitless" : "quality") as "speed" | "quality" | "max" | "limitless";
 
       // Pass 70 — Manus-aligned: If client sends few messages but has a taskExternalId,
       // reconstruct full conversation from DB to prevent context loss.

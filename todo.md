@@ -7142,7 +7142,7 @@
 - [x] Ensure SSE events are flushed properly — verified: res.flush() called after every write, no buffering
 
 ## Production Crash (Session 34b)
-- [ ] Fix React runtime error in TaskView (render-phase crash at line 78:2516 in production bundle)
+- [x] Fix React runtime error in TaskView (render-phase crash at line 78:2516 in production bundle) — FIXED: Root cause was CRITICAL-4 state bleed causing undefined access during render. Resolved by clearing all streaming state on task switch.
 
 ## REAL Persistent Production Bugs (Session 34c - Video Evidence 2)
 - [x] CRITICAL-1: Agent hallucinating prior context in fresh tasks — FIXED: Removed assistantSummary from crossTaskContext injection, added strict rules against claiming prior work
@@ -7151,3 +7151,38 @@
 - [x] CRITICAL-4: UI state bleed between tasks — FIXED: Added prevTaskIdRef useEffect that clears all streaming/UI state on task switch
 - [x] CRITICAL-5: "Start over" command doesn't actually reset context — FIXED: crossTaskContext no longer carries assistantSummary, strict rules prevent claiming prior work
 - [x] CRITICAL-6: Agent meta-commentary about UI bugs instead of functioning correctly — FIXED: Removed assistantSummary that was causing the agent to reference prior conversation context
+
+## Remaining Issues from Video Recordings + Parity Analysis (Session 34d)
+
+###### Auth Issues (Video 1)
+- [x] AUTH-1: OAuth redirect loop — VERIFIED ALREADY FIXED: Global redirect removed in prior pass, per-page auth redirect policy in place
+- [x] AUTH-2: Sign-in button — VERIFIED WORKING: getLoginUrl() correctly constructs OAuth URL with origin-based redirect
+### UI Bugs (Video 2)
+- [x] UI-1: Markdown table rendering — FIXED: Streaming content now uses prose-themed class (same as persisted messages) for consistent table styling
+- [x] UI-2: Jittery scrolling — FIXED: Throttled to 100ms during streaming + instant scroll (no smooth animation) to prevent jitter
+- [x] UI-3: Text glitches — FIXED: Removed contain:'layout style' and willChange:'contents' CSS that caused rendering artifacts
+- [x] UI-4: Status box overlay — VERIFIED: ActiveToolIndicator renders inside scroll area (not fixed/absolute over input)
+- [x] UI-5: Leaked backend paths — FIXED: Added sanitizePaths import and applied to ActionLabel file paths and commands
+### Critical Parity Gaps (Video Analysis)
+- [x] PARITY-1: Blinking cursor removed — FIXED: Removed the animate-pulse cursor span from streaming content
+- [x] PARITY-2: Document-style layout — FIXED: Removed flex-row-reverse and ml-auto from user messages, all messages now left-aligned
+- [x] PARITY-3: Tool card timer — VERIFIED ALREADY IMPLEMENTED: StepElapsedTimer shows MM:SS on active steps
+- [x] PARITY-4: Composer placeholder — FIXED: Changed to "Reply to Manus..." (in-task) matching production parity
+- [x] PARITY-5: Agent tone — VERIFIED ALREADY IMPLEMENTED: System prompt has casual warmth rules ("Love it", "Great choice", etc.)
+- [x] PARITY-6: Task type icons — VERIFIED ALREADY IMPLEMENTED: TaskStatusDot shows type-specific icons based on title keywords
+- [x] PARITY-7: Tool cards with file editor — VERIFIED ALREADY IMPLEMENTED: InlinePreviewWidgets show TerminalPreview/FilePreview with expandable content
+### Functional Bugs (Pass 62 Analysis)
+- [x] FUNC-1: Message persistence race — VERIFIED ALREADY FIXED: pendingMessagesRef queue flushes when serverId arrives
+- [x] FUNC-2: Streaming progress persistence — VERIFIED: Actions array stored as JSON in messages table, persisted with final message
+- [x] FUNC-3: Share link — VERIFIED ALREADY IMPLEMENTED: ShareDialog creates public share URLs via trpc.share.create
+
+## Priority Focus Areas (User Directive)
+- [ ] UI/UX structure/layout/flow — ensure intuitive, streamlined, Manus-parity layout
+- [ ] AI reasoning quality — ensure agent produces high-quality, relevant, well-structured responses
+- [ ] Task performance — speed, responsiveness, no unnecessary delays or re-renders
+
+## Model Tier Benchmarking & Parity (User Directive)
+- [ ] TIER-1: Max tier must be equivalent to Manus Max — verify maxTurns, maxTokens, continuation rounds match
+- [ ] TIER-2: Limitless tier must exceed Max on context window, continuous use, depth — NO arbitrary limits
+- [ ] TIER-3: Limitless should honor user's prompt without stopping — truly infinite until task completion
+- [ ] TIER-4: Verify no hardcoded caps that would artificially limit Limitless tier behavior
