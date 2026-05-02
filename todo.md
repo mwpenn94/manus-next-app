@@ -6919,3 +6919,14 @@
 - [x] FALSE POSITIVE: joinTeam race (unique constraint, item #31)
 - [x] FALSE POSITIVE: postMessage '*' origin (standard OAuth popup pattern)
 - 4/10 CLEAN, 6/10 flagged but only 1 genuine fix
+
+## Convergence Pass 17 — Cycle 3 Adversarial (Pass ~1050)
+- [x] GENUINE CRITICAL: iframe sandbox allow-scripts+allow-same-origin — removed allow-same-origin from document preview iframes (TaskView, MultiModalRenderer)
+- [x] GENUINE HIGH: OAuth open redirect — added origin allowlist validation (manus.space, manus.computer, localhost) + returnPath validation in both buildOAuthCallbackHtml and buildOAuthSuccessHtml
+- [x] FALSE POSITIVE: updateTeamMemberRole (function doesn't exist — hallucinated)
+- [x] FALSE POSITIVE: searchTasks escapeLike (already uses escapeLike on line 252)
+- [x] FALSE POSITIVE: javascript: URL bypass (trim+toLowerCase handles control chars)
+- [x] FALSE POSITIVE: handleExportMarkdown XSS (markdown text, not HTML)
+- [x] FALSE POSITIVE: exportPptx XSS (already fixed with esc())
+- [x] FALSE POSITIVE: focusAreas prompt injection (item #33)
+- 2/10 CLEAN, 8/10 flagged but only 2 genuine fixes needed

@@ -103,7 +103,7 @@ const IframeBlock = ({ url, title, height = 500 }: Extract<ContentBlock, { type:
         height={height}
         onLoad={() => setLoading(false)}
         className={cn('w-full h-full rounded-lg border border-border', isLoading && 'invisible')}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts"
       />
     </div>
   );

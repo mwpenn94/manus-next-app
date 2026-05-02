@@ -2056,7 +2056,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                           src={doc.url}
                           className="w-full h-full border-0"
                           title={doc.label || (doc.docType === "slides" ? "Slides Preview" : "PDF Preview")}
-                          sandbox="allow-scripts allow-same-origin"
+                          sandbox="allow-scripts"
                         />
                       ) : (doc.docType === "xlsx" || doc.docType === "csv" || doc.docType === "docx") && doc.url ? (
                         <div className="flex items-center justify-center h-full text-center text-muted-foreground">

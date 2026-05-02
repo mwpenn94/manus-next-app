@@ -55,6 +55,25 @@ function buildOAuthCallbackHtml(
     const parsed = JSON.parse(Buffer.from(state || "", "base64url").toString());
     origin = parsed.origin || "";
     returnPath = parsed.returnPath || "/connectors";
+    // Validate origin to prevent open redirect: only allow same-origin or known domains
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        // Only allow HTTPS origins on known domains (manus.space, manus.computer, localhost for dev)
+        const allowedPatterns = [/\.manus\.space$/, /\.manus\.computer$/, /^localhost$/];
+        const isAllowed = allowedPatterns.some(p => p.test(originUrl.hostname));
+        if (!isAllowed && originUrl.hostname !== 'localhost' && !originUrl.hostname.startsWith('127.')) {
+          console.warn(`[OAuth] Blocked redirect to untrusted origin: ${origin}`);
+          origin = ""; // Fall back to window.location.origin
+        }
+      } catch {
+        origin = ""; // Invalid URL, fall back
+      }
+    }
+    // Validate returnPath: must start with / and not contain protocol
+    if (returnPath && (!returnPath.startsWith('/') || returnPath.includes('://'))) {
+      returnPath = "/connectors";
+    }
   } catch { /* ignore */ }
 
   return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
@@ -91,8 +110,26 @@ function buildOAuthSuccessHtml(
   userName: string,
   returnPath: string = "/connectors"
 ): string {
+  // Validate origin to prevent open redirect
+  let safeOrigin = origin;
+  if (safeOrigin) {
+    try {
+      const originUrl = new URL(safeOrigin);
+      const allowedPatterns = [/\.manus\.space$/, /\.manus\.computer$/, /^localhost$/];
+      const isAllowed = allowedPatterns.some(p => p.test(originUrl.hostname));
+      if (!isAllowed && originUrl.hostname !== 'localhost' && !originUrl.hostname.startsWith('127.')) {
+        safeOrigin = "";
+      }
+    } catch {
+      safeOrigin = "";
+    }
+  }
+  // Validate returnPath
+  if (returnPath && (!returnPath.startsWith('/') || returnPath.includes('://'))) {
+    returnPath = "/connectors";
+  }
   // Build the redirect URL using returnPath (e.g., /github) instead of always /connectors
-  const redirectUrl = `${origin}${returnPath}?oauth_success=${encodeURIComponent(connectorId)}`;
+  const redirectUrl = `${safeOrigin}${returnPath}?oauth_success=${encodeURIComponent(connectorId)}`;
   return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}
 .card{text-align:center;padding:2rem;border-radius:1rem;background:#1a1a1a;border:1px solid #333;max-width:320px}
