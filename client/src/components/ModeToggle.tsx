@@ -4,7 +4,7 @@
  * Speed mode: fewer tool turns, faster responses, concise output (Manus 1.6 Lite aligned)
  * Quality mode: full tool depth, thorough research, detailed output (Manus 1.6 aligned)
  * Max mode: flagship tier — strategic, autonomous, deep chains (Manus 1.6 Max aligned)
- * Limitless mode: no constraints — recursive optimization until convergence
+ * Limitless mode: no constraints — unlimited depth and continuity, runs as long as needed
  */
 import { Zap, Sparkles, Crown, Infinity } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,7 +43,7 @@ const MODES: { id: AgentMode; label: string; icon: typeof Zap; title: string; ac
     id: "limitless",
     label: "Limitless",
     icon: Infinity,
-    title: "Limitless mode: no constraints — recursive optimization until convergence",
+    title: "Limitless mode: no constraints — unlimited depth and continuity, runs as long as needed",
     activeClass: "bg-primary/20 text-primary shadow-sm",
   },
 ];

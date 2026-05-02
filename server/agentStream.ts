@@ -38,15 +38,15 @@ import type { Response } from "express";
 // │          │                 │          │           │          │ deep chains, less guidance   │
 // ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
 // │ Limitless│ Beyond Manus    │ ∞        │ ∞ (model) │ ∞        │ No limits. Agent decides     │
-// │          │                 │          │           │          │ when to stop. Recursive      │
-// │          │                 │          │           │          │ optimization until           │
-// │          │                 │          │           │          │ convergence.                 │
+// │          │                 │          │           │          │ when to stop. Runs as deep   │
+// │          │                 │          │           │          │ and long as user needs.      │
+// │          │                 │          │           │          │                              │
 // └──────────┴─────────────────┴──────────┴───────────┴──────────┴──────────────────────────────┘
 //
 // Speed and Quality have fixed limits. Max has high but bounded limits — deeply
 // aligned with Manus 1.6 Max: "can work on a single task for a longer time
 // without stopping" and "needs less guidance mid-process." Limitless has NO
-// limits — the agent runs until convergence, task completion, or explicit user stop.
+// limits — the agent runs until task completion or explicit user stop.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface TierConfig {
@@ -82,7 +82,7 @@ const TIER_CONFIGS: Record<string, TierConfig> = {
   limitless: {
     maxTurns: Infinity,              // No turn cap — as many turns as needed
     maxTokensPerCall: Infinity,      // No token ceiling — model's full output window
-    maxContinuationRounds: Infinity, // No continuation cap — runs until convergence
+    maxContinuationRounds: Infinity, // No continuation cap — runs until task completion
     thinkingBudget: 4096,            // Maximum reasoning depth
   },
 };
@@ -201,7 +201,7 @@ You are a "Trusted Colleague" — a peer to the user, not a subordinate assistan
 - **git_operation(operation, args?)**: Perform git operations (init, add, commit, push, status, log, clone, remote_add) in the active webapp project. Use to version control the project and push to GitHub.
 - **deploy_webapp(version_label?)**: Build and deploy the active webapp project to the cloud. Bundles the project, uploads to cloud storage, and returns a live public URL. Use after the app is ready to share.
 - **github_edit(instruction, repo?, confirm?, edit_plan_id?)**: Edit files in a connected GitHub repo using natural language. PREFERRED method for repo editing — reads the repo via API, plans edits with AI, shows a diff preview, and commits atomically. No cloning needed. Two-step: first call generates a diff, second call with confirm=true applies it.
-- **github_assess(mode, repo?, focus?, target_phase?)**: Deeply assess, optimize, or validate a connected GitHub repo using the Manus recursive optimization framework. Analyzes across 14 dimensions (completeness, accuracy, depth, novelty, actionability, regression_safety, ux_quality, performance, security, accessibility, test_coverage, documentation, code_quality, deployment_readiness). Three modes: 'assess' (read-only report), 'optimize' (report + fix recommendations), 'validate' (phase gate pass/fail). Routes findings to expert classes A-F, runs quality guards, tracks convergence.
+- **github_assess(mode, repo?, focus?, target_phase?)**: Deeply assess, optimize, or validate a connected GitHub repo. Analyzes across 14 dimensions (completeness, accuracy, depth, novelty, actionability, regression_safety, ux_quality, performance, security, accessibility, test_coverage, documentation, code_quality, deployment_readiness). Three modes: 'assess' (read-only report), 'optimize' (report + fix recommendations), 'validate' (phase gate pass/fail). Routes findings to expert classes A-F, runs quality guards.
 - **data_pipeline(mode, source_description, data_sample?, target_format?, custom_instructions?)**: Execute data operations — ingest, transform, enrich, model, and persist data from any source. Supports CSV/JSON/XML/API/database sources, schema inference, quality scoring, null imputation, normalization, deduplication, and data modeling. Modes: 'ingest' (classify + validate), 'transform' (clean + normalize + enrich), 'model' (schema inference + relationships), 'persist' (storage strategy), 'full' (end-to-end pipeline).
 - **automation_orchestrate(mode, description, trigger?, target_url?, custom_instructions?)**: Design and orchestrate automation workflows — browser automation, API/webhook chains, scheduled tasks, event-driven pipelines, and agentic multi-step workflows. Modes: 'browser' (web scraping/interaction), 'api_chain' (multi-API orchestration), 'scheduled' (cron/interval tasks), 'event_driven' (webhook/trigger pipelines), 'agentic' (autonomous workflows), 'full' (complete automation design).
 - **app_lifecycle(mode, description, tech_stack?, repo?, custom_instructions?)**: Manage the full application development lifecycle. Modes: 'design' (UI/UX + design system), 'architect' (system architecture + tech stack), 'build' (implementation plan + code generation), 'test' (test strategy + coverage), 'deploy' (deployment strategy + CI/CD), 'observe' (monitoring + alerting), 'maintain' (dependency updates + tech debt), 'full' (complete SDLC plan).
@@ -519,7 +519,7 @@ CRITICAL: The user interface ALREADY shows tool execution steps visually (tool n
 Your text responses are what the user sees in the chat. Tool calls are shown as collapsible steps, but your TEXT is the main conversation.
 - **EVERY task MUST end with a text-only response** (no tool calls) that presents findings, results, or acknowledgment directly to the user.
 - If you used tools to research, your FINAL turn must present the research findings as readable text.
-- If you generated an image or document, your FINAL turn must acknowledge it with context.
+- If you generated an image or document, your FINAL turn must acknowledge it with brief context (e.g., "Here's your report" or "I've created the spreadsheet with the data you requested"). Do NOT include markdown download links [like this](url) in your text — the document/image is already shown as an interactive card with Open/Download buttons. Repeating the link creates a confusing duplicate.
 - If the user asks a question, your FINAL turn must ANSWER the question in text.
 - NEVER end a conversation with only tool calls and no visible text. The user should ALWAYS see a conversational response.
 - When the user sends a follow-up message, ALWAYS address their message directly. Do NOT ignore what they said.
@@ -577,7 +577,7 @@ You are an AGENT, not a chatbot. Act like one.`;
  * - `speed`: Lower temperature (0.3), max_tokens (16384), fewer tool turns, concise responses.
  * - `quality`: Higher temperature (0.7), max_tokens (65536), thorough research, detailed responses.
  * - `max`: Highest temperature (0.8), max_tokens (65536), 200 tool turns, deepest research — Manus 1.6 Max aligned.
- * - `limitless`: Temperature (0.8), unlimited tokens/turns/continuation — recursive optimization until convergence.
+ * - `limitless`: Temperature (0.8), unlimited tokens/turns/continuation — runs as deep and long as the user needs.
  *
  * All modes benefit from auto-continuation: if the LLM hits its output token limit,
  * the system seamlessly continues without user intervention.
@@ -1000,9 +1000,9 @@ The system will seamlessly continue you if your response hits the token limit.
 2. **Deep research depth**: For research/complex tasks, use at least 5 tool calls before considering a final response. Use wide_research PLUS multiple read_webpage calls on different sources. EXCEPTION: Simple factual questions, capability questions, or conversational messages should be answered directly in text with ZERO tool calls.
 3. **Cross-reference sources**: Never rely on a single source. Search from multiple angles, read multiple pages, and synthesize across all of them.
 4. **Tighter internal planning**: Plan your approach before executing. Minimize wasted turns.
-5. **Higher one-shot accuracy**: Get it right the first time. Verify before concluding.
+5. **Higher one-shot accuracy**: Get it right the first time. Verify before concluding. Prioritize depth on what was asked, not breadth on tangential topics.
 6. **Produce comprehensive deliverables**: Include tables, comparisons, step-by-step breakdowns, citations, and actionable specifics.
-7. **Generate artifacts**: Use generate_document for long-form deliverables, analyze_data for structured insights, generate_image for visualizations.
+7. **Generate artifacts the user requested**: Use generate_document for long-form deliverables, analyze_data for structured insights, generate_image for visualizations. Do NOT generate additional artifacts the user did not request.
 8. **Autonomous execution**: The user may not be watching. Deliver complete, self-contained results.
 9. **Leave no stone unturned**: Search for counterarguments, edge cases, alternative perspectives, and expert opinions.
 10. **Asynchronous mindset**: Work independently, report comprehensively.
@@ -1017,88 +1017,31 @@ When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT somethi
 - **After research, DELIVER**: Always synthesize research into the requested deliverable.
 - **Respect format requests**: If the user asks for PDF, use output_format: "pdf".`;
     } else if (mode === "limitless") {
-      // Beyond Manus: truly unlimited, recursive optimization until convergence
-      systemPrompt += `\n\n## MODE: LIMITLESS (Recursive Optimization Until Convergence)
+      // Limitless: unlimited context depth and continuous operation
+      systemPrompt += `\n\n## MODE: LIMITLESS (Unlimited Depth & Continuity)
 
-You are operating in Limitless mode — there are NO constraints on your execution.
-No turn limits. No token limits. No continuation limits. You run until the task converges.
-
-This mode is designed for recursive optimization: you continue refining, researching, and
-improving until the output reaches a state of convergence where additional passes yield
-no meaningful improvement. The user's termination conditions take precedence — if they
-specified criteria for "done," honor those. Otherwise, apply your own convergence judgment.
+You are operating in Limitless mode — there are NO constraints on your execution depth.
+No turn limits. No token limits. No continuation limits. You run for as long as the user needs.
 
 Your output will NEVER be truncated. If your response hits the token limit, the system
 will seamlessly continue you with full context. Write as extensively as the task demands.
 
-### ACTION-FIRST PRINCIPLE (CRITICAL)
-When the user asks you to GENERATE, CREATE, MAKE, BUILD, WRITE, or DRAFT something:
-- **ACT FIRST, research only if needed.** Use the appropriate tool (generate_document, generate_image, execute_code, create_webapp, etc.) IMMEDIATELY.
-- If the request is clear enough to act on (e.g., "generate a PDF for me"), use the tool right away. If the user hasn't specified content, ask them what content they want — do NOT research ABOUT the format.
-- Research is for INFORMATIONAL tasks ("what is X?", "compare X and Y", "analyze X"). Generation tasks need TOOLS, not web searches.
-- "Generate a PDF" means call generate_document with output_format: "pdf". It does NOT mean research PDF best practices.
-- "Create an image" means call generate_image. It does NOT mean research image design principles.
-- The user chose Limitless mode for depth of EXECUTION, not depth of meta-research about the task format.
+### CORE PRINCIPLES
+1. **Unlimited depth**: Go as deep into research, analysis, or creation as the task requires.
+2. **Continuous operation**: Keep working until the user's request is fully satisfied.
+3. **Action-first**: When asked to generate/create/build something, use the appropriate tool immediately. Research is for informational tasks.
+4. **Comprehensive deliverables**: Include tables, comparisons, citations, actionable specifics, and alternative perspectives.
+5. **Honor user termination conditions**: If the user specifies when to stop, follow those conditions exactly.
+6. **Self-monitoring**: Track your progress. Note what you've covered and what remains.
 
-1. **Recursive convergence**: After producing an initial result, review it critically. If any aspect can be improved, improve it. Continue until 100 consecutive review passes confirm no further improvements. Maximum total passes: 1280.
-2. **Research depth scales with task type**: For research/analysis tasks, use exhaustive multi-source research. For generation tasks, research only the SUBJECT MATTER if needed, then produce the deliverable.
-3. **Cross-reference everything**: Never rely on a single source. Verify facts across multiple sources.
-4. **Strategic decomposition**: Break complex tasks into subtasks and execute them methodically.
-5. **Never conclude prematurely ON THE REQUESTED TASK**: If the requested deliverable can be improved, improve it. But do NOT expand scope to produce unrequested outputs. "Maximum thoroughness" means depth on what was asked, not breadth into unrelated capabilities.
-6. **Produce the most comprehensive deliverables possible**: Include tables, comparisons, step-by-step breakdowns, citations, actionable specifics, counterarguments, edge cases, and alternative perspectives.
-7. **Generate artifacts the user requested**: Use the appropriate tools for what the user asked. For generation tasks, the ARTIFACT IS THE DELIVERABLE. Do NOT generate additional artifacts the user did not request — if they asked for a PDF, produce a PDF, not a PDF plus an Excel plus a presentation.
-8. **Honor user termination conditions**: If the user specified when to stop (e.g., "until convergence," "3 passes," "cover all 10 items"), follow those conditions exactly.
-9. **Self-monitoring**: Track your own progress. Note what you've covered and what remains.
-10. **Asynchronous deep work**: The user may not be watching. Deliver complete, self-contained, publication-quality results.
-
-### AUTONOMOUS DEFAULTS PRINCIPLE (CRITICAL)
-In Limitless mode, you are expected to be MAXIMALLY AUTONOMOUS. This means:
-- **Use defaults when the user provides templates with placeholders**: If the user gives you a template with example values (e.g., "[Company Name]" with "Acme Corp" as an example), USE the example values as defaults. Do NOT ask the user to fill in every placeholder.
-- **Never ask the same question twice**: Track what you've already asked. If the user didn't answer the first time, use your best judgment and proceed.
-- **Minimize confirmation-seeking**: The user chose Limitless mode because they want you to EXECUTE, not ask for permission. Make reasonable decisions and proceed. Only ask when the decision is truly ambiguous AND high-stakes.
-- **Auto-proceed with reasonable defaults**: If you need information the user hasn't provided, use industry-standard defaults, common examples, or your best inference from context. State what defaults you chose and why, then continue working.
-- **Reduce intermediate status messages**: Don't say "Conducting deeper research..." or "Let me analyze this further..." — just DO IT and show results.
-- **When the user says "continue" or "keep going"**: Resume exactly where you left off without re-asking for context or re-explaining what you're doing.
-- **File attachments ARE the context**: When the user attaches a file with their message, the file content IS the primary input. Process it immediately without asking what they want done — infer the task from the file content and any accompanying text.
-- **ZERO APOLOGIES**: Never say "My apologies", "I fell short", "You are absolutely right to call me out", "I should have done better", or any self-deprecating language. If you made a mistake, silently fix it and move on. The user wants results, not contrition.
-- **ZERO UNNECESSARY CLARIFICATION**: If the user's request is clear from context (e.g., "make me a guide about X", "do it", "that sounds good"), ACT IMMEDIATELY. Do not ask what they mean. Do not ask for specifics you can infer or research yourself.
-- **AFTER wide_research or web_search, ALWAYS synthesize into the deliverable**: Never present raw research results as the final answer. Always produce the actual document/guide/analysis the user requested using the research as input.
-
-### CONVERGENCE REPORTING & TEMPERATURE MODEL
-When performing recursive optimization passes, use the report_convergence tool to emit progress updates:
-- Call it at the START of each pass with status "running"
-- Call it at the END of each pass with status "converged" or "needs_more"
-- Include the pass type, temperature, rating, score_delta, and convergence_count
-
-**Temperature Model (Adaptive Explore/Exploit):**
-- Start at temp=1.0 (broad exploration). Decay by 0.05 per pass with no improvement.
-- 0.8-1.0: LANDSCAPE — broad sweep, architectural changes, new territory
-- 0.5-0.8: DEEP-DIVE — focused subsystem investigation
-- 0.3-0.5: REFINE — targeted fixes, polishing, edge cases
-- 0.1-0.3: CONVERGENT — only bug fixes, docs, test additions
-- 0.0-0.1: POLISH — zero-change verification passes only
-- If score_delta > 0.5, increase temp by 0.1 (discovery found). If score_delta < -0.3, increase temp by 0.15 (regression detected).
-
-**Pass Type Selection (Signal-Based Routing):**
-- landscape: Broad coverage needed, many areas untouched
-- depth: Specific subsystem needs deep investigation
-- adversarial: Probe for hidden failure modes, edge cases, security
-- future_state: Anticipate scaling issues, maintenance burden
-- synthesis: Combine findings from multiple passes into coherent improvements
-- exploration: Divergent thinking — try unconventional approaches
-- fundamental_redesign: Architecture-level rethinking (only at temp > 0.7)
-
-**Convergence Criteria:**
-- temp ≤ 0.2 through natural decay (not forced)
-- score_delta < 0.2 for 2+ consecutive passes
-- Zero regressions in last 3 passes
-- All expert dimensions satisfied (no HIGH-severity findings)
-
-**Anti-Stagnation:** If 3+ consecutive passes produce score_delta=0, force temp += 0.2 and switch to adversarial or exploration pass type.
-
-**Failure Logging:** Always include failure_log with what was tried and didn't work. This prevents repeating failed approaches and preserves institutional knowledge.
-
-**Rating Calibration:** Models overrate own outputs by 0.5-1.0 points. Calibrate accordingly. A true 9/10 means production-ready with zero known issues.`;
+### AUTONOMOUS OPERATION
+- Be maximally autonomous. Make reasonable decisions and proceed.
+- Use defaults when the user provides templates with placeholders.
+- Never ask the same question twice. Use your best judgment.
+- Minimize confirmation-seeking. Only ask when truly ambiguous AND high-stakes.
+- When the user says "continue" or "keep going", resume exactly where you left off.
+- File attachments ARE the context — process them immediately.
+- After research, ALWAYS synthesize into the actual deliverable the user requested.`;
     }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
@@ -1445,7 +1388,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         // Mode-aware continuation limits:
         // Speed: bounded (5 rounds), Quality: high (50 rounds), Max: unlimited (Infinity)
         // For Max mode, maxContinuationRounds is Infinity — the agent runs until its own
-        // termination conditions are met (convergence, task completion, or explicit stop).
+        // termination conditions are met (task completion or explicit stop).
         const isWithinLimit = continuationRounds <= maxContinuationRounds;
         
         if (!isWithinLimit) {
@@ -1838,7 +1781,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         // TIGHTENED: Only match explicit demonstration/continuous-work requests, NOT casual uses of "each", "all", "every"
         // "generate an example of each" should NOT trigger continuous mode
         // "demonstrate each capability" SHOULD trigger continuous mode
-        const wantsContinuous = /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|keep going|go until\s+(done|finished)|don't stop|do them all|show me all\s+(your|the)\s+(capabilities|tools)|one by one.*(capabilities|tools|features))\b/i.test(userText);
+        const wantsContinuous = /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|show\s+me\s+everything\s+you\s+can|keep going|go until\s+(done|finished)|don't stop|do them all|run\s+(all|each|every)\s+(capabilities|tools|features)|test\s+(all|each|every)\s+(capabilities|tools|features)|try\s+(all|each|every)\s+(capabilities|tools|features)|show me all\s+(your|the)\s+(capabilities|tools)|one by one.*(capabilities|tools|features))\b/i.test(userText);
         
         // Detect if the user asked for creative/generative output
         const wantsCreativeOutput = /\b(generate|create|write|make|draft|build|design|plan|guide|step.?by.?step|outline|script|story|tutorial|curriculum|template|proposal|report)\b/i.test(userText);
@@ -2104,6 +2047,53 @@ If the user hasn't specified content details, ASK them what content they want. D
             continue;
           }
         }
+
+        // QUALITY GATE: Prevent false-positive completion with shallow/empty responses
+        // In max/limitless mode, if the final text is too short and doesn't contain substantive content,
+        // force the agent to provide proper reasoning and context.
+        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0) {
+          // Agent is trying to end with a very short response and no tool usage — this is a false positive
+          const hasSubstance = /\b(here|result|found|analysis|summary|report|created|generated|built|deployed|completed|answer)\b/i.test(textContent);
+          if (!hasSubstance) {
+            console.log(`[Agent] Quality gate: response too shallow (${textContent.length} chars, 0 tools) in ${mode} mode — forcing elaboration`);
+            finalContent = "";
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `Your response was too brief and didn't address the task substantively. You are in ${mode.toUpperCase()} mode — the user expects thorough, detailed work. Please:
+1. Actually USE your tools to accomplish the task (search, generate, analyze, etc.)
+2. Provide detailed reasoning and context in your response
+3. Don't just acknowledge the request — FULFILL it with real output
+
+The user's original request was: "${userText.slice(0, 300)}"
+
+Do the work now.`,
+            });
+            continue;
+          }
+        }
+
+        // GENERAL QUALITY: Even in quality/speed mode, if response has NO reasoning and just says
+        // "done" or "complete" without explaining what was accomplished, force elaboration
+        if (textContent.length > 0 && textContent.length < 100 && completedToolCalls > 0) {
+          const isJustAcknowledgment = /^(done|complete|finished|here you go|there you go|all set|got it)[.!]?$/i.test(textContent.trim());
+          if (isJustAcknowledgment && turn < maxTurns - 1) {
+            console.log(`[Agent] Quality gate: response is just an acknowledgment without context — forcing explanation`);
+            finalContent = "";
+            conversation.push({ role: "assistant", content: textContent || "" });
+            conversation.push({
+              role: "user",
+              content: `You just said "${textContent.trim()}" but didn't explain what you accomplished or provide any useful context. Please provide a proper response that:
+- Summarizes what was done
+- Explains the results or output
+- Gives the user actionable context
+
+Don't just say "done" — tell the user what they got.`,
+            });
+            continue;
+          }
+        }
+
         break;
       }
 
@@ -2619,7 +2609,7 @@ function compressConversationContext(conversation: Message[]): number {
   }
   
   // If we collected failure information, inject a summary into the system prompt
-  // so the agent remembers what was tried and didn't work (Rule 3 of convergence framework)
+  // so the agent remembers what was tried and didn't work (avoid repeating failed approaches)
   if (failureLog.length > 0 && conversation[0]?.role === "system") {
     const failureSummary = `\n\n[Context Compression Note] The following approaches were tried and failed in earlier turns:\n${failureLog.slice(-5).map((f, i) => `${i + 1}. ${f}`).join("\n")}\nAvoid repeating these approaches.`;
     if (typeof conversation[0].content === "string" && !conversation[0].content.includes("[Context Compression Note]")) {

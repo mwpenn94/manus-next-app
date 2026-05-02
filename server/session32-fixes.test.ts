@@ -11,25 +11,24 @@ describe("Session 32: Issues from User Chat Transcript", () => {
 
     it("instructs agent to use defaults for unfilled placeholders", () => {
       expect(agentStream).toContain("Use defaults when the user provides templates with placeholders");
-      expect(agentStream).toContain("USE the example values as defaults");
     });
 
     it("reduces confirmation-seeking behavior", () => {
       expect(agentStream).toContain("Minimize confirmation-seeking");
-      expect(agentStream).toContain("EXECUTE, not ask for permission");
+      expect(agentStream).toContain("Only ask when truly ambiguous AND high-stakes");
     });
 
     it("instructs auto-proceed with reasonable defaults", () => {
-      expect(agentStream).toContain("Auto-proceed with reasonable defaults");
-      expect(agentStream).toContain("industry-standard defaults");
+      expect(agentStream).toContain("Make reasonable decisions and proceed");
+      expect(agentStream).toContain("Use your best judgment");
     });
 
     it("instructs to never ask the same question twice", () => {
       expect(agentStream).toContain("Never ask the same question twice");
     });
 
-    it("instructs to reduce intermediate status messages", () => {
-      expect(agentStream).toContain("Reduce intermediate status messages");
+    it("instructs autonomous execution without unnecessary messages", () => {
+      expect(agentStream).toContain("Be maximally autonomous");
     });
 
     it("instructs file attachments are the primary context", () => {
@@ -37,8 +36,8 @@ describe("Session 32: Issues from User Chat Transcript", () => {
     });
 
     it("instructs to resume exactly where left off on 'continue'", () => {
-      expect(agentStream).toContain('user says "continue"');
-      expect(agentStream).toContain("Resume exactly where you left off");
+      expect(agentStream).toContain('says "continue" or "keep going"');
+      expect(agentStream).toContain("resume exactly where you left off");
     });
   });
 
@@ -136,9 +135,9 @@ describe("Session 32: Issues from User Chat Transcript", () => {
       expect(indicator).toContain("pass");
     });
 
-    it("Limitless mode system prompt instructs agent to use report_convergence", () => {
-      expect(agentStream).toContain("CONVERGENCE REPORTING");
-      expect(agentStream).toContain("report_convergence");
+    it("report_convergence tool exists as optional user-configurable feature", () => {
+      const agentTools = readFile("server/agentTools.ts");
+      expect(agentTools).toContain("report_convergence");
     });
 
     it("streamWithRetry handles convergence SSE events", () => {
@@ -152,13 +151,13 @@ describe("Session 32: Issues from User Chat Transcript", () => {
 
     it("system prompt instructs agent to track what has been asked", () => {
       expect(agentStream).toContain("Never ask the same question twice");
-      expect(agentStream).toContain("use your best judgment and proceed");
+      expect(agentStream).toContain("Use your best judgment");
     });
 
     it("Limitless mode has explicit instructions about placeholder handling", () => {
       expect(agentStream).toContain("template");
       expect(agentStream).toContain("placeholder");
-      expect(agentStream).toContain("example values as defaults");
+      expect(agentStream).toContain("defaults");
     });
   });
 });

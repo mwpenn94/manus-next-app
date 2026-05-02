@@ -339,13 +339,13 @@ describe("Mode transport and MAX mode enforcement", () => {
     expect(content).toContain("Leave no stone unturned");
   });
 
-  it("LIMITLESS mode system prompt includes recursive convergence requirements", async () => {
+  it("LIMITLESS mode system prompt includes unlimited depth and continuity", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    expect(content).toContain("MODE: LIMITLESS (Recursive Optimization Until Convergence)");
-    expect(content).toContain("NO constraints on your execution");
-    expect(content).toContain("recursive optimization");
-    expect(content).toContain("convergence");
+    expect(content).toContain("MODE: LIMITLESS (Unlimited Depth & Continuity)");
+    expect(content).toContain("NO constraints on your execution depth");
+    expect(content).toContain("Unlimited depth");
+    expect(content).toContain("Continuous operation");
     expect(content).toContain("Honor user termination conditions");
     expect(content).toContain("Self-monitoring");
   });

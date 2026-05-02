@@ -7067,3 +7067,34 @@
 - [x] Verify AEGIS integrated into main agent loop (invokeWithAegisRetry at line 1304)
 - [x] Verify Sovereign routing service exists with circuit breakers
 - [x] Integrate Sovereign provider routing into AEGIS LLM path (opt-in via useSovereignRouting flag)
+
+## Session 32b: Critical Fixes from User Video Feedback
+### CRITICAL: Remove Misapplied Optimization Framework
+- [x] Remove embedded Universal Holistic Optimization temperature model from limitless mode system prompt (it was a PROCESS guide, not app content)
+- [x] Limitless mode should ONLY mean: unlimited context depth and continuous operation for as long as user needs
+- [x] Revert agentStream.ts convergence reporting section to simple operational instructions
+### CRITICAL: Chat Message Ordering & Visibility
+- [x] Fix progress messages being hidden or placed elsewhere instead of inline in chat — cards now render as inlineCards within the assistant message, not separate message bubbles
+- [x] Ensure agent conversational text appears BEFORE artifacts/documents (not after or hidden) — inline cards render after text in same bubble
+- [x] Fix messages being placed in wrong order relative to tool execution steps — cards are part of the message, not separate entries
+### CRITICAL: Artifact/Document Card Consistency
+- [x] Fix inconsistency between preview cards and links for documents — added system prompt instruction to NOT repeat download links when card is shown
+- [x] Fix broken spreadsheet navigation (clicking spreadsheet artifacts breaks app) — onDownload now uses anchor download instead of window.open
+- [x] Align artifact display with Manus pattern (consistent card format for all types) — all artifacts render as inline cards within the message
+### CRITICAL: False-Positive Task Completion
+- [x] Fix agent rendering completion without useful content/explanation/reasoning — added quality gate: shallow responses (<200 chars, 0 tools, <3 turns) are forced to elaborate
+- [x] Agent must provide substantive response text, not just tool results — acknowledgment-only responses after tool usage are forced to explain
+- [x] Ensure agent doesn't claim "done" without delivering actual value to user — quality gate prevents premature termination
+### CRITICAL: GitHub/App Dev Features
+- [x] Fix GitHub features that are broken/failing in production — enhanced triggerAsyncDeploy to support build-required repos (React/Vite/Next.js)
+- [x] Fix git clone authentication — now uses getGitHubToken for authenticated cloning of private repos
+- [ ] Fix pass36 test: token exposure in result strings
+- [ ] Fix pass37b test: GitHub in MORE_ITEMS
+- [ ] Fix p20 test: window.open pattern match
+### CRITICAL: Remove ALL Optimization Framework Traces from App
+- [x] REVISED: report_convergence tool KEPT as user-configurable feature (Settings > Reasoning & Convergence)
+- [x] REVISED: ConvergenceIndicator KEPT — only activates when user opts in via settings
+- [x] REVISED: onConvergence handler KEPT — only fires when user has convergence enabled
+- [x] REVISED: convergence cardType KEPT — renders when user has feature enabled
+- [x] Removed mandated convergence from limitless mode system prompt — no longer auto-injected
+- [x] Removed Sovereign integration from aegisLlm.ts (was misapplied)

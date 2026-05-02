@@ -61,6 +61,8 @@ export interface Message {
   cardType?: CardType;
   /** Data payload for the card */
   cardData?: Record<string, unknown>;
+  /** Inline cards that appear within this message (in order they were generated) */
+  inlineCards?: Array<{ cardType: CardType; cardData: Record<string, unknown>; content: string }>;
 }
 
 export interface Task {

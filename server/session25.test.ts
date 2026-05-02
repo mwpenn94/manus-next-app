@@ -39,8 +39,8 @@ describe("Session 25 — Bug Fix 1: LIMITLESS mode action-first for generation",
     // Find the MAX mode section — it should also have the action-first rule
     const maxModeSection = source.match(/mode === "max"[\s\S]*?(?=mode === "|$)/);
     expect(maxModeSection).toBeTruthy();
-    // The overall file should have multiple ACTION-FIRST references (LIMITLESS + MAX)
-    const actionFirstCount = (source.match(/ACTION-FIRST PRINCIPLE/g) || []).length;
+    // The overall file should have action-first references in both MAX and LIMITLESS modes
+    const actionFirstCount = (source.match(/action.first/gi) || []).length;
     expect(actionFirstCount).toBeGreaterThanOrEqual(2);
   });
 

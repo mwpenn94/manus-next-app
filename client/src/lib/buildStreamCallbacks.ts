@@ -6,6 +6,7 @@
  */
 
 import type { StreamCallbacks } from "./streamWithRetry";
+import type { CardType } from "@/contexts/TaskContext";
 
 export interface StreamState {
   accumulated: string;
@@ -13,6 +14,8 @@ export interface StreamState {
   images: string[];
   /** Source URLs collected from tool results (web_search, read_webpage) for citation linking */
   sourceUrls: Array<{ name: string; url: string }>;
+  /** Inline cards collected during streaming — attached to the final assistant message */
+  inlineCards: Array<{ cardType: CardType; cardData: Record<string, unknown>; content: string }>;
   _webappPreviewsSeen?: Set<string>;
   _previewRefreshCounter?: number;
 }
@@ -50,6 +53,8 @@ export interface StreamStateSetters {
   setAegisMeta?: (meta: { classification?: { taskType: string; complexity: string; confidence?: number }; planSteps?: string[]; quality?: Record<string, number> } | null) => void;
   /** Connector context state setter (which services were injected into agent context) */
   setConnectorContext?: (data: { id: string; name: string; relevanceScore: number }[] | null) => void;
+  /** Inline cards state setter — syncs streamState.inlineCards to React state for rendering in streaming bubble */
+  setStreamInlineCards?: (cards: Array<{ cardType: CardType; cardData: Record<string, unknown>; content: string }>) => void;
 }
 
 /**
@@ -178,13 +183,13 @@ export function buildStreamCallbacks(
       const isDocx = fmt === "docx" || urlLower.endsWith(".docx");
       const isXlsx = fmt === "xlsx" || urlLower.endsWith(".xlsx") || fmt === "csv" || urlLower.endsWith(".csv");
       const isRichDoc = isPdf || isDocx || isXlsx;
-      if (isRichDoc && setters.addMessage) {
+      if (isRichDoc) {
         const outputType = isXlsx ? "spreadsheet" : "document";
         const formatLabel = isPdf ? "PDF" : isDocx ? "Word" : isXlsx ? "Spreadsheet" : "Document";
-        setters.addMessage(setters.taskId, {
-          role: "assistant",
-          content: `\uD83D\uDCC4 **${docTitle}** is ready`,
-          cardType: "interactive_output" as const,
+        // Collect as inline card — will be attached to the final assistant message
+        state.inlineCards.push({
+          cardType: "interactive_output",
+          content: `📄 **${docTitle}** is ready`,
           cardData: {
             outputType,
             title: docTitle,
@@ -194,8 +199,9 @@ export function buildStreamCallbacks(
             downloadUrl: doc.url,
           },
         });
+        setters.setStreamInlineCards?.([...state.inlineCards]);
       } else {
-        // Plain or no addMessage: inline markdown link
+        // Plain format: inline markdown link in the stream text
         state.accumulated += `\n\n\uD83D\uDCC4 **${docTitle}** — [Download Document](${doc.url})\n\n`;
         setters.accumulatedRef.current = state.accumulated;
         setters.setStreamContent(state.accumulated);
@@ -274,29 +280,25 @@ export function buildStreamCallbacks(
       setters.setIsReconnecting?.(true);
     },
     onWebappPreview: (preview: { name: string; url: string; description?: string; projectExternalId?: string }) => {
-      // Create a webapp preview card message in the chat — but only once per app name.
-      // The server may fire multiple webapp_preview events for the same project; dedup here.
-      if (setters.addMessage) {
-        // Track which webapp names have already been shown in this stream session
-        if (!state._webappPreviewsSeen) state._webappPreviewsSeen = new Set<string>();
-        const seen = state._webappPreviewsSeen;
-        if (seen.has(preview.name)) return; // Already shown this app preview
-        seen.add(preview.name);
+      // Collect webapp preview as inline card — dedup by app name within this stream session.
+      if (!state._webappPreviewsSeen) state._webappPreviewsSeen = new Set<string>();
+      const seen = state._webappPreviewsSeen;
+      if (seen.has(preview.name)) return; // Already shown this app preview
+      seen.add(preview.name);
 
-        setters.addMessage(setters.taskId, {
-          role: "assistant",
-          content: "", // Card renders visually; no text content needed
-          cardType: "webapp_preview" as const,
-          cardData: {
-            appName: preview.name,
-            previewUrl: preview.url,
-            status: "running",
-            hasUnpublishedChanges: true,
-            projectExternalId: preview.projectExternalId,
-          },
-        });
-      }
-      // No fallback text injection — the card IS the message
+      // No fallback text injection — webapp preview renders as inline card only
+      state.inlineCards.push({
+        cardType: "webapp_preview",
+        content: "", // Card renders visually; no text content needed
+        cardData: {
+          appName: preview.name,
+          previewUrl: preview.url,
+          status: "running",
+          hasUnpublishedChanges: true,
+          projectExternalId: preview.projectExternalId,
+        },
+      });
+      setters.setStreamInlineCards?.([...state.inlineCards]);
     },
     onConfirmationGate: () => {
       // Gate system removed — tools execute autonomously

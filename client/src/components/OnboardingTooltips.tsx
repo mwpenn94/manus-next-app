@@ -44,7 +44,7 @@ const STEPS: OnboardingStep[] = [
   {
     id: "modes",
     title: "Choose Your Mode",
-    description: "Lite for quick answers, Standard for thorough work, Max for complex multi-step projects, Limitless for recursive optimization until convergence.",
+    description: "Lite for quick answers, Standard for thorough work, Max for complex multi-step projects, Limitless for unlimited depth and continuity.",
     icon: Zap,
     hint: "Start with Standard mode — you can always switch mid-task if you need more power.",
   },

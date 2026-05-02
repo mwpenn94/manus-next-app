@@ -2826,7 +2826,7 @@ export async function executeTool(
     case "run_command":
       return executeRunCommand(args);
     case "git_operation":
-      return executeGitOperation(args);
+      return executeGitOperation(args, context);
     case "deploy_webapp":
       return executeDeployWebapp(args, context);
     case "report_convergence":
@@ -3680,7 +3680,7 @@ async function executeGitOperation(args: {
   message?: string;
   remote_url?: string;
   files?: string;
-}): Promise<ToolResult> {
+}, context?: ToolContext): Promise<ToolResult> {
   const { execSync } = await import("child_process");
 
   if (!activeProjectDir && args.operation !== "clone") {
@@ -3717,7 +3717,7 @@ async function executeGitOperation(args: {
       case "log":
         output = execSync(`cd ${dir} && git log --oneline -10`, { timeout: 5000 }).toString();
         break;
-      case "clone":
+      case "clone": {
         if (!args.remote_url) return { success: false, result: "Remote URL is required for clone." };
         // Sanitize remote_url: only allow valid git URLs (https://, git://, ssh://)
         if (!/^(https?:\/\/|git:\/\/|git@)[\w.\-\/:@]+$/.test(args.remote_url)) {
@@ -3725,9 +3725,31 @@ async function executeGitOperation(args: {
         }
         const cloneName = args.remote_url.split("/").pop()?.replace(".git", "").replace(/[^a-zA-Z0-9_\-]/g, "") || "cloned-repo";
         const cloneDir = `/tmp/webapp-projects/${cloneName}`;
-        output = execSync(`git clone '${args.remote_url.replace(/'/g, "")}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+        
+        // Try to use GitHub token for authenticated clone (supports private repos)
+        let cloneUrl = args.remote_url.replace(/'/g, "");
+        if (context?.userId && cloneUrl.includes("github.com")) {
+          try {
+            const { getUserConnectors } = await import("./db");
+            const conns = await getUserConnectors(context.userId);
+            const ghConn = conns.find((c: any) => c.connectorId === "github" && c.status === "connected");
+            if (ghConn?.accessToken) {
+              // Inject token into HTTPS URL for authenticated clone
+              cloneUrl = cloneUrl.replace("https://github.com/", `https://x-access-token:${ghConn.accessToken}@github.com/`);
+            }
+          } catch (tokenErr: any) {
+            // Fall back to unauthenticated clone
+            console.warn(`[git_operation] Could not get GitHub token: ${tokenErr.message}`);
+          }
+        }
+        
+        // Ensure target directory doesn't already exist
+        try { execSync(`rm -rf ${cloneDir}`, { timeout: 5000 }); } catch {}
+        
+        output = execSync(`git clone '${cloneUrl}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
         activeProjectDir = cloneDir;
         break;
+      }
       case "remote_add":
         if (!args.remote_url) return { success: false, result: "Remote URL is required." };
         // Sanitize remote_url

@@ -129,7 +129,7 @@ import WebappPreviewCard from "@/components/WebappPreviewCard";
 import CheckpointCard from "@/components/CheckpointCard";
 import TaskCompletedCard from "@/components/TaskCompletedCard";
 import ConvergenceIndicator from "@/components/ConvergenceIndicator";
-import InteractiveOutputCard from "@/components/InteractiveOutputCard";
+import InteractiveOutputCard, { type OutputType } from "@/components/InteractiveOutputCard";
 import PublishSheet from "@/components/PublishSheet";
 import SiteLiveSheet from "@/components/SiteLiveSheet";
 import { MediaCapturePanel } from "@/components/MediaCapturePanel";
@@ -1000,7 +1000,17 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             }}
             onDownload={() => {
               const url = message.cardData?.downloadUrl as string;
-              if (url) window.open(url, "_blank", "noopener,noreferrer");
+              if (url) {
+                // Use download anchor to prevent navigation breaking for non-renderable files
+                const a = document.createElement("a");
+                a.href = url;
+                const safeName = ((message.cardData?.title as string) || "download").replace(/[<>:"/\\|?*\x00-\x1f]/g, "_").slice(0, 200);
+                a.download = safeName;
+                a.rel = "noopener noreferrer";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              }
             }}
           />
         ) : (
@@ -1127,6 +1137,40 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+        )}
+
+        {/* Inline cards — rendered in order after the message text (documents, previews, etc.) */}
+        {message.inlineCards && message.inlineCards.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {message.inlineCards.map((card, idx) => {
+              if (card.cardType === "interactive_output") {
+                return (
+                  <InteractiveOutputCard
+                    key={`inline-card-${idx}`}
+                    type={(card.cardData.outputType as OutputType) || "document"}
+                    title={(card.cardData.title as string) || "Document"}
+                    description={(card.cardData.description as string) || ""}
+                    previewUrl={card.cardData.previewUrl as string | undefined}
+                    openUrl={card.cardData.openUrl as string | undefined}
+                    downloadUrl={card.cardData.downloadUrl as string | undefined}
+                  />
+                );
+              }
+              if (card.cardType === "webapp_preview") {
+                return (
+                  <WebappPreviewCard
+                    key={`inline-card-${idx}`}
+                    appName={(card.cardData.appName as string) || "Web App"}
+                    previewUrl={(card.cardData.previewUrl as string) || ""}
+                    status={(card.cardData.status as "running" | "deploying" | "published" | "not_published") || "running"}
+                    hasUnpublishedChanges={card.cardData.hasUnpublishedChanges as boolean}
+                    refreshKey={previewRefreshKey || 0}
+                  />
+                );
+              }
+              return null;
+            })}
           </div>
         )}
 
@@ -2525,6 +2569,10 @@ export default function TaskView() {
   const [branchCompareOpen, setBranchCompareOpen] = useState(false);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
+  // Inline streaming cards: track card message IDs added during this stream session.
+  // These are hidden from the main message list during streaming and rendered inline
+  // Inline cards collected during streaming — rendered within the streaming bubble after text content.
+  const [streamInlineCards, setStreamInlineCards] = useState<Array<{ cardType: string; cardData: Record<string, unknown>; content: string }>>([]);
   const [agentMode, setAgentMode] = useState<AgentMode>(() => {
     try {
       // Primary: read model ID and convert to mode
@@ -2932,25 +2980,25 @@ export default function TaskView() {
       accumulatedRef.current = "";
       actionsRef.current = [];
       let accumulated = "";
-      const actions: AgentAction[] = [];
+         const actions: AgentAction[] = [];
       const images: string[] = [];
-
+      // Reset inline stream cards for this stream session
+      setStreamInlineCards([]);
       try {
         // System prompt is handled server-side (agentStream.ts)
         const messages = [
           { role: "user" as const, content: firstMsg.content },
         ];
-
         const controller = new AbortController();
         abortControllerRef.current = controller;
-
-        const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
+        const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard, setAegisMeta, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
+          setStreamInlineCards,
           getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
           onPreviewUrlUpdate: (url: string) => {
@@ -2976,7 +3024,7 @@ export default function TaskView() {
         // Mark all remaining active actions as done
         setStepProgress(null);
         const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
-        addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+        addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
         // Mark task as completed after successful streaming
         updateTaskStatus(task.id, "completed");
         // Auto-generate title after first agent response (only if title looks like user's raw input))
@@ -3014,6 +3062,8 @@ export default function TaskView() {
         setStreamImages([]);
         setStepProgress(null);
         setAegisMeta(null);
+        // Clear inline stream cards — they're now part of the final message's inlineCards field
+        setStreamInlineCards([]);
       }
     })();
   }, [task?.id, task?.messages.length, task?.autoStreamed, streaming, bridgeStatus, bridgeSend, addMessage, markAutoStreamed, agentMode, updateTaskStatus]);
@@ -3094,15 +3144,15 @@ export default function TaskView() {
     streamingTaskIdRef.current = task.id;
     accumulatedRef.current = "";
     actionsRef.current = [];
-
+    // Reset inline stream cards for this stream session
+    setStreamInlineCards([]);
     let accumulated = "";
     const actions: AgentAction[] = [];
     const images: string[] = [];
-
     try {
       // Build conversation history (system prompt is handled server-side)
       // Send up to 50 messages for full context — server has a 200-message limit guard.
-      // Filter out card-only messages (empty content with cardType) since they're UI-only.
+      // Filter out card-only messages (empty content with cardType) since they're UI-only.y.
       const conversationMessages = task.messages
         .filter(m => m.content.trim() || m.role === "user") // Keep all user msgs + non-empty assistant msgs
         .filter(m => !(m.role === "assistant" && isStreamErrorMessage(m.content))) // Skip error messages from context
@@ -3185,13 +3235,14 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
+        setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
           onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -3207,7 +3258,7 @@ export default function TaskView() {
       accumulated = streamState.accumulated;
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
-      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
         if (accumulated.trim()) {
@@ -3233,6 +3284,8 @@ export default function TaskView() {
       setKnowledgeRecalled(null);
       setStreamImages([]);
       setStepProgress(null);
+      // Clear inline stream card tracking
+      setStreamInlineCards([]);
     }
   }, [input, task, addMessage, bridgeStatus, bridgeSend, files, clearFiles]);
 
@@ -3271,13 +3324,14 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
+        setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -3296,7 +3350,7 @@ export default function TaskView() {
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
-      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
 
       // ── Auto-speak the response via Edge TTS ──
       handsFree.notifyComplete(accumulated);
@@ -3375,13 +3429,14 @@ export default function TaskView() {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
+        setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -3400,7 +3455,7 @@ export default function TaskView() {
 
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
-      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
         if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
@@ -3460,13 +3515,14 @@ export default function TaskView() {
         .map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }));
       const controller = new AbortController();
       abortControllerRef.current = controller;
-      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [] };
+      const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
+        setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
         onPreviewRefreshSignal: () => setPreviewRefreshKey((k) => k + 1),
         onPreviewUrlUpdate: (url: string) => {
@@ -3482,7 +3538,7 @@ export default function TaskView() {
       accumulated = streamState.accumulated;
       setStepProgress(null);
       const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
-      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
+      addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
       toast.success("Message edited and re-sent");
     } catch (err: any) {
       if (err.name === "AbortError") {
@@ -4273,11 +4329,15 @@ export default function TaskView() {
               {` • Model: ${agentMode}`}
             </div>
           </div>
-          {/* During streaming, hide card-type messages that were added mid-stream
-              (convergence, system_notice, context_compressed) to prevent scattered
-              progress indicators. They stay in the message list for history. */}
+          {/* During streaming, hide card messages added mid-stream from the main list.
+              They render inline within the streaming bubble for proper ordering (progress → text → cards).
+              After streaming ends, streamCardIds is cleared and they appear normally in history. */}
           {(streaming
-            ? task.messages.filter(m => !m.cardType || ["webapp_preview", "webapp_deployed", "browser_auth", "task_pause", "take_control", "checkpoint", "task_completed", "interactive_output", "system_notice"].includes(m.cardType))
+            ? task.messages.filter(m => {
+                // Hide convergence cards during streaming (they're progress-only)
+                if (m.cardType === "convergence") return false;
+                return true;
+              })
             : task.messages
           ).map((msg, i) => (
             <motion.div
@@ -4368,6 +4428,37 @@ export default function TaskView() {
                     {streaming && (
                       <span className="inline-block w-[2px] h-[1.1em] bg-primary ml-0.5 align-text-bottom animate-pulse" aria-hidden="true" />
                     )}
+                  </div>
+                )}
+                {/* Inline streaming cards: rendered from streamState.inlineCards during streaming */}
+                {streamInlineCards.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {streamInlineCards.map((card, idx) => (
+                      <div key={`stream-card-${idx}`}>
+                        {card.cardType === "webapp_preview" && (
+                          <WebappPreviewCard
+                            appName={(card.cardData as any)?.appName || "Web App"}
+                            previewUrl={(card.cardData as any)?.previewUrl || ""}
+                            status={(card.cardData as any)?.status || "running"}
+                            domain={(card.cardData as any)?.domain}
+                            publishedUrl={(card.cardData as any)?.publishedUrl}
+                            hasUnpublishedChanges={(card.cardData as any)?.hasUnpublishedChanges}
+                            projectExternalId={(card.cardData as any)?.projectExternalId}
+                            refreshKey={previewRefreshKey}
+                          />
+                        )}
+                        {card.cardType === "interactive_output" && (
+                          <InteractiveOutputCard
+                            type={(card.cardData as any)?.outputType || (card.cardData as any)?.type || "document"}
+                            title={(card.cardData as any)?.title || card.content}
+                            description={(card.cardData as any)?.description}
+                            previewUrl={(card.cardData as any)?.previewUrl}
+                            openUrl={(card.cardData as any)?.openUrl}
+                            downloadUrl={(card.cardData as any)?.downloadUrl}
+                          />
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
