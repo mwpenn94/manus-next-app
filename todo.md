@@ -7014,3 +7014,30 @@
 - [x] Add self-discovery notification UI in TaskView (above input bar, with countdown, accept/dismiss)
 - [x] Add aria-live/role accessibility attributes to notification
 - [x] Write tests for self-discovery feature (15 tests passing)
+
+## Session 31: Critical Issues from Screen Recording (Deep Alignment)
+
+### CRITICAL-001: Agent not streaming conversational text to chat
+- [x] Diagnose why agent only shows artifacts (documents, images) but not conversational text
+- [x] Fix agent to always stream conversational text to chat alongside tool results (VISIBLE TEXT OUTPUT rule + safety net synthesis)
+- [x] Ensure text appears BEFORE and AFTER artifacts (context + explanation)
+
+### CRITICAL-002: Agent ignoring user prompts and taking unprompted actions
+- [x] Fix agent hallucinating actions — added FRUSTRATION DETECTION + LATEST MESSAGE PRIORITY rules
+- [x] Add instruction to ALWAYS address the user's message directly before any tool use
+- [x] Add guard against unprompted tool calls (frustration regex forces text-only response)
+
+### CRITICAL-003: Agent failing to respond at all (no output)
+- [x] Diagnose why agent shows "thinking" but produces no output — LLM hanging without timeout
+- [x] Add fallback response when LLM returns empty/null content (safety net synthesis call)
+- [x] Add timeout detection — 120s AbortController on LLM fetch with retry
+
+### HIGH-001: Lack of progress feedback during long operations
+- [x] Verified: ActiveToolIndicator + heartbeat + step progress already implemented
+- [x] Verified: elapsed time shown via ETA estimation in StreamingStepsCollapsible
+- [x] Verified: partial results stream as they become available (SSE events per tool)
+
+### Additional Fixes from Video Analysis
+- [x] Mobile landscape orientation CSS support added
+- [x] Agent complaint/correction handling (frustration detection regex)
+- [x] Session 31 agent quality tests (33 tests passing)

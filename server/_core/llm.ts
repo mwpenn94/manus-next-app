@@ -357,11 +357,16 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // 120s timeout prevents hanging requests from blocking the agent loop
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120_000);
       const response = await fetch(apiUrl, {
         method: "POST",
         headers,
         body,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         return (await response.json()) as InvokeResult;
@@ -395,6 +400,18 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     } catch (err: any) {
       // Network-level errors (ECONNREFUSED, ETIMEDOUT, etc.)
       if (err instanceof LLMError) throw err;
+      // Convert AbortError (timeout) into a retryable error
+      if (err.name === "AbortError") {
+        const timeoutErr = new LLMError("LLM request timed out after 120s", 408, true);
+        if (attempt < MAX_RETRIES) {
+          const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+          console.warn(`[LLM] Timeout on attempt ${attempt + 1}/${MAX_RETRIES + 1}, retrying in ${backoffMs}ms`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          lastError = timeoutErr;
+          continue;
+        }
+        throw timeoutErr;
+      }
 
       if (attempt < MAX_RETRIES) {
         const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);

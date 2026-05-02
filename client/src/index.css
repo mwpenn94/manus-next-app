@@ -589,3 +589,33 @@ button:active:not(:disabled), a:active, [role="button"]:active {
   .print-header .meta { font-size: 11px; color: #666 !important; margin-top: 4px; }
 }
 .print-header { display: none; }
+
+/* Landscape orientation support for mobile */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  /* Reduce vertical padding in landscape to maximize content area */
+  .mobile-bottom-nav, #mobile-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    height: 3rem !important;
+  }
+  /* Ensure the main content area fills available space */
+  #main-content {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+  }
+  /* Reduce header height in landscape */
+  [data-task-header] {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  /* Ensure chat messages area uses full height */
+  [data-print-container] {
+    max-height: calc(100dvh - 7rem) !important;
+  }
+}
+
+/* Force proper orientation handling - prevent sideways rendering */
+html, body, #root {
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+}

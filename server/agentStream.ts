@@ -456,6 +456,14 @@ Example comparison format:
 
 ## SCOPE DISCIPLINE (CRITICAL)
 
+**LATEST MESSAGE PRIORITY**: The user's MOST RECENT message is ALWAYS your primary directive. If the user sends a new message:
+- Address their new message FIRST, even if you were in the middle of something else.
+- Do NOT continue previous work unless the new message explicitly says "continue" or "keep going".
+- Do NOT ignore the new message and do something unrelated.
+- If the new message is a question, ANSWER IT. If it's a new request, DO IT.
+- If the user is COMPLAINING or expressing frustration (e.g., "why did you...", "you completed prematurely", "I didn't ask for that", "stop"), IMMEDIATELY stop all tool use and respond with TEXT ONLY addressing their concern. Do NOT call any tools when the user is upset.
+- If the user asks "why is there no text?" or similar, respond in TEXT explaining what happened and what you can do differently.
+
 You MUST produce ONLY what the user asked for, then STOP. Specifically:
 - If the user asks for ONE thing (e.g., "generate a PDF"), produce ONLY that one thing, then present it and wait for the next instruction.
 - **NEVER** autonomously decide to demonstrate additional capabilities after completing the requested task.
@@ -506,6 +514,17 @@ CRITICAL: The user interface ALREADY shows tool execution steps visually (tool n
 - RIGHT: Just call the tool. The UI shows the user what's happening.
 - NEVER say "Let me [tool action]" or "I'll now [tool action]" — just DO it.
 - After tool calls, go straight to insights/results. Skip the play-by-play.
+
+## CRITICAL: ALWAYS PRODUCE VISIBLE TEXT OUTPUT
+Your text responses are what the user sees in the chat. Tool calls are shown as collapsible steps, but your TEXT is the main conversation.
+- **EVERY task MUST end with a text-only response** (no tool calls) that presents findings, results, or acknowledgment directly to the user.
+- If you used tools to research, your FINAL turn must present the research findings as readable text.
+- If you generated an image or document, your FINAL turn must acknowledge it with context.
+- If the user asks a question, your FINAL turn must ANSWER the question in text.
+- NEVER end a conversation with only tool calls and no visible text. The user should ALWAYS see a conversational response.
+- When the user sends a follow-up message, ALWAYS address their message directly. Do NOT ignore what they said.
+- If you have nothing more to do, say so briefly. An empty response is NEVER acceptable.
+- If a tool call fails, acknowledge the failure in text and explain what happened.
 
 ## OUTPUT FORMATTING
 
@@ -913,8 +932,14 @@ ${memoryContext}
       }
     }
 
+    // Detect user frustration/complaints — force text-only response
+    const isUserFrustrated = /\b(why (did|didn't|is|isn't|are|aren't) (you|there|it|none|no)|you completed prematurely|I didn't ask|stop (doing|generating|making)|what happened|no response|not responding|broken|doesn't work|why is none|you ignored|ignoring me|wrong|that's not what I|I said)\b/i.test(lastUserText);
+    if (isUserFrustrated) {
+      systemPrompt += `\n\n## USER FRUSTRATION DETECTED — TEXT-ONLY RESPONSE REQUIRED\nThe user appears frustrated or is complaining about your previous behavior. You MUST:\n1. Respond ONLY with text — do NOT call any tools.\n2. Acknowledge their concern directly and specifically.\n3. Explain what happened (if you can infer it from context).\n4. Ask how you can help them better.\nDo NOT generate images, documents, or run any tools. Just talk to the user.`;
+    }
+
     // Conditionally inject DEMONSTRATE EACH protocol — ONLY when user explicitly asks to demonstrate
-    const wantsDemonstration = /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|what\s+can\s+you\s+do.*(demonstrate|show)|go\s+until\s+done|do\s+them\s+all|show\s+me\s+all)\b/i.test(lastUserText);
+    const wantsDemonstration = !isUserFrustrated && /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|what\s+can\s+you\s+do.*(demonstrate|show)|go\s+until\s+done|do\s+them\s+all|show\s+me\s+all)\b/i.test(lastUserText);
     if (wantsDemonstration) {
       systemPrompt += `\n\n## DEMONSTRATE EACH \u2014 MANUS PARITY PROTOCOL
 
@@ -2346,6 +2371,37 @@ Do NOT use browser_action to test it — present confidently since the deploy su
         const { updateTelemetryOutcome } = await import("./db");
         await updateTelemetryOutcome(pendingTelemetryId, "resolved", turn - telemetryTurnAtIntervention);
       } catch { /* telemetry is non-critical */ }
+    }
+
+    // SAFETY NET: If the agent loop ended with tool calls but no visible text, force a final text response
+    if (!finalContent.trim() && completedToolCalls > 0) {
+      console.log(`[Agent] No visible text after ${completedToolCalls} tool calls — forcing final synthesis`);
+      try {
+        conversation.push({
+          role: "user",
+          content: "You have completed your tool calls but haven't provided a visible response to the user yet. Now produce a brief, direct text response summarizing what you accomplished or answering the user's question. Do NOT call any more tools — just respond in text.",
+        });
+        const { invokeLLM } = await import("./_core/llm");
+        const synthResponse = await invokeLLM({
+          messages: [{ role: "system", content: "You are a helpful assistant. Provide a concise summary response based on the conversation context. Do not use any tools." }, ...conversation],
+        });
+        const synthRaw = synthResponse?.choices?.[0]?.message?.content;
+        const synthText = typeof synthRaw === "string" ? synthRaw : "";
+        if (synthText.trim()) {
+          streamTextAsChunks(safeWrite, synthText);
+          finalContent = synthText;
+        } else {
+          // Absolute fallback
+          const fallback = "Done. Let me know if you need anything else.";
+          sendSSE(safeWrite, { delta: fallback });
+          finalContent = fallback;
+        }
+      } catch (e) {
+        console.error("[Agent] Final synthesis failed:", e);
+        const fallback = "I've completed the requested actions. Let me know if you need anything else.";
+        sendSSE(safeWrite, { delta: fallback });
+        finalContent = fallback;
+      }
     }
 
     // Signal completion — but check if generation requests actually produced a deliverable
