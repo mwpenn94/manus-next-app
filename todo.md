@@ -7177,12 +7177,12 @@
 - [x] FUNC-3: Share link — VERIFIED ALREADY IMPLEMENTED: ShareDialog creates public share URLs via trpc.share.create
 
 ## Priority Focus Areas (User Directive)
-- [ ] UI/UX structure/layout/flow — ensure intuitive, streamlined, Manus-parity layout
-- [ ] AI reasoning quality — ensure agent produces high-quality, relevant, well-structured responses
-- [ ] Task performance — speed, responsiveness, no unnecessary delays or re-renders
+- [x] UI/UX structure/layout/flow — VERIFIED (Passes 8,11,15,25,33,61,75,79,82,94): Document-style layout, left-aligned messages, responsive breakpoints, workspace panel, proper spacing
+- [x] AI reasoning quality — VERIFIED (Passes 9,12,16,42,46,63,66,69,80,88,91): Step-by-step reasoning, failover protocol, tool chaining, research-to-deliverable, quality gates
+- [x] Task performance — VERIFIED (Passes 10,17,43,64,77,84,93): No unnecessary delays, instant scroll, throttled updates, minimal LLM call overhead
 
 ## Model Tier Benchmarking & Parity (User Directive)
-- [ ] TIER-1: Max tier must be equivalent to Manus Max — verify maxTurns, maxTokens, continuation rounds match
-- [ ] TIER-2: Limitless tier must exceed Max on context window, continuous use, depth — NO arbitrary limits
-- [ ] TIER-3: Limitless should honor user's prompt without stopping — truly infinite until task completion
-- [ ] TIER-4: Verify no hardcoded caps that would artificially limit Limitless tier behavior
+- [x] TIER-1: Max tier equivalent to Manus Max — FIXED: maxTurns=200, maxTokens=65536, continuationRounds=100, thinkingBudget=4096, conversationSlice=100, serverCap=500
+- [x] TIER-2: Limitless exceeds Max — FIXED: All limits=Infinity, thinkingBudget=8192, compressionThreshold=180K, no conversation slice, no server message cap
+- [x] TIER-3: Limitless truly infinite — FIXED: maxTurns=∞, maxContinuationRounds=∞, maxTokensPerCall=∞, runs until task completion
+- [x] TIER-4: No hardcoded caps — VERIFIED: All limits tier-aware (client conversationHistoryLimit, server messageCap, agentStream maxContinuationRounds, compression threshold)
