@@ -127,6 +127,7 @@ export async function cloneAndBuild(options: CloneAndBuildOptions): Promise<Clon
     } catch (cloneErr: any) {
       const errMsg = cloneErr.stdout?.toString() || cloneErr.stderr?.toString() || cloneErr.message || "";
       log(`Clone failed: ${errMsg.slice(0, 500)}`);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* best-effort */ }
       return {
         success: false,
         buildLog,
@@ -177,6 +178,7 @@ export async function cloneAndBuild(options: CloneAndBuildOptions): Promise<Clon
     } catch (installErr: any) {
       const errMsg = installErr.stdout?.toString() || installErr.stderr?.toString() || installErr.message || "";
       log(`Install failed: ${errMsg.slice(0, 1000)}`);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* best-effort */ }
       return {
         success: false,
         buildLog,
@@ -205,6 +207,7 @@ export async function cloneAndBuild(options: CloneAndBuildOptions): Promise<Clon
         .slice(0, 15);
       const structuredErrors = errorLines.length > 0 ? errorLines.join("\n") : errMsg.slice(-2000);
       log(`Build failed with ${errorLines.length} error(s):\n${structuredErrors}`);
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch { /* best-effort */ }
       return {
         success: false,
         buildLog,
@@ -255,6 +258,10 @@ export async function cloneAndBuild(options: CloneAndBuildOptions): Promise<Clon
       hasBuildStep: true,
     };
   } catch (err: any) {
+    // Clean up tmpDir on failure to prevent resource leak
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch { /* best-effort cleanup */ }
     return {
       success: false,
       buildLog,

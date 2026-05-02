@@ -6867,3 +6867,11 @@
 - [x] Verified FALSE POSITIVE: Music delete (already checks userId ownership)
 - [x] Verified FALSE POSITIVE: handleEvaluate (intentional developer tool)
 - [x] Verified FALSE POSITIVE: activeProjectDir (server-set from sanitized names, not user-controlled)
+
+## Convergence Pass 11 — Cycle 2 Landscape (Pass ~600)
+- [x] CRITICAL: Git commit message injection — strip all shell metacharacters + limit to 500 chars
+- [x] HIGH: tmpDir resource leak in cloneAndBuild — added cleanup to all error return paths (clone, install, build, catch)
+- [x] Verified FALSE POSITIVE: test-login (guarded by NODE_ENV !== production)
+- [x] Verified FALSE POSITIVE: exportPdf XSS (server-generated HTML, not user-injected)
+- [x] Verified FALSE POSITIVE: slides generate unwaited async (intentional fire-and-forget with try/catch)
+- [x] Verified FALSE POSITIVE: memory race condition (low-risk for single-server)

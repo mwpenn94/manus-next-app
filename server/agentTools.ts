@@ -3702,7 +3702,9 @@ async function executeGitOperation(args: {
         break;
       case "commit":
         if (!args.message) return { success: false, result: "Commit message is required." };
-        output = execSync(`cd ${dir} && git add -A && git commit -m "${args.message.replace(/"/g, '\\"')}"`, { timeout: 10000 }).toString();
+        // Sanitize commit message: escape all shell metacharacters
+        const safeMsg = args.message.replace(/[`$\\"!#&|;(){}]/g, "").slice(0, 500);
+        output = execSync(`cd ${dir} && git add -A && git commit -m "${safeMsg}"`, { timeout: 10000 }).toString();
         break;
       case "push":
         const remote = args.remote_url ? `origin ${args.remote_url}` : "origin main";
