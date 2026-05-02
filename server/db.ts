@@ -1,4 +1,9 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, gt, inArray } from "drizzle-orm";
+
+/** Escape SQL LIKE wildcards in user input to prevent unintended pattern matching */
+function escapeLike(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&');
+}
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory, messageFeedback, type InsertMessageFeedback, personalizationPreferences, personalizationRules, personalizationLearningLog, processMetrics, improvementInitiatives, optimizationCycles, type InsertPersonalizationPreference, type InsertPersonalizationRule, type InsertPersonalizationLearningLogEntry, type InsertProcessMetric, type InsertImprovementInitiative, type InsertOptimizationCycle } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -244,7 +249,7 @@ export async function updateTaskSystemPrompt(externalId: string, userId: number,
 export async function searchTasks(userId: number, query: string, opts?: { dateFrom?: Date; dateTo?: Date; statusFilter?: string }) {
   const db = await getDb();
   if (!db) return [];
-  const pattern = `%${query}%`;
+    const pattern = `%${escapeLike(query)}%`;
 
   // Build base conditions
   const baseConds = [eq(tasks.userId, userId), eq(tasks.archived, 0)];
@@ -568,8 +573,8 @@ export async function getUserLibraryArtifacts(userId: number, opts?: { type?: st
     // Full-text search across label and content
     conditions.push(
       or(
-        like(workspaceArtifacts.label, `%${opts.search}%`),
-        like(workspaceArtifacts.content, `%${opts.search}%`)
+        like(workspaceArtifacts.label, `%${escapeLike(opts.search)}%`),
+        like(workspaceArtifacts.content, `%${escapeLike(opts.search)}%`)
       )
     );
   }
@@ -602,7 +607,7 @@ export async function getUserLibraryFiles(userId: number, opts?: { search?: stri
 
   const conditions: any[] = [eq(taskFiles.userId, userId)];
   if (opts?.search) {
-    conditions.push(like(taskFiles.fileName, `%${opts.search}%`));
+    conditions.push(like(taskFiles.fileName, `%${escapeLike(opts.search)}%`));
   }
 
   const [items, countResult] = await Promise.all([

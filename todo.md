@@ -6900,3 +6900,11 @@
 - [x] Verified FALSE POSITIVE: workspace IDOR (verifyTaskOwnershipById on all endpoints)
 - [x] Verified FALSE POSITIVE: parseCSV DoS (z.string().max(500000) limits input)
 - [x] Verified FALSE POSITIVE: atob DoS (standard binary audio decoding)
+
+## Convergence Pass 15 — Cycle 3 Landscape (Pass ~950)
+- [x] GENUINE: LIKE wildcard escaping — added escapeLike() to searchTasks, getUserLibraryArtifacts, getUserLibraryFiles, searchMemories
+- [x] FALSE POSITIVE: handleSend fetch SSRF (frontend browser fetch, not server-side)
+- [x] FALSE POSITIVE: TaskReplayOverlay DOM XSS (replaceState cleans URL, no injection)
+- [x] FALSE POSITIVE: parseCSV delimiter ReDoS (string split, not regex)
+- [x] FALSE POSITIVE: upsertTaskRating (function doesn't exist — hallucinated)
+- 3/10 CLEAN, 7/10 flagged but only 1 genuine fix needed
