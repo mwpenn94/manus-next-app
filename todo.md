@@ -7008,3 +7008,9 @@
 - [x] Add session context section to agent system prompt with usage guidelines
 - [x] Add user preference toggle for cross-task context (default: enabled)
 - [x] Write tests for cross-task memory injection (18 tests passing)
+
+### Self-Discovery Feature (Continuous Exploration)
+- [x] Create useSelfDiscovery hook (idle timer → follow-up prompt generation → countdown → auto-send)
+- [x] Add self-discovery notification UI in TaskView (above input bar, with countdown, accept/dismiss)
+- [x] Add aria-live/role accessibility attributes to notification
+- [x] Write tests for self-discovery feature (15 tests passing)

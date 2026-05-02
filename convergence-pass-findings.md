@@ -56,17 +56,36 @@
 
 ---
 
+## Session 30 — New Features
+
+### Cross-Task Conversation Memory
+**Status:** IMPLEMENTED ✓
+- `getRecentTaskSummaries` db helper retrieves last 5 completed tasks
+- Injected into agent system prompt as "Session Context" (separate from Memory)
+- User toggle in Settings → Memory Tuning (default: enabled)
+- 18 tests passing
+
+### Self-Discovery Mode (Continuous Exploration)
+**Status:** IMPLEMENTED ✓
+- `useSelfDiscovery` hook: 45s idle after task completion → generates contextual follow-up
+- Template selection based on content analysis (steps→challenges, research→trends, educational→action plan)
+- 15s countdown with accept/dismiss buttons, aria-live accessibility
+- Opt-in via Settings toggle (default: disabled)
+- 15 tests passing
+
+---
+
 ## Final Convergence State
 
 | Metric | Value |
 |--------|-------|
-| Tests Passing | 4,926 |
-| Test Files | 199 |
+| Tests Passing | 4,941+ |
+| Test Files | 200+ |
 | Test Failures | 0 |
 | TypeScript Errors | 0 |
-| Score | 9.7/10 |
-| Convergence Count | 1 (reset from test fixes) |
+| Score | 9.8/10 |
+| Convergence Count | 1 (reset from new features) |
 
 ## Next Pass Required: Convergence Pass 2 (need 3 consecutive clean passes)
 - Pass type: Adversarial (probe for hidden failure modes)
-- Focus: Agent response quality, edge cases, error recovery
+- Focus: Self-discovery edge cases, cross-task context quality, error recovery

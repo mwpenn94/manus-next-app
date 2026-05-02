@@ -150,6 +150,7 @@ import ExecutionPlanDisplay from "@/components/ExecutionPlanDisplay";
 import LiveOrchestrationGraph from "@/components/LiveOrchestrationGraph";
 import SessionCostPanel from "@/components/SessionCostPanel";
 import useInputHistory from "@/hooks/useInputHistory";
+import { useSelfDiscovery } from "@/hooks/useSelfDiscovery";
 import useOfflineQueue from "@/hooks/useOfflineQueue";
 import ParallelToolIndicator from "@/components/ParallelToolIndicator";
 import AdaptiveModelBadge from "@/components/AdaptiveModelBadge";
@@ -3664,6 +3665,29 @@ export default function TaskView() {
 
   const isFavorited = taskQuery.data?.favorite === 1;
 
+  // ── Self-Discovery: Auto-follow-up after idle ──
+  const selfDiscoveryEnabled = (prefsQuery.data?.generalSettings as any)?.selfDiscovery ?? false;
+  const lastAssistantForDiscovery = useMemo(() => {
+    if (!task) return null;
+    return [...task.messages].reverse().find(m => m.role === "assistant")?.content || null;
+  }, [task?.messages.length]);
+  const originalUserQueryForDiscovery = useMemo(() => {
+    if (!task) return null;
+    return task.messages.find(m => m.role === "user")?.content || null;
+  }, [task?.id]);
+  const selfDiscovery = useSelfDiscovery({
+    enabled: selfDiscoveryEnabled,
+    streaming,
+    lastAssistantContent: lastAssistantForDiscovery,
+    originalQuery: typeof originalUserQueryForDiscovery === "string" ? originalUserQueryForDiscovery : null,
+    onSendFollowUp: (msg) => {
+      if (!task) return;
+      addMessage(task.id, { role: "user", content: `\ud83d\udd0d Self-discovery: ${msg}` });
+    },
+    maxOccurrences: 1,
+    idleSeconds: 90,
+  });
+
   return (
     <div ref={splitContainerRef} className="h-full flex flex-col md:flex-row md:pb-0">
       {/* ── CONVERSATION PANEL ── */}
@@ -4436,6 +4460,28 @@ export default function TaskView() {
             </button>
           </div>
         )}
+        {/* Self-Discovery Notification */}
+        <AnimatePresence>
+          {selfDiscovery.pending && selfDiscovery.pendingPrompt && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              role="alert"
+              aria-live="polite"
+              className="mx-3 md:mx-6 mb-1 p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center gap-3"
+            >
+              <Sparkles className="w-4 h-4 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground">Self-Discovery</p>
+                <p className="text-xs text-muted-foreground truncate">{selfDiscovery.pendingPrompt}</p>
+              </div>
+              <span className="text-[10px] text-muted-foreground tabular-nums">{selfDiscovery.countdown}s</span>
+              <button onClick={selfDiscovery.accept} className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-90">Send</button>
+              <button onClick={selfDiscovery.dismiss} className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:text-foreground">Dismiss</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Input */}
         <div
           data-chat-input
