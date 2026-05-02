@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Zap,
   Shield,
@@ -60,10 +61,30 @@ const DEFAULT_ACTIONS: AutoAction[] = [
 ];
 
 export default function HandsFreeMode(): React.JSX.Element {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
   const [isEnabled, setIsEnabled] = useState(false);
   const [guards, setGuards] = useState<SafetyGuard[]>(DEFAULT_GUARDS);
   const [actions, setActions] = useState<AutoAction[]>(DEFAULT_ACTIONS);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Load persisted settings
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.handsFreeSettings;
+    if (saved) {
+      if (saved.guardStates) setGuards((prev) => prev.map((g) => ({ ...g, enabled: saved.guardStates[g.id] ?? g.enabled })));
+      if (saved.actionStates) setActions((prev) => prev.map((a) => ({ ...a, allowed: saved.actionStates[a.id] ?? a.allowed })));
+    }
+  }, [prefs]);
+
+  const persistSettings = useCallback((guardStates?: Record<string, boolean>, actionStates?: Record<string, boolean>) => {
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    const existing = (current.handsFreeSettings ?? {}) as Record<string, unknown>;
+    const updates: Record<string, unknown> = { ...existing };
+    if (guardStates) updates.guardStates = guardStates;
+    if (actionStates) updates.actionStates = actionStates;
+    savePrefsMut.mutate({ generalSettings: { ...current, handsFreeSettings: updates } });
+  }, [prefs, savePrefsMut]);
   const [showGuards, setShowGuards] = useState(true);
   const [showActions, setShowActions] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
@@ -94,16 +115,24 @@ export default function HandsFreeMode(): React.JSX.Element {
   }, [isEnabled]);
 
   const handleToggleGuard = useCallback((id: string) => {
-    setGuards((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, enabled: !g.enabled } : g))
-    );
-  }, []);
+    setGuards((prev) => {
+      const updated = prev.map((g) => (g.id === id ? { ...g, enabled: !g.enabled } : g));
+      const states: Record<string, boolean> = {};
+      updated.forEach((g) => { states[g.id] = g.enabled; });
+      persistSettings(states, undefined);
+      return updated;
+    });
+  }, [persistSettings]);
 
   const handleToggleAction = useCallback((id: string) => {
-    setActions((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, allowed: !a.allowed } : a))
-    );
-  }, []);
+    setActions((prev) => {
+      const updated = prev.map((a) => (a.id === id ? { ...a, allowed: !a.allowed } : a));
+      const states: Record<string, boolean> = {};
+      updated.forEach((a) => { states[a.id] = a.allowed; });
+      persistSettings(undefined, states);
+      return updated;
+    });
+  }, [persistSettings]);
 
   const formatUptime = (seconds: number): string => {
     const h = Math.floor(seconds / 3600);

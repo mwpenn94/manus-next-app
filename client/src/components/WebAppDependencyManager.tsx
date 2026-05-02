@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Package,
   Plus,
@@ -48,12 +49,20 @@ const MOCK_DEPS: Dependency[] = [
 type FilterType = "all" | "production" | "dev" | "outdated" | "vulnerable";
 
 export default function WebAppDependencyManager(): React.JSX.Element {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
   const [deps, setDeps] = useState<Dependency[]>(MOCK_DEPS);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newPackageName, setNewPackageName] = useState("");
   const [updating, setUpdating] = useState<Set<string>>(new Set());
+
+  // Load persisted filter preference
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.depManagerFilter;
+    if (saved) setFilter(saved);
+  }, [prefs]);
 
   const filteredDeps = useMemo(() => {
     let result = deps;

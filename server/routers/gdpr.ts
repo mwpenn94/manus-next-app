@@ -57,6 +57,12 @@ import {
   memoryEmbeddings,
   scheduleExecutionHistory,
   messageFeedback,
+  personalizationPreferences,
+  personalizationRules,
+  personalizationLearningLog,
+  processMetrics,
+  improvementInitiatives,
+  optimizationCycles,
  } from "../../drizzle/schema";
 
 export const gdprRouter = router({
@@ -246,7 +252,15 @@ export const gdprRouter = router({
       await db.delete(bridgeConfigs).where(eq(bridgeConfigs.userId, userId));
       await db.delete(strategyTelemetry).where(eq(strategyTelemetry.userId, userId));
 
-      // ── Phase 5b: Delete AEGIS/ATLAS/Sovereign user data ──
+      // Phase 5b: personalization & process improvement
+      await db.delete(personalizationLearningLog).where(eq(personalizationLearningLog.userId, userId));
+      await db.delete(personalizationRules).where(eq(personalizationRules.userId, userId));
+      await db.delete(personalizationPreferences).where(eq(personalizationPreferences.userId, userId));
+      await db.delete(optimizationCycles).where(eq(optimizationCycles.userId, userId));
+      await db.delete(improvementInitiatives).where(eq(improvementInitiatives.userId, userId));
+      await db.delete(processMetrics).where(eq(processMetrics.userId, userId));
+
+      // Phase 5c: AEGIS/ATLAS/Sovereign
       const aegisSessionRows = await db.select({ id: aegisSessions.id }).from(aegisSessions).where(eq(aegisSessions.userId, userId));
       const aegisSessionIds = aegisSessionRows.map(s => s.id);
       if (aegisSessionIds.length > 0) {
@@ -264,23 +278,23 @@ export const gdprRouter = router({
       }
       await db.delete(atlasGoals).where(eq(atlasGoals.userId, userId));
 
-      // ── Phase 5c: Delete Sovereign provider data (cascaded via aegisSessionId) ──
+      // Phase 5d: Sovereign cascades
       if (aegisSessionIds.length > 0) {
         await db.delete(sovereignUsageLogs).where(inArray(sovereignUsageLogs.aegisSessionId, aegisSessionIds));
         await db.delete(sovereignRoutingDecisions).where(inArray(sovereignRoutingDecisions.aegisSessionId, aegisSessionIds));
       }
 
-      // ── Phase 5d: Delete user feedback & automation schedules ──
+      // Phase 5e: feedback & schedules
       await db.delete(appFeedback).where(eq(appFeedback.userId, userId));
       await db.delete(scheduleExecutionHistory).where(eq(scheduleExecutionHistory.userId, userId));
       await db.delete(automationSchedules).where(eq(automationSchedules.userId, userId));
 
-      // ── Phase 5e: Delete data pipelines & memory embeddings ──
+      // Phase 5f: pipelines & embeddings
       await db.delete(dataPipelineRuns).where(eq(dataPipelineRuns.userId, userId));
       await db.delete(dataPipelines).where(eq(dataPipelines.userId, userId));
       await db.delete(memoryEmbeddings).where(eq(memoryEmbeddings.userId, userId));
 
-      // ── Phase 6: Delete the user record itself ──
+      // Phase 6: user record
       await db.delete(users).where(eq(users.id, userId));
 
       // Notify owner

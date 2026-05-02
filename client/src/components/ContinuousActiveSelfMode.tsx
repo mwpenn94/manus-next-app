@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Power,
   Activity,
@@ -55,6 +56,9 @@ interface CASMConfig {
 }
 
 export default function ContinuousActiveSelfMode(): React.JSX.Element {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
+
   const [isActive, setIsActive] = useState(true);
   const [tasks, setTasks] = useState<ActiveTask[]>(MOCK_TASKS);
   const [uptime, setUptime] = useState(7243);
@@ -66,6 +70,22 @@ export default function ContinuousActiveSelfMode(): React.JSX.Element {
     notifications: true,
     resourceLimit: 80,
   });
+
+  // Load persisted config
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.casmConfig;
+    if (saved) {
+      setConfig((prev) => ({ ...prev, ...saved }));
+    }
+    const savedActive = (prefs?.generalSettings as any)?.casmActive;
+    if (savedActive !== undefined) setIsActive(savedActive);
+  }, [prefs]);
+
+  // Persist config changes
+  const persistConfig = useCallback((newConfig: CASMConfig) => {
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    savePrefsMut.mutate({ generalSettings: { ...current, casmConfig: newConfig } });
+  }, [prefs, savePrefsMut]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -204,7 +224,7 @@ export default function ContinuousActiveSelfMode(): React.JSX.Element {
                   <span className="text-xs">Auto-resume on reconnect</span>
                 </div>
                 <button
-                  onClick={() => setConfig((c) => ({ ...c, autoResume: !c.autoResume }))}
+                  onClick={() => { const newConfig = { ...config, autoResume: !config.autoResume }; setConfig(newConfig); persistConfig(newConfig); }}
                   className={cn(
                     "relative w-8 h-4 rounded-full transition-colors",
                     config.autoResume ? "bg-primary" : "bg-muted"
@@ -222,7 +242,7 @@ export default function ContinuousActiveSelfMode(): React.JSX.Element {
                   <span className="text-xs">Notifications</span>
                 </div>
                 <button
-                  onClick={() => setConfig((c) => ({ ...c, notifications: !c.notifications }))}
+                  onClick={() => { const newConfig = { ...config, notifications: !config.notifications }; setConfig(newConfig); persistConfig(newConfig); }}
                   className={cn(
                     "relative w-8 h-4 rounded-full transition-colors",
                     config.notifications ? "bg-primary" : "bg-muted"

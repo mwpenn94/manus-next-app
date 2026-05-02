@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Users,
   MessageSquare,
@@ -108,10 +109,24 @@ function getRoleBadge(role: MemberRole): React.JSX.Element {
 }
 
 export default function WebAppCollaborationPanel(): React.JSX.Element {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
   const [activeTab, setActiveTab] = useState<"activity" | "comments" | "members">("activity");
   const [commentInput, setCommentInput] = useState("");
   const [comments, setComments] = useState<Comment[]>(MOCK_COMMENTS);
   const [showResolved, setShowResolved] = useState(false);
+
+  // Load persisted collaboration settings
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.collaborationSettings;
+    if (saved?.showResolved !== undefined) setShowResolved(saved.showResolved);
+  }, [prefs]);
+
+  const persistCollabSettings = useCallback((updates: Record<string, unknown>) => {
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    const existing = (current.collaborationSettings ?? {}) as Record<string, unknown>;
+    savePrefsMut.mutate({ generalSettings: { ...current, collaborationSettings: { ...existing, ...updates } } });
+  }, [prefs, savePrefsMut]);
 
   const filteredComments = useMemo(() => {
     if (showResolved) return comments;

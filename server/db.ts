@@ -1,6 +1,6 @@
 import { eq, desc, asc, and, or, like, ne, sql, lte, gte, lt, gt, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory, messageFeedback, type InsertMessageFeedback } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory, messageFeedback, type InsertMessageFeedback, personalizationPreferences, personalizationRules, personalizationLearningLog, processMetrics, improvementInitiatives, optimizationCycles, type InsertPersonalizationPreference, type InsertPersonalizationRule, type InsertPersonalizationLearningLogEntry, type InsertProcessMetric, type InsertImprovementInitiative, type InsertOptimizationCycle } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2728,4 +2728,177 @@ export async function getMessageFeedbackForTask(taskExternalId: string, userId: 
       eq(messageFeedback.taskExternalId, taskExternalId),
       eq(messageFeedback.userId, userId)
     ));
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// Personalization Engine — Preferences, Rules, Learning Log
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function getUserPersonalizationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(personalizationPreferences).where(eq(personalizationPreferences.userId, userId)).orderBy(personalizationPreferences.category);
+}
+
+export async function upsertPersonalizationPreference(pref: InsertPersonalizationPreference) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check if preference with same userId + category + label exists
+  const existing = await db.select().from(personalizationPreferences)
+    .where(and(
+      eq(personalizationPreferences.userId, pref.userId),
+      eq(personalizationPreferences.category, pref.category),
+      eq(personalizationPreferences.label, pref.label)
+    )).limit(1);
+  if (existing.length > 0) {
+    await db.update(personalizationPreferences)
+      .set({ value: pref.value, confidence: pref.confidence, source: pref.source, active: pref.active })
+      .where(eq(personalizationPreferences.id, existing[0].id));
+    return existing[0].id;
+  }
+  const result = await db.insert(personalizationPreferences).values(pref);
+  return result[0].insertId;
+}
+
+export async function deletePersonalizationPreference(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(personalizationPreferences).where(and(eq(personalizationPreferences.id, id), eq(personalizationPreferences.userId, userId)));
+}
+
+export async function resetPersonalizationPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(personalizationPreferences).where(eq(personalizationPreferences.userId, userId));
+}
+
+export async function getUserPersonalizationRules(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(personalizationRules).where(eq(personalizationRules.userId, userId)).orderBy(personalizationRules.createdAt);
+}
+
+export async function createPersonalizationRule(rule: InsertPersonalizationRule) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(personalizationRules).values(rule);
+  return result[0].insertId;
+}
+
+export async function togglePersonalizationRule(id: number, userId: number, active: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(personalizationRules)
+    .set({ active: active ? 1 : 0 })
+    .where(and(eq(personalizationRules.id, id), eq(personalizationRules.userId, userId)));
+}
+
+export async function deletePersonalizationRule(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(personalizationRules).where(and(eq(personalizationRules.id, id), eq(personalizationRules.userId, userId)));
+}
+
+export async function getUserLearningLog(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(personalizationLearningLog)
+    .where(eq(personalizationLearningLog.userId, userId))
+    .orderBy(personalizationLearningLog.createdAt)
+    .limit(limit);
+}
+
+export async function addLearningLogEntry(entry: InsertPersonalizationLearningLogEntry) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(personalizationLearningLog).values(entry);
+  return result[0].insertId;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Process Improvement — Metrics, Initiatives, Optimization Cycles
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function getUserProcessMetrics(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(processMetrics).where(eq(processMetrics.userId, userId)).orderBy(processMetrics.category);
+}
+
+export async function upsertProcessMetric(metric: InsertProcessMetric) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(processMetrics)
+    .where(and(eq(processMetrics.userId, metric.userId), eq(processMetrics.name, metric.name)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(processMetrics)
+      .set({
+        currentValue: metric.currentValue,
+        previousValue: metric.previousValue,
+        targetValue: metric.targetValue,
+        unit: metric.unit,
+        category: metric.category,
+        history: metric.history,
+      })
+      .where(eq(processMetrics.id, existing[0].id));
+    return existing[0].id;
+  }
+  const result = await db.insert(processMetrics).values(metric);
+  return result[0].insertId;
+}
+
+export async function deleteProcessMetric(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(processMetrics).where(and(eq(processMetrics.id, id), eq(processMetrics.userId, userId)));
+}
+
+export async function getUserImprovementInitiatives(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(improvementInitiatives).where(eq(improvementInitiatives.userId, userId)).orderBy(improvementInitiatives.createdAt);
+}
+
+export async function createImprovementInitiative(initiative: InsertImprovementInitiative) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(improvementInitiatives).values(initiative);
+  return result[0].insertId;
+}
+
+export async function updateImprovementInitiative(id: number, userId: number, updates: Partial<InsertImprovementInitiative>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(improvementInitiatives)
+    .set(updates)
+    .where(and(eq(improvementInitiatives.id, id), eq(improvementInitiatives.userId, userId)));
+}
+
+export async function deleteImprovementInitiative(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(improvementInitiatives).where(and(eq(improvementInitiatives.id, id), eq(improvementInitiatives.userId, userId)));
+}
+
+export async function getUserOptimizationCycles(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(optimizationCycles).where(eq(optimizationCycles.userId, userId)).orderBy(optimizationCycles.cycleNumber);
+}
+
+export async function createOptimizationCycle(cycle: InsertOptimizationCycle) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(optimizationCycles).values(cycle);
+  return result[0].insertId;
+}
+
+export async function updateOptimizationCycle(id: number, userId: number, updates: Partial<InsertOptimizationCycle>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(optimizationCycles)
+    .set(updates)
+    .where(and(eq(optimizationCycles.id, id), eq(optimizationCycles.userId, userId)));
 }

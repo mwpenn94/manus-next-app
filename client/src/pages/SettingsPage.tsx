@@ -1661,7 +1661,7 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground mb-5">
                 Manage documents, skills, and training data for your personal AI.
               </p>
-              <KnowledgeBaseExplorer />
+              <KnowledgeBaseExplorer projectExternalId="default" />
             </motion.div>
           )}
 

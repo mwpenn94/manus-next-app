@@ -295,6 +295,13 @@
       "when": 1777648434498,
       "tag": "0041_known_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1777685484765,
+      "tag": "0042_daily_sir_ram",
+      "breakpoints": true
     }
   ]
 }

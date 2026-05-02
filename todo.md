@@ -6736,3 +6736,35 @@
 - [x] Wire AgentSelfImprovementDashboard into Settings > AI Self-Improvement tab
 - [x] Wire DataIntegrationMonitor into Settings > Data Integration tab
 - [x] Wire ProcessImprovementTracker into Settings > Process Improvement tab
+
+## Convergence Pass: Full User Capability Audit & Persistence
+
+### Audit: Components wired but using local state (need DB persistence)
+- [x] PersonalizationEngine: Add DB schema + tRPC procedures for user preference learning
+- [x] ProcessImprovementTracker: Add DB schema + tRPC procedures for optimization cycles
+- [x] ScheduledTaskManager: Wire to existing scheduled_tasks tRPC CRUD procedures
+- [x] KnowledgeBaseExplorer: Wire to real file upload + knowledge base tRPC procedures
+- [x] DataIntegrationMonitor: Wire to real data pipeline status tRPC procedures
+- [x] AgentSelfImprovementDashboard: Wire to preferences tRPC for persistent settings
+- [x] ConnectorsCRUDPanel: Wire to real connector CRUD tRPC procedures
+- [x] AudibleCuesManager: Wire to user_preferences for persisting cue settings
+- [x] HandsFreeMode (Settings): Wire to user_preferences for persisting voice settings
+
+### Audit: Components wired into pages - verify render + interaction
+- [x] WebAppFileTreePanel: Wired to real tRPC webappProject.get for file structure
+- [x] WebAppDeploymentStatus: Wired to real tRPC webappProject.deployments
+- [x] WebAppVersionDiffView: Wired to real tRPC webappProject.deployments + rollback
+- [x] WebAppResponsivePreview: Wired with preferences persistence
+- [x] WebAppBuildConsole: Wired to real tRPC deployment logs
+- [x] WebAppDependencyManager: Wired with tRPC import
+- [x] WebAppCollaborationPanel: Wired with preferences persistence
+- [x] WebAppEnvironmentVariables: Wired to real tRPC addEnvVar/deleteEnvVar
+- [x] TaskStepProgressIndicator: Receives real step data from parent props
+- [x] TaskArtifactGallery: Wired to real tRPC file.list
+- [x] TaskReplayViewer: Wired to real tRPC replay.sessions/events
+- [x] AgentMemoryTimeline: Wired to real tRPC memory.list/add/delete/search
+
+### TypeScript & Tests
+- [x] Run TypeScript check (target: 0 errors) — CONFIRMED 0 errors
+- [x] Run full test suite (target: 4,912+ tests, 0 failures) — CONFIRMED 4,912 tests, 197 files, 0 failures
+- [x] Save checkpoint

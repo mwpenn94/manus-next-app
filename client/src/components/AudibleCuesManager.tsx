@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Volume2, Play, Upload, Settings, Wind, X, Clock, Sun, Moon, Ear, EarOff, BrainCircuit, CheckCircle, AlertTriangle, Terminal, Hourglass, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,34 @@ const WaveformVisualizer = ({ playing }: { playing: boolean }) => {
 };
 
 export default function AudibleCuesManager() {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
   const [cues, setCues] = useState<SoundCue[]>(initialCues);
+
+  // Load persisted audio settings
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.audibleCuesSettings;
+    if (saved) {
+      if (saved.cueVolumes) {
+        setCues((prev) => prev.map((c) => ({
+          ...c,
+          volume: saved.cueVolumes[c.id] ?? c.volume,
+          visualAlternative: saved.cueVisual?.[c.id] ?? c.visualAlternative,
+        })));
+      }
+      if (saved.voiceSpeed !== undefined) setVoiceSpeed([saved.voiceSpeed]);
+      if (saved.voicePitch !== undefined) setVoicePitch([saved.voicePitch]);
+      if (saved.selectedVoice) setSelectedVoice(saved.selectedVoice);
+      if (saved.quietHours) setQuietHours(saved.quietHours);
+      // globalMute handled by quiet hours toggle
+    }
+  }, [prefs]);
+
+  const persistSettings = useCallback((updates: Record<string, unknown>) => {
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    const existing = (current.audibleCuesSettings ?? {}) as Record<string, unknown>;
+    savePrefsMut.mutate({ generalSettings: { ...current, audibleCuesSettings: { ...existing, ...updates } } });
+  }, [prefs, savePrefsMut]);
   const [customSounds, setCustomSounds] = useState<CustomSound[]>([
     { id: 1, name: 'Custom Success Chime', fileName: 'chime.wav' },
     { id: 2, name: 'Sci-Fi Processing', fileName: 'sci-fi-hum.mp3' },

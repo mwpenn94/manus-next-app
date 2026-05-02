@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Brain,
   TrendingUp,
@@ -76,6 +77,25 @@ type ViewMode = "metrics" | "cycles" | "suggestions";
 
 export default function AgentSelfImprovementDashboard(): React.JSX.Element {
   const [viewMode, setViewMode] = useState<ViewMode>("metrics");
+
+  // Persist settings via preferences
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
+
+  // Load persisted view mode
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.selfImprovementViewMode;
+    if (saved && (saved === "metrics" || saved === "cycles" || saved === "suggestions")) {
+      setViewMode(saved);
+    }
+  }, [prefs]);
+
+  // Save view mode changes
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    savePrefsMut.mutate({ generalSettings: { ...current, selfImprovementViewMode: mode } });
+  };
 
   const overallScore = useMemo(() => {
     const scores = MOCK_METRICS.map((m) => (m.current / m.target) * 100);
@@ -159,7 +179,7 @@ export default function AgentSelfImprovementDashboard(): React.JSX.Element {
         ]).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setViewMode(tab.id)}
+            onClick={() => handleViewModeChange(tab.id)}
             className={cn(
               "flex items-center gap-1.5 px-3 py-2.5 text-sm border-b-2 transition-colors",
               viewMode === tab.id

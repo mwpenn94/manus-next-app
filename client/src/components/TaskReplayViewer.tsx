@@ -1,13 +1,10 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Play,
   Pause,
   SkipBack,
   SkipForward,
   FastForward,
-  Rewind,
-  Maximize2,
-  Minimize2,
   Clock,
   Eye,
   Code,
@@ -16,80 +13,67 @@ import {
   MessageSquare,
   FileText,
   Image,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-type ReplayEventType = "message" | "tool_use" | "browser" | "code" | "file" | "terminal" | "image" | "thinking";
-
-interface ReplayEvent {
-  id: string;
-  type: ReplayEventType;
-  timestamp: number; // seconds from start
-  duration: number; // seconds
-  title: string;
-  content: string;
-  screenshot?: string;
-}
-
-const MOCK_EVENTS: ReplayEvent[] = [
-  { id: "r1", type: "message", timestamp: 0, duration: 2, title: "User Request", content: "Build a responsive dashboard with real-time analytics charts" },
-  { id: "r2", type: "thinking", timestamp: 2, duration: 3, title: "Planning", content: "Analyzing requirements: need recharts for charts, WebSocket for real-time data, responsive grid layout..." },
-  { id: "r3", type: "terminal", timestamp: 5, duration: 4, title: "Install Dependencies", content: "$ pnpm add recharts\n$ pnpm add @tanstack/react-query" },
-  { id: "r4", type: "code", timestamp: 9, duration: 8, title: "Create Dashboard Component", content: "Writing Dashboard.tsx with LineChart, BarChart, and PieChart components..." },
-  { id: "r5", type: "code", timestamp: 17, duration: 5, title: "Create API Endpoints", content: "Adding tRPC procedures for analytics data fetching..." },
-  { id: "r6", type: "file", timestamp: 22, duration: 2, title: "Update Routes", content: "Adding /dashboard route to App.tsx..." },
-  { id: "r7", type: "browser", timestamp: 24, duration: 3, title: "Preview Dashboard", content: "Opening browser to verify layout and charts render correctly", screenshot: "https://placehold.co/800x450/0a0a1a/eee?text=Dashboard+Preview" },
-  { id: "r8", type: "code", timestamp: 27, duration: 4, title: "Fix Responsive Layout", content: "Adjusting grid breakpoints for mobile and tablet views..." },
-  { id: "r9", type: "terminal", timestamp: 31, duration: 3, title: "Run Tests", content: "$ pnpm test\n\nTests: 12 passed, 0 failed" },
-  { id: "r10", type: "message", timestamp: 34, duration: 2, title: "Delivery", content: "Dashboard is ready with 3 chart types, responsive layout, and real-time data support." },
-];
-
-function getEventIcon(type: ReplayEventType): React.JSX.Element {
+function getEventIcon(type: string): React.JSX.Element {
   switch (type) {
     case "message": return <MessageSquare className="w-3.5 h-3.5 text-blue-400" />;
     case "tool_use": return <Code className="w-3.5 h-3.5 text-yellow-400" />;
     case "browser": return <Globe className="w-3.5 h-3.5 text-green-400" />;
     case "code": return <Code className="w-3.5 h-3.5 text-yellow-400" />;
     case "file": return <FileText className="w-3.5 h-3.5 text-purple-400" />;
-    case "terminal": return <Terminal className="w-3.5 h-3.5 text-emerald-400" />;
+    case "terminal": return <Terminal className="w-3.5 h-3.5 text-cyan-400" />;
     case "image": return <Image className="w-3.5 h-3.5 text-pink-400" />;
-    case "thinking": return <Loader2 className="w-3.5 h-3.5 text-muted-foreground" />;
+    default: return <Eye className="w-3.5 h-3.5 text-muted-foreground" />;
   }
 }
 
-function getEventColor(type: ReplayEventType): string {
-  switch (type) {
-    case "message": return "bg-blue-500";
-    case "tool_use": return "bg-yellow-500";
-    case "browser": return "bg-green-500";
-    case "code": return "bg-yellow-500";
-    case "file": return "bg-purple-500";
-    case "terminal": return "bg-emerald-500";
-    case "image": return "bg-pink-500";
-    case "thinking": return "bg-muted-foreground";
-  }
+function formatTime(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function TaskReplayViewer(): React.JSX.Element {
+interface TaskReplayViewerProps {
+  taskId?: number;
+}
+
+export default function TaskReplayViewer({ taskId }: TaskReplayViewerProps): React.JSX.Element {
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(taskId ?? null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [selectedEvent, setSelectedEvent] = useState<string | null>("r1");
-  const totalDuration = 36; // seconds
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [activeEventIdx, setActiveEventIdx] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const { data: sessions = [], isLoading: loadingSessions } = trpc.replay.sessions.useQuery();
+  const { data: events = [], isLoading: loadingEvents } = trpc.replay.events.useQuery(
+    { taskId: selectedTaskId! },
+    { enabled: !!selectedTaskId }
+  );
+
+  const totalDuration = events.length > 0
+    ? Math.max(...events.map((e: any) => (e.offsetMs ?? 0))) + 2000
+    : 0;
+
+  // Playback timer
   useEffect(() => {
-    if (isPlaying) {
-      intervalRef.current = setInterval(() => {
+    if (isPlaying && events.length > 0) {
+      timerRef.current = setInterval(() => {
         setCurrentTime((prev) => {
-          const next = prev + 0.1 * playbackSpeed;
+          const next = prev + 100 * playbackSpeed;
           if (next >= totalDuration) {
             setIsPlaying(false);
             return totalDuration;
@@ -99,187 +83,200 @@ export default function TaskReplayViewer(): React.JSX.Element {
       }, 100);
     }
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, playbackSpeed]);
+  }, [isPlaying, playbackSpeed, totalDuration, events.length]);
 
-  // Auto-select current event
+  // Track active event
   useEffect(() => {
-    const current = MOCK_EVENTS.find(
-      (e) => currentTime >= e.timestamp && currentTime < e.timestamp + e.duration
-    );
-    if (current) setSelectedEvent(current.id);
-  }, [currentTime]);
+    if (events.length === 0) return;
+    let idx = 0;
+    for (let i = 0; i < events.length; i++) {
+      if ((events[i] as any).offsetMs <= currentTime) idx = i;
+    }
+    setActiveEventIdx(idx);
+  }, [currentTime, events]);
 
   const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    setCurrentTime(Math.max(0, Math.min(totalDuration, ratio * totalDuration)));
-  }, []);
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setCurrentTime(pct * totalDuration);
+  }, [totalDuration]);
 
-  const handleSkipBack = useCallback(() => {
-    setCurrentTime((prev) => Math.max(0, prev - 5));
-  }, []);
-
-  const handleSkipForward = useCallback(() => {
-    setCurrentTime((prev) => Math.min(totalDuration, prev + 5));
-  }, []);
-
-  const handleJumpToEvent = useCallback((event: ReplayEvent) => {
-    setCurrentTime(event.timestamp);
-    setSelectedEvent(event.id);
-  }, []);
-
-  const formatTime = (seconds: number): string => {
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
+  const jumpToEvent = (idx: number) => {
+    if (events[idx]) {
+      setCurrentTime((events[idx] as any).offsetMs);
+      setActiveEventIdx(idx);
+    }
   };
 
-  const selected = MOCK_EVENTS.find((e) => e.id === selectedEvent);
-  const progress = (currentTime / totalDuration) * 100;
+  const activeEvent = events[activeEventIdx] as any;
 
   return (
-    <div className="flex flex-col bg-background text-foreground rounded-xl border border-border overflow-hidden">
-      {/* Main View */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Event Timeline */}
-        <div className="w-72 border-r border-border overflow-y-auto">
-          <div className="px-4 py-3 border-b border-border bg-card/50">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" />
-              Events ({MOCK_EVENTS.length})
-            </h3>
+    <div className="flex flex-col h-full bg-background text-foreground rounded-xl border border-border overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/50">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
+            <Play className="w-5 h-5 text-green-500" />
           </div>
-          {MOCK_EVENTS.map((event) => {
-            const isCurrent = currentTime >= event.timestamp && currentTime < event.timestamp + event.duration;
-            const isPast = currentTime >= event.timestamp + event.duration;
-            return (
-              <button
-                key={event.id}
-                className={cn(
-                  "w-full text-left px-4 py-2.5 border-b border-border/50 transition-colors",
-                  isCurrent ? "bg-primary/5 border-l-2 border-l-primary" : isPast ? "opacity-60" : "",
-                  selectedEvent === event.id && !isCurrent ? "bg-accent/20" : "hover:bg-accent/20"
-                )}
-                onClick={() => handleJumpToEvent(event)}
-              >
-                <div className="flex items-center gap-2">
-                  {getEventIcon(event.type)}
-                  <span className="text-xs font-medium truncate">{event.title}</span>
-                  <span className="text-[9px] text-muted-foreground ml-auto shrink-0">{formatTime(event.timestamp)}</span>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate ml-5.5">{event.content}</p>
-              </button>
-            );
-          })}
+          <div>
+            <h2 className="text-base font-semibold">Task Replay</h2>
+            <p className="text-xs text-muted-foreground">
+              {sessions.length} replayable sessions · {events.length} events
+            </p>
+          </div>
         </div>
-
-        {/* Content View */}
-        <div className="flex-1 flex flex-col">
-          {/* Preview Area */}
-          <div className="flex-1 flex items-center justify-center p-6 bg-card/30">
-            {selected ? (
-              <div className="w-full max-w-2xl">
-                <div className="flex items-center gap-2 mb-3">
-                  {getEventIcon(selected.type)}
-                  <h3 className="text-sm font-semibold">{selected.title}</h3>
-                  <span className="text-[10px] text-muted-foreground">{formatTime(selected.timestamp)} - {formatTime(selected.timestamp + selected.duration)}</span>
-                </div>
-                {selected.screenshot ? (
-                  <div className="rounded-lg overflow-hidden border border-border shadow-lg">
-                    <img src={selected.screenshot} alt="" className="w-full" />
-                  </div>
-                ) : (
-                  <div className="p-5 rounded-lg bg-[#0d1117] border border-border">
-                    <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap leading-relaxed">
-                      {selected.content}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground">
-                <Eye className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Select an event to view details</p>
-              </div>
-            )}
-          </div>
-
-          {/* Timeline Scrubber */}
-          <div className="border-t border-border bg-card/50 px-5 py-3">
-            {/* Progress Bar */}
-            <div
-              className="relative h-6 mb-3 cursor-pointer group"
-              onClick={handleSeek}
-            >
-              {/* Track */}
-              <div className="absolute top-2.5 left-0 right-0 h-1 bg-muted rounded-full">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
-              </div>
-              {/* Event Markers */}
-              {MOCK_EVENTS.map((event) => (
-                <div
-                  key={event.id}
-                  className={cn(
-                    "absolute top-1 h-4 rounded-sm opacity-40 hover:opacity-80 transition-opacity",
-                    getEventColor(event.type)
-                  )}
-                  style={{
-                    left: `${(event.timestamp / totalDuration) * 100}%`,
-                    width: `${Math.max(0.5, (event.duration / totalDuration) * 100)}%`,
-                  }}
-                  title={event.title}
-                />
+        {sessions.length > 0 && (
+          <Select
+            value={selectedTaskId?.toString() ?? ""}
+            onValueChange={(v) => {
+              setSelectedTaskId(Number(v));
+              setCurrentTime(0);
+              setIsPlaying(false);
+              setActiveEventIdx(0);
+            }}
+          >
+            <SelectTrigger className="w-56 h-8 text-xs">
+              <SelectValue placeholder="Select a task session" />
+            </SelectTrigger>
+            <SelectContent>
+              {sessions.map((s: any) => (
+                <SelectItem key={s.id} value={s.id.toString()}>
+                  {s.title || `Task #${s.id}`}
+                </SelectItem>
               ))}
-              {/* Playhead */}
-              <div
-                className="absolute top-0.5 w-3 h-5 bg-primary rounded-sm shadow-md -translate-x-1/2 transition-all"
-                style={{ left: `${progress}%` }}
-              />
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {/* Loading / Empty */}
+      {(loadingSessions || loadingEvents) && (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {!loadingSessions && !selectedTaskId && sessions.length === 0 && (
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
+          <div className="text-center">
+            <Play className="w-8 h-8 mx-auto mb-3 opacity-40" />
+            <p className="text-sm">No replay sessions available yet.</p>
+            <p className="text-xs mt-1">Complete tasks to generate replay data.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Replay Content */}
+      {selectedTaskId && events.length > 0 && !loadingEvents && (
+        <>
+          <div className="flex flex-1 overflow-hidden">
+            {/* Event Timeline */}
+            <div className="w-72 border-r border-border overflow-y-auto">
+              {events.map((event: any, idx: number) => (
+                <button
+                  key={event.id ?? idx}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 border-b border-border/50 transition-colors",
+                    idx === activeEventIdx ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-accent/30"
+                  )}
+                  onClick={() => jumpToEvent(idx)}
+                >
+                  <div className="flex items-center gap-2">
+                    {getEventIcon(event.eventType)}
+                    <span className="text-xs font-medium truncate flex-1">{event.eventType}</span>
+                    <span className="text-[9px] text-muted-foreground">{formatTime(event.offsetMs)}</span>
+                  </div>
+                </button>
+              ))}
             </div>
 
-            {/* Controls */}
+            {/* Event Detail */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {activeEvent && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    {getEventIcon(activeEvent.eventType)}
+                    <h3 className="text-sm font-semibold">{activeEvent.eventType}</h3>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatTime(activeEvent.offsetMs)}
+                    </span>
+                  </div>
+                  <div className="p-4 rounded-lg bg-card border border-border">
+                    <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                      {typeof activeEvent.payload === "string"
+                        ? (() => { try { return JSON.stringify(JSON.parse(activeEvent.payload), null, 2); } catch { return activeEvent.payload; } })()
+                        : JSON.stringify(activeEvent.payload, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Playback Controls */}
+          <div className="px-5 py-3 border-t border-border bg-card/50">
+            {/* Progress Bar */}
+            <div
+              className="w-full h-2 rounded-full bg-muted mb-3 cursor-pointer relative"
+              onClick={handleSeek}
+            >
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0}%` }}
+              />
+              {/* Event markers */}
+              {events.map((event: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="absolute top-0 w-1 h-2 bg-foreground/30 rounded-full"
+                  style={{ left: `${totalDuration > 0 ? (event.offsetMs / totalDuration) * 100 : 0}%` }}
+                />
+              ))}
+            </div>
+
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <button onClick={handleSkipBack} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
-                  <Rewind className="w-4 h-4" />
-                </button>
-                <button
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => jumpToEvent(Math.max(0, activeEventIdx - 1))}>
+                  <SkipBack className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
                   onClick={() => setIsPlaying(!isPlaying)}
-                  className="p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                 >
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                </button>
-                <button onClick={handleSkipForward} className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground transition-colors">
-                  <FastForward className="w-4 h-4" />
-                </button>
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => jumpToEvent(Math.min(events.length - 1, activeEventIdx + 1))}>
+                  <SkipForward className="w-3.5 h-3.5" />
+                </Button>
               </div>
 
-              <span className="text-xs font-mono text-muted-foreground">
+              <span className="text-xs text-muted-foreground font-mono">
                 {formatTime(currentTime)} / {formatTime(totalDuration)}
               </span>
 
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-                  {[0.5, 1, 2, 4].map((speed) => (
-                    <button
-                      key={speed}
-                      onClick={() => setPlaybackSpeed(speed)}
-                      className={cn(
-                        "px-2 py-0.5 text-[10px] rounded-md transition-colors",
-                        playbackSpeed === speed ? "bg-background shadow-sm font-medium" : "text-muted-foreground"
-                      )}
-                    >
-                      {speed}x
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-1">
+                {[0.5, 1, 2, 4].map((speed) => (
+                  <button
+                    key={speed}
+                    onClick={() => setPlaybackSpeed(speed)}
+                    className={cn(
+                      "px-2 py-0.5 text-[10px] rounded transition-colors",
+                      playbackSpeed === speed ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {speed}x
+                  </button>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

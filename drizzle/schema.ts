@@ -1459,3 +1459,153 @@ export const messageFeedback = mysqlTable("message_feedback", {
 }));
 export type MessageFeedbackRow = typeof messageFeedback.$inferSelect;
 export type InsertMessageFeedback = typeof messageFeedback.$inferInsert;
+
+
+// ── Personalization Preferences (user preference learning + adaptive UI) ──
+export const personalizationPreferences = mysqlTable("personalization_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Preference category: interface, workflow, communication, content, accessibility */
+  category: varchar("category", { length: 64 }).notNull(),
+  /** Short label for the preference (e.g., "Dark Mode", "Compact View") */
+  label: varchar("label", { length: 256 }).notNull(),
+  /** Preference value (0.0 to 1.0 scale for sliders, or boolean-like 0/1) */
+  value: int("value").default(50).notNull(),
+  /** Confidence score (0-100): how certain the system is about this preference */
+  confidence: int("confidence").default(50).notNull(),
+  /** Source: explicit (user set it), inferred (system learned it), default */
+  source: mysqlEnum("source", ["explicit", "inferred", "default"]).default("default").notNull(),
+  /** Whether this preference is active */
+  active: int("active").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userCategoryIdx: index("personalization_prefs_user_category_idx").on(table.userId, table.category),
+}));
+export type PersonalizationPreference = typeof personalizationPreferences.$inferSelect;
+export type InsertPersonalizationPreference = typeof personalizationPreferences.$inferInsert;
+
+// ── Personalization Rules (adaptive behavior rules) ──
+export const personalizationRules = mysqlTable("personalization_rules", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Rule name (e.g., "Auto-expand code blocks") */
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Rule condition as human-readable description */
+  condition: text("condition").notNull(),
+  /** Rule action as human-readable description */
+  action: text("action").notNull(),
+  /** Whether this rule is active */
+  active: int("active").default(1).notNull(),
+  /** Impact level: low, medium, high */
+  impact: varchar("impact", { length: 16 }).default("medium").notNull(),
+  /** Number of times this rule has been triggered */
+  triggeredCount: int("triggeredCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("personalization_rules_user_idx").on(table.userId),
+}));
+export type PersonalizationRule = typeof personalizationRules.$inferSelect;
+export type InsertPersonalizationRule = typeof personalizationRules.$inferInsert;
+
+// ── Personalization Learning Log (interaction pattern tracking) ──
+export const personalizationLearningLog = mysqlTable("personalization_learning_log", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Event type: preference_learned, pattern_detected, adaptation_applied, feedback_received */
+  eventType: mysqlEnum("eventType", ["preference_learned", "pattern_detected", "adaptation_applied", "feedback_received"]).notNull(),
+  /** Human-readable description of what was learned */
+  description: text("description").notNull(),
+  /** Confidence of the learning (0-100) */
+  confidence: int("confidence").default(50).notNull(),
+  /** Related preference ID (if applicable) */
+  preferenceId: int("preferenceId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("personalization_learning_user_idx").on(table.userId),
+}));
+export type PersonalizationLearningLogEntry = typeof personalizationLearningLog.$inferSelect;
+export type InsertPersonalizationLearningLogEntry = typeof personalizationLearningLog.$inferInsert;
+
+// ── Process Metrics (optimization tracking) ──
+export const processMetrics = mysqlTable("process_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Metric name (e.g., "Task Completion Rate", "Average Response Time") */
+  name: varchar("name", { length: 256 }).notNull(),
+  /** Current value */
+  currentValue: int("currentValue").default(0).notNull(),
+  /** Previous period value (for trend calculation) */
+  previousValue: int("previousValue").default(0).notNull(),
+  /** Target value */
+  targetValue: int("targetValue").default(100).notNull(),
+  /** Unit of measurement (%, ms, count, score) */
+  unit: varchar("unit", { length: 32 }).default("%").notNull(),
+  /** Category: performance, quality, efficiency, user_satisfaction */
+  category: varchar("category", { length: 64 }).default("performance").notNull(),
+  /** Historical values as JSON array of {timestamp, value} */
+  history: json("history").$type<Array<{ timestamp: string; value: number }>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("process_metrics_user_idx").on(table.userId),
+}));
+export type ProcessMetric = typeof processMetrics.$inferSelect;
+export type InsertProcessMetric = typeof processMetrics.$inferInsert;
+
+// ── Improvement Initiatives (process improvement projects) ──
+export const improvementInitiatives = mysqlTable("improvement_initiatives", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Initiative title */
+  title: varchar("title", { length: 256 }).notNull(),
+  /** Detailed description */
+  description: text("description"),
+  /** Status: proposed, in_progress, completed, on_hold */
+  status: mysqlEnum("status", ["proposed", "in_progress", "completed", "on_hold"]).default("proposed").notNull(),
+  /** Impact score (0-100) */
+  impactScore: int("impactScore").default(50).notNull(),
+  /** Owner/responsible person */
+  owner: varchar("owner", { length: 128 }),
+  /** Linked metric IDs as JSON array */
+  linkedMetricIds: json("linkedMetricIds").$type<number[]>(),
+  /** Start date */
+  startDate: timestamp("startDate"),
+  /** Target completion date */
+  targetDate: timestamp("targetDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("improvement_initiatives_user_idx").on(table.userId),
+  statusIdx: index("improvement_initiatives_status_idx").on(table.status),
+}));
+export type ImprovementInitiative = typeof improvementInitiatives.$inferSelect;
+export type InsertImprovementInitiative = typeof improvementInitiatives.$inferInsert;
+
+// ── Optimization Cycles (iterative improvement tracking) ──
+export const optimizationCycles = mysqlTable("optimization_cycles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Cycle number (sequential per user) */
+  cycleNumber: int("cycleNumber").notNull(),
+  /** Current phase: assess, optimize, validate */
+  phase: mysqlEnum("phase", ["assess", "optimize", "validate"]).default("assess").notNull(),
+  /** Status: active, completed */
+  status: mysqlEnum("status", ["active", "completed"]).default("active").notNull(),
+  /** Findings from the assessment phase as JSON array */
+  findings: json("findings").$type<string[]>(),
+  /** Improvements applied during optimization as JSON array */
+  improvements: json("improvements").$type<string[]>(),
+  /** Validation results as JSON */
+  validationResults: json("validationResults").$type<{ passed: number; failed: number; notes: string[] }>(),
+  /** Start date of this cycle */
+  startDate: timestamp("startDate").defaultNow().notNull(),
+  /** Completion date */
+  completedDate: timestamp("completedDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("optimization_cycles_user_idx").on(table.userId),
+}));
+export type OptimizationCycle = typeof optimizationCycles.$inferSelect;
+export type InsertOptimizationCycle = typeof optimizationCycles.$inferInsert;

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Smartphone,
   Tablet,
@@ -40,6 +41,8 @@ export default function WebAppResponsivePreview({
   previewUrl = "about:blank",
   projectName = "My App",
 }: WebAppResponsivePreviewProps): React.JSX.Element {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
   const [activeDevice, setActiveDevice] = useState<DeviceMode>("desktop");
   const [orientation, setOrientation] = useState<Orientation>("portrait");
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -47,6 +50,23 @@ export default function WebAppResponsivePreview({
   const [customHeight, setCustomHeight] = useState<number | null>(null);
   const [showGrid, setShowGrid] = useState(false);
   const [zoom, setZoom] = useState(100);
+
+  // Load persisted preview preferences
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.previewSettings;
+    if (saved) {
+      if (saved.device) setActiveDevice(saved.device);
+      if (saved.orientation) setOrientation(saved.orientation);
+      if (saved.zoom) setZoom(saved.zoom);
+      if (saved.showGrid !== undefined) setShowGrid(saved.showGrid);
+    }
+  }, [prefs]);
+
+  const persistPreviewSettings = useCallback((updates: Record<string, unknown>) => {
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    const existing = (current.previewSettings ?? {}) as Record<string, unknown>;
+    savePrefsMut.mutate({ generalSettings: { ...current, previewSettings: { ...existing, ...updates } } });
+  }, [prefs, savePrefsMut]);
 
   const preset = DEVICE_PRESETS.find((d) => d.id === activeDevice)!;
   const isLandscape = orientation === "landscape" && activeDevice !== "desktop";

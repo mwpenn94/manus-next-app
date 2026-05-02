@@ -2,10 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Terminal,
   Trash2,
-  Download,
   Copy,
   Search,
-  Filter,
   ChevronDown,
   AlertTriangle,
   XCircle,
@@ -15,6 +13,7 @@ import {
   Play,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
 
 type LogLevel = "info" | "warn" | "error" | "success" | "debug";
 
@@ -26,104 +25,75 @@ interface LogEntry {
   message: string;
 }
 
-const MOCK_LOGS: LogEntry[] = [
-  { id: 1, timestamp: "20:31:02", level: "info", source: "vite", message: "Dev server running at http://localhost:3000/" },
-  { id: 2, timestamp: "20:31:02", level: "info", source: "vite", message: "Network: http://192.168.1.100:3000/" },
-  { id: 3, timestamp: "20:31:03", level: "success", source: "vite", message: "ready in 342ms" },
-  { id: 4, timestamp: "20:31:05", level: "info", source: "hmr", message: "[vite] connected." },
-  { id: 5, timestamp: "20:31:12", level: "info", source: "hmr", message: "src/App.tsx updated" },
-  { id: 6, timestamp: "20:31:12", level: "debug", source: "hmr", message: "1 module(s) updated, 0 full reload(s)" },
-  { id: 7, timestamp: "20:31:18", level: "warn", source: "react", message: "Warning: Each child in a list should have a unique \"key\" prop." },
-  { id: 8, timestamp: "20:31:22", level: "info", source: "api", message: "GET /api/trpc/auth.me 200 12ms" },
-  { id: 9, timestamp: "20:31:23", level: "info", source: "api", message: "GET /api/trpc/tasks.list 200 45ms" },
-  { id: 10, timestamp: "20:31:25", level: "error", source: "api", message: "POST /api/trpc/tasks.create 500 Internal Server Error" },
-  { id: 11, timestamp: "20:31:25", level: "error", source: "server", message: "Error: UNIQUE constraint failed: tasks.externalId" },
-  { id: 12, timestamp: "20:31:30", level: "info", source: "hmr", message: "src/pages/Home.tsx updated" },
-  { id: 13, timestamp: "20:31:30", level: "success", source: "hmr", message: "page reload performed" },
-  { id: 14, timestamp: "20:31:35", level: "info", source: "api", message: "GET /api/trpc/tasks.list 200 38ms" },
-  { id: 15, timestamp: "20:31:40", level: "info", source: "build", message: "Building for production..." },
-  { id: 16, timestamp: "20:31:42", level: "info", source: "build", message: "transforming (423) src/..." },
-  { id: 17, timestamp: "20:31:48", level: "success", source: "build", message: "✓ 423 modules transformed" },
-  { id: 18, timestamp: "20:31:48", level: "info", source: "build", message: "dist/assets/index-a1b2c3.js   245.12 kB │ gzip: 78.34 kB" },
-  { id: 19, timestamp: "20:31:48", level: "info", source: "build", message: "dist/assets/index-d4e5f6.css  18.45 kB │ gzip: 4.21 kB" },
-  { id: 20, timestamp: "20:31:49", level: "success", source: "build", message: "✓ built in 9.2s" },
-];
+interface WebAppBuildConsoleProps {
+  projectExternalId?: string;
+}
+
+function classifyLine(line: string): { level: LogLevel; source: string } {
+  const lower = line.toLowerCase();
+  if (lower.includes("error") || lower.includes("fail")) return { level: "error", source: "build" };
+  if (lower.includes("warn")) return { level: "warn", source: "build" };
+  if (lower.includes("✓") || lower.includes("success") || lower.includes("done")) return { level: "success", source: "build" };
+  if (lower.includes("debug") || lower.includes("cache")) return { level: "debug", source: "build" };
+  return { level: "info", source: "build" };
+}
 
 function getLevelIcon(level: LogLevel): React.JSX.Element {
   switch (level) {
-    case "info":
-      return <Info className="w-3 h-3 text-blue-400" />;
-    case "warn":
-      return <AlertTriangle className="w-3 h-3 text-amber-400" />;
-    case "error":
-      return <XCircle className="w-3 h-3 text-red-400" />;
-    case "success":
-      return <CheckCircle2 className="w-3 h-3 text-green-400" />;
-    case "debug":
-      return <Info className="w-3 h-3 text-muted-foreground" />;
+    case "info": return <Info className="w-3 h-3 text-blue-400" />;
+    case "warn": return <AlertTriangle className="w-3 h-3 text-amber-400" />;
+    case "error": return <XCircle className="w-3 h-3 text-red-400" />;
+    case "success": return <CheckCircle2 className="w-3 h-3 text-green-400" />;
+    case "debug": return <Info className="w-3 h-3 text-muted-foreground" />;
   }
 }
 
 function getLevelColor(level: LogLevel): string {
   switch (level) {
-    case "info":
-      return "text-blue-300";
-    case "warn":
-      return "text-amber-300";
-    case "error":
-      return "text-red-300";
-    case "success":
-      return "text-green-300";
-    case "debug":
-      return "text-muted-foreground";
+    case "info": return "text-blue-300";
+    case "warn": return "text-amber-300";
+    case "error": return "text-red-300";
+    case "success": return "text-green-300";
+    case "debug": return "text-muted-foreground";
   }
 }
 
-export default function WebAppBuildConsole(): React.JSX.Element {
-  const [logs, setLogs] = useState<LogEntry[]>(MOCK_LOGS);
+export default function WebAppBuildConsole({ projectExternalId }: WebAppBuildConsoleProps): React.JSX.Element {
+  const [selectedDeploymentId, setSelectedDeploymentId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel | "all">("all");
   const [autoScroll, setAutoScroll] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
-  const nextIdRef = useRef(MOCK_LOGS.length + 1);
 
-  // Simulate incoming logs
-  useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      const sources = ["api", "hmr", "vite", "server", "build"];
-      const levels: LogLevel[] = ["info", "info", "info", "warn", "debug"];
-      const messages = [
-        "GET /api/trpc/tasks.list 200 42ms",
-        "src/components/Card.tsx updated",
-        "1 module(s) updated",
-        "Unused CSS selector detected",
-        "Cache hit for module graph",
-      ];
-      const idx = Math.floor(Math.random() * messages.length);
-      const now = new Date();
-      const ts = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
-      setLogs((prev) => [
-        ...prev.slice(-200),
-        {
-          id: nextIdRef.current++,
-          timestamp: ts,
-          level: levels[idx],
-          source: sources[idx],
-          message: messages[idx],
-        },
-      ]);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [isPaused]);
+  const { data: deployments = [] } = trpc.webappProject.deployments.useQuery(
+    { externalId: projectExternalId ?? "" },
+    { enabled: !!projectExternalId }
+  );
+
+  const deploys = deployments as any[];
 
   useEffect(() => {
-    if (autoScroll) {
-      logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (deploys.length > 0 && !selectedDeploymentId) {
+      setSelectedDeploymentId(deploys[0].id);
     }
-  }, [logs, autoScroll]);
+  }, [deploys, selectedDeploymentId]);
+
+  const { data: buildLog } = trpc.webappProject.getDeploymentLog.useQuery(
+    { deploymentId: selectedDeploymentId! },
+    { enabled: !!selectedDeploymentId, refetchInterval: 5_000 }
+  );
+
+  const rawText = typeof buildLog === "string" ? buildLog : buildLog ? JSON.stringify(buildLog, null, 2) : "";
+  const logs: LogEntry[] = rawText.split("\n").filter(Boolean).map((line, i) => {
+    const { level, source } = classifyLine(line);
+    const tsMatch = line.match(/^\[?(\d{2}:\d{2}:\d{2})/);
+    return { id: i, timestamp: tsMatch?.[1] ?? "", level, source, message: line };
+  });
+
+  useEffect(() => {
+    if (autoScroll) logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs.length, autoScroll]);
 
   const filteredLogs = logs.filter((log) => {
     if (levelFilter !== "all" && log.level !== levelFilter) return false;
@@ -134,10 +104,8 @@ export default function WebAppBuildConsole(): React.JSX.Element {
     return true;
   });
 
-  const handleClear = useCallback(() => setLogs([]), []);
-
   const handleCopyAll = useCallback(() => {
-    const text = filteredLogs.map((l) => `[${l.timestamp}] [${l.level}] [${l.source}] ${l.message}`).join("\n");
+    const text = filteredLogs.map((l) => l.message).join("\n");
     navigator.clipboard.writeText(text).catch(() => {});
   }, [filteredLogs]);
 
@@ -151,17 +119,28 @@ export default function WebAppBuildConsole(): React.JSX.Element {
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-green-400" />
           <span className="text-xs font-medium text-gray-200">Build Console</span>
+          {deploys.length > 0 && (
+            <select
+              value={selectedDeploymentId ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedDeploymentId(Number(e.target.value))}
+              className="text-[10px] bg-[#0d1117] border border-gray-700 rounded px-2 py-0.5 text-gray-300 focus:outline-none ml-2"
+            >
+              {deploys.map((d: any) => (
+                <option key={d.id} value={d.id}>
+                  #{d.id} — {d.commitMessage?.slice(0, 30) || d.status}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex items-center gap-2 ml-3">
             {errorCount > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
-                <XCircle className="w-2.5 h-2.5" />
-                {errorCount}
+                <XCircle className="w-2.5 h-2.5" /> {errorCount}
               </span>
             )}
             {warnCount > 0 && (
               <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                <AlertTriangle className="w-2.5 h-2.5" />
-                {warnCount}
+                <AlertTriangle className="w-2.5 h-2.5" /> {warnCount}
               </span>
             )}
           </div>
@@ -169,34 +148,13 @@ export default function WebAppBuildConsole(): React.JSX.Element {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className={cn(
-              "p-1.5 rounded transition-colors",
-              showSearch ? "bg-gray-700 text-gray-200" : "text-gray-500 hover:text-gray-300"
-            )}
+            className={cn("p-1.5 rounded transition-colors", showSearch ? "bg-gray-700 text-gray-200" : "text-gray-500 hover:text-gray-300")}
             title="Search"
           >
             <Search className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => setIsPaused(!isPaused)}
-            className="p-1.5 rounded text-gray-500 hover:text-gray-300 transition-colors"
-            title={isPaused ? "Resume" : "Pause"}
-          >
-            {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            onClick={handleCopyAll}
-            className="p-1.5 rounded text-gray-500 hover:text-gray-300 transition-colors"
-            title="Copy all"
-          >
+          <button onClick={handleCopyAll} className="p-1.5 rounded text-gray-500 hover:text-gray-300 transition-colors" title="Copy all">
             <Copy className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={handleClear}
-            className="p-1.5 rounded text-gray-500 hover:text-gray-300 transition-colors"
-            title="Clear"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -237,11 +195,13 @@ export default function WebAppBuildConsole(): React.JSX.Element {
 
       {/* Log Output */}
       <div className="flex-1 overflow-y-auto px-4 py-2 text-[11px] leading-5">
+        {!selectedDeploymentId && (
+          <p className="text-gray-600 py-8 text-center">No deployment selected. Deploy your project to see build logs.</p>
+        )}
         {filteredLogs.map((log) => (
           <div key={log.id} className="flex items-start gap-2 hover:bg-gray-800/30 px-1 -mx-1 rounded">
-            <span className="text-gray-600 shrink-0 select-none">{log.timestamp}</span>
+            <span className="text-gray-600 shrink-0 select-none w-6 text-right">{log.id + 1}</span>
             {getLevelIcon(log.level)}
-            <span className="text-gray-500 shrink-0 w-12 truncate">[{log.source}]</span>
             <span className={getLevelColor(log.level)}>{log.message}</span>
           </div>
         ))}
@@ -250,13 +210,10 @@ export default function WebAppBuildConsole(): React.JSX.Element {
 
       {/* Footer */}
       <div className="flex items-center justify-between px-4 py-1.5 border-t border-gray-700/50 bg-[#161b22] text-[10px] text-gray-600">
-        <span>{filteredLogs.length} lines{isPaused ? " (paused)" : ""}</span>
+        <span>{filteredLogs.length} lines</span>
         <button
           onClick={() => setAutoScroll(!autoScroll)}
-          className={cn(
-            "flex items-center gap-1 transition-colors",
-            autoScroll ? "text-green-500" : "text-gray-600 hover:text-gray-400"
-          )}
+          className={cn("flex items-center gap-1 transition-colors", autoScroll ? "text-green-500" : "text-gray-600 hover:text-gray-400")}
         >
           <ChevronDown className="w-3 h-3" />
           Auto-scroll {autoScroll ? "on" : "off"}

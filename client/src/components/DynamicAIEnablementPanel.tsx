@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 import {
   Cpu,
   ToggleLeft,
@@ -57,9 +58,29 @@ const MOCK_CAPABILITIES: AICapability[] = [
 ];
 
 export default function DynamicAIEnablementPanel(): React.JSX.Element {
+  const { data: prefs } = trpc.preferences.get.useQuery();
+  const savePrefsMut = trpc.preferences.save.useMutation();
   const [capabilities, setCapabilities] = useState<AICapability[]>(MOCK_CAPABILITIES);
   const [selectedCapability, setSelectedCapability] = useState<string | null>(null);
   const [filterTier, setFilterTier] = useState<"all" | "core" | "advanced" | "experimental">("all");
+
+  // Load persisted capability states
+  useEffect(() => {
+    const saved = (prefs?.generalSettings as any)?.aiCapabilityStates;
+    if (saved && typeof saved === "object") {
+      setCapabilities((prev) => prev.map((c) => ({
+        ...c,
+        enabled: saved[c.id] !== undefined ? saved[c.id] : c.enabled,
+      })));
+    }
+  }, [prefs]);
+
+  const persistCapabilities = useCallback((caps: AICapability[]) => {
+    const states: Record<string, boolean> = {};
+    caps.forEach((c) => { states[c.id] = c.enabled; });
+    const current = (prefs?.generalSettings ?? {}) as Record<string, unknown>;
+    savePrefsMut.mutate({ generalSettings: { ...current, aiCapabilityStates: states } });
+  }, [prefs, savePrefsMut]);
 
   const handleToggle = useCallback((id: string) => {
     setCapabilities((prev) => {
@@ -90,7 +111,11 @@ export default function DynamicAIEnablementPanel(): React.JSX.Element {
 
       return prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c));
     });
-  }, []);
+    // Persist after state update
+    setTimeout(() => {
+      setCapabilities((current) => { persistCapabilities(current); return current; });
+    }, 0);
+  }, [persistCapabilities]);
 
   const groups: CapabilityGroup[] = [
     { category: "reasoning", label: "Reasoning", icon: Brain, capabilities: capabilities.filter((c) => c.category === "reasoning") },
