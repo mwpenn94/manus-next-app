@@ -854,7 +854,8 @@ async function startServer() {
           const sanitize = (s: string) => s.replace(/[\/\\:*?"<>|\x00-\x1f]/g, "_").replace(/\.\./g, "_").slice(0, 200);
           const fileName = sanitize(rawFileName);
           const taskId = sanitize(rawTaskId);
-          const fileKey = `task-files/${taskId}/${Date.now()}-${fileName}`;
+          const randomSuffix = Math.random().toString(36).slice(2, 8);
+          const fileKey = `task-files/${taskId}/${Date.now()}-${randomSuffix}-${fileName}`;
           const { key, url } = await storagePut(fileKey, body, contentType);
           res.json({ success: true, key, url, fileName });
         } catch (err: any) {

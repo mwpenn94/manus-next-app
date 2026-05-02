@@ -6831,3 +6831,29 @@
 - [x] Verified FALSE POSITIVE: memoryEntries.lastAccessedAt IS updated via touchMemoryAccess
 - [x] Verified FALSE POSITIVE: projectDir command injection - projectName sanitized with [^a-z0-9-]
 - [x] Verified FALSE POSITIVE: generateImage race condition - code properly awaits stream
+
+## Convergence Pass 8 — Depth Pass (Pass ~475)
+- [x] HIGH: Add random suffix to fileKey in upload to prevent S3 key collisions
+- [x] HIGH: Add error logging to GDPR notify catch block (was silently swallowing)
+- [x] Verified FALSE POSITIVE: teamIds in GDPR deleteAllData IS defined (line 192)
+- [x] Verified FALSE POSITIVE: Slides JSON.parse IS inside try-catch
+- [x] Verified FALSE POSITIVE: TaskView unmount stale closure ALREADY FIXED with addMessageRef pattern
+- [x] Verified FALSE POSITIVE: GitHub null repo HANDLED with optional chaining
+- [x] Verified FALSE POSITIVE: getRepoTree HAS await (line 222)
+- [x] Verified FALSE POSITIVE: documentArtifacts spread uses ?? [] fallback
+- [x] Verified FALSE POSITIVE: file.type.split uses ?. optional chaining with || fallback
+- [x] Verified FALSE POSITIVE: replay useEffect deps intentionally limited (eslint-disable comment)
+- [x] Verified DESIGN DECISION: taskRatings unique per task is correct (one rating per task)
+- [x] Verified DESIGN DECISION: Research race condition is user-scoped (low risk)
+
+## Convergence Pass 9 — Adversarial Pass (Pass ~500)
+- [x] CRITICAL: Command injection in cloneAndBuild — added whitelist + shell metacharacter blocking
+- [x] HIGH: Team IDOR — added membership verification to team.get, team.members, team.sessions
+- [x] HIGH: SSRF in fetchPageContent and executeReadWebpage — added isInternalUrl() blocker for private IPs
+- [x] HIGH: Research IDOR — added ownership prefix check to research.get
+- [x] HIGH: XSS via javascript: URL in BrowserPreview — added protocol check before window.open
+- [x] Verified ALREADY FIXED: addCredits auth bypass (fixed in landscape pass)
+- [x] Verified FALSE POSITIVE: DuckDuckGo SSRF (query is search text, not URL)
+- [x] Verified FALSE POSITIVE: Client-side credit display (display only, not authoritative)
+- [x] Verified FALSE POSITIVE: OAuth CSRF (state parameter already validated)
+- [x] Verified FALSE POSITIVE: Prompt injection (inherent to LLM, not a code vulnerability)

@@ -25,12 +25,22 @@ export const teamRouter = router({
       }),
     get: protectedProcedure
       .input(z.object({ teamId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        // Verify caller is a member of this team
+        const userTeams = await getUserTeams(ctx.user.id);
+        if (!userTeams.some(t => t.id === input.teamId)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a member of this team" });
+        }
         return getTeamById(input.teamId);
       }),
     members: protectedProcedure
       .input(z.object({ teamId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        // Verify caller is a member of this team
+        const userTeams = await getUserTeams(ctx.user.id);
+        if (!userTeams.some(t => t.id === input.teamId)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a member of this team" });
+        }
         return getTeamMembers(input.teamId);
       }),
     join: protectedProcedure
@@ -60,7 +70,12 @@ export const teamRouter = router({
       }),
     sessions: protectedProcedure
       .input(z.object({ teamId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        // Verify caller is a member of this team
+        const userTeams = await getUserTeams(ctx.user.id);
+        if (!userTeams.some(t => t.id === input.teamId)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a member of this team" });
+        }
         return getTeamSessions(input.teamId);
       }),
     shareSession: protectedProcedure

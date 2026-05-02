@@ -170,7 +170,13 @@ export const researchRouter = router({
   /** Get research results */
   get: protectedProcedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) => {
+    .query(({ ctx, input }) => {
+      // IDOR protection: verify the research ID belongs to the requesting user
+      // Research IDs follow the format: research-{userId}-{timestamp}
+      const expectedPrefix = `research-${ctx.user.id}-`;
+      if (!input.id.startsWith(expectedPrefix)) {
+        return null; // Don't reveal that the resource exists
+      }
       const result = researchCache.get(input.id);
       if (!result) return null;
       return result;

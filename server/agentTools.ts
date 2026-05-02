@@ -1185,8 +1185,38 @@ async function wikipediaSearch(query: string): Promise<Array<{ title: string; sn
 /**
  * Fetch a webpage and extract its text content (lightweight, no heavy deps).
  */
+/** Block requests to internal/private IP ranges to prevent SSRF */
+function isInternalUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    const hostname = parsed.hostname.toLowerCase();
+    // Block common internal hostnames
+    if (hostname === "localhost" || hostname === "[::1]") return true;
+    // Block private/reserved IP ranges
+    const parts = hostname.split(".");
+    if (parts.length === 4 && parts.every(p => /^\d+$/.test(p))) {
+      const [a, b] = parts.map(Number);
+      if (a === 127) return true;                    // 127.0.0.0/8 loopback
+      if (a === 10) return true;                     // 10.0.0.0/8 private
+      if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12 private
+      if (a === 192 && b === 168) return true;        // 192.168.0.0/16 private
+      if (a === 169 && b === 254) return true;        // 169.254.0.0/16 link-local / cloud metadata
+      if (a === 0) return true;                       // 0.0.0.0/8
+    }
+    // Block non-http(s) schemes
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return true;
+    return false;
+  } catch {
+    return true; // If URL can't be parsed, block it
+  }
+}
+
 async function fetchPageContent(url: string, maxChars = 8000): Promise<string> {
   try {
+    // SSRF protection: block requests to internal networks
+    if (isInternalUrl(url)) {
+      return "(Blocked: URL points to an internal or private network address)";
+    }
     const resp = await fetch(url, {
       headers: {
         "User-Agent":
@@ -1623,6 +1653,10 @@ async function executeWebSearchFallback(args: { query: string }): Promise<ToolRe
  */
 async function executeReadWebpage(args: { url: string }): Promise<ToolResult> {
   try {
+    // SSRF protection: block requests to internal networks
+    if (isInternalUrl(args.url)) {
+      return { success: false, result: "Blocked: URL points to an internal or private network address" };
+    }
     // C8-B3: Skip ad/redirect URLs
     if (isAdOrRedirectUrl(args.url)) {
       return {

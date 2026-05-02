@@ -301,7 +301,9 @@ export const gdprRouter = router({
       try {
         const { notifyOwner } = await import("../_core/notification");
         await notifyOwner({ title: "GDPR Data Deletion", content: `User ${ctx.user.name} (ID: ${userId}) requested full data deletion.` });
-      } catch {}
+      } catch (notifyErr) {
+        console.warn("[GDPR] Owner notification failed (non-blocking):", notifyErr);
+      }
       return { deleted: true, deletedAt: new Date().toISOString() };
     }),
   });

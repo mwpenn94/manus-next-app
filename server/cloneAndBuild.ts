@@ -46,6 +46,28 @@ export interface CloneAndBuildResult {
   hasBuildStep: boolean;
 }
 
+/** Whitelist of allowed install/build command prefixes to prevent command injection */
+const ALLOWED_COMMAND_PREFIXES = [
+  "npm install", "npm ci", "npm run",
+  "yarn install", "yarn",
+  "pnpm install", "pnpm run",
+  "npx", "bun install", "bun run",
+];
+
+function sanitizeBuildCommand(cmd: string): string {
+  const trimmed = cmd.trim();
+  // Block shell metacharacters that enable injection
+  if (/[;&|`$(){}\\]/.test(trimmed)) {
+    throw new Error(`Unsafe command rejected: contains shell metacharacters`);
+  }
+  // Must start with an allowed prefix
+  const isAllowed = ALLOWED_COMMAND_PREFIXES.some(prefix => trimmed.startsWith(prefix));
+  if (!isAllowed) {
+    throw new Error(`Unsafe command rejected: must start with one of: ${ALLOWED_COMMAND_PREFIXES.join(", ")}`);
+  }
+  return trimmed;
+}
+
 /**
  * Clone a GitHub repo, install dependencies, run build, and return the output path.
  * If no package.json is found, returns the repo root as a static site.
@@ -55,13 +77,17 @@ export async function cloneAndBuild(options: CloneAndBuildOptions): Promise<Clon
     cloneUrl,
     branch,
     token,
-    installCommand = "npm install",
-    buildCommand = "npm run build",
+    installCommand: rawInstallCommand = "npm install",
+    buildCommand: rawBuildCommand = "npm run build",
     outputDir = "dist",
     envVars = {},
     buildTimeout = 120000,
     onLog,
   } = options;
+
+  // Sanitize commands to prevent injection
+  const installCommand = sanitizeBuildCommand(rawInstallCommand);
+  const buildCommand = sanitizeBuildCommand(rawBuildCommand);
 
   const startTime = Date.now();
   const buildLog: string[] = [];
