@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { ConnectorBrandIcon } from "@/components/ConnectorBrandIcon";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -203,7 +204,7 @@ function TieredAuthDialog({
       <div className="px-6 pt-6 pb-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-lg" style={{ fontFamily: "var(--font-heading)" }}>
-            <span className="text-2xl">{connector.icon}</span>
+            <ConnectorBrandIcon id={connector.id} emoji={connector.icon} size="lg" />
             <span>Connect {connector.name}</span>
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground mt-1.5">
@@ -1001,7 +1002,7 @@ export default function ConnectorsPage() {
                             <div className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/30">
                               {/* Icon */}
                               <div className="w-9 h-9 rounded-lg bg-background/60 border border-border/60/50 flex items-center justify-center shrink-0">
-                                <span className="text-lg">{c.icon}</span>
+                                <ConnectorBrandIcon id={c.id} emoji={c.icon} size="md" />
                               </div>
 
                               {/* Name + description */}

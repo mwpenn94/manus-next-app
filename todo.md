@@ -6942,3 +6942,14 @@
 - Convergence trajectory: 6→3→2→2→1→1→0 genuine fixes per pass
 - All 23 security fixes verified in place across the codebase
 - Total passes completed: ~1200 of 1280 target
+
+## Session 26 — Video Bug Report (ScreenRecording_05-02-2026)
+- [ ] Fix input area: send button missing in stalled task state, only "+" button visible
+- [ ] Fix "+" button covering/replacing send button — tapping "+" deletes typed message
+- [ ] Fix message loss: typed/pasted text disappears when tapping "+" instead of sending
+- [ ] Fix message persistence: messages disappearing, not persisting across task states
+- [ ] Fix stalled state recovery loop: task gets stuck in "stalled" error, cannot recover
+- [ ] Fix connectors page icons: use proper brand logos (Slack, GitHub, Gmail, Outlook) instead of generic icons
+- [ ] Add task template management: ability to edit/delete templates, remove "Test Template" clutter
+- [ ] Fix GitHub integration: agent hallucinates repo contents instead of actually reading repo
+- [ ] Fix GitHub CRUD/preview/publish: app claims connection but cannot interact with repo

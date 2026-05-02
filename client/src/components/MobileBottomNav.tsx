@@ -197,8 +197,11 @@ export default function MobileBottomNav() {
           </button>
         </div>
       </nav>
-      {/* FAB — floating action button for new task (Manus parity) */}
-      {!moreOpen && location !== "/" && (
+      {/* FAB — floating action button for new task (Manus parity)
+       * Hidden on /task/* pages to prevent overlap with chat input send button.
+       * The chat input already has a "+" button for PlusMenu actions.
+       */}
+      {!moreOpen && location !== "/" && !location.startsWith("/task/") && (
         <button
           onClick={() => navigate("/")}
           className="md:hidden fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-90 transition-transform"

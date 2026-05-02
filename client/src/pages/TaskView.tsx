@@ -2976,8 +2976,9 @@ export default function TaskView() {
         setStepProgress(null);
         const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
         addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined });
-
-        // Auto-generate title after first agent response (only if title looks like user's raw input)
+        // Mark task as completed after successful streaming
+        updateTaskStatus(task.id, "completed");
+        // Auto-generate title after first agent response (only if title looks like user's raw input))
         if (task.messages.length <= 2 && accumulated.trim() && isAuthenticated) {
           const userMsg = task.messages.find(m => m.role === "user");
           if (userMsg && task.title === userMsg.content.slice(0, 50) + (userMsg.content.length > 50 ? "..." : "") || task.title === userMsg?.content.slice(0, 50)) {
@@ -4492,11 +4493,9 @@ export default function TaskView() {
             </div>
           )}
           {/* Stale/error task recovery — Manus-style interactive error recovery with options */}
-          {!streaming && !lastErrorRetryable && (task.status === "error" || (task.status === "running" && !streaming)) && task.messages.length > 0 && (
+          {!streaming && !lastErrorRetryable && task.status === "error" && task.messages.length > 0 && (
             <UserChoiceErrorHandler
-              errorMessage={task.status === "error"
-                ? "Something went wrong during execution. Here are your options:"
-                : "This task appears to be stalled. Here's how to proceed:"}
+              errorMessage="Something went wrong during execution. Here are your options:"
               options={[
                 { label: "Retry the last step", description: "Re-run the most recent operation", action: () => handleRegenerate() },
                 { label: "Start fresh from here", description: "Send a new message to continue differently", action: () => { inputRef.current?.focus(); } },
