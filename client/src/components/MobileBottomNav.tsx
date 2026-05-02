@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import {
   Home, ListTodo, CreditCard, MoreHorizontal, X, Search,
   FolderOpen, BookOpen, Clock, Zap, Plug, Settings, HelpCircle,
-  Github, Brain, Compass, Webhook, Shield,
+  Github, Brain, Compass, Webhook, Shield, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -197,6 +197,17 @@ export default function MobileBottomNav() {
           </button>
         </div>
       </nav>
+      {/* FAB — floating action button for new task (Manus parity) */}
+      {!moreOpen && location !== "/" && (
+        <button
+          onClick={() => navigate("/")}
+          className="md:hidden fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center active:scale-90 transition-transform"
+          aria-label="New task"
+          style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+      )}
     </>
   );
 }

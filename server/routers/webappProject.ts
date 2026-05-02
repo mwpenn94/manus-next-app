@@ -841,4 +841,28 @@ Provide a JSON response with this exact structure:
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         return { saved: true, reportId: `qa-${Date.now()}` };
       }),
+    /** Get project dependencies from package.json */
+    dependencies: protectedProcedure
+      .input(z.object({ externalId: z.string().optional() }))
+      .query(async ({ ctx }) => {
+        try {
+          const fs = await import("fs");
+          const path = await import("path");
+          const pkgPath = path.resolve(process.cwd(), "package.json");
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+          const deps = Object.entries(pkg.dependencies || {}).map(([name, version]) => ({
+            name,
+            version: String(version),
+            type: "production" as const,
+          }));
+          const devDeps = Object.entries(pkg.devDependencies || {}).map(([name, version]) => ({
+            name,
+            version: String(version),
+            type: "development" as const,
+          }));
+          return [...deps, ...devDeps];
+        } catch {
+          return [];
+        }
+      }),
 });

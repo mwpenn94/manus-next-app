@@ -6768,3 +6768,42 @@
 - [x] Run TypeScript check (target: 0 errors) — CONFIRMED 0 errors
 - [x] Run full test suite (target: 4,912+ tests, 0 failures) — CONFIRMED 4,912 tests, 197 files, 0 failures
 - [x] Save checkpoint
+
+## Deep Manus Parity Pass (Video Analysis - May 2026)
+
+### HIGH PRIORITY: Execution Dashboard (Core Agent Experience)
+- [x] Build ExecutionBlock component: top-level task cards with live timers counting up per phase
+- [x] Build expandable sub-tasks (accordion) inside each ExecutionBlock with checkmark/pulsing icons
+- [x] Add tool-specific icons in execution steps: lightbulb (knowledge), file (create/edit), terminal (command), browser (web)
+- [x] Build inline TerminalPreview widget: dark-gray rounded rect showing command being executed
+- [x] Build inline FilePreview widget: dark-gray rounded rect showing file path being edited
+- [x] Integrate ExecutionBlock into TaskView chat stream (render as SSE tool_start/tool_result events)
+- [x] Add agent status progression: "Manus is thinking..." → "Initializing the computer..." → active execution
+- [x] Add task completion state with checkmark and 5-star rating widget (RLHF feedback)
+
+### HIGH PRIORITY: Header & Connection UX
+- [x] Add model selector to TaskView header (show active model name + token/credit balance)
+- [x] Add connection lost/reconnect red banner (top drop-down, auto-dismiss on reconnect)
+- [x] Ensure auth flow uses explicit sign-in button (not auto-redirect that could loop)
+
+### MEDIUM PRIORITY: Home & Navigation Polish
+- [x] Add category filter tabs to home task list (All, Manual, Scheduled)
+- [x] Add FAB (+) button for new task on mobile (bottom-right floating action button)
+- [x] Add GitHub quick-action icon in chat input bar
+- [ ] Ensure markdown tables have horizontal scroll on mobile
+- [ ] Consistent agent avatar (stylized Manus logo) in all chat messages
+
+### Next Steps Resolution: Wire Mock Components to Real tRPC
+- [ ] Wire ScheduledTaskManager to real tRPC (remove MOCK_ arrays)
+- [ ] Wire ConnectorsCRUDPanel to real tRPC (remove MOCK_ arrays)
+- [ ] Wire DataIntegrationMonitor to real tRPC (remove MOCK_ arrays)
+- [x] Wire AgentSelfImprovementDashboard to real tRPC (remove MOCK_ arrays)
+- [ ] Wire AgentMemoryTimeline to real tRPC (remove MOCK_ arrays)
+- [ ] Wire TaskArtifactGallery to real tRPC (remove MOCK_ arrays)
+- [ ] Wire TaskReplayViewer to real tRPC (remove MOCK_ arrays)
+- [ ] Wire HandsFreeMode to real tRPC (remove MOCK_ arrays)
+- [ ] Wire AudibleCuesManager to real tRPC (remove MOCK_ arrays)
+
+### Test Coverage Expansion
+- [x] Add vitest specs for personalization.ts router
+- [x] Add vitest specs for processImprovement.ts router

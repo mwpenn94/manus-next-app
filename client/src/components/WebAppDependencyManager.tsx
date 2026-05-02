@@ -51,7 +51,26 @@ type FilterType = "all" | "production" | "dev" | "outdated" | "vulnerable";
 export default function WebAppDependencyManager(): React.JSX.Element {
   const { data: prefs } = trpc.preferences.get.useQuery();
   const savePrefsMut = trpc.preferences.save.useMutation();
+  // Fetch real dependencies from tRPC
+  const { data: realDeps, isLoading: depsLoading } = trpc.webappProject.dependencies.useQuery({ externalId: undefined });
   const [deps, setDeps] = useState<Dependency[]>(MOCK_DEPS);
+
+  // Sync real deps when loaded
+  useEffect(() => {
+    if (realDeps && realDeps.length > 0) {
+      setDeps(realDeps.map((d: { name: string; version: string; type: string }) => ({
+        name: d.name,
+        currentVersion: d.version.replace(/^[\^~]/, ""),
+        latestVersion: d.version.replace(/^[\^~]/, ""),
+        type: d.type === "development" ? "dev" : "production",
+        size: "-",
+        license: "MIT",
+        hasUpdate: false,
+        vulnerabilities: 0,
+        description: "",
+      })));
+    }
+  }, [realDeps]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);

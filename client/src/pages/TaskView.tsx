@@ -97,6 +97,7 @@ import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { motion, AnimatePresence } from "framer-motion";
 import ModeToggle, { type AgentMode } from "@/components/ModeToggle";
+import { TerminalPreview, FilePreview, BrowserPreview } from "@/components/InlinePreviewWidgets";
 import ShareDialog from "@/components/ShareDialog";
 // TaskProgressCard replaced by inline step counter (Pass 52)
 import { BranchBanner, ChildBranches, BranchButton } from "@/components/BranchIndicator";
@@ -662,21 +663,30 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
             </button>
           )}
         </div>
-        {/* Inline screenshot for browsing actions */}
-        {(action.type as string === "browsing") && action.preview?.startsWith("http") && (
-          <div className="mt-1.5 rounded-md overflow-hidden border border-border/50 max-w-[280px]">
-            <img
-              src={action.preview}
-              alt="Browser screenshot"
-              className="w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => window.open(action.preview!, "_blank")}
-              loading="lazy"
-            />
-          </div>
+        {/* Manus-style inline preview widgets for terminal/file/browser actions */}
+        {isActive && action.type === "executing" && action.command && (
+          <TerminalPreview command={action.command} isActive className="mt-1" />
+        )}
+        {isActive && (action.type === "creating" || action.type === "editing" || action.type === "reading" || action.type === "writing") && (action as any).file && (
+          <FilePreview filePath={(action as any).file} action={action.type as any} isActive className="mt-1" />
+        )}
+        {action.type === "browsing" && action.url && (
+          <BrowserPreview
+            url={action.url}
+            screenshot={action.preview?.startsWith("http") ? action.preview : undefined}
+            isActive={isActive}
+            className="mt-1"
+          />
         )}
         {previewExpanded && action.preview && (
-          <div className="mt-1.5 rounded bg-muted/50 border border-border/50 text-[11px] text-muted-foreground leading-relaxed max-h-40 overflow-y-auto">
-            {action.type === "searching" && action.preview.includes("http") ? (
+          <div className="mt-1.5 overflow-hidden">
+            {/* Terminal output as dark card widget */}
+            {(action.type === "executing") ? (
+              <TerminalPreview command={action.command || ""} output={action.preview} className="mt-0" />
+            ) : (action.type === "creating" || action.type === "editing" || action.type === "reading" || action.type === "writing") ? (
+              <FilePreview filePath={(action as any).file || "file"} action={action.type as any} content={action.preview} className="mt-0" />
+            ) : action.type === "searching" && action.preview.includes("http") ? (
+            <div className="rounded bg-muted/50 border border-border/50 text-[11px] text-muted-foreground leading-relaxed max-h-40 overflow-y-auto">
               <div className="divide-y divide-border/50">
                 {action.preview.split("\n").filter(Boolean).slice(0, 5).map((line, i) => {
                   const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
@@ -702,10 +712,7 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                   );
                 })}
               </div>
-            ) : (action.type === "executing" || action.type === "reading" || action.type === "editing") ? (
-              <div className="p-2">
-                <pre className="font-mono whitespace-pre-wrap text-[10px] leading-relaxed">{action.preview}</pre>
-              </div>
+            </div>
             ) : action.type === "installing" ? (
               <div className="p-2">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -2269,7 +2276,16 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
 
       {/* Timeline / Progress — Enhanced with TaskStepProgressIndicator */}
       <div className="border-t border-border shrink-0">
-        <TaskStepProgressIndicator />
+        <TaskStepProgressIndicator
+          steps={agentActions && agentActions.length > 0 ? agentActions.map((a, i) => ({
+            id: `step-${i}`,
+            label: a.type.charAt(0).toUpperCase() + a.type.slice(1) + (('url' in a && a.url) ? `: ${(a as any).url.slice(0, 40)}` : ('command' in a && a.command) ? `: ${(a as any).command.slice(0, 40)}` : ('file' in a && a.file) ? `: ${(a as any).file}` : ('query' in a && a.query) ? `: ${(a as any).query.slice(0, 40)}` : ('label' in a && a.label) ? `: ${(a as any).label}` : ''),
+            description: a.preview || '',
+            status: a.status === 'active' ? 'running' as const : a.status === 'done' ? 'completed' as const : 'failed' as const,
+            toolsUsed: [a.type],
+          })) : undefined}
+          compact
+        />
         <div className="h-10 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">

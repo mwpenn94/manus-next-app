@@ -71,7 +71,7 @@ import {
   X,
   Star,
   Trash2,
-  Filter,
+
   Brain,
   FolderOpen,
   Users,
@@ -605,73 +605,41 @@ function AllTasksSection({
   statusFilter,
   onStatusFilterChange,
 }: AllTasksSectionProps) {
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!showFilterDropdown) return;
-    const handler = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilterDropdown(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showFilterDropdown]);
-
   const filters = [
     { id: "all", label: "All" },
     { id: "running", label: "Running" },
     { id: "completed", label: "Completed" },
     { id: "error", label: "Error" },
     { id: "favorites", label: "Favorites" },
+    { id: "scheduled", label: "Scheduled" },
   ];
 
   // Apply filter
   const filteredTasks = useMemo(() => {
     if (statusFilter === "favorites") return allTasks.filter((t) => t.favorite === 1);
+    if (statusFilter === "scheduled") return allTasks.filter((t) => t.title.startsWith("[Scheduled]") || t.title.toLowerCase().includes("scheduled"));
     if (statusFilter !== "all") return allTasks.filter((t) => t.status === statusFilter);
     return allTasks;
   }, [allTasks, statusFilter]);
 
   return (
     <div className="px-2 py-1 mt-2">
-      {/* Section header */}
-      <div className="flex items-center justify-between px-1 mb-1">
-        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-          All tasks
-        </span>
-        <div className="relative" ref={filterRef}>
+      {/* Filter pills — horizontal scrollable like Manus */}
+      <div className="flex items-center gap-1 px-1 mb-2 overflow-x-auto scrollbar-none">
+        {filters.map((f) => (
           <button
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            key={f.id}
+            onClick={() => onStatusFilterChange(f.id)}
             className={cn(
-              "p-1 rounded transition-colors",
-              statusFilter !== "all"
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              "px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all shrink-0",
+              statusFilter === f.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
             )}
-            title="Filter tasks"
           >
-            <Filter className="w-3.5 h-3.5" />
+            {f.label}
           </button>
-          {showFilterDropdown && (
-            <div className="absolute right-0 top-full mt-1 z-50 w-36 rounded-lg border border-border bg-popover text-popover-foreground shadow-xl overflow-hidden py-1">
-              {filters.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => {
-                    onStatusFilterChange(f.id);
-                    setShowFilterDropdown(false);
-                  }}
-                  className={cn(
-                    "w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-accent/50",
-                    statusFilter === f.id && "bg-accent/30 font-medium"
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        ))}
       </div>
 
       {/* Task list */}
