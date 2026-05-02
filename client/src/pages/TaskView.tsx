@@ -4242,7 +4242,12 @@ export default function TaskView() {
           {/* Print header — only visible when printing */}
           <div className="print-header">
             <h1>{task?.title || "Task Chat"}</h1>
-            <div className="meta">{task?.createdAt?.toLocaleString()} • {task?.messages?.length || 0} messages</div>
+            <div className="meta">
+              {task?.createdAt?.toLocaleString()} • Status: {task?.status || "unknown"} • {task?.messages?.length || 0} messages
+              {agentActions.length > 0 && ` • ${agentActions.length} tool calls`}
+              {tokenUsage && ` • Est. cost: ${((tokenUsage.prompt_tokens / 1_000_000) * 3.0 + (tokenUsage.completion_tokens / 1_000_000) * 15.0) < 0.01 ? '<$0.01' : `$${((tokenUsage.prompt_tokens / 1_000_000) * 3.0 + (tokenUsage.completion_tokens / 1_000_000) * 15.0).toFixed(3)}`}`}
+              {` • Model: ${agentMode}`}
+            </div>
           </div>
           {/* During streaming, hide card-type messages that were added mid-stream
               (convergence, system_notice, context_compressed) to prevent scattered
