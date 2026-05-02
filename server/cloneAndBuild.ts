@@ -102,13 +102,26 @@ export async function cloneAndBuild(options: CloneAndBuildOptions): Promise<Clon
   try {
     // Clone the repo
     log(`Cloning ${cloneUrl} (branch: ${branch})...`);
+    
+    // Sanitize branch name to prevent command injection
+    const safeBranch = branch.replace(/[^a-zA-Z0-9._\-\/]/g, "");
+    if (!safeBranch || safeBranch !== branch.trim()) {
+      return {
+        success: false,
+        buildLog,
+        error: `Invalid branch name: contains disallowed characters`,
+        durationSec: Math.round((Date.now() - startTime) / 1000),
+        hasBuildStep: false,
+      };
+    }
+    
     const authUrl = token
       ? cloneUrl.replace("https://", `https://x-access-token:${token}@`)
       : cloneUrl;
     
     try {
       execSync(
-        `git clone --depth 1 --branch ${branch} "${authUrl}" "${tmpDir}/repo" 2>&1`,
+        `git clone --depth 1 --branch "${safeBranch}" "${authUrl}" "${tmpDir}/repo" 2>&1`,
         { timeout: 60000 }
       );
     } catch (cloneErr: any) {

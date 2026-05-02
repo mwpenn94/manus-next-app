@@ -81,6 +81,11 @@ export const teamRouter = router({
     shareSession: protectedProcedure
       .input(z.object({ teamId: z.number(), taskExternalId: z.string() }))
       .mutation(async ({ ctx, input }) => {
+        // Verify caller is a member of this team before allowing session sharing
+        const userTeams = await getUserTeams(ctx.user.id);
+        if (!userTeams.some(t => t.id === input.teamId)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not a member of this team" });
+        }
         await createTeamSession({ teamId: input.teamId, taskExternalId: input.taskExternalId, createdBy: ctx.user.id });
         return { success: true };
       }),

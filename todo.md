@@ -6857,3 +6857,13 @@
 - [x] Verified FALSE POSITIVE: Client-side credit display (display only, not authoritative)
 - [x] Verified FALSE POSITIVE: OAuth CSRF (state parameter already validated)
 - [x] Verified FALSE POSITIVE: Prompt injection (inherent to LLM, not a code vulnerability)
+
+## Convergence Pass 10 — AOV Validation Pass (Pass ~550)
+- [x] CRITICAL: Branch injection in git clone — added sanitization + quoting in cloneAndBuild
+- [x] HIGH: shareSession IDOR — added team membership verification
+- [x] Verified FALSE POSITIVE: SSRF (isInternalUrl already present, workers didn't see it in their chunk)
+- [x] Verified FALSE POSITIVE: removeMember (already has owner/admin check in db.ts)
+- [x] Verified FALSE POSITIVE: installDeps (already has strict regex validation)
+- [x] Verified FALSE POSITIVE: Music delete (already checks userId ownership)
+- [x] Verified FALSE POSITIVE: handleEvaluate (intentional developer tool)
+- [x] Verified FALSE POSITIVE: activeProjectDir (server-set from sanitized names, not user-controlled)
