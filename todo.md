@@ -6892,3 +6892,11 @@
 - [x] Verified FALSE POSITIVE: View as HTML XSS (creates blob from markdown, not raw HTML)
 - [x] Verified FALSE POSITIVE: useHandsFreeMode fetch auth (same-origin includes credentials)
 - [x] Verified FALSE POSITIVE: research.start prompt injection (inherent to LLM usage)
+
+## Convergence Pass 14 — Cycle 2 Validation (Pass ~900)
+- [x] 10/10 AOV areas report CONVERGED status
+- [x] GENUINE: OAuth callback XSS — added escapeHtml() to buildOAuthCallbackHtml and buildManusVerifyHtml
+- [x] GENUINE: exportPdf HTML escaping — added esc() for title, content, notes, and deck.title
+- [x] Verified FALSE POSITIVE: workspace IDOR (verifyTaskOwnershipById on all endpoints)
+- [x] Verified FALSE POSITIVE: parseCSV DoS (z.string().max(500000) limits input)
+- [x] Verified FALSE POSITIVE: atob DoS (standard binary audio decoding)

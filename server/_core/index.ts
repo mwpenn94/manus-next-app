@@ -30,6 +30,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 /**
  * Builds an HTML page for the OAuth callback popup.
  * If opened as a popup, posts the code back to the opener via postMessage.
@@ -42,7 +46,7 @@ function buildOAuthCallbackHtml(
   state?: string
 ): string {
   if (error) {
-    return `<!DOCTYPE html><html><body><h2>OAuth Error</h2><p>${error}</p><script>setTimeout(()=>window.close(),3000)</script></body></html>`;
+    return `<!DOCTYPE html><html><body><h2>OAuth Error</h2><p>${escapeHtml(error)}</p><script>setTimeout(()=>window.close(),3000)</script></body></html>`;
   }
   // Parse origin and returnPath from state for same-window redirect
   let origin = "";
@@ -137,7 +141,7 @@ function buildManusVerifyHtml(
     return `<!DOCTYPE html><html><body>
 <div style="font-family:system-ui;text-align:center;margin-top:40vh;color:#e5e5e5;background:#0a0a0a;min-height:100vh">
   <h2 style="color:#ef4444">Verification Failed</h2>
-  <p>${error || "Unknown error"}</p>
+  <p>${escapeHtml(error || "Unknown error")}</p>
 </div>
 <script>setTimeout(()=>window.close(),3000)</script>
 </body></html>`;
