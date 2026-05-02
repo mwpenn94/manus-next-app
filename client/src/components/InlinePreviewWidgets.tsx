@@ -16,6 +16,7 @@ import { useState } from "react";
 import { Terminal, FileCode, Globe, Copy, Check, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import sanitizePaths from "@/lib/sanitizePaths";
 
 interface TerminalPreviewProps {
   command: string;
@@ -39,7 +40,8 @@ export function TerminalPreview({ command, output, isActive = false, className }
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const truncatedCmd = command.length > 60 ? command.slice(0, 57) + "..." : command;
+  const sanitizedCmd = sanitizePaths(command);
+  const truncatedCmd = sanitizedCmd.length > 60 ? sanitizedCmd.slice(0, 57) + "..." : sanitizedCmd;
 
   return (
     <motion.div
@@ -80,7 +82,7 @@ export function TerminalPreview({ command, output, isActive = false, className }
       {expanded && output && (
         <div className="border-t border-[#333] px-3 py-2 max-h-32 overflow-y-auto">
           <pre className="text-[10px] font-mono text-[#999] whitespace-pre-wrap leading-relaxed">
-            {output}
+            {sanitizePaths(output)}
           </pre>
         </div>
       )}
@@ -110,8 +112,9 @@ export function FilePreview({ filePath, action = "editing", content, isActive = 
     writing: "Writing",
   }[action];
 
-  const fileName = filePath.split("/").pop() || filePath;
-  const dirPath = filePath.includes("/") ? filePath.slice(0, filePath.lastIndexOf("/")) : "";
+  const sanitizedPath = sanitizePaths(filePath);
+  const fileName = sanitizedPath.split("/").pop() || sanitizedPath;
+  const dirPath = sanitizedPath.includes("/") ? sanitizedPath.slice(0, sanitizedPath.lastIndexOf("/")) : "";
 
   return (
     <motion.div

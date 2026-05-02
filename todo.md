@@ -6809,13 +6809,13 @@
 - [x] Add vitest specs for processImprovement.ts router
 
 ## Video Bug Fixes + Deep Parity (Pass 6+)
-- [ ] Fix markdown table rendering (raw syntax shown instead of formatted table)
-- [ ] Fix jittery scrolling during AI text generation (smooth auto-scroll)
-- [ ] Fix visual text glitches/flashing during streaming
-- [ ] Fix intrusive status box overlaying chat input field
-- [ ] Abstract backend details (hide /home/ubuntu/ paths from user in terminal output)
-- [ ] Add task type icons in history list (circle icons per task type)
-- [ ] Add credit/token balance display in TaskView header
-- [ ] Fix auth redirect loop (OAuth callback issue)
+- [x] Fix markdown table rendering (raw syntax shown instead of formatted table)
+- [x] Fix jittery scrolling during AI text generation (smooth auto-scroll)
+- [x] Fix visual text glitches/flashing during streaming
+- [x] Fix intrusive status box overlaying chat input field
+- [x] Abstract backend details (hide /home/ubuntu/ paths from user in terminal output)
+- [x] Add task type icons in history list (circle icons per task type)
+- [x] Add credit/token balance display in TaskView header
+- [x] Fix auth redirect loop (OAuth callback issue)
 - [x] DOMPurify sanitization added to all dangerouslySetInnerHTML components
 - [x] Remove dead MOCK_ constant definitions

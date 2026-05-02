@@ -4333,7 +4333,7 @@ export default function TaskView() {
                 )}
                 {/* Streaming text content with cursor */}
                 {streamContent && (
-                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none relative">
+                  <div className="text-sm text-foreground prose prose-sm prose-invert max-w-none relative" style={{ contain: 'layout style', willChange: 'contents' }}>
                     <Streamdown>{streamContent}</Streamdown>
                     {streaming && (
                       <span className="inline-block w-[2px] h-[1.1em] bg-primary ml-0.5 align-text-bottom animate-pulse" aria-hidden="true" />
