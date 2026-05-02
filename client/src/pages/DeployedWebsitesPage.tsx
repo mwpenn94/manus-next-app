@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Globe, ExternalLink, BarChart3, Clock, Database, FolderOpen, Search as SearchIcon,
-  Loader2, Lock, Eye, Users, TrendingUp, Activity, RefreshCw, Settings, ArrowUpRight,
+  Loader2, Lock, Eye, Users, TrendingUp, Activity, RefreshCw, Settings, ArrowUpRight, AlertCircle,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
@@ -98,7 +98,19 @@ export default function DeployedWebsitesPage() {
 
           {/* Overview */}
           <TabsContent value="overview" className="mt-4">
-            {webappProjects.isLoading ? (
+            {webappProjects.isError ? (
+              <Card className="border-destructive/30">
+                <CardContent className="py-12 text-center">
+                  <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+                  <p className="text-foreground font-medium">Failed to load projects</p>
+                  <p className="text-sm text-muted-foreground mt-1">{webappProjects.error?.message || "An unexpected error occurred."}</p>
+                  <Button variant="outline" className="mt-4" onClick={() => webappProjects.refetch()}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Retry
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : webappProjects.isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>

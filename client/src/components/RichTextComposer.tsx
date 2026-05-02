@@ -44,7 +44,7 @@ const RichTextComposer = () => {
 
   useEffect(() => {
     if (editorRef.current && content !== editorRef.current.innerHTML) {
-        editorRef.current.innerHTML = content;
+        editorRef.current.innerHTML = DOMPurify.sanitize(content);
     }
   }, [content]);
 

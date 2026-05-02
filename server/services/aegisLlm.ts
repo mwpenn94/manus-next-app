@@ -13,6 +13,8 @@
 
 import { invokeLLM, type InvokeParams, type InvokeResult, type Message } from "../_core/llm";
 import * as aegis from "./aegis";
+import { routeRequest, type RoutingRequest } from "./sovereign";
+import * as db from "../db";
 
 export interface AegisInvokeParams extends InvokeParams {
   /** User ID for session tracking. Required for AEGIS pipeline. */
@@ -23,6 +25,10 @@ export interface AegisInvokeParams extends InvokeParams {
   skipCache?: boolean;
   /** Skip post-flight quality scoring. Default: false. */
   skipPostFlight?: boolean;
+  /** Use Sovereign routing for provider selection. Default: false (uses direct invokeLLM). */
+  useSovereignRouting?: boolean;
+  /** Task type hint for Sovereign routing (e.g., 'research', 'code', 'chat'). */
+  taskType?: string;
 }
 
 export interface AegisInvokeResult {
@@ -123,7 +129,46 @@ export async function invokeWithAegis(params: AegisInvokeParams): Promise<AegisI
       })
     : llmParams.messages;
 
-  const llmResult = await invokeLLM({ ...llmParams, messages: messagesForLLM });
+  // ── Provider Selection: Sovereign routing or direct invokeLLM ──
+  let llmResult: InvokeResult;
+  if (params.useSovereignRouting) {
+    try {
+      // Check if Sovereign has configured providers
+      const providers = await db.getActiveProviders();
+      if (providers && providers.length > 0) {
+        const routingRequest: RoutingRequest = {
+          messages: messagesForLLM.map(m => ({
+            role: m.role,
+            content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+          })),
+          userId,
+          taskType: params.taskType ?? preFlight.classification?.taskType ?? "chat",
+        };
+        const routingResult = await routeRequest(routingRequest);
+        // Synthesize InvokeResult from Sovereign output
+        llmResult = {
+          id: `sovereign-${Date.now()}`,
+          created: Math.floor(Date.now() / 1000),
+          model: routingResult.model,
+          choices: [{
+            index: 0,
+            message: { role: "assistant", content: routingResult.output },
+            finish_reason: "stop",
+          }],
+          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        };
+      } else {
+        // No providers configured — fall back to direct invokeLLM
+        llmResult = await invokeLLM({ ...llmParams, messages: messagesForLLM });
+      }
+    } catch (sovereignErr: any) {
+      // Sovereign routing failed — graceful fallback to direct invokeLLM
+      console.warn(`[AEGIS] Sovereign routing failed, falling back to direct LLM: ${sovereignErr.message?.slice(0, 100)}`);
+      llmResult = await invokeLLM({ ...llmParams, messages: messagesForLLM });
+    }
+  } else {
+    llmResult = await invokeLLM({ ...llmParams, messages: messagesForLLM });
+  }
 
   // ── Post-flight ──
   let quality: aegis.QualityScores | undefined;

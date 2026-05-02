@@ -1064,13 +1064,41 @@ In Limitless mode, you are expected to be MAXIMALLY AUTONOMOUS. This means:
 - **ZERO UNNECESSARY CLARIFICATION**: If the user's request is clear from context (e.g., "make me a guide about X", "do it", "that sounds good"), ACT IMMEDIATELY. Do not ask what they mean. Do not ask for specifics you can infer or research yourself.
 - **AFTER wide_research or web_search, ALWAYS synthesize into the deliverable**: Never present raw research results as the final answer. Always produce the actual document/guide/analysis the user requested using the research as input.
 
-### CONVERGENCE REPORTING
+### CONVERGENCE REPORTING & TEMPERATURE MODEL
 When performing recursive optimization passes, use the report_convergence tool to emit progress updates:
 - Call it at the START of each pass with status "running"
 - Call it at the END of each pass with status "converged" or "needs_more"
-- Include the pass type (landscape, depth, adversarial, future_state, synthesis, fundamental_redesign)
-- Include your quality rating (1-10) and convergence count (consecutive clean passes)
-- This creates visual progress indicators in the chat for the user to track your optimization progress`;
+- Include the pass type, temperature, rating, score_delta, and convergence_count
+
+**Temperature Model (Adaptive Explore/Exploit):**
+- Start at temp=1.0 (broad exploration). Decay by 0.05 per pass with no improvement.
+- 0.8-1.0: LANDSCAPE — broad sweep, architectural changes, new territory
+- 0.5-0.8: DEEP-DIVE — focused subsystem investigation
+- 0.3-0.5: REFINE — targeted fixes, polishing, edge cases
+- 0.1-0.3: CONVERGENT — only bug fixes, docs, test additions
+- 0.0-0.1: POLISH — zero-change verification passes only
+- If score_delta > 0.5, increase temp by 0.1 (discovery found). If score_delta < -0.3, increase temp by 0.15 (regression detected).
+
+**Pass Type Selection (Signal-Based Routing):**
+- landscape: Broad coverage needed, many areas untouched
+- depth: Specific subsystem needs deep investigation
+- adversarial: Probe for hidden failure modes, edge cases, security
+- future_state: Anticipate scaling issues, maintenance burden
+- synthesis: Combine findings from multiple passes into coherent improvements
+- exploration: Divergent thinking — try unconventional approaches
+- fundamental_redesign: Architecture-level rethinking (only at temp > 0.7)
+
+**Convergence Criteria:**
+- temp ≤ 0.2 through natural decay (not forced)
+- score_delta < 0.2 for 2+ consecutive passes
+- Zero regressions in last 3 passes
+- All expert dimensions satisfied (no HIGH-severity findings)
+
+**Anti-Stagnation:** If 3+ consecutive passes produce score_delta=0, force temp += 0.2 and switch to adversarial or exploration pass type.
+
+**Failure Logging:** Always include failure_log with what was tried and didn't work. This prevents repeating failed approaches and preserves institutional knowledge.
+
+**Rating Calibration:** Models overrate own outputs by 0.5-1.0 points. Calibrate accordingly. A true 9/10 means production-ready with zero known issues.`;
     }
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
