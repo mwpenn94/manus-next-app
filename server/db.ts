@@ -1168,11 +1168,13 @@ export async function getMeetingSession(id: number) {
 export async function createTeam(team: { name: string; ownerId: number }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const [result] = await db.insert(teams).values(team).$returningId();
-  // Also add owner as team member
-  await db.insert(teamMembers).values({ teamId: result.id, userId: team.ownerId, role: "owner" });
-  const [created] = await db.select().from(teams).where(eq(teams.id, result.id)).limit(1);
-  return created;
+  // Use transaction to ensure team + owner member are created atomically
+  return await db.transaction(async (tx) => {
+    const [result] = await tx.insert(teams).values(team).$returningId();
+    await tx.insert(teamMembers).values({ teamId: result.id, userId: team.ownerId, role: "owner" });
+    const [created] = await tx.select().from(teams).where(eq(teams.id, result.id)).limit(1);
+    return created;
+  });
 }
 
 export async function getUserTeams(userId: number) {

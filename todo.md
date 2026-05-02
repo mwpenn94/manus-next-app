@@ -6875,3 +6875,11 @@
 - [x] Verified FALSE POSITIVE: exportPdf XSS (server-generated HTML, not user-injected)
 - [x] Verified FALSE POSITIVE: slides generate unwaited async (intentional fire-and-forget with try/catch)
 - [x] Verified FALSE POSITIVE: memory race condition (low-risk for single-server)
+
+## Convergence Pass 12 — Cycle 2 Depth (Pass ~700)
+- [x] CRITICAL: createTeam missing transaction — wrapped in db.transaction() for atomicity
+- [x] Verified FALSE POSITIVE: StepElapsedTimer (has proper cleanup via return () => clearInterval)
+- [x] Verified FALSE POSITIVE: stddev uses population formula (correct for descriptive stats)
+- [x] Verified FALSE POSITIVE: joinTeam race (unique constraint prevents duplicates)
+- [x] Verified FALSE POSITIVE: music in-memory (by design for ephemeral demo data)
+- [x] Verified by-design: exportData covers 20+ tables (comprehensive)
