@@ -6988,4 +6988,4 @@
 - [x] Added "Present ACTUAL data from tool results" instruction to agent system prompt
 - [x] Added "Platform Self-Awareness" section to agent system prompt
 - [x] Verified on dev preview: "Show me what's in my connected repo" now returns actual repo contents (file tree, README, commits)
-- [ ] Validate all fixes on deployed production site
+- [x] Validate all fixes on deployed production site — CONFIRMED: github_ops returns actual repo contents (file tree, README, commits) on manusnext-mlromfub.manus.space, no crash

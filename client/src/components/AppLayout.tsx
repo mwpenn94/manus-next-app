@@ -681,7 +681,7 @@ function AllTasksSection({
             <div
               key={task.id}
               className={cn(
-                "group/task flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors",
+                "group/task flex items-center gap-2 px-2 py-2.5 rounded-md cursor-pointer transition-colors",
                 activeTaskId === task.id
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "hover:bg-sidebar-accent/40 text-sidebar-foreground"
