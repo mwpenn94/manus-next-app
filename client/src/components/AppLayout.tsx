@@ -727,9 +727,7 @@ function AppsGridMenu({ location }: { location: string }) {
       { href: "/schedule", label: "Schedule", Icon: Clock, color: "text-red-400" },
       { href: "/connectors", label: "Connectors", Icon: Plug, color: "text-muted-foreground" },
       { href: "/memory", label: "Memory", Icon: Brain, color: "text-pink-400" },
-      { href: "/github", label: "GitHub", Icon: ExternalLink, color: "text-muted-foreground" },
       { href: "/billing", label: "Billing", Icon: BarChart3, color: "text-yellow-400" },
-      { href: "/discover", label: "Discover", Icon: Globe, color: "text-red-400" },
       { href: "/help", label: "Help", Icon: HelpCircle, color: "text-red-400" },
     ];
     if (userRole === "admin") {
@@ -1073,7 +1071,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           New task
         </button>
         <Link
-          href="/discover"
+          href="/skills"
           className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
           <Crosshair className="w-4 h-4 text-muted-foreground" />

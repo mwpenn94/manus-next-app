@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 import {
   Home, ListTodo, CreditCard, MoreHorizontal, X, Search,
   FolderOpen, BookOpen, Clock, Zap, Plug, Settings, HelpCircle,
-  Github, Brain, Compass, Webhook, Shield, Plus,
+  Brain, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTask } from "@/contexts/TaskContext";
@@ -34,10 +34,6 @@ const MORE_ITEMS: NavItem[] = [
   { path: "/schedule", label: "Schedule", icon: Clock },
   { path: "/connectors", label: "Connectors", icon: Plug },
   { path: "/memory", label: "Memory", icon: Brain },
-  { path: "/github", label: "GitHub", icon: Github },
-  { path: "/discover", label: "Discover", icon: Compass },
-  { path: "/webhooks", label: "Webhooks", icon: Webhook },
-  { path: "/data-controls", label: "Data Controls", icon: Shield },
   { path: "/settings", label: "Settings", icon: Settings },
   { path: "/help", label: "Help", icon: HelpCircle },
 ];

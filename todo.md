@@ -6978,3 +6978,14 @@
 ## Session 29: Accessibility Fix
 - [x] Fix color contrast error on home page: white text (#ffffff) on #1a93fe blue background has 3.15:1 ratio, needs 4.5:1 minimum (WCAG AA)
 - [x] Changed sidebar filter tabs (All/Running/Completed/Error/Favorites/Scheduled) from text-[10px] bg-primary to text-[11px] bg-[oklch(0.52_0.19_252)] — achieves ~5.6:1 contrast ratio
+
+## Session 29: Recursive Optimization — Batch 1 (LANDSCAPE)
+- [x] Fix PDF export: black page caused by mask-image CSS on print container — added comprehensive @media print overrides
+- [x] Fix print CSS: override dark theme semantic colors to white bg / black text for print
+- [x] Align sidebar Explore nav with Manus: removed standalone Discover, kept admin items
+- [x] Align MobileBottomNav More menu with Manus: removed non-Manus items (Music, Documents, Browser standalone pages)
+- [x] Enhanced github_ops(status) to return actual file tree, README preview, recent commits, and full metadata
+- [x] Added "Present ACTUAL data from tool results" instruction to agent system prompt
+- [x] Added "Platform Self-Awareness" section to agent system prompt
+- [x] Verified on dev preview: "Show me what's in my connected repo" now returns actual repo contents (file tree, README, commits)
+- [ ] Validate all fixes on deployed production site

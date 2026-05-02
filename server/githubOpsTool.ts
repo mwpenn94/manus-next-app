@@ -584,16 +584,52 @@ export async function executeGitHubOps(
           listCommits(token, owner, repoName, { per_page: 10 }),
         ]);
 
-        // Check for CI
+        // Fetch file tree and README for comprehensive status
         let hasCI = false;
+        let fileTree: string[] = [];
+        let readmeContent = "";
+        let totalFiles = 0;
+        let topDirs: string[] = [];
         try {
-          // Try to detect .github/workflows directory
-          const tree = await import("./githubApi").then((m) =>
-            m.getRepoTree(token, owner, repoName, defaultBranch, true)
-          );
-          hasCI = tree.tree.some((item) => item.path?.startsWith(".github/workflows/"));
+          const { getRepoTree, getFileContent } = await import("./githubApi");
+          const tree = await getRepoTree(token, owner, repoName, defaultBranch, true);
+          hasCI = tree.tree.some((item: any) => item.path?.startsWith(".github/workflows/"));
+          
+          // Build file tree summary
+          const files = tree.tree.filter((item: any) => item.type === "blob");
+          totalFiles = files.length;
+          
+          // Get top-level directories
+          const dirs = new Set<string>();
+          for (const item of tree.tree) {
+            const parts = (item.path || "").split("/");
+            if (parts.length > 1) dirs.add(parts[0] + "/");
+          }
+          topDirs = Array.from(dirs).sort();
+          
+          // Get top-level files
+          const topFiles = tree.tree
+            .filter((item: any) => item.type === "blob" && !(item.path || "").includes("/"))
+            .map((item: any) => item.path);
+          fileTree = [...topDirs.map(d => `📁 ${d}`), ...topFiles.map((f: string) => `📄 ${f}`)];
+          
+          // Fetch README
+          try {
+            const readme = await getFileContent(token, owner, repoName, "README.md");
+            if (readme.content) {
+              readmeContent = Buffer.from(readme.content, "base64").toString("utf-8").slice(0, 2000);
+            }
+          } catch {
+            // No README — try readme.md
+            try {
+              const readme = await getFileContent(token, owner, repoName, "readme.md");
+              if (readme.content) {
+                readmeContent = Buffer.from(readme.content, "base64").toString("utf-8").slice(0, 2000);
+              }
+            } catch { /* No README */ }
+          }
         } catch {
-          // Ignore
+          // Tree fetch failed — continue with basic info
         }
 
         const recommendations: string[] = [];
@@ -616,16 +652,54 @@ export async function executeGitHubOps(
           openPRs: prs.length,
           recentCommits: commits.length,
           hasCI,
-          hasBranchProtection: false, // Would need admin API to check
+          hasBranchProtection: false,
           healthScore,
           recommendations,
         };
 
+        // Build enhanced report with actual repo contents
+        let report = formatOpsReport("status", { health });
+        
+        // Add repo metadata
+        report += `\n\n## Repository Details`;
+        report += `\n| Field | Value |`;
+        report += `\n|-------|-------|`;
+        report += `\n| Description | ${repoInfo.description || "(none)"} |`;
+        report += `\n| Language | ${repoInfo.language || "(not detected)"} |`;
+        report += `\n| Stars | ${repoInfo.stargazers_count} |`;
+        report += `\n| Forks | ${repoInfo.forks_count} |`;
+        report += `\n| Open Issues | ${repoInfo.open_issues_count} |`;
+        report += `\n| Visibility | ${repoInfo.private ? "Private" : "Public"} |`;
+        report += `\n| Last Push | ${repoInfo.pushed_at || "(unknown)"} |`;
+        report += `\n| URL | ${repoInfo.html_url} |`;
+        
+        // Add file tree
+        if (fileTree.length > 0) {
+          report += `\n\n## File Structure (${totalFiles} files)`;
+          report += `\n\`\`\`\n${fileTree.slice(0, 60).join("\n")}${fileTree.length > 60 ? `\n... and ${fileTree.length - 60} more` : ""}\n\`\`\``;
+        }
+        
+        // Add recent commits
+        if (commits.length > 0) {
+          report += `\n\n## Recent Commits`;
+          for (const c of commits.slice(0, 5)) {
+            const date = c.commit?.author?.date ? new Date(c.commit.author.date).toLocaleDateString() : "";
+            const msg = (c.commit?.message || "").split("\n")[0].slice(0, 80);
+            const sha = (c.sha || "").slice(0, 7);
+            report += `\n- \`${sha}\` ${msg} (${date})`;
+          }
+        }
+        
+        // Add README preview
+        if (readmeContent) {
+          report += `\n\n## README.md (preview)\n${readmeContent}${readmeContent.length >= 2000 ? "\n\n*... (truncated)*" : ""}`;
+        }
+
         return {
           success: true,
-          result: formatOpsReport("status", { health }),
+          result: report,
           artifactType: "document" as any,
-          artifactLabel: `Repo Health: ${repoInfo.full_name}`,
+          artifactLabel: `Repo Status: ${repoInfo.full_name}`,
         };
       }
 
