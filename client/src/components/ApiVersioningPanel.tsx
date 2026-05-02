@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Code, GitCommit, GitPullRequest, LifeBuoy, ShieldAlert, ShieldCheck, Sunset } from 'lucide-react';
@@ -182,7 +183,7 @@ const ApiVersioningPanel: React.FC = () => {
                           <DialogHeader>
                             <DialogTitle>Migration Guide</DialogTitle>
                           </DialogHeader>
-                          <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: migrationGuide }} />
+                          <div className="prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(migrationGuide) }} />
                         </DialogContent>
                       </Dialog>
                     </div>

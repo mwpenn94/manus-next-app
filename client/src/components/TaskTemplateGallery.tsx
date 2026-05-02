@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,7 +44,7 @@ const TemplateCard = ({ template, onPreview, onEdit, onDelete }: {
     onEdit: (e: React.MouseEvent) => void;
     onDelete: (e: React.MouseEvent) => void;
 }) => {
-    const Icon = (props: any) => <div {...props} dangerouslySetInnerHTML={{ __html: template.icon }} />;
+    const Icon = (props: any) => <div {...props} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(template.icon) }} />;
 
     return (
         <motion.div

@@ -29,22 +29,6 @@ interface Dependency {
   description: string;
 }
 
-const MOCK_DEPS: Dependency[] = [
-  { name: "react", currentVersion: "19.0.0", latestVersion: "19.0.0", type: "production", size: "6.4 kB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "A JavaScript library for building user interfaces" },
-  { name: "react-dom", currentVersion: "19.0.0", latestVersion: "19.0.0", type: "production", size: "130 kB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "React package for working with the DOM" },
-  { name: "wouter", currentVersion: "3.3.5", latestVersion: "3.4.0", type: "production", size: "3.8 kB", license: "ISC", hasUpdate: true, vulnerabilities: 0, description: "A minimalist-friendly routing for React" },
-  { name: "@tanstack/react-query", currentVersion: "5.90.2", latestVersion: "5.91.0", type: "production", size: "42 kB", license: "MIT", hasUpdate: true, vulnerabilities: 0, description: "Hooks for fetching, caching and updating async data" },
-  { name: "@trpc/client", currentVersion: "11.6.0", latestVersion: "11.6.0", type: "production", size: "18 kB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "tRPC client library" },
-  { name: "tailwindcss", currentVersion: "4.0.0", latestVersion: "4.0.0", type: "production", size: "320 kB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "A utility-first CSS framework" },
-  { name: "lucide-react", currentVersion: "0.460.0", latestVersion: "0.465.0", type: "production", size: "15 kB", license: "ISC", hasUpdate: true, vulnerabilities: 0, description: "Beautiful & consistent icon toolkit for React" },
-  { name: "framer-motion", currentVersion: "11.15.0", latestVersion: "11.15.0", type: "production", size: "140 kB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "Production-ready motion library for React" },
-  { name: "sonner", currentVersion: "1.7.1", latestVersion: "1.7.1", type: "production", size: "12 kB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "An opinionated toast component for React" },
-  { name: "drizzle-orm", currentVersion: "0.44.5", latestVersion: "0.44.5", type: "production", size: "85 kB", license: "Apache-2.0", hasUpdate: false, vulnerabilities: 0, description: "TypeScript ORM for SQL databases" },
-  { name: "vite", currentVersion: "6.0.0", latestVersion: "6.0.0", type: "dev", size: "2.3 MB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "Next generation frontend tooling" },
-  { name: "vitest", currentVersion: "2.1.9", latestVersion: "2.1.9", type: "dev", size: "4.1 MB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "Blazing fast unit test framework" },
-  { name: "typescript", currentVersion: "5.9.3", latestVersion: "5.9.3", type: "dev", size: "22 MB", license: "Apache-2.0", hasUpdate: false, vulnerabilities: 0, description: "TypeScript is a language for application scale JavaScript" },
-  { name: "drizzle-kit", currentVersion: "0.31.4", latestVersion: "0.31.4", type: "dev", size: "8.5 MB", license: "MIT", hasUpdate: false, vulnerabilities: 0, description: "DrizzleORM CLI companion for migrations" },
-];
 
 type FilterType = "all" | "production" | "dev" | "outdated" | "vulnerable";
 

@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -191,7 +192,7 @@ const CodeDisplay = React.memo(({ content, language, searchTerm }: { content: st
                     {lines.map((_, i) => <div key={i}>{i + 1}</div>)}
                 </div>
                 <pre className="flex-1 whitespace-pre-wrap break-words">
-                    <code dangerouslySetInnerHTML={{ __html: highlightedContent }} />
+                    <code dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(highlightedContent) }} />
                 </pre>
             </div>
         </ScrollArea>
@@ -222,7 +223,7 @@ const DiffDisplay = React.memo(({ oldContent, newContent, language }: { oldConte
                             return (
                                 <div key={index} className={cn(baseClasses, typeClasses[item.type as keyof typeof typeClasses])}>
                                     <span className="w-6 select-none text-center">{symbol[item.type as keyof typeof symbol]}</span>
-                                    <span dangerouslySetInnerHTML={{ __html: highlightedLine }} />
+                                    <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(highlightedLine) }} />
                                 </div>
                             );
                         })}

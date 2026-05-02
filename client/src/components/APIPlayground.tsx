@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ const JsonSyntaxHighlight = React.memo(({ json }: { json: object }) => {
         }
         return `<span class="${cls}">${match}</span>`;
     });
-    return <pre className="text-xs p-4" dangerouslySetInnerHTML={{ __html: highlighted }} />;
+    return <pre className="text-xs p-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(highlighted) }} />;
 });
 
 export default function APIPlayground() {

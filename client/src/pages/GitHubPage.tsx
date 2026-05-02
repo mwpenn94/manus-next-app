@@ -80,12 +80,12 @@ export default function GitHubPage() {
     const params = new URLSearchParams(window.location.search);
     const allParams = Object.fromEntries(params.entries());
     if (Object.keys(allParams).length > 0) {
-      console.log("[GitHub OAuth] Page loaded with params:", allParams);
+      console.debug("[GitHub OAuth] Page loaded with params:", allParams);
     }
 
     // Case 1: Server-side exchange succeeded — ?oauth_success=github
     if (params.get("oauth_success") === "github") {
-      console.log("[GitHub OAuth] Server-side success detected");
+      console.debug("[GitHub OAuth] Server-side success detected");
       toast.success("GitHub connected!");
       connectorListQuery.refetch();
       window.history.replaceState({}, "", "/github");
@@ -105,10 +105,10 @@ export default function GitHubPage() {
     const code = params.get("code");
     const state = params.get("state");
     if (code && state) {
-      console.log("[GitHub OAuth] Code+state fallback detected, attempting client-side exchange");
+      console.debug("[GitHub OAuth] Code+state fallback detected, attempting client-side exchange");
       try {
         const parsed = JSON.parse(atob(state.replace(/-/g, '+').replace(/_/g, '/')));
-        console.log("[GitHub OAuth] Parsed state:", { connectorId: parsed.connectorId, origin: parsed.origin, returnPath: parsed.returnPath });
+        console.debug("[GitHub OAuth] Parsed state:", { connectorId: parsed.connectorId, origin: parsed.origin, returnPath: parsed.returnPath });
         if (parsed.connectorId === "github") {
           setConnecting(true);
           completeOAuthMut.mutate({

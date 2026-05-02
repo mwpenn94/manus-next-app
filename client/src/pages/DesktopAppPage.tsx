@@ -212,7 +212,7 @@ echo "Installers are in src-tauri/target/release/bundle/"
     <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center gap-2 mb-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Go back">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           {builds.length > 0 && (

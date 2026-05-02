@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -161,7 +162,7 @@ const SyntaxHighlight = React.memo(({ code }: { code: string }) => {
             .replace(/('|"|`)(.*?)('|"|`)/g, '<span class="text-emerald-400">$1$2$3</span>')
             .replace(/(\/\/.*)/g, '<span class="text-gray-500">$1</span>');
     }, [code]);
-    return <span dangerouslySetInnerHTML={{ __html: highlighted }} />;
+    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(highlighted) }} />;
 });
 
 const DiffRow = ({ oldLineNum, newLineNum, content, type }: { oldLineNum?: number, newLineNum?: number, content: string, type: 'added' | 'removed' | 'unchanged' }) => {

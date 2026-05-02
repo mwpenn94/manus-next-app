@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, FileCode, Link as LinkIcon, File as FileIcon, UploadCloud, Trash2, Search, CheckCircle, Loader, XCircle } from 'lucide-react';
@@ -158,7 +159,7 @@ export const AgentKnowledgeBase: React.FC<AgentKnowledgeBaseProps> = ({ document
                           <span className="text-sm font-medium text-muted-foreground">{doc?.title}</span>
                           <Badge variant="secondary">Relevance: {result.relevance.toFixed(2)}</Badge>
                         </div>
-                        <p className="mt-2 text-sm" dangerouslySetInnerHTML={{ __html: result.chunk }} />
+                        <p className="mt-2 text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(result.chunk) }} />
                       </motion.div>
                     );
                   })}

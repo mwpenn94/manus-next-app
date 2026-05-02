@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bold, Italic, Heading2, List, Code, Save, Users, Clock, AlertCircle } from 'lucide-react';
@@ -180,7 +181,7 @@ export default function CollaborativeEditor() {
                 suppressContentEditableWarning
                 className="prose prose-invert max-w-none h-full focus:outline-none"
                 onInput={handleContentChange}
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
               />
               <AnimatePresence>
                 {cursors.map(cursor => {

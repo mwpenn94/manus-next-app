@@ -228,6 +228,7 @@ export default function VideoGeneratorPage() {
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7"
+                          aria-label="Download video"
                           onClick={(e) => { e.stopPropagation(); window.open(project.videoUrl, "_blank"); }}
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -237,6 +238,7 @@ export default function VideoGeneratorPage() {
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7 text-destructive"
+                        aria-label="Delete video project"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (confirm("Delete this video project?")) {

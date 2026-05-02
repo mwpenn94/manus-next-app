@@ -547,7 +547,7 @@ export default function ReplayPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/replay")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/replay")} aria-label="Go back">
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
@@ -668,19 +668,19 @@ export default function ReplayPage() {
 
                 {/* Buttons */}
                 <div className="flex items-center justify-center gap-2">
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRestart} title="Restart">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleRestart} title="Restart" aria-label="Action button">
                     <SkipBack className="w-3.5 h-3.5" />
                   </Button>
                   {isPlaying ? (
-                    <Button size="icon" className="h-9 w-9" onClick={handlePause} title="Pause">
+                    <Button size="icon" className="h-9 w-9" onClick={handlePause} title="Pause" aria-label="Play">
                       <Pause className="w-4 h-4" />
                     </Button>
                   ) : (
-                    <Button size="icon" className="h-9 w-9" onClick={handlePlay} title="Play">
+                    <Button size="icon" className="h-9 w-9" onClick={handlePlay} title="Play" aria-label="Play">
                       <Play className="w-4 h-4" />
                     </Button>
                   )}
-                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleSkipForward} title="Skip +10">
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleSkipForward} title="Skip +10" aria-label="Action button">
                     <SkipForward className="w-3.5 h-3.5" />
                   </Button>
                   <div className="flex items-center gap-1 ml-4">

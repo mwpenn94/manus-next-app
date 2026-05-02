@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Bold, Italic, Code, Link, Smile, AtSign, Eye, EyeOff } from 'lucide-react';
 
@@ -149,7 +150,7 @@ const RichTextComposer = () => {
       {isPreview ? (
         <div
           className="p-4 prose prose-sm dark:prose-invert max-w-none min-h-[150px]"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
         />
       ) : (
         <div

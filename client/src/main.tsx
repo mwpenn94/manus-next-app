@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
+import { toast } from 'sonner';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
@@ -73,17 +74,20 @@ queryClient.getQueryCache().subscribe(event => {
       console.warn("[API] Network unavailable — retrying...");
       return;
     }
-    if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
+     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Query Error]", error);
+      // Global error toast for non-auth query failures (covers all pages)
+      toast.error(error.message || "Something went wrong", { id: 'query-error', duration: 4000 });
     }
   }
 });
-
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Mutation Error]", error);
+      // Global error toast for mutation failures
+      toast.error(error.message || "Action failed", { id: 'mutation-error', duration: 4000 });
     }
   }
 });

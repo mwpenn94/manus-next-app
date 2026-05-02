@@ -417,6 +417,7 @@ export default function SchedulePage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive"
+                        title="Delete schedule"
                         onClick={() => {
                           if (confirm("Delete this schedule?")) {
                             deleteMutation.mutate({ id: schedule.id });

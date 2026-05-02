@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import React, { useState, useMemo, useCallback, useRef, useEffect, forwardRef } from 'react';
 import { Bold, Italic, Underline, Strikethrough, List, ListOrdered, Link2, Code, Pilcrow, Undo, Redo, Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, AlignJustify, Quote, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -191,7 +192,7 @@ const RichTextEditor: React.FC = () => {
                             onInput={(e) => setContent(e.currentTarget.innerHTML)}
                             className="w-full h-96 prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none overflow-y-auto leading-relaxed"
                             aria-label="Rich text editor"
-                            dangerouslySetInnerHTML={{ __html: content }}
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
                         />
                     )}
                 </motion.div>

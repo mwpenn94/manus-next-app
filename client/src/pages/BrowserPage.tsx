@@ -723,13 +723,13 @@ export default function BrowserPage() {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-card shrink-0">
         {/* Nav buttons */}
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleGoBack} disabled={isLoading}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleGoBack} disabled={isLoading} aria-label="Go back">
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleGoForward} disabled={isLoading}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleGoForward} disabled={isLoading} aria-label="Go forward">
             <ArrowRight className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleReload} disabled={isLoading}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleReload} disabled={isLoading} aria-label="Refresh">
             <RotateCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
           </Button>
         </div>
@@ -753,14 +753,14 @@ export default function BrowserPage() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleScreenshot} disabled={isLoading} title="Take screenshot">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleScreenshot} disabled={isLoading} title="Take screenshot" aria-label="Action button">
             <Camera className="w-4 h-4" />
           </Button>
 
           {/* Session selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 relative" title="Sessions">
+              <Button variant="ghost" size="icon" className="h-8 w-8 relative" title="Sessions" aria-label="More options">
                 <Layers className="w-4 h-4" />
                 {sessions.length > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-primary text-primary-foreground text-[9px] rounded-full flex items-center justify-center">
@@ -791,6 +791,7 @@ export default function BrowserPage() {
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 shrink-0"
+                      aria-label="Close session"
                       onClick={e => { e.stopPropagation(); handleCloseSession(s.id); }}
                     >
                       <X className="w-3 h-3" />
@@ -815,7 +816,7 @@ export default function BrowserPage() {
           {/* Viewport / Device Preset Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" title="Device viewport">
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Device viewport" aria-label="More options">
                 {currentViewport && currentViewport.width <= 430 ? (
                   <Smartphone className="w-4 h-4" />
                 ) : currentViewport && currentViewport.width <= 820 ? (
@@ -1075,10 +1076,10 @@ export default function BrowserPage() {
                 <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
                   <span className="text-xs font-medium">Console</span>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={refreshConsoleLogs} title="Refresh">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={refreshConsoleLogs} title="Refresh" aria-label="Refresh">
                       <RefreshCw className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setConsoleLogs([])} title="Clear">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setConsoleLogs([])} title="Clear" aria-label="Delete">
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
@@ -1115,10 +1116,10 @@ export default function BrowserPage() {
                 <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
                   <span className="text-xs font-medium">Network</span>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={refreshNetworkRequests} title="Refresh">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={refreshNetworkRequests} title="Refresh" aria-label="Refresh">
                       <RefreshCw className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setNetworkRequests([])} title="Clear">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setNetworkRequests([])} title="Clear" aria-label="Delete">
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
@@ -1269,6 +1270,7 @@ export default function BrowserPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6"
+                                aria-label="Run QA suite"
                                 onClick={e => { e.stopPropagation(); runQaSuite(suite.id); }}
                                 disabled={suite.status === "running"}
                               >
@@ -1278,6 +1280,7 @@ export default function BrowserPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6"
+                                aria-label="Add step"
                                 onClick={e => { e.stopPropagation(); setActiveQaSuiteId(suite.id); setShowAddStepDialog(true); }}
                               >
                                 <Plus className="w-3 h-3" />
@@ -1286,6 +1289,7 @@ export default function BrowserPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6"
+                                aria-label="Delete QA suite"
                                 onClick={e => { e.stopPropagation(); deleteQaSuite(suite.id); }}
                               >
                                 <Trash2 className="w-3 h-3" />

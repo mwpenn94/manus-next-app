@@ -954,7 +954,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             description={message.content || "Checkpoint saved"}
             screenshotUrl={message.cardData?.screenshotUrl as string}
             isLatest={!!message.cardData?.isLatest}
-            onPreview={() => toast.info("Opening preview...")}
+            onPreview={() => { try { localStorage.setItem("manus-workspace-panel", "open"); } catch {} window.dispatchEvent(new CustomEvent("open-workspace-panel")); }}
             onRollback={() => toast.info("Rolling back...")}
           />
         ) : message.cardType === "task_completed" ? (
@@ -2497,7 +2497,7 @@ export default function TaskView() {
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
 
   const [desktopWorkspaceOpen, setDesktopWorkspaceOpen] = useState(() => {
-    try { return localStorage.getItem("manus-workspace-panel") !== "closed"; } catch { return true; }
+    try { return localStorage.getItem("manus-workspace-panel") === "open"; } catch { return false; }
   });
   const toggleDesktopWorkspace = useCallback(() => {
     setDesktopWorkspaceOpen(prev => {
@@ -2508,6 +2508,13 @@ export default function TaskView() {
   }, []);
   const { ratio: workspaceRatio, updateRatio: updateWorkspaceRatio } = useWorkspaceDivider();
   const splitContainerRef = useRef<HTMLDivElement>(null);
+
+  // Listen for open-workspace-panel custom events from child components (Manus parity: auto-open on deliverable)
+  useEffect(() => {
+    const handler = () => { setDesktopWorkspaceOpen(true); };
+    window.addEventListener("open-workspace-panel", handler);
+    return () => window.removeEventListener("open-workspace-panel", handler);
+  }, []);
   const [isDragging, setIsDragging] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
@@ -2824,7 +2831,7 @@ export default function TaskView() {
     if (scrollRef.current && !replayOpen && !userScrolledUpRef.current) {
       requestAnimationFrame(() => {
         if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
         }
       });
     }
@@ -2952,6 +2959,9 @@ export default function TaskView() {
             if (previewMsg?.id) {
               updateMessageCard(task.id, previewMsg.id, { previewUrl: url });
             }
+            // Auto-open workspace panel when preview becomes available (Manus parity)
+            setDesktopWorkspaceOpen(true);
+            try { localStorage.setItem("manus-workspace-panel", "open"); } catch {}
           },
         });
 

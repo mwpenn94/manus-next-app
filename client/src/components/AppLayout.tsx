@@ -135,15 +135,36 @@ function UserInitials({ name }: { name: string | null | undefined }) {
 }
 
 /* ─── Task status dot (Manus-style) ─── */
-function TaskStatusDot({ status }: { status: string }) {
+function TaskStatusDot({ status, title }: { status: string; title?: string }) {
+  if (status === "running") {
+    return <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0 mt-[5px]" />;
+  }
+  if (status === "error") {
+    return <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
+  }
+  // Type-specific icon based on title keywords (Manus parity)
+  const t = (title || "").toLowerCase();
+  if (t.includes("research") || t.includes("analyze") || t.includes("find")) {
+    return <Search className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />;
+  }
+  if (t.includes("build") || t.includes("code") || t.includes("create app") || t.includes("website")) {
+    return <Monitor className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />;
+  }
+  if (t.includes("write") || t.includes("draft") || t.includes("report") || t.includes("article")) {
+    return <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />;
+  }
+  if (t.includes("data") || t.includes("chart") || t.includes("dashboard")) {
+    return <BarChart3 className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />;
+  }
+  if (t.includes("schedule") || t.includes("[scheduled]")) {
+    return <Clock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />;
+  }
+  // Default: subtle dot
   return (
     <div
       className={cn(
         "w-2 h-2 rounded-full shrink-0 mt-[5px]",
-        status === "running" && "bg-primary animate-pulse",
-        status === "completed" && "bg-muted-foreground/60",
-        status === "error" && "bg-red-400",
-        status !== "running" && status !== "completed" && status !== "error" && "bg-muted-foreground/30"
+        "bg-muted-foreground/30"
       )}
     />
   );
@@ -378,7 +399,7 @@ function ProjectTreeNode({
               )}
               onClick={() => onTaskClick(task.id)}
             >
-              <TaskStatusDot status={task.status} />
+              <TaskStatusDot status={task.status} title={task.title} />
               <span className="text-[13px] truncate flex-1 min-w-0">{task.title}</span>
               <TaskContextMenu
                 taskId={task.id}
@@ -667,7 +688,7 @@ function AllTasksSection({
               )}
               onClick={() => onTaskClick(task.id)}
             >
-              <TaskStatusDot status={task.status} />
+              <TaskStatusDot status={task.status} title={task.title} />
               <span className="text-[13px] truncate flex-1 min-w-0">{task.title}</span>
               {task.favorite === 1 && (
                 <Star className="w-3 h-3 text-foreground fill-foreground shrink-0" />

@@ -150,7 +150,7 @@ export default function MessagingAgentPage() {
     <div className="h-full overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")} aria-label="Go back">
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex-1">
