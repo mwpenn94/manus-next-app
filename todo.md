@@ -6944,12 +6944,13 @@
 - Total passes completed: ~1200 of 1280 target
 
 ## Session 26 — Video Bug Report (ScreenRecording_05-02-2026)
-- [ ] Fix input area: send button missing in stalled task state, only "+" button visible
-- [ ] Fix "+" button covering/replacing send button — tapping "+" deletes typed message
-- [ ] Fix message loss: typed/pasted text disappears when tapping "+" instead of sending
-- [ ] Fix message persistence: messages disappearing, not persisting across task states
-- [ ] Fix stalled state recovery loop: task gets stuck in "stalled" error, cannot recover
-- [ ] Fix connectors page icons: use proper brand logos (Slack, GitHub, Gmail, Outlook) instead of generic icons
-- [ ] Add task template management: ability to edit/delete templates, remove "Test Template" clutter
-- [ ] Fix GitHub integration: agent hallucinates repo contents instead of actually reading repo
-- [ ] Fix GitHub CRUD/preview/publish: app claims connection but cannot interact with repo
+- [x] Fix input area: send button missing in stalled task state, only "+" button visible — FAB hidden on /task/* pages, send button always visible
+- [x] Fix "+" button covering/replacing send button — tapping "+" deletes typed message — FAB hidden on task pages via MobileBottomNav
+- [x] Fix message loss: typed/pasted text disappears when tapping "+" instead of sending — Root cause was FAB navigating away; now hidden on task pages
+- [x] Fix message persistence: messages disappearing, not persisting across task states — Fixed by FAB navigation removal + proper task status completion
+- [x] Fix stalled state recovery loop: task gets stuck in "stalled" error, cannot recover — Stalled handler now only shows for error status; tasks properly complete after streaming
+- [x] Fix connectors page icons: use proper brand logos (Slack, GitHub, Gmail, Outlook) instead of generic icons — ConnectorBrandIcon.tsx with 35 brand SVGs
+- [x] Add task template management: ability to edit/delete templates, remove "Test Template" clutter — Added ContextMenu (right-click) on compact pills for quick edit/delete, "Manage" button opening full management dialog with multi-select bulk delete, and bulkDelete tRPC procedure
+- [x] Fix GitHub integration: agent hallucinates repo contents instead of actually reading repo — Added validateGitHubToken() to all 4 GitHub tools (edit, assess, ops, create); clear "reconnect" error on 401; improved error propagation in githubApi.ts
+- [x] Fix GitHub CRUD/preview/publish: app claims connection but cannot interact with repo — Token validation catches expired/revoked tokens; agent receives clear error message to inform user to reconnect
+- [x] Fix consistent agent response failure — Added consecutive tool failure breaker (5 max), expanded client-side ERROR_MSG_PATTERNS (10 new patterns), improved error categorization

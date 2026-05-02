@@ -406,6 +406,15 @@ export async function executeGitHubOps(
       result: "GitHub is not connected. Please connect your GitHub account first.",
     };
   }
+  // Validate token is still active before proceeding
+  const { validateGitHubToken } = await import("./githubApi");
+  const validUser = await validateGitHubToken(token);
+  if (!validUser) {
+    return {
+      success: false,
+      result: "Your GitHub token has expired or been revoked. Please reconnect your GitHub account:\n1. Go to the GitHub page in the sidebar\n2. Click 'Disconnect' then 'Connect GitHub Account'\n3. Re-authorize the app on GitHub",
+    };
+  }
 
   const repos = await getUserGitHubRepos(context.userId);
   if (repos.length === 0) {

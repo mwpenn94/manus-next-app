@@ -1030,6 +1030,8 @@ When performing recursive optimization passes, use the report_convergence tool t
     let nudgedForDeepResearch = false;
     let continuationRounds = 0; // Track consecutive auto-continuation rounds (Manus parity)
     let appBuildingContinuations = 0; // Track how many times we've nudged the agent to continue building
+    let consecutiveToolFailures = 0; // Track consecutive tool failures to break infinite failure loops
+    const MAX_CONSECUTIVE_TOOL_FAILURES = 5; // Break the loop after 5 consecutive tool failures
 
     // ── Token usage tracking (Session 23: Context Window Indicator) ──
     let cumulativePromptTokens = 0;
@@ -1447,6 +1449,19 @@ When performing recursive optimization passes, use the report_convergence tool t
               });
             }
 
+            // Track consecutive tool failures to prevent infinite failure loops
+            if (!result.success) {
+              consecutiveToolFailures++;
+              if (consecutiveToolFailures >= MAX_CONSECUTIVE_TOOL_FAILURES) {
+                console.warn(`[Agent] ${MAX_CONSECUTIVE_TOOL_FAILURES} consecutive tool failures — breaking loop to prevent infinite failure cycle`);
+                sendSSE(safeWrite, { delta: `\n\n---\n\n*Multiple tool operations failed consecutively. I'll summarize what I was able to accomplish and suggest next steps.*\n\n` });
+                conversation.push({ role: "tool", content: `SYSTEM: Tool execution has failed ${MAX_CONSECUTIVE_TOOL_FAILURES} times consecutively. Stop calling tools and provide a helpful summary to the user about what went wrong and what they can do.`, tool_call_id: toolCall.id, name: tn } as any);
+                break;
+              }
+            } else {
+              consecutiveToolFailures = 0; // Reset on success
+            }
+
             completedToolCalls++;
             sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
             conversation.push({ role: "tool", content: result.result, tool_call_id: toolCall.id, name: tn } as any);
@@ -1454,6 +1469,7 @@ When performing recursive optimization passes, use the report_convergence tool t
         } else {
           // No tool calls — just add the partial text
           conversation.push({ role: "assistant", content: textContent || "" });
+          consecutiveToolFailures = 0; // Reset when agent produces text (not stuck in tool loop)
         }
         
         // Context compression: if conversation is getting very long, summarize older tool results

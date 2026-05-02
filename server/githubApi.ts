@@ -28,10 +28,37 @@ async function githubFetch<T = unknown>(path: string, opts: GitHubApiOptions): P
   });
   if (!resp.ok) {
     const errBody = await resp.text();
+    // Provide clear error messages for auth failures
+    if (resp.status === 401) {
+      throw new Error(`GitHub token expired or revoked (401). Please reconnect your GitHub account via Settings > Connectors.`);
+    }
+    if (resp.status === 403) {
+      // Check if it's a rate limit or permission issue
+      const remaining = resp.headers.get("x-ratelimit-remaining");
+      if (remaining === "0") {
+        const resetAt = resp.headers.get("x-ratelimit-reset");
+        const resetDate = resetAt ? new Date(parseInt(resetAt) * 1000).toLocaleTimeString() : "soon";
+        throw new Error(`GitHub API rate limit exceeded. Resets at ${resetDate}. Please wait and try again.`);
+      }
+      throw new Error(`GitHub permission denied (403). Your token may lack the required scopes. Please reconnect your GitHub account with full repo access.`);
+    }
     throw new Error(`GitHub API ${resp.status}: ${errBody}`);
   }
   if (resp.status === 204) return {} as T;
   return resp.json() as Promise<T>;
+}
+
+/**
+ * Validate a GitHub token by making a lightweight /user call.
+ * Returns the username if valid, or null if the token is expired/revoked.
+ */
+export async function validateGitHubToken(token: string): Promise<string | null> {
+  try {
+    const user = await getAuthenticatedUser(token);
+    return user.login;
+  } catch {
+    return null;
+  }
 }
 
 // ── User ──

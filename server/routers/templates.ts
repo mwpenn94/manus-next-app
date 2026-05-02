@@ -3,6 +3,7 @@ import { z } from "zod";
 import { 
   createTaskTemplate,
   deleteTaskTemplate,
+  bulkDeleteTaskTemplates,
   getUserTaskTemplates,
   incrementTemplateUsage,
   updateTaskTemplate,
@@ -40,6 +41,12 @@ export const templatesRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await deleteTaskTemplate(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    bulkDelete: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()).min(1).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        await bulkDeleteTaskTemplates(input.ids, ctx.user.id);
         return { success: true };
       }),
     use: protectedProcedure

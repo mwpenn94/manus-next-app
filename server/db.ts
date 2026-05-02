@@ -2016,6 +2016,13 @@ export async function deleteTaskTemplate(id: number, userId: number) {
   await db.delete(taskTemplates).where(and(eq(taskTemplates.id, id), eq(taskTemplates.userId, userId)));
 }
 
+export async function bulkDeleteTaskTemplates(ids: number[], userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  if (ids.length === 0) return;
+  await db.delete(taskTemplates).where(and(inArray(taskTemplates.id, ids), eq(taskTemplates.userId, userId)));
+}
+
 export async function incrementTemplateUsage(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;

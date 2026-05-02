@@ -289,6 +289,17 @@ const ERROR_MSG_PATTERNS = [
   "ReferenceError:",
   "SyntaxError:",
   "Internal Server Error",
+  // Server-side error messages that should be detected as errors
+  "Your account credits have been exhausted",
+  "A payment issue is preventing",
+  "The AI service encountered a temporary error",
+  "Rate limit reached",
+  "Authentication expired",
+  "Unable to connect to the AI service",
+  "No response from LLM after multiple retries",
+  "The AI returned an invalid response",
+  "Multiple tool operations failed consecutively",
+  "Agent execution failed",
 ];
 
 export function isStreamErrorMessage(content: string): boolean {

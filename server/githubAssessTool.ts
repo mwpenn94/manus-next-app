@@ -503,6 +503,15 @@ export async function executeGitHubAssess(args: {
       result: "GitHub is not connected. Please connect your GitHub account first by visiting the GitHub page and clicking 'Connect GitHub Account'.",
     };
   }
+  // Validate token is still active before proceeding
+  const { validateGitHubToken } = await import("./githubApi");
+  const validUser = await validateGitHubToken(token);
+  if (!validUser) {
+    return {
+      success: false,
+      result: "Your GitHub token has expired or been revoked. Please reconnect your GitHub account:\n1. Go to the GitHub page in the sidebar\n2. Click 'Disconnect' then 'Connect GitHub Account'\n3. Re-authorize the app on GitHub\n\nThis usually happens when you revoke access on GitHub's side or change your password.",
+    };
+  }
 
   // ── Step 0: Find the repo ──
   const repos = await getUserGitHubRepos(context.userId);
