@@ -3120,15 +3120,17 @@ export default function TaskView() {
         }
       } catch (err: any) {
         if (err.name === "AbortError") {
-          // PARITY2/3 FIX: Only add "stopped" message if user manually stopped,
-          // NOT if the abort was triggered by a follow-up message (pendingRestreamRef).
-          // When pendingRestream is true, save partial content without "stopped" suffix
-          // so the agent sees what it was working on when the user sent a follow-up.
+          // Only add "stopped" message if user manually stopped (not a follow-up abort).
+          // When pendingRestream is true, we discard partial content entirely to avoid
+          // confusing the LLM with half-finished responses on re-stream.
           if (accumulated.trim() && !pendingRestreamRef.current) {
+            // User manually stopped — save partial with "stopped" marker
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
-          } else if (accumulated.trim() && pendingRestreamRef.current) {
-            addMessage(task.id, { role: "assistant", content: accumulated, actions: actions.length > 0 ? actions : undefined });
           }
+          // When pendingRestream is true (user sent follow-up mid-stream),
+          // do NOT save partial content. It would confuse the LLM on re-stream
+          // because it sees a half-finished response as if it were complete.
+          // The server-side onComplete also skips persistence when aborted.
         } else {
           addMessage(task.id, {
             role: "assistant",
@@ -3224,10 +3226,13 @@ export default function TaskView() {
         if (err.name === "AbortError") {
           // PARITY2/3: Same fix as main handler — don't add "stopped" when it's a follow-up abort
           if (accumulated.trim() && !pendingRestreamRef.current) {
+            // User manually stopped — save partial with "stopped" marker
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
-          } else if (accumulated.trim() && pendingRestreamRef.current) {
-            addMessage(task.id, { role: "assistant", content: accumulated, actions: actions.length > 0 ? actions : undefined });
           }
+          // When pendingRestream is true (user sent follow-up mid-stream),
+          // do NOT save partial content. It would confuse the LLM on re-stream
+          // because it sees a half-finished response as if it were complete.
+          // The server-side onComplete also skips persistence when aborted.
         } else {
           addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
           updateTaskStatus(task.id, "error");

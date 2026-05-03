@@ -1135,8 +1135,29 @@ export async function upsertConnector(connector: InsertConnector) {
     .where(and(eq(connectors.userId, connector.userId), eq(connectors.connectorId, connector.connectorId)))
     .limit(1);
   if (existing.length > 0) {
+    // Determine if this is a PAT-based connection (config contains a token field)
+    const configObj = connector.config as Record<string, string> | undefined;
+    const isPATAuth = configObj && (configObj.token || configObj.pat || configObj.smartPat);
+    
+    const updateFields: Record<string, any> = {
+      config: connector.config,
+      status: connector.status ?? "connected",
+      lastSyncAt: new Date(),
+    };
+    
+    // When connecting via PAT, clear stale OAuth fields to prevent:
+    // 1. Refresh timer trying to refresh non-existent refresh tokens
+    // 2. Git clone failover using stale OAuth tokens instead of the PAT
+    if (isPATAuth) {
+      updateFields.accessToken = null;
+      updateFields.refreshToken = null;
+      updateFields.tokenExpiresAt = null;
+      updateFields.oauthScopes = null;
+      updateFields.authMethod = "api_key";
+    }
+    
     await db.update(connectors)
-      .set({ config: connector.config, status: connector.status ?? "connected", lastSyncAt: new Date() })
+      .set(updateFields)
       .where(eq(connectors.id, existing[0].id));
     return existing[0].id;
   }

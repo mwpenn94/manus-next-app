@@ -40,7 +40,7 @@ export interface GitHubAuthFailoverOptions {
  * Validate a GitHub token by calling GET /user
  * Returns the username if valid, null if invalid/expired
  */
-async function validateGitHubToken(token: string): Promise<{ valid: boolean; username?: string; scopes?: string[] }> {
+async function validateGitHubToken(token: string): Promise<{ valid: boolean; uncertain?: boolean; username?: string; scopes?: string[] }> {
   try {
     const resp = await fetch("https://api.github.com/user", {
       headers: {
@@ -48,6 +48,7 @@ async function validateGitHubToken(token: string): Promise<{ valid: boolean; use
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
+      signal: AbortSignal.timeout(8000), // 8s timeout to avoid blocking the chain
     });
     if (resp.status === 200) {
       const data = await resp.json();
@@ -58,15 +59,17 @@ async function validateGitHubToken(token: string): Promise<{ valid: boolean; use
     if (resp.status === 401 || resp.status === 403) {
       return { valid: false };
     }
-    // Rate limited or server error — assume valid to avoid unnecessary fallback
+    // Rate limited or server error — mark as uncertain so caller falls through to next layer
     if (resp.status === 429) {
-      return { valid: true, username: "rate-limited" };
+      console.warn("[GitHubAuthFailover] Rate limited during token validation — marking uncertain");
+      return { valid: false, uncertain: true, username: "rate-limited" };
     }
     return { valid: false };
   } catch (err) {
     console.error("[GitHubAuthFailover] Token validation network error:", err);
-    // Network error — assume valid to avoid cascading failures
-    return { valid: true, username: "network-error" };
+    // Network error — mark as uncertain so caller falls through to next layer
+    // DO NOT assume valid — this was causing stale OAuth tokens to be used instead of valid PATs
+    return { valid: false, uncertain: true, username: "network-error" };
   }
 }
 
@@ -104,6 +107,54 @@ export async function resolveGitHubAuth(options: GitHubAuthFailoverOptions): Pro
     // Get all connectors for this user
     const connectors = await getUserConnectors(userId);
     const githubConn = connectors.find(c => c.connectorId === "github" && c.status === "connected");
+
+    // ── Priority Check: If PAT exists in config, try PAT layers FIRST ──
+    // This prevents the common failure mode where a stale OAuth token is validated
+    // (rate-limited/network error returns uncertain) before the valid PAT is tried.
+    const connConfig = (githubConn?.config && typeof githubConn.config === "object")
+      ? githubConn.config as Record<string, any>
+      : null;
+    const hasPATInConfig = connConfig && (connConfig.token || connConfig.pat || connConfig.smartPat);
+    const patToken = hasPATInConfig ? (connConfig!.token || connConfig!.pat || connConfig!.smartPat) : null;
+
+    if (patToken && typeof patToken === "string" && (patToken.startsWith("github_pat_") || patToken.startsWith("ghp_"))) {
+      // PAT exists — try it FIRST (skip OAuth entirely when PAT is explicitly configured)
+      const patSource = patToken.startsWith("github_pat_") ? "smart_pat" : "classic_pat";
+      layers.push(patSource);
+      if (validate) {
+        const result = await validateGitHubToken(patToken);
+        if (result.valid) {
+          console.log(`[GitHubAuthFailover] PAT-priority: ${patSource} valid (user: ${result.username})`);
+          return {
+            token: patToken,
+            source: patSource,
+            username: result.username,
+            expiresAt: null,
+            needsRefresh: false,
+          };
+        }
+        if (result.uncertain) {
+          // Rate-limited or network error — use PAT anyway since user explicitly configured it
+          console.warn(`[GitHubAuthFailover] PAT-priority: ${patSource} validation uncertain, using anyway (user explicitly configured)`);
+          return {
+            token: patToken,
+            source: patSource,
+            username: result.username,
+            expiresAt: null,
+            needsRefresh: false,
+          };
+        }
+        console.warn(`[GitHubAuthFailover] PAT-priority: ${patSource} invalid, falling through to OAuth`);
+      } else {
+        return {
+          token: patToken,
+          source: patSource,
+          username: githubConn?.name || undefined,
+          expiresAt: null,
+          needsRefresh: false,
+        };
+      }
+    }
 
     // ── Layer 1: OAuth Token ──
     if (githubConn?.accessToken) {

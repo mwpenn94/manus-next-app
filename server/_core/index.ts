@@ -175,12 +175,21 @@ function buildManusVerifyHtml(
   error?: string
 ): string {
   if (error || !result) {
-    return `<!DOCTYPE html><html><body>
-<div style="font-family:system-ui;text-align:center;margin-top:40vh;color:#e5e5e5;background:#0a0a0a;min-height:100vh">
-  <h2 style="color:#ef4444">Verification Failed</h2>
+    return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}
+.card{text-align:center;padding:2rem;border-radius:1rem;background:#1a1a1a;border:1px solid #333;max-width:360px}
+.err-icon{width:48px;height:48px;border-radius:50%;background:#ef444420;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.err-icon svg{width:24px;height:24px;color:#ef4444}
+h2{margin:0 0 0.5rem;font-size:1.25rem;color:#ef4444}p{color:#999;margin:0 0 1rem;font-size:0.875rem;line-height:1.5}
+.btn{display:inline-block;padding:0.625rem 1.5rem;background:#c9a227;color:#000;text-decoration:none;border-radius:0.5rem;font-weight:500;font-size:0.875rem;cursor:pointer;border:none;margin:0.25rem}
+.btn-close{background:#333;color:#e5e5e5}
+</style></head><body>
+<div class="card">
+  <div class="err-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+  <h2>Verification Failed</h2>
   <p>${escapeHtml(error || "Unknown error")}</p>
+  <button class="btn" onclick="window.close()">Close & Try Again</button>
 </div>
-<script>setTimeout(()=>window.close(),3000)</script>
 </body></html>`;
   }
 
@@ -298,6 +307,11 @@ async function startServer() {
   app.use("/api/tts", ttsLimiter);
   app.use("/api/trpc", apiLimiter);
   app.use("/api/analytics/collect", analyticsLimiter);
+
+  // Per-task stream concurrency guard: only one active stream per task at a time.
+  // When a new stream request arrives for a task that's already streaming,
+  // abort the old stream first to prevent race conditions and message corruption.
+  const activeTaskStreams = new Map<string, AbortController>();
 
   // Webhook rate limiters (G-005)
   const webhookLimiter = rateLimit({
@@ -870,8 +884,20 @@ async function startServer() {
         origin,
       }));
     } catch (err: any) {
-      console.error("[Connector Manus Verify] Error:", err);
-      return res.status(500).send(buildManusVerifyHtml(null, err.message || "Verification failed"));
+      console.error("[Connector Manus Verify] Error:", err?.response?.status, err?.message);
+      // Map common errors to user-friendly messages
+      let userMessage = "Verification failed. Please try again.";
+      const status = err?.response?.status;
+      if (status === 503 || err?.code === "ECONNREFUSED" || err?.code === "ETIMEDOUT") {
+        userMessage = "The Manus authentication service is temporarily unavailable. Please try again in a few minutes.";
+      } else if (status === 401 || status === 403) {
+        userMessage = "Authentication expired or was denied. Please try connecting again from the Connectors page.";
+      } else if (err?.message?.includes("expired") || err?.message?.includes("invalid_grant")) {
+        userMessage = "The verification code expired. Please try again — the process must be completed within 60 seconds.";
+      } else if (err?.message) {
+        userMessage = `Verification failed: ${err.message.slice(0, 200)}`;
+      }
+      return res.status(500).send(buildManusVerifyHtml(null, userMessage));
     }
   });
 
@@ -1062,10 +1088,28 @@ async function startServer() {
     const streamAbortController = new AbortController();
     req.on("close", () => {
       if (!streamAbortController.signal.aborted) {
-        console.log("[SSE] Client disconnected — aborting agent stream");
+        console.log("[SSE] Client disconnected \u2014 aborting agent stream");
         streamAbortController.abort();
       }
     });
+
+    // Per-task concurrency guard: If another stream is already running for this task,
+    // abort it before starting the new one. This prevents two streams from writing
+    // to the same task simultaneously (which causes message corruption/loss).
+    const body = req.body || {};
+    const guardTaskId = body.taskExternalId as string | undefined;
+    if (guardTaskId) {
+      const existingController = activeTaskStreams.get(guardTaskId);
+      if (existingController && !existingController.signal.aborted) {
+        console.log(`[SSE] Aborting previous stream for task ${guardTaskId} (new request arrived)`);
+        existingController.abort();
+      }
+      activeTaskStreams.set(guardTaskId, streamAbortController);
+      // Clean up on stream end
+      const cleanup = () => { activeTaskStreams.delete(guardTaskId); };
+      req.on("close", cleanup);
+      res.on("finish", cleanup);
+    }
 
     const safeWrite = (data: string): boolean => {
       try {
@@ -1085,7 +1129,6 @@ async function startServer() {
 
     try {
       const { runAgentStream } = await import("../agentStream");
-      const body = req.body || {};
       let messages = body.messages || [];
       const taskExternalId = body.taskExternalId as string | undefined;
       const mode = (body.mode === "speed" ? "speed" : body.mode === "max" ? "max" : body.mode === "limitless" ? "limitless" : "quality") as "speed" | "quality" | "max" | "limitless";
@@ -1402,16 +1445,46 @@ async function startServer() {
         memoryContext,
         crossTaskContext,
         abortSignal: streamAbortController.signal,
-        // NOTE: Server-side onComplete persistence REMOVED (Pass 70).
-        // The client already persists assistant messages via trpc.task.addMessage
-        // after stream completion. Dual-persist caused duplicate messages on reload
-        // because both the server (with raw finalContent) and the client (with
-        // post-processed content including citation links) wrote separate rows.
-        // The client-side persistence is the source of truth since it includes
-        // all post-processing (citations, images, card data).
-        // If the client disconnects mid-stream, the message is lost — but this is
-        // acceptable since the user can retry. The alternative (duplicates) is worse.
-        onComplete: undefined,
+        // Server-side persistence: Save assistant message as a safety net.
+        // The client ALSO persists (with post-processed content like citations).
+        // To avoid duplicates on reload, we use a "server_safety_net" cardType marker.
+        // The client-side message merge logic deduplicates by content matching.
+        // If client disconnects mid-stream, this ensures the message is NOT lost.
+        onComplete: taskServerId ? async (content) => {
+          if (!content || !content.trim()) return;
+          // If the stream was aborted (user sent follow-up or navigated away),
+          // do NOT persist partial content — the new stream will produce the real response.
+          if (streamAbortController.signal.aborted) {
+            console.log("[Stream] onComplete: skipped (stream was aborted)");
+            return;
+          }
+          try {
+            const { nanoid } = await import("nanoid");
+            const { addTaskMessage, getTaskMessages: getDbMsgs } = await import("../db");
+            // Dedup check: see if client already persisted this message
+            const existing = await getDbMsgs(taskServerId!);
+            const lastFew = existing.slice(-3);
+            const isDup = lastFew.some((m: any) =>
+              m.role === "assistant" && m.content.trim() === content.trim()
+            );
+            if (isDup) {
+              console.log("[Stream] onComplete: skipped (client already persisted)");
+              return;
+            }
+            await addTaskMessage({
+              taskId: taskServerId!,
+              externalId: nanoid(12),
+              role: "assistant",
+              content: content,
+              actions: null,
+              cardType: "server_safety_net",
+              cardData: null,
+            });
+            console.log("[Stream] onComplete: assistant message persisted (safety net)");
+          } catch (err: any) {
+            console.error("[Stream] onComplete persistence failed:", err.message?.slice(0, 200));
+          }
+        } : undefined,
         onArtifact: async (artifact) => {
           console.log("[Stream] Artifact produced:", artifact.type, artifact.label);
           if (taskServerId) {

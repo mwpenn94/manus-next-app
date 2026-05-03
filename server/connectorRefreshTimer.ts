@@ -95,6 +95,25 @@ async function refreshDueConnectors(): Promise<{
         (c) => c.connectorId === connectorId && c.status === "connected"
       );
 
+      // Skip PAT-based connectors — they don't use OAuth refresh
+      const authMethod = (conn as any)?.authMethod;
+      const connConfig = (conn as any)?.config as Record<string, any> | undefined;
+      const hasPATInConfig = connConfig && (connConfig.token || connConfig.pat || connConfig.smartPat);
+      if (authMethod === "api_key" || authMethod === "webhook" || (hasPATInConfig && !conn?.refreshToken)) {
+        await updateConnectorHealth(userId, connectorId, {
+          autoRefreshEnabled: false,
+          lastRefreshError: "PAT-based auth does not support token refresh",
+        });
+        await logConnectorHealthEvent(
+          userId,
+          connectorId,
+          "auto_refresh_disabled",
+          "Connector uses PAT auth — refresh not applicable"
+        );
+        skipped++;
+        continue;
+      }
+
       if (!conn || !conn.refreshToken) {
         // Connector disconnected or no refresh token — skip and disable
         await updateConnectorHealth(userId, connectorId, {

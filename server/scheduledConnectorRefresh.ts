@@ -31,6 +31,7 @@ interface RefreshResult {
   userId: number;
   status: "refreshed" | "failed" | "skipped";
   error?: string;
+  reason?: string;
   newExpiresAt?: string;
 }
 
@@ -85,6 +86,23 @@ export async function handleConnectorRefresh(req: Request, res: Response) {
         const conn = userConns.find(
           (c) => c.connectorId === connectorId && c.status === "connected"
         );
+
+        // Skip PAT-based connectors — they don't use OAuth refresh
+        const authMethod = (conn as any)?.authMethod;
+        if (authMethod === "api_key" || authMethod === "webhook") {
+          await updateConnectorHealth(userId, connectorId, {
+            autoRefreshEnabled: false,
+            lastRefreshError: "PAT-based auth does not support token refresh",
+          });
+          await logConnectorHealthEvent(
+            userId,
+            connectorId,
+            "auto_refresh_disabled",
+            "Connector uses PAT auth — refresh not applicable"
+          );
+          results.push({ connectorId, userId, status: "skipped", reason: "PAT auth" });
+          continue;
+        }
 
         if (!conn || !conn.refreshToken) {
           // Connector disconnected or no refresh token — skip and disable auto-refresh

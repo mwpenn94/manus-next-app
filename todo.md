@@ -7438,3 +7438,28 @@
 - [x] S51-CV1: TypeScript 0 errors
 - [x] S51-CV2: All tests passing (211 files, 5193 tests, 0 failures)
 - [x] S51-CV3: Tool count assertions updated from 37 to 38 across all test files
+
+## Session 52: REAL Production Bug Fixes (from screen recording IOV)
+### Bug 1: "Refresh failed: No refresh token available" on PAT-based GitHub auth
+- [x] S52-B1a: Traced — connectorRefreshTimer fires for ALL connectors regardless of authMethod
+- [x] S52-B1b: Fixed — connectorRefreshTimer and scheduledConnectorRefresh now skip PAT connectors (check authMethod + config.token)
+- [x] S52-B1c: Fixed — upsertConnector now clears stale accessToken/refreshToken/tokenExpiresAt when PAT is saved
+### Bug 2: Git Clone Auth Failure — oauth_app token type rejected
+- [x] S52-B2a: ROOT CAUSE FOUND — validateGitHubToken returned valid:true on 429/network error, causing stale OAuth to be used over valid PAT
+- [x] S52-B2b: Fixed — (1) validateGitHubToken now returns uncertain:true on 429/network error instead of valid:true (2) PAT priority reorder: if config.token exists, try PAT FIRST before OAuth (3) uncertain validation uses PAT anyway since user explicitly configured it
+- [x] S52-B2c: IOV test passes — resolveGitHubAuth correctly returns PAT (smart_pat) when both stale OAuth and valid PAT exist
+### Bug 3: Messages Disappearing During Task Execution
+- [x] S52-B3a: ROOT CAUSE FOUND — server NEVER persists assistant messages; relies entirely on client-side storage which is lost on disconnect
+- [x] S52-B3b: Fixed — re-enabled server-side onComplete in stream endpoint to persist final assistant message to DB via addTaskMessage
+- [x] S52-B3c: Fixed — added abort check in onComplete to prevent stale content from being saved after stream abort
+### Bug 4: Mid-Task Message Crash ("Something went wrong")
+- [x] S52-B4a: ROOT CAUSE FOUND — no server-side concurrency guard; two streams on same task corrupt shared state. Also: partial content saved as full message confuses LLM on re-stream
+- [x] S52-B4b: Fixed — added per-task activeStreams Map; new stream request aborts existing stream for same task before starting
+- [x] S52-B4c: Fixed — when pendingRestream is true, partial content is NOT saved (prevents LLM confusion from half-finished responses)
+### Bug 5: Manus Verify → "Service Unavailable"
+- [x] S52-B5a: Traced — external Manus OAuth portal was temporarily unreachable; code path is correct
+- [x] S52-B5b: Fixed — improved error handling in manus callback with retry button in error HTML, clearer error messages for users
+### Convergence
+- [x] S52-CV1: TypeScript 0 errors (LSP confirmed)
+- [x] S52-CV2: All 212 test files pass (5203 tests, 0 failures)
+- [x] S52-CV3: IOV test file (session52-iov.test.ts) validates all 5 bug fixes with 10 targeted assertions
