@@ -956,11 +956,13 @@ ${memoryContext}
     // Detect user frustration/complaints — force text-only response
     const isUserFrustrated = /\b(why (did|didn't|is|isn't|are|aren't) (you|there|it|none|no)|you completed prematurely|you terminated|terminated early|still terminated|I didn't ask|stop (doing|generating|making)|what (just )?happened to (my|your|it)|no response|not responding|broken|doesn't work|why is none|you ignored|ignoring me|wrong|that's not what I|I said|(my |the )?(messages?|response|output|text|content) disappeared|(you('re| are)) not done|didn't finish|did not (provide|finish|complete)|how is a user supposed|you didn't|you did not|why the hell|the hell is)\b/i.test(lastUserText);
     if (isUserFrustrated) {
-      systemPrompt += `\n\n## USER FRUSTRATION DETECTED — TEXT-ONLY RESPONSE REQUIRED\nThe user appears frustrated or is complaining about your previous behavior. You MUST:\n1. Respond ONLY with text — do NOT call any tools.\n2. Acknowledge their concern directly and specifically.\n3. Explain what happened (if you can infer it from context).\n4. Ask how you can help them better.\nDo NOT generate images, documents, or run any tools. Just talk to the user.`;
+      systemPrompt += `\n\n## USER FRUSTRATION DETECTED — ACKNOWLEDGE AND RESUME\nThe user appears frustrated or is complaining about your previous behavior. You MUST:\n1. In ONE brief sentence (max 15 words), acknowledge the issue without apologizing (e.g., "Let me pick up where I left off.", "Understood — continuing now.", "Resuming the task.").\n2. Look at the FULL conversation history to determine what task you were working on before the interruption/error.\n3. IMMEDIATELY resume that task. Use tools if needed. Do NOT just describe what you'll do — actually DO it.\n4. If you cannot determine what task was in progress, ask ONE specific question: "What would you like me to work on?"\n\nCRITICAL: Do NOT analyze Wikipedia articles, do NOT start random research, do NOT describe your capabilities. RESUME the specific task from the conversation history.`;
     }
 
     // Conditionally inject DEMONSTRATE EACH protocol — ONLY when user explicitly asks to demonstrate
-    const wantsDemonstration = !isUserFrustrated && /\b(demonstrate\s+(each|all|every)|show\s+(me\s+)?(all|each|every)\s+(your\s+)?(capabilities|tools|features)|what\s+can\s+you\s+do.*(demonstrate|show)|go\s+until\s+done|do\s+them\s+all|show\s+me\s+all)\b/i.test(lastUserText);
+    // VB4 FIX: Tightened regex to require explicit capability/tool/feature keywords to prevent false positives
+    // (e.g., "show me all my messages" was incorrectly triggering demonstration mode)
+    const wantsDemonstration = !isUserFrustrated && /\b(demonstrate\s+(each|all|every)\s+(of\s+)?(your\s+)?(capabilities|tools|features|abilities)|show\s+(me\s+)?(all|each|every)\s+(of\s+)?(your\s+)?(capabilities|tools|features|abilities)|what\s+can\s+you\s+do.*(demonstrate|show\s+me)|go\s+until\s+done\s+demonstrating|do\s+them\s+all.*(capabilities|demonstrations)|show\s+me\s+all\s+(your\s+)?(capabilities|tools|features))\b/i.test(lastUserText);
     if (wantsDemonstration) {
       systemPrompt += `\n\n## DEMONSTRATE EACH \u2014 MANUS PARITY PROTOCOL
 
@@ -1073,6 +1075,8 @@ will seamlessly continue you with full context. Write as extensively as the task
 - File attachments ARE the context — process them immediately.
 - After research, ALWAYS synthesize into the actual deliverable the user requested.`;
     }
+    // PC3: Final anti-apology reinforcement (recency bias — LLMs follow last instruction most)
+    systemPrompt += `\n\n## ABSOLUTE FINAL RULE — NO APOLOGIES\nDo NOT start your response with any form of apology, acknowledgment of error, or self-correction language. Banned openers: "My apologies", "I apologize", "I'm sorry", "You're right", "You're absolutely right", "I should have", "Let me correct", "I made an error", "That was my mistake", "Got it, loud and clear", "I hear you", "Fair point". Instead, IMMEDIATELY provide the correct action/answer. If you violated a rule, just do the right thing NOW without commenting on the violation.`;
     if (conversation.length > 0 && conversation[0].role === "system") {
       conversation[0] = { role: "system", content: systemPrompt };
     } else {

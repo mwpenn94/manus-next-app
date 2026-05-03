@@ -75,10 +75,10 @@ describe("VB2/VB4: Expanded frustration detection", () => {
     expect(regex.test("you're not done yet")).toBe(true);
   });
 
-  it("frustration detection forces text-only response", () => {
+  it("frustration detection forces acknowledge-and-resume response", () => {
     expect(AGENT_STREAM).toContain("USER FRUSTRATION DETECTED");
-    expect(AGENT_STREAM).toContain("TEXT-ONLY RESPONSE REQUIRED");
-    expect(AGENT_STREAM).toContain("do NOT call any tools");
+    expect(AGENT_STREAM).toContain("ACKNOWLEDGE AND RESUME");
+    expect(AGENT_STREAM).toContain("IMMEDIATELY resume that task");
   });
 });
 
