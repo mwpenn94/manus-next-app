@@ -61,6 +61,10 @@ export interface StreamStateSetters {
   setConnectorAuthRequired?: (data: { connector: string; reason: string } | null) => void;
   /** Orchestration progress — multi-agent execution state */
   setOrchestrationState?: (data: { phase: string; completedTasks: number; totalTasks: number; currentTask?: string; agentName?: string; quality?: number } | null) => void;
+  /** Persist step progress into task model so workspace panel can display it */
+  updateTaskSteps?: (taskId: string, completed: number, total: number) => void;
+  /** Persist workspace artifacts from SSE tool results */
+  persistArtifact?: (taskId: string, artifactType: string, data: { label?: string; content?: string; url?: string }) => void;
 }
 
 /**
@@ -173,6 +177,21 @@ export function buildStreamCallbacks(
         const name = toolResult.name || "Source";
         state.sourceUrls.push({ name, url: toolResult.url });
       }
+      // Persist workspace artifacts from SSE tool results
+      if (setters.persistArtifact && idx >= 0) {
+        const action = state.actions[idx];
+        const actionType = action?.type;
+        if (actionType === "browsing" && toolResult.preview) {
+          setters.persistArtifact(setters.taskId, "browser_screenshot", { url: toolResult.preview, label: action?.url || "Browser" });
+          if (action?.url) {
+            setters.persistArtifact(setters.taskId, "browser_url", { url: action.url });
+          }
+        } else if ((actionType === "creating" || actionType === "editing" || actionType === "writing") && toolResult.preview) {
+          setters.persistArtifact(setters.taskId, "code", { content: toolResult.preview, label: action?.file || action?.label || "Code" });
+        } else if ((actionType === "executing" || actionType === "installing" || actionType === "building") && toolResult.preview) {
+          setters.persistArtifact(setters.taskId, "terminal", { content: toolResult.preview, label: action?.label || "Terminal" });
+        }
+      }
     },
     onImage: (imageUrl: string) => {
       state.images.push(imageUrl);
@@ -180,6 +199,10 @@ export function buildStreamCallbacks(
       state.accumulated += `\n\n![Generated Image](${imageUrl})\n\n`;
       setters.accumulatedRef.current = state.accumulated;
       setters.setStreamContent(state.accumulated);
+      // Persist generated image as workspace artifact
+      if (setters.persistArtifact) {
+        setters.persistArtifact(setters.taskId, "generated_image", { url: imageUrl, label: "Generated Image" });
+      }
     },
     onDocument: (doc: { title: string; url: string; format?: string }) => {
       const docTitle = doc.title || "Document";
@@ -208,9 +231,14 @@ export function buildStreamCallbacks(
         setters.setStreamInlineCards?.([...state.inlineCards]);
       } else {
         // Plain format: inline markdown link in the stream text
-        state.accumulated += `\n\n\uD83D\uDCC4 **${docTitle}** — [Download Document](${doc.url})\n\n`;
+        state.accumulated += `\n\n\uD83D\uDCC4 **${docTitle}** \u2014 [Download Document](${doc.url})\n\n`;
         setters.accumulatedRef.current = state.accumulated;
         setters.setStreamContent(state.accumulated);
+      }
+      // Persist document as workspace artifact
+      if (setters.persistArtifact && doc.url) {
+        const artifactType = isPdf ? "document_pdf" : isDocx ? "document_docx" : isXlsx ? "document_xlsx" : "document";
+        setters.persistArtifact(setters.taskId, artifactType, { url: doc.url, label: docTitle });
       }
     },
     onDone: (content: string) => {
@@ -262,6 +290,10 @@ export function buildStreamCallbacks(
     },
     onStepProgress: (progress: any) => {
       setters.setStepProgress(progress);
+      // Persist step progress into task model so workspace panel can display it
+      if (progress && typeof progress.completed === "number" && typeof progress.total === "number" && setters.updateTaskSteps) {
+        setters.updateTaskSteps(setters.taskId, progress.completed, progress.total);
+      }
     },
     onError: (error: string, retryable?: boolean) => {
       if (retryable) {

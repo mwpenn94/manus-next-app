@@ -7463,3 +7463,12 @@
 - [x] S52-CV1: TypeScript 0 errors (LSP confirmed)
 - [x] S52-CV2: All 212 test files pass (5203 tests, 0 failures)
 - [x] S52-CV3: IOV test file (session52-iov.test.ts) validates all 5 bug fixes with 10 targeted assertions
+
+## Session 53: Right Panel & State Bleed Fixes
+
+- [x] S53-BUG1: Task progress shows "0% — 0/0 steps completed" even after task completes with 5 steps — step counter not updating from SSE stream events — FIXED: Wired onStepProgress in buildStreamCallbacks to call updateTaskSteps which persists into task model
+- [x] S53-BUG2: "No code artifacts yet" in Code tab — file artifacts (PDFs, documents) not being captured/displayed in right panel — FIXED: Added persistArtifact calls in onToolResult, onImage, onDocument handlers in buildStreamCallbacks
+- [x] S53-BUG3: Right panel tabs (BrowseAll, Docs, Images, Code, Links, Artifacts, Replay, Mem) not populating with task outputs from tool results — FIXED: Same as BUG2 — artifacts now flow from SSE stream into workspace DB via persistArtifact
+- [x] S53-BUG4: Stale "Session ended" state in right panel while new task is running — panel not resetting on task switch — FIXED: Workspace panel now uses (task.status === 'running' || isStreaming) for live indicator
+- [x] S53-BUG5: Input field and "Manus is thinking" component carry over from completed task to new task — state bleed between tasks causing user confusion — FIXED: CRITICAL-4 reset now aborts running stream, sets streaming=false, and clears input
+- [x] S53-BUG6: ConnectorsCRUDPanel OAuth flow broken — used nonexistent connector.authType and hardcoded /api/connectors/:id/oauth route — FIXED: Now uses trpc.connector.getOAuthUrl mutation with proper origin/returnPath

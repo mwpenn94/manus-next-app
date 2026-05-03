@@ -49,6 +49,7 @@ export default function ConnectorsCRUDPanel(): React.JSX.Element {
     onSuccess: () => utils.connector.list.invalidate(),
   });
   const testMutation = trpc.connector.test.useMutation();
+  const getOAuthUrlMutation = trpc.connector.getOAuthUrl.useMutation();
 
   const isLoading = catalogLoading || connectorsLoading;
 
@@ -236,10 +237,24 @@ export default function ConnectorsCRUDPanel(): React.JSX.Element {
                         variant="outline"
                         size="sm"
                         className="h-7 text-xs gap-1"
-                        onClick={() => {
-                          if (connector.authType === "oauth") {
-                            window.open(`/api/connectors/${connector.id}/oauth`, "_blank", "noopener,noreferrer");
-                          } else {
+                        onClick={async () => {
+                          try {
+                            const result = await getOAuthUrlMutation.mutateAsync({
+                              connectorId: connector.id,
+                              origin: window.location.origin,
+                              returnPath: "/connectors",
+                            });
+                            if (result.supported && result.url) {
+                              window.open(result.url, "_blank", "noopener,noreferrer");
+                            } else {
+                              // Fallback to API key connect
+                              connectMutation.mutate({
+                                connectorId: connector.id,
+                                name: connector.name,
+                                config: {},
+                              });
+                            }
+                          } catch {
                             connectMutation.mutate({
                               connectorId: connector.id,
                               name: connector.name,
@@ -247,7 +262,7 @@ export default function ConnectorsCRUDPanel(): React.JSX.Element {
                             });
                           }
                         }}
-                        disabled={connectMutation.isPending}
+                        disabled={connectMutation.isPending || getOAuthUrlMutation.isPending}
                       >
                         <Plus className="w-3 h-3" />
                         Connect

@@ -99,6 +99,8 @@ interface TaskContextValue {
   updateMessageCard: (taskId: string, messageId: string, cardData: Record<string, unknown>) => void;
   updateTaskFavorite: (taskId: string, favorite: number) => void;
   editMessageAndTruncate: (taskId: string, messageId: string, newContent: string) => void;
+  updateTaskSteps: (taskId: string, completed: number, total: number) => void;
+  persistArtifact: (taskId: string, artifactType: string, data: { label?: string; content?: string; url?: string }) => void;
 }
 
 const TaskContext = createContext<TaskContextValue | null>(null);
@@ -106,7 +108,7 @@ const TaskContext = createContext<TaskContextValue | null>(null);
 let nextMsgId = 100;
 
 // Valid artifact types that the workspace panel can display
-const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "slides", "webapp_preview"]);
+const ARTIFACT_TYPES = new Set(["browser_screenshot", "browser_url", "code", "terminal", "generated_image", "document", "document_pdf", "document_docx", "document_xlsx", "document_csv", "slides", "webapp_preview"]);
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -477,6 +479,17 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     [isAuthenticated, updateStatusMutation.mutate]
   );
 
+  const updateTaskSteps = useCallback(
+    (taskId: string, completed: number, total: number) => {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, completedSteps: completed, totalSteps: total, updatedAt: new Date() } : t
+        )
+      );
+    },
+    []
+  );
+
   const renameTask = useCallback(
     (taskId: string, title: string) => {
       setTasks((prev) => {
@@ -808,6 +821,8 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         updateMessageCard,
         updateTaskFavorite,
         editMessageAndTruncate,
+        updateTaskSteps,
+        persistArtifact,
       }}
     >
       {children}

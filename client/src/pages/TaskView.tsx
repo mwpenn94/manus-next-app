@@ -2373,10 +2373,10 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
         <div className="h-10 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground">
-              {task.status === "running" ? "Watching live" : "Session ended"}
+              {(task.status === "running" || isStreaming) ? "Watching live" : "Session ended"}
             </span>
           </div>
-          {task.totalSteps && (
+          {(task.totalSteps != null && task.totalSteps > 0) && (
             <div className="flex items-center gap-2">
               <div className="w-24 h-1 bg-muted rounded-full overflow-hidden">
                 <motion.div
@@ -2564,7 +2564,7 @@ export default function TaskView() {
   const searchString = useSearch();
   const replayRequested = useMemo(() => new URLSearchParams(searchString).get("replay") === "1", [searchString]);
   const [replayOpen, setReplayOpen] = useState(false);
-  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, replaceLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite, editMessageAndTruncate } = useTask();
+  const { tasks, activeTask, setActiveTask, addMessage, removeLastMessage, replaceLastMessage, updateTaskStatus, renameTask: renameTaskFn, markAutoStreamed, updateMessageCard, updateTaskFavorite, editMessageAndTruncate, updateTaskSteps, persistArtifact } = useTask();
   const { status: bridgeStatus, sendRaw: bridgeSend, lastEvent } = useBridge();
   const { isAuthenticated } = useAuth();
   const [input, setInput] = useState("");
@@ -2890,7 +2890,12 @@ export default function TaskView() {
   useEffect(() => {
     const currentId = task?.id ?? null;
     if (prevTaskIdRef.current && currentId !== prevTaskIdRef.current) {
-      // Task changed — clear all streaming state
+      // Task changed — abort any running stream and clear ALL streaming state
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      setStreaming(false);
       setStreamContent("");
       setAgentActions([]);
       setStreamImages([]);
@@ -2903,6 +2908,7 @@ export default function TaskView() {
       setAegisMeta(null);
       setGenerationIncomplete(false);
       setLastErrorRetryable(false);
+      setInput("");
       pendingRestreamRef.current = false;
     }
     prevTaskIdRef.current = currentId;
@@ -3068,7 +3074,7 @@ export default function TaskView() {
         const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
@@ -3200,7 +3206,7 @@ export default function TaskView() {
         const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
@@ -3424,7 +3430,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3513,7 +3519,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3618,7 +3624,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3704,7 +3710,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -4711,7 +4717,7 @@ export default function TaskView() {
                     {resumeStaleMutation.isPending ? "Resuming..." : "Resume Task"}
                   </button>
                 )}
-                {task.completedSteps && task.totalSteps && (
+                {(task.completedSteps != null && task.completedSteps > 0 && task.totalSteps != null && task.totalSteps > 0) && (
                   <span className="text-[11px] text-muted-foreground">
                     {task.completedSteps}/{task.totalSteps} steps
                   </span>
