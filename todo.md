@@ -7251,10 +7251,10 @@
 - [x] VB6: Markdown rendering failure in thinking block — raw ## headers and broken tables in thinking preview. Fix: render thinking preview with Streamdown instead of raw text
 ### Next Steps Implementation
 - [x] NS1: Webapp-builder build loop fix — add "build attempt budget" that forces different approach after 2 failed builds
-- [ ] NS2: Integration tests for capability demonstration flow (demonstrate each capability end-to-end)
-- [ ] NS3: E2E smoke tests — Playwright-based test for login → create task → send message → receive response → view artifacts
+- [x] NS2: Integration tests for capability demonstration flow (demonstrate each capability end-to-end)
+- [x] NS3: E2E smoke tests — Playwright-based test for login → create task → send message → receive response → view artifacts
 ### Follow-up IOV Convergence Passes
-- [ ] IOV-38: Run follow-up convergence passes until 3 consecutive clean passes confirm convergence
+- [x] IOV-38: Run follow-up convergence passes until 3 consecutive clean passes confirm convergence
 
 ## Session 38: Pasted Content Issues (from user chat screenshot)
 - [x] PC1: Filter out empty assistant messages from display (lines 192-213 show empty "Listen" messages)
