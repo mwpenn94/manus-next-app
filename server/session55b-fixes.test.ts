@@ -53,7 +53,7 @@ describe("Session 55b: Partial content preserved on mid-stream follow-up", () =>
   });
 });
 
-describe("Session 55b: GitHub Query Guard (multi-turn)", () => {
+describe("Session 55b: GitHub Query Guard (unconditional — blocks research on ALL turns)", () => {
   const streamContent = fs.readFileSync(AGENT_STREAM_PATH, "utf-8");
 
   it("defines isGitHubRepoQuery regex detection", () => {
@@ -61,20 +61,25 @@ describe("Session 55b: GitHub Query Guard (multi-turn)", () => {
     expect(streamContent).toContain("connected\\s*(github|repo)");
   });
 
-  it("tracks whether github_ops has been called via githubOpsCompleted", () => {
+  it("tracks githubOpsCompleted for logging purposes", () => {
     expect(streamContent).toContain("let githubOpsCompleted = false");
     expect(streamContent).toContain("githubOpsCompleted = true");
   });
 
-  it("blocks research tools on ALL turns until github_ops runs (not just turn 1)", () => {
-    expect(streamContent).toContain("GITHUB QUERY GUARD");
-    expect(streamContent).toContain("!githubOpsCompleted");
-    // Must NOT be limited to turn === 1
-    const guardSection = streamContent.substring(
-      streamContent.indexOf("GITHUB QUERY GUARD: Block research"),
-      streamContent.indexOf("GITHUB QUERY GUARD: Block research") + 500
+  it("guard condition does NOT include !githubOpsCompleted (fires unconditionally)", () => {
+    // The guard should fire on EVERY turn for repo queries, not just before github_ops runs
+    const guardConditionLine = streamContent.split("\n").find(
+      (line: string) => line.includes("isGitHubRepoQuery") && line.includes("toolCalls") && line.includes("if (")
     );
-    expect(guardSection).not.toContain("turn === 1");
+    expect(guardConditionLine).toBeDefined();
+    expect(guardConditionLine).not.toContain("!githubOpsCompleted");
+    expect(guardConditionLine).not.toContain("turn <=");
+  });
+
+  it("blocks research on ALL turns — comment says ALWAYS/unconditionally", () => {
+    expect(streamContent).toContain("ALWAYS block research tools for GitHub repo queries");
+    expect(streamContent).toContain("fires on EVERY turn, unconditionally");
+    expect(streamContent).toContain("research is NEVER appropriate");
   });
 
   it("blocks deep_research_content, wide_research, web_search, read_webpage", () => {
@@ -85,14 +90,22 @@ describe("Session 55b: GitHub Query Guard (multi-turn)", () => {
     expect(streamContent).toContain('"read_webpage"');
   });
 
-  it("deactivates guard once github_ops is detected", () => {
-    expect(streamContent).toContain("github_ops detected on turn");
-    expect(streamContent).toContain("guard will deactivate");
+  it("allows github_ops, github_assess, github_edit, git_operation, app_lifecycle, deploy_webapp", () => {
+    expect(streamContent).toContain('"github_ops"');
+    expect(streamContent).toContain('"github_assess"');
+    expect(streamContent).toContain('"github_edit"');
+    expect(streamContent).toContain('"git_operation"');
+    expect(streamContent).toContain('"app_lifecycle"');
+    expect(streamContent).toContain('"deploy_webapp"');
   });
 
-  it("injects SYSTEM ENFORCEMENT message when all calls are research", () => {
-    expect(streamContent).toContain("SYSTEM ENFORCEMENT: Research tools are BLOCKED");
+  it("injects SYSTEM ENFORCEMENT message saying PERMANENTLY BLOCKED", () => {
+    expect(streamContent).toContain("SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED");
     expect(streamContent).toContain("github_ops(mode: 'status')");
+  });
+
+  it("logs that research is NEVER allowed for repo queries", () => {
+    expect(streamContent).toContain("research is NEVER allowed for repo queries");
   });
 });
 

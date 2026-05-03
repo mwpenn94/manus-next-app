@@ -7520,3 +7520,5 @@
 - [x] Root cause: Nixpacks builder ignores Dockerfile — production has no git/curl/tar binaries
 - [x] Verified: Pure Node.js tarball extraction works (2081 files, 19.2MB download, 37.7MB decompressed)
 - [x] All 40 regression tests pass (session55 + session55b)
+- [x] Fix GitHub Query Guard to block research on ALL turns unconditionally (not just until github_ops runs)
+- [x] Update regression tests for unconditional guard logic (session55b, session37, pass36, continuation-fix)

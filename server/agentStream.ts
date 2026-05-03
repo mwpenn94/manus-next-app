@@ -1302,7 +1302,7 @@ For questions unrelated to GitHub (math, general knowledge, research, etc.), IGN
 6. If they ask to build/deploy/run → github_ops(status) → git_operation(clone) → install_deps → deploy_webapp
 
 ### Auto-selection rule:
-If only one repo is connected, use it automatically when the user asks about "my repo".
+If only one, use it automatically when the user asks about "my repo". If multiple repos, ask which repo they mean.
 
 ### GIT CLONE FAILURE RECOVERY
 If git_operation(clone) fails:
@@ -1539,10 +1539,12 @@ If git_operation(clone) fails:
         console.log(`[Agent] SIMPLE QUERY GUARD: Stripping ${toolCalls.length} tool call(s) for simple query`);
         toolCalls = undefined;
       }
-      // GITHUB QUERY GUARD: Block research tools until github_ops has been called.
+      // GITHUB QUERY GUARD: ALWAYS block research tools for GitHub repo queries.
       // The LLM persistently ignores prompt routing and calls deep_research_content
-      // for repo queries. This guard fires on EVERY turn until github_ops runs.
-      if (isGitHubRepoQuery && !githubOpsCompleted && toolCalls && toolCalls.length > 0) {
+      // for repo queries. This guard fires on EVERY turn, unconditionally.
+      // It does NOT deactivate after github_ops runs — research is NEVER appropriate
+      // for queries about the user's own connected repo.
+      if (isGitHubRepoQuery && toolCalls && toolCalls.length > 0) {
         const BLOCKED_RESEARCH_TOOLS = ["deep_research_content", "wide_research", "web_search", "read_webpage"];
         const hasResearchCall = toolCalls.some((tc: any) => {
           const name = tc.function?.name || tc.name || "";
@@ -1550,22 +1552,21 @@ If git_operation(clone) fails:
         });
         const hasGitHubCall = toolCalls.some((tc: any) => {
           const name = tc.function?.name || tc.name || "";
-          return ["github_ops", "github_assess", "github_edit"].includes(name);
+          return ["github_ops", "github_assess", "github_edit", "git_operation", "app_lifecycle", "deploy_webapp"].includes(name);
         });
         if (hasGitHubCall) {
-          // Mark that github_ops is being called — allow research on future turns
           githubOpsCompleted = true;
-          console.log(`[Agent] GITHUB QUERY GUARD: github_ops detected on turn ${turn} — guard will deactivate after this turn`);
-          // Still strip research calls on THIS turn if mixed with github_ops
+          console.log(`[Agent] GITHUB QUERY GUARD: GitHub/deploy tool detected on turn ${turn}`);
+          // Strip research calls even when mixed with github tools
           if (hasResearchCall) {
-            console.log(`[Agent] GITHUB QUERY GUARD: Stripping ${toolCalls.filter((tc: any) => BLOCKED_RESEARCH_TOOLS.includes(tc.function?.name || tc.name || "")).length} research call(s) mixed with github_ops`);
+            console.log(`[Agent] GITHUB QUERY GUARD: Stripping ${toolCalls.filter((tc: any) => BLOCKED_RESEARCH_TOOLS.includes(tc.function?.name || tc.name || "")).length} research call(s) mixed with GitHub tools`);
             toolCalls = toolCalls.filter((tc: any) => {
               const name = tc.function?.name || tc.name || "";
               return !BLOCKED_RESEARCH_TOOLS.includes(name);
             });
           }
         } else if (hasResearchCall) {
-          console.log(`[Agent] GITHUB QUERY GUARD: Blocking ${toolCalls.length} research tool call(s) on turn ${turn} — github_ops must run first`);
+          console.log(`[Agent] GITHUB QUERY GUARD: Blocking ${toolCalls.length} research tool call(s) on turn ${turn} — research is NEVER allowed for repo queries`);
           // Strip ALL research calls
           const filtered = toolCalls.filter((tc: any) => {
             const name = tc.function?.name || tc.name || "";
@@ -1575,7 +1576,7 @@ If git_operation(clone) fails:
             toolCalls = undefined;
             conversation.push({
               role: "user",
-              content: "SYSTEM ENFORCEMENT: Research tools are BLOCKED for this query. You MUST use github_ops(mode: 'status') to fetch real repo data. Do NOT call deep_research_content, wide_research, web_search, or read_webpage. Call github_ops NOW.",
+              content: "SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED for this query about your connected GitHub repo. You MUST use github_ops(mode: 'status') to fetch real repo data. Do NOT call deep_research_content, wide_research, web_search, or read_webpage. Use ONLY github_ops, github_edit, git_operation, or answer directly from what you already know.",
             } as any);
           } else {
             toolCalls = filtered;

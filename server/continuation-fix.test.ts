@@ -157,7 +157,7 @@ describe("Continuation Fix — Early Termination Bug", () => {
 
     it("resolves tier config via getTierConfig()", () => {
       expect(agentStreamSrc).toContain("const tierConfig = getTierConfig(mode)");
-      expect(agentStreamSrc).toContain("const { maxTurns, maxContinuationRounds } = tierConfig");
+      expect(agentStreamSrc).toContain("let { maxTurns, maxContinuationRounds } = tierConfig");
     });
 
     it("omits maxTokens for Limitless tier (lets model use full output window)", () => {
