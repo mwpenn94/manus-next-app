@@ -602,7 +602,7 @@ describe("Session 25 — Feature 6: Task Duplicate/Fork", () => {
     );
     // Should have BranchButton inside the assistant action buttons section (!isUser)
     // The pattern: !isUser block contains BranchButton
-    const assistantActionsSection = source.match(/\{\/\* Action buttons for assistant messages \*\/\}[\s\S]*?\{\/\* Branch button for user messages \*\/\}/);
+    const assistantActionsSection = source.match(/\{\/\* Action buttons for assistant messages \*\/\}[\s\S]*?\{\/\* Branch button for user messages/);
     expect(assistantActionsSection).toBeTruthy();
     expect(assistantActionsSection![0]).toContain("BranchButton");
   });

@@ -7296,3 +7296,11 @@
 - [x] PARITY4/5: Strengthen Rule 11 anti-clarification with BACK-REFERENCE RULE, explicit anti-clarification examples, and AFTER ERROR RECOVERY instruction
 - [x] PARITY8: Add guard against empty stream responses — show error message instead of silent empty message, don't mark task as "completed" when response is empty
 - [x] PARITY1: Message persistence verified — merge logic correctly preserves local messages not yet on server
+- [x] FIX: Mid-task user messages cause agent to fail instead of gracefully handling — fixed via server-side abort signal + expanded frustration/override detection (Session 48)
+## Session 48: Critical Agent Behavior Bugs (May 3 - User Screenshots IMG_7602-7611)
+- [x] BUG1: Mid-task messages show "Branch" markers and don't interrupt agent — Branch button now hidden during streaming + hover-only on user msgs + server-side abort signal
+- [x] BUG2: Agent ignores explicit user instructions — expanded override detection regex + USER OVERRIDE COMMAND system prompt injection
+- [x] BUG3: Agent loops on git clone failure — added token type detection, actionable error messages, retry limit, GIT CLONE FAILURE RECOVERY system prompt section
+- [x] BUG4: Chat persistence verified working — server-side DB persistence + dedup merge + partial content save on abort all functional
+- [x] BUG5: Agent frustration detection expanded — regex now catches 'I already told/said/asked', 'you keep doing/ignoring/repeating', 'listen to me', 'are you listening', 'not what I asked/wanted'
+- [x] BUG6: Agent research override — isUserOverride regex catches 'no research', 'skip research', 'stop researching', 'enough research', 'no browsing' + server-side abort signal kills in-flight tool execution

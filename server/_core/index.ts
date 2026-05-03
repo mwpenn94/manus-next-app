@@ -1048,6 +1048,16 @@ async function startServer() {
     req.on("close", () => clearInterval(heartbeatInterval));
     res.on("close", () => clearInterval(heartbeatInterval));
 
+    // Abort signal: triggered when client disconnects (e.g., user sends follow-up mid-stream)
+    // This propagates to runAgentStream so it can stop tool execution early.
+    const streamAbortController = new AbortController();
+    req.on("close", () => {
+      if (!streamAbortController.signal.aborted) {
+        console.log("[SSE] Client disconnected — aborting agent stream");
+        streamAbortController.abort();
+      }
+    });
+
     const safeWrite = (data: string): boolean => {
       try {
         if (res.destroyed) return false;
@@ -1382,6 +1392,7 @@ async function startServer() {
         aiFocus,
         memoryContext,
         crossTaskContext,
+        abortSignal: streamAbortController.signal,
         // NOTE: Server-side onComplete persistence REMOVED (Pass 70).
         // The client already persists assistant messages via trpc.task.addMessage
         // after stream completion. Dual-persist caused duplicate messages on reload

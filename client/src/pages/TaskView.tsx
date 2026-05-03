@@ -836,7 +836,7 @@ function MessageFeedbackButtons({ taskExternalId, messageIndex }: { taskExternal
 }
 
 // ── Message bubble ──
-function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey, onShare }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number; onShare?: () => void }) {
+function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVoice, ttsRateStr, taskExternalId, messageIndex, allMessages, isEditing, editDraft, onStartEdit, onCancelEdit, onSaveEdit, onEditDraftChange, previewRefreshKey, onShare, isStreaming }: { message: Message; isLast: boolean; onRegenerate?: () => void; canRegenerate?: boolean; userTTSVoice?: string; ttsRateStr?: string; taskExternalId?: string; messageIndex?: number; allMessages?: Message[]; isEditing?: boolean; editDraft?: string; onStartEdit?: () => void; onCancelEdit?: () => void; onSaveEdit?: () => void; onEditDraftChange?: (val: string) => void; previewRefreshKey?: number; onShare?: () => void; isStreaming?: boolean }) {
   const [actionsExpanded, setActionsExpanded] = useState(true);
   const tts = useEdgeTTS();
   const isUser = message.role === "user";
@@ -851,7 +851,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={cn("flex gap-3 mb-5")}
+      className={cn("flex gap-3 mb-5 group")}
     >
       {!isUser && (
         <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
@@ -1245,9 +1245,9 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
             )}
           </div>
         )}
-        {/* Branch button for user messages */}
-        {isUser && taskExternalId && messageIndex !== undefined && allMessages && (
-          <div className="mt-1 flex justify-end">
+        {/* Branch button for user messages — hidden during streaming, visible on hover */}
+        {isUser && taskExternalId && messageIndex !== undefined && allMessages && !isStreaming && (
+          <div className="mt-1 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <BranchButton
               taskExternalId={taskExternalId}
               message={message}
@@ -4561,6 +4561,7 @@ export default function TaskView() {
               onEditDraftChange={(val) => setEditDraft(val)}
               previewRefreshKey={previewRefreshKey}
               onShare={handleShareDialog}
+              isStreaming={!!streaming}
             />
             </ErrorBoundary>
             </motion.div>

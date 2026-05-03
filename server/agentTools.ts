@@ -3729,14 +3729,28 @@ async function executeGitOperation(args: {
         
         // Try to use GitHub token for authenticated clone (supports private repos)
         let cloneUrl = args.remote_url.replace(/'/g, "");
+        let tokenUsed = false;
+        let originalUrl = cloneUrl;
+        let tokenType = "unknown"; // "classic_pat" (ghp_), "fine_grained" (github_pat_), "oauth_app", "unknown"
         if (context?.userId && cloneUrl.includes("github.com")) {
           try {
             const { getUserConnectors } = await import("./db");
             const conns = await getUserConnectors(context.userId);
             const ghConn = conns.find((c: any) => c.connectorId === "github" && c.status === "connected");
             if (ghConn?.accessToken) {
+              const token = ghConn.accessToken;
+              // Detect token type for better error messages
+              if (token.startsWith("ghp_")) tokenType = "classic_pat";
+              else if (token.startsWith("github_pat_")) tokenType = "fine_grained";
+              else if (token.startsWith("gho_")) tokenType = "oauth_app";
+              else if (token.startsWith("ghu_")) tokenType = "oauth_user";
+              else tokenType = "unknown";
               // Inject token into HTTPS URL for authenticated clone
-              cloneUrl = cloneUrl.replace("https://github.com/", `https://x-access-token:${ghConn.accessToken}@github.com/`);
+              cloneUrl = cloneUrl.replace("https://github.com/", `https://x-access-token:${token}@github.com/`);
+              tokenUsed = true;
+              console.log(`[git_operation] Using GitHub token for authenticated clone (type: ${tokenType}, length: ${token.length}, prefix: ${token.slice(0, 8)}...)`);
+            } else {
+              console.warn(`[git_operation] No GitHub access token found in connector. Attempting unauthenticated clone.`);
             }
           } catch (tokenErr: any) {
             // Fall back to unauthenticated clone
@@ -3747,7 +3761,67 @@ async function executeGitOperation(args: {
         // Ensure target directory doesn't already exist
         try { execSync(`rm -rf ${cloneDir}`, { timeout: 5000 }); } catch {}
         
-        output = execSync(`git clone '${cloneUrl}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+        // Attempt clone with retry and fallback strategies
+        let cloneSuccess = false;
+        let cloneError = "";
+        
+        // Attempt 1: Clone with token (if available)
+        try {
+          output = execSync(`git clone '${cloneUrl}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+          cloneSuccess = true;
+        } catch (err1: any) {
+          cloneError = err1.message || String(err1);
+          console.warn(`[git_operation] Clone attempt 1 failed: ${cloneError}`);
+          
+          // Attempt 2: If token was used and failed, try without token (public repo fallback)
+          if (tokenUsed && !cloneSuccess) {
+            try {
+              console.log(`[git_operation] Retrying clone without token (public repo fallback)...`);
+              try { execSync(`rm -rf ${cloneDir}`, { timeout: 5000 }); } catch {}
+              output = execSync(`git clone '${originalUrl}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+              cloneSuccess = true;
+              output += "\n(Note: Cloned without authentication — repo appears to be public)";
+            } catch (err2: any) {
+              cloneError = err2.message || String(err2);
+              console.warn(`[git_operation] Clone attempt 2 (no token) also failed: ${cloneError}`);
+            }
+          }
+          
+          // Attempt 3: Try with .git suffix if not already present
+          if (!cloneSuccess && !originalUrl.endsWith(".git")) {
+            try {
+              console.log(`[git_operation] Retrying clone with .git suffix...`);
+              try { execSync(`rm -rf ${cloneDir}`, { timeout: 5000 }); } catch {}
+              const urlWithGit = (tokenUsed ? cloneUrl : originalUrl) + ".git";
+              output = execSync(`git clone '${urlWithGit}' ${cloneDir} 2>&1`, { timeout: 60000 }).toString();
+              cloneSuccess = true;
+            } catch (err3: any) {
+              // Keep the original error as it's more informative
+              console.warn(`[git_operation] Clone attempt 3 (.git suffix) also failed: ${err3.message}`);
+            }
+          }
+        }
+        
+        if (!cloneSuccess) {
+          // Parse the error to give actionable guidance with token type context
+          let guidance = "";
+          const tokenInfo = tokenUsed ? `Token type: ${tokenType}. ` : "No token was used. ";
+          if (cloneError.includes("Authentication failed") || cloneError.includes("could not read Username") || cloneError.includes("403")) {
+            if (tokenType === "fine_grained") {
+              guidance = `\n\n${tokenInfo}LIKELY CAUSE: Fine-grained PATs (github_pat_) require explicit repository access permissions. The token may not have 'Contents: Read' permission for this specific repository.\nACTION: Tell the user their fine-grained PAT needs 'Contents: Read' permission for this repo. Alternatively, a Classic PAT (ghp_) with 'repo' scope works for all repos.\nCRITICAL: Do NOT retry this clone — the token permissions need to be fixed first.`;
+            } else {
+              guidance = `\n\n${tokenInfo}LIKELY CAUSE: The GitHub token is invalid, expired, or lacks 'repo' scope.\nACTION: Ask the user to reconnect their GitHub in Settings, or generate a new Classic PAT with 'repo' scope.\nCRITICAL: Do NOT retry this clone — the token needs to be fixed first.`;
+            }
+          } else if (cloneError.includes("not found") || cloneError.includes("404") || cloneError.includes("does not exist")) {
+            guidance = `\n\n${tokenInfo}LIKELY CAUSE: The repository does not exist, the URL is incorrect, or the token lacks access to this private repo.\nACTION: Verify the exact repository name and owner. Check capitalization. If the repo is private, ensure the token has access.\nCRITICAL: Do NOT retry — the URL or permissions need to be corrected.`;
+          } else if (cloneError.includes("Permission denied")) {
+            guidance = `\n\n${tokenInfo}LIKELY CAUSE: The token doesn't have permission to access this private repository.\nACTION: The user needs to grant repo access to their GitHub token/app.\nCRITICAL: Do NOT retry — permissions need to be fixed.`;
+          } else {
+            guidance = `\n\n${tokenInfo}ACTION: Present this error to the user and ask for guidance.\nCRITICAL: Do NOT retry more than once — repeated failures with the same token will produce the same result.`;
+          }
+          return { success: false, result: `Git clone failed: ${cloneError}${guidance}` };
+        }
+        
         activeProjectDir = cloneDir;
         break;
       }

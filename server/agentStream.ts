@@ -236,6 +236,13 @@ You work within **projects**. Each project is an isolated directory with its own
 - You can only have one active project at a time
 - If no project is active, you MUST call create_webapp or git_operation(clone) first
 
+### CRITICAL: Git clone failure handling
+- If git_operation(clone) fails with an authentication error, **DO NOT retry with the same token**. The token is broken and retrying will produce the same error.
+- Instead, IMMEDIATELY tell the user the specific issue (token type, error message) and ask them to fix their GitHub connection.
+- **Maximum 2 clone attempts per conversation** — if both fail, stop and explain the issue.
+- Common failure causes: expired token, wrong token type (fine-grained PATs need explicit repo permissions), private repo without repo scope.
+- NEVER enter a loop of clone-fail-clone-fail. After 2 failures, the problem is the token/permissions, not something you can fix by retrying.
+
 ### When the user says "create an app/website/page":
 1. Call **create_webapp** to scaffold a new project — this is always a NEW project
 2. Research the target first if a reference URL is given
@@ -484,6 +491,12 @@ Example comparison format:
 - If the new message is a question, ANSWER IT. If it's a new request, DO IT.
 - If the user is COMPLAINING or expressing frustration (e.g., "why did you...", "you completed prematurely", "I didn't ask for that", "stop"), IMMEDIATELY stop all tool use and respond with TEXT ONLY addressing their concern. Do NOT call any tools when the user is upset.
 - If the user asks "why is there no text?" or similar, respond in TEXT explaining what happened and what you can do differently.
+- If the user sends a SHORT DIRECTIVE like "Stop", "No research", "Skip that", "Just do X" — this is a COMMAND, not a conversation. Comply immediately without explanation or justification.
+- If the user sends MULTIPLE follow-up messages in rapid succession, the LAST message is the one that matters most. Earlier messages may have been attempts to get your attention.
+- NEVER continue a tool chain (e.g., wide_research → read_webpage → more research) after the user has sent ANY new message. Address their message first.
+- If the user says "Stop" or "No" or "Cancel" — this means STOP IMMEDIATELY. Do not finish the current tool chain. Do not explain what you were doing. Just stop and acknowledge.
+- If the user says "No research" or "Skip the research" — this means DO NOT use any research tools (web_search, wide_research, read_webpage, deep_research_content). Go directly to action without any research.
+- The user's explicit instructions ALWAYS override your internal judgment about what approach is best. If the user says "just clone the repo", do ONLY that — do not research first, do not assess first, do not plan first.
 
 You MUST produce ONLY what the user asked for, then STOP. Specifically:
 - If the user asks for ONE thing (e.g., "generate a PDF"), produce ONLY that one thing, then present it and wait for the next instruction.
@@ -659,6 +672,8 @@ export interface AgentStreamOptions {
   autoTuneStrategies?: boolean;
   /** AI Focus domain preference — shapes system prompt emphasis (default: "general") */
   aiFocus?: string;
+  /** Abort signal — when the client disconnects, this signal is triggered to stop tool execution */
+  abortSignal?: AbortSignal;
 }
 
 function sendSSE(safeWrite: (d: string) => boolean, event: Record<string, unknown>): boolean {
@@ -847,7 +862,7 @@ async function invokeWithAegisRetry(
  * @returns Promise that resolves when the stream is complete
  */
 export async function runAgentStream(options: AgentStreamOptions): Promise<void> {
-  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, crossTaskContext, userId, taskExternalId, aiFocus = "general" } = options;
+  const { messages, resolvedSystemPrompt, safeWrite, safeEnd, onArtifact, mode = "quality", memoryContext, crossTaskContext, userId, taskExternalId, aiFocus = "general", abortSignal } = options;
 
   try {
     const { invokeLLM } = await import("./_core/llm");
@@ -954,7 +969,13 @@ ${memoryContext}
     }
 
     // Detect user frustration/complaints — force text-only response
-    const isUserFrustrated = /\b(why (did|didn't|is|isn't|are|aren't) (you|there|it|none|no)|you completed prematurely|you terminated|terminated early|still terminated|I didn't ask|stop (doing|generating|making)|what (just )?happened to (my|your|it)|no response|not responding|broken|doesn't work|why is none|you ignored|ignoring me|wrong|that's not what I|I said|(my |the )?(messages?|response|output|text|content) disappeared|(you('re| are)) not done|didn't finish|did not (provide|finish|complete)|how is a user supposed|you didn't|you did not|why the hell|the hell is)\b/i.test(lastUserText);
+    const isUserFrustrated = /\b(why (did|didn't|is|isn't|are|aren't) (you|there|it|none|no)|you completed prematurely|you terminated|terminated early|still terminated|I didn't ask|stop (doing|generating|making)|what (just )?happened to (my|your|it)|no response|not responding|broken|doesn't work|why is none|you ignored|ignoring me|wrong|that's not what I|I said|(my |the )?(messages?|response|output|text|content) disappeared|(you('re| are)) not done|didn't finish|did not (provide|finish|complete)|how is a user supposed|you didn't|you did not|why the hell|the hell is|I already (told|said|asked)|I keep (telling|asking|saying)|listen to me|are you listening|pay attention|not what I (asked|wanted|said)|you keep (doing|ignoring|repeating))\b/i.test(lastUserText);
+    // Detect explicit user redirect/override commands — these aren't frustration but MUST override agent behavior
+    // Matches: "no research", "skip the research", "stop", "only focus on X", "just clone the repo", etc.
+    const isUserOverride = /\b(no research|skip (the |all )?research|stop researching|don't research|do not research|only (focus|work) on|just (do|focus|clone|build|deploy|create|make|try)|stop everything|cancel|abort|no more research|enough research|stop looking|stop searching|don't (look|search)|do not (look|search)|focus only on|nothing else|don't do anything else|no browsing|skip browsing|stop browsing)\b/i.test(lastUserText.trim()) || /^(stop|no|skip|enough|cancel)[!.\s]*$/i.test(lastUserText.trim());
+    if (isUserOverride && !isUserFrustrated) {
+      systemPrompt += `\n\n## USER OVERRIDE COMMAND DETECTED\nThe user has given an EXPLICIT directive to change your behavior. You MUST:\n1. IMMEDIATELY comply with their instruction — no exceptions.\n2. If they said "no research" or "skip research": Do NOT call web_search, wide_research, read_webpage, or deep_research_content. Go directly to action.\n3. If they said "stop": Stop all current work and acknowledge.\n4. If they said "only focus on X" or "just do X": Do EXACTLY X and nothing else.\n5. Do NOT explain why you were doing something different. Do NOT justify your previous approach. Just comply.\n6. If a tool call is already in progress, acknowledge it completed but do NOT start another research tool.\n\nThe user's instruction takes absolute priority over any system prompt guidance about research depth or thoroughness.`;
+    }
     if (isUserFrustrated) {
       systemPrompt += `\n\n## USER FRUSTRATION DETECTED — ACKNOWLEDGE AND RESUME\nThe user appears frustrated or is complaining about your previous behavior. You MUST:\n1. In ONE brief sentence (max 15 words), acknowledge the issue without apologizing (e.g., "Let me pick up where I left off.", "Understood — continuing now.", "Resuming the task.").\n2. Look at the FULL conversation history to determine what task you were working on before the interruption/error.\n3. IMMEDIATELY resume that task. Use tools if needed. Do NOT just describe what you'll do — actually DO it.\n4. If you cannot determine what task was in progress, ask ONE specific question: "What would you like me to work on?"\n\nCRITICAL: Do NOT analyze Wikipedia articles, do NOT start random research, do NOT describe your capabilities. RESUME the specific task from the conversation history.`;
     }
@@ -1217,6 +1238,19 @@ will seamlessly continue you with full context. Write as extensively as the task
           const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
           systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. These are REAL repositories with live data.\n\n${repoList}\n\n### CRITICAL: Always use real data, never just describe capabilities\nWhen the user mentions their repo, asks about it, or asks what you can do with it:\n1. **IMMEDIATELY call github_ops(mode: 'status', repo: '${repos.length === 1 ? repos[0].fullName : '<repo_name>'}')** to fetch live repo data\n2. Present REAL information: actual file count, languages, recent commits, open PRs, issues\n3. NEVER respond with just a list of tool descriptions — that is not helpful\n4. The user connected their repo because they want you to WORK WITH IT, not describe what you could theoretically do\n\n### Available operations:\n- **github_edit(instruction, repo)** — Edit files via AI-powered diff + atomic commit\n- **github_assess(mode, repo)** — Deep code quality analysis (assess/optimize/validate)\n- **github_ops(mode, repo)** — Branch management, PRs, releases, CI/CD, status checks\n\n### Auto-selection rule:\nIf the user doesn't specify which repo and they have only one, use it automatically. If multiple, ask which repo they mean.\n\n### Proactive behavior:\n- If the user says "you're connected to a repo" or "what do you know about it" → call github_ops(mode: 'status') FIRST, then respond with real data\n- If the user asks "what can you do with my repo" → call github_ops(mode: 'status') to show real data, THEN explain capabilities with examples specific to their repo\n- If the user asks to edit/fix/update code → use github_edit immediately, don't ask for confirmation to start\n- If the user asks about code quality → use github_assess immediately\n- If the user asks to "preview", "view", "show", or "load" their connected repo (READ intent) → use github_ops(status) + github_assess(assess) to READ and DISPLAY the repo contents.
 - If the user asks to "build", "deploy", "run", "host", "launch", or "render a live preview" of their connected repo (BUILD intent) → follow the LIVE PREVIEW WORKFLOW: github_ops(status) → git_operation(clone) → install_deps → deploy_webapp. This produces a real hosted URL.
+
+### GIT CLONE FAILURE RECOVERY
+If git_operation(clone) fails:
+1. **First failure**: Check the error message carefully. Common causes:
+   - "Authentication failed" → The GitHub token may be invalid or expired. Tell the user to reconnect their GitHub in Settings.
+   - "Repository not found" → Verify the repo name/URL is correct. Try with and without .git suffix.
+   - "Permission denied" → The token doesn't have repo scope. Suggest the user update their PAT.
+2. **Second failure with same error**: Do NOT retry the same command. Instead:
+   - Try cloning with the HTTPS URL directly (without token injection) if the repo is public.
+   - Use github_ops(status) to verify the repo exists and is accessible.
+   - Tell the user the specific error and suggest concrete fixes.
+3. **NEVER loop more than 2 clone attempts**. After 2 failures, present the error clearly and ask the user to fix the underlying issue (token permissions, repo visibility, etc.).
+4. Do NOT start researching "how to fix git clone" — the user wants ACTION, not research about their problem.
 - NEVER call create_webapp when the user is asking about a connected repo. create_webapp is for NEW projects from templates only.
 - When in doubt between READ and BUILD, ask: "Would you like me to show you the repo contents, or build and deploy a live preview?"`;
         }
@@ -1295,6 +1329,13 @@ will seamlessly continue you with full context. Write as extensively as the task
 
     while (turn < maxTurns) {
       turn++;
+      // Check if client disconnected — abort early to save resources
+      if (abortSignal?.aborted) {
+        console.log(`[Agent] Client disconnected at turn ${turn} — aborting agent loop`);
+        sendSSE(safeWrite, { status: "stopped", reason: "client_disconnected" });
+        safeEnd();
+        return;
+      }
       console.log(`[Agent] Turn ${turn}/${maxTurns === Infinity ? '\u221e' : maxTurns}, messages: ${conversation.length}`);
 
       // Call LLM with tools — all params from tierConfig.
@@ -1527,10 +1568,16 @@ will seamlessly continue you with full context. Write as extensively as the task
               continue;
             }
             recentToolCallKeys.set(dedupKey, turn);
-
+            // Check abort before executing tool (saves resources when client disconnected)
+            if (abortSignal?.aborted) {
+              console.log(`[Agent] Client disconnected before executing ${tn} — aborting`);
+              sendSSE(safeWrite, { status: "stopped", reason: "client_disconnected" });
+              safeEnd();
+              return;
+            }
             sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
             const toolCtx = { userId, taskExternalId };
-            const result: ToolResult = await executeTool(tn, ta, toolCtx);
+            const result: ToolResult = await executeTool(tn, ta, toolCtx);;
             const safeResult = String(result.result ?? 'Tool returned no output');
             sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: safeResult.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
 
