@@ -14,7 +14,7 @@ RUN pnpm run build
 
 # ── Stage 3: Production ─────────────────────────────────────────
 FROM node:22-alpine AS production
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini git
 WORKDIR /app
 
 # Non-root user

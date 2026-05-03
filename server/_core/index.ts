@@ -1128,7 +1128,7 @@ async function startServer() {
               const { getTaskByExternalId, updateTaskStatus: dbUpdateStatus } = await import("../db");
               const taskRecord = await getTaskByExternalId(capturedTaskId);
               if (taskRecord && taskRecord.status === "running") {
-                await dbUpdateStatus(taskRecord.id, "stopped");
+                await dbUpdateStatus(taskRecord.externalId, "stopped");
                 console.log(`[SSE] Task ${capturedTaskId} marked as 'stopped' (client disconnected)`);
               }
             } catch (err: any) {
@@ -1480,7 +1480,11 @@ async function startServer() {
         // To avoid duplicates on reload, we use a "server_safety_net" cardType marker.
         // The client-side message merge logic deduplicates by content matching.
         // If client disconnects mid-stream, this ensures the message is NOT lost.
-        onComplete: taskServerId ? async (content) => {
+        // Session 55 FIX: onComplete is ALWAYS defined. If taskServerId was null at
+        // stream start (race: task not yet created in DB), we re-resolve it at completion
+        // time using taskExternalId. This closes the persistence gap where messages were
+        // lost because the safety net was disabled due to the race condition.
+        onComplete: async (content) => {
           if (!content || !content.trim()) return;
           // If the stream was aborted (user sent follow-up or navigated away),
           // do NOT persist partial content — the new stream will produce the real response.
@@ -1490,9 +1494,22 @@ async function startServer() {
           }
           try {
             const { nanoid } = await import("nanoid");
-            const { addTaskMessage, getTaskMessages: getDbMsgs } = await import("../db");
+            const { addTaskMessage, getTaskMessages: getDbMsgs, getTaskByExternalId: getTaskByExt } = await import("../db");
+            // Re-resolve taskServerId at completion time (fixes the race condition)
+            let resolvedTaskId = taskServerId;
+            if (!resolvedTaskId && taskExternalId) {
+              const taskRecord = await getTaskByExt(taskExternalId);
+              if (taskRecord) {
+                resolvedTaskId = taskRecord.id;
+                console.log(`[Stream] onComplete: late-resolved taskServerId=${resolvedTaskId} from externalId=${taskExternalId}`);
+              }
+            }
+            if (!resolvedTaskId) {
+              console.warn("[Stream] onComplete: no taskServerId available even after re-resolution — cannot persist");
+              return;
+            }
             // Dedup check: see if client already persisted this message
-            const existing = await getDbMsgs(taskServerId!);
+            const existing = await getDbMsgs(resolvedTaskId);
             const lastFew = existing.slice(-3);
             const isDup = lastFew.some((m: any) =>
               m.role === "assistant" && m.content.trim() === content.trim()
@@ -1502,7 +1519,7 @@ async function startServer() {
               return;
             }
             await addTaskMessage({
-              taskId: taskServerId!,
+              taskId: resolvedTaskId,
               externalId: nanoid(12),
               role: "assistant",
               content: content,
@@ -1514,14 +1531,23 @@ async function startServer() {
           } catch (err: any) {
             console.error("[Stream] onComplete persistence failed:", err.message?.slice(0, 200));
           }
-        } : undefined,
+        },
         onArtifact: async (artifact) => {
           console.log("[Stream] Artifact produced:", artifact.type, artifact.label);
-          if (taskServerId) {
+          // Session 55: Re-resolve taskServerId (same race fix as onComplete)
+          let artifactTaskId = taskServerId;
+          if (!artifactTaskId && taskExternalId) {
+            try {
+              const { getTaskByExternalId: getTaskByExt2 } = await import("../db");
+              const taskRecord = await getTaskByExt2(taskExternalId);
+              if (taskRecord) artifactTaskId = taskRecord.id;
+            } catch { /* ignore */ }
+          }
+          if (artifactTaskId) {
             try {
               const { addWorkspaceArtifact } = await import("../db");
               await addWorkspaceArtifact({
-                taskId: taskServerId,
+                taskId: artifactTaskId,
                 artifactType: artifact.type as any,
                 label: artifact.label || null,
                 content: artifact.content || null,

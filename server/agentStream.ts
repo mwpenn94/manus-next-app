@@ -1150,6 +1150,14 @@ will seamlessly continue you with full context. Write as extensively as the task
     // to force the agent to try a different approach after 2 failures with similar packages
     const buildAttemptHistory: { tool: string; args: string; failed: boolean }[] = [];
      const MAX_SAME_BUILD_ATTEMPTS = 2; // After 2 failures with same approach, force different strategy
+    // CLONE ATTEMPT BUDGET: Hard limit on git_operation(clone) attempts across ALL turns.
+    // The LLM ignores soft "do not retry" instructions, so we enforce this programmatically.
+    // After MAX_CLONE_ATTEMPTS failed clones, we inject an unmissable system message AND
+    // remove git_operation from the tool list to make retrying impossible.
+    let cloneAttempts = 0;
+    const MAX_CLONE_ATTEMPTS = 2; // Hard budget: max 2 clone attempts per conversation
+    let cloneBudgetExhausted = false; // When true, git_operation(clone) is blocked
+
     // PC4 FIX: Research budget for Limitless mode — after N consecutive research tools
     // without producing a deliverable, nudge the agent to synthesize and deliver
     let consecutiveResearchCalls = 0;
@@ -1633,6 +1641,24 @@ If git_operation(clone) fails:
               continue;
             }
             recentToolCallKeys.set(dedupKey, turn);
+
+            // ── CLONE BUDGET ENFORCEMENT (Session 55) ──
+            // Hard-block git_operation(clone) after MAX_CLONE_ATTEMPTS failures.
+            // This is a PROGRAMMATIC enforcement — the LLM cannot override it.
+            if (tn === "git_operation" && pa.operation === "clone") {
+              if (cloneBudgetExhausted) {
+                console.log(`[Agent] CLONE BUDGET: Blocking clone attempt (budget exhausted after ${cloneAttempts} attempts)`);
+                const blockMsg = `BLOCKED: git_operation(clone) has been disabled after ${MAX_CLONE_ATTEMPTS} failed attempts in this conversation. The clone failure is due to a configuration issue (likely missing git in the production container, or a token/permissions problem). You MUST NOT attempt to clone again. Instead, tell the user exactly what went wrong and suggest they: (1) check their GitHub connection in Settings, (2) use github_edit for file changes instead of cloning, or (3) try again after fixing the underlying issue. DO NOT call git_operation(clone) again — it will be blocked.`;
+                sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
+                sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: false, preview: blockMsg.slice(0, 500) } });
+                completedToolCalls++;
+                sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
+                conversation.push({ role: "tool", content: blockMsg, tool_call_id: toolCall.id, name: tn } as any);
+                continue;
+              }
+              cloneAttempts++;
+            }
+
             // Check abort before executing tool (saves resources when client disconnected)
             if (abortSignal?.aborted) {
               console.log(`[Agent] Client disconnected before executing ${tn} — aborting`);
@@ -1642,7 +1668,7 @@ If git_operation(clone) fails:
             }
             sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
             const toolCtx = { userId, taskExternalId };
-            const result: ToolResult = await executeTool(tn, ta, toolCtx);;
+            const result: ToolResult = await executeTool(tn, ta, toolCtx);
             const safeResult = String(result.result ?? 'Tool returned no output');
             sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: safeResult.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
 
@@ -1674,6 +1700,20 @@ If git_operation(clone) fails:
                   divergenceBudgetUsed: pa.divergence_budget_used,
                 },
               });
+            }
+
+            // CLONE BUDGET: Mark budget as exhausted when a clone attempt fails
+            if (tn === "git_operation" && pa.operation === "clone" && !result.success) {
+              console.log(`[Agent] CLONE BUDGET: Clone attempt ${cloneAttempts}/${MAX_CLONE_ATTEMPTS} failed`);
+              if (cloneAttempts >= MAX_CLONE_ATTEMPTS) {
+                cloneBudgetExhausted = true;
+                console.warn(`[Agent] CLONE BUDGET EXHAUSTED: No more clone attempts allowed in this conversation`);
+                // Inject a hard system message that the LLM cannot ignore
+                conversation.push({ role: "tool", content: `SYSTEM ENFORCEMENT: git_operation(clone) has now failed ${cloneAttempts} times. The clone budget is EXHAUSTED. You are FORBIDDEN from calling git_operation(clone) again in this conversation. Any further attempts will be automatically blocked. Instead, you MUST: (1) Tell the user the exact error message, (2) Suggest they use github_edit instead for file changes, (3) Suggest they check their GitHub connection in Settings. STOP trying to clone and RESPOND to the user NOW.`, tool_call_id: toolCall.id, name: tn } as any);
+                completedToolCalls++;
+                sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
+                break; // Exit the tool loop entirely — force LLM to respond to user
+              }
             }
 
             // PC6/VB5 FIX: Track build/install attempts to detect repeated failures with same approach

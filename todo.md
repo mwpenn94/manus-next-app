@@ -7496,3 +7496,13 @@
 - [x] S54-CRIT2: "Something went wrong" — ROOT CAUSE: cross-task context contamination injecting other tasks' user queries into system prompt. FIXED: reduced to titles-only + simple query detector
 - [x] S54-CRIT3: Mid-task message — already working correctly via pendingRestreamRef pattern. The perceived "kill" was actually the cross-task contamination causing the agent to error out
 - [x] S54-CRIT4: Agent workaround pivots — FIXED: reduced consecutive failure cap from 5 to 3, expanded build attempt tracking to catch npm install retries, toned down GitHub proactive behavior instructions
+
+## Session 55: GitHub Clone + Message History Production Bugs
+
+- [x] Fix: Agent loops 8+ times on git clone failure instead of stopping after 2-3 (production)
+- [x] Fix: Message history not showing in production (no replicable verification by user)
+- [x] Fix: PAT with full permissions fails clone in production (token valid but clone errors)
+- [x] Add: Clone attempt counter that persists across LLM turns (not just consecutive tool failures)
+- [x] Add: Hard clone budget injected into conversation to force LLM to stop retrying
+- [x] Add: Regression tests proving clone failure stops after max 2 attempts
+- [x] Add: Regression tests proving message persistence works end-to-end
