@@ -7481,3 +7481,18 @@
 - [x] S53b-BUG3: Task stuck in "Running" state after error — FIXED: onError calls updateTaskStatus(taskId, 'error'); added 'Stopped' badge for tasks interrupted by task switching
 - [x] S53b-BUG4: Multiagent orchestration task fails with generic error — infrastructure issue (web_search fetch failed), not a code bug
 - [x] S53b-BUG5: Abort content preservation — FIXED: onError checks abortSignal.aborted and skips error handling when CRITICAL-4 already saved partial content
+
+## Session 54: Step Progress Persistence + Production Validation
+- [ ] S54-FEAT1: Persist step progress (completedSteps/totalSteps) to database — schema migration + tRPC mutation + client integration
+- [ ] S54-FEAT2: Load persisted step progress on page refresh / task reload (hydrate from DB into task model)
+- [ ] S54-FEAT3: Workspace panel shows correct progress bar after page refresh (Manus parity)
+- [ ] S54-VAL1: Validate GitHub sync errors resolved — test git pull/push via checkpoint save
+- [ ] S54-VAL2: Validate message persistence errors resolved — test message save/load cycle in production
+- [ ] S54-VAL3: Validate streaming SSE errors resolved — test full task execution end-to-end in production
+- [ ] S54-VAL4: Validate no console errors in production browser (network, runtime, unhandled rejections)
+
+## Session 54: CRITICAL Production Bugs (from video evidence)
+- [ ] S54-CRIT1: GitHub clone fails with fine-grained PAT — "fine_grained token doesn't have necessary permissions" error when agent tries to clone connected repo
+- [ ] S54-CRIT2: "Something went wrong while processing this request" red error box appears in task view — message processing fails
+- [ ] S54-CRIT3: Mid-task message kills running task — sending follow-up message while agent is processing causes task to terminate/fail
+- [ ] S54-CRIT4: Agent pivots to unwanted workaround instead of reporting clone failure clearly — should fail gracefully, not create random "Simple Web App"

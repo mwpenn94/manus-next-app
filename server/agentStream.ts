@@ -930,7 +930,7 @@ ${memoryContext}
 
     // Inject cross-task context if available — enables referencing previous conversations
     if (crossTaskContext) {
-      systemPrompt += `\n\n## RECENT SESSION CONTEXT\n\nThe user has worked on these tasks recently (titles and queries only — for reference):\n\n${crossTaskContext}\n\n**STRICT RULES FOR SESSION CONTEXT:**\n1. This context ONLY tells you what topics the user has explored before. It does NOT mean you have done anything in THIS task.\n2. NEVER say "We've already covered X" or "As I demonstrated earlier" — each task starts fresh with zero prior actions.\n3. If the user says "continue that" or "do the same for X", use context to understand their intent, then execute from scratch.\n4. The CURRENT task message is your ONLY directive. Session context is background information only.\n5. NEVER skip actions because a previous task did something similar — always execute fully in the current task.`;
+      systemPrompt += `\n\n## RECENT SESSION CONTEXT (titles only — for disambiguation)\n\n${crossTaskContext}\n\n**ABSOLUTE ISOLATION RULES:**\n1. These are ONLY recent task titles. They exist SOLELY to help you disambiguate if the user says "continue that" or "the same thing as before".\n2. You have ZERO knowledge of what happened in those tasks. Do NOT reference their content, do NOT assume what was done.\n3. The CURRENT user message is your ONLY task. If it says "What is 3+4?", answer ONLY that. Do NOT pivot to topics from other tasks.\n4. NEVER say "As we discussed", "Building on our previous work", or reference any other task's topic.\n5. If the current task is simple and self-contained, IGNORE this context entirely.`;
     }
 
     // Detect if the user has attached files/images in the latest message
@@ -2670,6 +2670,14 @@ Do NOT use browser_action to test it — present confidently since the deploy su
     sendSSE(safeWrite, { done: true, content: finalContent });
     safeEnd();
     console.log("[Agent] Stream complete after", turn, "turns,", completedToolCalls, "tool calls", wasGenerationRequest ? `(generation: artifact=${producedArtifact})` : "");
+
+    // Persist step progress to DB (fire-and-forget) — Manus parity: workspace shows progress after refresh
+    if (options.taskExternalId && totalToolCalls > 0) {
+      import("./db").then(({ updateTaskStepProgress }) => {
+        updateTaskStepProgress(options.taskExternalId!, completedToolCalls, totalToolCalls)
+          .catch((e: any) => console.error("[Agent] Step progress persistence failed:", e.message));
+      }).catch(() => { /* db module not available */ });
+    }
 
     // Persist the final assistant message server-side (fire-and-forget)
     if (options.onComplete && finalContent.trim()) {

@@ -124,6 +124,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   const updateStatusMutation = trpc.task.updateStatus.useMutation();
   const renameMutation = trpc.task.rename.useMutation();
   const addArtifactMutation = trpc.workspace.addArtifact.useMutation();
+  const updateStepProgressMutation = trpc.task.updateStepProgress.useMutation();
 
   // Fetch server tasks when authenticated
   const serverTasksQuery = trpc.task.list.useQuery(undefined, {
@@ -486,8 +487,13 @@ export function TaskProvider({ children }: { children: ReactNode }) {
           t.id === taskId ? { ...t, completedSteps: completed, totalSteps: total, updatedAt: new Date() } : t
         )
       );
+      // Persist to DB (fire-and-forget) — Manus parity: progress survives page refresh
+      updateStepProgressMutation.mutate(
+        { externalId: taskId, completedSteps: completed, totalSteps: total },
+        { onError: () => { /* silent — server-side also persists at stream end */ } }
+      );
     },
-    []
+    [updateStepProgressMutation]
   );
 
   const renameTask = useCallback(

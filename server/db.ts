@@ -3072,3 +3072,16 @@ export async function getOrchestrationRuns(userId: number, taskId?: number, limi
     .orderBy(desc(orchestrationRuns.createdAt))
     .limit(limit);
 }
+
+
+// ── Step Progress Persistence (Manus Parity) ──
+/**
+ * Persist step progress (completedSteps/totalSteps) to the tasks table.
+ * Called server-side at stream completion so the workspace panel shows
+ * correct progress even after page refresh.
+ */
+export async function updateTaskStepProgress(externalId: string, completedSteps: number, totalSteps: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(tasks).set({ completedSteps, totalSteps }).where(eq(tasks.externalId, externalId));
+}

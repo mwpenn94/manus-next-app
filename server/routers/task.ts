@@ -95,6 +95,19 @@ export const taskRouter = router({
       return { success: true };
     }),
 
+  updateStepProgress: protectedProcedure
+    .input(z.object({
+      externalId: z.string().max(50),
+      completedSteps: z.number().int().min(0),
+      totalSteps: z.number().int().min(0),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyTaskOwnership(input.externalId, ctx.user.id);
+      const { updateTaskStepProgress } = await import("../db");
+      await updateTaskStepProgress(input.externalId, input.completedSteps, input.totalSteps);
+      return { success: true };
+    }),
+
   rename: protectedProcedure
     .input(z.object({
       externalId: z.string().max(50),

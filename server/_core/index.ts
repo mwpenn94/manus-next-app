@@ -1109,6 +1109,34 @@ async function startServer() {
       const cleanup = () => { activeTaskStreams.delete(guardTaskId); };
       req.on("close", cleanup);
       res.on("finish", cleanup);
+
+      // SERVER-SIDE CLEANUP: When client disconnects mid-stream, mark the task as "stopped"
+      // so it doesn't stay in "running" forever. Uses a 3s delay to allow a follow-up stream
+      // (from the same task) to take over before marking as stopped.
+      req.on("close", () => {
+        if (streamAbortController.signal.aborted) {
+          const capturedTaskId = guardTaskId;
+          const capturedController = streamAbortController;
+          setTimeout(async () => {
+            // Check if a new stream has taken over for this task
+            const currentController = activeTaskStreams.get(capturedTaskId);
+            if (currentController && currentController !== capturedController) {
+              // A new stream is running — don't touch the status
+              return;
+            }
+            try {
+              const { getTaskByExternalId, updateTaskStatus: dbUpdateStatus } = await import("../db");
+              const taskRecord = await getTaskByExternalId(capturedTaskId);
+              if (taskRecord && taskRecord.status === "running") {
+                await dbUpdateStatus(taskRecord.id, "stopped");
+                console.log(`[SSE] Task ${capturedTaskId} marked as 'stopped' (client disconnected)`);
+              }
+            } catch (err: any) {
+              console.warn(`[SSE] Failed to mark task as stopped:`, err.message?.slice(0, 100));
+            }
+          }, 3000); // 3s delay to allow follow-up stream to take over
+        }
+      });
     }
 
     const safeWrite = (data: string): boolean => {
@@ -1408,12 +1436,14 @@ async function startServer() {
             const { getRecentTaskSummaries } = await import("../db");
             const recentTasks = await getRecentTaskSummaries(streamUserId, taskExternalId, 5);
             if (recentTasks.length > 0) {
+              // ISOLATION FIX: Only include task titles and status — NOT user queries or assistant content.
+              // Including user queries caused the LLM to treat other tasks' content as active work.
               crossTaskContext = recentTasks.map((t, i) => {
                 const timeAgo = Math.round((Date.now() - new Date(t.createdAt).getTime()) / 60000);
                 const timeStr = timeAgo < 60 ? `${timeAgo}m ago` : timeAgo < 1440 ? `${Math.round(timeAgo / 60)}h ago` : `${Math.round(timeAgo / 1440)}d ago`;
-                return `${i + 1}. [${timeStr}] "${t.title}" (${t.status})\n   User: ${t.userQuery}`;
+                return `${i + 1}. [${timeStr}] "${t.title}" (${t.status})`;
               }).join("\n");
-              console.log(`[Stream] Cross-task context: ${recentTasks.length} recent tasks injected`);
+              console.log(`[Stream] Cross-task context: ${recentTasks.length} recent task titles injected (no queries)`);
             }
           }
         }
