@@ -718,7 +718,7 @@ export default function ConnectorDetailPage() {
       {/* ── Header: back + ··· menu ── */}
       <div className="relative flex items-center justify-between px-4 py-3 shrink-0">
         <button
-          onClick={() => navigate(-1 as any)}
+          onClick={() => navigate("/")}
           className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           aria-label="Go back"
         >

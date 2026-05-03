@@ -2890,7 +2890,21 @@ export default function TaskView() {
   useEffect(() => {
     const currentId = task?.id ?? null;
     if (prevTaskIdRef.current && currentId !== prevTaskIdRef.current) {
-      // Task changed — abort any running stream and clear ALL streaming state
+      // Task changed — save partial content FIRST, then abort the stream.
+      // Without this, any streamed content accumulated in refs is lost.
+      const prevTaskId = streamingTaskIdRef.current;
+      const partialContent = accumulatedRef.current;
+      if (prevTaskId && partialContent.trim()) {
+        addMessageRef.current(prevTaskId, {
+          role: "assistant",
+          content: partialContent + "\n\n*[Response interrupted — you navigated away]*",
+          actions: actionsRef.current.length > 0 ? actionsRef.current : undefined,
+        });
+        streamingTaskIdRef.current = null;
+        accumulatedRef.current = "";
+        actionsRef.current = [];
+      }
+      // Now abort the stream
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
