@@ -372,6 +372,19 @@ export async function addTaskMessage(message: InsertTaskMessage) {
   await db.insert(taskMessages).values(message);
 }
 
+/**
+ * Update an existing task message by ID — used for dedup upsert on server_safety_net messages.
+ */
+export async function updateTaskMessage(messageId: number, updates: Partial<Pick<InsertTaskMessage, "content" | "cardData">>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateSet: Record<string, unknown> = {};
+  if (updates.content !== undefined) updateSet.content = updates.content;
+  if (updates.cardData !== undefined) updateSet.cardData = updates.cardData;
+  if (Object.keys(updateSet).length === 0) return;
+  await db.update(taskMessages).set(updateSet).where(eq(taskMessages.id, messageId));
+}
+
 export async function getTaskMessages(taskId: number) {
   const db = await getDb();
   if (!db) return [];

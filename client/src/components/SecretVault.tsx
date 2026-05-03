@@ -24,7 +24,7 @@ type Secret = {
 };
 
 const mockSecrets: Secret[] = [
-  { id: "sec_1", name: "GitHub API Token", type: "API Key", value: "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx", lastRotated: "2026-03-15", folder: "API Keys" },
+  { id: "sec_1", name: "GitHub API Token", type: "API Key", value: "github_pat_xxxxxxxxxxxxxxxxxxxxxxxxxxxx", lastRotated: "2026-03-15", folder: "API Keys" },
   { id: "sec_2", name: "AWS Root Password", type: "Password", value: "AwsRoot!@#123", lastRotated: "2026-04-01", expires: "2026-07-01", folder: "Passwords" },
   { id: "sec_3", name: "Stripe Webhook Cert", type: "Certificate", value: "cert_live_xxxxxxxxxxxxxxxxxxxx", lastRotated: "2025-12-10", folder: "Certificates" },
   { id: "sec_4", name: "OpenAI API Key", type: "API Key", value: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx", lastRotated: "2026-04-20", folder: "API Keys" },

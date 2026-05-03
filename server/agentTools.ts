@@ -1286,6 +1286,8 @@ export interface ToolResult {
   codeIssues?: string[];
   /** Emitted when a connector token is expired and user must re-authenticate */
   connectorAuthRequired?: { connector: string; reason: string };
+  /** Emitted during multi-agent orchestration with sub-task progress */
+  orchestrationProgress?: { phase: string; completedTasks: number; totalTasks: number; currentTask?: string; agentName?: string; quality?: number };
 }
 
 // ── Web Search: Multi-Source Pipeline ──
@@ -5346,6 +5348,9 @@ async function executeMultiAgentOrchestration(
     // Step 2: Execute the orchestration plan
     console.log(`[multi_agent_orchestrate] Executing plan with ${plan.agents.length} agents, ${plan.tasks.length} tasks`);
 
+    // Track progress for SSE emission
+    let latestProgress: { phase: string; completedTasks: number; totalTasks: number; currentTask?: string; agentName?: string; quality?: number } | undefined;
+
     const completedPlan = await executeOrchestration(
       plan,
       AGENT_TOOLS, // Give workers access to all tools
@@ -5357,9 +5362,23 @@ async function executeMultiAgentOrchestration(
       {
         onTaskStarted: (task, agent) => {
           console.log(`[multi_agent_orchestrate] Agent "${agent.name}" starting: ${task.title}`);
+          latestProgress = {
+            phase: "executing",
+            completedTasks: plan.tasks.filter(t => t.status === "completed").length,
+            totalTasks: plan.tasks.length,
+            currentTask: task.title,
+            agentName: agent.name,
+          };
         },
         onTaskCompleted: (task, _result, quality) => {
           console.log(`[multi_agent_orchestrate] Task "${task.title}" completed (quality: ${quality.toFixed(2)})`);
+          latestProgress = {
+            phase: "executing",
+            completedTasks: plan.tasks.filter(t => t.status === "completed").length,
+            totalTasks: plan.tasks.length,
+            currentTask: task.title,
+            quality,
+          };
         },
         onTaskFailed: (task, error) => {
           console.warn(`[multi_agent_orchestrate] Task "${task.title}" failed: ${error}`);
@@ -5386,6 +5405,7 @@ async function executeMultiAgentOrchestration(
       result: `${header}${planSummary}\n\n---\n\n## Final Synthesized Result\n\n${completedPlan.finalResult || "(No synthesis produced)"}`,
       artifactType: "document",
       artifactLabel: `Multi-Agent: ${args.goal.slice(0, 50)}`,
+      orchestrationProgress: latestProgress ? { ...latestProgress, phase: "completed", completedTasks: successCount, totalTasks: plan.tasks.length, quality: avgQuality } : undefined,
     };
   } catch (err: any) {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

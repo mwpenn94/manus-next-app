@@ -1605,6 +1605,11 @@ If git_operation(clone) fails:
               sendSSE(safeWrite, { connector_auth_required: result.connectorAuthRequired });
             }
 
+            // Emit orchestration_progress SSE event during multi-agent execution
+            if (result.orchestrationProgress) {
+              sendSSE(safeWrite, { orchestration_progress: result.orchestrationProgress });
+            }
+
             // Emit convergence SSE event when report_convergence tool is called
             if (tn === "report_convergence" && result.success) {
               sendSSE(safeWrite, {
@@ -2395,6 +2400,16 @@ Don't just say "done" — tell the user what they got.`,
             projectExternalId: result.projectExternalId,
           },
         });
+
+        // Emit connector_auth_required SSE event when a tool detects expired/revoked connector token
+        if (result.connectorAuthRequired) {
+          sendSSE(safeWrite, { connector_auth_required: result.connectorAuthRequired });
+        }
+
+        // Emit orchestration_progress SSE event during multi-agent execution
+        if (result.orchestrationProgress) {
+          sendSSE(safeWrite, { orchestration_progress: result.orchestrationProgress });
+        }
 
         // If it's an image, send a special image event for inline display
         if (result.url && (toolName === "generate_image" || toolName === "design_canvas")) {

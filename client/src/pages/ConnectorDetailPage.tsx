@@ -89,7 +89,7 @@ interface ConfigField {
 const CONNECTOR_AUTH_DATA: Record<string, { configFields: ConfigField[]; tokenHelp?: TokenHelp; oauthLabel?: string }> = {
   github: {
     oauthLabel: "Sign in with GitHub",
-    configFields: [{ key: "token", label: "Personal Access Token", placeholder: "ghp_..." }],
+    configFields: [{ key: "token", label: "Personal Access Token", placeholder: "github_pat_... or ghp_..." }],
     tokenHelp: {
       url: "https://github.com/settings/tokens?type=beta",
       label: "Generate token at GitHub Settings",
@@ -97,7 +97,7 @@ const CONNECTOR_AUTH_DATA: Record<string, { configFields: ConfigField[]; tokenHe
         "Go to GitHub Settings → Developer settings → Personal access tokens",
         "Click 'Generate new token (Fine-grained)'",
         "Select repositories and permissions: Contents (read/write), Issues (read/write), Pull requests (read/write)",
-        "Copy the token (starts with ghp_)",
+        "Copy the token (starts with github_pat_ for fine-grained, or ghp_ for classic)",
       ],
     },
   },
@@ -606,7 +606,7 @@ export default function ConnectorDetailPage() {
         `Click "Generate new token (Fine-grained)"`,
         `Token name: "Manus Next - ${verifiedIdentity.identity}"`,
         `Select repositories and permissions you need`,
-        `Copy the token (starts with ghp_) and paste below`,
+        `Copy the token (starts with github_pat_ for fine-grained, or ghp_ for classic) and paste below`,
       ];
     }
     if (connectorId === "microsoft-365") {

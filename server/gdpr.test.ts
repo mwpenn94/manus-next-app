@@ -22,7 +22,7 @@ describe("GDPR deleteAllData completeness", () => {
     expect(deleteStart).toBeGreaterThan(-1);
 
     // Get the procedure body (from start to next procedure or closing)
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 10000);
 
     // All tables that have a userId column (direct ownership)
     const directUserTables = [
@@ -86,7 +86,7 @@ describe("GDPR deleteAllData completeness", () => {
   it("should delete teams owned by user (ownerId)", () => {
     const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 10000);
 
     expect(deleteBody).toContain("teams.ownerId");
     expect(deleteBody).toContain("db.delete(teams)");
@@ -95,7 +95,7 @@ describe("GDPR deleteAllData completeness", () => {
   it("should remove user from teams they are a member of", () => {
     const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 10000);
 
     // Should delete teamMembers by userId (for teams user is a member of, not owner)
     expect(deleteBody).toContain("teamMembers");
@@ -105,7 +105,7 @@ describe("GDPR deleteAllData completeness", () => {
   it("should delete in correct dependency order (children before parents)", () => {
     const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 10000);
 
     // taskMessages must be deleted before tasks
     const msgDeletePos = deleteBody.indexOf("db.delete(taskMessages)");
@@ -137,7 +137,7 @@ describe("GDPR deleteAllData completeness", () => {
   it("should notify owner after deletion", () => {
     const routerCode = readRouterSource();
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 10000);
 
     expect(deleteBody).toContain("notifyOwner");
     expect(deleteBody).toContain("GDPR Data Deletion");
@@ -240,7 +240,7 @@ describe("Schema table coverage verification", () => {
 
     // Get the deleteAllData body
     const deleteStart = routerCode.indexOf("deleteAllData: protectedProcedure");
-    const deleteBody = routerCode.slice(deleteStart, deleteStart + 8000);
+    const deleteBody = routerCode.slice(deleteStart, deleteStart + 10000);
 
     // Every table with userId/ownerId should be referenced in deleteAllData
     for (const table of tablesWithUserId) {

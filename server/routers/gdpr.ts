@@ -63,6 +63,7 @@ import {
   processMetrics,
   improvementInitiatives,
   optimizationCycles,
+  orchestrationRuns,
  } from "../../drizzle/schema";
 
 export const gdprRouter = router({
@@ -293,6 +294,9 @@ export const gdprRouter = router({
       await db.delete(dataPipelineRuns).where(eq(dataPipelineRuns.userId, userId));
       await db.delete(dataPipelines).where(eq(dataPipelines.userId, userId));
       await db.delete(memoryEmbeddings).where(eq(memoryEmbeddings.userId, userId));
+
+      // Phase 5g: orchestration runs
+      await db.delete(orchestrationRuns).where(eq(orchestrationRuns.userId, userId));
 
       // Phase 6: user record
       await db.delete(users).where(eq(users.id, userId));

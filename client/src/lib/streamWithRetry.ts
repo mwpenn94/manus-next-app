@@ -52,6 +52,8 @@ export interface StreamCallbacks {
   onReasoningDepth?: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number }) => void;
   /** Connector auth required — emitted when a connector token is expired and user must re-authenticate */
   onConnectorAuthRequired?: (data: { connector: string; reason: string }) => void;
+  /** Orchestration progress — emitted during multi-agent execution with sub-task status */
+  onOrchestrationProgress?: (data: { phase: string; completedTasks: number; totalTasks: number; currentTask?: string; agentName?: string; quality?: number }) => void;
 }
 
 export interface StreamOptions {
@@ -118,6 +120,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.connectorContext && callbacks.onConnectorContext) callbacks.onConnectorContext(data.connectorContext);
     if (data.reasoning_depth && callbacks.onReasoningDepth) callbacks.onReasoningDepth(data.reasoning_depth);
     if (data.connector_auth_required && callbacks.onConnectorAuthRequired) callbacks.onConnectorAuthRequired(data.connector_auth_required);
+    if (data.orchestration_progress && callbacks.onOrchestrationProgress) callbacks.onOrchestrationProgress(data.orchestration_progress);
     if (data.error) {
       // Detect credit exhaustion errors and dispatch global event for the banner
       const errMsg = (data.error || "").toLowerCase();

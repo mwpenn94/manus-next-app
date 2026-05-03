@@ -7415,3 +7415,26 @@
 - [x] BF2-4: Stored Smart PAT in DB, wired failover into git_operation tool
 - [x] BF2-5: Added GitHubAuthHealth dashboard component showing all auth layers
 - [x] BF2-6: Added githubAuthHealth tRPC procedure for frontend health monitoring
+
+## Session 51: Dedup, PAT UI Fix, Orchestration Inline, SSE Progress
+### Bug 1: Message Dedup (server_safety_net)
+- [x] S51-1: Added updateTaskMessage helper to db.ts (upsert by content)
+- [x] S51-2: Added dedup logic in addMessage procedure — detects existing server_safety_net messages and updates instead of duplicating
+### Bug 2: GitHub Smart PAT Input Shows Classic Prefix
+- [x] S51-3: Updated ConnectorsPage placeholder and steps to show github_pat_ as primary prefix
+- [x] S51-4: Updated ConnectorDetailPage placeholder and steps
+- [x] S51-5: Updated SecretVault mock data from ghp_ to github_pat_
+### Feature 1: Orchestration Panel Inline in TaskView
+- [x] S51-6: Added orchestration_progress SSE event type to StreamCallbacks interface
+- [x] S51-7: Added onOrchestrationProgress parsing in streamWithRetry
+- [x] S51-8: Added setOrchestrationState setter and onOrchestrationProgress handler in buildStreamCallbacks
+- [x] S51-9: Added orchestrationProgress field to ToolResult interface
+- [x] S51-10: Wired progress tracking callbacks in executeMultiAgentOrchestration
+- [x] S51-11: Added orchestration_progress SSE emission in both agentStream tool execution paths
+### Feature 2: GDPR Compliance
+- [x] S51-12: Added orchestrationRuns deletion to GDPR deleteAllData procedure
+- [x] S51-13: Updated GDPR test slice size from 8000 to 10000 chars
+### Convergence
+- [x] S51-CV1: TypeScript 0 errors
+- [x] S51-CV2: All tests passing (211 files, 5193 tests, 0 failures)
+- [x] S51-CV3: Tool count assertions updated from 37 to 38 across all test files

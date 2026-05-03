@@ -22,6 +22,7 @@ import {
   verifyTaskOwnership,
   verifyTaskOwnershipById,
   deleteLastMessages,
+  updateTaskMessage,
   getDb,
 } from "../db";
 
@@ -215,6 +216,23 @@ export const taskRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await verifyTaskOwnershipById(input.taskId, ctx.user.id);
+
+      // Dedup upsert for server_safety_net messages — prevents duplicate rows
+      // when concurrent streams both try to persist the same safety message.
+      if (input.cardType === "server_safety_net") {
+        const existing = await getTaskMessages(input.taskId);
+        const dup = existing.find(
+          (m) => m.role === input.role && m.cardType === "server_safety_net" && m.content === input.content
+        );
+        if (dup) {
+          // Already exists — update metadata if provided, return existing
+          if (input.cardData) {
+            await updateTaskMessage(dup.id, { cardData: input.cardData });
+          }
+          return { success: true, externalId: dup.externalId, deduplicated: true };
+        }
+      }
+
       const externalId = nanoid(12);
       await addTaskMessage({
         taskId: input.taskId,

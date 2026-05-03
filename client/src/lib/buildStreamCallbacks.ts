@@ -59,6 +59,8 @@ export interface StreamStateSetters {
   setReasoningDepth?: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number } | null) => void;
   /** Connector auth required — emitted when a connector token is expired and user must re-authenticate */
   setConnectorAuthRequired?: (data: { connector: string; reason: string } | null) => void;
+  /** Orchestration progress — multi-agent execution state */
+  setOrchestrationState?: (data: { phase: string; completedTasks: number; totalTasks: number; currentTask?: string; agentName?: string; quality?: number } | null) => void;
 }
 
 /**
@@ -468,6 +470,9 @@ export function buildStreamCallbacks(
     },
     onConnectorAuthRequired: (data: { connector: string; reason: string }) => {
       setters.setConnectorAuthRequired?.(data);
+    },
+    onOrchestrationProgress: (data: { phase: string; completedTasks: number; totalTasks: number; currentTask?: string; agentName?: string; quality?: number }) => {
+      setters.setOrchestrationState?.(data);
     },
   };
 }
