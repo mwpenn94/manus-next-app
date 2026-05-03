@@ -1220,6 +1220,53 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── Multi-Agent Orchestration Tool (Exceeds Manus Parity) ──
+  {
+    type: "function" as const,
+    function: {
+      name: "multi_agent_orchestrate",
+      description:
+        "Orchestrate multiple specialized AI agents to collaboratively solve complex tasks. Unlike parallel_execute (which runs identical operations on different inputs), this tool decomposes a complex goal into HETEROGENEOUS sub-tasks and assigns them to specialized agents (researcher, coder, writer, analyst, designer, reviewer) that communicate through a shared context bus. Use for: multi-faceted projects requiring different expertise, complex research-then-write workflows, code+docs+tests generation, or any task benefiting from division of labor among specialists.",
+      parameters: {
+        type: "object",
+        properties: {
+          goal: {
+            type: "string",
+            description: "The complex goal to decompose and solve using multiple specialized agents. Should be a task that benefits from different types of expertise working together.",
+          },
+          context: {
+            type: "string",
+            description: "Optional additional context, constraints, or requirements for the orchestration.",
+          },
+          agents: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                role: {
+                  type: "string",
+                  enum: ["researcher", "coder", "writer", "analyst", "designer", "reviewer"],
+                  description: "The specialization of this agent",
+                },
+                focus: {
+                  type: "string",
+                  description: "Specific focus area or custom instructions for this agent",
+                },
+              },
+              required: ["role"],
+            },
+            description: "Optional: manually specify which agents to use. If omitted, the supervisor will automatically determine the optimal team composition.",
+          },
+          max_agents: {
+            type: "number",
+            description: "Maximum number of agents to use (2-6, default: 4)",
+          },
+        },
+        required: ["goal"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -1237,6 +1284,8 @@ export interface ToolResult {
   projectExternalId?: string;
   /** Optional code review issues found during post-deploy analysis */
   codeIssues?: string[];
+  /** Emitted when a connector token is expired and user must re-authenticate */
+  connectorAuthRequired?: { connector: string; reason: string };
 }
 
 // ── Web Search: Multi-Source Pipeline ──
@@ -3147,6 +3196,8 @@ export async function executeTool(
       return executeAnalyzeVideo(args);
     case "parallel_execute":
       return executeParallelTasks(args, context);
+    case "multi_agent_orchestrate":
+      return executeMultiAgentOrchestration(args, context);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }
@@ -3973,18 +4024,51 @@ async function executeGitOperation(args: {
         let tokenType = "unknown"; // "classic_pat" (ghp_), "fine_grained" (github_pat_), "oauth_app", "unknown"
         if (context?.userId && cloneUrl.includes("github.com")) {
           try {
-            const { getUserConnectors } = await import("./db");
+            const { getUserConnectors, updateConnectorOAuthTokens } = await import("./db");
+            const { validateAndRefreshGitHubToken } = await import("./connectorOAuth");
             const conns = await getUserConnectors(context.userId);
             const ghConn = conns.find((c: any) => c.connectorId === "github" && c.status === "connected");
             if (ghConn?.accessToken) {
-              const token = ghConn.accessToken;
+              let token = ghConn.accessToken;
               // Detect token type for better error messages
               if (token.startsWith("ghp_")) tokenType = "classic_pat";
               else if (token.startsWith("github_pat_")) tokenType = "fine_grained";
               else if (token.startsWith("gho_")) tokenType = "oauth_app";
               else if (token.startsWith("ghu_")) tokenType = "oauth_user";
               else tokenType = "unknown";
-              // Inject token into HTTPS URL for authenticated clone
+
+              // PRE-OPERATION TOKEN VALIDATION (Session 49 fix)
+              // Validates the token BEFORE attempting git clone to provide
+              // actionable error messages instead of cryptic git failures.
+              const validation = await validateAndRefreshGitHubToken(token, ghConn.refreshToken);
+              if (!validation.valid) {
+                // Token is dead and cannot be refreshed
+                console.warn(`[git_operation] GitHub token validation failed: ${validation.error}`);
+                return {
+                  success: false,
+                  result: `GitHub authentication failed: ${validation.error}\n\nYour GitHub token has expired or been revoked. ` +
+                    `Standard GitHub OAuth tokens (gho_) do not support automatic refresh.\n\n` +
+                    `ACTION REQUIRED: Please reconnect your GitHub account in Settings → Connectors → GitHub → Reconnect.\n` +
+                    `CRITICAL: Do NOT retry this operation — the token must be refreshed first by the user.`,
+                  connectorAuthRequired: { connector: "github", reason: validation.error || "Token expired" },
+                };
+              }
+
+              // If token was refreshed, update it in the database
+              if (validation.accessToken && validation.accessToken !== token) {
+                token = validation.accessToken;
+                try {
+                  await updateConnectorOAuthTokens(ghConn.id, {
+                    accessToken: validation.accessToken,
+                    refreshToken: validation.newRefreshToken || undefined,
+                  });
+                  console.log(`[git_operation] GitHub token refreshed and persisted`);
+                } catch (persistErr: any) {
+                  console.warn(`[git_operation] Could not persist refreshed token: ${persistErr.message}`);
+                }
+              }
+
+              // Inject validated token into HTTPS URL for authenticated clone
               cloneUrl = cloneUrl.replace("https://github.com/", `https://x-access-token:${token}@github.com/`);
               tokenUsed = true;
               console.log(`[git_operation] Using GitHub token for authenticated clone (type: ${tokenType}, length: ${token.length}, prefix: ${token.slice(0, 8)}...)`);
@@ -5264,4 +5348,74 @@ async function executeParallelTasks(args: {
     artifactType: "document",
     artifactLabel: args.description || `Parallel: ${inputs.length} tasks`,
   };
+}
+
+
+// ── Multi-Agent Orchestration Executor ──
+
+async function executeMultiAgentOrchestration(
+  args: { goal: string; context?: string; agents?: Array<{ role: string; focus?: string }>; max_agents?: number },
+  context?: { userId?: number; taskExternalId?: string },
+): Promise<ToolResult> {
+  const startTime = Date.now();
+
+  try {
+    const { decompose, executeOrchestration, summarizePlan } = await import("./services/multiAgent");
+
+    // Step 1: Supervisor decomposes the goal
+    console.log(`[multi_agent_orchestrate] Decomposing goal: "${args.goal.slice(0, 80)}..."`);
+    const plan = await decompose(args.goal, args.context);
+
+    // Step 2: Execute the orchestration plan
+    console.log(`[multi_agent_orchestrate] Executing plan with ${plan.agents.length} agents, ${plan.tasks.length} tasks`);
+
+    const completedPlan = await executeOrchestration(
+      plan,
+      AGENT_TOOLS, // Give workers access to all tools
+      async (toolName: string, toolArgs: any) => {
+        // Workers can call tools through the same executor
+        const result = await executeTool(toolName, toolArgs, context);
+        return { success: result.success, result: result.result };
+      },
+      {
+        onTaskStarted: (task, agent) => {
+          console.log(`[multi_agent_orchestrate] Agent "${agent.name}" starting: ${task.title}`);
+        },
+        onTaskCompleted: (task, _result, quality) => {
+          console.log(`[multi_agent_orchestrate] Task "${task.title}" completed (quality: ${quality.toFixed(2)})`);
+        },
+        onTaskFailed: (task, error) => {
+          console.warn(`[multi_agent_orchestrate] Task "${task.title}" failed: ${error}`);
+        },
+      },
+    );
+
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const planSummary = summarizePlan(completedPlan);
+    const successCount = completedPlan.tasks.filter(t => t.status === "completed").length;
+    const failCount = completedPlan.tasks.filter(t => t.status === "failed").length;
+    const avgQuality = completedPlan.tasks
+      .filter(t => t.quality != null)
+      .reduce((sum, t) => sum + (t.quality || 0), 0) / Math.max(1, completedPlan.tasks.filter(t => t.quality != null).length);
+
+    const header = `## Multi-Agent Orchestration Results\n\n` +
+      `**Goal:** ${args.goal}\n` +
+      `**Agents:** ${completedPlan.agents.length} | **Tasks:** ${completedPlan.tasks.length} | ` +
+      `**Completed:** ${successCount} | **Failed:** ${failCount} | ` +
+      `**Avg Quality:** ${avgQuality.toFixed(2)} | **Time:** ${elapsed}s\n\n---\n\n`;
+
+    return {
+      success: failCount === 0 || successCount > 0,
+      result: `${header}${planSummary}\n\n---\n\n## Final Synthesized Result\n\n${completedPlan.finalResult || "(No synthesis produced)"}`,
+      artifactType: "document",
+      artifactLabel: `Multi-Agent: ${args.goal.slice(0, 50)}`,
+    };
+  } catch (err: any) {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.error(`[multi_agent_orchestrate] Orchestration failed after ${elapsed}s:`, err);
+    return {
+      success: false,
+      result: `Multi-agent orchestration failed: ${err.message}\n\nThe supervisor could not decompose or execute the task. Consider breaking it into smaller pieces or using parallel_execute for simpler batch operations.`,
+    };
+  }
 }

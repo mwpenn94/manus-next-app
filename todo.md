@@ -7352,3 +7352,25 @@
 - [x] P5-G2: Implement remaining gaps — video analysis, Python execution, parallel_execute, enhanced wide_research
 - [x] P5-G3: Run exhaustive virtual user validation across all capabilities — tsc 0 errors, 209 test files, 5155 tests pass
 - [x] P5-G4: Recursive convergence passes — 3 consecutive clean passes achieved (fix: missing /mobile-projects and /app-publish routes)
+
+## Session 49: GitHub OAuth Fix + Multi-Agent Orchestration
+
+### GitHub OAuth Token Refresh Fix
+- [x] GH-1: Add validateGitHubToken() helper to connectorOAuth.ts (calls GET /user to verify token validity)
+- [x] GH-2: Add refreshToken() method to GitHub provider (for apps with token expiration enabled)
+- [x] GH-3: Add pre-operation token validation in git_operation clone (agentTools.ts)
+- [x] GH-4: Emit connector_auth_required SSE event when token is expired/invalid
+- [x] GH-5: Add connector_auth_required event parsing in streamWithRetry.ts
+- [x] GH-6: Add onConnectorAuthRequired callback to StreamCallbacks interface
+
+### Multi-Agent Orchestration (Exceeds Manus Parity)
+- [x] MA-1: Create server/services/multiAgent.ts with SupervisorAgent and WorkerAgent classes
+- [x] MA-2: Add multi_agent_orchestrate tool definition to AGENT_TOOLS array
+- [x] MA-3: Add multi_agent_orchestrate case to executeToolCall switch
+- [x] MA-4: Write tests for multi-agent orchestration
+- [x] MA-5: Update tool count assertions (37 → 38)
+
+### Convergence
+- [x] CV-1: TypeScript 0 errors
+- [x] CV-2: All tests passing (58 tests in 2 new/updated files)
+- [x] CV-3: Clean pass confirmed

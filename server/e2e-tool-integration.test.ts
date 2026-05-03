@@ -56,8 +56,8 @@ describe("E2E Tool Integration — All 31 Tools", () => {
 
   // ── 1. Tool Registry Validation ──
   describe("Tool Registry", () => {
-    it("should have exactly 32 tools registered", () => {
-      expect(AGENT_TOOLS.length).toBe(37);
+    it("should have exactly 38 tools registered", () => {
+      expect(AGENT_TOOLS.length).toBe(38);
     });
 
     it("should have unique tool names", () => {

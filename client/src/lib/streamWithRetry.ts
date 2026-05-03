@@ -50,6 +50,8 @@ export interface StreamCallbacks {
   onConnectorContext?: (data: { id: string; name: string; relevanceScore: number }[]) => void;
   /** Reasoning depth transparency — real-time cognitive state of the agent */
   onReasoningDepth?: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number }) => void;
+  /** Connector auth required — emitted when a connector token is expired and user must re-authenticate */
+  onConnectorAuthRequired?: (data: { connector: string; reason: string }) => void;
 }
 
 export interface StreamOptions {
@@ -115,6 +117,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.aegis_meta && callbacks.onAegisMeta) callbacks.onAegisMeta(data.aegis_meta);
     if (data.connectorContext && callbacks.onConnectorContext) callbacks.onConnectorContext(data.connectorContext);
     if (data.reasoning_depth && callbacks.onReasoningDepth) callbacks.onReasoningDepth(data.reasoning_depth);
+    if (data.connector_auth_required && callbacks.onConnectorAuthRequired) callbacks.onConnectorAuthRequired(data.connector_auth_required);
     if (data.error) {
       // Detect credit exhaustion errors and dispatch global event for the banner
       const errMsg = (data.error || "").toLowerCase();

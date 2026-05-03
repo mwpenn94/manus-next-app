@@ -57,6 +57,8 @@ export interface StreamStateSetters {
   setStreamInlineCards?: (cards: Array<{ cardType: CardType; cardData: Record<string, unknown>; content: string }>) => void;
   /** Reasoning depth transparency state setter */
   setReasoningDepth?: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number } | null) => void;
+  /** Connector auth required — emitted when a connector token is expired and user must re-authenticate */
+  setConnectorAuthRequired?: (data: { connector: string; reason: string } | null) => void;
 }
 
 /**
@@ -463,6 +465,9 @@ export function buildStreamCallbacks(
     },
     onReasoningDepth: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number }) => {
       setters.setReasoningDepth?.(data);
+    },
+    onConnectorAuthRequired: (data: { connector: string; reason: string }) => {
+      setters.setConnectorAuthRequired?.(data);
     },
   };
 }

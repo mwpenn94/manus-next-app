@@ -1600,6 +1600,11 @@ If git_operation(clone) fails:
             const safeResult = String(result.result ?? 'Tool returned no output');
             sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: result.success, preview: safeResult.slice(0, 500), url: result.url, projectExternalId: result.projectExternalId } });
 
+            // Emit connector_auth_required SSE event when a tool detects expired/revoked connector token
+            if (result.connectorAuthRequired) {
+              sendSSE(safeWrite, { connector_auth_required: result.connectorAuthRequired });
+            }
+
             // Emit convergence SSE event when report_convergence tool is called
             if (tn === "report_convergence" && result.success) {
               sendSSE(safeWrite, {

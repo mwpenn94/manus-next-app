@@ -32,6 +32,103 @@ export interface OAuthTokenResult {
   tokenType?: string;
 }
 
+// ── GitHub Token Validation ──
+
+/**
+ * Validate a GitHub access token by calling the GitHub API.
+ * Returns { valid: true, user } if the token works, or { valid: false, error } if expired/revoked.
+ *
+ * This is the primary fix for the "No refresh token available" issue:
+ * Standard GitHub OAuth Apps (gho_ tokens) do NOT issue refresh tokens.
+ * Instead of trying to refresh, we validate first and prompt re-auth if invalid.
+ */
+export async function validateGitHubToken(accessToken: string): Promise<{
+  valid: boolean;
+  user?: { login: string; email?: string };
+  error?: string;
+  statusCode?: number;
+}> {
+  try {
+    const resp = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+    if (resp.ok) {
+      const data = await resp.json() as Record<string, string>;
+      return { valid: true, user: { login: data.login, email: data.email } };
+    }
+    // 401 = token expired/revoked, 403 = rate limited or scope issue
+    const errorBody = await resp.text().catch(() => "");
+    if (resp.status === 401) {
+      return { valid: false, error: "Token expired or revoked", statusCode: 401 };
+    }
+    if (resp.status === 403) {
+      return { valid: false, error: `Access forbidden: ${errorBody.slice(0, 100)}`, statusCode: 403 };
+    }
+    return { valid: false, error: `GitHub API returned ${resp.status}`, statusCode: resp.status };
+  } catch (err: any) {
+    return { valid: false, error: `Network error: ${err.message}` };
+  }
+}
+
+/**
+ * Validate and optionally refresh a GitHub token.
+ * 
+ * Strategy:
+ * 1. Call GET /user to check if token is still valid
+ * 2. If valid → return the token as-is
+ * 3. If invalid AND a refresh token exists → attempt refresh
+ * 4. If invalid AND no refresh token → return error with reconnect guidance
+ *
+ * This replaces the old pattern of blindly using the token and getting cryptic git errors.
+ */
+export async function validateAndRefreshGitHubToken(
+  accessToken: string,
+  refreshToken?: string | null
+): Promise<{
+  valid: boolean;
+  accessToken?: string;
+  newRefreshToken?: string;
+  error?: string;
+  requiresReauth?: boolean;
+}> {
+  // Step 1: Validate current token
+  const validation = await validateGitHubToken(accessToken);
+  if (validation.valid) {
+    return { valid: true, accessToken };
+  }
+
+  // Step 2: Token is invalid — try refresh if available
+  if (refreshToken) {
+    try {
+      const provider = githubProvider;
+      const tokens = await provider.refreshToken!(refreshToken);
+      return {
+        valid: true,
+        accessToken: tokens.accessToken,
+        newRefreshToken: tokens.refreshToken,
+      };
+    } catch (refreshErr: any) {
+      // Refresh also failed — need full re-auth
+      return {
+        valid: false,
+        error: `Token expired and refresh failed: ${refreshErr.message}`,
+        requiresReauth: true,
+      };
+    }
+  }
+
+  // Step 3: No refresh token — standard OAuth App tokens (gho_) don't have refresh tokens
+  return {
+    valid: false,
+    error: validation.error || "Token expired or revoked",
+    requiresReauth: true,
+  };
+}
+
 // ── GitHub OAuth ──
 const githubProvider: OAuthProvider = {
   id: "github",
@@ -68,6 +165,38 @@ const githubProvider: OAuthProvider = {
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
+      scope: data.scope,
+      tokenType: data.token_type,
+    };
+  },
+
+  /**
+   * Refresh a GitHub OAuth token.
+   * 
+   * NOTE: Standard GitHub OAuth Apps (gho_ tokens) do NOT issue refresh tokens.
+   * Only GitHub Apps with "token expiration" enabled provide refresh tokens.
+   * If a refresh token is available (from a GitHub App), this method will use it.
+   * Otherwise, the caller should prompt the user to re-authenticate.
+   */
+  async refreshToken(refreshToken: string): Promise<OAuthTokenResult> {
+    const resp = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        client_id: env.GITHUB_OAUTH_CLIENT_ID || "",
+        client_secret: env.GITHUB_OAUTH_CLIENT_SECRET || "",
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
+    const data = await resp.json() as Record<string, string>;
+    if (data.error) {
+      throw new Error(`GitHub token refresh failed: ${data.error_description || data.error}`);
+    }
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in ? parseInt(data.expires_in, 10) : undefined,
       scope: data.scope,
       tokenType: data.token_type,
     };
