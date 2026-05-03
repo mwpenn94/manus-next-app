@@ -42,6 +42,7 @@ const DataControlsPage = lazy(() => import("./pages/DataControlsPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const DeployedWebsitesPage = lazy(() => import("./pages/DeployedWebsitesPage"));
 const DesignView = lazy(() => import("./pages/DesignView"));
+const MobileProjectsPage = lazy(() => import("./pages/MobileProjectsPage"));
 
 function PageLoader() {
   return (
@@ -156,6 +157,12 @@ function Router() {
         <SuspenseRoute><TeamPage /></SuspenseRoute>
       </Route>
       <Route path="/deployed-websites">
+        <SuspenseRoute><DeployedWebsitesPage /></SuspenseRoute>
+      </Route>
+      <Route path="/mobile-projects">
+        <SuspenseRoute><MobileProjectsPage /></SuspenseRoute>
+      </Route>
+      <Route path="/app-publish">
         <SuspenseRoute><DeployedWebsitesPage /></SuspenseRoute>
       </Route>
       <Route path="/design/:id">

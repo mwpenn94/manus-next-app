@@ -20,6 +20,7 @@ import {
   Download, FileCode, Palette, Box,
 } from "lucide-react";
 import { toast } from "sonner";
+import AppStoreMetadataEditor from "@/components/AppStoreMetadataEditor";
 
 type Framework = "pwa" | "capacitor" | "expo";
 type Platform = "ios" | "android" | "web";
@@ -369,6 +370,7 @@ export default function MobileProjectsPage() {
         <Tabs defaultValue="config" className="space-y-4">
           <TabsList>
             <TabsTrigger value="config"><Settings className="w-3.5 h-3.5 mr-1.5" />Configuration</TabsTrigger>
+            <TabsTrigger value="store"><Smartphone className="w-3.5 h-3.5 mr-1.5" />Store Listing</TabsTrigger>
             <TabsTrigger value="assets"><Palette className="w-3.5 h-3.5 mr-1.5" />Assets</TabsTrigger>
             <TabsTrigger value="code"><FileCode className="w-3.5 h-3.5 mr-1.5" />Generated Code</TabsTrigger>
           </TabsList>
@@ -467,6 +469,10 @@ export default function MobileProjectsPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="store" className="space-y-4">
+            <AppStoreMetadataEditor project={project} />
           </TabsContent>
 
           <TabsContent value="assets" className="space-y-4">
