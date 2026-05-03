@@ -254,16 +254,27 @@ You work within **projects**. Each project is an isolated directory with its own
 - "Clone [repo URL]" → **git_operation(clone)** that specific repo
 - "What do you know about my repo?", "You're connected to a repo", "What can you do with the connected repo?" → **github_ops(mode: 'status')** FIRST to fetch real data, then explain
 - "Show me my repo", "What's the status of my repo?", "Tell me about my code" → **github_ops(mode: 'status')**
-- "Load a preview of my repo", "Preview my repo", "Show me what's in my repo", "Read my repo", "View my connected repo" → **github_ops(mode: 'status')** FIRST, then **github_assess(mode: 'assess')** to read and display the actual repo contents. Do NOT create a new webapp — the user wants to SEE their existing repo, not build a new project.
+- "Load a preview of my repo", "Preview my repo", "Show me what's in my repo", "Read my repo", "View my connected repo" → **github_ops(mode: 'status')** FIRST, then **github_assess(mode: 'assess')** to read and display the actual repo contents. This is a READ intent — do NOT build or deploy.
 - "Can you read/update my connected repo?" → **github_ops(mode: 'status')** to verify connection, then respond with what you found. Use **github_edit** if they want changes.
-- When ambiguous, ask the user: "Would you like me to create a new project or edit your connected repository?"
+- "Build and deploy my repo", "Render a live preview", "Deploy my repo", "Host my repo", "Run my repo", "Launch my app" → **LIVE PREVIEW WORKFLOW** (see below). This is a BUILD/DEPLOY intent.
+- When ambiguous, ask the user: "Would you like me to read your repo contents, or build and deploy a live preview?"
 
-### CRITICAL: Do NOT create new webapps when the user asks about their connected repo
-If the user mentions a specific repo name (e.g., "mwpenn94/manus-next-app") or says "my connected repo" / "my repo", they are referring to their EXISTING GitHub repository. Do NOT:
-- Call create_webapp to make a new project
-- Create index.html / styles.css / main.js files as a "preview"
-- Deploy a new webapp as a "preview" of their repo
-Instead, use github_ops(status) and github_assess to READ and REPORT on the actual repo contents.
+### LIVE PREVIEW WORKFLOW (Build & Deploy Connected Repo)
+When the user asks to BUILD, DEPLOY, RUN, HOST, RENDER, or LAUNCH their connected repo as a live preview:
+1. Call **github_ops(mode: 'status')** to get the repo URL and metadata
+2. Call **git_operation(operation: 'clone', remote_url: <repo_https_url>)** to clone the repo
+3. Call **install_deps** or **run_command** to install dependencies (try 'npm install', fall back to 'npm install --legacy-peer-deps')
+4. Call **deploy_webapp** to build and deploy to S3 — this produces a live URL
+5. Present the live preview URL to the user with the iframe card
+
+IMPORTANT: Do NOT call create_webapp for this flow. create_webapp is for NEW projects from templates. For existing repos, use the clone → install → deploy pipeline above.
+If the build fails, problem-solve: check error messages, try different install flags, edit vite.config or package.json if needed, then retry the build.
+
+### READ vs BUILD Intent Detection
+If the user mentions a specific repo name or says "my connected repo" / "my repo":
+- **READ intents** ("show me", "what's in", "preview" without build words, "view", "read", "status", "what can you do"): Use github_ops + github_assess to READ and REPORT.
+- **BUILD intents** ("build", "deploy", "run", "host", "launch", "render a live preview", "get it running", "make it live"): Use the LIVE PREVIEW WORKFLOW above.
+- Do NOT call create_webapp to make a new project when the user is asking about their connected repo.
 
 ### CRITICAL: Present ACTUAL data from tool results
 When github_ops(status) or github_assess returns data about the user's repo, you MUST:
@@ -1157,7 +1168,10 @@ will seamlessly continue you with full context. Write as extensively as the task
         const repos = await getUserGitHubRepos(userId);
         if (repos.length > 0) {
           const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
-          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. These are REAL repositories with live data.\n\n${repoList}\n\n### CRITICAL: Always use real data, never just describe capabilities\nWhen the user mentions their repo, asks about it, or asks what you can do with it:\n1. **IMMEDIATELY call github_ops(mode: 'status', repo: '${repos.length === 1 ? repos[0].fullName : '<repo_name>'}')** to fetch live repo data\n2. Present REAL information: actual file count, languages, recent commits, open PRs, issues\n3. NEVER respond with just a list of tool descriptions — that is not helpful\n4. The user connected their repo because they want you to WORK WITH IT, not describe what you could theoretically do\n\n### Available operations:\n- **github_edit(instruction, repo)** — Edit files via AI-powered diff + atomic commit\n- **github_assess(mode, repo)** — Deep code quality analysis (assess/optimize/validate)\n- **github_ops(mode, repo)** — Branch management, PRs, releases, CI/CD, status checks\n\n### Auto-selection rule:\nIf the user doesn't specify which repo and they have only one, use it automatically. If multiple, ask which repo they mean.\n\n### Proactive behavior:\n- If the user says "you're connected to a repo" or "what do you know about it" → call github_ops(mode: 'status') FIRST, then respond with real data\n- If the user asks "what can you do with my repo" → call github_ops(mode: 'status') to show real data, THEN explain capabilities with examples specific to their repo\n- If the user asks to edit/fix/update code → use github_edit immediately, don't ask for confirmation to start\n- If the user asks about code quality → use github_assess immediately\n- If the user asks to "preview", "view", "show", or "load" their connected repo → use github_ops(status) + github_assess(assess) to READ and DISPLAY the repo contents. Do NOT create a new webapp or deploy anything — they want to see their EXISTING repo, not a new project.\n- NEVER call create_webapp when the user is asking about a connected repo. The words "preview" and "load" in the context of a connected repo mean READ IT, not BUILD SOMETHING NEW.`;
+          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. These are REAL repositories with live data.\n\n${repoList}\n\n### CRITICAL: Always use real data, never just describe capabilities\nWhen the user mentions their repo, asks about it, or asks what you can do with it:\n1. **IMMEDIATELY call github_ops(mode: 'status', repo: '${repos.length === 1 ? repos[0].fullName : '<repo_name>'}')** to fetch live repo data\n2. Present REAL information: actual file count, languages, recent commits, open PRs, issues\n3. NEVER respond with just a list of tool descriptions — that is not helpful\n4. The user connected their repo because they want you to WORK WITH IT, not describe what you could theoretically do\n\n### Available operations:\n- **github_edit(instruction, repo)** — Edit files via AI-powered diff + atomic commit\n- **github_assess(mode, repo)** — Deep code quality analysis (assess/optimize/validate)\n- **github_ops(mode, repo)** — Branch management, PRs, releases, CI/CD, status checks\n\n### Auto-selection rule:\nIf the user doesn't specify which repo and they have only one, use it automatically. If multiple, ask which repo they mean.\n\n### Proactive behavior:\n- If the user says "you're connected to a repo" or "what do you know about it" → call github_ops(mode: 'status') FIRST, then respond with real data\n- If the user asks "what can you do with my repo" → call github_ops(mode: 'status') to show real data, THEN explain capabilities with examples specific to their repo\n- If the user asks to edit/fix/update code → use github_edit immediately, don't ask for confirmation to start\n- If the user asks about code quality → use github_assess immediately\n- If the user asks to "preview", "view", "show", or "load" their connected repo (READ intent) → use github_ops(status) + github_assess(assess) to READ and DISPLAY the repo contents.
+- If the user asks to "build", "deploy", "run", "host", "launch", or "render a live preview" of their connected repo (BUILD intent) → follow the LIVE PREVIEW WORKFLOW: github_ops(status) → git_operation(clone) → install_deps → deploy_webapp. This produces a real hosted URL.
+- NEVER call create_webapp when the user is asking about a connected repo. create_webapp is for NEW projects from templates only.
+- When in doubt between READ and BUILD, ask: "Would you like me to show you the repo contents, or build and deploy a live preview?"`;
         }
       } catch (err) {
         console.warn("[Agent] Failed to load GitHub repos for context:", err);
@@ -1637,7 +1651,7 @@ will seamlessly continue you with full context. Write as extensively as the task
         // injects continuation prompts that naturally produce similar responses.
         const usedAppBuildingToolsForStuck = conversation.some(m =>
           (m as any).tool_calls?.some((tc: any) =>
-            ["create_webapp", "create_file", "edit_file", "install_deps", "run_command"].includes(tc.function?.name)
+            ["create_webapp", "create_file", "edit_file", "install_deps", "run_command", "git_operation"].includes(tc.function?.name)
           )
         );
         const hasDeployedForStuck = conversation.some(m =>
@@ -1913,7 +1927,7 @@ If the user hasn't specified content details, ASK them what content they want. D
         // The agent MUST continue after create_webapp to build out files and deploy.
         const usedAppBuildingTools = conversation.some(m =>
           (m as any).tool_calls?.some((tc: any) =>
-            ["create_webapp", "create_file", "edit_file", "install_deps", "run_command"].includes(tc.function?.name)
+            ["create_webapp", "create_file", "edit_file", "install_deps", "run_command", "git_operation"].includes(tc.function?.name)
           )
         );
         const hasDeployed = conversation.some(m =>

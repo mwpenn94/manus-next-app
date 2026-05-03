@@ -3031,11 +3031,13 @@ async function uploadDirToS3(
     ".txt": "text/plain", ".xml": "application/xml",
   };
 
-  // Recursively collect all files
+  // Recursively collect all files (skip heavy/irrelevant directories)
+  const UPLOAD_SKIP_DIRS = new Set(["node_modules", ".git", ".next", "__pycache__", ".cache"]);
   const collectFiles = (dir: string, base: string): { relPath: string; absPath: string }[] => {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     const files: { relPath: string; absPath: string }[] = [];
     for (const entry of entries) {
+      if (UPLOAD_SKIP_DIRS.has(entry.name)) continue;
       const fullPath = pathMod.join(dir, entry.name);
       const relPath = pathMod.relative(base, fullPath);
       if (entry.isDirectory()) {
@@ -3046,7 +3048,6 @@ async function uploadDirToS3(
     }
     return files;
   };
-
   const allFiles = collectFiles(buildDir, buildDir);
   const assetUrlMap = new Map<string, string>();
 
@@ -3441,7 +3442,7 @@ async function executeCreateFile(args: {
   const pathMod = await import("path");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   try {
@@ -3477,7 +3478,7 @@ async function executeEditFile(args: {
   const pathMod = await import("path");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   try {
@@ -3518,7 +3519,7 @@ async function executeReadFile(args: {
   const pathMod = await import("path");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   try {
@@ -3550,7 +3551,7 @@ async function executeListFiles(args: {
   const pathMod = await import("path");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   try {
@@ -3603,7 +3604,7 @@ async function executeInstallDeps(args: {
   const { execSync } = await import("child_process");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   try {
@@ -3638,7 +3639,7 @@ async function executeRunCommand(args: {
   const { execSync } = await import("child_process");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   // Security: block dangerous commands and host-app modification
@@ -3684,7 +3685,7 @@ async function executeGitOperation(args: {
   const { execSync } = await import("child_process");
 
   if (!activeProjectDir && args.operation !== "clone") {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   const dir = activeProjectDir || "/tmp/webapp-projects";
@@ -3814,7 +3815,7 @@ async function executeDeployWebapp(args: {
   const { execSync } = await import("child_process");
 
   if (!activeProjectDir) {
-    return { success: false, result: "No active webapp project. Use create_webapp first." };
+    return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
   const projectName = path.basename(activeProjectDir);
@@ -3911,17 +3912,20 @@ async function executeDeployWebapp(args: {
         };
       }
 
-      // Find the build output directory
+      // Find the build output directory (supports Vite/dist, CRA/build, Next.js/out, Gatsby/public)
       const distDir = path.join(activeProjectDir, "dist");
       const buildDirAlt = path.join(activeProjectDir, "build");
+      const outDir = path.join(activeProjectDir, "out");
       if (fs.existsSync(distDir)) {
         buildDir = distDir;
       } else if (fs.existsSync(buildDirAlt)) {
         buildDir = buildDirAlt;
+      } else if (fs.existsSync(outDir) && fs.existsSync(path.join(outDir, "index.html"))) {
+        buildDir = outDir;
       } else {
         return {
           success: false,
-          result: "Build completed but no dist/ or build/ directory found. Check your build configuration.",
+          result: "Build completed but no dist/, build/, or out/ directory found. Check your build configuration. For Next.js, ensure 'output: export' is set in next.config.js.",
         };
       }
 
@@ -3954,10 +3958,12 @@ async function executeDeployWebapp(args: {
     const deployPrefix = `webapp-deploys/${projectName}-${timestamp}`;
 
     // Recursively collect all files from the build directory
+     const DEPLOY_SKIP_DIRS = new Set(["node_modules", ".git", ".next", "__pycache__", ".cache"]);
     const collectFiles = (dir: string, base: string): { relPath: string; absPath: string }[] => {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       const files: { relPath: string; absPath: string }[] = [];
       for (const entry of entries) {
+        if (DEPLOY_SKIP_DIRS.has(entry.name)) continue;
         const fullPath = path.join(dir, entry.name);
         const relPath = path.relative(base, fullPath);
         if (entry.isDirectory()) {
@@ -3968,7 +3974,6 @@ async function executeDeployWebapp(args: {
       }
       return files;
     };
-
     const allFiles = collectFiles(buildDir, buildDir);
     const mimeTypes: Record<string, string> = {
       ".html": "text/html",
@@ -4157,6 +4162,8 @@ async function executeDeployWebapp(args: {
       console.warn("[deploy_webapp] Code review failed (non-critical):", reviewErr);
     }
 
+    // Update activeProjectPreviewUrl so post-deploy edits can reference the live URL
+    activeProjectPreviewUrl = publishedUrl;
     // Build the result message, noting any failed assets and code issues
     const failedNote = failedAssets.length > 0
       ? `\n\nNote: ${failedAssets.length} asset(s) failed to upload and may be missing: ${failedAssets.join(", ")}`

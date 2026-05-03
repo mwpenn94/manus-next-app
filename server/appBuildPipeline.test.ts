@@ -13,7 +13,7 @@ import { describe, it, expect } from "vitest";
 function shouldRunStuckDetection(conversation: any[]): boolean {
   const usedAppBuildingTools = conversation.some(m =>
     m.tool_calls?.some((tc: any) =>
-      ["create_webapp", "create_file", "edit_file", "install_deps", "run_command"].includes(tc.function?.name)
+      ["create_webapp", "create_file", "edit_file", "install_deps", "run_command", "git_operation"].includes(tc.function?.name)
     )
   );
   const hasDeployed = conversation.some(m =>
@@ -27,7 +27,7 @@ function shouldRunStuckDetection(conversation: any[]): boolean {
 function isAppBuildingPipeline(conversation: any[]): boolean {
   const usedAppBuildingTools = conversation.some(m =>
     m.tool_calls?.some((tc: any) =>
-      ["create_webapp", "create_file", "edit_file", "install_deps", "run_command"].includes(tc.function?.name)
+      ["create_webapp", "create_file", "edit_file", "install_deps", "run_command", "git_operation"].includes(tc.function?.name)
     )
   );
   const hasDeployed = conversation.some(m =>
@@ -116,6 +116,34 @@ describe("App-building pipeline stuck detection exemption", () => {
     ];
     expect(shouldRunStuckDetection(conversation)).toBe(false);
     expect(isAppBuildingPipeline(conversation)).toBe(true);
+  });
+
+  it("should handle git_operation as an app-building tool (clone → install → deploy flow)", () => {
+    const conversation = [
+      { role: "user", content: "Build and deploy my connected repo" },
+      { role: "assistant", content: "", tool_calls: [{ function: { name: "git_operation", arguments: '{"operation":"clone","remote_url":"https://github.com/user/repo"}' } }] },
+      { role: "tool", content: "Cloned successfully" },
+    ];
+    expect(shouldRunStuckDetection(conversation)).toBe(false);
+    expect(isAppBuildingPipeline(conversation)).toBe(true);
+  });
+
+  it("should allow git_operation pipeline to continue until deploy_webapp", () => {
+    const conversationMidClone = [
+      { role: "user", content: "Deploy my repo" },
+      { role: "assistant", content: "", tool_calls: [{ function: { name: "git_operation", arguments: '{"operation":"clone"}' } }] },
+      { role: "tool", content: "Cloned" },
+      { role: "assistant", content: "", tool_calls: [{ function: { name: "install_deps", arguments: '{"packages":""}' } }] },
+      { role: "tool", content: "Installed" },
+    ];
+    expect(isAppBuildingPipeline(conversationMidClone)).toBe(true);
+
+    const conversationAfterDeploy = [
+      ...conversationMidClone,
+      { role: "assistant", content: "", tool_calls: [{ function: { name: "deploy_webapp", arguments: '{}' } }] },
+      { role: "tool", content: "Deployed" },
+    ];
+    expect(isAppBuildingPipeline(conversationAfterDeploy)).toBe(false);
   });
 });
 
