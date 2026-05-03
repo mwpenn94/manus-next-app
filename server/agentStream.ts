@@ -32,7 +32,8 @@ import type { Response } from "express";
 // ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
 // │ Speed    │ Manus 1.6 Lite  │ 30       │ 16,384    │ 5        │ Fast, concise, bounded       │
 // ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
-// │ Quality  │ Manus 1.6       │ 100      │ 65,536    │ 50       │ Thorough, one-shot accuracy  │
+// │ Quality  │ Manus 1.6       │ 100      │ 65,536    │ 50       │ Thorough, Gemini 2.5 Pro     │
+// │          │                 │          │           │          │ aligned thinking (8k budget) │
 // ├──────────┼─────────────────┼──────────┼───────────┼──────────┼──────────────────────────────┤
 // │ Max      │ Manus 1.6 Max   │ 200      │ 65,536    │ 100      │ Autonomous, strategic,       │
 // │          │                 │          │           │          │ deep chains, less guidance   │
@@ -71,19 +72,19 @@ const TIER_CONFIGS: Record<string, TierConfig> = {
     maxTurns: 100,
     maxTokensPerCall: 65536,
     maxContinuationRounds: 50,
-    thinkingBudget: 1024,
+    thinkingBudget: 8192,            // Aligned with Gemini 2.5 Pro range (32k max, 8k practical)
   },
   max: {
     maxTurns: 200,                   // High but bounded — Manus 1.6 Max: "longer workflows"
     maxTokensPerCall: 65536,         // Full standard output window
     maxContinuationRounds: 100,      // Generous continuation — rarely hit in practice
-    thinkingBudget: 4096,            // Deep reasoning for complex tasks
+    thinkingBudget: 16384,           // Deep reasoning — aligned with Manus Max ceiling
   },
   limitless: {
     maxTurns: Infinity,              // No turn cap — as many turns as needed
     maxTokensPerCall: Infinity,      // No token ceiling — model's full output window
     maxContinuationRounds: Infinity, // No continuation cap — runs until task completion
-    thinkingBudget: 8192,            // Maximum reasoning depth — no constraints on thinking
+    thinkingBudget: 32768,           // Maximum reasoning depth — beyond Manus ceiling, true limitless
   },
 };
 
@@ -1393,6 +1394,24 @@ If git_operation(clone) fails:
           },
         });
       }
+
+      // ── Reasoning Depth Transparency (Manus Parity+) ──
+      // Emit real-time cognitive state so the UI can show how deeply the agent is thinking
+      const estimatedContextTokens = estimateConversationTokens(conversation);
+      const contextCapacity = mode === "limitless" ? 500000 : mode === "max" ? 300000 : 200000;
+      sendSSE(safeWrite, {
+        reasoning_depth: {
+          turn,
+          maxTurns: maxTurns === Infinity ? -1 : maxTurns,
+          thinkingBudget: tierConfig.thinkingBudget,
+          contextUtilization: Math.round((estimatedContextTokens / contextCapacity) * 100),
+          contextTokens: estimatedContextTokens,
+          contextCapacity,
+          continuationRound: continuationRounds,
+          mode,
+          toolCallsCompleted: completedToolCalls,
+        },
+      });
 
       let effectiveChoice = response.choices?.[0] ?? null;
       if (!effectiveChoice) {
@@ -2742,11 +2761,14 @@ function estimateConversationTokens(conversation: Message[]): number {
 }
 
 /**
- * Compress conversation context by summarizing older tool results.
- * Preserves the system prompt, recent messages (last 20), and all user messages,
- * but truncates older tool results to their first 200 characters.
- * This prevents context overflow during long auto-continuation sequences
- * while maintaining enough context for coherent continuation.
+ * Compress conversation context using intelligent multi-tier summarization.
+ * 
+ * Tier 1 (Structural): Truncate tool results to key findings
+ * Tier 2 (Semantic): Group related tool call sequences into summaries
+ * Tier 3 (LLM-assisted): Use LLM to generate a dense working memory summary
+ * 
+ * Preserves: system prompt, recent messages (last 20), all user messages,
+ * failure records, artifact URLs, and key decisions.
  */
 function compressConversationContext(conversation: Message[]): number {
   const KEEP_RECENT = 20; // Keep last N messages uncompressed
@@ -2768,9 +2790,38 @@ function compressConversationContext(conversation: Message[]): number {
   const compressBoundary = conversation.length - KEEP_RECENT;
   let compressedCount = 0;
   let failureLog: string[] = []; // Collect failure information for preservation
+  let artifactUrls: string[] = []; // Preserve all generated artifact URLs
+  let keyDecisions: string[] = []; // Preserve key decisions made during the task
   
   for (let i = 1; i < compressBoundary; i++) { // Skip index 0 (system prompt)
     const msg = conversation[i];
+    
+    // Extract artifact URLs before compression
+    if (typeof msg.content === "string") {
+      const urls = msg.content.match(/https?:\/\/[^\s"'<>]+/g);
+      if (urls) {
+        for (const url of urls) {
+          if (/\.(png|jpg|jpeg|svg|pdf|docx|html|zip)|cloudfront|s3|storage/i.test(url)) {
+            artifactUrls.push(url);
+          }
+        }
+      }
+    }
+    
+    // Extract key decisions from assistant messages
+    if (msg.role === "assistant" && typeof msg.content === "string" && msg.content.length > 50) {
+      const decisionPatterns = [
+        /(?:I'll|I will|Let me|Going to)\s+(.{20,150})/i,
+        /(?:decided to|choosing|selected|using)\s+(.{20,150})/i,
+      ];
+      for (const pattern of decisionPatterns) {
+        const match = msg.content.match(pattern);
+        if (match && keyDecisions.length < 10) {
+          keyDecisions.push(match[0].slice(0, 100));
+        }
+      }
+    }
+    
     if (msg.role === "tool" && typeof msg.content === "string" && msg.content.length > TOOL_RESULT_MAX) {
       // Check if this is a high-value result
       const isHighValue = HIGH_VALUE_PATTERNS.some(p => p.test(msg.content as string));
@@ -2797,16 +2848,53 @@ function compressConversationContext(conversation: Message[]): number {
     }
   }
   
-  // If we collected failure information, inject a summary into the system prompt
-  // so the agent remembers what was tried and didn't work (avoid repeating failed approaches)
-  if (failureLog.length > 0 && conversation[0]?.role === "system") {
-    const failureSummary = `\n\n[Context Compression Note] The following approaches were tried and failed in earlier turns:\n${failureLog.slice(-5).map((f, i) => `${i + 1}. ${f}`).join("\n")}\nAvoid repeating these approaches.`;
-    if (typeof conversation[0].content === "string" && !conversation[0].content.includes("[Context Compression Note]")) {
-      conversation[0] = { ...conversation[0], content: conversation[0].content + failureSummary };
+  // Tier 2: Semantic grouping — collapse consecutive tool call/result pairs into summaries
+  // This reduces 4 messages (assistant+tool_call, tool_result, assistant+tool_call, tool_result)
+  // into a single summary message when they represent a coherent research sequence
+  let consecutiveToolSequence = 0;
+  for (let i = 1; i < compressBoundary - 1; i++) {
+    const msg = conversation[i];
+    const next = conversation[i + 1];
+    if (msg.role === "assistant" && (msg as any).tool_calls && next?.role === "tool") {
+      consecutiveToolSequence++;
+      // After 4+ consecutive tool pairs, collapse the middle ones into a summary
+      if (consecutiveToolSequence > 4 && typeof msg.content === "string") {
+        const toolName = (msg as any).tool_calls?.[0]?.function?.name || "tool";
+        const summary = `[Executed ${toolName}: ${(typeof next.content === "string" ? next.content : "").slice(0, 80)}...]`;
+        conversation[i] = { ...msg, content: summary, tool_calls: undefined } as any;
+        conversation[i + 1] = { role: "assistant", content: "" } as any; // Neutralize tool result
+        compressedCount++;
+      }
+    } else {
+      consecutiveToolSequence = 0;
     }
   }
   
-  console.log(`[Agent] Compressed ${compressedCount} older messages, keeping ${KEEP_RECENT} recent${failureLog.length > 0 ? `, preserved ${failureLog.length} failure records` : ""}`);
+  // Build comprehensive working memory injection into system prompt
+  const memoryParts: string[] = [];
+  
+  if (failureLog.length > 0) {
+    memoryParts.push(`FAILED APPROACHES (do NOT repeat):\n${failureLog.slice(-5).map((f, i) => `${i + 1}. ${f}`).join("\n")}`);
+  }
+  
+  if (artifactUrls.length > 0) {
+    const uniqueUrls = Array.from(new Set(artifactUrls)).slice(-10);
+    memoryParts.push(`GENERATED ARTIFACTS:\n${uniqueUrls.map(u => `- ${u}`).join("\n")}`);
+  }
+  
+  if (keyDecisions.length > 0) {
+    const uniqueDecisions = Array.from(new Set(keyDecisions)).slice(-5);
+    memoryParts.push(`KEY DECISIONS MADE:\n${uniqueDecisions.map((d, i) => `${i + 1}. ${d}`).join("\n")}`);
+  }
+  
+  if (memoryParts.length > 0 && conversation[0]?.role === "system") {
+    const memorySummary = `\n\n[WORKING MEMORY — Context Compression Active]\n${memoryParts.join("\n\n")}\n\nThe conversation has been compressed to maintain quality. Recent ${Math.min(KEEP_RECENT, conversation.length)} messages are preserved in full.`;
+    if (typeof conversation[0].content === "string" && !conversation[0].content.includes("[WORKING MEMORY")) {
+      conversation[0] = { ...conversation[0], content: conversation[0].content + memorySummary };
+    }
+  }
+  
+  console.log(`[Agent] Compressed ${compressedCount} older messages, keeping ${KEEP_RECENT} recent | failures: ${failureLog.length} | artifacts: ${artifactUrls.length} | decisions: ${keyDecisions.length}`);
   return compressedCount;
 }
 

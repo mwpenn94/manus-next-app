@@ -55,6 +55,8 @@ export interface StreamStateSetters {
   setConnectorContext?: (data: { id: string; name: string; relevanceScore: number }[] | null) => void;
   /** Inline cards state setter — syncs streamState.inlineCards to React state for rendering in streaming bubble */
   setStreamInlineCards?: (cards: Array<{ cardType: CardType; cardData: Record<string, unknown>; content: string }>) => void;
+  /** Reasoning depth transparency state setter */
+  setReasoningDepth?: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number } | null) => void;
 }
 
 /**
@@ -458,6 +460,9 @@ export function buildStreamCallbacks(
     },
     onConnectorContext: (data: { id: string; name: string; relevanceScore: number }[]) => {
       setters.setConnectorContext?.(data);
+    },
+    onReasoningDepth: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number }) => {
+      setters.setReasoningDepth?.(data);
     },
   };
 }

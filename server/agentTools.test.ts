@@ -46,7 +46,7 @@ describe("Agent Tools", () => {
 
   it("AGENT_TOOLS defines the expected tool set", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(33);
+    expect(AGENT_TOOLS).toHaveLength(37);
     const toolNames = AGENT_TOOLS.map((t) => t.function.name);
     expect(toolNames).toContain("web_search");
     expect(toolNames).toContain("read_webpage");
@@ -83,6 +83,11 @@ describe("Agent Tools", () => {
     expect(toolNames).toContain("deep_research_content");
     expect(toolNames).toContain("github_ops");
     expect(toolNames).toContain("create_github_repo");
+    // NS20: Parity+ tools
+    expect(toolNames).toContain("native_app_build");
+    expect(toolNames).toContain("webapp_rollback");
+    expect(toolNames).toContain("analyze_video");
+    expect(toolNames).toContain("parallel_execute");
   });
 
   it("each tool has proper function calling schema", async () => {

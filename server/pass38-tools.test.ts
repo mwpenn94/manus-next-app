@@ -756,7 +756,7 @@ describe("Pass 38.5: github_ops tool", () => {
 describe("Pass 38: Tool Registration", () => {
   it("all 32 tools are registered in AGENT_TOOLS", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(33);
+    expect(AGENT_TOOLS).toHaveLength(37);
     
     const toolNames = AGENT_TOOLS.map((t: any) => t.function.name);
     
@@ -769,6 +769,12 @@ describe("Pass 38: Tool Registration", () => {
     
     // Pass 37e tool
     expect(toolNames).toContain("github_assess");
+    
+    // Parity+ tools (NS20)
+    expect(toolNames).toContain("native_app_build");
+    expect(toolNames).toContain("webapp_rollback");
+    expect(toolNames).toContain("analyze_video");
+    expect(toolNames).toContain("parallel_execute");
     
     // Original tools still present
     expect(toolNames).toContain("web_search");

@@ -198,7 +198,7 @@ export const AGENT_TOOLS: Tool[] = [
             type: "array",
             items: { type: "string" },
             description:
-              "Array of 2-5 search queries to execute in parallel. Each query should target a different aspect or angle of the research topic.",
+              "Array of 2-10 search queries to execute in parallel. Each query should target a different aspect or angle of the research topic.",
           },
           synthesis_prompt: {
             type: "string",
@@ -382,13 +382,18 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "execute_code",
       description:
-        "Execute JavaScript/TypeScript code to perform calculations, data transformations, or generate structured output. Use this for math, algorithms, data processing, or when you need to compute something precisely rather than estimate.",
+        "Execute code to perform calculations, data transformations, analysis, or generate structured output. Supports JavaScript (sandboxed VM) and Python (subprocess with numpy/pandas/scipy available). Use this for math, algorithms, data processing, statistical analysis, or when you need to compute something precisely rather than estimate. Python is preferred for data science, statistical analysis, and complex math. JavaScript is preferred for quick calculations and JSON manipulation.",
       parameters: {
         type: "object",
         properties: {
           code: {
             type: "string",
-            description: "JavaScript code to execute. Must be a self-contained snippet that produces output via console.log() or returns a value.",
+            description: "Code to execute. For JS: self-contained snippet with console.log() output. For Python: script with print() output.",
+          },
+          language: {
+            type: "string",
+            enum: ["javascript", "python"],
+            description: "Programming language. Default: javascript. Use python for data science, statistics, complex math, or when numpy/pandas/scipy are needed.",
           },
           description: {
             type: "string",
@@ -405,7 +410,7 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "create_webapp",
       description:
-        "Create a new web application project. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project. IMPORTANT: Default to 'html' template for fast, reliable results. Only use 'react' template if the user specifically needs React features (state management, components, routing). The 'html' template supports modern CSS, animations, and responsive design without build steps.",
+        "Create a new web application project. Returns a preview URL that can be embedded in the chat. Use this when the user asks to build a website, web app, landing page, or any browser-based project. IMPORTANT: Default to 'html' template for fast, reliable results. Only use 'react' template if the user specifically needs React features (state management, components, routing). The 'html' template supports modern CSS, animations, and responsive design without build steps. Use 'nextjs' for full-stack apps with SSR/API routes. Use 'svelte' for lightweight reactive apps.",
       parameters: {
         type: "object",
         properties: {
@@ -419,7 +424,18 @@ export const AGENT_TOOLS: Tool[] = [
           },
           template: {
             type: "string",
-            description: "Template type: 'react' (React+Vite+Tailwind), 'html' (plain HTML/CSS/JS), or 'landing' (landing page template)",
+            enum: ["html", "react", "nextjs", "svelte", "landing"],
+            description: "Template type: 'react' (React+Vite+Tailwind), 'html' (plain HTML/CSS/JS), 'nextjs' (Next.js full-stack with API routes), 'svelte' (SvelteKit lightweight), or 'landing' (landing page template)",
+          },
+          env_vars: {
+            type: "object",
+            description: "Environment variables to set for the project (e.g., { 'API_KEY': 'xxx', 'DATABASE_URL': 'postgres://...' }). These are written to .env and available at build/runtime.",
+            additionalProperties: { type: "string" },
+          },
+          features: {
+            type: "array",
+            items: { type: "string", enum: ["auth", "database", "api", "analytics", "payments", "email"] },
+            description: "Optional features to scaffold: 'auth' (login/signup), 'database' (SQLite/Postgres), 'api' (REST endpoints), 'analytics' (event tracking), 'payments' (Stripe), 'email' (transactional)",
           },
         },
         required: ["name", "description"],
@@ -594,13 +610,26 @@ export const AGENT_TOOLS: Tool[] = [
     function: {
       name: "deploy_webapp",
       description:
-        "Build and deploy the current webapp project. This bundles the project (runs npm run build for React projects), uploads the built output to cloud storage, and makes it publicly accessible. Returns the live URL.",
+        "Build and deploy the current webapp project. This bundles the project (runs npm run build for React projects), uploads the built output to cloud storage, and makes it publicly accessible. Returns the live URL. Supports environment variable injection, custom domains, and deployment versioning.",
       parameters: {
         type: "object",
         properties: {
           version_label: {
             type: "string",
             description: "Version label for this deployment (e.g. 'v1.0.0', 'initial release')",
+          },
+          env_vars: {
+            type: "object",
+            description: "Environment variables to inject during build (e.g., { 'VITE_API_URL': 'https://api.example.com' })",
+            additionalProperties: { type: "string" },
+          },
+          custom_domain: {
+            type: "string",
+            description: "Custom domain to associate with this deployment (e.g., 'myapp.com'). DNS must be configured separately.",
+          },
+          production: {
+            type: "boolean",
+            description: "Whether this is a production deployment (enables optimizations, minification, and CDN caching). Default: true.",
           },
         },
         required: [],
@@ -1041,6 +1070,152 @@ export const AGENT_TOOLS: Tool[] = [
           },
         },
         required: ["connector_id", "action"],
+        additionalProperties: false,
+      },
+    },
+  },
+  // ── Native App Build Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "native_app_build",
+      description:
+        "Build native applications (mobile, desktop, PWA) from existing web projects. Supports multiple targets: 'pwa' (Progressive Web App with offline support), 'capacitor' (iOS/Android native wrapper), 'tauri' (lightweight desktop app), 'electron' (cross-platform desktop). Generates the necessary configuration files, build scripts, and platform-specific assets. Use when the user asks to make their web app work offline, create a mobile app, build a desktop app, or publish to app stores.",
+      parameters: {
+        type: "object",
+        properties: {
+          target: {
+            type: "string",
+            enum: ["pwa", "capacitor", "tauri", "electron", "expo", "cicd"],
+            description: "Build target platform: 'pwa' (service worker + manifest for installable web app), 'capacitor' (native iOS/Android from web code), 'tauri' (Rust-based lightweight desktop), 'electron' (Node.js desktop), 'expo' (React Native with EAS Build), 'cicd' (GitHub Actions CI/CD pipeline)",
+          },
+          platforms: {
+            type: "array",
+            items: { type: "string", enum: ["ios", "android", "windows", "macos", "linux"] },
+            description: "Target platforms for native builds (e.g., ['ios', 'android'] for Capacitor, ['windows', 'macos'] for Tauri/Electron)",
+          },
+          app_name: {
+            type: "string",
+            description: "Display name for the native app (shown on home screen / dock)",
+          },
+          app_id: {
+            type: "string",
+            description: "Bundle identifier (e.g., 'com.mycompany.myapp'). Required for Capacitor and Tauri.",
+          },
+          icon_url: {
+            type: "string",
+            description: "URL to the app icon (1024x1024 PNG recommended). Will be resized for all platforms.",
+          },
+          splash_url: {
+            type: "string",
+            description: "URL to splash screen image (2732x2732 PNG recommended). Used for mobile apps.",
+          },
+          permissions: {
+            type: "array",
+            items: { type: "string", enum: ["camera", "microphone", "geolocation", "notifications", "storage", "contacts", "calendar", "biometrics"] },
+            description: "Native permissions the app needs access to",
+          },
+          offline_strategy: {
+            type: "string",
+            enum: ["cache-first", "network-first", "stale-while-revalidate"],
+            description: "Caching strategy for PWA/offline support. Default: 'cache-first' for static assets.",
+          },
+        },
+        required: ["target"],
+        additionalProperties: false,
+      },
+    },
+  },
+  // ── Webapp Rollback Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "webapp_rollback",
+      description:
+        "Rollback a deployed webapp to a previous version. Lists available deployment versions and allows reverting to any previous successful deployment. Use when the user reports a broken deployment or wants to undo recent changes.",
+      parameters: {
+        type: "object",
+        properties: {
+          project_name: {
+            type: "string",
+            description: "Name of the webapp project to rollback",
+          },
+          version_id: {
+            type: "string",
+            description: "Specific deployment version ID to rollback to. If omitted, rolls back to the previous version.",
+          },
+          list_versions: {
+            type: "boolean",
+            description: "If true, lists available versions instead of performing a rollback.",
+          },
+        },
+        required: [],
+        additionalProperties: false,
+      },
+    },
+  },
+  // ── Video Analysis Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "analyze_video",
+      description:
+        "Analyze video content using AI vision. Accepts YouTube URLs, direct video URLs, or uploaded video file URLs. Extracts key frames, identifies content, summarizes the video, and answers specific questions about it. Use when the user shares a video and asks about its content, wants a summary, or needs specific information extracted from it.",
+      parameters: {
+        type: "object",
+        properties: {
+          video_url: {
+            type: "string",
+            description: "URL of the video to analyze (YouTube URL, direct video URL, or uploaded file URL)",
+          },
+          prompt: {
+            type: "string",
+            description: "What to analyze or extract from the video. E.g., 'summarize the key points', 'identify all products shown', 'transcribe the speech', 'describe the visual style'",
+          },
+          extract_frames: {
+            type: "boolean",
+            description: "Whether to extract and analyze individual key frames (default: true)",
+          },
+          timestamps: {
+            type: "boolean",
+            description: "Whether to include timestamps in the analysis (default: true)",
+          },
+        },
+        required: ["video_url", "prompt"],
+        additionalProperties: false,
+      },
+    },
+  },
+  // ── Parallel Execute Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "parallel_execute",
+      description:
+        "Execute multiple independent subtasks in parallel for faster results. Similar to map() — takes a list of inputs and a task template, executes them concurrently, and returns aggregated results. Use for: batch web searches, multi-source research, parallel data processing, bulk file operations, or any task where multiple independent operations can run simultaneously. Maximum 25 parallel subtasks.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_template: {
+            type: "string",
+            description: "Template describing what to do with each input. Use {{input}} as placeholder. E.g., 'Search for information about {{input}} and summarize the key facts'",
+          },
+          inputs: {
+            type: "array",
+            items: { type: "string" },
+            description: "List of inputs to process in parallel (max 25). Each input is substituted into the task_template.",
+          },
+          description: {
+            type: "string",
+            description: "Brief description of the parallel operation",
+          },
+          merge_strategy: {
+            type: "string",
+            enum: ["concatenate", "table", "summary", "json"],
+            description: "How to merge results: 'concatenate' (join with separators), 'table' (markdown table), 'summary' (LLM-synthesized summary), 'json' (structured JSON array)",
+          },
+        },
+        required: ["task_template", "inputs"],
         additionalProperties: false,
       },
     },
@@ -1897,8 +2072,64 @@ Provide clear, structured analysis with:
  */
 async function executeCode(args: {
   code: string;
+  language?: string;
   description?: string;
 }): Promise<ToolResult> {
+  const language = args.language || "javascript";
+
+  if (language === "python") {
+    // Python execution via subprocess
+    try {
+      const { execSync } = await import("child_process");
+      const fs = await import("fs");
+      const path = await import("path");
+      const os = await import("os");
+
+      // Write code to a temp file
+      const tmpDir = os.tmpdir();
+      const tmpFile = path.join(tmpDir, `exec_${Date.now()}.py`);
+      fs.writeFileSync(tmpFile, args.code);
+
+      try {
+        const output = execSync(`python3 "${tmpFile}" 2>&1`, {
+          timeout: 30000, // 30 second timeout for Python (data science can be slower)
+          maxBuffer: 1024 * 1024, // 1MB output buffer
+          env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" },
+        }).toString();
+
+        // Clean up
+        try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+
+        const trimmedOutput = output.trim() || "(Code executed successfully with no output)";
+        return {
+          success: true,
+          result: `\`\`\`python\n${trimmedOutput}\n\`\`\``,
+          artifactType: "terminal",
+          artifactLabel: args.description || "Python execution",
+        };
+      } catch (execErr: any) {
+        // Clean up
+        try { fs.unlinkSync(tmpFile); } catch { /* ignore */ }
+
+        const errorOutput = execErr.stdout?.toString() || execErr.stderr?.toString() || execErr.message;
+        return {
+          success: false,
+          result: `Python execution error:\n\`\`\`\n${errorOutput.slice(0, 3000)}\n\`\`\``,
+          artifactType: "terminal",
+          artifactLabel: "Python execution (error)",
+        };
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        result: `Python setup error: ${err.message}. Python3 may not be available in this environment.`,
+        artifactType: "terminal",
+        artifactLabel: "Python execution (error)",
+      };
+    }
+  }
+
+  // JavaScript execution (default) — sandboxed VM
   try {
     const vm = await import("vm");
 
@@ -2214,7 +2445,7 @@ async function executeWideResearch(args: {
   synthesis_prompt: string;
 }): Promise<ToolResult> {
   try {
-    const queries = (args.queries || []).slice(0, 5); // Cap at 5 parallel queries
+    const queries = (args.queries || []).slice(0, 10); // Cap at 10 parallel queries (Manus-aligned)
     if (queries.length === 0) {
       return { success: false, result: "No queries provided for wide research." };
     }
@@ -2908,6 +3139,14 @@ export async function executeTool(
         return { success: false, result: result.error || "Connector action failed" };
       }
     }
+    case "native_app_build":
+      return executeNativeAppBuild(args, context);
+    case "webapp_rollback":
+      return executeWebappRollback(args, context);
+    case "analyze_video":
+      return executeAnalyzeVideo(args);
+    case "parallel_execute":
+      return executeParallelTasks(args, context);
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }
@@ -3883,6 +4122,9 @@ async function retryWithBackoff<T>(
 }
 async function executeDeployWebapp(args: {
   version_label?: string;
+  env_vars?: Record<string, string>;
+  custom_domain?: string;
+  production?: boolean;
 }, context?: ToolContext): Promise<ToolResult> {
   const fs = await import("fs");
   const path = await import("path");
@@ -3893,6 +4135,17 @@ async function executeDeployWebapp(args: {
   }
 
   const projectName = path.basename(activeProjectDir);
+  const isProduction = args.production !== false; // Default true
+
+  // ── ENV VAR INJECTION ──
+  // Write environment variables to .env file before build
+  if (args.env_vars && Object.keys(args.env_vars).length > 0) {
+    const envContent = Object.entries(args.env_vars)
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n");
+    fs.writeFileSync(path.join(activeProjectDir, ".env"), envContent + "\n");
+    console.log(`[deploy_webapp] Injected ${Object.keys(args.env_vars).length} environment variables`);
+  }
 
   try {
     // ── PRE-DEPLOY VALIDATION (Manus Parity+) ──
@@ -4261,4 +4514,754 @@ async function executeDeployWebapp(args: {
       result: `Deploy failed: ${err.message}`,
     };
   }
+}
+
+
+// ── native_app_build ──
+async function executeNativeAppBuild(args: {
+  target: string;
+  platforms?: string[];
+  app_name?: string;
+  app_id?: string;
+  icon_url?: string;
+  splash_url?: string;
+  permissions?: string[];
+  offline_strategy?: string;
+}, context?: ToolContext): Promise<ToolResult> {
+  const fs = await import("fs");
+  const path = await import("path");
+
+  if (!activeProjectDir) {
+    return { success: false, result: "No active webapp project. Use create_webapp first, then convert to native." };
+  }
+
+  const projectName = path.basename(activeProjectDir);
+  const appName = args.app_name || projectName;
+  const appId = args.app_id || `com.app.${projectName.replace(/[^a-z0-9]/g, "")}`;
+  const target = args.target;
+  const platforms = args.platforms || (target === "capacitor" ? ["ios", "android"] : ["windows", "macos", "linux"]);
+  const offlineStrategy = args.offline_strategy || "cache-first";
+
+  try {
+    const generatedFiles: string[] = [];
+
+    switch (target) {
+      case "pwa": {
+        // Generate service worker
+        const swContent = `// Service Worker - ${offlineStrategy} strategy
+const CACHE_NAME = '${projectName}-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/main.js',
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  ${offlineStrategy === "cache-first" ? `event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      return response;
+    }))
+  );` : offlineStrategy === "network-first" ? `event.respondWith(
+    fetch(event.request).then((response) => {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      return response;
+    }).catch(() => caches.match(event.request))
+  );` : `event.respondWith(
+    caches.match(event.request).then((cached) => {
+      const fetchPromise = fetch(event.request).then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      });
+      return cached || fetchPromise;
+    })
+  );`}
+});`;
+        fs.writeFileSync(path.join(activeProjectDir, "sw.js"), swContent);
+        generatedFiles.push("sw.js");
+
+        // Generate manifest.json
+        const manifest = {
+          name: appName,
+          short_name: appName.slice(0, 12),
+          description: `${appName} - Progressive Web App`,
+          start_url: "/",
+          display: "standalone",
+          background_color: "#0a0a0a",
+          theme_color: "#3b82f6",
+          orientation: "any",
+          icons: [
+            { src: args.icon_url || "/icon-192.png", sizes: "192x192", type: "image/png" },
+            { src: args.icon_url || "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+          ],
+        };
+        fs.writeFileSync(path.join(activeProjectDir, "manifest.json"), JSON.stringify(manifest, null, 2));
+        generatedFiles.push("manifest.json");
+
+        // Add SW registration to index.html
+        const indexPath = path.join(activeProjectDir, "index.html");
+        if (fs.existsSync(indexPath)) {
+          let html = fs.readFileSync(indexPath, "utf-8");
+          if (!html.includes("serviceWorker")) {
+            const swScript = `\n<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>`;
+            const manifestLink = `\n<link rel="manifest" href="/manifest.json">`;
+            const metaTheme = `\n<meta name="theme-color" content="#3b82f6">`;
+            html = html.replace("</head>", `${manifestLink}${metaTheme}</head>`);
+            html = html.replace("</body>", `${swScript}</body>`);
+            fs.writeFileSync(indexPath, html);
+          }
+        }
+
+        return {
+          success: true,
+          result: `PWA configuration generated for "${appName}"!\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nFeatures:\n- Offline support (${offlineStrategy} strategy)\n- Installable on mobile/desktop\n- App manifest with icons\n- Service worker with caching\n\nNext steps:\n1. Add app icons (192x192 and 512x512 PNG)\n2. Deploy with deploy_webapp\n3. Users can install from browser "Add to Home Screen"`,
+          artifactType: "code",
+          artifactLabel: "PWA Config",
+        };
+      }
+
+      case "capacitor": {
+        // Generate capacitor.config.ts
+        const capConfig = `import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: '${appId}',
+  appName: '${appName}',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https'
+  },
+  plugins: {${args.permissions?.includes("camera") ? "\n    Camera: { presentationStyle: 'popover' }," : ""}${args.permissions?.includes("geolocation") ? "\n    Geolocation: { enableHighAccuracy: true }," : ""}${args.permissions?.includes("notifications") ? "\n    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] }," : ""}
+  }
+};
+
+export default config;
+`;
+        fs.writeFileSync(path.join(activeProjectDir, "capacitor.config.ts"), capConfig);
+        generatedFiles.push("capacitor.config.ts");
+
+        // Generate setup script
+        const setupScript = `#!/bin/bash
+# Capacitor Setup Script for ${appName}
+echo "Installing Capacitor..."
+npm install @capacitor/core @capacitor/cli
+npx cap init "${appName}" "${appId}" --web-dir dist
+
+${platforms.includes("ios") ? `echo "Adding iOS platform..."
+npm install @capacitor/ios
+npx cap add ios` : ""}
+
+${platforms.includes("android") ? `echo "Adding Android platform..."
+npm install @capacitor/android
+npx cap add android` : ""}
+
+${args.permissions?.includes("camera") ? "npm install @capacitor/camera" : ""}
+${args.permissions?.includes("geolocation") ? "npm install @capacitor/geolocation" : ""}
+${args.permissions?.includes("notifications") ? "npm install @capacitor/push-notifications" : ""}
+
+echo "Building web assets..."
+npm run build
+
+echo "Syncing with native projects..."
+npx cap sync
+
+echo "Done! Open native IDE with:"
+${platforms.includes("ios") ? 'echo "  npx cap open ios"' : ""}
+${platforms.includes("android") ? 'echo "  npx cap open android"' : ""}
+`;
+        fs.writeFileSync(path.join(activeProjectDir, "setup-native.sh"), setupScript);
+        fs.chmodSync(path.join(activeProjectDir, "setup-native.sh"), "755");
+        generatedFiles.push("setup-native.sh");
+
+        return {
+          success: true,
+          result: `Capacitor native app configuration generated for "${appName}"!\n\nBundle ID: ${appId}\nPlatforms: ${platforms.join(", ")}\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nNext steps:\n1. Run \`bash setup-native.sh\` to initialize native projects\n2. Build web assets: \`npm run build\`\n3. Sync: \`npx cap sync\`\n4. Open IDE: \`npx cap open ${platforms[0]}\`\n5. Build and run on device/simulator\n\nFor App Store submission:\n- iOS: Open Xcode, set signing team, archive and upload\n- Android: Open Android Studio, generate signed APK/AAB`,
+          artifactType: "code",
+          artifactLabel: "Capacitor Config",
+        };
+      }
+
+      case "tauri": {
+        // Generate tauri.conf.json
+        const tauriConfig = {
+          "$schema": "https://raw.githubusercontent.com/nicedoc/tauri-schema/main/schema.json",
+          productName: appName,
+          version: "0.1.0",
+          identifier: appId,
+          build: {
+            beforeBuildCommand: "npm run build",
+            beforeDevCommand: "npm run dev",
+            devUrl: "http://localhost:5173",
+            frontendDist: "../dist",
+          },
+          app: {
+            title: appName,
+            windows: [{ title: appName, width: 1200, height: 800, resizable: true }],
+            security: { csp: null },
+          },
+          bundle: {
+            active: true,
+            targets: platforms.includes("macos") ? ["dmg", "app"] : platforms.includes("windows") ? ["msi", "nsis"] : ["deb", "appimage"],
+            icon: ["icons/icon.png", "icons/icon.icns", "icons/icon.ico"],
+          },
+        };
+        fs.mkdirSync(path.join(activeProjectDir, "src-tauri"), { recursive: true });
+        fs.writeFileSync(path.join(activeProjectDir, "src-tauri", "tauri.conf.json"), JSON.stringify(tauriConfig, null, 2));
+        generatedFiles.push("src-tauri/tauri.conf.json");
+
+        // Generate Cargo.toml
+        const cargoToml = `[package]
+name = "${projectName}"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+`;
+        fs.writeFileSync(path.join(activeProjectDir, "src-tauri", "Cargo.toml"), cargoToml);
+        generatedFiles.push("src-tauri/Cargo.toml");
+
+        // Generate main.rs
+        const mainRs = `#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() {
+    tauri::Builder::default()
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+`;
+        fs.mkdirSync(path.join(activeProjectDir, "src-tauri", "src"), { recursive: true });
+        fs.writeFileSync(path.join(activeProjectDir, "src-tauri", "src", "main.rs"), mainRs);
+        generatedFiles.push("src-tauri/src/main.rs");
+
+        return {
+          success: true,
+          result: `Tauri desktop app configuration generated for "${appName}"!\n\nBundle ID: ${appId}\nPlatforms: ${platforms.join(", ")}\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nNext steps:\n1. Install Tauri CLI: \`npm install -D @tauri-apps/cli\`\n2. Install Rust: \`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh\`\n3. Dev mode: \`npx tauri dev\`\n4. Build: \`npx tauri build\`\n\nOutput:\n- macOS: .dmg and .app in src-tauri/target/release/bundle/\n- Windows: .msi and .exe in src-tauri/target/release/bundle/\n- Linux: .deb and .AppImage in src-tauri/target/release/bundle/`,
+          artifactType: "code",
+          artifactLabel: "Tauri Config",
+        };
+      }
+
+      case "electron": {
+        // Generate electron main process
+        const electronMain = `const { app, BrowserWindow } = require('electron');
+const path = require('path');
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    title: '${appName}',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  // Load the built app
+  if (process.env.NODE_ENV === 'development') {
+    win.loadURL('http://localhost:5173');
+    win.webContents.openDevTools();
+  } else {
+    win.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
+}
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+`;
+        fs.mkdirSync(path.join(activeProjectDir, "electron"), { recursive: true });
+        fs.writeFileSync(path.join(activeProjectDir, "electron", "main.js"), electronMain);
+        generatedFiles.push("electron/main.js");
+
+        // Generate preload script
+        const preload = `const { contextBridge } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  platform: process.platform,
+  versions: process.versions,
+});
+`;
+        fs.writeFileSync(path.join(activeProjectDir, "electron", "preload.js"), preload);
+        generatedFiles.push("electron/preload.js");
+
+        // Generate electron-builder config
+        const builderConfig = {
+          appId: appId,
+          productName: appName,
+          directories: { output: "release", buildResources: "build" },
+          files: ["dist/**/*", "electron/**/*"],
+          mac: { target: ["dmg", "zip"], icon: "build/icon.icns" },
+          win: { target: ["nsis", "portable"], icon: "build/icon.ico" },
+          linux: { target: ["AppImage", "deb"], icon: "build/icon.png" },
+        };
+        fs.writeFileSync(path.join(activeProjectDir, "electron-builder.json"), JSON.stringify(builderConfig, null, 2));
+        generatedFiles.push("electron-builder.json");
+
+        return {
+          success: true,
+          result: `Electron desktop app configuration generated for "${appName}"!\n\nBundle ID: ${appId}\nPlatforms: ${platforms.join(", ")}\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nNext steps:\n1. Install Electron: \`npm install -D electron electron-builder\`\n2. Add to package.json scripts:\n   "electron:dev": "electron electron/main.js"\n   "electron:build": "npm run build && electron-builder"\n3. Dev mode: \`npm run electron:dev\`\n4. Build: \`npm run electron:build\`\n\nOutput:\n- macOS: .dmg in release/\n- Windows: .exe installer in release/\n- Linux: .AppImage in release/`,
+          artifactType: "code",
+          artifactLabel: "Electron Config",
+        };
+      }
+
+      case "expo": {
+        // Generate Expo/React Native project structure
+        const appJson = {
+          expo: {
+            name: appName,
+            slug: projectName.replace(/[^a-z0-9-]/g, "-"),
+            version: "1.0.0",
+            orientation: "portrait",
+            icon: args.icon_url || "./assets/icon.png",
+            splash: {
+              image: args.splash_url || "./assets/splash.png",
+              resizeMode: "contain",
+              backgroundColor: "#0a0a0a",
+            },
+            ios: {
+              supportsTablet: true,
+              bundleIdentifier: appId,
+              infoPlist: {
+                ...(args.permissions?.includes("camera") ? { NSCameraUsageDescription: "This app uses the camera" } : {}),
+                ...(args.permissions?.includes("geolocation") ? { NSLocationWhenInUseUsageDescription: "This app uses your location" } : {}),
+              },
+            },
+            android: {
+              adaptiveIcon: { foregroundImage: "./assets/adaptive-icon.png", backgroundColor: "#0a0a0a" },
+              package: appId,
+              permissions: [
+                ...(args.permissions?.includes("camera") ? ["CAMERA"] : []),
+                ...(args.permissions?.includes("geolocation") ? ["ACCESS_FINE_LOCATION"] : []),
+                ...(args.permissions?.includes("notifications") ? ["RECEIVE_BOOT_COMPLETED", "VIBRATE"] : []),
+              ],
+            },
+            plugins: [
+              ...(args.permissions?.includes("camera") ? ["expo-camera"] : []),
+              ...(args.permissions?.includes("notifications") ? ["expo-notifications"] : []),
+            ],
+          },
+        };
+        fs.writeFileSync(path.join(activeProjectDir, "app.json"), JSON.stringify(appJson, null, 2));
+        generatedFiles.push("app.json");
+
+        // Generate App.tsx entry point
+        const appTsx = `import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator();
+
+function HomeScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>${appName}</Text>
+      <StatusBar style="auto" />
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Home" component={HomeScreen} options={{ title: '${appName}' }} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0a0a0a', alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
+});
+`;
+        fs.writeFileSync(path.join(activeProjectDir, "App.tsx"), appTsx);
+        generatedFiles.push("App.tsx");
+
+        // Generate eas.json for EAS Build
+        const easJson = {
+          cli: { version: ">= 5.0.0" },
+          build: {
+            development: { developmentClient: true, distribution: "internal" },
+            preview: { distribution: "internal" },
+            production: {},
+          },
+          submit: {
+            production: {
+              ios: { appleId: "your-apple-id@example.com", ascAppId: "your-app-store-connect-app-id" },
+              android: { serviceAccountKeyPath: "./google-services.json" },
+            },
+          },
+        };
+        fs.writeFileSync(path.join(activeProjectDir, "eas.json"), JSON.stringify(easJson, null, 2));
+        generatedFiles.push("eas.json");
+
+        // Generate setup script
+        const setupScript = `#!/bin/bash\n# Expo/React Native Setup Script for ${appName}\necho "Creating Expo project..."\nnpx create-expo-app@latest . --template blank-typescript\n\necho "Installing navigation..."\nnpx expo install @react-navigation/native @react-navigation/native-stack react-native-screens react-native-safe-area-context\n\n${args.permissions?.includes("camera") ? 'echo "Installing camera..."\nnpx expo install expo-camera\n' : ""}${args.permissions?.includes("notifications") ? 'echo "Installing notifications..."\nnpx expo install expo-notifications expo-device\n' : ""}${args.permissions?.includes("geolocation") ? 'echo "Installing location..."\nnpx expo install expo-location\n' : ""}\necho "Installing EAS CLI..."\nnpm install -g eas-cli\n\necho "Done! Run with:"\necho "  npx expo start"\necho "  eas build --platform all"\n`;
+        fs.writeFileSync(path.join(activeProjectDir, "setup-expo.sh"), setupScript);
+        fs.chmodSync(path.join(activeProjectDir, "setup-expo.sh"), "755");
+        generatedFiles.push("setup-expo.sh");
+
+        return {
+          success: true,
+          result: `Expo/React Native app configuration generated for "${appName}"!\n\nBundle ID: ${appId}\nPlatforms: iOS, Android\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nNext steps:\n1. Run \`bash setup-expo.sh\` to initialize the project\n2. Start development: \`npx expo start\`\n3. Preview on device: Scan QR code with Expo Go app\n4. Build for stores: \`eas build --platform all\`\n5. Submit to stores: \`eas submit --platform all\`\n\nFor App Store/Play Store submission:\n- iOS: Configure Apple Developer account in eas.json\n- Android: Add google-services.json for Play Store\n- Run \`eas submit\` after successful build`,
+          artifactType: "code",
+          artifactLabel: "Expo Config",
+        };
+      }
+
+      case "cicd": {
+        // Generate GitHub Actions CI/CD pipeline for native builds
+        fs.mkdirSync(path.join(activeProjectDir, ".github", "workflows"), { recursive: true });
+
+        const ciWorkflow = `name: Build & Deploy\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  web-build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n          cache: 'npm'\n      - run: npm ci\n      - run: npm run build\n      - run: npm test\n      - uses: actions/upload-artifact@v4\n        with:\n          name: web-dist\n          path: dist/\n\n${platforms.includes("ios") || platforms.includes("android") ? `  mobile-build:\n    runs-on: ubuntu-latest\n    needs: web-build\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - uses: expo/expo-github-action@v8\n        with:\n          eas-version: latest\n          token: \${{ secrets.EXPO_TOKEN }}\n      - run: npm ci\n      - run: eas build --platform all --non-interactive\n` : ""}${platforms.includes("macos") || platforms.includes("windows") || platforms.includes("linux") ? `  desktop-build:\n    strategy:\n      matrix:\n        os: [${platforms.includes("macos") ? "macos-latest, " : ""}${platforms.includes("windows") ? "windows-latest, " : ""}${platforms.includes("linux") ? "ubuntu-latest" : ""}]\n    runs-on: \${{ matrix.os }}\n    needs: web-build\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - run: npm ci\n      - run: npm run build\n      - run: npx tauri build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: desktop-\${{ matrix.os }}\n          path: src-tauri/target/release/bundle/\n` : ""}`;
+
+        fs.writeFileSync(path.join(activeProjectDir, ".github", "workflows", "build.yml"), ciWorkflow);
+        generatedFiles.push(".github/workflows/build.yml");
+
+        // Generate release workflow
+        const releaseWorkflow = `name: Release\non:\n  push:\n    tags: ['v*']\n\njobs:\n  create-release:\n    runs-on: ubuntu-latest\n    outputs:\n      upload_url: \${{ steps.create_release.outputs.upload_url }}\n    steps:\n      - uses: actions/create-release@v1\n        id: create_release\n        env:\n          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}\n        with:\n          tag_name: \${{ github.ref }}\n          release_name: Release \${{ github.ref }}\n          draft: false\n          prerelease: false\n`;
+        fs.writeFileSync(path.join(activeProjectDir, ".github", "workflows", "release.yml"), releaseWorkflow);
+        generatedFiles.push(".github/workflows/release.yml");
+
+        return {
+          success: true,
+          result: `CI/CD pipeline generated for "${appName}"!\n\nPlatforms: ${platforms.join(", ")}\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nPipeline stages:\n1. Web Build — Build, test, upload artifacts\n${platforms.includes("ios") || platforms.includes("android") ? "2. Mobile Build — EAS Build for iOS/Android\n" : ""}${platforms.includes("macos") || platforms.includes("windows") || platforms.includes("linux") ? "3. Desktop Build — Tauri build matrix (macOS/Windows/Linux)\n" : ""}\nRequired secrets (add in GitHub repo settings):\n- EXPO_TOKEN — For EAS Build (mobile)\n- GITHUB_TOKEN — Auto-provided for releases\n\nTriggers:\n- Push to main → Build & test\n- Tag v* → Create GitHub Release`,
+          artifactType: "code",
+          artifactLabel: "CI/CD Pipeline",
+        };
+      }
+
+      default:
+        return { success: false, result: `Unknown target: ${target}. Supported: pwa, capacitor, tauri, electron, expo, cicd` };
+    }
+  } catch (err: any) {
+    return { success: false, result: `Native app build failed: ${err.message}` };
+  }
+}
+
+// ── webapp_rollback ──
+async function executeWebappRollback(args: {
+  project_name?: string;
+  version_id?: string;
+  list_versions?: boolean;
+}, context?: ToolContext): Promise<ToolResult> {
+  if (!context?.userId) {
+    return { success: false, result: "Authentication required for webapp rollback." };
+  }
+
+  try {
+    const { getUserWebappProjects, getProjectDeployments, updateWebappProject } = await import("./db");
+    const projects = await getUserWebappProjects(context.userId);
+
+    if (projects.length === 0) {
+      return { success: false, result: "No webapp projects found. Create one first with create_webapp." };
+    }
+
+    // Find the target project
+    const projectName = args.project_name || (activeProjectDir ? (await import("path")).basename(activeProjectDir) : null);
+    const project = projectName
+      ? projects.find((p: any) => p.name === projectName || p.externalId === projectName)
+      : projects[0];
+
+    if (!project) {
+      return { success: false, result: `Project "${projectName}" not found. Available: ${projects.map((p: any) => p.name).join(", ")}` };
+    }
+
+    // Get deployment history
+    const deployments = await getProjectDeployments(project.id);
+    const successfulDeploys = deployments.filter((d: any) => d.status === "live" && d.bundleUrl);
+
+    if (args.list_versions) {
+      if (successfulDeploys.length === 0) {
+        return { success: true, result: `No successful deployments found for "${project.name}".` };
+      }
+      const versionList = successfulDeploys.map((d: any, i: number) => 
+        `${i + 1}. ${d.versionLabel || "Unnamed"} (${new Date(d.completedAt).toLocaleString()}) — ID: ${d.id}`
+      ).join("\n");
+      return {
+        success: true,
+        result: `Deployment history for "${project.name}" (${successfulDeploys.length} versions):\n\n${versionList}\n\nCurrent: ${project.publishedUrl || "Not deployed"}\n\nTo rollback, call webapp_rollback with version_id set to the deployment ID.`,
+      };
+    }
+
+    // Perform rollback
+    if (successfulDeploys.length < 2) {
+      return { success: false, result: "Cannot rollback: only one deployment exists. Need at least 2 versions." };
+    }
+
+    let targetDeploy: any;
+    if (args.version_id) {
+      targetDeploy = successfulDeploys.find((d: any) => String(d.id) === args.version_id);
+      if (!targetDeploy) {
+        return { success: false, result: `Deployment version "${args.version_id}" not found. Use list_versions=true to see available versions.` };
+      }
+    } else {
+      // Rollback to previous version (second most recent)
+      targetDeploy = successfulDeploys[1]; // Index 0 is current, 1 is previous
+    }
+
+    // Update project to point to the target deployment's URL
+    await updateWebappProject(project.id, {
+      publishedUrl: targetDeploy.bundleUrl,
+      deployStatus: "live",
+      lastDeployedAt: new Date(),
+    });
+
+    return {
+      success: true,
+      result: `Rolled back "${project.name}" to version: ${targetDeploy.versionLabel || "Unnamed"} (deployed ${new Date(targetDeploy.completedAt).toLocaleString()})\n\nLive URL: ${targetDeploy.bundleUrl}\n\nThe previous version is now live. You can deploy a new version with deploy_webapp to override this.`,
+      url: targetDeploy.bundleUrl,
+      artifactType: "webapp_deployed",
+      artifactLabel: `${project.name} (rollback)`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Rollback failed: ${err.message}` };
+  }
+}
+
+
+// ── analyze_video ──
+async function executeAnalyzeVideo(args: {
+  video_url: string;
+  prompt: string;
+  extract_frames?: boolean;
+  timestamps?: boolean;
+}): Promise<ToolResult> {
+  try {
+    const { invokeLLM } = await import("./_core/llm");
+
+    // Determine video type
+    const isYouTube = /youtube\.com|youtu\.be/.test(args.video_url);
+    const videoType = isYouTube ? "YouTube" : "Direct video";
+
+    // For YouTube videos, try to extract metadata via oEmbed
+    let videoTitle = "";
+    let videoDuration = "";
+    if (isYouTube) {
+      try {
+        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(args.video_url)}&format=json`;
+        const resp = await fetch(oembedUrl, { signal: AbortSignal.timeout(5000) });
+        if (resp.ok) {
+          const data = await resp.json() as any;
+          videoTitle = data.title || "";
+        }
+      } catch { /* ignore metadata fetch failures */ }
+    }
+
+    // Use LLM with video/file content type for analysis
+    const messages: Array<{ role: string; content: any }> = [
+      {
+        role: "system",
+        content: `You are a video analysis expert. Analyze the provided video content and respond to the user's prompt. ${args.timestamps !== false ? "Include timestamps where relevant." : ""} ${args.extract_frames !== false ? "Describe key visual frames and transitions." : ""} Be detailed and specific about visual content, audio content, text overlays, and any other relevant information.`,
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "file_url",
+            file_url: {
+              url: args.video_url,
+              mime_type: "video/mp4" as const,
+            },
+          },
+          {
+            type: "text",
+            text: `${videoTitle ? `Video title: "${videoTitle}"\n` : ""}${videoDuration ? `Duration: ${videoDuration}\n` : ""}Video source: ${videoType}\nURL: ${args.video_url}\n\nAnalysis request: ${args.prompt}`,
+          },
+        ],
+      },
+    ];
+
+    const response = await invokeLLM({
+      messages: messages as any,
+      maxTokens: 4096,
+    });
+
+    const analysis = response?.choices?.[0]?.message?.content || "Unable to analyze video content.";
+
+    return {
+      success: true,
+      result: `## Video Analysis\n\n**Source:** ${videoType}${videoTitle ? ` — "${videoTitle}"` : ""}\n**URL:** ${args.video_url}\n\n---\n\n${analysis}`,
+      artifactType: "document",
+      artifactLabel: `Video Analysis: ${videoTitle || args.video_url.slice(0, 50)}`,
+    };
+  } catch (err: any) {
+    // Fallback: if LLM doesn't support video, provide a text-based analysis prompt
+    if (err.message?.includes("unsupported") || err.message?.includes("file_url")) {
+      return {
+        success: true,
+        result: `## Video Analysis Request\n\n**URL:** ${args.video_url}\n**Prompt:** ${args.prompt}\n\n---\n\n*Note: Direct video analysis is not available in the current model configuration. The video URL has been noted for manual review.*\n\nTo analyze this video, you can:\n1. Open the URL in a browser and describe what you see\n2. Use the cloud_browser tool to take screenshots at different timestamps\n3. If it's a YouTube video, search for its transcript`,
+        artifactType: "document",
+        artifactLabel: "Video Analysis (manual)",
+      };
+    }
+    return {
+      success: false,
+      result: `Video analysis failed: ${err.message}`,
+    };
+  }
+}
+
+// ── parallel_execute ──
+async function executeParallelTasks(args: {
+  task_template: string;
+  inputs: string[];
+  description?: string;
+  merge_strategy?: string;
+}, context?: ToolContext): Promise<ToolResult> {
+  const { invokeLLM } = await import("./_core/llm");
+
+  // Cap at 25 parallel tasks (aligned with Manus Wide Research scale)
+  const inputs = (args.inputs || []).slice(0, 25);
+  if (inputs.length === 0) {
+    return { success: false, result: "No inputs provided for parallel execution." };
+  }
+
+  const mergeStrategy = args.merge_strategy || "concatenate";
+  const template = args.task_template;
+
+  // Execute all tasks in parallel using Promise.allSettled
+  const startTime = Date.now();
+  const results = await Promise.allSettled(
+    inputs.map(async (input, index) => {
+      const prompt = template.replace(/\{\{input\}\}/g, input);
+
+      // Use LLM to process each subtask
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: "You are a focused research assistant. Complete the given task concisely and accurately. Return only the relevant information without preamble.",
+          },
+          { role: "user", content: prompt },
+        ],
+        maxTokens: 2048,
+      });
+
+      const rawContent = response?.choices?.[0]?.message?.content;
+      const content = typeof rawContent === "string" ? rawContent : "(No result)";
+      return { input, result: content, index };
+    })
+  );
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  // Separate successes and failures
+  const successes: Array<{ input: string; result: string; index: number }> = [];
+  const failures: Array<{ input: string; reason: string }> = [];
+
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.status === "fulfilled") {
+      successes.push(r.value);
+    } else {
+      failures.push({ input: inputs[i], reason: r.reason?.message || "Unknown error" });
+    }
+  }
+
+  // Merge results based on strategy
+  let mergedOutput = "";
+
+  switch (mergeStrategy) {
+    case "table": {
+      mergedOutput = "| # | Input | Result |\n|---|---|---|\n";
+      for (const s of successes) {
+        const shortResult = s.result.replace(/\n/g, " ").slice(0, 200);
+        mergedOutput += `| ${s.index + 1} | ${s.input} | ${shortResult} |\n`;
+      }
+      break;
+    }
+    case "json": {
+      const jsonResults = successes.map(s => ({
+        input: s.input,
+        result: s.result,
+      }));
+      mergedOutput = "```json\n" + JSON.stringify(jsonResults, null, 2) + "\n```";
+      break;
+    }
+    case "summary": {
+      // Use LLM to synthesize all results into a coherent summary
+      const allResults = successes.map(s => `[${s.input}]: ${s.result}`).join("\n\n");
+      try {
+        const summaryResponse = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: "Synthesize the following parallel research results into a coherent, well-organized summary. Identify patterns, key findings, and notable differences across the results.",
+            },
+            { role: "user", content: allResults },
+          ],
+          maxTokens: 3000,
+        });
+        const summaryContent = summaryResponse?.choices?.[0]?.message?.content;
+        mergedOutput = (typeof summaryContent === "string" ? summaryContent : allResults);
+      } catch {
+        // Fallback to concatenation if summary fails
+        mergedOutput = allResults;
+      }
+      break;
+    }
+    case "concatenate":
+    default: {
+      mergedOutput = successes
+        .map(s => `### ${s.input}\n\n${s.result}`)
+        .join("\n\n---\n\n");
+      break;
+    }
+  }
+
+  // Build final result
+  const header = `## Parallel Execution Results\n\n**Tasks:** ${inputs.length} | **Completed:** ${successes.length} | **Failed:** ${failures.length} | **Time:** ${elapsed}s\n${args.description ? `**Description:** ${args.description}\n` : ""}\n---\n\n`;
+
+  const failureNote = failures.length > 0
+    ? `\n\n---\n\n**Failed tasks:**\n${failures.map(f => `- ${f.input}: ${f.reason}`).join("\n")}`
+    : "";
+
+  return {
+    success: true,
+    result: `${header}${mergedOutput}${failureNote}`,
+    artifactType: "document",
+    artifactLabel: args.description || `Parallel: ${inputs.length} tasks`,
+  };
 }

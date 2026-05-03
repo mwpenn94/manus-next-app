@@ -142,6 +142,7 @@ import { streamWithRetry, getStreamErrorMessage, isStreamErrorMessage } from "@/
 import { buildStreamCallbacks, type StreamState } from "@/lib/buildStreamCallbacks";
 import InConversationSearch, { useConversationSearch } from "@/components/InConversationSearch";
 import TaskReplayOverlay from "@/components/TaskReplayOverlay";
+import ReasoningDepthIndicator from "@/components/ReasoningDepthIndicator";
 import TaskStepProgressIndicator from "@/components/TaskStepProgressIndicator";
 import TaskArtifactGallery from "@/components/TaskArtifactGallery";
 import TaskReplayViewer from "@/components/TaskReplayViewer";
@@ -2576,6 +2577,7 @@ export default function TaskView() {
   const [tokenUsage, setTokenUsage] = useState<{ prompt_tokens: number; completion_tokens: number; total_tokens: number; turn: number } | null>(null);
   const [knowledgeRecalled, setKnowledgeRecalled] = useState<{ count: number; keys: string[] } | null>(null);
   const [aegisMeta, setAegisMeta] = useState<{ classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null>(null);
+  const [reasoningDepth, setReasoningDepth] = useState<{ turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number } | null>(null);
   const [connectorContext, setConnectorContext] = useState<{ id: string; name: string; relevanceScore: number }[] | null>(null);
   const [mobileWorkspaceOpen, setMobileWorkspaceOpen] = useState(false);
 
@@ -3068,7 +3070,7 @@ export default function TaskView() {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-          updateMessageCard, setAegisMeta, setConnectorContext,
+          updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
           setStreamInlineCards,
           getTaskMessages: () => task?.messages || [],
@@ -3198,7 +3200,7 @@ export default function TaskView() {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
           updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-          updateMessageCard, setAegisMeta, setConnectorContext,
+          updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
           setStreamInlineCards,
           getTaskMessages: () => task?.messages || [],
@@ -3419,7 +3421,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta, setConnectorContext,
+        updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
@@ -3508,7 +3510,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta, setConnectorContext,
+        updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
@@ -3613,7 +3615,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta, setConnectorContext,
+        updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
@@ -3699,7 +3701,7 @@ export default function TaskView() {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
         updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
-        updateMessageCard, setAegisMeta, setConnectorContext,
+        updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
         setStreamInlineCards,
         getTaskMessages: () => task?.messages || [],
@@ -4613,6 +4615,8 @@ export default function TaskView() {
                     className="mb-2"
                   />
                 )}
+                {/* Reasoning Depth Indicator — real-time cognitive state transparency */}
+                <ReasoningDepthIndicator data={reasoningDepth} isStreaming={streaming} className="mb-2" />
                 {/* Streaming text content — renders ABOVE action steps (Manus parity: agent speaks first, then shows work) */}
                 {streamContent && (
                   <div className="text-sm text-foreground prose prose-sm prose-themed max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 mb-2">

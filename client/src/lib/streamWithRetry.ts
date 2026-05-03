@@ -48,6 +48,8 @@ export interface StreamCallbacks {
   onAegisMeta?: (data: { classification?: { taskType: string; complexity: string; novelty: string; confidence: number }; quality?: { completeness: number; accuracy: number; relevance: number; clarity: number; efficiency: number; overall: number }; planSteps?: string[]; cached?: boolean; improvements?: string[] }) => void;
   /** Connector context — which connected services were injected into agent context */
   onConnectorContext?: (data: { id: string; name: string; relevanceScore: number }[]) => void;
+  /** Reasoning depth transparency — real-time cognitive state of the agent */
+  onReasoningDepth?: (data: { turn: number; maxTurns: number; thinkingBudget: number; contextUtilization: number; contextTokens: number; contextCapacity: number; continuationRound: number; mode: string; toolCallsCompleted: number }) => void;
 }
 
 export interface StreamOptions {
@@ -112,6 +114,7 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.knowledge_recalled && callbacks.onKnowledgeRecalled) callbacks.onKnowledgeRecalled(data.knowledge_recalled);
     if (data.aegis_meta && callbacks.onAegisMeta) callbacks.onAegisMeta(data.aegis_meta);
     if (data.connectorContext && callbacks.onConnectorContext) callbacks.onConnectorContext(data.connectorContext);
+    if (data.reasoning_depth && callbacks.onReasoningDepth) callbacks.onReasoningDepth(data.reasoning_depth);
     if (data.error) {
       // Detect credit exhaustion errors and dispatch global event for the banner
       const errMsg = (data.error || "").toLowerCase();

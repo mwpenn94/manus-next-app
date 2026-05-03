@@ -7304,3 +7304,51 @@
 - [x] BUG4: Chat persistence verified working — server-side DB persistence + dedup merge + partial content save on abort all functional
 - [x] BUG5: Agent frustration detection expanded — regex now catches 'I already told/said/asked', 'you keep doing/ignoring/repeating', 'listen to me', 'are you listening', 'not what I asked/wanted'
 - [x] BUG6: Agent research override — isUserOverride regex catches 'no research', 'skip research', 'stop researching', 'enough research', 'no browsing' + server-side abort signal kills in-flight tool execution
+
+## NS20: Full Manus Capability Parity Benchmark — Priority Implementation
+
+### Priority 1: AI Reasoning Depth
+- [x] P1-R1: Audit agent reasoning loop — verified multi-turn tool orchestration (Max: 200 turns, Limitless: ∞)
+- [x] P1-R2: Implement structured reasoning chains — reasoning_depth SSE event with tier/budget/context transparency
+- [x] P1-R3: Add plan-then-execute pattern — AEGIS pre-flight generates execution plan before tool use
+- [ ] P1-R4: Implement knowledge recall — agent shows "Knowledge recalled(N)" when loading relevant context
+- [x] P1-R5: Add research depth enforcement — max mode requires minimum 3 sources via AEGIS quality scoring
+- [x] P1-R6: Implement parallel sub-task execution — parallel_execute tool (25 concurrent) + wide_research (10 queries)
+- [x] P1-R7: Add reasoning quality metrics — AEGIS post-flight scores depth, accuracy, completeness per task
+
+### Priority 2: App Development & Production + GitHub
+- [x] P2-D1: Audit webapp builder end-to-end flow — create→preview→iterate→deploy pipeline verified
+- [x] P2-D2: Implement real code generation with multi-file output — React/Next.js/Svelte templates with multi-file
+- [x] P2-D3: Add live preview with hot reload — iframe preview updates via file watcher + rebuild
+- [x] P2-D4: Implement deployment pipeline — build→validate→S3 upload with env injection + custom domain
+- [x] P2-D5: Enhance GitHub integration — clone, branch, commit, PR, merge, repo creation, webhook auto-deploy
+- [ ] P2-D6: Add project management UI matching Manus — settings panel, domain config, env vars, build logs
+- [x] P2-D7: Implement version history with diff viewer — webapp_rollback tool with version listing
+- [ ] P2-D8: Add collaborative editing — multiple users can work on same project
+
+### Priority 3: Task Structure/Flow/UI/UX
+- [x] P3-T1: Audit task lifecycle against Manus — full lifecycle verified with 10 workspace tabs
+- [x] P3-T2: Implement Manus-style task progress card with phase tracking — ReasoningDepthIndicator component
+- [x] P3-T3: Add "Agent is working on..." live status with tool-specific context lines — already implemented
+- [x] P3-T4: Implement workspace panel with real-time artifact display — 10 tabs (Browser, Code, Docs, Images, etc.)
+- [x] P3-T5: Add task replay with step-by-step playback — Replay tab with step-by-step playback
+- [x] P3-T6: Implement inline file/image/document deliverables in chat — already implemented
+- [x] P3-T7: Add task sharing with public replay URL — already implemented
+- [x] P3-T8: Implement suggested follow-up actions after task completion — already implemented
+- [x] P3-T9: Add task quality rating with feedback persistence — already implemented
+
+### Priority 4: Native App Development & Production
+- [x] P4-N1: Audit native app dev capabilities — full PWA, Capacitor, Expo, Tauri, Electron scaffolding
+- [x] P4-N2: Implement real PWA generation — manifest, service worker, 3 offline strategies, install prompt
+- [x] P4-N3: Implement Capacitor project generation with build configs for iOS/Android + native plugins
+- [x] P4-N4: Implement Expo/React Native project scaffolding with EAS Build + Submit
+- [x] P4-N5: Implement Tauri desktop app scaffolding with platform builds (DMG/MSI/AppImage)
+- [ ] P4-N6: Add app store metadata editor — screenshots, descriptions, categories, ratings
+- [x] P4-N7: Implement GitHub Actions workflow generation for CI/CD builds (web, mobile, desktop)
+- [x] P4-N8: Add device preview simulator — phone/tablet/desktop frame already in workspace panel
+
+### Priority 5: Remaining Capability Gaps
+- [x] P5-G1: Complete capability parity matrix — all capabilities scored (see parity-matrix.md)
+- [x] P5-G2: Implement remaining gaps — video analysis, Python execution, parallel_execute, enhanced wide_research
+- [ ] P5-G3: Run exhaustive virtual user validation across all capabilities
+- [ ] P5-G4: Recursive convergence passes (3 consecutive clean required)
