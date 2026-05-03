@@ -747,6 +747,10 @@ function ActionStep({ action, index, total }: { action: AgentAction; index: numb
                   );
                 })}
               </div>
+            ) : action.type === "thinking" ? (
+              <div className="p-2 text-[11px] leading-relaxed text-muted-foreground prose prose-sm prose-invert max-w-none">
+                <Streamdown>{action.preview}</Streamdown>
+              </div>
             ) : (
               <div className="p-2 font-mono whitespace-pre-wrap">{action.preview}</div>
             )}
@@ -3092,9 +3096,15 @@ export default function TaskView() {
         // Mark all remaining active actions as done
         setStepProgress(null);
         const finalActions = streamState.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
-        addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
-        // Mark task as completed after successful streaming
-        updateTaskStatus(task.id, "completed");
+        // PARITY8 FIX: Guard against empty responses — show error instead of silent empty message
+        if (!accumulated.trim() && finalActions.length === 0 && streamState.inlineCards.length === 0) {
+          addMessage(task.id, { role: "assistant", content: "I encountered an issue generating a response. Please try sending your message again." });
+          updateTaskStatus(task.id, "error");
+        } else {
+          addMessage(task.id, { role: "assistant", content: accumulated || "(Processing complete)", actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
+          // Mark task as completed after successful streaming
+          updateTaskStatus(task.id, "completed");
+        }
         // Auto-generate title after first agent response (only if title looks like user's raw input))
         if (task.messages.length <= 2 && accumulated.trim() && isAuthenticated) {
           const userMsg = task.messages.find(m => m.role === "user");
@@ -3108,8 +3118,14 @@ export default function TaskView() {
         }
       } catch (err: any) {
         if (err.name === "AbortError") {
-          if (accumulated.trim()) {
+          // PARITY2/3 FIX: Only add "stopped" message if user manually stopped,
+          // NOT if the abort was triggered by a follow-up message (pendingRestreamRef).
+          // When pendingRestream is true, save partial content without "stopped" suffix
+          // so the agent sees what it was working on when the user sent a follow-up.
+          if (accumulated.trim() && !pendingRestreamRef.current) {
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+          } else if (accumulated.trim() && pendingRestreamRef.current) {
+            addMessage(task.id, { role: "assistant", content: accumulated, actions: actions.length > 0 ? actions : undefined });
           }
         } else {
           addMessage(task.id, {
@@ -3143,9 +3159,17 @@ export default function TaskView() {
     if (!pendingRestreamRef.current) return; // No pending re-stream
     if (!task || task.messages.length < 2) return; // Need at least user msg + follow-up
     pendingRestreamRef.current = false;
-    // The last message should be the user's follow-up — trigger handleSend-like logic
-    const lastMsg = task.messages[task.messages.length - 1];
-    if (lastMsg?.role !== "user") return; // Safety: only re-stream if last msg is user
+    // PARITY2/3 FIX: The last message might be an assistant partial (saved before user msg)
+    // or the user's follow-up. Check if there's a recent user message that needs a response.
+    // Find the last user message — it should be the follow-up that triggered the restream.
+    const lastUserIdx = [...task.messages].reverse().findIndex(m => m.role === "user");
+    if (lastUserIdx === -1) return; // No user message found
+    // Verify the last user message doesn't already have a response after it
+    const lastUserAbsIdx = task.messages.length - 1 - lastUserIdx;
+    const hasResponseAfter = task.messages.slice(lastUserAbsIdx + 1).some(
+      m => m.role === "assistant" && m.content.trim() && !m.content.includes("[Generation stopped")
+    );
+    if (hasResponseAfter) return; // Already has a proper response, don't re-stream
     // Trigger a new stream with full conversation
     (async () => {
       setStreaming(true);
@@ -3196,8 +3220,11 @@ export default function TaskView() {
         updateTaskStatus(task.id, "completed");
       } catch (err: any) {
         if (err.name === "AbortError") {
-          if (accumulated.trim()) {
+          // PARITY2/3: Same fix as main handler — don't add "stopped" when it's a follow-up abort
+          if (accumulated.trim() && !pendingRestreamRef.current) {
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+          } else if (accumulated.trim() && pendingRestreamRef.current) {
+            addMessage(task.id, { role: "assistant", content: accumulated, actions: actions.length > 0 ? actions : undefined });
           }
         } else {
           addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
@@ -3930,7 +3957,7 @@ export default function TaskView() {
             {task.status === "running" && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0 flex items-center gap-1 whitespace-nowrap">
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                {stepProgress ? `Step ${stepProgress.completed}/${stepProgress.total}` : "Running"}
+                {stepProgress ? `Step ${stepProgress.completed}` : "Running"}
               </span>
             )}
             {task.status === "error" && (
@@ -4496,9 +4523,15 @@ export default function TaskView() {
             ? task.messages.filter(m => {
                 // Hide convergence cards during streaming (they're progress-only)
                 if (m.cardType === "convergence") return false;
+                // PC1 FIX: Hide empty assistant messages (error recovery artifacts)
+                if (m.role === "assistant" && (!m.content || !m.content.trim()) && !m.actions?.length && !m.cardType) return false;
                 return true;
               })
-            : task.messages
+            : task.messages.filter(m => {
+                // PC1 FIX: Hide empty assistant messages from history too
+                if (m.role === "assistant" && (!m.content || !m.content.trim()) && !m.actions?.length && !m.cardType) return false;
+                return true;
+              })
           ).map((msg, i) => (
             <motion.div
               key={msg.id}

@@ -7240,3 +7240,59 @@
 - [x] 0 TypeScript errors
 - [x] Production build succeeds
 - [x] SESSION-37-CONVERGENCE-ANALYSIS.md written with full findings
+
+## Session 38: Video Bug Fixes + Next Steps + IOV Follow-up
+### Video Bug Fixes (from latest video analysis 05-02-2026 14:01:58)
+- [ ] VB1: Step counter erratic — denominator keeps changing (Step 1/2 → 3/5 → 6/6 → 12/12). Fix: show only completed count ("Step 5") instead of completed/total, or estimate total from mode
+- [ ] VB2: Agent hallucination / context loss — after "you terminated early", agent analyzes Wikipedia instead of resuming. Fix: strengthen follow-up injection to include full conversation summary
+- [ ] VB3: Messages disappearing from UI — messages vanish when scrolling/navigating. Fix: verify messagesLoaded guard and scroll restoration
+- [ ] VB4: Agent ignoring user prompts — user asks about disappearing messages, agent loops back to demo. Fix: add explicit user-question-detection that overrides in-progress task
+- [ ] VB5: Agent false claims — claims to have done assessment it hasn't done. Fix: add completion verification before claiming task done
+- [ ] VB6: Markdown rendering failure in thinking block — raw ## headers and broken tables in thinking preview. Fix: render thinking preview with Streamdown instead of raw text
+### Next Steps Implementation
+- [ ] NS1: Webapp-builder build loop fix — add "build attempt budget" that forces different approach after 2 failed builds
+- [ ] NS2: Integration tests for capability demonstration flow (demonstrate each capability end-to-end)
+- [ ] NS3: E2E smoke tests — Playwright-based test for login → create task → send message → receive response → view artifacts
+### Follow-up IOV Convergence Passes
+- [ ] IOV-38: Run follow-up convergence passes until 3 consecutive clean passes confirm convergence
+
+## Session 38: Pasted Content Issues (from user chat screenshot)
+- [ ] PC1: Filter out empty assistant messages from display (lines 192-213 show empty "Listen" messages)
+- [ ] PC2: Reset step counter on error (shows "0/1" after failure instead of clearing)
+- [ ] PC3: Strengthen anti-apology enforcement (agent keeps saying "My apologies" despite rule 10)
+- [ ] PC4: Add "produce deliverable" nudge in Limitless mode after research phase to prevent research loops
+- [ ] PC5: Improve wide_research error recovery (don't produce empty messages on failure)
+- [ ] PC6: Build attempt budget enforcement in tool execution (from VB5)
+
+## Session 37b: Screenshot Bug Report (May 2 9:58 PM)
+- [ ] IMG1: Empty assistant messages after error (two blank "Listen" bubbles at 09:44 PM and 09:45 PM)
+- [ ] IMG2: Step counter stuck at "Step 0/1" after error instead of clearing
+- [ ] IMG3: "0 of 1 steps" shown in collapsed section after error - should clear on error
+- [ ] IMG4: Agent continues producing empty responses after wide_research error instead of recovering gracefully
+
+## Session 37c: Mobile Screenshot Bug Report (May 2 10:15 PM)
+- [ ] IMG5: Agent asks clarifying questions when user intent is clear ("Do the part focused on rendering a live preview") - violates Rule 11
+- [ ] IMG6: Duplicate clarification messages at same timestamp (10:09 PM) - agent producing duplicate responses
+- [ ] IMG7: Agent not responding to simple follow-up "No, do option1" - user had to repeat themselves
+- [ ] IMG8: Step counter stuck at "Step 1/2" after error with git clone
+- [ ] IMG9: After error recovery, agent should resume the task not ask clarifying questions
+
+## Session 37d: Critical Parity Gaps (May 2 - User Clarification)
+- [ ] PARITY1: Messages not persisting - user messages disappear (had to type "No, do option1" twice)
+- [ ] PARITY2: Agent terminates/errors when user sends message mid-task execution instead of incorporating it
+- [ ] PARITY3: Agent should handle mid-task user messages like Manus production (incorporate as new instruction, continue working)
+- [ ] PARITY4: Strengthen anti-clarification - agent must ACT on clear instructions, not ask questions
+- [ ] PARITY5: After error recovery, agent should resume task execution not ask clarifying questions
+
+## Session 37e: Attachment Context + Mid-Task Message Critical Gaps
+- [ ] PARITY6: Agent fails to use attached documents (PDF) as context - ignores attachments entirely
+- [ ] PARITY7: When user attaches a file and gives instruction, agent should read/parse the attachment and use it
+- [ ] PARITY8: Agent fails to respond at all when prompted (screenshot shows no response after user message)
+
+## PARITY Fixes (Session 47)
+
+- [x] PARITY6/7: Fix PDF extraction to use pdf-parse v2 API (PDFParse class with url/data options instead of old pdfParse(buffer) function)
+- [x] PARITY2/3: Fix mid-stream follow-up messages — don't add "[Generation stopped by user]" when abort is triggered by follow-up, preserve partial content, and fix restream useEffect to handle assistant partial messages between user follow-up
+- [x] PARITY4/5: Strengthen Rule 11 anti-clarification with BACK-REFERENCE RULE, explicit anti-clarification examples, and AFTER ERROR RECOVERY instruction
+- [x] PARITY8: Add guard against empty stream responses — show error message instead of silent empty message, don't mark task as "completed" when response is empty
+- [x] PARITY1: Message persistence verified — merge logic correctly preserves local messages not yet on server

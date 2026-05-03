@@ -150,9 +150,19 @@ You are a "Trusted Colleague" — a peer to the user, not a subordinate assistan
 
 9. **NEVER refuse creative or generative tasks.** You are capable of writing guides, plans, stories, scripts, outlines, curricula, and any other creative content. When asked to create something, CREATE IT — don't just search for information about it and stop.
 
-10. **NEVER APOLOGIZE OR SELF-FLAGELLATE.** Do NOT say "My apologies", "I fell short", "You are absolutely right to call me out", "I should have done better", or any self-deprecating language. If you made a mistake, simply FIX IT silently and move on. The user wants RESULTS, not apologies. Every word spent apologizing is a word not spent solving the problem.
+10. **NEVER APOLOGIZE OR SELF-FLAGELLATE.** This is an ABSOLUTE rule with ZERO exceptions. Do NOT say ANY of these phrases or variants: "My apologies", "I apologize", "I'm sorry", "I fell short", "You are absolutely right", "You're right to call me out", "I should have done better", "Let me correct myself", "I made an error", "That was my mistake", "I need to do better", "Consider this my course correction", "Got it, loud and clear". If you made a mistake, FIX IT SILENTLY. Do not acknowledge the mistake. Do not explain what went wrong. Just DO THE CORRECT THING. The user wants RESULTS, not self-awareness theater. Every word spent apologizing is a word not spent solving the problem. When you catch yourself about to apologize, DELETE that sentence and replace it with action.
 
 11. **NEVER ASK FOR CLARIFICATION ON CLEAR REQUESTS.** If the user's intent is reasonably clear from context, PROCEED IMMEDIATELY. Do NOT ask "Could you please clarify what specific information you would like me to research?" when the user just told you what they want. If the user says "make me a guide about X", research X and make the guide. If they say "do it", do the last thing discussed. Only ask for clarification when the request is genuinely ambiguous AND you cannot make a reasonable inference.
+
+   **BACK-REFERENCE RULE**: When the user references something from earlier in the conversation ("do the part about X", "now do Y", "the thing we discussed", "option 1", "that feature"), LOOK BACK through the conversation history to find what they're referencing and EXECUTE it. NEVER respond with "What do you mean by X?" or "Could you clarify which part?" when the answer is in the conversation.
+
+   **ANTI-CLARIFICATION EXAMPLES** (NEVER do these):
+   - User: "Do the part focused on rendering a live preview" → WRONG: "What issue are you experiencing?" → RIGHT: Build/implement the live preview feature discussed earlier
+   - User: "No, do option 1" → WRONG: "Could you specify which option?" → RIGHT: Find "option 1" in conversation and execute it
+   - User: "Continue with the next step" → WRONG: "What step would you like?" → RIGHT: Look at what was being done and continue
+   - User: "Fix that bug" → WRONG: "Which bug?" → RIGHT: Find the most recently discussed bug and fix it
+
+   **AFTER ERROR RECOVERY**: If you just recovered from an error (tool failure, timeout, etc.), DO NOT ask the user what to do next. Instead, RESUME the task you were working on before the error occurred. Check the conversation history for what you were doing and continue from where you left off.
 
 11b. **PROPORTIONAL RESPONSE — DON'T OVER-ENGINEER.** Match your response complexity to the user's request:
    - Simple questions ("What is X?", "What are your capabilities?", "What's the date?") → Answer directly in text. NO tool calls needed.
@@ -944,7 +954,7 @@ ${memoryContext}
     }
 
     // Detect user frustration/complaints — force text-only response
-    const isUserFrustrated = /\b(why (did|didn't|is|isn't|are|aren't) (you|there|it|none|no)|you completed prematurely|I didn't ask|stop (doing|generating|making)|what happened|no response|not responding|broken|doesn't work|why is none|you ignored|ignoring me|wrong|that's not what I|I said)\b/i.test(lastUserText);
+    const isUserFrustrated = /\b(why (did|didn't|is|isn't|are|aren't) (you|there|it|none|no)|you completed prematurely|you terminated|terminated early|still terminated|I didn't ask|stop (doing|generating|making)|what (just )?happened to (my|your|it)|no response|not responding|broken|doesn't work|why is none|you ignored|ignoring me|wrong|that's not what I|I said|(my |the )?(messages?|response|output|text|content) disappeared|(you('re| are)) not done|didn't finish|did not (provide|finish|complete)|how is a user supposed|you didn't|you did not|why the hell|the hell is)\b/i.test(lastUserText);
     if (isUserFrustrated) {
       systemPrompt += `\n\n## USER FRUSTRATION DETECTED — TEXT-ONLY RESPONSE REQUIRED\nThe user appears frustrated or is complaining about your previous behavior. You MUST:\n1. Respond ONLY with text — do NOT call any tools.\n2. Acknowledge their concern directly and specifically.\n3. Explain what happened (if you can infer it from context).\n4. Ask how you can help them better.\nDo NOT generate images, documents, or run any tools. Just talk to the user.`;
     }
@@ -1085,7 +1095,15 @@ will seamlessly continue you with full context. Write as extensively as the task
     let appBuildingContinuations = 0; // Track how many times we've nudged the agent to continue building
     let consecutiveToolFailures = 0; // Track consecutive tool failures to break infinite failure loops
     const MAX_CONSECUTIVE_TOOL_FAILURES = 5; // Break the loop after 5 consecutive tool failures
-
+    // BUILD ATTEMPT BUDGET: Track repeated install_deps/run_command(npm build) failures
+    // to force the agent to try a different approach after 2 failures with similar packages
+    const buildAttemptHistory: { tool: string; args: string; failed: boolean }[] = [];
+     const MAX_SAME_BUILD_ATTEMPTS = 2; // After 2 failures with same approach, force different strategy
+    // PC4 FIX: Research budget for Limitless mode — after N consecutive research tools
+    // without producing a deliverable, nudge the agent to synthesize and deliver
+    let consecutiveResearchCalls = 0;
+    const RESEARCH_BUDGET_LIMIT = mode === "limitless" ? 8 : mode === "max" ? 6 : 4;
+    let deliverableNudgeSent = false;
     // ── Token usage tracking (Session 23: Context Window Indicator) ──
     let cumulativePromptTokens = 0;
     let cumulativeCompletionTokens = 0;
@@ -1109,48 +1127,73 @@ will seamlessly continue you with full context. Write as extensively as the task
     // ── PDF/File Preprocessing: Extract text from file_url attachments so the LLM can read them ──
     // Many LLM providers don't natively support file_url content parts for PDFs.
     // We extract the text server-side and convert file_url → text content.
+    // NOTE: pdf-parse v2 uses PDFParse class API (not the old pdfParse(buffer) function)
     for (let i = 0; i < conversation.length; i++) {
       const msg = conversation[i];
       if (msg.role === "user" && Array.isArray(msg.content)) {
         const newContent: any[] = [];
         for (const part of msg.content as any[]) {
           if (part.type === "file_url" && part.file_url?.mime_type === "application/pdf") {
-            // Extract PDF text server-side
+            // Extract PDF text server-side using pdf-parse v2 API
             try {
               const pdfUrl = part.file_url.url;
               console.log(`[Agent] Extracting text from PDF: ${pdfUrl.slice(0, 80)}...`);
-              const resp = await fetch(pdfUrl);
-              if (resp.ok) {
-                const buffer = Buffer.from(await resp.arrayBuffer());
-                const pdfParse = require("pdf-parse");
-                const parsed = await pdfParse(buffer);
-                const pdfText = parsed.text?.trim();
-                if (pdfText && pdfText.length > 0) {
-                  // Replace file_url with extracted text content
-                  newContent.push({
-                    type: "text",
-                    text: `[Attached PDF Content - ${parsed.numpages || '?'} pages]:\n\n${pdfText.slice(0, 100000)}${pdfText.length > 100000 ? '\n\n[...truncated, PDF has ' + pdfText.length + ' characters total]' : ''}`
-                  });
-                  console.log(`[Agent] PDF extracted: ${pdfText.length} chars, ${parsed.numpages} pages`);
-                } else {
-                  // PDF has no extractable text (scanned image PDF)
-                  newContent.push({
-                    type: "text",
-                    text: `[Attached PDF - ${parsed.numpages || '?'} pages, but no extractable text (likely a scanned/image PDF). The user attached this file — acknowledge it and work with whatever context is available from the conversation.]`
-                  });
-                  console.log(`[Agent] PDF has no extractable text (scanned?)`);
-                }
+              const { PDFParse } = require("pdf-parse");
+              // pdf-parse v2: try URL-based loading first (most reliable)
+              const parser = new PDFParse({ url: pdfUrl });
+              const result = await parser.getText();
+              const pdfText = result.text?.trim();
+              const pageCount = result.total || result.pages?.length || '?';
+              if (pdfText && pdfText.length > 0) {
+                // Replace file_url with extracted text content
+                newContent.push({
+                  type: "text",
+                  text: `[Attached PDF Content - ${pageCount} pages]:\n\n${pdfText.slice(0, 100000)}${pdfText.length > 100000 ? '\n\n[...truncated, PDF has ' + pdfText.length + ' characters total]' : ''}`
+                });
+                console.log(`[Agent] PDF extracted: ${pdfText.length} chars, ${pageCount} pages`);
               } else {
-                // Fetch failed — keep original and add note
-                newContent.push(part);
-                newContent.push({ type: "text", text: `[Note: PDF attachment was provided but could not be fetched. Proceed with available context.]` });
-                console.log(`[Agent] PDF fetch failed: ${resp.status}`);
+                // PDF has no extractable text (scanned image PDF)
+                newContent.push({
+                  type: "text",
+                  text: `[Attached PDF - ${pageCount} pages, but no extractable text (likely a scanned/image PDF). The user attached this file — acknowledge it and work with whatever context is available from the conversation.]`
+                });
+                console.log(`[Agent] PDF has no extractable text (scanned?)`);
               }
             } catch (err) {
-              // Extraction failed — keep original and add note
-              console.error(`[Agent] PDF extraction error:`, err);
-              newContent.push(part);
-              newContent.push({ type: "text", text: `[Note: PDF attachment was provided but text extraction failed. Proceed with available context and NEVER claim you cannot read attachments.]` });
+              // URL-based extraction failed — try fallback with buffer approach
+              console.error(`[Agent] PDF URL extraction error, trying buffer fallback:`, (err as Error).message);
+              try {
+                const pdfUrl = part.file_url.url;
+                const resp = await fetch(pdfUrl);
+                if (resp.ok) {
+                  const buffer = Buffer.from(await resp.arrayBuffer());
+                  const { PDFParse } = require("pdf-parse");
+                  const parser = new PDFParse({ data: buffer });
+                  const result = await parser.getText();
+                  const pdfText = result.text?.trim();
+                  const pageCount = result.total || result.pages?.length || '?';
+                  if (pdfText && pdfText.length > 0) {
+                    newContent.push({
+                      type: "text",
+                      text: `[Attached PDF Content - ${pageCount} pages]:\n\n${pdfText.slice(0, 100000)}${pdfText.length > 100000 ? '\n\n[...truncated, PDF has ' + pdfText.length + ' characters total]' : ''}`
+                    });
+                    console.log(`[Agent] PDF extracted (buffer fallback): ${pdfText.length} chars, ${pageCount} pages`);
+                  } else {
+                    newContent.push({
+                      type: "text",
+                      text: `[Attached PDF - ${pageCount} pages, but no extractable text (likely a scanned/image PDF). The user attached this file — acknowledge it and work with whatever context is available from the conversation.]`
+                    });
+                  }
+                } else {
+                  newContent.push(part);
+                  newContent.push({ type: "text", text: `[Note: PDF attachment was provided but could not be fetched (HTTP ${resp.status}). Proceed with available context.]` });
+                  console.log(`[Agent] PDF fetch failed: ${resp.status}`);
+                }
+              } catch (fallbackErr) {
+                console.error(`[Agent] PDF buffer fallback also failed:`, (fallbackErr as Error).message);
+                newContent.push(part);
+                newContent.push({ type: "text", text: `[Note: PDF attachment was provided but text extraction failed. Proceed with available context and NEVER claim you cannot read attachments.]` });
+              }
             }
           } else {
             newContent.push(part);
@@ -1335,6 +1378,7 @@ will seamlessly continue you with full context. Write as extensively as the task
           }
         }
         if (!effectiveChoice) {
+          sendSSE(safeWrite, { step_progress: null });
           sendSSE(safeWrite, { error: "No response from LLM after multiple retries", retryable: true });
           break;
         }
@@ -1506,6 +1550,20 @@ will seamlessly continue you with full context. Write as extensively as the task
               });
             }
 
+            // PC6/VB5 FIX: Track build/install attempts to detect repeated failures with same approach
+            if ((tn === "install_deps" || tn === "run_command") && ta.includes("build")) {
+              const buildKey = tn === "install_deps" ? pa.packages || "" : (pa.command || "").slice(0, 100);
+              buildAttemptHistory.push({ tool: tn, args: buildKey, failed: !result.success });
+              // Check if same approach failed MAX_SAME_BUILD_ATTEMPTS times
+              const recentSameAttempts = buildAttemptHistory.filter(h => h.tool === tn && h.args === buildKey && h.failed);
+              if (recentSameAttempts.length >= MAX_SAME_BUILD_ATTEMPTS && !result.success) {
+                console.log(`[Agent] Build budget: ${tn} with "${buildKey.slice(0, 50)}" failed ${recentSameAttempts.length} times — injecting strategy change`);
+                conversation.push({ role: "tool", content: `SYSTEM: This exact ${tn} approach has failed ${recentSameAttempts.length} times. You MUST try a DIFFERENT strategy: use different packages, different build tool, simplify the project, or remove problematic dependencies. Do NOT retry the same command.`, tool_call_id: toolCall.id, name: tn } as any);
+                completedToolCalls++;
+                sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
+                continue;
+              }
+            }
             // Track consecutive tool failures to prevent infinite failure loops
             if (!result.success) {
               consecutiveToolFailures++;
@@ -1522,11 +1580,34 @@ will seamlessly continue you with full context. Write as extensively as the task
             completedToolCalls++;
             sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
             conversation.push({ role: "tool", content: safeResult, tool_call_id: toolCall.id, name: tn } as any);
+
+            // PC4 FIX: Track research tool calls and nudge deliverable production
+            const RESEARCH_TOOLS = ["web_search", "wide_research", "read_webpage", "deep_research_content"];
+            const DELIVERABLE_TOOLS = ["generate_document", "generate_image", "generate_slides", "create_webapp", "create_file"];
+            if (RESEARCH_TOOLS.includes(tn)) {
+              consecutiveResearchCalls++;
+            } else if (DELIVERABLE_TOOLS.includes(tn)) {
+              consecutiveResearchCalls = 0; // Reset — agent is producing
+            }
+          }
+
+          // PC4 FIX: After exceeding research budget, inject deliverable nudge
+          if (consecutiveResearchCalls >= RESEARCH_BUDGET_LIMIT && !deliverableNudgeSent) {
+            deliverableNudgeSent = true;
+            console.log(`[Agent] Research budget exceeded (${consecutiveResearchCalls}/${RESEARCH_BUDGET_LIMIT}) — nudging to produce deliverable`);
+            conversation.push({
+              role: "user",
+              content: `IMPORTANT: You have now completed ${consecutiveResearchCalls} research operations. You have gathered enough information. STOP RESEARCHING and START PRODUCING the deliverable the user requested. Synthesize your research into the actual output NOW. Do not do any more web_search, wide_research, or read_webpage calls. Use generate_document, create_file, or write your response directly.`,
+            } as any);
           }
         } else {
           // No tool calls — just add the partial text
           conversation.push({ role: "assistant", content: textContent || "" });
           consecutiveToolFailures = 0; // Reset when agent produces text (not stuck in tool loop)
+          // PC4: If agent produces text after research, reset counter (it's synthesizing)
+          if (consecutiveResearchCalls > 0 && (textContent || "").length > 200) {
+            consecutiveResearchCalls = 0;
+          }
         }
         
         // Context compression: if conversation is getting very long, summarize older tool results
@@ -2568,6 +2649,8 @@ Do NOT use browser_action to test it — present confidently since the deploy su
       }
     }
     // Send error status BEFORE the error message so the client resets from "running"
+    // PC2 FIX: Reset step_progress on error so the counter clears
+    sendSSE(safeWrite, { step_progress: null });
     sendSSE(safeWrite, { status: "error" });
     sendSSE(safeWrite, { error: userMessage, retryable });
     safeEnd();

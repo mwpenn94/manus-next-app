@@ -96,7 +96,8 @@ function parseSSELine(line: string, callbacks: StreamCallbacks): boolean {
     if (data.document) callbacks.onDocument(data.document);
     if (data.done) callbacks.onDone(data.content || "");
     if (data.status) callbacks.onStatus(data.status, data.metadata);
-    if (data.step_progress) callbacks.onStepProgress(data.step_progress);
+    // PC2 FIX: Handle null step_progress (sent on error to clear the counter)
+    if (data.step_progress !== undefined) callbacks.onStepProgress(data.step_progress);
     if (data.webapp_preview) callbacks.onWebappPreview(data.webapp_preview);
     if (data.webapp_deployed && callbacks.onWebappDeployed) callbacks.onWebappDeployed(data.webapp_deployed);
     if (data.preview_refresh && callbacks.onPreviewRefresh) callbacks.onPreviewRefresh(data.preview_refresh);
