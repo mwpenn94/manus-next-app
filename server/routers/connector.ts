@@ -581,4 +581,25 @@ export const connectorRouter = router({
         lastSync: github.lastSyncAt,
       };
     }),
+
+    /**
+     * githubAuthHealth — Returns the health status of all GitHub auth layers.
+     * Used by the frontend to display the auth failover dashboard.
+     */
+    githubAuthHealth: protectedProcedure.query(async ({ ctx }) => {
+      const { getAuthLayerHealth } = await import("../services/githubAuthFailover");
+      return getAuthLayerHealth(ctx.user.id);
+    }),
+
+    /**
+     * storeSmartPat — Stores a Smart PAT (fine-grained token) for failover use.
+     * Called when user creates a new PAT via the Smart PAT wizard.
+     */
+    storeSmartPat: protectedProcedure
+      .input(z.object({ token: z.string().min(10).max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        const { storeSmartPat } = await import("../services/githubAuthFailover");
+        const success = await storeSmartPat(ctx.user.id, input.token);
+        return { success };
+      }),
   });

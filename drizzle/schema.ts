@@ -1612,3 +1612,46 @@ export const optimizationCycles = mysqlTable("optimization_cycles", {
 }));
 export type OptimizationCycle = typeof optimizationCycles.$inferSelect;
 export type InsertOptimizationCycle = typeof optimizationCycles.$inferInsert;
+
+
+// ── Orchestration Runs (multi-agent execution history) ──
+export const orchestrationRuns = mysqlTable("orchestration_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Unique external ID for client reference */
+  externalId: varchar("externalId", { length: 64 }).notNull().unique().$defaultFn(() => nanoid()),
+  userId: int("userId").notNull(),
+  /** The task that triggered this orchestration (optional) */
+  taskExternalId: varchar("taskExternalId", { length: 64 }),
+  /** The high-level goal that was decomposed */
+  goal: text("goal").notNull(),
+  /** Additional context provided to the supervisor */
+  context: text("context"),
+  /** Status of the orchestration run */
+  status: mysqlEnum("status", ["planning", "executing", "completed", "failed", "cancelled"]).default("planning").notNull(),
+  /** Number of agents spawned */
+  agentCount: int("agentCount").default(0).notNull(),
+  /** Number of tasks decomposed */
+  taskCount: int("taskCount").default(0).notNull(),
+  /** Number of tasks completed successfully */
+  completedCount: int("completedCount").default(0).notNull(),
+  /** Number of tasks that failed */
+  failedCount: int("failedCount").default(0).notNull(),
+  /** Average quality score across all completed tasks (0-1) */
+  avgQuality: int("avgQuality").default(0).notNull(), // stored as integer 0-100
+  /** Full orchestration plan as JSON (agents, tasks, dependencies) */
+  plan: json("plan"),
+  /** Individual task results as JSON array */
+  taskResults: json("taskResults"),
+  /** Final synthesized result text */
+  finalResult: text("finalResult"),
+  /** Execution duration in milliseconds */
+  durationMs: int("durationMs"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userIdx: index("orchestration_runs_user_idx").on(table.userId),
+  taskIdx: index("orchestration_runs_task_idx").on(table.taskExternalId),
+  statusIdx: index("orchestration_runs_status_idx").on(table.status),
+}));
+export type OrchestrationRun = typeof orchestrationRuns.$inferSelect;
+export type InsertOrchestrationRun = typeof orchestrationRuns.$inferInsert;

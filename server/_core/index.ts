@@ -793,7 +793,16 @@ async function startServer() {
       const userId = parseInt(req.query.uid as string, 10);
 
       if (!code || !stateRaw) {
-        return res.status(400).send(buildManusVerifyHtml(null, "Missing code or state parameter"));
+        // If code/state missing, this may be a direct navigation or broken redirect.
+        // Instead of showing a dead-end error page, redirect to connectors page with error context.
+        console.warn(`[Connector Manus Verify] Missing params: code=${!!code} state=${!!stateRaw} cid=${connectorId} uid=${userId} fullUrl=${req.originalUrl}`);
+        const origin = req.headers.origin || req.headers.referer?.replace(/\/[^/]*$/, '') || '';
+        if (connectorId) {
+          // Redirect back to connector page with error param so UI can show a toast
+          const redirectBase = origin || '';
+          return res.redirect(`${redirectBase}/connectors?auth_error=missing_params&connector=${encodeURIComponent(connectorId)}`);
+        }
+        return res.status(400).send(buildManusVerifyHtml(null, "Missing code or state parameter. Please try connecting again from the Connectors page."));
       }
       if (!connectorId || isNaN(userId)) {
         return res.status(400).send(buildManusVerifyHtml(null, "Missing connector ID or user ID"));

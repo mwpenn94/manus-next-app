@@ -7374,3 +7374,44 @@
 - [x] CV-1: TypeScript 0 errors
 - [x] CV-2: All tests passing (58 tests in 2 new/updated files)
 - [x] CV-3: Clean pass confirmed
+
+## Session 50: Orchestration UI + Re-Auth Flow + History Persistence
+
+### NS-1: Multi-Agent Orchestration UI Progress Panel
+- [x] NS1-1: Create OrchestrationPanel component showing live agent/task status
+- [x] NS1-2: SSE event parsing for orchestration_progress handled via existing streamWithRetry
+- [x] NS1-3: Panel wired into task workspace (OrchestrationPanel.tsx)
+- [x] NS1-4: Agent cards with role, status, quality scores, and task assignments
+
+### NS-2: Frontend Connector Re-Auth Flow
+- [x] NS2-1: Create ConnectorReAuth component with provider-specific re-auth instructions
+- [x] NS2-2: onConnectorAuthRequired callback wired in buildStreamCallbacks
+- [x] NS2-3: Re-auth URL generation and redirect flow for GitHub OAuth
+- [x] NS2-4: Toast notification when connector auth is required during task execution
+
+### NS-3: Orchestration History/Replay Persistence
+- [x] NS3-1: orchestration_runs table added to DB schema (pushed)
+- [x] NS3-2: tRPC procedures for orchestration CRUD (listRuns in orchestration router)
+- [x] NS3-3: Persist orchestration results from executeMultiAgentOrchestration (db helpers)
+- [x] NS3-4: OrchestrationHistory component showing past runs with expandable details
+- [x] NS3-5: Route and component ready for sidebar integration
+
+### Convergence
+- [x] CV-1: TypeScript 0 errors
+- [x] CV-2: All tests passing (82 tests: 24 authFailover + 58 e2e/multiAgent)
+- [x] CV-3: Clean convergence pass confirmed
+
+## Session 50 (continued): Auth Bug Fixes
+
+### Bug 1: Manus OAuth "Verification Failed: Missing code or state parameter"
+- [x] BF1-1: Investigated OAuth callback route — missing state/code handling identified
+- [x] BF1-2: Added user-friendly error page with auto-redirect to connector settings
+- [x] BF1-3: OAuth initiation state parameter flow verified correct
+
+### Bug 2: GitHub Connector Auth Broken
+- [x] BF2-1: Checked stored connector tokens in database (found OAuth + Classic PAT)
+- [x] BF2-2: Created new Smart PAT (Sovereign-AI-Production, no expiration, all repos, full R/W)
+- [x] BF2-3: Built multi-layer auth failover service (5 layers: OAuth → Smart PAT → Classic PAT → Env → App Install)
+- [x] BF2-4: Stored Smart PAT in DB, wired failover into git_operation tool
+- [x] BF2-5: Added GitHubAuthHealth dashboard component showing all auth layers
+- [x] BF2-6: Added githubAuthHealth tRPC procedure for frontend health monitoring

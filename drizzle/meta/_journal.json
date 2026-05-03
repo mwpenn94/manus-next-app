@@ -309,6 +309,13 @@
       "when": 1777756172344,
       "tag": "0043_mushy_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1777816361368,
+      "tag": "0044_lonely_killmonger",
+      "breakpoints": true
     }
   ]
 }

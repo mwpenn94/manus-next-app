@@ -4024,60 +4024,37 @@ async function executeGitOperation(args: {
         let tokenType = "unknown"; // "classic_pat" (ghp_), "fine_grained" (github_pat_), "oauth_app", "unknown"
         if (context?.userId && cloneUrl.includes("github.com")) {
           try {
-            const { getUserConnectors, updateConnectorOAuthTokens } = await import("./db");
-            const { validateAndRefreshGitHubToken } = await import("./connectorOAuth");
-            const conns = await getUserConnectors(context.userId);
-            const ghConn = conns.find((c: any) => c.connectorId === "github" && c.status === "connected");
-            if (ghConn?.accessToken) {
-              let token = ghConn.accessToken;
-              // Detect token type for better error messages
-              if (token.startsWith("ghp_")) tokenType = "classic_pat";
-              else if (token.startsWith("github_pat_")) tokenType = "fine_grained";
-              else if (token.startsWith("gho_")) tokenType = "oauth_app";
-              else if (token.startsWith("ghu_")) tokenType = "oauth_user";
+            // ── MULTI-LAYER AUTH FAILOVER (Session 50) ──
+            // Uses the 5-layer failover chain to resolve a valid GitHub token.
+            // Priority: OAuth → Smart PAT → Classic PAT → Env Fallback → App Install
+            const { resolveGitHubAuth } = await import("./services/githubAuthFailover");
+            const authResult = await resolveGitHubAuth({
+              userId: context.userId,
+              validate: true,
+              attemptRefresh: true,
+            });
+
+            if (authResult) {
+              let token = authResult.token;
+              // Map source to tokenType for error messages
+              if (authResult.source === "oauth") tokenType = "oauth_app";
+              else if (authResult.source === "smart_pat") tokenType = "fine_grained";
+              else if (authResult.source === "classic_pat") tokenType = "classic_pat";
+              else if (authResult.source === "env_fallback") tokenType = "env_fallback";
+              else if (authResult.source === "app_install") tokenType = "app_install";
               else tokenType = "unknown";
-
-              // PRE-OPERATION TOKEN VALIDATION (Session 49 fix)
-              // Validates the token BEFORE attempting git clone to provide
-              // actionable error messages instead of cryptic git failures.
-              const validation = await validateAndRefreshGitHubToken(token, ghConn.refreshToken);
-              if (!validation.valid) {
-                // Token is dead and cannot be refreshed
-                console.warn(`[git_operation] GitHub token validation failed: ${validation.error}`);
-                return {
-                  success: false,
-                  result: `GitHub authentication failed: ${validation.error}\n\nYour GitHub token has expired or been revoked. ` +
-                    `Standard GitHub OAuth tokens (gho_) do not support automatic refresh.\n\n` +
-                    `ACTION REQUIRED: Please reconnect your GitHub account in Settings → Connectors → GitHub → Reconnect.\n` +
-                    `CRITICAL: Do NOT retry this operation — the token must be refreshed first by the user.`,
-                  connectorAuthRequired: { connector: "github", reason: validation.error || "Token expired" },
-                };
-              }
-
-              // If token was refreshed, update it in the database
-              if (validation.accessToken && validation.accessToken !== token) {
-                token = validation.accessToken;
-                try {
-                  await updateConnectorOAuthTokens(ghConn.id, {
-                    accessToken: validation.accessToken,
-                    refreshToken: validation.newRefreshToken || undefined,
-                  });
-                  console.log(`[git_operation] GitHub token refreshed and persisted`);
-                } catch (persistErr: any) {
-                  console.warn(`[git_operation] Could not persist refreshed token: ${persistErr.message}`);
-                }
-              }
 
               // Inject validated token into HTTPS URL for authenticated clone
               cloneUrl = cloneUrl.replace("https://github.com/", `https://x-access-token:${token}@github.com/`);
               tokenUsed = true;
-              console.log(`[git_operation] Using GitHub token for authenticated clone (type: ${tokenType}, length: ${token.length}, prefix: ${token.slice(0, 8)}...)`);
+              console.log(`[git_operation] Using GitHub token via failover (source: ${authResult.source}, user: ${authResult.username})`);
             } else {
-              console.warn(`[git_operation] No GitHub access token found in connector. Attempting unauthenticated clone.`);
+              // All failover layers exhausted
+              console.warn(`[git_operation] All auth layers exhausted for user ${context.userId}. Attempting unauthenticated clone.`);
             }
           } catch (tokenErr: any) {
             // Fall back to unauthenticated clone
-            console.warn(`[git_operation] Could not get GitHub token: ${tokenErr.message}`);
+            console.warn(`[git_operation] Auth failover error: ${tokenErr.message}`);
           }
         }
         

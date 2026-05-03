@@ -58,4 +58,15 @@ export const orchestrationRouter = router({
     .mutation(async ({ input }) => {
       return incrementRetry(input.taskId);
     }),
+
+  /** List past multi-agent orchestration runs for history/replay */
+  listRuns: protectedProcedure
+    .input(z.object({
+      taskId: z.number().optional(),
+      limit: z.number().min(1).max(100).default(20),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const { getOrchestrationRuns } = await import("../db");
+      return getOrchestrationRuns(ctx.user.id, input?.taskId, input?.limit || 20);
+    }),
 });

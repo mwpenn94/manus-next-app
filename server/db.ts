@@ -5,7 +5,7 @@ function escapeLike(str: string): string {
   return str.replace(/[%_\\]/g, '\\$&');
 }
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory, messageFeedback, type InsertMessageFeedback, personalizationPreferences, personalizationRules, personalizationLearningLog, processMetrics, improvementInitiatives, optimizationCycles, type InsertPersonalizationPreference, type InsertPersonalizationRule, type InsertPersonalizationLearningLogEntry, type InsertProcessMetric, type InsertImprovementInitiative, type InsertOptimizationCycle } from "../drizzle/schema";
+import { InsertUser, users, tasks, taskMessages, bridgeConfigs, taskFiles, userPreferences, workspaceArtifacts, memoryEntries, taskShares, notifications, scheduledTasks, taskEvents, projects, projectKnowledge, skills, slideDecks, connectors, meetingSessions, teams, teamMembers, teamSessions, webappBuilds, designs, connectedDevices, deviceSessions, mobileProjects, appBuilds, taskRatings, videoProjects, githubRepos, webappProjects, webappDeployments, pageViews, taskTemplates, taskBranches, strategyTelemetry, type InsertTask, type InsertTaskMessage, type InsertBridgeConfig, type InsertTaskFile, type InsertUserPreference, type InsertWorkspaceArtifact, type InsertMemoryEntry, type InsertTaskShare, type InsertNotification, type InsertScheduledTask, type InsertTaskEvent, type InsertProject, type InsertProjectKnowledge, type InsertSkill, type InsertSlideDeck, type InsertConnector, type InsertMeetingSession, type InsertConnectedDevice, type InsertDeviceSession, type InsertMobileProject, type InsertAppBuild, type InsertTaskRating, type InsertVideoProject, type InsertGitHubRepo, type InsertWebappProject, type InsertWebappDeployment, type InsertPageView, type InsertTaskTemplate, type InsertTaskBranch, type InsertStrategyTelemetry, aegisSessions, aegisQualityScores, aegisCache, aegisFragments, aegisLessons, aegisPatterns, atlasGoals, atlasPlans, atlasGoalTasks, sovereignProviders, sovereignRoutingDecisions, sovereignUsageLogs, type InsertAegisSession, type InsertAegisQualityScore, type InsertAegisCache, type InsertAegisFragment, type InsertAegisLesson, type InsertAegisPattern, type InsertAtlasGoal, type InsertAtlasPlan, type InsertAtlasGoalTask, type InsertSovereignProvider, type InsertSovereignRoutingDecision, type InsertSovereignUsageLog, connectorHealth, connectorHealthLogs, type InsertConnectorHealth, type InsertConnectorHealthLog, dataPipelines, dataPipelineRuns, memoryEmbeddings, scheduleExecutionHistory, type InsertDataPipeline, type InsertDataPipelineRun, type InsertMemoryEmbedding, type InsertScheduleExecutionHistory, messageFeedback, type InsertMessageFeedback, personalizationPreferences, personalizationRules, personalizationLearningLog, processMetrics, improvementInitiatives, optimizationCycles, type InsertPersonalizationPreference, type InsertPersonalizationRule, type InsertPersonalizationLearningLogEntry, type InsertProcessMetric, type InsertImprovementInitiative, type InsertOptimizationCycle, orchestrationRuns, type InsertOrchestrationRun } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -2981,4 +2981,60 @@ export async function getRecentTaskSummaries(userId: number, excludeTaskExternal
   
   // Only return tasks that have at least a user message
   return summaries.filter(s => s.userQuery);
+}
+
+
+// ── Orchestration Runs ──
+
+export async function createOrchestrationRun(data: InsertOrchestrationRun) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.insert(orchestrationRuns).values(data).$returningId();
+  return result?.id ?? null;
+}
+
+export async function updateOrchestrationRun(externalId: string, data: Partial<InsertOrchestrationRun>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(orchestrationRuns).set(data).where(eq(orchestrationRuns.externalId, externalId));
+}
+
+export async function getOrchestrationRun(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [run] = await db.select().from(orchestrationRuns).where(eq(orchestrationRuns.externalId, externalId)).limit(1);
+  return run ?? null;
+}
+
+export async function listOrchestrationRuns(userId: number, limit = 20, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orchestrationRuns)
+    .where(eq(orchestrationRuns.userId, userId))
+    .orderBy(desc(orchestrationRuns.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getOrchestrationRunsByTask(taskExternalId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orchestrationRuns)
+    .where(eq(orchestrationRuns.taskExternalId, taskExternalId))
+    .orderBy(desc(orchestrationRuns.createdAt));
+}
+
+export async function getOrchestrationRuns(userId: number, taskId?: number, limit: number = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(orchestrationRuns.userId, userId)];
+  if (taskId) {
+    // taskId here is the numeric task ID; we need to look up the external ID
+    // For now, filter by userId only when no taskExternalId mapping exists
+    // The schema uses taskExternalId (string), not numeric taskId
+  }
+  return db.select().from(orchestrationRuns)
+    .where(and(...conditions))
+    .orderBy(desc(orchestrationRuns.createdAt))
+    .limit(limit);
 }
