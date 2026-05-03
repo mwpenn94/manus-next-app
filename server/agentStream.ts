@@ -1107,8 +1107,33 @@ will seamlessly continue you with full context. Write as extensively as the task
 
     // Resolve tier config — Speed, Quality, and Max have fixed (bounded) limits. Limitless has none.
     const tierConfig = getTierConfig(mode);
-    const { maxTurns, maxContinuationRounds } = tierConfig;
-    console.log(`[Agent] Tier: ${mode} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
+    let { maxTurns, maxContinuationRounds } = tierConfig;
+
+    // ═══════════════════════════════════════════════════════════════════
+    // SIMPLE QUERY DETECTION — Prevent over-research on trivial questions
+    // ═══════════════════════════════════════════════════════════════════
+    // When the user asks a simple factual question (math, definitions, yes/no),
+    // cap tool turns to 0 regardless of mode. This prevents the agent from
+    // burning tokens on research/GitHub tools for "What is 7+8?" type queries.
+    // Reuse lastUserMsg and lastUserText from line 937/955 (already in scope)
+    const simpleQueryText = typeof lastUserMsg?.content === "string" ? lastUserMsg.content : lastUserText;
+    const isSimpleQuery = (
+      // Math questions
+      /^\s*(what\s+is\s+)?\d+\s*[+\-*/×÷]\s*\d+/i.test(simpleQueryText) ||
+      /\b\d+\s*(plus|minus|times|divided by|multiplied by)\s*\d+\b/i.test(simpleQueryText) ||
+      // Very short factual questions (under 60 chars, starts with question word)
+      (simpleQueryText.length < 60 && /^\s*(what|who|when|where|how much|how many|is|are|does|do|can|will)\b/i.test(simpleQueryText) && !/\b(research|search|find|look up|build|create|generate|make|write|draft|design|analyze|compare|demonstrate|show me|deploy|clone|edit|explain in detail|comprehensive|thorough|deep dive)\b/i.test(simpleQueryText)) ||
+      // Explicit "one word" / "brief" / "short" answer requests
+      /\b(one\s*word|one\s*sentence|brief|short)\s*(answer|response)\b/i.test(simpleQueryText)
+    );
+    let isSimpleQueryMode = false;
+    if (isSimpleQuery) {
+      maxTurns = 1; // Allow 1 turn (text-only response), no tool calls
+      maxContinuationRounds = 0;
+      isSimpleQueryMode = true;
+      console.log(`[Agent] SIMPLE QUERY DETECTED: "${lastUserText.slice(0, 80)}" — capping to 1 turn, 0 continuations`);
+    }
+    console.log(`[Agent] Tier: ${mode}${isSimpleQueryMode ? ' (SIMPLE)' : ''} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
     
     let turn = 0;
     let finalContent = "";
@@ -1120,7 +1145,7 @@ will seamlessly continue you with full context. Write as extensively as the task
     let continuationRounds = 0; // Track consecutive auto-continuation rounds (Manus parity)
     let appBuildingContinuations = 0; // Track how many times we've nudged the agent to continue building
     let consecutiveToolFailures = 0; // Track consecutive tool failures to break infinite failure loops
-    const MAX_CONSECUTIVE_TOOL_FAILURES = 5; // Break the loop after 5 consecutive tool failures
+    const MAX_CONSECUTIVE_TOOL_FAILURES = 3; // Break the loop after 3 consecutive tool failures (reduced from 5 — users reported looping)
     // BUILD ATTEMPT BUDGET: Track repeated install_deps/run_command(npm build) failures
     // to force the agent to try a different approach after 2 failures with similar packages
     const buildAttemptHistory: { tool: string; args: string; failed: boolean }[] = [];
@@ -1237,23 +1262,37 @@ will seamlessly continue you with full context. Write as extensively as the task
         const repos = await getUserGitHubRepos(userId);
         if (repos.length > 0) {
           const repoList = repos.map(r => `- **${r.fullName}** (${r.defaultBranch || "main"})${r.description ? ` — ${r.description}` : ""}`).join("\n");
-          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES\nThe user has ${repos.length} GitHub repo(s) connected. These are REAL repositories with live data.\n\n${repoList}\n\n### CRITICAL: Always use real data, never just describe capabilities\nWhen the user mentions their repo, asks about it, or asks what you can do with it:\n1. **IMMEDIATELY call github_ops(mode: 'status', repo: '${repos.length === 1 ? repos[0].fullName : '<repo_name>'}')** to fetch live repo data\n2. Present REAL information: actual file count, languages, recent commits, open PRs, issues\n3. NEVER respond with just a list of tool descriptions — that is not helpful\n4. The user connected their repo because they want you to WORK WITH IT, not describe what you could theoretically do\n\n### Available operations:\n- **github_edit(instruction, repo)** — Edit files via AI-powered diff + atomic commit\n- **github_assess(mode, repo)** — Deep code quality analysis (assess/optimize/validate)\n- **github_ops(mode, repo)** — Branch management, PRs, releases, CI/CD, status checks\n\n### Auto-selection rule:\nIf the user doesn't specify which repo and they have only one, use it automatically. If multiple, ask which repo they mean.\n\n### Proactive behavior:\n- If the user says "you're connected to a repo" or "what do you know about it" → call github_ops(mode: 'status') FIRST, then respond with real data\n- If the user asks "what can you do with my repo" → call github_ops(mode: 'status') to show real data, THEN explain capabilities with examples specific to their repo\n- If the user asks to edit/fix/update code → use github_edit immediately, don't ask for confirmation to start\n- If the user asks about code quality → use github_assess immediately\n- If the user asks to "preview", "view", "show", or "load" their connected repo (READ intent) → use github_ops(status) + github_assess(assess) to READ and DISPLAY the repo contents.
-- If the user asks to "build", "deploy", "run", "host", "launch", or "render a live preview" of their connected repo (BUILD intent) → follow the LIVE PREVIEW WORKFLOW: github_ops(status) → git_operation(clone) → install_deps → deploy_webapp. This produces a real hosted URL.
+          systemPrompt += `\n\n## CONNECTED GITHUB REPOSITORIES
+The user has ${repos.length} GitHub repo(s) connected:
+
+${repoList}
+
+### IMPORTANT: Only use GitHub tools when the user EXPLICITLY asks about their repo
+Do NOT proactively call GitHub tools unless the user's message specifically mentions their repo, GitHub, code, commits, PRs, or similar topics.
+For questions unrelated to GitHub (math, general knowledge, research, etc.), IGNORE this section entirely.
+
+### Available operations (use ONLY when user asks about their repo):
+- **github_edit(instruction, repo)** — Edit files via AI-powered diff + atomic commit
+- **github_assess(mode, repo)** — Deep code quality analysis
+- **github_ops(mode, repo)** — Branch management, PRs, releases, status checks
+
+### When the user DOES ask about their repo:
+1. Call github_ops(mode: 'status', repo: '${repos.length === 1 ? repos[0].fullName : '<repo_name>'}') to fetch live data
+2. Present REAL information from the API response
+3. If they ask to edit/fix code → use github_edit
+4. If they ask about code quality → use github_assess
+5. If they ask to preview/view → use github_ops(status) + github_assess(assess)
+6. If they ask to build/deploy/run → github_ops(status) → git_operation(clone) → install_deps → deploy_webapp
+
+### Auto-selection rule:
+If only one repo is connected, use it automatically when the user asks about "my repo".
 
 ### GIT CLONE FAILURE RECOVERY
 If git_operation(clone) fails:
-1. **First failure**: Check the error message carefully. Common causes:
-   - "Authentication failed" → The GitHub token may be invalid or expired. Tell the user to reconnect their GitHub in Settings.
-   - "Repository not found" → Verify the repo name/URL is correct. Try with and without .git suffix.
-   - "Permission denied" → The token doesn't have repo scope. Suggest the user update their PAT.
-2. **Second failure with same error**: Do NOT retry the same command. Instead:
-   - Try cloning with the HTTPS URL directly (without token injection) if the repo is public.
-   - Use github_ops(status) to verify the repo exists and is accessible.
-   - Tell the user the specific error and suggest concrete fixes.
-3. **NEVER loop more than 2 clone attempts**. After 2 failures, present the error clearly and ask the user to fix the underlying issue (token permissions, repo visibility, etc.).
-4. Do NOT start researching "how to fix git clone" — the user wants ACTION, not research about their problem.
-- NEVER call create_webapp when the user is asking about a connected repo. create_webapp is for NEW projects from templates only.
-- When in doubt between READ and BUILD, ask: "Would you like me to show you the repo contents, or build and deploy a live preview?"`;
+1. Check the error message. Common causes: expired token, missing permissions, wrong repo name.
+2. Do NOT retry more than 2 times. After 2 failures, tell the user the specific error and suggest fixes.
+3. Do NOT research "how to fix git clone" — just report the error clearly.
+- NEVER call create_webapp for connected repos. create_webapp is for NEW projects only.`;
         }
       } catch (err) {
         console.warn("[Agent] Failed to load GitHub repos for context:", err);
@@ -1475,7 +1514,14 @@ If git_operation(clone) fails:
           break;
         }
       }
-      const toolCalls = assistantMessage?.tool_calls;
+      let toolCalls = assistantMessage?.tool_calls;
+      // SIMPLE QUERY GUARD: Strip tool_calls for trivial questions to prevent over-research.
+      // The LLM may still try to call tools (e.g., wide_research for "What is 7+8?") because
+      // the system prompt mentions capabilities. We suppress those calls entirely.
+      if (isSimpleQueryMode && toolCalls && toolCalls.length > 0) {
+        console.log(`[Agent] SIMPLE QUERY GUARD: Stripping ${toolCalls.length} tool call(s) for simple query`);
+        toolCalls = undefined;
+      }
       // Manus Parity: Thinking/reasoning content is a VISIBLE feature, not hidden.
       // Models may include reasoning in <think>...</think> tags or a separate `thinking` field.
       // We emit it as agent_thinking for the UI to render visibly (like Manus shows reasoning steps).
@@ -1631,7 +1677,7 @@ If git_operation(clone) fails:
             }
 
             // PC6/VB5 FIX: Track build/install attempts to detect repeated failures with same approach
-            if ((tn === "install_deps" || tn === "run_command") && ta.includes("build")) {
+            if ((tn === "install_deps" || tn === "run_command") && (ta.includes("build") || ta.includes("install"))) {
               const buildKey = tn === "install_deps" ? pa.packages || "" : (pa.command || "").slice(0, 100);
               buildAttemptHistory.push({ tool: tn, args: buildKey, failed: !result.success });
               // Check if same approach failed MAX_SAME_BUILD_ATTEMPTS times

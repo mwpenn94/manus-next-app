@@ -7483,16 +7483,16 @@
 - [x] S53b-BUG5: Abort content preservation — FIXED: onError checks abortSignal.aborted and skips error handling when CRITICAL-4 already saved partial content
 
 ## Session 54: Step Progress Persistence + Production Validation
-- [ ] S54-FEAT1: Persist step progress (completedSteps/totalSteps) to database — schema migration + tRPC mutation + client integration
-- [ ] S54-FEAT2: Load persisted step progress on page refresh / task reload (hydrate from DB into task model)
-- [ ] S54-FEAT3: Workspace panel shows correct progress bar after page refresh (Manus parity)
-- [ ] S54-VAL1: Validate GitHub sync errors resolved — test git pull/push via checkpoint save
-- [ ] S54-VAL2: Validate message persistence errors resolved — test message save/load cycle in production
-- [ ] S54-VAL3: Validate streaming SSE errors resolved — test full task execution end-to-end in production
-- [ ] S54-VAL4: Validate no console errors in production browser (network, runtime, unhandled rejections)
+- [x] S54-FEAT1: Persist step progress to DB — server-side in agentStream.ts onComplete + client-side debounced tRPC mutation + updateTaskStepProgress helper in db.ts
+- [x] S54-FEAT2: Load persisted step progress on refresh — already worked via getUserTasks mapping st.completedSteps/st.totalSteps
+- [x] S54-FEAT3: Workspace panel shows correct progress bar after refresh — validated in production
+- [x] S54-VAL1: GitHub sync — checkpoint save succeeded (version 1c160bcf), no sync errors
+- [x] S54-VAL2: Message persistence — tested follow-up messages in production ("multiply that by 2" → "Forty-eight"), context maintained correctly
+- [x] S54-VAL3: Streaming SSE — tested 3 tasks in production, all streamed correctly with step counter working
+- [x] S54-VAL4: Console errors — only 1 transient HMR hooks error during dev editing (not reproducible), no persistent errors
 
 ## Session 54: CRITICAL Production Bugs (from video evidence)
-- [ ] S54-CRIT1: GitHub clone fails with fine-grained PAT — "fine_grained token doesn't have necessary permissions" error when agent tries to clone connected repo
-- [ ] S54-CRIT2: "Something went wrong while processing this request" red error box appears in task view — message processing fails
-- [ ] S54-CRIT3: Mid-task message kills running task — sending follow-up message while agent is processing causes task to terminate/fail
-- [ ] S54-CRIT4: Agent pivots to unwanted workaround instead of reporting clone failure clearly — should fail gracefully, not create random "Simple Web App"
+- [x] S54-CRIT1: GitHub clone — ROOT CAUSE was cross-task contamination causing agent to clone wrong repos. PAT works correctly (validated: agent cloned mwpenn94/manus-next-app successfully)
+- [x] S54-CRIT2: "Something went wrong" — ROOT CAUSE: cross-task context contamination injecting other tasks' user queries into system prompt. FIXED: reduced to titles-only + simple query detector
+- [x] S54-CRIT3: Mid-task message — already working correctly via pendingRestreamRef pattern. The perceived "kill" was actually the cross-task contamination causing the agent to error out
+- [x] S54-CRIT4: Agent workaround pivots — FIXED: reduced consecutive failure cap from 5 to 3, expanded build attempt tracking to catch npm install retries, toned down GitHub proactive behavior instructions
