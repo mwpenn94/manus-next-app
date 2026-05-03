@@ -4104,6 +4104,44 @@ async function executeGitOperation(args: {
           }
         }
         
+        // Attempt 4: Git-binary-free fallback — download repo via GitHub API tarball
+        // This works even when `git` is not installed in the production container.
+        // Uses curl + tar which are universally available.
+        if (!cloneSuccess && cloneUrl.includes("github.com")) {
+          try {
+            // Extract owner/repo from URL
+            const ghMatch = originalUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+            if (ghMatch) {
+              const [, owner, repo] = ghMatch;
+              console.log(`[git_operation] Attempt 4: Downloading repo via GitHub API tarball (${owner}/${repo})...`);
+              try { execSync(`rm -rf ${cloneDir}`, { timeout: 5000 }); } catch {}
+              execSync(`mkdir -p ${cloneDir}`, { timeout: 5000 });
+              
+              // Build curl command with auth header if token is available
+              const tokenForApi = tokenUsed ? cloneUrl.match(/x-access-token:([^@]+)@/)?.[1] : null;
+              const authHeader = tokenForApi ? `-H "Authorization: Bearer ${tokenForApi}"` : "";
+              const tarballUrl = `https://api.github.com/repos/${owner}/${repo}/tarball`;
+              
+              // Download and extract tarball in one pipeline
+              const curlCmd = `curl -sL ${authHeader} -H "Accept: application/vnd.github+json" "${tarballUrl}" | tar -xz -C ${cloneDir} --strip-components=1`;
+              execSync(curlCmd, { timeout: 120000 });
+              
+              // Verify extraction succeeded by checking for files
+              const fileCount = execSync(`find ${cloneDir} -type f | wc -l`, { timeout: 5000 }).toString().trim();
+              if (parseInt(fileCount) > 0) {
+                cloneSuccess = true;
+                output = `Repository downloaded via GitHub API tarball (${fileCount} files extracted).\nNote: This is a snapshot download (no .git history). Full git operations require the git binary.`;
+                console.log(`[git_operation] Tarball clone succeeded: ${fileCount} files extracted`);
+              } else {
+                console.warn(`[git_operation] Tarball extraction produced 0 files`);
+              }
+            }
+          } catch (err4: any) {
+            console.warn(`[git_operation] Attempt 4 (tarball) failed: ${err4.message}`);
+            // Keep original cloneError for guidance
+          }
+        }
+
         if (!cloneSuccess) {
           // Parse the error to give actionable guidance with token type context
           let guidance = "";

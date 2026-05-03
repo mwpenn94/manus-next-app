@@ -3152,11 +3152,13 @@ export default function TaskView() {
           } else if (accumulated.trim() && !pendingRestreamRef.current) {
             // User manually stopped — save partial with "stopped" marker
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+          } else if (accumulated.trim() && pendingRestreamRef.current) {
+            // User sent follow-up mid-stream — save partial with "interrupted" marker.
+            // This keeps the content visible in the UI so it doesn't vanish.
+            // The re-stream conversation builder (isStreamErrorMessage filter) will
+            // exclude this message from the LLM context, preventing confusion.
+            addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Response interrupted — you sent a follow-up]*", actions: actions.length > 0 ? actions : undefined });
           }
-          // When pendingRestream is true (user sent follow-up mid-stream),
-          // do NOT save partial content. It would confuse the LLM on re-stream
-          // because it sees a half-finished response as if it were complete.
-          // The server-side onComplete also skips persistence when aborted.
         } else {
           // Only add error message if CRITICAL-4 didn't already handle this
           if (streamingTaskIdRef.current) {
@@ -3487,8 +3489,12 @@ export default function TaskView() {
       if (err.name === "AbortError") {
         if (!streamingTaskIdRef.current) {
           // CRITICAL-4 already handled this abort
-        } else if (accumulated.trim()) {
+        } else if (accumulated.trim() && !pendingRestreamRef.current) {
           addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+        } else if (accumulated.trim() && pendingRestreamRef.current) {
+          // User sent follow-up mid-stream — save partial with "interrupted" marker.
+          // Keeps content visible in UI; excluded from re-stream LLM context.
+          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Response interrupted — you sent a follow-up]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
         if (streamingTaskIdRef.current) {

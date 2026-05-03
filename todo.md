@@ -7506,3 +7506,12 @@
 - [x] Add: Hard clone budget injected into conversation to force LLM to stop retrying
 - [x] Add: Regression tests proving clone failure stops after max 2 attempts
 - [x] Add: Regression tests proving message persistence works end-to-end
+
+## Session 55b: Production Crash on GitHub Repo Query
+
+- [x] Fix: "The string did not match the expected pattern" client-side error (toast) on GitHub queries
+- [x] Fix: Agent messages disappear when user sends follow-up mid-execution (previous response vanishes)
+- [x] Fix: Agent initiates unsolicited "Conducting deeper research..." when user only asked to tell about repo
+- [x] Ensure agent only calls deep_research_content when user explicitly requests research
+- [x] Add: Git-binary-free tarball fallback (Attempt 4) for clone in production without git binary
+- [x] Verified: Tarball download works for mwpenn94/manus-next-app (2080 files extracted successfully)

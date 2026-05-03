@@ -1133,7 +1133,15 @@ will seamlessly continue you with full context. Write as extensively as the task
       isSimpleQueryMode = true;
       console.log(`[Agent] SIMPLE QUERY DETECTED: "${lastUserText.slice(0, 80)}" — capping to 1 turn, 0 continuations`);
     }
-    console.log(`[Agent] Tier: ${mode}${isSimpleQueryMode ? ' (SIMPLE)' : ''} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
+    // GITHUB QUERY GUARD: Detect when user is asking about their connected repo.
+    // The LLM often ignores routing instructions and calls deep_research_content instead
+    // of github_ops. We detect this intent and strip research tools on turn 1.
+    const isGitHubRepoQuery = /\b(connected\s*(github|repo)|my\s*(github|repo)|the\s*repo|about\s*(the|my|your)\s*(connected\s*)?(github|repo)|tell\s*me\s*about.*repo|what\s*(can|do)\s*you.*repo|status\s*of.*repo|what.*connected.*repo|preview.*repo|render.*preview|you('re|\s+are)\s+connected)\b/i.test(simpleQueryText);
+    if (isGitHubRepoQuery) {
+      console.log(`[Agent] GITHUB QUERY GUARD: Detected repo-related query — will strip research tools on turn 1`);
+    }
+
+    console.log(`[Agent] Tier: ${mode}${isSimpleQueryMode ? ' (SIMPLE)' : ''}${isGitHubRepoQuery ? ' (GITHUB)' : ''} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
     
     let turn = 0;
     let finalContent = "";
@@ -1529,6 +1537,39 @@ If git_operation(clone) fails:
       if (isSimpleQueryMode && toolCalls && toolCalls.length > 0) {
         console.log(`[Agent] SIMPLE QUERY GUARD: Stripping ${toolCalls.length} tool call(s) for simple query`);
         toolCalls = undefined;
+      }
+      // GITHUB QUERY GUARD: On turn 1, if the user asked about their repo but the LLM
+      // called deep_research_content or wide_research instead of github_ops, strip those
+      // research calls. This prevents the agent from going on unsolicited research tangents.
+      if (isGitHubRepoQuery && turn === 1 && toolCalls && toolCalls.length > 0) {
+        const BLOCKED_RESEARCH_TOOLS = ["deep_research_content", "wide_research", "web_search", "read_webpage"];
+        const hasResearchCall = toolCalls.some((tc: any) => {
+          const name = tc.function?.name || tc.name || "";
+          return BLOCKED_RESEARCH_TOOLS.includes(name);
+        });
+        const hasGitHubCall = toolCalls.some((tc: any) => {
+          const name = tc.function?.name || tc.name || "";
+          return ["github_ops", "github_assess", "github_edit"].includes(name);
+        });
+        if (hasResearchCall && !hasGitHubCall) {
+          console.log(`[Agent] GITHUB QUERY GUARD: Stripping research tool calls on turn 1 for repo query — agent should use github_ops instead`);
+          // Strip research calls, keep any non-research calls
+          const filtered = toolCalls.filter((tc: any) => {
+            const name = tc.function?.name || tc.name || "";
+            return !BLOCKED_RESEARCH_TOOLS.includes(name);
+          });
+          if (filtered.length === 0) {
+            // All calls were research — force a github_ops call
+            toolCalls = undefined;
+            // Inject a nudge to use github_ops
+            conversation.push({
+              role: "user",
+              content: "SYSTEM: You tried to research instead of checking the connected repo. Use github_ops(mode: 'status') to fetch real repo data first. Do NOT use research tools for questions about the connected repository.",
+            } as any);
+          } else {
+            toolCalls = filtered;
+          }
+        }
       }
       // Manus Parity: Thinking/reasoning content is a VISIBLE feature, not hidden.
       // Models may include reasoning in <think>...</think> tags or a separate `thinking` field.
