@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -11,13 +11,12 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  copied: boolean;
-  showDetails: boolean;
 }
 
 /**
  * User-friendly error message mapping.
  * Converts raw technical errors into actionable guidance.
+ * NEVER exposes stack traces or technical details to end users.
  */
 function getUserFriendlyMessage(error: Error | null): { title: string; description: string } {
   if (!error) return { title: "Something went wrong", description: "An unexpected error occurred." };
@@ -54,6 +53,12 @@ function getUserFriendlyMessage(error: Error | null): { title: string; descripti
       description: "The operation took longer than expected. Please try again — if the issue persists, try a simpler request.",
     };
   }
+  if (msg.includes("Task not found") || msg.includes("not found")) {
+    return {
+      title: "Page not found",
+      description: "The page or task you were looking for couldn't be found. It may have been moved or deleted.",
+    };
+  }
 
   return {
     title: "Something went wrong",
@@ -64,7 +69,7 @@ function getUserFriendlyMessage(error: Error | null): { title: string; descripti
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null, copied: false, showDetails: false };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -72,7 +77,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Report error to server for observability (B5)
+    // Report error to server for observability — but NEVER expose to user
     try {
       fetch("/api/client-error", {
         method: "POST",
@@ -89,12 +94,13 @@ class ErrorBoundary extends Component<Props, State> {
     } catch { /* silently ignore */ }
   }
 
-  handleCopyError = () => {
-    const text = this.state.error?.stack || this.state.error?.message || "Unknown error";
-    navigator.clipboard.writeText(text).then(() => {
-      this.setState({ copied: true });
-      setTimeout(() => this.setState({ copied: false }), 2000);
-    });
+  handleGoHome = () => {
+    // Navigate to home and clear error state
+    window.location.href = "/";
+  };
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
   };
 
   render() {
@@ -116,53 +122,30 @@ class ErrorBoundary extends Component<Props, State> {
               {description}
             </p>
 
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-3">
               <button
-                onClick={() => this.setState({ hasError: false, error: null })}
+                onClick={this.handleRetry}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium",
                   "bg-muted text-muted-foreground",
                   "hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
                 )}
               >
+                <RotateCcw size={14} />
                 Try Again
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={this.handleGoHome}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium",
                   "bg-primary text-primary-foreground",
                   "hover:opacity-90 cursor-pointer"
                 )}
               >
-                <RotateCcw size={14} />
-                Reload Page
+                <Home size={14} />
+                Go Home
               </button>
             </div>
-
-            {/* Collapsible technical details — hidden by default for cleaner UX */}
-            <button
-              onClick={() => this.setState({ showDetails: !this.state.showDetails })}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-muted-foreground transition-colors"
-            >
-              {this.state.showDetails ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              Technical details
-            </button>
-
-            {this.state.showDetails && (
-              <div className="mt-3 p-3 w-full rounded-lg bg-muted/50 border border-border overflow-auto relative group max-h-48">
-                <pre className="text-[11px] text-muted-foreground whitespace-break-spaces font-mono leading-relaxed">
-                  {this.state.error?.stack || this.state.error?.message}
-                </pre>
-                <button
-                  onClick={this.handleCopyError}
-                  className="absolute top-2 right-2 p-1.5 rounded bg-background/80 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Copy error"
-                >
-                  {this.state.copied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       );

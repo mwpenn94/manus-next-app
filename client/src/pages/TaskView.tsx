@@ -870,37 +870,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
           </div>
         )}
 
-        {/* Actions accordion — rendered BEFORE text content for Manus parity */}
-        {hasActions && !isUser && (
-          <div className="mb-2.5">
-            <button
-              onClick={() => setActionsExpanded(!actionsExpanded)}
-              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1.5 group"
-            >
-              {actionsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              <span>
-                {doneCount === totalCount ? (
-                  <span className="text-muted-foreground">{totalCount} steps completed</span>
-                ) : (
-                  <span>{doneCount} of {totalCount} steps</span>
-                )}
-              </span>
-            </button>
-            <AnimatePresence>
-              {actionsExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="overflow-hidden py-1"
-                >
-                  <GroupedActionsList actions={message.actions!} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+        {/* Actions accordion placeholder — moved BELOW text content for Manus parity */}
 
         {/* Card-type messages render special inline cards */}
         {message.cardType === "browser_auth" ? (
@@ -1103,6 +1073,38 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
                 <Streamdown>{message.content}</Streamdown>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Actions accordion — rendered AFTER text content for Manus parity (text first, steps below) */}
+        {hasActions && !isUser && (
+          <div className="mt-2.5">
+            <button
+              onClick={() => setActionsExpanded(!actionsExpanded)}
+              className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors mb-1.5 group"
+            >
+              {actionsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              <span>
+                {doneCount === totalCount ? (
+                  <span className="text-muted-foreground">{totalCount} steps completed</span>
+                ) : (
+                  <span>{doneCount} of {totalCount} steps</span>
+                )}
+              </span>
+            </button>
+            <AnimatePresence>
+              {actionsExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="overflow-hidden py-1"
+                >
+                  <GroupedActionsList actions={message.actions!} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -1637,11 +1639,45 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
                     className="w-full h-full object-cover object-top"
                   />
                 </div>
+              ) : currentBrowserUrl ? (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-muted/20 to-muted/5 p-6">
+                  {/* Active browsing indicator - shows the agent is working */}
+                  <div className="w-full max-w-sm space-y-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Globe className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground">Browsing the web</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{currentBrowserUrl}</p>
+                      </div>
+                      {isStreaming && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-[9px] text-green-500 font-medium">Live</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Visual representation of page loading */}
+                    <div className="rounded-lg border border-border/50 bg-card/50 p-4 space-y-2">
+                      <div className="h-2 w-3/4 rounded bg-muted/60 animate-pulse" />
+                      <div className="h-2 w-full rounded bg-muted/40" />
+                      <div className="h-2 w-5/6 rounded bg-muted/40" />
+                      <div className="h-2 w-2/3 rounded bg-muted/30" />
+                      <div className="h-8 mt-3" />
+                      <div className="h-2 w-full rounded bg-muted/40" />
+                      <div className="h-2 w-4/5 rounded bg-muted/40" />
+                    </div>
+                    <p className="text-[10px] text-center text-muted-foreground">
+                      Reading and analyzing page content
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center text-muted-foreground p-8">
                   <Globe className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-xs">No browser activity yet</p>
-                  <p className="text-[10px] mt-1 text-muted-foreground">Screenshots will appear here when the agent browses the web</p>
+                  <p className="text-[10px] mt-1 text-muted-foreground">Browser activity will appear here when the agent searches or browses the web</p>
                 </div>
               )}
             </div>
@@ -3768,7 +3804,15 @@ export default function TaskView() {
   if (!task) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
-        <p className="text-sm">Task not found</p>
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-sm">This task couldn't be found</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Go Home
+          </button>
+        </div>
       </div>
     );
   }
@@ -4464,6 +4508,7 @@ export default function TaskView() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.15, delay: Math.min(i * 0.02, 0.3) }}
             >
+            <ErrorBoundary>
             <MessageBubble
               key={`bubble-${msg.id}`}
               message={msg}
@@ -4484,6 +4529,7 @@ export default function TaskView() {
               previewRefreshKey={previewRefreshKey}
               onShare={handleShareDialog}
             />
+            </ErrorBoundary>
             </motion.div>
           ))}
           {isTyping && <TypingIndicator />}
@@ -4533,15 +4579,15 @@ export default function TaskView() {
                     className="mb-2"
                   />
                 )}
-                {/* Manus dual display: collapsible steps timeline + active step */}
-                {agentActions.length > 0 && (
-                  <StreamingStepsCollapsible actions={agentActions} stepProgress={stepProgress} />
-                )}
-                {/* Streaming text content — no cursor (Manus parity: text just populates) */}
+                {/* Streaming text content — renders ABOVE action steps (Manus parity: agent speaks first, then shows work) */}
                 {streamContent && (
-                  <div className="text-sm text-foreground prose prose-sm prose-themed max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0">
+                  <div className="text-sm text-foreground prose prose-sm prose-themed max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 mb-2">
                     <Streamdown parseIncompleteMarkdown>{streamContent}</Streamdown>
                   </div>
+                )}
+                {/* Manus dual display: collapsible steps timeline + active step (below text) */}
+                {agentActions.length > 0 && (
+                  <StreamingStepsCollapsible actions={agentActions} stepProgress={stepProgress} />
                 )}
                 {/* Inline streaming cards: rendered from streamState.inlineCards during streaming */}
                 {streamInlineCards.length > 0 && (

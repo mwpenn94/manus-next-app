@@ -1370,11 +1370,12 @@ will seamlessly continue you with full context. Write as extensively as the task
       if (thinkingField && typeof thinkingField === "string" && thinkingField.trim()) {
         extractedThinking = (extractedThinking ? extractedThinking + "\n" : "") + thinkingField.trim();
       }
+      const textContent = rawContent;
       // Emit thinking as agent_thinking event for the UI to render visibly
-      if (extractedThinking && extractedThinking.length > 10) {
+      // Only emit when textContent.trim().length > 10 to avoid noise on trivial responses
+      if (extractedThinking && textContent.trim().length > 10) {
         sendSSE(safeWrite, { agent_thinking: { content: extractedThinking, turn } });
       }
-      const textContent = rawContent;
 
       // ═══════════════════════════════════════════════════════════════════════
       // MANUS-PARITY AUTO-CONTINUATION SYSTEM
@@ -1424,20 +1425,19 @@ will seamlessly continue you with full context. Write as extensively as the task
           },
         });
         
-        // Stream partial text — but only if there are NO tool calls.
-        // When tool calls are present, the text is internal reasoning.
-        if (textContent && (!toolCalls || toolCalls.length === 0)) {
-          streamTextAsChunks(safeWrite, textContent);
-          finalContent += textContent;
+        // MANUS PARITY: Stream partial text ALWAYS — even when tool_calls are present.
+        // The text is the agent's conversational narrative, not hidden reasoning.
+        if (textContent && textContent.trim().length > 0) {
+          const isOnlyThinkTag = /^\s*<(?:think|thinking)>[\s\S]*<\/(?:think|thinking)>\s*$/i.test(textContent);
+          if (!isOnlyThinkTag) {
+            streamTextAsChunks(safeWrite, textContent);
+            finalContent += textContent;
+          }
         }
         
         // If there were tool calls, execute them (and reset continuation counter since progress was made)
         if (toolCalls && toolCalls.length > 0) {
           continuationRounds = 0; // Reset — tool execution = real progress
-          // Emit reasoning text as agent_thinking (not as message content)
-          if (textContent && textContent.trim().length > 10) {
-            sendSSE(safeWrite, { agent_thinking: { content: textContent.trim(), turn } });
-          }
           conversation.push({
             role: "assistant",
             content: textContent || "",
@@ -1567,21 +1567,26 @@ will seamlessly continue you with full context. Write as extensively as the task
         continue;
       }
 
-      // If there's text content, stream it — but ONLY when there are no tool calls.
-      // When tool calls are present, the text is internal reasoning/thinking and should
-      // NOT be shown to the user as message content. It will be emitted as agent_thinking
-      // in the tool-call execution path below.
-      if (textContent && (!toolCalls || toolCalls.length === 0)) {
-        const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
-        const chunks = textContent.match(sentencePattern) || [textContent];
-        const captured = chunks.join("");
-        if (captured.length < textContent.length) {
-          chunks.push(textContent.slice(captured.length));
+      // MANUS PARITY: Stream text content to the user REGARDLESS of whether tool_calls
+      // are present. In Manus production, the agent's conversational text ("Let me research
+      // that for you...") appears INLINE before the action steps. The text is NOT internal
+      // reasoning — it's the agent's narrative that gives the user context about what's happening.
+      // Only suppress text that is purely <think> tag content (already extracted above).
+      if (textContent && textContent.trim().length > 0) {
+        // Skip streaming if the text is ONLY a think tag (already emitted as agent_thinking)
+        const isOnlyThinkTag = /^\s*<(?:think|thinking)>[\s\S]*<\/(?:think|thinking)>\s*$/i.test(textContent);
+        if (!isOnlyThinkTag) {
+          const sentencePattern = /([^.!?\n]+[.!?\n]+\s*)/g;
+          const chunks = textContent.match(sentencePattern) || [textContent];
+          const captured = chunks.join("");
+          if (captured.length < textContent.length) {
+            chunks.push(textContent.slice(captured.length));
+          }
+          for (const chunk of chunks) {
+            if (!sendSSE(safeWrite, { delta: chunk })) return;
+          }
+          finalContent += textContent;
         }
-        for (const chunk of chunks) {
-          if (!sendSSE(safeWrite, { delta: chunk })) return;
-        }
-        finalContent += textContent;
       }
 
       // If no tool calls, check if we should auto-continue
@@ -1917,7 +1922,10 @@ If the user hasn't specified content details, ASK them what content they want. D
         // If we're in an app-building pipeline and haven't deployed yet, NEVER trigger scope-creep
         const isAppBuildingPipeline = usedAppBuildingTools && !hasDeployed;
 
-        if (!wantsContinuous && completedToolCalls >= 1 && !isAppBuildingPipeline) {
+        // MULTI-PART REQUEST DETECTION: If the user's prompt contains multiple explicit requests
+        // (connected by "and", "then", "also", numbered items, etc.), do NOT trigger scope-creep
+        const hasMultiPartRequest = /\b(and\s+(then|also|next|after\s+that)|then\s+(also|next|dive|show|demonstrate|do)|,\s*(then|also|and)\s+(dive|show|demonstrate|do|explore|check|look|review|analyze)|\d+[.):]\s*.+\n.*\d+[.):]|first.{5,80}(then|second|next|after)|after\s+that|in\s+addition|as\s+well\s+as)\b/i.test(userText);
+        if (!wantsContinuous && !hasMultiPartRequest && completedToolCalls >= 1 && !isAppBuildingPipeline) {
           const scopeCreepSignals = /\b(next[,.]?\s+I\s+will|now\s+I\s+will\s+(also|demonstrate|proceed)|I\s+will\s+(also|additionally|furthermore)\s+(generate|create|demonstrate|show|produce|build)|let\s+me\s+(also|additionally)\s+(generate|create|demonstrate)|proceed\s+to\s+(the\s+next|demonstrate|generate))\b/i.test(textContent);
           if (scopeCreepSignals) {
             console.log(`[Agent] SCOPE-CREEP DETECTED: Agent trying to produce unrequested outputs after completing ${completedToolCalls} tool calls. Injecting STOP.`);
@@ -2132,10 +2140,8 @@ Don't just say "done" — tell the user what they got.`,
         break;
       }
 
-      // Pass 5 Step 3: Emit agent_thinking when there's reasoning text alongside tool calls
-      if (textContent && textContent.trim().length > 10) {
-        sendSSE(safeWrite, { agent_thinking: { content: textContent.trim(), turn } });
-      }
+      // Manus Parity: Text alongside tool calls is now streamed as delta (above).
+      // agent_thinking for <think> tags is already emitted at extraction time (line ~1374).
       // Add assistant message with tool_calls to conversation
       conversation.push({
         role: "assistant",

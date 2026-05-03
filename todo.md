@@ -7186,3 +7186,20 @@
 - [x] TIER-2: Limitless exceeds Max — FIXED: All limits=Infinity, thinkingBudget=8192, compressionThreshold=180K, no conversation slice, no server message cap
 - [x] TIER-3: Limitless truly infinite — FIXED: maxTurns=∞, maxContinuationRounds=∞, maxTokensPerCall=∞, runs until task completion
 - [x] TIER-4: No hardcoded caps — VERIFIED: All limits tier-aware (client conversationHistoryLimit, server messageCap, agentStream maxContinuationRounds, compression threshold)
+
+## CRITICAL Issues from Video Evidence (Session 35)
+
+### Core Streaming/Display Problem
+- [x] STREAM-1: Agent conversational text is HIDDEN during tool execution — user sees only action step labels with no narrative context. Text must render INLINE with actions in real-time, not dump all at once after completion
+- [x] STREAM-2: Text appears OUT OF ORDER — explanatory text renders AFTER actions complete instead of BEFORE/DURING
+- [x] STREAM-3: Agent output rendering must match Manus production pattern: text → action → text → action (interleaved), not actions-only → text-dump-at-end
+
+### Crash/Error Handling
+- [x] CRASH-1: App crashes with exposed raw JavaScript stack traces shown to end user — must show graceful error UI with no technical details
+- [x] CRASH-2: "Task not found" error when navigating back from generated content
+- [x] CRASH-3: Unrecoverable error state — Reload/Try Again buttons don't work, user is stuck in broken loop
+
+### Agent Behavior
+- [x] AGENT-1: Agent terminates when user sends message mid-task (supposedly fixed but still happening in video)
+- [x] AGENT-2: Agent claims "task complete" without fulfilling ALL items in user's prompt
+- [x] AGENT-3: Agent must not produce meta-commentary about its own UI/platform issues — stay focused on user's actual request

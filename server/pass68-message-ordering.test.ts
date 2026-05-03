@@ -18,22 +18,23 @@ const WEBAPP_CARD_SRC = readFileSync(
 );
 
 describe("Pass 68 — Message Ordering (Manus Parity)", () => {
-  describe("Actions accordion renders BEFORE text content for assistant messages", () => {
-    it("actions accordion block appears before card-type rendering block", () => {
+  describe("Text content renders BEFORE actions accordion for assistant messages (Manus production parity)", () => {
+    it("text content appears before actions accordion in assistant messages", () => {
+      // In Manus production, conversational text appears ABOVE collapsible action steps
+      const streamdownIdx = TASK_VIEW_SRC.indexOf(
+        '<Streamdown>{message.content}</Streamdown>'
+      );
       const actionsIdx = TASK_VIEW_SRC.indexOf(
-        "Actions accordion — rendered BEFORE text content for Manus parity"
+        "Actions accordion — rendered AFTER text content for Manus parity"
       );
-      const cardIdx = TASK_VIEW_SRC.indexOf(
-        "Card-type messages render special inline cards"
-      );
+      expect(streamdownIdx).toBeGreaterThan(-1);
       expect(actionsIdx).toBeGreaterThan(-1);
-      expect(cardIdx).toBeGreaterThan(-1);
-      expect(actionsIdx).toBeLessThan(cardIdx);
+      expect(streamdownIdx).toBeLessThan(actionsIdx);
     });
 
     it("assistant actions accordion uses !isUser guard", () => {
       const match = TASK_VIEW_SRC.match(
-        /\{hasActions && !isUser && \(\s*<div className="mb-2\.5">/
+        /\{hasActions && !isUser && \(\s*<div className="mt-2\.5">/
       );
       expect(match).not.toBeNull();
     });
@@ -45,16 +46,16 @@ describe("Pass 68 — Message Ordering (Manus Parity)", () => {
       expect(match).not.toBeNull();
     });
 
-    it("actions accordion appears before Streamdown text content", () => {
-      const actionsAccordionIdx = TASK_VIEW_SRC.indexOf(
-        "{hasActions && !isUser && ("
-      );
+    it("actions accordion appears after Streamdown text content", () => {
       const streamdownIdx = TASK_VIEW_SRC.indexOf(
         '<Streamdown>{message.content}</Streamdown>'
       );
-      expect(actionsAccordionIdx).toBeGreaterThan(-1);
+      const actionsAccordionIdx = TASK_VIEW_SRC.indexOf(
+        "{hasActions && !isUser && ("
+      );
       expect(streamdownIdx).toBeGreaterThan(-1);
-      expect(actionsAccordionIdx).toBeLessThan(streamdownIdx);
+      expect(actionsAccordionIdx).toBeGreaterThan(-1);
+      expect(streamdownIdx).toBeLessThan(actionsAccordionIdx);
     });
   });
 
@@ -87,20 +88,17 @@ describe("Pass 68 — Message Ordering (Manus Parity)", () => {
   });
 
   describe("Streaming bubble ordering is correct", () => {
-    it("ActiveToolIndicator renders before StreamingStepsCollapsible in streaming bubble", () => {
-      // In the streaming section (after "streaming && ("), find the order
+    it("streamContent renders before StreamingStepsCollapsible in streaming bubble (text first, actions below)", () => {
+      // In Manus production, text streams first, then action steps appear below
       const streamingSection = TASK_VIEW_SRC.slice(
         TASK_VIEW_SRC.indexOf("{streaming && (")
       );
-      const toolIndicatorIdx = streamingSection.indexOf("ActiveToolIndicator");
-      const groupedActionsIdx = streamingSection.indexOf("StreamingStepsCollapsible");
       const streamContentIdx = streamingSection.indexOf("{streamContent && (");
+      const groupedActionsIdx = streamingSection.indexOf("StreamingStepsCollapsible");
       
-      expect(toolIndicatorIdx).toBeGreaterThan(-1);
-      expect(groupedActionsIdx).toBeGreaterThan(-1);
       expect(streamContentIdx).toBeGreaterThan(-1);
-      expect(toolIndicatorIdx).toBeLessThan(groupedActionsIdx);
-      expect(groupedActionsIdx).toBeLessThan(streamContentIdx);
+      expect(groupedActionsIdx).toBeGreaterThan(-1);
+      expect(streamContentIdx).toBeLessThan(groupedActionsIdx);
     });
   });
 

@@ -401,11 +401,12 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       // Network-level errors (ECONNREFUSED, ETIMEDOUT, etc.)
       if (err instanceof LLMError) throw err;
       // Convert AbortError (timeout) into a retryable error
+      // Limit timeout retries to 1 (not MAX_RETRIES) to avoid 8+ minute hangs
       if (err.name === "AbortError") {
         const timeoutErr = new LLMError("LLM request timed out after 120s", 408, true);
-        if (attempt < MAX_RETRIES) {
-          const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
-          console.warn(`[LLM] Timeout on attempt ${attempt + 1}/${MAX_RETRIES + 1}, retrying in ${backoffMs}ms`);
+        if (attempt < 1) {
+          const backoffMs = 2000; // Short backoff for timeout retry
+          console.warn(`[LLM] Timeout on attempt ${attempt + 1}, retrying once in ${backoffMs}ms`);
           await new Promise(resolve => setTimeout(resolve, backoffMs));
           lastError = timeoutErr;
           continue;
