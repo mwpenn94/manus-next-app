@@ -99,6 +99,7 @@ import {
   HelpCircle,
   Home,
   Plug,
+  Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ConnectorsSheet, { ConnectorsBadge } from "@/components/ConnectorsSheet";
@@ -142,6 +143,9 @@ function TaskStatusDot({ status, title }: { status: string; title?: string }) {
   if (status === "error") {
     return <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
   }
+  if (status === "stopped") {
+    return <Square className="w-3 h-3 text-amber-500/70 shrink-0" />;
+  }
   // Type-specific icon based on title keywords (Manus parity)
   const t = (title || "").toLowerCase();
   if (t.includes("research") || t.includes("analyze") || t.includes("find")) {
@@ -179,6 +183,8 @@ function TaskStatusIcon({ status }: { status: string }) {
       return <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
     case "error":
       return <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
+    case "stopped":
+      return <Square className="w-3 h-3 text-amber-500/70 shrink-0" />;
     default:
       return <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
   }

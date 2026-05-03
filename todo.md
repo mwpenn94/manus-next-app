@@ -7474,3 +7474,10 @@
 - [x] S53-BUG6: ConnectorsCRUDPanel OAuth flow broken — used nonexistent connector.authType and hardcoded /api/connectors/:id/oauth route — FIXED: Now uses trpc.connector.getOAuthUrl mutation with proper origin/returnPath
 - [x] S53-BUG7: Streamed content lost when switching tasks during streaming — CRITICAL-4 abort killed stream without saving accumulated content — FIXED: Now calls savePartialContent (addMessage with "Response interrupted" note) BEFORE aborting
 - [x] S53-BUG8: ConnectorDetailPage back button navigates to /connector/-1 (not found) — FIXED: Changed navigate(-1) to navigate("/")
+
+## Session 53b: Mobile Screenshot Issues (IMG_7622, IMG_7623)
+- [x] S53b-BUG1: Stale action indicator "Reasoning about next steps..." spinner continues after error — FIXED: onError now marks all active actions as 'done' and clears stepProgress
+- [x] S53b-BUG2: Step counter shows "0 of 1 steps" / "Step 0" — FIXED: Header badge now shows 1-indexed "Step N of M"; onError marks all actions done so accordion shows "N steps completed"
+- [x] S53b-BUG3: Task stuck in "Running" state after error — FIXED: onError calls updateTaskStatus(taskId, 'error'); added 'Stopped' badge for tasks interrupted by task switching
+- [x] S53b-BUG4: Multiagent orchestration task fails with generic error — infrastructure issue (web_search fetch failed), not a code bug
+- [x] S53b-BUG5: Abort content preservation — FIXED: onError checks abortSignal.aborted and skips error handling when CRITICAL-4 already saved partial content

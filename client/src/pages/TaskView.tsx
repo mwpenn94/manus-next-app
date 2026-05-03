@@ -2890,24 +2890,29 @@ export default function TaskView() {
   useEffect(() => {
     const currentId = task?.id ?? null;
     if (prevTaskIdRef.current && currentId !== prevTaskIdRef.current) {
-      // Task changed — save partial content FIRST, then abort the stream.
-      // Without this, any streamed content accumulated in refs is lost.
-      const prevTaskId = streamingTaskIdRef.current;
-      const partialContent = accumulatedRef.current;
-      if (prevTaskId && partialContent.trim()) {
-        addMessageRef.current(prevTaskId, {
-          role: "assistant",
-          content: partialContent + "\n\n*[Response interrupted — you navigated away]*",
-          actions: actionsRef.current.length > 0 ? actionsRef.current : undefined,
-        });
-        streamingTaskIdRef.current = null;
-        accumulatedRef.current = "";
-        actionsRef.current = [];
-      }
-      // Now abort the stream
+      // Task changed — abort the stream FIRST so that any in-flight onError
+      // callbacks see signal.aborted=true and skip adding error messages.
+      // Then save the partial content from refs (which are still intact).
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
+      }
+      // Now save partial content from refs (abort doesn't clear these)
+      const prevTaskId = streamingTaskIdRef.current;
+      const partialContent = accumulatedRef.current;
+      if (prevTaskId) {
+        if (partialContent.trim()) {
+          addMessageRef.current(prevTaskId, {
+            role: "assistant",
+            content: partialContent + "\n\n*[Response interrupted — you navigated away]*",
+            actions: actionsRef.current.length > 0 ? actionsRef.current : undefined,
+          });
+        }
+        // Mark the old task as stopped so it doesn't stay stuck in "running"
+        updateTaskStatus(prevTaskId, "stopped");
+        streamingTaskIdRef.current = null;
+        accumulatedRef.current = "";
+        actionsRef.current = [];
       }
       setStreaming(false);
       setStreamContent("");
@@ -3088,7 +3093,7 @@ export default function TaskView() {
         const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
+          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact, abortSignal: abortControllerRef.current?.signal,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
@@ -3140,10 +3145,11 @@ export default function TaskView() {
         }
       } catch (err: any) {
         if (err.name === "AbortError") {
-          // Only add "stopped" message if user manually stopped (not a follow-up abort).
-          // When pendingRestream is true, we discard partial content entirely to avoid
-          // confusing the LLM with half-finished responses on re-stream.
-          if (accumulated.trim() && !pendingRestreamRef.current) {
+          // If CRITICAL-4 (task switch) already saved partial content and set
+          // streamingTaskIdRef to null, skip the duplicate save here.
+          if (!streamingTaskIdRef.current) {
+            // CRITICAL-4 already handled this abort — do nothing
+          } else if (accumulated.trim() && !pendingRestreamRef.current) {
             // User manually stopped — save partial with "stopped" marker
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
           }
@@ -3152,12 +3158,23 @@ export default function TaskView() {
           // because it sees a half-finished response as if it were complete.
           // The server-side onComplete also skips persistence when aborted.
         } else {
-          addMessage(task.id, {
-            role: "assistant",
-            content: getStreamErrorMessage(err),
-          });
-          // Ensure task doesn't stay stuck in "running" after a stream error
-          updateTaskStatus(task.id, "error");
+          // Only add error message if CRITICAL-4 didn't already handle this
+          if (streamingTaskIdRef.current) {
+            // Include any accumulated content and actions so the step counter is correct.
+            // The onError callback may have already appended the error to accumulated,
+            // so use accumulated if it has content, otherwise use the generic error message.
+            const finalContent = accumulated.trim()
+              ? accumulated
+              : getStreamErrorMessage(err);
+            // Mark all remaining active actions as done so step counter shows correctly
+            const errorActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+            addMessage(task.id, {
+              role: "assistant",
+              content: finalContent,
+              actions: errorActions.length > 0 ? errorActions : undefined,
+            });
+            updateTaskStatus(task.id, "error");
+          }
         }
       } finally {
         abortControllerRef.current = null;
@@ -3220,7 +3237,7 @@ export default function TaskView() {
         const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
         const callbacks = buildStreamCallbacks(streamState, {
           setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
+          updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact, abortSignal: abortControllerRef.current?.signal,
           addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
           updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
           setFollowUpSuggestions: setAgentFollowUps,
@@ -3244,18 +3261,19 @@ export default function TaskView() {
         updateTaskStatus(task.id, "completed");
       } catch (err: any) {
         if (err.name === "AbortError") {
-          // PARITY2/3: Same fix as main handler — don't add "stopped" when it's a follow-up abort
-          if (accumulated.trim() && !pendingRestreamRef.current) {
-            // User manually stopped — save partial with "stopped" marker
+          // If CRITICAL-4 (task switch) already saved partial content, skip duplicate save
+          if (!streamingTaskIdRef.current) {
+            // CRITICAL-4 already handled this abort — do nothing
+          } else if (accumulated.trim() && !pendingRestreamRef.current) {
             addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
           }
-          // When pendingRestream is true (user sent follow-up mid-stream),
-          // do NOT save partial content. It would confuse the LLM on re-stream
-          // because it sees a half-finished response as if it were complete.
-          // The server-side onComplete also skips persistence when aborted.
         } else {
-          addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
-          updateTaskStatus(task.id, "error");
+          if (streamingTaskIdRef.current) {
+            const finalContent = accumulated.trim() ? accumulated : getStreamErrorMessage(err);
+            const errorActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+            addMessage(task.id, { role: "assistant", content: finalContent, actions: errorActions.length > 0 ? errorActions : undefined });
+            updateTaskStatus(task.id, "error");
+          }
         }
       } finally {
         abortControllerRef.current = null;
@@ -3444,7 +3462,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact, abortSignal: abortControllerRef.current?.signal,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3467,16 +3485,22 @@ export default function TaskView() {
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
-        if (accumulated.trim()) {
+        if (!streamingTaskIdRef.current) {
+          // CRITICAL-4 already handled this abort
+        } else if (accumulated.trim()) {
           addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
-        addMessage(task.id, {
-          role: "assistant",
-          content: getStreamErrorMessage(err),
-        });
-        // Ensure task doesn't stay stuck in "running" after a stream error
-        updateTaskStatus(task.id, "error");
+        if (streamingTaskIdRef.current) {
+          const finalContent = accumulated.trim() ? accumulated : getStreamErrorMessage(err);
+          const errorActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+          addMessage(task.id, {
+            role: "assistant",
+            content: finalContent,
+            actions: errorActions.length > 0 ? errorActions : undefined,
+          });
+          updateTaskStatus(task.id, "error");
+        }
       }
     } finally {
       abortControllerRef.current = null;
@@ -3533,7 +3557,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact, abortSignal: abortControllerRef.current?.signal,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3562,13 +3586,19 @@ export default function TaskView() {
       handsFree.notifyComplete(accumulated);
     } catch (err: any) {
       if (err.name === "AbortError") {
-        if (accumulated.trim()) {
+        if (!streamingTaskIdRef.current) {
+          // CRITICAL-4 already handled this abort
+        } else if (accumulated.trim()) {
           addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped]*", actions: actions.length > 0 ? actions : undefined });
         }
       } else {
-        const errorMsg = getStreamErrorMessage(err);
-        addMessage(task.id, { role: "assistant", content: errorMsg });
-        handsFree.notifyError(errorMsg);
+        if (streamingTaskIdRef.current) {
+          const finalContent = accumulated.trim() ? accumulated : getStreamErrorMessage(err);
+          const errorActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+          addMessage(task.id, { role: "assistant", content: finalContent, actions: errorActions.length > 0 ? errorActions : undefined });
+          handsFree.notifyError(getStreamErrorMessage(err));
+          updateTaskStatus(task.id, "error");
+        }
       }
     } finally {
       abortControllerRef.current = null;
@@ -3638,7 +3668,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact, abortSignal: abortControllerRef.current?.signal,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3664,9 +3694,18 @@ export default function TaskView() {
       addMessage(task.id, { role: "assistant", content: accumulated, actions: finalActions.length > 0 ? finalActions : undefined, inlineCards: streamState.inlineCards.length > 0 ? streamState.inlineCards : undefined });
     } catch (err: any) {
       if (err.name === "AbortError") {
-        if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+        if (!streamingTaskIdRef.current) {
+          // CRITICAL-4 already handled this abort
+        } else if (accumulated.trim()) {
+          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+        }
       } else {
-        addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
+        if (streamingTaskIdRef.current) {
+          const finalContent = accumulated.trim() ? accumulated : getStreamErrorMessage(err);
+          const errorActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+          addMessage(task.id, { role: "assistant", content: finalContent, actions: errorActions.length > 0 ? errorActions : undefined });
+          updateTaskStatus(task.id, "error");
+        }
       }
     } finally {
       abortControllerRef.current = null;
@@ -3724,7 +3763,7 @@ export default function TaskView() {
       const streamState: StreamState = { accumulated: "", actions, images, sourceUrls: [], inlineCards: [] };
       const callbacks = buildStreamCallbacks(streamState, {
         setStreamContent, setAgentActions, setStreamImages, setStepProgress,
-        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact,
+        updateTaskStatus, accumulatedRef, actionsRef, mapToolToAction, taskId: task.id, updateTaskSteps, persistArtifact, abortSignal: abortControllerRef.current?.signal,
         addMessage, setIsReconnecting, setLastErrorRetryable, setTokenUsage, setGenerationIncomplete, setKnowledgeRecalled,
         updateMessageCard, setAegisMeta, setReasoningDepth, setConnectorContext,
         setFollowUpSuggestions: setAgentFollowUps,
@@ -3748,9 +3787,18 @@ export default function TaskView() {
       toast.success("Message edited and re-sent");
     } catch (err: any) {
       if (err.name === "AbortError") {
-        if (accumulated.trim()) addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+        if (!streamingTaskIdRef.current) {
+          // CRITICAL-4 already handled this abort
+        } else if (accumulated.trim()) {
+          addMessage(task.id, { role: "assistant", content: accumulated + "\n\n*[Generation stopped by user]*", actions: actions.length > 0 ? actions : undefined });
+        }
       } else {
-        addMessage(task.id, { role: "assistant", content: getStreamErrorMessage(err) });
+        if (streamingTaskIdRef.current) {
+          const finalContent = accumulated.trim() ? accumulated : getStreamErrorMessage(err);
+          const errorActions = actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+          addMessage(task.id, { role: "assistant", content: finalContent, actions: errorActions.length > 0 ? errorActions : undefined });
+          updateTaskStatus(task.id, "error");
+        }
       }
     } finally {
       abortControllerRef.current = null;
@@ -3984,7 +4032,9 @@ export default function TaskView() {
             {task.status === "running" && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium shrink-0 flex items-center gap-1 whitespace-nowrap">
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                {stepProgress ? `Step ${stepProgress.completed}` : "Running"}
+                {stepProgress && stepProgress.total > 0
+                  ? `Step ${stepProgress.completed + 1 > stepProgress.total ? stepProgress.total : stepProgress.completed + 1} of ${stepProgress.total}`
+                  : "Running"}
               </span>
             )}
             {task.status === "error" && (
@@ -3995,6 +4045,11 @@ export default function TaskView() {
             {task.status === "completed" && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium shrink-0 whitespace-nowrap">
                 Completed
+              </span>
+            )}
+            {task.status === "stopped" && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 font-medium shrink-0 whitespace-nowrap">
+                Stopped
               </span>
             )}
             {/* Cost visibility indicator */}

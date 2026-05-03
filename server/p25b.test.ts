@@ -119,7 +119,7 @@ describe("P25b — Hands-Free Mode Transcription Fix", () => {
     });
 
     it("handleHandsFreeSend calls handsFree.notifyError on failure", () => {
-      expect(tv).toContain("handsFree.notifyError(errorMsg)");
+      expect(tv).toContain("handsFree.notifyError(getStreamErrorMessage(err))");
     });
 
     it("notifyComplete triggers TTS speakResponse", () => {

@@ -65,6 +65,8 @@ export interface StreamStateSetters {
   updateTaskSteps?: (taskId: string, completed: number, total: number) => void;
   /** Persist workspace artifacts from SSE tool results */
   persistArtifact?: (taskId: string, artifactType: string, data: { label?: string; content?: string; url?: string }) => void;
+  /** Abort signal — used to skip error handling when CRITICAL-4 already handled the abort */
+  abortSignal?: AbortSignal;
 }
 
 /**
@@ -296,6 +298,13 @@ export function buildStreamCallbacks(
       }
     },
     onError: (error: string, retryable?: boolean) => {
+      // If the abort signal is already aborted, CRITICAL-4 already handled the
+      // cleanup (saved partial content, set status to 'stopped'). Skip error handling
+      // to avoid overwriting the preserved partial content with an error message.
+      if (setters.abortSignal?.aborted) {
+        console.log('[onError] Skipping error handling — abort signal already triggered (CRITICAL-4 handled it)');
+        return;
+      }
       if (retryable) {
         state.accumulated += `\n\n\u26a0\ufe0f ${error}\n\nYou can try sending your message again.`;
       } else {
@@ -307,6 +316,14 @@ export function buildStreamCallbacks(
       if (retryable && setters.setLastErrorRetryable) {
         setters.setLastErrorRetryable(true);
       }
+      // CRITICAL: Clear stale action indicators — mark all active actions as done
+      // so the "Reasoning about next steps..." spinner doesn't persist after error.
+      const finalActions = state.actions.map(a => a.status === "active" ? { ...a, status: "done" as const } : a);
+      state.actions = finalActions;
+      setters.actionsRef.current = [...finalActions];
+      setters.setAgentActions([...finalActions]);
+      // Clear step progress spinner so it doesn't show stale "In progress" state
+      setters.setStepProgress(null);
       // CRITICAL: Reset task status from "running" to "error" so the task doesn't
       // appear permanently stuck. This allows the user to send follow-up messages.
       setters.updateTaskStatus(setters.taskId, "error");
