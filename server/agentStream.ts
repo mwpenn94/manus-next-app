@@ -1165,6 +1165,7 @@ will seamlessly continue you with full context. Write as extensively as the task
     let cloneAttempts = 0;
     const MAX_CLONE_ATTEMPTS = 2; // Hard budget: max 2 clone attempts per conversation
     let cloneBudgetExhausted = false; // When true, git_operation(clone) is blocked
+    let githubOpsCompleted = false; // Tracks whether github_ops has been called — guard deactivates after
 
     // PC4 FIX: Research budget for Limitless mode — after N consecutive research tools
     // without producing a deliverable, nudge the agent to synthesize and deliver
@@ -1538,10 +1539,10 @@ If git_operation(clone) fails:
         console.log(`[Agent] SIMPLE QUERY GUARD: Stripping ${toolCalls.length} tool call(s) for simple query`);
         toolCalls = undefined;
       }
-      // GITHUB QUERY GUARD: On turn 1, if the user asked about their repo but the LLM
-      // called deep_research_content or wide_research instead of github_ops, strip those
-      // research calls. This prevents the agent from going on unsolicited research tangents.
-      if (isGitHubRepoQuery && turn === 1 && toolCalls && toolCalls.length > 0) {
+      // GITHUB QUERY GUARD: Block research tools until github_ops has been called.
+      // The LLM persistently ignores prompt routing and calls deep_research_content
+      // for repo queries. This guard fires on EVERY turn until github_ops runs.
+      if (isGitHubRepoQuery && !githubOpsCompleted && toolCalls && toolCalls.length > 0) {
         const BLOCKED_RESEARCH_TOOLS = ["deep_research_content", "wide_research", "web_search", "read_webpage"];
         const hasResearchCall = toolCalls.some((tc: any) => {
           const name = tc.function?.name || tc.name || "";
@@ -1551,20 +1552,30 @@ If git_operation(clone) fails:
           const name = tc.function?.name || tc.name || "";
           return ["github_ops", "github_assess", "github_edit"].includes(name);
         });
-        if (hasResearchCall && !hasGitHubCall) {
-          console.log(`[Agent] GITHUB QUERY GUARD: Stripping research tool calls on turn 1 for repo query — agent should use github_ops instead`);
-          // Strip research calls, keep any non-research calls
+        if (hasGitHubCall) {
+          // Mark that github_ops is being called — allow research on future turns
+          githubOpsCompleted = true;
+          console.log(`[Agent] GITHUB QUERY GUARD: github_ops detected on turn ${turn} — guard will deactivate after this turn`);
+          // Still strip research calls on THIS turn if mixed with github_ops
+          if (hasResearchCall) {
+            console.log(`[Agent] GITHUB QUERY GUARD: Stripping ${toolCalls.filter((tc: any) => BLOCKED_RESEARCH_TOOLS.includes(tc.function?.name || tc.name || "")).length} research call(s) mixed with github_ops`);
+            toolCalls = toolCalls.filter((tc: any) => {
+              const name = tc.function?.name || tc.name || "";
+              return !BLOCKED_RESEARCH_TOOLS.includes(name);
+            });
+          }
+        } else if (hasResearchCall) {
+          console.log(`[Agent] GITHUB QUERY GUARD: Blocking ${toolCalls.length} research tool call(s) on turn ${turn} — github_ops must run first`);
+          // Strip ALL research calls
           const filtered = toolCalls.filter((tc: any) => {
             const name = tc.function?.name || tc.name || "";
             return !BLOCKED_RESEARCH_TOOLS.includes(name);
           });
           if (filtered.length === 0) {
-            // All calls were research — force a github_ops call
             toolCalls = undefined;
-            // Inject a nudge to use github_ops
             conversation.push({
               role: "user",
-              content: "SYSTEM: You tried to research instead of checking the connected repo. Use github_ops(mode: 'status') to fetch real repo data first. Do NOT use research tools for questions about the connected repository.",
+              content: "SYSTEM ENFORCEMENT: Research tools are BLOCKED for this query. You MUST use github_ops(mode: 'status') to fetch real repo data. Do NOT call deep_research_content, wide_research, web_search, or read_webpage. Call github_ops NOW.",
             } as any);
           } else {
             toolCalls = filtered;

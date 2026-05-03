@@ -7515,3 +7515,8 @@
 - [x] Ensure agent only calls deep_research_content when user explicitly requests research
 - [x] Add: Git-binary-free tarball fallback (Attempt 4) for clone in production without git binary
 - [x] Verified: Tarball download works for mwpenn94/manus-next-app (2080 files extracted successfully)
+- [x] Fix: GitHub Query Guard now persists across ALL turns (not just turn 1) until github_ops runs
+- [x] Fix: Pure Node.js tarball fallback (no curl/tar binaries) — works in Nixpacks containers
+- [x] Root cause: Nixpacks builder ignores Dockerfile — production has no git/curl/tar binaries
+- [x] Verified: Pure Node.js tarball extraction works (2081 files, 19.2MB download, 37.7MB decompressed)
+- [x] All 40 regression tests pass (session55 + session55b)

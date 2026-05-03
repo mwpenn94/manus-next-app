@@ -4104,40 +4104,158 @@ async function executeGitOperation(args: {
           }
         }
         
-        // Attempt 4: Git-binary-free fallback — download repo via GitHub API tarball
-        // This works even when `git` is not installed in the production container.
-        // Uses curl + tar which are universally available.
+        // Attempt 4: PURE NODE.JS clone fallback — no git, curl, or tar binaries needed.
+        // Uses Node.js built-in fetch + zlib + manual tar parsing.
+        // This is the ONLY reliable method in Nixpacks/Cloud Run containers.
         if (!cloneSuccess && cloneUrl.includes("github.com")) {
           try {
-            // Extract owner/repo from URL
             const ghMatch = originalUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
             if (ghMatch) {
               const [, owner, repo] = ghMatch;
-              console.log(`[git_operation] Attempt 4: Downloading repo via GitHub API tarball (${owner}/${repo})...`);
-              try { execSync(`rm -rf ${cloneDir}`, { timeout: 5000 }); } catch {}
-              execSync(`mkdir -p ${cloneDir}`, { timeout: 5000 });
+              console.log(`[git_operation] Attempt 4: Pure Node.js download via GitHub API (${owner}/${repo})...`);
               
-              // Build curl command with auth header if token is available
+              const fs = await import("fs");
+              const path = await import("path");
+              const zlib = await import("zlib");
+              
+              // Clean and create target directory
+              try { fs.rmSync(cloneDir, { recursive: true, force: true }); } catch {}
+              fs.mkdirSync(cloneDir, { recursive: true });
+              
+              // Build headers for GitHub API
               const tokenForApi = tokenUsed ? cloneUrl.match(/x-access-token:([^@]+)@/)?.[1] : null;
-              const authHeader = tokenForApi ? `-H "Authorization: Bearer ${tokenForApi}"` : "";
+              const headers: Record<string, string> = {
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "manus-next-app",
+              };
+              if (tokenForApi) headers["Authorization"] = `Bearer ${tokenForApi}`;
+              
               const tarballUrl = `https://api.github.com/repos/${owner}/${repo}/tarball`;
+              console.log(`[git_operation] Fetching tarball from ${tarballUrl}...`);
               
-              // Download and extract tarball in one pipeline
-              const curlCmd = `curl -sL ${authHeader} -H "Accept: application/vnd.github+json" "${tarballUrl}" | tar -xz -C ${cloneDir} --strip-components=1`;
-              execSync(curlCmd, { timeout: 120000 });
+              // Follow redirects (GitHub API returns 302 to S3)
+              let response = await fetch(tarballUrl, { headers, redirect: "follow" });
+              if (!response.ok) {
+                throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+              }
               
-              // Verify extraction succeeded by checking for files
-              const fileCount = execSync(`find ${cloneDir} -type f | wc -l`, { timeout: 5000 }).toString().trim();
-              if (parseInt(fileCount) > 0) {
+              // Get the tarball as a buffer
+              const tarballBuffer = Buffer.from(await response.arrayBuffer());
+              console.log(`[git_operation] Downloaded ${(tarballBuffer.length / 1024 / 1024).toFixed(1)}MB tarball`);
+              
+              // Decompress gzip
+              const tarBuffer = zlib.gunzipSync(tarballBuffer);
+              
+              // Parse tar format manually (512-byte header blocks)
+              // TAR format: each file has a 512-byte header followed by file data padded to 512 bytes
+              let offset = 0;
+              let fileCount = 0;
+              const BLOCK_SIZE = 512;
+              
+              while (offset < tarBuffer.length - BLOCK_SIZE) {
+                // Read header
+                const header = tarBuffer.subarray(offset, offset + BLOCK_SIZE);
+                
+                // Check for end-of-archive (two zero blocks)
+                if (header.every((b: number) => b === 0)) break;
+                
+                // Extract filename (bytes 0-99, null-terminated)
+                let fileName = "";
+                for (let i = 0; i < 100; i++) {
+                  if (header[i] === 0) break;
+                  fileName += String.fromCharCode(header[i]);
+                }
+                
+                // Check for GNU long name extension (type 'L')
+                const typeFlag = String.fromCharCode(header[156]);
+                
+                // Extract file size (bytes 124-135, octal, null-terminated)
+                let sizeStr = "";
+                for (let i = 124; i < 136; i++) {
+                  if (header[i] === 0 || header[i] === 32) break;
+                  sizeStr += String.fromCharCode(header[i]);
+                }
+                const fileSize = parseInt(sizeStr, 8) || 0;
+                
+                // Check for USTAR prefix (bytes 345-499)
+                let prefix = "";
+                if (header[345] !== 0) {
+                  for (let i = 345; i < 500; i++) {
+                    if (header[i] === 0) break;
+                    prefix += String.fromCharCode(header[i]);
+                  }
+                  if (prefix) fileName = prefix + "/" + fileName;
+                }
+                
+                offset += BLOCK_SIZE; // Move past header
+                
+                if (typeFlag === "L") {
+                  // GNU long name: the data block contains the real filename
+                  const longName = tarBuffer.subarray(offset, offset + fileSize).toString("utf8").replace(/\0/g, "");
+                  const dataPadded = Math.ceil(fileSize / BLOCK_SIZE) * BLOCK_SIZE;
+                  offset += dataPadded;
+                  // Next header is the actual file with this long name
+                  // Read the next header
+                  const nextHeader = tarBuffer.subarray(offset, offset + BLOCK_SIZE);
+                  const nextTypeFlag = String.fromCharCode(nextHeader[156]);
+                  let nextSizeStr = "";
+                  for (let i = 124; i < 136; i++) {
+                    if (nextHeader[i] === 0 || nextHeader[i] === 32) break;
+                    nextSizeStr += String.fromCharCode(nextHeader[i]);
+                  }
+                  const nextFileSize = parseInt(nextSizeStr, 8) || 0;
+                  offset += BLOCK_SIZE;
+                  
+                  // Strip the first path component (repo-hash prefix)
+                  const parts = longName.split("/");
+                  const stripped = parts.slice(1).join("/");
+                  
+                  if (stripped && nextTypeFlag === "0" || nextTypeFlag === "\0") {
+                    const filePath = path.join(cloneDir, stripped);
+                    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+                    fs.writeFileSync(filePath, tarBuffer.subarray(offset, offset + nextFileSize));
+                    fileCount++;
+                  } else if (stripped && nextTypeFlag === "5") {
+                    fs.mkdirSync(path.join(cloneDir, stripped), { recursive: true });
+                  }
+                  
+                  const nextDataPadded = Math.ceil(nextFileSize / BLOCK_SIZE) * BLOCK_SIZE;
+                  offset += nextDataPadded;
+                  continue;
+                }
+                
+                // Strip the first path component (GitHub adds owner-repo-hash/ prefix)
+                const parts = fileName.split("/");
+                const strippedName = parts.slice(1).join("/");
+                
+                if (typeFlag === "5" || fileName.endsWith("/")) {
+                  // Directory
+                  if (strippedName) {
+                    fs.mkdirSync(path.join(cloneDir, strippedName), { recursive: true });
+                  }
+                } else if ((typeFlag === "0" || typeFlag === "\0") && strippedName) {
+                  // Regular file
+                  const filePath = path.join(cloneDir, strippedName);
+                  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+                  fs.writeFileSync(filePath, tarBuffer.subarray(offset, offset + fileSize));
+                  fileCount++;
+                }
+                
+                // Advance past file data (padded to 512-byte boundary)
+                const dataPadded = Math.ceil(fileSize / BLOCK_SIZE) * BLOCK_SIZE;
+                offset += dataPadded;
+              }
+              
+              if (fileCount > 0) {
                 cloneSuccess = true;
-                output = `Repository downloaded via GitHub API tarball (${fileCount} files extracted).\nNote: This is a snapshot download (no .git history). Full git operations require the git binary.`;
-                console.log(`[git_operation] Tarball clone succeeded: ${fileCount} files extracted`);
+                output = `Repository downloaded via GitHub API (${fileCount} files extracted).\nNote: This is a snapshot download (no .git history). Full git operations require the git binary.`;
+                console.log(`[git_operation] Pure Node.js clone succeeded: ${fileCount} files extracted`);
               } else {
-                console.warn(`[git_operation] Tarball extraction produced 0 files`);
+                console.warn(`[git_operation] Tar extraction produced 0 files`);
               }
             }
           } catch (err4: any) {
-            console.warn(`[git_operation] Attempt 4 (tarball) failed: ${err4.message}`);
+            console.warn(`[git_operation] Attempt 4 (pure Node.js) failed: ${err4.message}`);
             // Keep original cloneError for guidance
           }
         }
