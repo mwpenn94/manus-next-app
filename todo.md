@@ -7532,3 +7532,4 @@
 - [x] Ensure all capabilities work end-to-end at Manus parity
 - [x] Adjust all build/install timeouts to 300s for pilot repo (2000+ files, heavy deps)
 - [x] Add self-repo detection to prevent recursive clone when connected repo IS the host app
+- [x] Add integration test for full clone→build→deploy pipeline using pilot repo (mwpenn94/manus-next-app) to validate timeout chain end-to-end (33 tests)
