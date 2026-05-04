@@ -522,6 +522,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   }, [tasks]);
 
   // Helper: persist a workspace artifact from bridge event metadata
+  // Server-side retry queue handles transient DB failures (3 attempts, exponential backoff: 1s, 2s, 4s)
   const persistArtifact = useCallback(
     (taskId: string, artifactType: string, data: { label?: string; content?: string; url?: string }) => {
       if (!isAuthenticated) return;
@@ -536,8 +537,9 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         url: data.url || undefined,
       }, {
         onError: (err) => {
-          // Silently log artifact persistence failures — these are non-critical
-          console.warn("[Artifact] Failed to persist:", artifactType, err.message);
+          // Server retry queue handles transient DB failures transparently.
+          // This only fires on network/auth errors that prevent reaching the server.
+          console.warn("[Artifact] Mutation failed (server retry queue may still persist):", artifactType, err.message);
         },
       });
     },

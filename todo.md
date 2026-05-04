@@ -7733,3 +7733,12 @@
 - [x] Enhanced system prompt: added CRITICAL instruction not to call create_webapp before/after git_operation(clone)
 - [x] Updated 3 test regex limits (2000→3000, 4000→5000) to accommodate added recovery code
 - [x] All 219 test files pass, 5,369 tests, 0 failures
+
+## Session 5c: Artifact Persistence Retry Queue
+### Feature: Retry queue with exponential backoff for workspace artifact persistence
+- [x] Implement server-side retry queue (3 attempts, exponential backoff: 1s, 2s, 4s)
+- [x] Add workspace.addArtifact retry logic: catch DB errors → enqueue for retry → return success to client
+- [x] Update client-side persistArtifact comments to reflect server-side retry handling
+- [x] Write 12 tests for retry queue (success on retry, max attempts exhausted, backoff timing, mixed batch, full lifecycle)
+- [x] Added retryQueueStatus diagnostic endpoint for monitoring
+- [x] All 220 test files pass, 5,381 tests, 0 failures
