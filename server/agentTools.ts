@@ -1154,6 +1154,120 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── Store Submission Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "store_submit",
+      description:
+        "Automate app store submission for mobile apps. Generates store listing metadata (descriptions, keywords, categories), validates compliance with store guidelines, creates submission-ready packages, and generates Fastlane/EAS configuration for automated upload. Supports Apple App Store (via Fastlane deliver / App Store Connect API) and Google Play Store (via Fastlane supply / Play Developer API). Requires prior native_app_build with capacitor or expo target.",
+      parameters: {
+        type: "object",
+        properties: {
+          store: {
+            type: "string",
+            enum: ["apple", "google", "both"],
+            description: "Target store: 'apple' (App Store Connect), 'google' (Google Play Console), 'both'",
+          },
+          app_name: {
+            type: "string",
+            description: "App display name for the store listing",
+          },
+          short_description: {
+            type: "string",
+            description: "Short description (max 80 chars for Google Play, 30 chars subtitle for Apple)",
+          },
+          full_description: {
+            type: "string",
+            description: "Full app description for the store listing (max 4000 chars)",
+          },
+          keywords: {
+            type: "string",
+            description: "Comma-separated keywords for ASO (max 100 chars for Apple)",
+          },
+          category: {
+            type: "string",
+            enum: ["business", "education", "entertainment", "finance", "food_drink", "games", "health_fitness", "lifestyle", "medical", "music", "navigation", "news", "photo_video", "productivity", "reference", "shopping", "social_networking", "sports", "travel", "utilities", "weather"],
+            description: "Primary app category",
+          },
+          content_rating: {
+            type: "string",
+            enum: ["4+", "9+", "12+", "17+", "everyone", "teen", "mature"],
+            description: "Content/age rating for the app",
+          },
+          privacy_policy_url: {
+            type: "string",
+            description: "URL to the app's privacy policy (required for both stores)",
+          },
+          screenshot_urls: {
+            type: "array",
+            items: { type: "string" },
+            description: "URLs to app screenshots (minimum 2 for Apple, 2 for Google)",
+          },
+          release_notes: {
+            type: "string",
+            description: "What's new in this version",
+          },
+          auto_submit: {
+            type: "boolean",
+            description: "If true, automatically submit for review after upload. If false, save as draft.",
+          },
+        },
+        required: ["store", "app_name", "full_description", "category"],
+        additionalProperties: false,
+      },
+    },
+  },
+  // ── Code Signing Tool ──
+  {
+    type: "function" as const,
+    function: {
+      name: "code_sign",
+      description:
+        "Configure code signing for native app builds. Generates signing configurations, manages certificate references, and sets up provisioning profiles. Supports Apple code signing (development/distribution certificates, provisioning profiles via Fastlane match), Android signing (keystore generation, Play App Signing enrollment), and desktop code signing (Windows Authenticode, macOS notarization via notarytool). Required before store submission.",
+      parameters: {
+        type: "object",
+        properties: {
+          platform: {
+            type: "string",
+            enum: ["ios", "android", "macos", "windows"],
+            description: "Target platform for code signing configuration",
+          },
+          signing_type: {
+            type: "string",
+            enum: ["development", "distribution", "ad-hoc", "enterprise"],
+            description: "Type of signing identity. 'development' for testing, 'distribution' for store release.",
+          },
+          team_id: {
+            type: "string",
+            description: "Apple Developer Team ID (10-char alphanumeric) for iOS/macOS signing",
+          },
+          bundle_id: {
+            type: "string",
+            description: "App bundle identifier (e.g., com.company.app)",
+          },
+          keystore_alias: {
+            type: "string",
+            description: "Android keystore alias for the signing key",
+          },
+          use_play_app_signing: {
+            type: "boolean",
+            description: "Enable Google Play App Signing (recommended)",
+          },
+          notarize: {
+            type: "boolean",
+            description: "Enable Apple notarization for macOS apps",
+          },
+          match_git_url: {
+            type: "string",
+            description: "Git repo URL for Fastlane match certificate storage (iOS)",
+          },
+        },
+        required: ["platform", "signing_type"],
+        additionalProperties: false,
+      },
+    },
+  },
   // ── Video Analysis Tool ──
   {
     type: "function" as const,
@@ -3263,6 +3377,10 @@ export async function executeTool(
       return executeWebappRollback(args, context);
     case "analyze_video":
       return executeAnalyzeVideo(args);
+    case "store_submit":
+      return executeStoreSubmit(args, context);
+    case "code_sign":
+      return executeCodeSign(args, context);
     case "parallel_execute":
       return executeParallelTasks(args, context);
     case "multi_agent_orchestrate":
@@ -5910,4 +6028,503 @@ async function executeParallelMap(
     artifactType: "document",
     artifactLabel: `Parallel Map (${results.length} items)`,
   };
+}
+
+
+// ── store_submit executor ──
+async function executeStoreSubmit(args: {
+  store?: string;
+  app_name?: string;
+  short_description?: string;
+  full_description?: string;
+  keywords?: string;
+  category?: string;
+  content_rating?: string;
+  privacy_policy_url?: string;
+  screenshot_urls?: string[];
+  release_notes?: string;
+  auto_submit?: boolean;
+}, context?: ToolContext): Promise<ToolResult> {
+  if (!context?.userId) {
+    return { success: false, result: "Authentication required for store submission." };
+  }
+  if (!activeProjectDir) {
+    return { success: false, result: "No active project. Use create_webapp first." };
+  }
+  const fs = await import("fs");
+  const path = await import("path");
+  const store = args.store || "both";
+  const appName = args.app_name || "My App";
+  const category = args.category || "utilities";
+  const fullDescription = args.full_description || "";
+  const shortDescription = args.short_description || fullDescription.slice(0, 80);
+  const keywords = args.keywords || "";
+  const contentRating = args.content_rating || "4+";
+  const privacyUrl = args.privacy_policy_url || "";
+  const releaseNotes = args.release_notes || "Bug fixes and performance improvements.";
+  const autoSubmit = args.auto_submit ?? false;
+  const generatedFiles: string[] = [];
+
+  try {
+    // Create fastlane directory
+    const fastlaneDir = path.join(activeProjectDir, "fastlane");
+    fs.mkdirSync(fastlaneDir, { recursive: true });
+    fs.mkdirSync(path.join(fastlaneDir, "metadata", "en-US"), { recursive: true });
+
+    if (store === "apple" || store === "both") {
+      // Generate Fastlane Deliverfile for Apple
+      const deliverfile = `# Auto-generated by Sovereign AI store_submit tool
+app_identifier ENV["APP_IDENTIFIER"]
+username ENV["APPLE_ID"]
+
+# Metadata
+name "${appName}"
+subtitle "${shortDescription.slice(0, 30)}"
+description "${fullDescription.replace(/"/g, '\\"')}"
+keywords "${keywords}"
+privacy_url "${privacyUrl}"
+primary_category "${category.toUpperCase()}"
+
+# Rating
+app_rating_config_path "./fastlane/rating_config.json"
+
+# Submission
+submit_for_review ${autoSubmit}
+automatic_release ${autoSubmit}
+phased_release true
+
+# Screenshots
+skip_screenshots ${(args.screenshot_urls?.length || 0) === 0}
+`;
+      fs.writeFileSync(path.join(fastlaneDir, "Deliverfile"), deliverfile);
+      generatedFiles.push("fastlane/Deliverfile");
+
+      // Rating config
+      const ratingConfig = {
+        CARTOON_FANTASY_VIOLENCE: 0,
+        REALISTIC_VIOLENCE: 0,
+        PROLONGED_GRAPHIC_SADISTIC_REALISTIC_VIOLENCE: 0,
+        PROFANITY_CRUDE_HUMOR: 0,
+        MATURE_SUGGESTIVE: 0,
+        HORROR: 0,
+        MEDICAL_TREATMENT_INFO: 0,
+        ALCOHOL_TOBACCO_DRUGS: 0,
+        GAMBLING: 0,
+        SEXUAL_CONTENT_NUDITY: 0,
+        GRAPHIC_SEXUAL_CONTENT_NUDITY: 0,
+        UNRESTRICTED_WEB_ACCESS: 0,
+        GAMBLING_CONTESTS: 0,
+      };
+      fs.writeFileSync(path.join(fastlaneDir, "rating_config.json"), JSON.stringify(ratingConfig, null, 2));
+      generatedFiles.push("fastlane/rating_config.json");
+
+      // Metadata files
+      fs.writeFileSync(path.join(fastlaneDir, "metadata", "en-US", "name.txt"), appName);
+      fs.writeFileSync(path.join(fastlaneDir, "metadata", "en-US", "subtitle.txt"), shortDescription.slice(0, 30));
+      fs.writeFileSync(path.join(fastlaneDir, "metadata", "en-US", "description.txt"), fullDescription);
+      fs.writeFileSync(path.join(fastlaneDir, "metadata", "en-US", "keywords.txt"), keywords);
+      fs.writeFileSync(path.join(fastlaneDir, "metadata", "en-US", "release_notes.txt"), releaseNotes);
+      fs.writeFileSync(path.join(fastlaneDir, "metadata", "en-US", "privacy_url.txt"), privacyUrl);
+      generatedFiles.push("fastlane/metadata/en-US/name.txt", "fastlane/metadata/en-US/description.txt", "fastlane/metadata/en-US/keywords.txt", "fastlane/metadata/en-US/release_notes.txt");
+
+      // Fastfile lane for iOS
+      const iosLane = `default_platform(:ios)
+
+platform :ios do
+  desc "Submit to App Store"
+  lane :release do
+    # Build (assumes IPA already built via EAS or Xcode)
+    deliver(
+      force: true,
+      skip_metadata: false,
+      skip_screenshots: ${(args.screenshot_urls?.length || 0) === 0},
+      submit_for_review: ${autoSubmit},
+      automatic_release: ${autoSubmit},
+      precheck_include_in_app_purchases: false,
+    )
+  end
+
+  desc "Upload to TestFlight"
+  lane :beta do
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+    )
+  end
+end
+`;
+      fs.writeFileSync(path.join(fastlaneDir, "Fastfile"), iosLane);
+      generatedFiles.push("fastlane/Fastfile");
+    }
+
+    if (store === "google" || store === "both") {
+      // Generate Fastlane supply config for Google Play
+      const supplyConfig = `# Google Play Store configuration
+json_key_file ENV["GOOGLE_PLAY_JSON_KEY"]
+package_name ENV["APP_IDENTIFIER"]
+track "production"
+release_status "${autoSubmit ? "completed" : "draft"}"
+`;
+      fs.writeFileSync(path.join(fastlaneDir, "Supplyfile"), supplyConfig);
+      generatedFiles.push("fastlane/Supplyfile");
+
+      // Google Play metadata
+      const playMetadataDir = path.join(fastlaneDir, "metadata", "android", "en-US");
+      fs.mkdirSync(playMetadataDir, { recursive: true });
+      fs.writeFileSync(path.join(playMetadataDir, "title.txt"), appName);
+      fs.writeFileSync(path.join(playMetadataDir, "short_description.txt"), shortDescription.slice(0, 80));
+      fs.writeFileSync(path.join(playMetadataDir, "full_description.txt"), fullDescription);
+      fs.writeFileSync(path.join(playMetadataDir, "changelogs", "default.txt"), releaseNotes);
+      fs.mkdirSync(path.join(playMetadataDir, "changelogs"), { recursive: true });
+      fs.writeFileSync(path.join(playMetadataDir, "changelogs", "default.txt"), releaseNotes);
+      generatedFiles.push("fastlane/metadata/android/en-US/title.txt", "fastlane/metadata/android/en-US/full_description.txt");
+
+      // Append Google Play lane to Fastfile
+      if (store === "both") {
+        const googleLane = `\n\nplatform :android do
+  desc "Submit to Google Play"
+  lane :release do
+    supply(
+      track: "production",
+      release_status: "${autoSubmit ? "completed" : "draft"}",
+      aab: "../android/app/build/outputs/bundle/release/app-release.aab",
+    )
+  end
+
+  desc "Upload to internal testing"
+  lane :beta do
+    supply(
+      track: "internal",
+      aab: "../android/app/build/outputs/bundle/release/app-release.aab",
+    )
+  end
+end
+`;
+        fs.appendFileSync(path.join(fastlaneDir, "Fastfile"), googleLane);
+      }
+    }
+
+    // Generate EAS submit config (alternative to Fastlane for Expo projects)
+    const easSubmitConfig = {
+      submit: {
+        production: {
+          ios: {
+            appleId: "ENV_APPLE_ID",
+            ascAppId: "ENV_ASC_APP_ID",
+            appleTeamId: "ENV_APPLE_TEAM_ID",
+          },
+          android: {
+            serviceAccountKeyPath: "./google-play-key.json",
+            track: "production",
+            releaseStatus: autoSubmit ? "completed" : "draft",
+          },
+        },
+      },
+    };
+    fs.writeFileSync(path.join(activeProjectDir, "eas.json"), JSON.stringify(easSubmitConfig, null, 2));
+    generatedFiles.push("eas.json");
+
+    // Store compliance checklist
+    const complianceChecklist = `# Store Submission Checklist — ${appName}
+
+## Apple App Store
+- [ ] App icon: 1024x1024 PNG, no alpha channel, no rounded corners
+- [ ] Screenshots: At least 3 for each required device size (6.7", 6.5", 5.5")
+- [ ] Privacy policy URL is live and accessible
+- [ ] App Review guidelines compliance (no private APIs, no hidden features)
+- [ ] Content rating questionnaire completed
+- [ ] In-app purchases configured (if applicable)
+- [ ] Export compliance (HTTPS counts as encryption — select "Yes" then "No" for exempt)
+- [ ] Sign in with Apple implemented (if any third-party login exists)
+
+## Google Play Store
+- [ ] App icon: 512x512 PNG
+- [ ] Feature graphic: 1024x500 PNG
+- [ ] Screenshots: At least 2 phone screenshots
+- [ ] Privacy policy URL is live
+- [ ] Content rating questionnaire completed
+- [ ] Target API level meets current requirement (API 34+)
+- [ ] Data safety form completed
+- [ ] App signing enrolled (Play App Signing)
+
+## Both Stores
+- [ ] Bundle ID matches across all configs: \`ENV_APP_IDENTIFIER\`
+- [ ] Version number and build number are incremented
+- [ ] All placeholder text removed from the app
+- [ ] Crash-free rate > 99% in testing
+- [ ] Deep links and universal links tested
+`;
+    fs.writeFileSync(path.join(activeProjectDir, "STORE_SUBMISSION_CHECKLIST.md"), complianceChecklist);
+    generatedFiles.push("STORE_SUBMISSION_CHECKLIST.md");
+
+    const storeNames = store === "both" ? "Apple App Store + Google Play" : store === "apple" ? "Apple App Store" : "Google Play";
+    return {
+      success: true,
+      result: `Store submission package generated for "${appName}" → ${storeNames}!\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\nSubmission method:\n• Fastlane: \`fastlane ios release\` / \`fastlane android release\`\n• EAS: \`eas submit --platform all\`\n\nRequired environment variables:\n• APPLE_ID — Apple Developer email\n• APP_IDENTIFIER — Bundle ID (e.g., com.company.app)\n• GOOGLE_PLAY_JSON_KEY — Path to service account key\n• ASC_APP_ID — App Store Connect app ID\n\nNext steps:\n1. Review STORE_SUBMISSION_CHECKLIST.md\n2. Add screenshots to fastlane/screenshots/\n3. Set environment variables\n4. Run \`fastlane ios release\` or \`eas submit\`\n\nAuto-submit: ${autoSubmit ? "ON — will submit for review automatically" : "OFF — saved as draft for manual review"}`,
+      artifactType: "code",
+      artifactLabel: `Store Submission (${storeNames})`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Store submission generation failed: ${err.message}` };
+  }
+}
+
+// ── code_sign executor ──
+async function executeCodeSign(args: {
+  platform?: string;
+  signing_type?: string;
+  team_id?: string;
+  bundle_id?: string;
+  keystore_alias?: string;
+  use_play_app_signing?: boolean;
+  notarize?: boolean;
+  match_git_url?: string;
+}, context?: ToolContext): Promise<ToolResult> {
+  if (!context?.userId) {
+    return { success: false, result: "Authentication required for code signing." };
+  }
+  if (!activeProjectDir) {
+    return { success: false, result: "No active project. Use create_webapp first." };
+  }
+  const fs = await import("fs");
+  const path = await import("path");
+  const platform = args.platform || "ios";
+  const signingType = args.signing_type || "development";
+  const teamId = args.team_id || "TEAM_ID_HERE";
+  const bundleId = args.bundle_id || "com.example.app";
+  const alias = args.keystore_alias || "release-key";
+  const generatedFiles: string[] = [];
+
+  try {
+    const fastlaneDir = path.join(activeProjectDir, "fastlane");
+    fs.mkdirSync(fastlaneDir, { recursive: true });
+
+    if (platform === "ios" || platform === "macos") {
+      // Fastlane Match configuration for certificate management
+      const matchfile = `# Fastlane Match — Automated certificate & provisioning profile management
+git_url("${args.match_git_url || "https://github.com/YOUR_ORG/certificates.git"}")
+storage_mode("git")
+type("${signingType === "distribution" ? "appstore" : signingType}")
+app_identifier("${bundleId}")
+team_id("${teamId}")
+# For CI/CD, set MATCH_PASSWORD env var for encryption
+`;
+      fs.writeFileSync(path.join(fastlaneDir, "Matchfile"), matchfile);
+      generatedFiles.push("fastlane/Matchfile");
+
+      // ExportOptions.plist for Xcode archive
+      const exportOptions = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>${signingType === "distribution" ? "app-store" : signingType === "ad-hoc" ? "ad-hoc" : "development"}</string>
+  <key>teamID</key>
+  <string>${teamId}</string>
+  <key>signingStyle</key>
+  <string>manual</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>${bundleId}</key>
+    <string>${signingType === "distribution" ? "match AppStore " : "match Development "}${bundleId}</string>
+  </dict>
+  <key>uploadBitcode</key>
+  <false/>
+  <key>uploadSymbols</key>
+  <true/>
+</dict>
+</plist>`;
+      fs.writeFileSync(path.join(activeProjectDir, "ExportOptions.plist"), exportOptions);
+      generatedFiles.push("ExportOptions.plist");
+
+      // Signing lane in Fastfile
+      const signingLane = `
+  desc "Sync certificates"
+  lane :certificates do
+    match(type: "${signingType === "distribution" ? "appstore" : signingType}")
+  end
+
+  desc "Build signed IPA"
+  lane :build_signed do
+    certificates
+    gym(
+      scheme: ENV["SCHEME"] || "${bundleId.split(".").pop()}",
+      export_options: "./ExportOptions.plist",
+      output_directory: "./build",
+      clean: true,
+    )
+  end
+`;
+      // Append to Fastfile if exists
+      const fastfilePath = path.join(fastlaneDir, "Fastfile");
+      if (fs.existsSync(fastfilePath)) {
+        const existing = fs.readFileSync(fastfilePath, "utf-8");
+        if (!existing.includes("lane :certificates")) {
+          // Insert before the last 'end'
+          const updated = existing.replace(/^end\s*$/m, signingLane + "\nend");
+          fs.writeFileSync(fastfilePath, updated);
+        }
+      } else {
+        fs.writeFileSync(fastfilePath, `default_platform(:ios)\n\nplatform :ios do\n${signingLane}\nend\n`);
+      }
+      generatedFiles.push("fastlane/Fastfile (signing lanes)");
+
+      // Notarization config for macOS
+      if (args.notarize && platform === "macos") {
+        const notarizeConfig = `# macOS Notarization Configuration
+# Requires: Apple Developer ID Application certificate + notarytool credentials
+#
+# Setup:
+#   xcrun notarytool store-credentials "AC_PASSWORD" \\
+#     --apple-id "$APPLE_ID" \\
+#     --team-id "${teamId}" \\
+#     --password "$APP_SPECIFIC_PASSWORD"
+#
+# Usage in Tauri (tauri.conf.json):
+#   "bundle": {
+#     "macOS": {
+#       "signingIdentity": "Developer ID Application: Your Name (${teamId})",
+#       "providerShortName": "${teamId}"
+#     }
+#   }
+#
+# Manual notarization:
+#   xcrun notarytool submit ./build/MyApp.dmg --keychain-profile "AC_PASSWORD" --wait
+#   xcrun stapler staple ./build/MyApp.dmg
+
+APPLE_ID=your-apple-id@example.com
+TEAM_ID=${teamId}
+BUNDLE_ID=${bundleId}
+`;
+        fs.writeFileSync(path.join(activeProjectDir, "notarize.env.example"), notarizeConfig);
+        generatedFiles.push("notarize.env.example");
+      }
+    }
+
+    if (platform === "android") {
+      const usePlaySigning = args.use_play_app_signing ?? true;
+
+      // Keystore generation script
+      const keystoreScript = `#!/bin/bash
+# Generate Android release keystore
+# Run this ONCE and store the keystore securely (do NOT commit to git)
+
+KEYSTORE_FILE="android/app/release.keystore"
+ALIAS="${alias}"
+
+echo "Generating release keystore..."
+keytool -genkeypair \\
+  -v \\
+  -storetype PKCS12 \\
+  -keystore "$KEYSTORE_FILE" \\
+  -alias "$ALIAS" \\
+  -keyalg RSA \\
+  -keysize 2048 \\
+  -validity 10000 \\
+  -storepass "$KEYSTORE_PASSWORD" \\
+  -keypass "$KEYSTORE_PASSWORD" \\
+  -dname "CN=Your Name, OU=Your Org, O=Your Company, L=City, ST=State, C=US"
+
+echo ""
+echo "Keystore generated at: $KEYSTORE_FILE"
+echo "Alias: $ALIAS"
+echo ""
+echo "IMPORTANT: Store the keystore password securely!"
+echo "Add to CI secrets: KEYSTORE_PASSWORD, KEYSTORE_FILE, KEY_ALIAS"
+${usePlaySigning ? '\necho ""\necho "Play App Signing is ENABLED."\necho "Upload your keystore to Play Console → App Integrity → App Signing"\necho "Google will manage the app signing key; you keep the upload key."' : ""}
+`;
+      fs.writeFileSync(path.join(activeProjectDir, "generate-keystore.sh"), keystoreScript);
+      fs.chmodSync(path.join(activeProjectDir, "generate-keystore.sh"), "755");
+      generatedFiles.push("generate-keystore.sh");
+
+      // Gradle signing config
+      const gradleSigningConfig = `// Add to android/app/build.gradle inside android { }
+signingConfigs {
+    release {
+        storeFile file(System.getenv("KEYSTORE_FILE") ?: "release.keystore")
+        storePassword System.getenv("KEYSTORE_PASSWORD") ?: ""
+        keyAlias "${alias}"
+        keyPassword System.getenv("KEYSTORE_PASSWORD") ?: ""
+    }
+}
+
+buildTypes {
+    release {
+        signingConfig signingConfigs.release
+        minifyEnabled true
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+}
+`;
+      fs.writeFileSync(path.join(activeProjectDir, "android-signing.gradle"), gradleSigningConfig);
+      generatedFiles.push("android-signing.gradle");
+
+      // EAS credentials config
+      const easCredentials = {
+        android: {
+          keystore: {
+            keystorePath: "./android/app/release.keystore",
+            keystorePassword: "ENV_KEYSTORE_PASSWORD",
+            keyAlias: alias,
+            keyPassword: "ENV_KEYSTORE_PASSWORD",
+          },
+        },
+      };
+      fs.writeFileSync(path.join(activeProjectDir, "credentials.json"), JSON.stringify(easCredentials, null, 2));
+      generatedFiles.push("credentials.json");
+    }
+
+    if (platform === "windows") {
+      // Windows Authenticode signing script
+      const windowsSignScript = `# Windows Code Signing with SignTool
+# Requires: Windows SDK + code signing certificate (.pfx)
+#
+# Purchase a code signing certificate from:
+# - DigiCert, Sectigo, GlobalSign, or SSL.com
+#
+# For EV certificates (recommended for SmartScreen reputation):
+# - Requires hardware token (USB)
+# - signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a MyApp.exe
+#
+# For standard certificates:
+# signtool sign /f "certificate.pfx" /p "$PFX_PASSWORD" /tr http://timestamp.digicert.com /td sha256 /fd sha256 MyApp.exe
+#
+# Tauri config (tauri.conf.json):
+# {
+#   "bundle": {
+#     "windows": {
+#       "certificateThumbprint": "YOUR_CERT_THUMBPRINT",
+#       "digestAlgorithm": "sha256",
+#       "timestampUrl": "http://timestamp.digicert.com"
+#     }
+#   }
+# }
+
+$env:TAURI_SIGNING_PRIVATE_KEY = "path/to/private-key"
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "your-password"
+`;
+      fs.writeFileSync(path.join(activeProjectDir, "windows-signing.ps1"), windowsSignScript);
+      generatedFiles.push("windows-signing.ps1");
+    }
+
+    // .gitignore additions for signing files
+    const gitignoreAdditions = `\n# Code signing (DO NOT commit these)\n*.keystore\n*.jks\n*.p12\n*.pfx\n*.mobileprovision\n*.cer\ncredentials.json\n*.env\nnotarize.env\n`;
+    const gitignorePath = path.join(activeProjectDir, ".gitignore");
+    if (fs.existsSync(gitignorePath)) {
+      const existing = fs.readFileSync(gitignorePath, "utf-8");
+      if (!existing.includes("*.keystore")) {
+        fs.appendFileSync(gitignorePath, gitignoreAdditions);
+        generatedFiles.push(".gitignore (updated)");
+      }
+    }
+
+    const platformName = { ios: "iOS", android: "Android", macos: "macOS", windows: "Windows" }[platform] || platform;
+    return {
+      success: true,
+      result: `Code signing configured for ${platformName} (${signingType})!\n\nFiles created:\n${generatedFiles.map(f => `- ${f}`).join("\n")}\n\n${platform === "ios" || platform === "macos" ? `Apple Signing:\n• Team ID: ${teamId}\n• Bundle ID: ${bundleId}\n• Method: Fastlane match (${signingType})\n• Certificates stored in: ${args.match_git_url || "Configure match_git_url"}\n${args.notarize ? "• Notarization: ENABLED (see notarize.env.example)\n" : ""}` : ""}${platform === "android" ? `Android Signing:\n• Keystore alias: ${alias}\n• Play App Signing: ${args.use_play_app_signing ? "ENABLED (recommended)" : "DISABLED"}\n• Run: ./generate-keystore.sh to create keystore\n` : ""}${platform === "windows" ? `Windows Signing:\n• Method: Authenticode (SignTool)\n• See windows-signing.ps1 for instructions\n` : ""}\nNext steps:\n1. ${platform === "ios" ? "Run `fastlane match development` to sync certificates" : platform === "android" ? "Run ./generate-keystore.sh and store password securely" : "Obtain code signing certificate"}\n2. Add signing credentials to CI/CD secrets\n3. Run store_submit to prepare store listing`,
+      artifactType: "code",
+      artifactLabel: `Code Signing (${platformName})`,
+    };
+  } catch (err: any) {
+    return { success: false, result: `Code signing configuration failed: ${err.message}` };
+  }
 }

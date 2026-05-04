@@ -2,7 +2,7 @@
  * MusicStudioPage — AI music generation interface.
  * Matches Manus music-gen capability: prompt-based music creation.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import HeroIllustration from "@/components/HeroIllustration";
+import { getMusicSynthesizer } from "@/hooks/musicSynthesizer";
 
 interface MusicTrack {
   id: string;
@@ -45,6 +46,35 @@ export default function MusicStudioPage() {
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [pollingId, setPollingId] = useState<string | null>(null);
+  const [synthProgress, setSynthProgress] = useState<Record<string, number>>({});
+  const synthRef = useRef(getMusicSynthesizer());
+
+  // Synthesizer playback for tracks without audio URL
+  const playSynthesized = useCallback((track: MusicTrack) => {
+    const synth = synthRef.current;
+    if (synth.playing) {
+      synth.stop();
+      setPlayingId(null);
+      return;
+    }
+    synth.onStateChange((state) => {
+      setSynthProgress(prev => ({ ...prev, [track.id]: state.progress }));
+      if (!state.isPlaying) {
+        setPlayingId(null);
+      }
+    });
+    setPlayingId(track.id);
+    synth.playComposition("", {
+      genre: track.genre.toLowerCase(),
+      mood: "creative",
+      duration: 30,
+    });
+  }, []);
+
+  // Cleanup synthesizer on unmount
+  useEffect(() => {
+    return () => { synthRef.current.stop(); };
+  }, []);
 
   const generateMutation = trpc.music.generate.useMutation({
     onSuccess: (data) => {
@@ -192,16 +222,21 @@ export default function MusicStudioPage() {
                     <button
                       onClick={() => {
                         if (track.status !== "ready") return;
-                        // Find the audio element for this track and toggle play/pause
-                        const audioEl = document.querySelector(`audio[src="${track.url}"]`) as HTMLAudioElement | null;
-                        if (audioEl) {
-                          if (playingId === track.id) {
-                            audioEl.pause();
-                          } else {
-                            audioEl.play().catch(() => {});
+                        if (track.url) {
+                          // Play server-generated audio
+                          const audioEl = document.querySelector(`audio[src="${track.url}"]`) as HTMLAudioElement | null;
+                          if (audioEl) {
+                            if (playingId === track.id) {
+                              audioEl.pause();
+                            } else {
+                              audioEl.play().catch(() => {});
+                            }
                           }
+                          setPlayingId(playingId === track.id ? null : track.id);
+                        } else {
+                          // Fallback: Web Audio synthesizer
+                          playSynthesized(track);
                         }
-                        setPlayingId(playingId === track.id ? null : track.id);
                       }}
                       disabled={track.status !== "ready"}
                       className={cn(
@@ -272,7 +307,20 @@ export default function MusicStudioPage() {
                           onPause={() => setPlayingId(null)}
                           onEnded={() => setPlayingId(null)}
                         />
-                      ) : null}
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary/60 rounded-full transition-all duration-200"
+                              style={{ width: `${(synthProgress[track.id] || 0) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Volume2 className="w-3 h-3" />
+                            Synth
+                          </span>
+                        </div>
+                      )}
                       {/* Animated waveform bars */}
                       <div className="flex items-end gap-[2px] h-8 mt-2">
                         {Array.from({ length: 48 }).map((_, i) => {

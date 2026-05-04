@@ -1067,4 +1067,37 @@ CMD ["sh", "-c", "${runtimeConfig.startCommand}"]
           return { configured: false, runtime: "static", framework: project.framework };
         }
       }),
+
+    /**
+     * Save visual editor changes — persists CSS modifications made via the visual editor.
+     * Stores changes as a JSON array in the project's envVars for replay on next deploy.
+     */
+    saveVisualEdits: protectedProcedure
+      .input(z.object({
+        projectId: z.string(),
+        changes: z.array(z.object({
+          selector: z.string(),
+          property: z.string(),
+          value: z.string(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.projectId);
+        if (!project || project.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        }
+        // Accumulate visual edits
+        const existingEdits = project.envVars?._VISUAL_EDITS
+          ? JSON.parse(project.envVars._VISUAL_EDITS)
+          : [];
+        const allEdits = [...existingEdits, ...input.changes];
+        const updatedEnvVars = { ...(project.envVars || {}), _VISUAL_EDITS: JSON.stringify(allEdits) };
+        await updateWebappProject(project.id, { envVars: updatedEnvVars } as any);
+        // Generate CSS override string for injection into deployed HTML
+        const cssOverrides = allEdits.map((edit: { selector: string; property: string; value: string }) => {
+          const kebabProp = edit.property.replace(/([A-Z])/g, '-$1').toLowerCase();
+          return `${edit.selector} { ${kebabProp}: ${edit.value} !important; }`;
+        }).join('\n');
+        return { success: true, totalEdits: allEdits.length, cssOverrides };
+      }),
 });

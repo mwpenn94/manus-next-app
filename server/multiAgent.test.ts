@@ -179,9 +179,9 @@ describe("Multi-Agent Orchestration Service", () => {
     expect(names).toContain("multi_agent_orchestrate");
   });
 
-  it("AGENT_TOOLS has 40 tools (including parallel_map + show_thinking)", async () => {
+  it("AGENT_TOOLS has 42 tools (including parallel_map + show_thinking + store_submit + code_sign)", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS.length).toBe(40);
+    expect(AGENT_TOOLS.length).toBe(42);
   });
 
   it("multi_agent_orchestrate tool has correct parameter schema", async () => {
