@@ -55,6 +55,10 @@ export const tasks = mysqlTable("tasks", {
   priority: int("priority").default(2).notNull(),
   /** Per-task timeout in seconds (null = use default 300s) */
   timeoutSeconds: int("timeoutSeconds"),
+  /** Per-task recursive optimization override (null = use user preference) */
+  taskRecursiveOptEnabled: boolean("taskRecursiveOptEnabled"),
+  /** Per-task optimization depth override (null = use user preference) */
+  taskRecursiveOptDepth: int("taskRecursiveOptDepth"),
   /** Number of retry attempts made for this task */
   retryCount: int("retryCount").default(0).notNull(),
   /** Maximum retries allowed (null = use default 3) */

@@ -88,7 +88,7 @@ interface TaskContextValue {
   tasks: Task[];
   activeTaskId: string | null;
   activeTask: Task | null;
-  createTask: (title: string, initialMessage: string) => string;
+  createTask: (title: string, initialMessage: string, opts?: { recursiveOptEnabled?: boolean; recursiveOptDepth?: number }) => string;
   setActiveTask: (id: string | null) => void;
   addMessage: (taskId: string, message: Omit<Message, "id" | "timestamp">) => void;
   removeLastMessage: (taskId: string) => Message | null;
@@ -271,7 +271,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     );
   }, [activeServerId, serverMessagesQuery.data, needsMessageLoad]);
 
-  const createTask = useCallback((title: string, initialMessage: string) => {
+  const createTask = useCallback((title: string, initialMessage: string, opts?: { recursiveOptEnabled?: boolean; recursiveOptDepth?: number }) => {
     // Generate stable ID on the client — this ID is used everywhere from the start
     const id = nanoid(12);
     const now = new Date();
@@ -297,7 +297,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     // Persist to server if authenticated — pass the same externalId
     if (isAuthenticated) {
       createTaskMutation.mutate(
-        { title, externalId: id },
+        { title, externalId: id, recursiveOptEnabled: opts?.recursiveOptEnabled, recursiveOptDepth: opts?.recursiveOptDepth },
         {
           onSuccess: (result) => {
             // Only set serverId — the task.id is already correct (same nanoid)

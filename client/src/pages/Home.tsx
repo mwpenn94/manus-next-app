@@ -170,6 +170,7 @@ export default function Home() {
     return "manus-next-max";
   });
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [taskRecursiveOpt, setTaskRecursiveOpt] = useState(false);
   const [specializedMode, setSpecializedMode] = useState<SpecializedMode>(null);
   const [, navigate] = useLocation();
   const { createTask, tasks } = useTask();
@@ -217,7 +218,7 @@ export default function Home() {
     }
     const text = input.trim() || (pendingFiles.length > 0 ? `Work with ${pendingFiles.length} file(s): ${pendingFiles.map(f => f.name).join(", ")}` : "");
     const title = text.length > 50 ? text.slice(0, 50) + "..." : text;
-    const id = createTask(title, text);
+    const id = createTask(title, text, taskRecursiveOpt ? { recursiveOptEnabled: true } : undefined);
     // Store pending files in sessionStorage so TaskView can pick them up and upload
     if (pendingFiles.length > 0) {
       // We can't pass File objects through sessionStorage, so we store a flag
@@ -518,6 +519,19 @@ export default function Home() {
                 isAuthenticated={isAuthenticated}
                 onTranscript={(text) => setInput(prev => prev ? prev + " " + text : text)}
               />
+              <button
+                onClick={() => setTaskRecursiveOpt(!taskRecursiveOpt)}
+                className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                  taskRecursiveOpt
+                    ? "bg-primary/20 text-primary border border-primary/40"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+                title={taskRecursiveOpt ? "Recursive Optimization: ON" : "Recursive Optimization: OFF"}
+                aria-label="Toggle recursive optimization"
+              >
+                <Sparkles className="w-4 h-4" />
+              </button>
               <button
                 onClick={handleSubmit}
                 disabled={!input.trim() && pendingFiles.length === 0}

@@ -7583,7 +7583,7 @@
 - [x] FEAT-S56-RO-2: Add recursive_optimization_depth column to user_settings table (integer, default 3, range 1-1280)
 - [x] FEAT-S56-RO-3: Create settings UI toggle for Recursive Optimization (on/off + depth slider + temperature strategy)
 - [x] FEAT-S56-RO-4: Wire settings to agent stream — when enabled, agent uses report_convergence tool with pass tracking
-- [ ] FEAT-S56-RO-5: Per-task override — allow users to set optimization depth per task creation (deferred to next session)
+- [x] FEAT-S56-RO-5: Per-task override — Sparkles toggle in input bar, per-task DB columns, agent stream reads task-level override first
 - [x] TEST-S56-PIPELINE: End-to-end test of clone→build→deploy pipeline with Session 56 fixes (13 tests passing)
 - [x] GAP-G-1: iOS composer choreography — responsive mobile layout for task input area (safe-area padding, transition-[padding])
 - [x] GAP-G-2: iOS composer choreography — touch-optimized suggestion cards (44px min targets, touch-manipulation, active:scale)

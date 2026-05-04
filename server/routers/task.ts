@@ -52,13 +52,20 @@ export const taskRouter = router({
     }),
 
   create: protectedProcedure
-    .input(z.object({ title: z.string().min(1).max(500), externalId: z.string().min(8).max(24).optional() }))
+    .input(z.object({
+      title: z.string().min(1).max(500),
+      externalId: z.string().min(8).max(24).optional(),
+      recursiveOptEnabled: z.boolean().optional(),
+      recursiveOptDepth: z.number().min(1).max(1280).optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const externalId = input.externalId || nanoid(12);
       return createTask({
         externalId,
         userId: ctx.user.id,
         title: input.title,
+        taskRecursiveOptEnabled: input.recursiveOptEnabled ?? undefined,
+        taskRecursiveOptDepth: input.recursiveOptDepth ?? undefined,
       });
     }),
 
