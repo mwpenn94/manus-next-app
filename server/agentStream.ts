@@ -1578,16 +1578,20 @@ If git_operation(clone) fails:
               role: "user",
               content: `SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED for this query about your connected GitHub repo.
 
-IMPORTANT CONTEXT: The connected repo (mwpenn94/manus-next-app) IS the currently running application. You are ALREADY INSIDE this codebase. Do NOT try to clone it — you have full access to it at /home/ubuntu/manus-next-app.
+CONTEXT: The connected repo (mwpenn94/manus-next-app) is the currently running application.
 
-Allowed actions:
-- github_ops(mode: 'status') — fetch repo health, commits, file tree, README from GitHub API
-- github_ops(mode: 'branch') — create feature branches
-- github_ops(mode: 'pr') — manage pull requests
-- github_ops(mode: 'release') — generate changelogs
-- respond_to_user — answer directly from your knowledge of this codebase
+You have FULL development lifecycle capabilities:
+- git_operation(clone) — clone the repo to /tmp/webapp-projects/ for a fresh working copy
+- install_deps — install dependencies in the cloned project
+- deploy_webapp — build and deploy a live preview
+- run_command — run any command in the project (build, test, lint, etc.)
+- app_lifecycle — manage the preview server
+- github_ops(status/branch/pr/release) — check repo health, create branches, manage PRs
+- github_edit — make code changes to files
+- respond_to_user — answer questions about the codebase
 
-Do NOT call deep_research_content, wide_research, web_search, or read_webpage. The user wants information about THEIR OWN repo, not web research about it.`,
+The user can preview, edit, review changes, and publish updates through you.
+Do NOT call deep_research_content, wide_research, web_search, or read_webpage — the user wants to WORK WITH their repo, not research about it.`,
             } as any);
           } else {
             toolCalls = filtered;

@@ -3956,11 +3956,16 @@ async function executeRunCommand(args: {
     return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
   }
 
-  // Security: block dangerous commands and host-app modification
+  // Security: block dangerous commands and direct host-app modification
+  // Note: commands run in activeProjectDir (the cloned project), NOT the host app.
+  // Only block commands that explicitly target the RUNNING host instance path.
   const blocked = ["rm -rf /", "rm -rf /*", "mkfs", "dd if=", ":(){ :|:& };:"];
-  const hostAppPaths = ["/home/ubuntu/manus-next-app", "manus-next-app"];
-  if (hostAppPaths.some(p => args.command.includes(p))) {
-    return { success: false, result: "Cannot modify the host application. Commands must operate within the active project sandbox only." };
+  const hostInstancePath = "/home/ubuntu/manus-next-app";
+  // Block commands that would cd into or directly modify the running host instance
+  if (args.command.includes(`cd ${hostInstancePath}`) || 
+      args.command.includes(`rm -rf ${hostInstancePath}`) ||
+      args.command.includes(`rm ${hostInstancePath}`)) {
+    return { success: false, result: "Cannot modify the running host application directly. Use the cloned project in the sandbox." };
   }
   if (blocked.some(b => args.command.includes(b))) {
     return { success: false, result: "Command blocked for safety reasons." };
@@ -4039,18 +4044,13 @@ async function executeGitOperation(args: {
           return { success: false, result: "Invalid remote URL format. Only https://, git://, and git@ URLs are allowed." };
         }
         
-        // SELF-REPO DETECTION: If the user is trying to clone the host application itself,
-        // warn them and provide useful context instead of a recursive clone.
+        // SELF-REPO AWARENESS: If cloning the host app, allow it but clone to a separate directory
+        // so the agent can build a preview without interfering with the running instance.
         const normalizedUrl = args.remote_url.toLowerCase().replace(/\.git$/, "");
         const isSelfRepo = normalizedUrl.includes("mwpenn94/manus-next-app") || normalizedUrl.includes("mwpenn94/manus-next");
-        if (isSelfRepo) {
-          return {
-            success: true,
-            result: `## ⚠️ Self-Repo Detected\n\nThe repository \`mwpenn94/manus-next-app\` is the **currently running application** — you are already inside it.\n\n**What you can do instead:**\n- Use \`github_ops(status)\` to see repo health, recent commits, file structure, and README\n- Use \`github_ops(branch)\` to create feature branches\n- Use \`github_ops(pr)\` to manage pull requests\n- Use \`github_ops(release)\` to generate changelogs\n- Ask about specific files or features — I have full context of this codebase\n\n**Current app location:** /home/ubuntu/manus-next-app\n**Status:** Running in production at manusnext-mlromfub.manus.space`,
-            artifactType: "terminal" as any,
-            artifactLabel: "Self-Repo Detection",
-          };
-        }
+        // Note: We do NOT block self-repo clones. The agent needs to be able to clone, build,
+        // preview, edit, and republish itself. The clone goes to /tmp/webapp-projects/ which
+        // is separate from the running instance at /home/ubuntu/manus-next-app.
         const cloneName = args.remote_url.split("/").pop()?.replace(".git", "").replace(/[^a-zA-Z0-9_\-]/g, "") || "cloned-repo";
         const cloneDir = `/tmp/webapp-projects/${cloneName}`;
         

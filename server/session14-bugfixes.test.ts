@@ -63,9 +63,9 @@ describe("Self-edit guard", () => {
   it("run_command blocks host app path references", async () => {
     const fs = await import("fs");
     const agentTools = fs.readFileSync("server/agentTools.ts", "utf-8");
-    expect(agentTools).toContain("hostAppPaths");
+    expect(agentTools).toContain("hostInstancePath");
     expect(agentTools).toContain("/home/ubuntu/manus-next-app");
-    expect(agentTools).toContain("Cannot modify the host application");
+    expect(agentTools).toContain("Cannot modify the running host application directly");
   });
 
   it("create_file and edit_file have path traversal guards", async () => {

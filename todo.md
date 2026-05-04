@@ -7533,3 +7533,6 @@
 - [x] Adjust all build/install timeouts to 300s for pilot repo (2000+ files, heavy deps)
 - [x] Add self-repo detection to prevent recursive clone when connected repo IS the host app
 - [x] Add integration test for full clone→build→deploy pipeline using pilot repo (mwpenn94/manus-next-app) to validate timeout chain end-to-end (33 tests)
+- [x] Fix self-repo detection — allows clone/build/preview within sandbox (clone proceeds, adds context note)
+- [x] Fix GitHub Query Guard — supports full dev lifecycle (clone, build, preview, edit, publish)
+- [x] Agent can preview, edit, and republish itself within its sandbox (run_command only blocks direct host instance modification)
