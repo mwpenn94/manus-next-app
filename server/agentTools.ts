@@ -3213,16 +3213,21 @@ export async function executeTool(
   }
 }
 
-// ── Webapp Project State ──
+/// ── Webapp Project State ──
 let activeProjectDir: string | null = null;
 let activeProjectServePath: string | null = null;
 let activeProjectType: "html" | "react" | null = null;
 let activeProjectPreviewUrl: string | null = null;
-
+// SUCCESSFUL CLONE REGISTRY (Session 56 Fix): Track repos that have been cloned successfully.
+// Key = normalized URL (lowercase, no .git suffix), Value = { dir, timestamp }
+// This prevents the catastrophic bug where the agent re-clones the same repo 8+ times.
+const successfulCloneRegistry = new Map<string, { dir: string; timestamp: number }>();
+export function getSuccessfulCloneRegistry() {
+  return successfulCloneRegistry;
+}
 export function getActiveProject() {
   return { dir: activeProjectDir, servePath: activeProjectServePath, type: activeProjectType };
 }
-
 export function getActivePreviewUrl(): string | null {
   return activeProjectPreviewUrl;
 }
@@ -3443,6 +3448,35 @@ async function executeCreateWebapp(args: {
   const template = args.template || "react";
 
   try {
+    // ── SESSION 56 FIX: Protect cloned repos from being overwritten by create_webapp ──
+    // If the target directory is a successfully cloned repo, DO NOT overwrite it.
+    // This prevents the catastrophic bug where create_webapp destroys a valid clone.
+    const isClonedDir = Array.from(successfulCloneRegistry.values()).some(entry => entry.dir === projectDir);
+    if (isClonedDir && fs.existsSync(projectDir)) {
+      // Reactivate the existing clone instead of destroying it
+      activeProjectDir = projectDir;
+      console.log(`[create_webapp] PROTECTED: ${projectDir} is a cloned repo — reactivating instead of overwriting`);
+      return {
+        success: true,
+        result: `Project directory "${projectName}" already exists from a previous git clone. It has been reactivated as the active project. DO NOT create a new webapp over a cloned repository. Use the existing files: install_deps, run_command(build), edit_file, or deploy_webapp.`,
+        artifactType: "terminal",
+        artifactLabel: `${projectName} (reactivated)`,
+      };
+    }
+    // Also protect if activeProjectDir is already set to a cloned repo (different name but same content)
+    if (activeProjectDir && activeProjectDir !== projectDir) {
+      const activeIsCloned = Array.from(successfulCloneRegistry.values()).some(entry => entry.dir === activeProjectDir);
+      if (activeIsCloned && fs.existsSync(activeProjectDir)) {
+        console.log(`[create_webapp] PROTECTED: Active project ${activeProjectDir} is a cloned repo — blocking create_webapp that would override it`);
+        return {
+          success: true,
+          result: `An active cloned project already exists at ${activeProjectDir}. You should NOT create a new webapp when you have a cloned repository ready. Use the existing cloned project: install_deps, run_command(build), edit_file, or deploy_webapp.`,
+          artifactType: "terminal",
+          artifactLabel: `blocked (clone protected)`,
+        };
+      }
+    }
+
     // Clean up any existing project with same name
     if (fs.existsSync(projectDir)) {
       fs.rmSync(projectDir, { recursive: true, force: true });
@@ -4107,6 +4141,29 @@ async function executeGitOperation(args: {
           return { success: false, result: "Invalid remote URL format. Only https://, git://, and git@ URLs are allowed." };
         }
         
+        // ── SUCCESSFUL CLONE REGISTRY (Session 56 Fix) ──
+        // If this repo URL was already cloned successfully, DO NOT re-clone.
+        // Instead, reactivate the existing directory and tell the agent to use it.
+        const normalizedUrlForRegistry = args.remote_url.toLowerCase().replace(/\.git$/, "").replace(/\/$/, "");
+        const existingClone = successfulCloneRegistry.get(normalizedUrlForRegistry);
+        if (existingClone) {
+          const fs = await import("fs");
+          if (fs.existsSync(existingClone.dir)) {
+            // Reactivate the existing clone directory
+            activeProjectDir = existingClone.dir;
+            console.log(`[git_operation] CLONE DEDUP: Repo already cloned at ${existingClone.dir} — reactivating instead of re-cloning`);
+            return {
+              success: true,
+              result: `This repository has already been cloned successfully to ${existingClone.dir}. The project directory is now active. DO NOT clone again — use the existing files. You can proceed with install_deps, run_command, create_file, edit_file, or deploy_webapp.`,
+              artifactType: "terminal",
+              artifactLabel: `git clone (reused existing)`,
+            };
+          } else {
+            // Directory was cleaned up — remove from registry and allow re-clone
+            successfulCloneRegistry.delete(normalizedUrlForRegistry);
+          }
+        }
+
         // SELF-REPO AWARENESS: If cloning the host app, allow it but clone to a separate directory
         // so the agent can build a preview without interfering with the running instance.
         const normalizedUrl = args.remote_url.toLowerCase().replace(/\.git$/, "");
@@ -4379,6 +4436,9 @@ async function executeGitOperation(args: {
         }
         
         activeProjectDir = cloneDir;
+        // Register successful clone to prevent re-cloning (Session 56 Fix)
+        successfulCloneRegistry.set(normalizedUrlForRegistry, { dir: cloneDir, timestamp: Date.now() });
+        console.log(`[git_operation] CLONE REGISTRY: Registered successful clone of ${normalizedUrlForRegistry} at ${cloneDir}`);
         break;
       }
       case "remote_add":
@@ -4449,6 +4509,31 @@ async function executeDeployWebapp(args: {
 
   if (!activeProjectDir) {
     return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
+  }
+
+  // ── SESSION 56 FIX: Deploy directory content validation ──
+  // Verify that activeProjectDir actually exists and contains real project files.
+  // This catches the bug where activeProjectDir points to a directory that was
+  // deleted/overwritten by a subsequent create_webapp call.
+  if (!fs.existsSync(activeProjectDir)) {
+    // Check if there's a cloned repo we should be using instead
+    const lastClone = Array.from(successfulCloneRegistry.entries()).pop();
+    if (lastClone) {
+      const [url, entry] = lastClone;
+      if (fs.existsSync(entry.dir)) {
+        activeProjectDir = entry.dir;
+        console.log(`[deploy_webapp] RECOVERY: activeProjectDir was missing, recovered to last cloned repo at ${entry.dir}`);
+      } else {
+        return { success: false, result: `Deploy failed: The project directory no longer exists. The cloned repo at ${entry.dir} was also removed. Please clone the repository again.` };
+      }
+    } else {
+      return { success: false, result: "Deploy failed: The project directory no longer exists. Use create_webapp or git_operation(clone) to set up a project first." };
+    }
+  }
+  // Verify the directory isn't empty (catches cases where rm -rf happened)
+  const dirContents = fs.readdirSync(activeProjectDir);
+  if (dirContents.length === 0) {
+    return { success: false, result: `Deploy failed: The project directory (${activeProjectDir}) is empty. This may indicate the project was accidentally deleted. Please clone or create the project again.` };
   }
 
   const projectName = path.basename(activeProjectDir);

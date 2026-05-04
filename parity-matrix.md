@@ -7,14 +7,14 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 
 | Capability | Manus | Our App | Gap | Priority |
 |---|---|---|---|---|
-| Multi-turn agent loop | ✅ Full iterative loop with tool use | ✅ 3-tier loop (quick/standard/deep) | ⚠️ Loop depth capped at 3/5/12 vs Manus unlimited | P1-CRITICAL |
+| Multi-turn agent loop | ✅ Full iterative loop with tool use | ✅ 4-tier loop (speed/quality/max/limitless) | ✅ PARITY+ (speed=30, quality=100, max=200, limitless=∞) | — |
 | Recursive convergence | ✅ Implicit in agent behavior | ✅ Explicit report_convergence tool with temp/scoring | ✅ PARITY+ (we have explicit convergence framework) | — |
 | Tool orchestration | ✅ 20+ tools, parallel map() | ✅ 27 tools, wide_research parallel | ⚠️ Missing: map() parallel subtask spawning | P1-HIGH |
 | Deep research mode | ✅ Gemini Deep Research agent | ✅ deep_research_content tool + wide_research | ⚠️ Our deep research is LLM-only, not multi-agent | P1-HIGH |
 | Anti-shallow guards | ✅ Implicit quality control | ✅ Explicit anti-shallow detection + forced continuation | ✅ PARITY+ | — |
 | Stuck detection | ✅ Implicit | ✅ Explicit stuck detection with recovery prompts | ✅ PARITY+ | — |
 | Memory extraction | ✅ Cross-task memory | ✅ Post-task memory extraction to DB | ✅ PARITY | — |
-| Context compression | ✅ Automatic | ⚠️ Not implemented | ❌ MISSING | P1-HIGH |
+| Context compression | ✅ Automatic | ✅ compressConversationContext with selective preservation | ✅ PARITY+ (failure log, artifact URLs, key decisions preserved) | — |
 | Reasoning transparency | ✅ Step-by-step in replay | ✅ Tool events + progress steps in UI | ⚠️ Need richer "thinking" display | P1-MEDIUM |
 
 ## Priority 2: App Development & Production + GitHub
@@ -106,8 +106,8 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 ## Critical Gaps Summary (Ordered by Priority)
 
 ### P1 — AI Reasoning (Top Priority)
-1. **Loop depth limits** — Increase max iterations for deep mode (12→25+)
-2. **Context compression** — Implement conversation summarization for long tasks
+1. ~~**Loop depth limits**~~ — RESOLVED: 4-tier system (speed=30, quality=100, max=200, limitless=∞ turns)
+2. ~~**Context compression**~~ — RESOLVED: compressConversationContext with selective preservation + WORKING MEMORY injection
 3. **Parallel subtask spawning** — Add map()-style parallel execution
 4. **Richer thinking display** — Show reasoning steps more transparently
 

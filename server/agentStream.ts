@@ -1101,7 +1101,34 @@ will seamlessly continue you with full context. Write as extensively as the task
 - Minimize confirmation-seeking. Only ask when truly ambiguous AND high-stakes.
 - When the user says "continue" or "keep going", resume exactly where you left off.
 - File attachments ARE the context — process them immediately.
-- After research, ALWAYS synthesize into the actual deliverable the user requested.`;
+- After research, ALWAYS synthesize into the actual deliverable the user requested.
+
+### RECURSIVE OPTIMIZATION FRAMEWORK (When user requests convergence/optimization passes)
+When the user requests recursive optimization, convergence passes, or IOV passes, use the **report_convergence** tool with the full framework:
+
+**Temperature Model (0.0-1.0):**
+- Start at 0.6-0.8 depending on task novelty. High = explore/diverge, Low = exploit/converge.
+- Temperature decays by 0.05 when a pass produces no improvement (score_delta ≤ 0).
+- Temperature increases by 0.1 when score drops (regression detected) to enable recovery exploration.
+- Convergence requires: temperature ≤ 0.2 AND score_delta < 0.2 for 2+ passes AND zero regressions.
+
+**Pass Types (select based on signals):**
+- landscape: Broad survey of remaining issues (use when starting or after regression)
+- depth: Deep dive into a specific identified issue (use when a clear target exists)
+- adversarial: Stress-test and try to break what exists (use mid-cycle)
+- future_state: Evaluate against future requirements (use when current state is stable)
+- synthesis: Integrate and harmonize across components (use when multiple fixes need coordination)
+- exploration: Try novel approaches outside current paradigm (use when stagnating)
+- fundamental_redesign: Reconsider core assumptions (use only when temperature > 0.7 and repeated failures)
+
+**Per-Pass Protocol:**
+1. Call report_convergence(status='running') at pass START with pass_type, temperature, signal_assessment
+2. Execute the pass work (actual changes, analysis, or verification)
+3. Call report_convergence(status='converged'|'needs_more') at pass END with rating, score_delta, failure_log
+4. If score_delta ≤ 0 for 3+ consecutive passes AND temperature ≤ 0.2, the work has converged
+5. Counter resets to 0 on ANY pass that produces changes (score_delta > 0)
+
+**Anti-Stagnation:** If 5 consecutive passes show score_delta = 0, force pass_type to 'exploration' or 'adversarial' and bump temperature by 0.15.`;
     }
     // PC3: Final anti-apology reinforcement (recency bias — LLMs follow last instruction most)
     systemPrompt += `\n\n## ABSOLUTE FINAL RULE — NO APOLOGIES\nDo NOT start your response with any form of apology, acknowledgment of error, or self-correction language. Banned openers: "My apologies", "I apologize", "I'm sorry", "You're right", "You're absolutely right", "I should have", "Let me correct", "I made an error", "That was my mistake", "Got it, loud and clear", "I hear you", "Fair point". Instead, IMMEDIATELY provide the correct action/answer. If you violated a rule, just do the right thing NOW without commenting on the violation.`;
@@ -1171,6 +1198,7 @@ will seamlessly continue you with full context. Write as extensively as the task
     let cloneAttempts = 0;
     const MAX_CLONE_ATTEMPTS = 2; // Hard budget: max 2 clone attempts per conversation
     let cloneBudgetExhausted = false; // When true, git_operation(clone) is blocked
+    const successfulCloneUrls = new Set<string>(); // Session 56 Fix: Track URLs that cloned successfully to prevent re-cloning
     let githubOpsCompleted = false; // Tracks whether github_ops has been called — guard deactivates after
 
     // PC4 FIX: Research budget for Limitless mode — after N consecutive research tools
@@ -1736,6 +1764,20 @@ SELF-REPO AWARENESS: This repo already has its own package.json with build scrip
                 conversation.push({ role: "tool", content: blockMsg, tool_call_id: toolCall.id, name: tn } as any);
                 continue;
               }
+              // ── SUCCESSFUL CLONE DEDUP (Session 56 Fix) ──
+              // If this exact URL was already cloned successfully in this conversation,
+              // block the re-clone attempt at the stream level (belt-and-suspenders with agentTools check).
+              const cloneUrl = (pa.remote_url || "").toLowerCase().replace(/\.git$/, "").replace(/\/$/, "");
+              if (cloneUrl && successfulCloneUrls.has(cloneUrl)) {
+                console.log(`[Agent] CLONE DEDUP: Blocking re-clone of already-cloned URL: ${cloneUrl}`);
+                const dedupMsg = `ALREADY CLONED: This repository (${pa.remote_url}) was already cloned successfully earlier in this conversation. The project directory is already active. DO NOT clone again. Proceed with the next step: install_deps, run_command(build), create_file, edit_file, or deploy_webapp.`;
+                sendSSE(safeWrite, { tool_start: { id: toolCall.id, name: tn, args: pa, display: getToolDisplayInfo(tn, pa) } });
+                sendSSE(safeWrite, { tool_result: { id: toolCall.id, name: tn, success: true, preview: dedupMsg.slice(0, 500) } });
+                completedToolCalls++;
+                sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
+                conversation.push({ role: "tool", content: dedupMsg, tool_call_id: toolCall.id, name: tn } as any);
+                continue;
+              }
               cloneAttempts++;
             }
 
@@ -1793,6 +1835,14 @@ SELF-REPO AWARENESS: This repo already has its own package.json with build scrip
                 completedToolCalls++;
                 sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
                 break; // Exit the tool loop entirely — force LLM to respond to user
+              }
+            }
+            // SESSION 56 FIX: Register successful clone URLs to prevent re-cloning
+            if (tn === "git_operation" && pa.operation === "clone" && result.success) {
+              const clonedUrl = (pa.remote_url || "").toLowerCase().replace(/\.git$/, "").replace(/\/$/, "");
+              if (clonedUrl) {
+                successfulCloneUrls.add(clonedUrl);
+                console.log(`[Agent] CLONE REGISTRY: Registered successful clone of ${clonedUrl}`);
               }
             }
 
@@ -1999,7 +2049,30 @@ SELF-REPO AWARENESS: This repo already has its own package.json with build scrip
         );
         const isInAppBuildPipeline = (usedAppBuildingToolsForStuck || contentShowsAppBuildForStuck) && !hasDeployedForStuck && !contentShowsDeployedForStuck;
         const normalizedText = (textContent || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 500);
-        if (normalizedText.length > 20 && !isInAppBuildPipeline) {
+
+        // ── SESSION 56 FIX: EXACT-REPETITION DETECTION (fires even during app-building pipeline) ──
+        // The blanket isInAppBuildPipeline exemption was too broad — it allowed the agent to
+        // say the EXACT same text 8+ times in a row without triggering stuck detection.
+        // Fix: If the text is >90% similar (near-verbatim) to the IMMEDIATELY PREVIOUS response,
+        // always fire stuck detection regardless of pipeline state.
+        let isExactRepeat = false;
+        if (normalizedText.length > 20 && recentTextResponses.length > 0) {
+          const lastResponse = recentTextResponses[recentTextResponses.length - 1];
+          // Check for near-exact match (>90% word overlap with last response)
+          const prevWords = new Set(lastResponse.split(" ").filter(w => w.length > 2));
+          const currWords = new Set(normalizedText.split(" ").filter(w => w.length > 2));
+          if (prevWords.size > 0 && currWords.size > 0) {
+            let shared = 0;
+            Array.from(currWords).forEach(w => { if (prevWords.has(w)) shared++; });
+            const exactSimilarity = shared / Math.max(prevWords.size, currWords.size);
+            if (exactSimilarity > 0.9) {
+              isExactRepeat = true;
+              console.log(`[Agent] EXACT REPEAT DETECTED (similarity: ${(exactSimilarity * 100).toFixed(0)}%) — overriding pipeline exemption`);
+            }
+          }
+        }
+
+        if (normalizedText.length > 20 && (!isInAppBuildPipeline || isExactRepeat)) {
           // Check similarity against recent text responses
           const isSimilarToRecent = recentTextResponses.some(prev => {
             // Simple Jaccard-like similarity: shared words / total words

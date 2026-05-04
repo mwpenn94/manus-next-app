@@ -57,51 +57,26 @@
 
 **Fix:** Enhance the convergence tool schema to include temperature, pass_type, signal_assessment, score_delta, failure_log, and persist convergence state in the database for cross-session continuity.
 
-### GAP C: ATLAS Parallel Execution Gap (Same-Order Tasks Run Sequentially)
+### GAP C: ATLAS Parallel Execution Gap (Same-Order Tasks Run Sequentially) — ✅ RESOLVED
 
-**Reference:** Vol 3 (Orchestration) mandates parallel execution of independent tasks. The system_reminder confirms: "comments and plan structure allow same-order tasks to run in parallel, but `executeGoal()` currently executes each task in a batch sequentially via `for (const task of batch) { await executeTask(...) }`"
+**Status:** CLOSED. `atlas.ts` now uses `Promise.allSettled()` for same-order tasks within each batch. Verified via code inspection.
 
-**Current State:** ATLAS `executeGoal()` groups tasks by `executionOrder` (correct), but within each batch, tasks are awaited one-at-a-time instead of using `Promise.allSettled()`.
+### GAP D: Main Agent Loop Does Not Route Through AEGIS/Sovereign — ✅ RESOLVED
 
-**Fix:** Change the sequential `for...await` to `Promise.allSettled()` for same-order tasks within a batch.
+**Status:** CLOSED. Line 1422 of agentStream.ts shows `invokeWithAegisRetry()` as the primary LLM call path. It routes through AEGIS with pre-flight (cache check, prompt optimization), post-flight (quality scoring), and falls back to raw invokeLLM only on AEGIS pipeline errors. SSE events emit AEGIS metadata (classification, quality scores) to the client.
 
-### GAP D: Main Agent Loop Does Not Route Through AEGIS/Sovereign
+### GAP E: ConvergenceIndicator UI Missing Temperature and Pass Type Visualization — ✅ RESOLVED
 
-**Reference:** The system_reminder confirms AEGIS exists and is integrated into ATLAS, but the main `agentStream.ts` agent loop (the core chat experience) calls `invokeLLM()` directly without routing through Sovereign or applying AEGIS pre/post-flight.
+**Status:** CLOSED. `ConvergenceIndicator.tsx` now includes: TemperatureGauge component (0.0-1.0 visualization), pass type badges, ScoreDeltaIndicator (trend chip), signal assessment display, failure log, and divergence budget usage bar. SSE convergence events from agentStream.ts emit all fields (temperature, passType, scoreDelta, signalAssessment, failureLog, divergenceBudgetUsed).
 
-**Current State:** The main agent loop at lines 900-1200 builds messages and calls `invokeLLM()` directly. It does NOT:
-- Route through `routeRequest()` (Sovereign) for provider selection/failover
-- Apply `runPreFlight()` for prompt optimization
-- Apply `runPostFlight()` for quality scoring
-- Use AEGIS cache for repeated similar queries
+### GAP F: Context Compression Doesn't Preserve High-Value Tool Results — ✅ RESOLVED
 
-**Impact:** The most-used path (chat streaming) gets none of the quality/routing/caching benefits that ATLAS tasks get.
-
-**Fix:** Integrate Sovereign routing into the main agent stream's LLM call path, with AEGIS pre-flight for prompt optimization and post-flight for quality tracking.
-
-### GAP E: ConvergenceIndicator UI Missing Temperature and Pass Type Visualization
-
-**Reference:** The Universal Holistic Optimization Prompt v4 requires temperature to be visible and tracked. The Convergence Pass Log shows each pass has a type, temperature, and rating.
-
-**Current State:** ConvergenceIndicator shows a simple progress bar (0-100 consecutive passes) but doesn't show:
-- Current temperature (0.0-1.0)
-- Which pass type was last executed
-- Score trajectory (improving, stagnating, regressing)
-- Temperature history (has it been declining naturally?)
-- Divergence budget usage
-
-**Fix:** Enhance ConvergenceIndicator to show temperature gauge, pass type history, and score trajectory.
-
-### GAP F: Context Compression Doesn't Preserve High-Value Tool Results
-
-**Reference:** Vol 1 describes context compression that "preserves semantic meaning while reducing token count." The Universal Holistic Optimization Prompt v4 Rule 3 requires failure logging — what was tried and didn't work must be preserved.
-
-**Current State:** `compressConversationContext()` uses LLM summarization but treats all messages equally. It doesn't:
-- Preserve tool results that produced artifacts (images, documents, code)
-- Maintain a "what was tried and failed" log that survives compression
-- Weight recent tool results higher than old conversation
-
-**Fix:** Add selective preservation of high-value tool results and a persistent failure log that survives context compression.
+**Status:** CLOSED. `compressConversationContext()` now implements:
+1. HIGH_VALUE_PATTERNS matching (artifact creation, URLs, errors, file types, deployments) — preserved at 600 chars vs 200 for standard
+2. Failure log extraction — errors/failures collected and injected into WORKING MEMORY system prompt section
+3. Artifact URL preservation — all generated artifact URLs (CDN, S3, storage) extracted and preserved
+4. Key decisions preservation — assistant decision patterns captured and injected into WORKING MEMORY
+5. Tier 2 semantic grouping — consecutive tool sequences collapsed into summaries while preserving semantics
 
 ### GAP G: iOS Composer Choreography Not Replicated
 
@@ -115,10 +90,10 @@
 
 ## Priority Order (by impact × feasibility)
 
-1. **GAP A** (System Prompt Framework) — foundational, affects all recursive optimization behavior
-2. **GAP B** (Convergence Tool) — enables proper tracking of the framework's state
-3. **GAP D** (AEGIS/Sovereign in main loop) — quality multiplier on the most-used path
-4. **GAP C** (ATLAS parallel) — performance improvement, small code change
-5. **GAP F** (Context compression) — reliability for long tasks
-6. **GAP E** (ConvergenceIndicator UI) — user visibility of optimization state
-7. **GAP G** (iOS composer choreography) — UX polish, larger scope
+1. **GAP A** (System Prompt Framework) — ✅ RESOLVED (Session 56: Full framework embedded in limitless mode)
+2. **GAP B** (Convergence Tool) — ✅ RESOLVED (all fields implemented)
+3. **GAP D** (AEGIS/Sovereign in main loop) — ✅ RESOLVED (invokeWithAegisRetry is primary path)
+4. **GAP C** (ATLAS parallel) — ✅ RESOLVED (Promise.allSettled)
+5. **GAP F** (Context compression) — ✅ RESOLVED (selective preservation + WORKING MEMORY)
+6. **GAP E** (ConvergenceIndicator UI) — ✅ RESOLVED (temperature gauge, pass type, score delta)
+7. **GAP G** (iOS composer choreography) — OPEN (UX polish, larger scope, low priority)

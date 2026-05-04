@@ -7553,3 +7553,17 @@
 - [x] Add catch-all in error handler for URL-related errors (prevents raw error leaking to client)
 - [x] Fix unguarded new URL(page.url) in web_search result formatting (line 1743)
 - [x] Change list_files step type from 'browsing' to 'reading' (prevents BrowserPreview rendering for file operations)
+
+## Session 56: Critical "Losing Its Mind" Bugs (14 screenshots)
+
+- [x] BUG-S56-1: Agent clones same repo 8 times — clone budget (MAX_CLONE_ATTEMPTS=2) not blocking successful re-clones. Need successful clone registry.
+- [x] BUG-S56-2: Infinite text loop — "I need to correct this immediately. I'm going to re-clone..." repeats endlessly. Stuck detection disabled during app-building pipeline.
+- [x] BUG-S56-3: Agent deploys hallucinated "simple-demo-app" (generic "Hello from your repo!" HTML) instead of actual cloned repo content.
+- [x] BUG-S56-4: Deployed URL shows "AccessDenied" or stuck "Loading React App..." — wrong content deployed to S3.
+- [x] FIX-S56-1: Add successful clone registry — track repo URLs cloned successfully, block re-clones, tell agent to use existing directory
+- [x] FIX-S56-2: Add exact-repetition text detection that fires EVEN during app-building pipeline (bypass isInAppBuildPipeline skip)
+- [x] FIX-S56-3: Add deploy directory validation — verify activeProjectDir contains actual cloned repo content before deploying
+- [x] FIX-S56-4: Prevent create_webapp from overriding activeProjectDir when a successfully cloned repo exists
+- [x] IOV-S56-1: Embed full Recursive Optimization Framework in limitless mode system prompt (temperature, pass types, anti-stagnation)
+- [x] IOV-S56-2: Update parity-matrix.md — correct stale claims (loop depth, context compression now PARITY+)
+- [x] IOV-S56-3: Update GAP_ANALYSIS_REVISED.md — mark 6/7 gaps as RESOLVED with evidence
