@@ -65,6 +65,23 @@ export const automationRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
+
+      // Compute initial nextRunAt so the scheduler can pick it up
+      let nextRunAt: number | null = null;
+      if (input.triggerType === "interval" && input.intervalSeconds) {
+        nextRunAt = Date.now() + input.intervalSeconds * 1000;
+      } else if (input.triggerType === "cron" && input.cronExpression) {
+        try {
+          const cronParser = require("cron-parser");
+          const parts = input.cronExpression.trim().split(/\s+/);
+          const expr = parts.length === 6 ? parts.slice(1).join(" ") : input.cronExpression;
+          const interval = cronParser.parseExpression(expr);
+          nextRunAt = interval.next().toDate().getTime();
+        } catch {
+          nextRunAt = Date.now() + 3600_000; // fallback: 1 hour
+        }
+      }
+
       const [result] = await db
         .insert(automationSchedules)
         .values({
@@ -78,9 +95,10 @@ export const automationRouter = router({
           workflowDefinition: (input.workflowDefinition as Record<string, unknown>) ?? null,
           status: "active",
           runCount: 0,
+          nextRunAt,
         })
         .$returningId();
-      return { id: result.id, name: input.name, status: "active" };
+      return { id: result.id, name: input.name, status: "active", nextRunAt };
     }),
 
   update: protectedProcedure

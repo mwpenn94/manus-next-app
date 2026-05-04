@@ -223,4 +223,22 @@ Return a JSON object with:
       const { url } = await storagePut(key, result.buffer, result.contentType);
       return { url, filename: result.filename, format: "pdf" as const, title: spec.title };
     }),
+
+  /** Parse/extract text from a PDF document at a given URL */
+  parse: protectedProcedure
+    .input(
+      z.object({
+        url: z.string().url(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { extractTextFromPdfUrl } = await import("../pdfExtraction");
+      const result = await extractTextFromPdfUrl(input.url);
+      return {
+        text: result.text,
+        numPages: result.numPages,
+        metadata: result.metadata,
+        truncated: result.truncated,
+      };
+    }),
 });

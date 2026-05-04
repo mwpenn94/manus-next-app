@@ -140,9 +140,9 @@ describe("Clone → Build → Deploy Pipeline — Timeout Chain", () => {
 
     it("create_webapp has --legacy-peer-deps fallback", () => {
       // The create_webapp section uses legacy-peer-deps as a third attempt
-      // Distance is ~8266 chars, use 9000 window
+      // Distance is ~10250 chars, use 12000 window
       const createSection = agentToolsSrc.match(
-        /async function executeCreateWebapp[\s\S]{0,9000}legacy-peer-deps/
+        /async function executeCreateWebapp[\s\S]{0,12000}legacy-peer-deps/
       );
       expect(createSection).not.toBeNull();
     });
@@ -205,22 +205,23 @@ describe("Clone → Build → Deploy Pipeline — Self-Repo Awareness", () => {
 
 describe("Clone → Build → Deploy Pipeline — Deploy Pre-Validation", () => {
   it("deploy validates package.json has build script", () => {
+    // Use the function definition which is closer to the validation code
     const deploySection = agentToolsSrc.match(
-      /executeDeployWebapp[\s\S]{0,3000}no 'build' script/
+      /async function executeDeployWebapp[\s\S]{0,4000}no 'build' script/
     );
     expect(deploySection).not.toBeNull();
   });
 
   it("deploy validates node_modules exists before build", () => {
     const deploySection = agentToolsSrc.match(
-      /executeDeployWebapp[\s\S]{0,3000}node_modules\/ not found/
+      /async function executeDeployWebapp[\s\S]{0,4000}node_modules\/ not found/
     );
     expect(deploySection).not.toBeNull();
   });
 
   it("deploy checks for entry point (src/main.tsx etc.)", () => {
     const deploySection = agentToolsSrc.match(
-      /executeDeployWebapp[\s\S]{0,4000}No entry point found/
+      /async function executeDeployWebapp[\s\S]{0,5000}No entry point found/
     );
     expect(deploySection).not.toBeNull();
   });
@@ -380,7 +381,7 @@ describe("Clone → Build → Deploy Pipeline — Intent Classifier Integration"
     const agentStreamSrc = fs.readFileSync(path.resolve("server/agentStream.ts"), "utf-8");
     // The depth gate condition should require userWantsResearch
     const depthGateCondition = agentStreamSrc.match(
-      /INTENT-AWARE DEPTH GATE[\s\S]{0,1000}userWantsResearch/
+      /INTENT-AWARE DEPTH GATE[\s\S]{0,1200}userWantsResearch/
     );
     expect(depthGateCondition).not.toBeNull();
   });

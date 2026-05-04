@@ -3406,6 +3406,10 @@ function getToolDisplayInfo(
       return { type: "researching", label: `Research (${args.mode || "full"}): ${(args.topic || args.description || "").slice(0, 50)}` };
     case "github_ops":
       return { type: "versioning", label: `GitHub ops (${args.mode || "status"}): ${(args.description || args.repo || "").slice(0, 50)}` };
+    case "parallel_map":
+      return { type: "executing", label: `Parallel processing ${(args.inputs || []).length} items` };
+    case "show_thinking":
+      return { type: "thinking", label: args.title || "Reasoning" };
     default:
       return { type: "thinking", label: `Using ${toolName}` };
   }

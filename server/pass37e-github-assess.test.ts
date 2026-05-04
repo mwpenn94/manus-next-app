@@ -569,9 +569,9 @@ describe("Pass 37e: GitHub Assess Tool", () => {
       expect(params.required).toEqual(["mode"]);
     });
 
-    it("AGENT_TOOLS count is now 32", async () => {
+    it("AGENT_TOOLS count is now 40", async () => {
       const { AGENT_TOOLS } = await import("./agentTools");
-      expect(AGENT_TOOLS.length).toBe(38);
+      expect(AGENT_TOOLS.length).toBe(40);
     });
 
     it("github_assess is wired in executeTool", async () => {

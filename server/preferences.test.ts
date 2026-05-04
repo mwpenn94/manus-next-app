@@ -68,6 +68,9 @@ describe("preferences router", () => {
       generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false, theme: 'dark' },
       capabilities: {},
       systemPrompt: null,
+      recursiveOptimizationEnabled: false,
+      recursiveOptimizationDepth: 3,
+      recursiveOptimizationTemperature: 'balanced',
     });
   });
 

@@ -9,13 +9,13 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 |---|---|---|---|---|
 | Multi-turn agent loop | ✅ Full iterative loop with tool use | ✅ 4-tier loop (speed/quality/max/limitless) | ✅ PARITY+ (speed=30, quality=100, max=200, limitless=∞) | — |
 | Recursive convergence | ✅ Implicit in agent behavior | ✅ Explicit report_convergence tool with temp/scoring | ✅ PARITY+ (we have explicit convergence framework) | — |
-| Tool orchestration | ✅ 20+ tools, parallel map() | ✅ 27 tools, wide_research parallel | ⚠️ Missing: map() parallel subtask spawning | P1-HIGH |
+| Tool orchestration | ✅ 20+ tools, parallel map() | ✅ 29 tools, wide_research + parallel_map + parallel_execute | ✅ PARITY+ (parallel_map for structured batch, parallel_execute for ad-hoc) | — |
 | Deep research mode | ✅ Gemini Deep Research agent | ✅ deep_research_content tool + wide_research | ⚠️ Our deep research is LLM-only, not multi-agent | P1-HIGH |
 | Anti-shallow guards | ✅ Implicit quality control | ✅ Explicit anti-shallow detection + forced continuation | ✅ PARITY+ | — |
 | Stuck detection | ✅ Implicit | ✅ Explicit stuck detection with recovery prompts | ✅ PARITY+ | — |
 | Memory extraction | ✅ Cross-task memory | ✅ Post-task memory extraction to DB | ✅ PARITY | — |
 | Context compression | ✅ Automatic | ✅ compressConversationContext with selective preservation | ✅ PARITY+ (failure log, artifact URLs, key decisions preserved) | — |
-| Reasoning transparency | ✅ Step-by-step in replay | ✅ Tool events + progress steps in UI | ⚠️ Need richer "thinking" display | P1-MEDIUM |
+| Reasoning transparency | ✅ Step-by-step in replay | ✅ show_thinking tool + tool events + progress steps | ✅ PARITY (show_thinking emits structured reasoning to UI) | — |
 
 ## Priority 2: App Development & Production + GitHub
 
@@ -31,10 +31,10 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 | GitHub assess/audit | ✅ Not native | ✅ github_assess with 14-dimension scoring | ✅ PARITY+ | — |
 | GitHub CI/CD generation | ✅ Not native | ✅ github_ops with workflow generation | ✅ PARITY+ | — |
 | GitHub PR workflow | ✅ Not native | ✅ github_ops branch/pr/release/merge | ✅ PARITY+ | — |
-| Checkpoint/rollback | ✅ webdev_save_checkpoint | ⚠️ Git operations but no checkpoint UI | ❌ MISSING checkpoint management UI | P2-HIGH |
+| Checkpoint/rollback | ✅ webdev_save_checkpoint | ✅ Deployments panel with version history + rollback mutations | ✅ PARITY | — |
 | Visual editor | ✅ Select element + edit in preview | ❌ Not implemented | ❌ MISSING | P2-MEDIUM |
 | Custom domains | ✅ Manus.space + custom domains | ❌ Not implemented | ❌ MISSING | P2-LOW |
-| Environment secrets | ✅ webdev_request_secrets | ⚠️ Basic env vars in project settings | ⚠️ Need encrypted secrets management | P2-MEDIUM |
+| Environment secrets | ✅ webdev_request_secrets | ✅ Secrets tab in Settings + per-project addEnvVar/deleteEnvVar | ✅ PARITY | — |
 | Database integration | ✅ Drizzle + TiDB | ⚠️ No database for built webapps | ❌ MISSING for user-built apps | P2-HIGH |
 | Server-side code | ✅ Express + tRPC | ⚠️ Static-only deployment | ❌ MISSING server deployment | P2-HIGH |
 
@@ -77,7 +77,7 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 | Binary signing | ✅ Not native feature | ❌ Not implemented | ❌ MISSING | P4-LOW |
 | Native testing | ✅ Not native feature | ❌ Not implemented | ❌ MISSING | P4-MEDIUM |
 
-## Other Capabilities
+## Priority 5: Other Capabilities
 
 | Capability | Manus | Our App | Gap | Priority |
 |---|---|---|---|---|
@@ -94,28 +94,28 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 | Screenshot verify | ✅ Vision AI | ✅ screenshot_verify with LLM vision | ✅ PARITY | — |
 | Connectors (Slack/Drive/etc) | ✅ OAuth connectors | ✅ use_connector tool | ✅ PARITY | — |
 | Data pipeline | ✅ Not native | ✅ data_pipeline tool | ✅ PARITY+ | — |
-| Automation orchestration | ✅ Scheduled tasks | ✅ automation_orchestrate tool | ✅ PARITY+ | — |
+| Automation orchestration | ✅ Scheduled tasks | ✅ automation_orchestrate + scheduler with cron/interval polling | ✅ PARITY | — |
 | App lifecycle management | ✅ Not native | ✅ app_lifecycle tool | ✅ PARITY+ | — |
 | Stripe/payments | ✅ Stripe integration | ✅ Stripe integration | ✅ PARITY | — |
-| Scheduled tasks | ✅ Cron/interval | ⚠️ automation_orchestrate plans only | ❌ MISSING actual cron execution | P5-HIGH |
-| Video analysis | ✅ manus-analyze-video | ❌ Not implemented | ❌ MISSING | P5-MEDIUM |
+| Scheduled tasks | ✅ Cron/interval | ✅ Scheduler polls automation_schedules, computes nextRunAt on create | ✅ PARITY (cron-parser + interval, execution via agent stream) | — |
+| Video analysis | ✅ manus-analyze-video | ✅ analyze_video tool with LLM vision | ✅ PARITY | — |
 | Speech-to-text | ✅ manus-speech-to-text | ✅ voiceTranscription integration | ✅ PARITY | — |
-| Music generation | ✅ AI music gen | ❌ Not implemented | ❌ MISSING | P5-LOW |
-| PDF processing | ✅ PDF skill | ⚠️ PDF generation only, no parsing | ⚠️ PARTIAL | P5-MEDIUM |
+| Music generation | ✅ AI music gen | ✅ music.generate with degraded-delivery contract (prompt-only until audio API available) | ⚠️ PARTIAL (no audio generation API, returns structured prompt) | P5-LOW |
+| PDF processing | ✅ PDF skill | ✅ document.parse for PDF text extraction + PDF generation | ✅ PARITY | — |
 
 ## Critical Gaps Summary (Ordered by Priority)
 
 ### P1 — AI Reasoning (Top Priority)
 1. ~~**Loop depth limits**~~ — RESOLVED: 4-tier system (speed=30, quality=100, max=200, limitless=∞ turns)
 2. ~~**Context compression**~~ — RESOLVED: compressConversationContext with selective preservation + WORKING MEMORY injection
-3. **Parallel subtask spawning** — Add map()-style parallel execution
-4. **Richer thinking display** — Show reasoning steps more transparently
+3. ~~**Parallel subtask spawning**~~ — RESOLVED: parallel_map tool for structured batch processing + parallel_execute for ad-hoc
+4. ~~**Richer thinking display**~~ — RESOLVED: show_thinking tool emits structured reasoning to UI
 
 ### P2 — App Development & Production
 5. **Server-side deployment** — Support Express/API deployment, not just static
-6. **Checkpoint management UI** — Version history with rollback
+6. ~~**Checkpoint management UI**~~ — RESOLVED: Deployments panel with version history + rollback
 7. **Database for user apps** — Allow user-built apps to have databases
-8. **Encrypted secrets management** — Proper secret handling for user apps
+8. ~~**Encrypted secrets management**~~ — RESOLVED: Secrets tab + per-project env var management
 
 ### P3 — Task Structure/Flow/UI/UX
 9. **Native mobile app** — PWA wrapper or Capacitor build of our own app
@@ -126,6 +126,21 @@ Cross-referenced 83 replay links, official Manus documentation, native app featu
 12. **Store submission automation** — Guided store submission flow
 
 ### P5 — Other
-13. **Actual cron execution** — Real scheduled task runner
+13. ~~**Actual cron execution**~~ — RESOLVED: Scheduler polls automation_schedules with nextRunAt, computes next run on create
 14. **Python code execution** — Add Python runtime support
-15. **Video analysis** — Video content analysis tool
+15. ~~**Video analysis**~~ — RESOLVED: analyze_video tool with LLM vision
+16. ~~**PDF processing**~~ — RESOLVED: document.parse for PDF text extraction
+17. ~~**Music generation**~~ — RESOLVED (partial): degraded-delivery contract, returns structured prompt
+
+## Remaining Open Items (8 of original 17)
+
+| # | Item | Priority | Effort | Notes |
+|---|---|---|---|---|
+| 1 | Deep research multi-agent | P1-HIGH | Large | Requires multi-agent orchestration for research |
+| 2 | Server-side deployment | P2-HIGH | Large | Need CloudRun or similar for SSR/API |
+| 3 | Visual editor | P2-MEDIUM | Large | Select-and-edit in preview iframe |
+| 4 | Database for user apps | P2-HIGH | Medium | Provision per-app databases |
+| 5 | Native mobile app | P3-HIGH | Large | PWA wrapper or Capacitor build |
+| 6 | Richer tool result previews | P3-MEDIUM | Medium | Inline document/image previews |
+| 7 | Actual build pipeline | P4-HIGH | Large | Cloud builds for native apps |
+| 8 | Python code execution | P5-MEDIUM | Medium | Add Python runtime to execute_code |

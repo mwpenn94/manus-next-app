@@ -369,6 +369,162 @@ export function startScheduler(): void {
     console.log(`[Scheduler] Retention job scheduled — next run in ${Math.round(delayMs / 60000)}min`);
   };
   scheduleRetentionJob();
+
+  // ── Automation Schedules Polling ──
+  // Polls automation_schedules table for due workflows and executes them internally
+  // via runAgentStream (same pattern as scheduled_tasks but for automation workflows)
+  const AUTOMATION_POLL_INTERVAL_MS = 120_000; // 2 minutes
+  let automationIsRunning = false;
+
+  async function pollDueAutomations(): Promise<void> {
+    if (automationIsRunning) return;
+    automationIsRunning = true;
+    try {
+      const { getDb } = await import("./db");
+      const { automationSchedules, scheduleExecutionHistory } = await import("../drizzle/schema");
+      const { eq, and, lte, sql } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) return;
+
+      const now = Date.now();
+      const dueAutomations = await db
+        .select()
+        .from(automationSchedules)
+        .where(
+          and(
+            eq(automationSchedules.status, "active"),
+            lte(automationSchedules.nextRunAt, now)
+          )
+        )
+        .limit(10);
+
+      if (dueAutomations.length === 0) return;
+      console.log(`[Scheduler] Found ${dueAutomations.length} due automation(s)`);
+
+      for (const automation of dueAutomations) {
+        try {
+          // Create execution history record
+          const [execution] = await db.insert(scheduleExecutionHistory).values({
+            scheduleId: automation.id,
+            userId: automation.userId,
+            status: "running",
+            triggerType: "scheduled",
+          }).$returningId();
+
+          // Build the prompt from workflow definition
+          const workflow = automation.workflowDefinition as Record<string, unknown> | null;
+          const prompt = workflow?.prompt as string
+            ?? workflow?.instruction as string
+            ?? `Execute automation: ${automation.name}${automation.description ? ` — ${automation.description}` : ""}`;
+
+          // Execute via agent stream
+          const { nanoid } = await import("nanoid");
+          const { createTask, addTaskMessage, updateTaskStatus } = await import("./db");
+          const taskExternalId = nanoid(12);
+          const task = await createTask({
+            externalId: taskExternalId,
+            userId: automation.userId,
+            title: `[Auto] ${automation.name}`,
+          });
+
+          if (!task) throw new Error("Failed to create task for automation");
+
+          await addTaskMessage({
+            taskId: task.id,
+            externalId: nanoid(12),
+            role: "user",
+            content: prompt,
+            actions: null,
+          });
+
+          const { runAgentStream } = await import("./agentStream");
+          let fullContent = "";
+          const startTime = Date.now();
+
+          await runAgentStream({
+            messages: [{ role: "user", content: prompt }],
+            taskExternalId,
+            safeWrite: (data: string) => {
+              try {
+                const match = data.match(/^data: (.+)$/m);
+                if (match) {
+                  const parsed = JSON.parse(match[1]);
+                  if (parsed.delta) fullContent += parsed.delta;
+                }
+              } catch { /* ignore */ }
+              return true;
+            },
+            safeEnd: () => {},
+            mode: "quality",
+          });
+
+          const durationMs = Date.now() - startTime;
+
+          // Save assistant response
+          if (fullContent) {
+            await addTaskMessage({
+              taskId: task.id,
+              externalId: nanoid(12),
+              role: "assistant",
+              content: fullContent,
+              actions: null,
+            });
+          }
+          await updateTaskStatus(taskExternalId, "completed");
+
+          // Update execution history
+          await db.update(scheduleExecutionHistory).set({
+            status: "completed",
+            output: fullContent ? fullContent.slice(0, 5000) : null,
+            durationMs,
+            completedAt: new Date(),
+          }).where(eq(scheduleExecutionHistory.id, execution.id));
+
+          // Calculate next run
+          let nextRunAt: number | null = null;
+          if (automation.triggerType === "interval" && automation.intervalSeconds) {
+            nextRunAt = Date.now() + automation.intervalSeconds * 1000;
+          } else if (automation.triggerType === "cron" && automation.cronExpression) {
+            try {
+              const nextDate = getNextCronTime(automation.cronExpression);
+              nextRunAt = nextDate.getTime();
+            } catch {
+              nextRunAt = Date.now() + 3600_000;
+            }
+          }
+
+          // Update automation schedule
+          await db.update(automationSchedules).set({
+            lastRunAt: Date.now(),
+            nextRunAt,
+            runCount: (automation.runCount ?? 0) + 1,
+            lastRunResult: { success: true, durationMs, outputPreview: fullContent?.slice(0, 200) } as Record<string, unknown>,
+            status: "active",
+          }).where(eq(automationSchedules.id, automation.id));
+
+          console.log(`[Scheduler] Automation "${automation.name}" completed in ${durationMs}ms`);
+        } catch (err: any) {
+          console.error(`[Scheduler] Automation "${automation.name}" failed:`, err.message?.slice(0, 300));
+          // Mark as failed
+          const { eq: eqOp } = await import("drizzle-orm");
+          await db.update(automationSchedules).set({
+            lastRunAt: Date.now(),
+            lastRunResult: { success: false, error: err.message?.slice(0, 500) } as Record<string, unknown>,
+            status: "failed",
+          }).where(eqOp(automationSchedules.id, automation.id));
+        }
+      }
+    } catch (err: any) {
+      console.error("[Scheduler] Automation poll error:", err.cause?.message || err.message?.slice(0, 200));
+    } finally {
+      automationIsRunning = false;
+    }
+  }
+
+  // Start automation polling
+  setTimeout(() => pollDueAutomations().catch(console.error), 15_000); // 15s after startup
+  setInterval(() => pollDueAutomations().catch(console.error), AUTOMATION_POLL_INTERVAL_MS);
+  console.log(`[Scheduler] Automation schedules polling — every ${AUTOMATION_POLL_INTERVAL_MS / 1000}s`);
 }
 
 /**

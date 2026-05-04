@@ -754,9 +754,9 @@ describe("Pass 38.5: github_ops tool", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("Pass 38: Tool Registration", () => {
-  it("all 32 tools are registered in AGENT_TOOLS", async () => {
+  it("all 40 tools are registered in AGENT_TOOLS", async () => {
     const { AGENT_TOOLS } = await import("./agentTools");
-    expect(AGENT_TOOLS).toHaveLength(38);
+    expect(AGENT_TOOLS).toHaveLength(40);
     
     const toolNames = AGENT_TOOLS.map((t: any) => t.function.name);
     
@@ -775,6 +775,9 @@ describe("Pass 38: Tool Registration", () => {
     expect(toolNames).toContain("webapp_rollback");
     expect(toolNames).toContain("analyze_video");
     expect(toolNames).toContain("parallel_execute");
+    expect(toolNames).toContain("multi_agent_orchestrate");
+    expect(toolNames).toContain("parallel_map");
+    expect(toolNames).toContain("show_thinking");
     
     // Original tools still present
     expect(toolNames).toContain("web_search");

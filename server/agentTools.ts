@@ -1267,6 +1267,69 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "parallel_map",
+      description:
+        "Execute the same operation across multiple inputs in parallel (like Pool.map()). Use when you need to perform identical processing on 3+ independent items — e.g., research 10 companies, analyze 5 documents, generate descriptions for 8 products. Each subtask runs independently and results are aggregated.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_template: {
+            type: "string",
+            description:
+              "A template prompt describing what to do with each input. Use {{input}} as placeholder. E.g., 'Research the company {{input}} and return their revenue, employee count, and main products.'",
+          },
+          inputs: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Array of 3-50 input strings. Each one is substituted into task_template for a separate parallel subtask.",
+          },
+          output_fields: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Names of fields each subtask should return. E.g., ['company_name', 'revenue', 'employees', 'products']",
+          },
+          max_concurrency: {
+            type: "number",
+            description: "Maximum parallel subtasks to run simultaneously (2-10, default: 5)",
+          },
+        },
+        required: ["task_template", "inputs", "output_fields"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "show_thinking",
+      description:
+        "Display your internal reasoning process to the user. Use this to show step-by-step thinking, decision trees, trade-off analysis, or planning before taking action. Makes the AI's reasoning transparent and auditable.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Brief title for this thinking step. E.g., 'Evaluating approach options' or 'Planning research strategy'",
+          },
+          reasoning: {
+            type: "string",
+            description: "The detailed reasoning content in markdown format. Include considerations, trade-offs, decisions made, and rationale.",
+          },
+          conclusion: {
+            type: "string",
+            description: "Brief conclusion or next action decided upon.",
+          },
+        },
+        required: ["title", "reasoning", "conclusion"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 // ── Tool Executors ──
@@ -3204,6 +3267,13 @@ export async function executeTool(
       return executeParallelTasks(args, context);
     case "multi_agent_orchestrate":
       return executeMultiAgentOrchestration(args, context);
+    case "parallel_map":
+      return executeParallelMap(args, context);
+    case "show_thinking":
+      return {
+        success: true,
+        result: `## ${args.title}\n\n${args.reasoning}\n\n**Conclusion:** ${args.conclusion}`,
+      };
     default:
       return { success: false, result: `Unknown tool: ${name}` };
   }
@@ -5754,4 +5824,90 @@ async function executeMultiAgentOrchestration(
       result: `Multi-agent orchestration failed: ${err.message}\n\nThe supervisor could not decompose or execute the task. Consider breaking it into smaller pieces or using parallel_execute for simpler batch operations.`,
     };
   }
+}
+
+// ── Parallel Map Executor ──
+
+async function executeParallelMap(
+  args: {
+    task_template: string;
+    inputs: string[];
+    output_fields: string[];
+    max_concurrency?: number;
+  },
+  context?: { userId?: number; taskExternalId?: string },
+): Promise<ToolResult> {
+  const { task_template, inputs, output_fields, max_concurrency = 5 } = args;
+
+  if (!inputs || inputs.length === 0) {
+    return { success: false, result: "No inputs provided for parallel_map" };
+  }
+  if (inputs.length > 50) {
+    return { success: false, result: "Maximum 50 inputs allowed per parallel_map call" };
+  }
+
+  const concurrency = Math.min(Math.max(2, max_concurrency), 10);
+  const results: Array<{ input: string; output: Record<string, string>; error?: string }> = [];
+
+  // Process in batches of `concurrency`
+  for (let i = 0; i < inputs.length; i += concurrency) {
+    const batch = inputs.slice(i, i + concurrency);
+    const batchPromises = batch.map(async (input) => {
+      const prompt = task_template.replace(/\{\{input\}\}/g, input);
+      try {
+        const { invokeLLM } = await import("./_core/llm");
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a data extraction assistant. Given the task below, return a JSON object with exactly these fields: ${output_fields.map(f => `"${f}"`).join(", ")}. Return ONLY valid JSON, no markdown fences.`,
+            },
+            { role: "user", content: prompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "map_result",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: Object.fromEntries(
+                  output_fields.map((f) => [f, { type: "string" }])
+                ),
+                required: output_fields,
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const content = String(response.choices[0].message.content || "{}");
+        const parsed = JSON.parse(content);
+        return { input, output: parsed };
+      } catch (err: any) {
+        return { input, output: Object.fromEntries(output_fields.map(f => [f, ""])), error: err.message?.slice(0, 100) };
+      }
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+  }
+
+  // Format as markdown table
+  const successCount = results.filter(r => !r.error).length;
+  const header = `## Parallel Map Results\n\n**Processed:** ${results.length} items | **Success:** ${successCount} | **Failed:** ${results.length - successCount}\n\n`;
+
+  const tableHeader = `| Input | ${output_fields.join(" | ")} | Status |\n| --- | ${output_fields.map(() => "---").join(" | ")} | --- |`;
+  const tableRows = results.map(r => {
+    const vals = output_fields.map(f => (r.output[f] || "").replace(/\|/g, "\\|").slice(0, 80));
+    const status = r.error ? `❌ ${r.error.slice(0, 30)}` : "✅";
+    return `| ${r.input.slice(0, 40)} | ${vals.join(" | ")} | ${status} |`;
+  }).join("\n");
+
+  return {
+    success: successCount > 0,
+    result: `${header}${tableHeader}\n${tableRows}`,
+    artifactType: "document",
+    artifactLabel: `Parallel Map (${results.length} items)`,
+  };
 }
