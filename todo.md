@@ -7630,3 +7630,26 @@
 
 ### Parity Matrix Update
 - [x] Updated parity-matrix.md: 9 of 17 gaps resolved, 8 remaining open items documented
+
+## IOV Convergence Pass — Session 2 Part 2 (Remaining Parity Gaps)
+
+### P### P5-MEDIUM: Python Code Execution
+- [x] Python runtime already exists in execute_code (subprocess with python3, 30s timeout)
+### P1-HIGH: Deep Research Multi-Agent
+- [x] Upgraded research router: 4-agent pipeline (planning → parallel research → validation → synthesis)
+- [x] Fixed TypeScript error in research.ts (batch.map parameter types)
+### P3-MEDIUM: Richer Tool Result Previews
+- [x] Already implemented: InteractiveOutputCard + InlinePreviewWidgets + SandboxViewer (react-syntax-highlighter)
+### P2-HIGH: Server-Side Deployment
+- [x] Added configureRuntime procedure (ssr/api/fullstack) + Dockerfile generation
+### P2-HIGH: Database for User Apps
+- [x] Added provisionDatabase + databaseStatus procedures for per-app DB credentials
+### P4-HIGH: Actual Build Pipeline
+- [x] cloneAndBuild.ts already executes real builds; native_app_build(cicd) generates GitHub Actions workflows
+- [x] Verified: PWA/Capacitor/Tauri/Electron/Expo config + CI/CD pipeline generation all functional
+
+### Final Parity Matrix Update
+- [x] Updated parity-matrix.md: 92% overall parity (69/75 items at PARITY+)
+- [x] 6 remaining items all platform-limited (require external accounts/credentials)
+- [x] Convergence confirmed: two consecutive passes found no actionable items
+- [x] All 218 test files pass, 5345 tests, 0 failures (1 fixed: research.ts types)

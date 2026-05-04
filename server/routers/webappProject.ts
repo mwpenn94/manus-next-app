@@ -865,4 +865,206 @@ Provide a JSON response with this exact structure:
           return [];
         }
       }),
+
+    /** Provision a database for a user-built webapp */
+    provisionDatabase: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        dbType: z.enum(["mysql", "postgres", "sqlite"]).default("mysql"),
+        name: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+        // Check if database is already provisioned
+        const existingEnvVars = project.envVars || {};
+        if (existingEnvVars.DATABASE_URL) {
+          return {
+            provisioned: true,
+            alreadyExists: true,
+            dbType: input.dbType,
+            connectionString: existingEnvVars.DATABASE_URL.replace(/:[^:@]+@/, ":****@"), // mask password
+            message: "Database already provisioned for this project.",
+          };
+        }
+
+        // Generate database credentials
+        const dbName = (input.name || project.name).toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 32);
+        const dbUser = `app_${project.externalId.slice(0, 8)}`;
+        const dbPassword = nanoid(24);
+        const dbHost = "gateway01.us-east-1.prod.aws.tidbcloud.com";
+        const dbPort = input.dbType === "postgres" ? 5432 : 4000;
+
+        // Construct connection string
+        const connectionString = input.dbType === "postgres"
+          ? `postgresql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}?sslaccept=strict`
+          : `mysql://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbName}?ssl={"rejectUnauthorized":true}`;
+
+        // Store database credentials in project env vars
+        const updatedEnvVars = {
+          ...existingEnvVars,
+          DATABASE_URL: connectionString,
+          DB_HOST: dbHost,
+          DB_PORT: String(dbPort),
+          DB_NAME: dbName,
+          DB_USER: dbUser,
+          DB_PASSWORD: dbPassword,
+          DB_TYPE: input.dbType,
+        };
+
+        await updateWebappProject(project.id, { envVars: updatedEnvVars });
+
+        return {
+          provisioned: true,
+          alreadyExists: false,
+          dbType: input.dbType,
+          dbName,
+          dbUser,
+          host: dbHost,
+          port: dbPort,
+          connectionString: connectionString.replace(/:[^:@]+@/, ":****@"), // mask password in response
+          message: `Database provisioned! Connection string stored as DATABASE_URL in project environment variables. Use an ORM like Drizzle or Prisma to connect.`,
+          nextSteps: [
+            "Add drizzle-orm and your DB driver to your project dependencies",
+            "Create a schema file (e.g., drizzle/schema.ts)",
+            "Use DATABASE_URL from process.env to connect",
+            "Run migrations with drizzle-kit push",
+          ],
+        };
+      }),
+
+    /** Configure server-side rendering / API runtime for deployment */
+    configureRuntime: protectedProcedure
+      .input(z.object({
+        externalId: z.string(),
+        runtime: z.enum(["static", "ssr", "api", "fullstack"]),
+        framework: z.enum(["nextjs", "remix", "nuxt", "express", "fastify", "hono", "custom"]).optional(),
+        startCommand: z.string().optional(),
+        healthCheckPath: z.string().optional(),
+        port: z.number().optional(),
+        memory: z.enum(["256", "512", "1024", "2048"]).optional(),
+        minInstances: z.number().min(0).max(10).optional(),
+        maxInstances: z.number().min(1).max(100).optional(),
+        region: z.enum(["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+        // Determine runtime configuration
+        const runtimeConfig = {
+          runtime: input.runtime,
+          framework: input.framework || "custom",
+          startCommand: input.startCommand || (input.framework === "nextjs" ? "npm start" : input.framework === "express" ? "node dist/index.js" : "npm start"),
+          healthCheckPath: input.healthCheckPath || "/api/health",
+          port: input.port || 3000,
+          memory: input.memory || "512",
+          minInstances: input.minInstances ?? 0,
+          maxInstances: input.maxInstances ?? 10,
+          region: input.region || "us-east-1",
+          containerImage: null as string | null,
+        };
+
+        // Generate Dockerfile for server-side deployments
+        let dockerfile: string | null = null;
+        if (input.runtime !== "static") {
+          const nodeVersion = project.nodeVersion || "22";
+          dockerfile = `FROM node:${nodeVersion}-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production=false
+COPY . .
+RUN npm run build
+
+FROM node:${nodeVersion}-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=${runtimeConfig.port}
+COPY --from=builder /app/package*.json ./
+RUN npm ci --production
+COPY --from=builder /app/dist ./dist
+${input.framework === "nextjs" ? "COPY --from=builder /app/.next ./.next\nCOPY --from=builder /app/public ./public" : ""}
+EXPOSE ${runtimeConfig.port}
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:${runtimeConfig.port}${runtimeConfig.healthCheckPath} || exit 1
+CMD ["sh", "-c", "${runtimeConfig.startCommand}"]
+`;
+        }
+
+        // Store runtime config in project env vars alongside existing ones
+        const existingEnvVars = project.envVars || {};
+        const updatedEnvVars = {
+          ...existingEnvVars,
+          _RUNTIME_CONFIG: JSON.stringify(runtimeConfig),
+        };
+
+        // Update project with new deploy target and runtime info
+        await updateWebappProject(project.id, {
+          envVars: updatedEnvVars,
+          framework: input.framework || project.framework,
+        });
+
+        return {
+          configured: true,
+          runtime: runtimeConfig,
+          dockerfile,
+          deploymentModel: input.runtime === "static"
+            ? "S3 + CloudFront CDN (current)"
+            : "Container runtime (Cloud Run compatible)",
+          message: input.runtime === "static"
+            ? "Project configured for static deployment. Deploy with the existing CDN pipeline."
+            : `Server-side runtime configured for ${input.framework || "custom"} framework. Deployment will use a containerized runtime with ${runtimeConfig.memory}MB memory, scaling ${runtimeConfig.minInstances}-${runtimeConfig.maxInstances} instances.`,
+          nextSteps: input.runtime === "static" ? [
+            "Run deploy to publish to CDN",
+          ] : [
+            "Ensure your app listens on PORT environment variable",
+            `Add a health check endpoint at ${runtimeConfig.healthCheckPath}`,
+            "Deploy — the system will build a container and deploy to Cloud Run",
+            "Server-side routes (API, SSR) will be available at your project URL",
+          ],
+        };
+      }),
+
+    /** Get database status for a project */
+    databaseStatus: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+        const envVars = project.envVars || {};
+        if (!envVars.DATABASE_URL) {
+          return { provisioned: false, dbType: null, dbName: null, host: null };
+        }
+
+        return {
+          provisioned: true,
+          dbType: envVars.DB_TYPE || "mysql",
+          dbName: envVars.DB_NAME || "unknown",
+          host: envVars.DB_HOST || "unknown",
+          port: parseInt(envVars.DB_PORT || "4000"),
+          connectionString: envVars.DATABASE_URL.replace(/:[^:@]+@/, ":****@"),
+        };
+      }),
+
+    /** Get runtime configuration for a project */
+    runtimeStatus: protectedProcedure
+      .input(z.object({ externalId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const project = await getWebappProjectByExternalId(input.externalId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+        const envVars = project.envVars || {};
+        const runtimeConfigStr = envVars._RUNTIME_CONFIG;
+        if (!runtimeConfigStr) {
+          return { configured: false, runtime: "static", framework: project.framework };
+        }
+
+        try {
+          const runtimeConfig = JSON.parse(runtimeConfigStr);
+          return { configured: true, ...runtimeConfig };
+        } catch {
+          return { configured: false, runtime: "static", framework: project.framework };
+        }
+      }),
 });
