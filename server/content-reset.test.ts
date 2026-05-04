@@ -62,11 +62,14 @@ describe("content_reset SSE event — server emission", () => {
     expect(contentResetCalls!.length).toBe(8); // Exactly 8 post-streaming reset points
   });
 
-  it("anti-shallow MAX/LIMITLESS sends content_reset before Conducting deeper research", () => {
-    const antiShallowSection = agentStreamSrc.match(
-      /anti-shallow:[\s\S]{0,300}content_reset[\s\S]{0,200}Conducting deeper research/
+  it("intent-aware depth gate sends content_reset before Gathering more information", () => {
+    // The depth gate section has intent classification logic between the header and the content_reset
+    const hasDepthGate = agentStreamSrc.includes("INTENT-AWARE DEPTH GATE");
+    const hasContentResetBeforeGathering = agentStreamSrc.match(
+      /shouldForceResearch[\s\S]{0,300}content_reset[\s\S]{0,200}Gathering more information/
     );
-    expect(antiShallowSection).not.toBeNull();
+    expect(hasDepthGate).toBe(true);
+    expect(hasContentResetBeforeGathering).not.toBeNull();
   });
 
   it("anti-premature-completion sends content_reset before Producing the requested content", () => {

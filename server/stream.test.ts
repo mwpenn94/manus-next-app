@@ -333,7 +333,7 @@ describe("Mode transport and MAX mode enforcement", () => {
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
     expect(content).toContain("MODE: MAX (Aligned with Manus 1.6 Max");
     expect(content).toContain("flagship autonomous tier deeply aligned with Manus 1.6 Max");
-    expect(content).toContain("Deep research depth");
+    expect(content).toContain("Match depth to intent");
     expect(content).toContain("Cross-reference sources");
     expect(content).toContain("Tighter internal planning");
     expect(content).toContain("Leave no stone unturned");
@@ -344,19 +344,19 @@ describe("Mode transport and MAX mode enforcement", () => {
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
     expect(content).toContain("MODE: LIMITLESS (Unlimited Depth & Continuity)");
     expect(content).toContain("NO constraints on your execution depth");
-    expect(content).toContain("Unlimited depth");
+    expect(content).toContain("Match depth to intent");
     expect(content).toContain("Continuous operation");
     expect(content).toContain("Honor user termination conditions");
     expect(content).toContain("Self-monitoring");
   });
 
-  it("MAX/LIMITLESS mode anti-shallow-completion code exists in agentStream", async () => {
+  it("MAX/LIMITLESS mode intent-aware depth gate exists in agentStream", async () => {
     const fs = await import("fs");
     const content = fs.readFileSync("server/agentStream.ts", "utf-8");
-    expect(content).toContain("MAX/LIMITLESS MODE ANTI-SHALLOW-COMPLETION");
-    expect(content).toContain("forcing deeper research");
-    expect(content).toContain("completedToolCalls < 3");
-    // Both max and limitless should trigger anti-shallow
+    expect(content).toContain("INTENT-AWARE DEPTH GATE");
+    expect(content).toContain("userWantsResearch");
+    expect(content).toContain("isActionRequest");
+    // Both max and limitless should trigger the depth gate
     expect(content).toContain('mode === "max" || mode === "limitless"');
   });
 

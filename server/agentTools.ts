@@ -3566,16 +3566,24 @@ async function executeCreateWebapp(args: {
       // Install deps with error handling + fallback to HTML on total failure
       let installSuccess = false;
       try {
-        // Use shorter timeout and suppress output to avoid hanging
-        execSync(`cd ${projectDir} && npm install --prefer-offline --no-audit --no-fund 2>&1 | tail -3`, { timeout: 45000, stdio: 'pipe' });
+        // Attempt 1: prefer-offline for speed (5 min timeout — pilot repo has 2000+ files)
+        execSync(`cd ${projectDir} && npm install --prefer-offline --no-audit --no-fund 2>&1 | tail -3`, { timeout: 300000, stdio: 'pipe' });
         installSuccess = true;
       } catch (installErr: any) {
         console.warn(`[create_webapp] npm install --prefer-offline failed, retrying with network: ${installErr.message?.slice(0, 100)}`);
         try {
-          execSync(`cd ${projectDir} && npm install --no-audit --no-fund 2>&1 | tail -3`, { timeout: 60000, stdio: 'pipe' });
+          // Attempt 2: full network install (5 min timeout)
+          execSync(`cd ${projectDir} && npm install --no-audit --no-fund 2>&1 | tail -3`, { timeout: 300000, stdio: 'pipe' });
           installSuccess = true;
         } catch (retryErr: any) {
-          console.warn(`[create_webapp] npm install retry also failed: ${retryErr.message?.slice(0, 100)}`);
+          console.warn(`[create_webapp] npm install retry failed, trying --legacy-peer-deps: ${retryErr.message?.slice(0, 100)}`);
+          try {
+            // Attempt 3: legacy-peer-deps for repos with peer dep conflicts (5 min timeout)
+            execSync(`cd ${projectDir} && npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -3`, { timeout: 300000, stdio: 'pipe' });
+            installSuccess = true;
+          } catch (legacyErr: any) {
+            console.warn(`[create_webapp] All npm install attempts failed: ${legacyErr.message?.slice(0, 100)}`);
+          }
         }
       }
 
@@ -3911,10 +3919,24 @@ async function executeInstallDeps(args: {
       }
     }
     const sanitized = packages.join(" ");
-    const output = execSync(
-      `cd ${activeProjectDir} && npm install ${sanitized}${devFlag} 2>&1 | tail -10`,
-      { timeout: 60000 }
-    ).toString();
+    let output: string;
+    try {
+      output = execSync(
+        `cd ${activeProjectDir} && npm install ${sanitized}${devFlag} 2>&1 | tail -10`,
+        { timeout: 300000 }
+      ).toString();
+    } catch (installErr: any) {
+      // Retry with --legacy-peer-deps for peer dependency conflicts
+      console.warn(`[install_deps] First attempt failed, retrying with --legacy-peer-deps`);
+      try {
+        output = execSync(
+          `cd ${activeProjectDir} && npm install ${sanitized}${devFlag} --legacy-peer-deps 2>&1 | tail -10`,
+          { timeout: 300000 }
+        ).toString();
+      } catch (retryErr: any) {
+        return { success: false, result: `Failed to install packages after 2 attempts (with and without --legacy-peer-deps):\n\n${retryErr.stdout?.toString()?.slice(-1000) || retryErr.message}` };
+      }
+    }
     return {
       success: true,
       result: `Installed packages: ${args.packages}\n\n${output}`,
@@ -3947,7 +3969,7 @@ async function executeRunCommand(args: {
   try {
     const output = execSync(
       `cd ${activeProjectDir} && ${args.command} 2>&1`,
-      { timeout: 30000, maxBuffer: 1024 * 1024 }
+      { timeout: 120000, maxBuffer: 2 * 1024 * 1024 }
     ).toString();
     const truncated = output.length > 5000 ? output.slice(-5000) + "\n... (output truncated)" : output;
     return {
@@ -4015,6 +4037,19 @@ async function executeGitOperation(args: {
         // Sanitize remote_url: only allow valid git URLs (https://, git://, ssh://)
         if (!/^(https?:\/\/|git:\/\/|git@)[\w.\-\/:@]+$/.test(args.remote_url)) {
           return { success: false, result: "Invalid remote URL format. Only https://, git://, and git@ URLs are allowed." };
+        }
+        
+        // SELF-REPO DETECTION: If the user is trying to clone the host application itself,
+        // warn them and provide useful context instead of a recursive clone.
+        const normalizedUrl = args.remote_url.toLowerCase().replace(/\.git$/, "");
+        const isSelfRepo = normalizedUrl.includes("mwpenn94/manus-next-app") || normalizedUrl.includes("mwpenn94/manus-next");
+        if (isSelfRepo) {
+          return {
+            success: true,
+            result: `## ⚠️ Self-Repo Detected\n\nThe repository \`mwpenn94/manus-next-app\` is the **currently running application** — you are already inside it.\n\n**What you can do instead:**\n- Use \`github_ops(status)\` to see repo health, recent commits, file structure, and README\n- Use \`github_ops(branch)\` to create feature branches\n- Use \`github_ops(pr)\` to manage pull requests\n- Use \`github_ops(release)\` to generate changelogs\n- Ask about specific files or features — I have full context of this codebase\n\n**Current app location:** /home/ubuntu/manus-next-app\n**Status:** Running in production at manusnext-mlromfub.manus.space`,
+            artifactType: "terminal" as any,
+            artifactLabel: "Self-Repo Detection",
+          };
         }
         const cloneName = args.remote_url.split("/").pop()?.replace(".git", "").replace(/[^a-zA-Z0-9_\-]/g, "") || "cloned-repo";
         const cloneDir = `/tmp/webapp-projects/${cloneName}`;
@@ -4444,7 +4479,7 @@ async function executeDeployWebapp(args: {
     if (hasPackageJson) {
       // React/Vite project — run build
       try {
-        execSync(`cd ${activeProjectDir} && npm run build 2>&1`, { timeout: 120000 });
+        execSync(`cd ${activeProjectDir} && npm run build 2>&1`, { timeout: 300000 });
       } catch (buildErr: any) {
         // GAP F: Extract structured build errors for better agent/user feedback
         const rawOutput = buildErr.stdout?.toString() || buildErr.stderr?.toString() || buildErr.message || "";

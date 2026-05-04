@@ -1048,7 +1048,7 @@ You have generous but bounded limits (200 tool turns, 100 continuation rounds). 
 The system will seamlessly continue you if your response hits the token limit.
 
 1. **Strategic decomposition**: Break complex tasks into subtasks and execute them methodically.
-2. **Deep research depth**: For research/complex tasks, use at least 5 tool calls before considering a final response. Use wide_research PLUS multiple read_webpage calls on different sources. EXCEPTION: Simple factual questions, capability questions, or conversational messages should be answered directly in text with ZERO tool calls.
+2. **Match depth to intent**: For research/analysis tasks, use multiple tool calls (web_search, read_webpage, wide_research) to gather comprehensive information. For action requests (clone, deploy, build, configure), use the appropriate action tools directly. For conversational messages, questions about your capabilities, or simple queries, answer directly in text with ZERO tool calls. Never force research when the user didn't ask for it.
 3. **Cross-reference sources**: Never rely on a single source. Search from multiple angles, read multiple pages, and synthesize across all of them.
 4. **Tighter internal planning**: Plan your approach before executing. Minimize wasted turns.
 5. **Higher one-shot accuracy**: Get it right the first time. Verify before concluding. Prioritize depth on what was asked, not breadth on tangential topics.
@@ -1081,9 +1081,9 @@ Your output will NEVER be truncated. If your response hits the token limit, the 
 will seamlessly continue you with full context. Write as extensively as the task demands.
 
 ### CORE PRINCIPLES
-1. **Unlimited depth**: Go as deep into research, analysis, or creation as the task requires.
+1. **Match depth to intent**: Go deep into research ONLY when the user asks for research, analysis, or investigation. For action requests (clone, deploy, build, configure), use action tools directly. For conversational queries or questions about your capabilities, answer directly in text. NEVER force research when the user didn't ask for it.
 2. **Continuous operation**: Keep working until the user's request is fully satisfied.
-3. **Action-first**: When asked to generate/create/build something, use the appropriate tool immediately. Research is for informational tasks.
+3. **Action-first**: When asked to generate/create/build something, use the appropriate tool immediately. When asked to perform an action (deploy, clone, install), do it directly without researching first.
 4. **Comprehensive deliverables**: Include tables, comparisons, citations, actionable specifics, and alternative perspectives.
 5. **Honor user termination conditions**: If the user specifies when to stop, follow those conditions exactly.
 6. **Self-monitoring**: Track your progress. Note what you've covered and what remains.
@@ -1576,7 +1576,18 @@ If git_operation(clone) fails:
             toolCalls = undefined;
             conversation.push({
               role: "user",
-              content: "SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED for this query about your connected GitHub repo. You MUST use github_ops(mode: 'status') to fetch real repo data. Do NOT call deep_research_content, wide_research, web_search, or read_webpage. Use ONLY github_ops, github_edit, git_operation, or answer directly from what you already know.",
+              content: `SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED for this query about your connected GitHub repo.
+
+IMPORTANT CONTEXT: The connected repo (mwpenn94/manus-next-app) IS the currently running application. You are ALREADY INSIDE this codebase. Do NOT try to clone it — you have full access to it at /home/ubuntu/manus-next-app.
+
+Allowed actions:
+- github_ops(mode: 'status') — fetch repo health, commits, file tree, README from GitHub API
+- github_ops(mode: 'branch') — create feature branches
+- github_ops(mode: 'pr') — manage pull requests
+- github_ops(mode: 'release') — generate changelogs
+- respond_to_user — answer directly from your knowledge of this codebase
+
+Do NOT call deep_research_content, wide_research, web_search, or read_webpage. The user wants information about THEIR OWN repo, not web research about it.`,
             } as any);
           } else {
             toolCalls = filtered;
@@ -2163,29 +2174,55 @@ If git_operation(clone) fails:
           }
         }
         
-        // MAX/LIMITLESS MODE ANTI-SHALLOW-COMPLETION: In max or limitless mode, if agent tries to conclude within first 5 turns with fewer than 3 tool calls, force continuation
-        // EXCEPTION: If the user asked for generative output (generate/create/make/build/write/draft), 
-        // do NOT force research — force TOOL USE for production instead.
+        // ═══════════════════════════════════════════════════════════════════
+        // INTENT-AWARE DEPTH GATE (replaces aggressive anti-shallow-completion)
+        // Only nudge deeper work when the user's INTENT genuinely requires it.
+        // ═══════════════════════════════════════════════════════════════════
         const isGenerationRequest = /\b(generate|create|make|build|draft|write|design|set\s*up|scaffold)\s+(me\s+)?(a\s+|an\s+|the\s+|my\s+|some\s+)?(demo\s+|simple\s+|basic\s+|sample\s+|quick\s+|new\s+|small\s+)?(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|application|website|webapp|web\s*app|web\s*site|page|landing\s*page|dashboard|tool|video|audio|song|music|portfolio|blog|store|game|calculator|todo|chart|graph|diagram|poster|flyer|resume|cv|letter|email|newsletter|brochure)\b/i.test(userText) || /\bjust\s+(create|make|build|generate|do|start)\b/i.test(userText);
-        if ((mode === "max" || mode === "limitless") && turn <= 5 && completedToolCalls < 3 && (maxTurns === Infinity || turn < maxTurns - 2) && !isGenerationRequest) {
+        
+        // INTENT CLASSIFIER: Determine if the user actually wants research
+        const userWantsResearch = /\b(research|investigate|find (out|information|data|sources)|look (up|into)|search for|what (is|are|does|do)\s+.{10,}|compare .{5,} (to|with|vs|versus)|analyze .{5,}|deep dive|thorough|comprehensive|in.?depth|detailed analysis|market (research|analysis)|competitive (analysis|landscape)|literature review|state of the art|pros and cons|advantages and disadvantages)\b/i.test(userText);
+        
+        // Queries that should NEVER trigger forced research:
+        const isActionRequest = /\b(clone|deploy|install|run|start|stop|connect|disconnect|configure|set up|update|upgrade|fix|repair|reset|restart|delete|remove|move|copy|rename|send|share|export|import|download|upload|open|close|save|load|push|pull|merge|commit|checkout|switch|toggle|enable|disable|turn (on|off)|activate|deactivate)\b/i.test(userText);
+        const isConversationalQuery = /\b(hello|hi|hey|what can you|who are you|how are you|thanks|thank you|help|capabilities|what do you|tell me about yourself|introduce|how do i|can you|could you|would you|will you|please)\b/i.test(userText);
+        const isAboutConnectedResources = /\b(connected|my (repo|github|account|project|app|site|website|database|db)|the repo|this repo|your repo)\b/i.test(userText);
+        const isShortDirective = userText.split(/\s+/).length <= 12;
+        
+        // The gate should ONLY fire when ALL of these are true:
+        // 1. Mode is max or limitless
+        // 2. Turn is early (<=5) and few tool calls (<3)
+        // 3. User's intent is genuinely research-oriented
+        // 4. NOT a generation, action, conversational, or resource-specific request
+        const shouldForceResearch = (
+          (mode === "max" || mode === "limitless") &&
+          turn <= 5 &&
+          completedToolCalls < 3 &&
+          (maxTurns === Infinity || turn < maxTurns - 2) &&
+          userWantsResearch &&
+          !isGenerationRequest &&
+          !isActionRequest &&
+          !isConversationalQuery &&
+          !isAboutConnectedResources &&
+          !isShortDirective &&
+          !isSimpleQueryMode &&
+          !isGitHubRepoQuery
+        );
+        
+        if (shouldForceResearch) {
           const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
-          console.log(`[Agent] ${modeName} mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
+          console.log(`[Agent] ${modeName} mode depth gate: turn ${turn}, ${completedToolCalls} tool calls, user intent is research — encouraging deeper work`);
           sendSSE(safeWrite, { content_reset: true });
           finalContent = "";
-          sendSSE(safeWrite, { delta: "\n\n*Conducting deeper research...*\n\n" });
+          sendSSE(safeWrite, { delta: "\n\n*Gathering more information...*\n\n" });
           conversation.push({ role: "assistant", content: textContent || "" });
           conversation.push({
             role: "user",
-            content: `You are in ${modeName} mode. The user expects DEEP, THOROUGH research — not a quick answer. You have only used ${completedToolCalls} tools so far, which is far too few for ${modeName} mode. You MUST:
-1. Use web_search or wide_research to gather information from multiple sources
-2. Use read_webpage on at least 2-3 of the most relevant URLs from your search results
-3. Cross-reference and synthesize information across sources
-4. Only THEN produce your comprehensive response
-
-Do NOT produce a final answer yet. Research more deeply first.`,
+            content: `You are in ${modeName} mode. The user asked for research/analysis: "${userText.slice(0, 200)}". You have only used ${completedToolCalls} tools so far. For a research task in ${modeName} mode, gather information from multiple sources before synthesizing your response. Use web_search or wide_research, then read_webpage on relevant results. After gathering enough data, produce a comprehensive synthesis.`,
           });
           continue;
         }
+        
         // For generation requests in MAX/LIMITLESS with no tool calls yet, nudge to USE TOOLS not research
         if ((mode === "max" || mode === "limitless") && turn <= 3 && completedToolCalls === 0 && isGenerationRequest && (maxTurns === Infinity || turn < maxTurns - 2)) {
           const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
@@ -2196,14 +2233,7 @@ Do NOT produce a final answer yet. Research more deeply first.`,
           conversation.push({ role: "assistant", content: textContent || "" });
           conversation.push({
             role: "user",
-            content: `STOP. The user asked you to GENERATE/CREATE something specific: "${userText.slice(0, 200)}". You are in ${modeName} mode. This is a GENERATION task, not a research task. You MUST use the appropriate tool NOW:
-- For documents/PDFs: use generate_document with the appropriate output_format
-- For images: use generate_image
-- For slides: use generate_slides
-- For apps/websites: use create_webapp
-- For code: use execute_code
-
-If the user hasn't specified content details, ASK them what content they want. Do NOT research ABOUT the format. ACT NOW.`,
+            content: `The user asked you to GENERATE/CREATE something specific: "${userText.slice(0, 200)}". Use the appropriate tool NOW:\n- For documents/PDFs: use generate_document\n- For images: use generate_image\n- For slides: use generate_slides\n- For apps/websites: use create_webapp\n- For code: use execute_code\n\nACT NOW — do not research about the format.`,
           });
           continue;
         }
@@ -2411,10 +2441,11 @@ If the user hasn't specified content details, ASK them what content they want. D
         // QUALITY GATE: Prevent false-positive completion with shallow/empty responses
         // In max/limitless mode, if the final text is too short and doesn't contain substantive content,
         // force the agent to provide proper reasoning and context.
-        // EXCEPTION: Don't fire for conversational questions that don't need tools
-        const isConversational = /\b(hello|hi|hey|what can you|who are you|how are you|thanks|thank you|help|capabilities|what do you|tell me about yourself|introduce)\b/i.test(userText);
-        const userAskedSimpleQuestion = userText.split(/\s+/).length <= 8;
-        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0 && !isConversational && !userAskedSimpleQuestion) {
+        // EXCEPTION: Don't fire for conversational, action, short, or resource-specific queries
+        const isConversational = /\b(hello|hi|hey|what can you|who are you|how are you|thanks|thank you|help|capabilities|what do you|tell me about yourself|introduce|how do i|can you|could you|would you|will you|please)\b/i.test(userText);
+        const userAskedSimpleQuestion = userText.split(/\s+/).length <= 12;
+        const isActionOrResource = /\b(clone|deploy|install|run|start|stop|connect|disconnect|configure|set up|update|fix|reset|restart|delete|remove|send|share|export|import|download|upload|open|close|save|push|pull|merge|commit|connected|my (repo|github|account|project|app)|the repo)\b/i.test(userText);
+        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0 && !isConversational && !userAskedSimpleQuestion && !isActionOrResource && !isSimpleQueryMode && !isGitHubRepoQuery) {
           // Agent is trying to end with a very short response and no tool usage — this is a false positive
           const hasSubstance = /\b(here|result|found|analysis|summary|report|created|generated|built|deployed|completed|answer)\b/i.test(textContent);
           if (!hasSubstance) {

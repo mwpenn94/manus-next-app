@@ -7524,3 +7524,11 @@
 - [x] Update regression tests for unconditional guard logic (session55b, session37, pass36, continuation-fix)
 - [x] Fix agent duplicating/looping responses in chat UI (same content rendered twice) — added content_reset SSE event at all 8 post-streaming reset points
 - [x] Fix messages not persisting across page reloads (root cause: client accumulated buffer diverged from server finalContent after continuation resets — content_reset keeps them in sync)
+- [x] Fix Limitless mode forcing wide research even when user does not request it
+- [x] Replace aggressive anti-shallow-completion with proper intent classifier (exempt conversational, action, simple queries)
+- [x] Fix quality gate to not force research on medium-length non-research queries
+- [x] Fix system prompt to not mandate "at least 5 tool calls" for simple questions in max/limitless
+- [x] Fix webapp build/deploy pipeline timeout issues (all timeouts 300s for pilot repo scale)
+- [x] Ensure all capabilities work end-to-end at Manus parity
+- [x] Adjust all build/install timeouts to 300s for pilot repo (2000+ files, heavy deps)
+- [x] Add self-repo detection to prevent recursive clone when connected repo IS the host app
