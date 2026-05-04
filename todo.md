@@ -7723,3 +7723,13 @@
 - [x] Music feature at PARITY+: composition generation + structured playback via Web Audio oscillators/envelopes matches reference capabilities
 ### Test Suite
 - [x] All 219 test files pass, 5,369 tests, 0 failures
+
+## IOV Convergence Pass — Session 5b (deploy_webapp context bug)
+### Bug Fix: deploy_webapp fails after git clone (project context not switching)
+- [x] Investigated: activeProjectDir gets set by create_webapp to empty scaffold, then git_operation(clone) updates it, but stale state causes install_deps/deploy_webapp to operate on wrong directory
+- [x] Fixed install_deps: added package.json existence check + recovery from successfulCloneRegistry (last cloned repo)
+- [x] Fixed run_command: added directory existence check + recovery from successfulCloneRegistry
+- [x] Fixed deploy_webapp: added entry point validation (package.json OR index.html) + recovery from successfulCloneRegistry
+- [x] Enhanced system prompt: added CRITICAL instruction not to call create_webapp before/after git_operation(clone)
+- [x] Updated 3 test regex limits (2000→3000, 4000→5000) to accommodate added recovery code
+- [x] All 219 test files pass, 5,369 tests, 0 failures

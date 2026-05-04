@@ -4187,9 +4187,32 @@ async function executeInstallDeps(args: {
   dev?: boolean;
 }): Promise<ToolResult> {
   const { execSync } = await import("child_process");
+  const fs = await import("fs");
 
   if (!activeProjectDir) {
     return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
+  }
+
+  // ── SESSION 5b FIX: Validate activeProjectDir before running install ──
+  // If the current activeProjectDir doesn't contain a package.json, check if
+  // a recently cloned repo does. This fixes the bug where create_webapp sets
+  // activeProjectDir to an empty scaffold, then git_operation(clone) runs but
+  // the agent calls install_deps before the clone result updates the variable.
+  const hasPackageJson = fs.existsSync(`${activeProjectDir}/package.json`);
+  if (!hasPackageJson || !fs.existsSync(activeProjectDir)) {
+    // Try to recover from the last successful clone
+    const lastClone = Array.from(successfulCloneRegistry.entries()).pop();
+    if (lastClone) {
+      const [, entry] = lastClone;
+      if (fs.existsSync(entry.dir) && fs.existsSync(`${entry.dir}/package.json`)) {
+        console.log(`[install_deps] RECOVERY: activeProjectDir (${activeProjectDir}) has no package.json — switching to last cloned repo at ${entry.dir}`);
+        activeProjectDir = entry.dir;
+      }
+    }
+    // Re-check after recovery attempt
+    if (!fs.existsSync(`${activeProjectDir}/package.json`)) {
+      return { success: false, result: `No package.json found in project directory (${activeProjectDir}). Make sure you have cloned the repository or created a Node.js project first.` };
+    }
   }
 
   try {
@@ -4236,9 +4259,25 @@ async function executeRunCommand(args: {
   command: string;
 }): Promise<ToolResult> {
   const { execSync } = await import("child_process");
+  const fs = await import("fs");
 
   if (!activeProjectDir) {
     return { success: false, result: "No active webapp project. Use create_webapp or git_operation(clone) first." };
+  }
+
+  // ── SESSION 5b FIX: Validate activeProjectDir exists before running command ──
+  if (!fs.existsSync(activeProjectDir)) {
+    const lastClone = Array.from(successfulCloneRegistry.entries()).pop();
+    if (lastClone) {
+      const [, entry] = lastClone;
+      if (fs.existsSync(entry.dir)) {
+        console.log(`[run_command] RECOVERY: activeProjectDir (${activeProjectDir}) missing — switching to last cloned repo at ${entry.dir}`);
+        activeProjectDir = entry.dir;
+      }
+    }
+    if (!fs.existsSync(activeProjectDir)) {
+      return { success: false, result: `Project directory (${activeProjectDir}) does not exist. Clone the repository again.` };
+    }
   }
 
   // Security: block dangerous commands and direct host-app modification
@@ -4722,6 +4761,21 @@ async function executeDeployWebapp(args: {
   const dirContents = fs.readdirSync(activeProjectDir);
   if (dirContents.length === 0) {
     return { success: false, result: `Deploy failed: The project directory (${activeProjectDir}) is empty. This may indicate the project was accidentally deleted. Please clone or create the project again.` };
+  }
+
+  // ── SESSION 5b FIX: If activeProjectDir has no package.json AND no index.html,
+  // but a cloned repo does, switch to the cloned repo. This handles the case where
+  // create_webapp set activeProjectDir to a scaffold that was later cleaned up.
+  const hasAnyEntryPoint = fs.existsSync(path.join(activeProjectDir, "package.json")) || fs.existsSync(path.join(activeProjectDir, "index.html"));
+  if (!hasAnyEntryPoint) {
+    const lastClone = Array.from(successfulCloneRegistry.entries()).pop();
+    if (lastClone) {
+      const [, entry] = lastClone;
+      if (fs.existsSync(entry.dir) && (fs.existsSync(path.join(entry.dir, "package.json")) || fs.existsSync(path.join(entry.dir, "index.html")))) {
+        console.log(`[deploy_webapp] RECOVERY: activeProjectDir (${activeProjectDir}) has no entry point — switching to cloned repo at ${entry.dir}`);
+        activeProjectDir = entry.dir;
+      }
+    }
   }
 
   const projectName = path.basename(activeProjectDir);

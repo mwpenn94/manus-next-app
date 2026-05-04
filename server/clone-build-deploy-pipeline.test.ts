@@ -86,7 +86,7 @@ describe("Clone → Build → Deploy Pipeline — Timeout Chain", () => {
     it("install_deps timeout is at least 300s for large monorepos", () => {
       // The install_deps function should have a 300s timeout
       const installDepsSection = agentToolsSrc.match(
-        /executeInstallDeps[\s\S]{0,2000}timeout:\s*(\d+)/
+        /executeInstallDeps[\s\S]{0,3000}timeout:\s*(\d+)/
       );
       expect(installDepsSection).not.toBeNull();
       const timeout = parseInt(installDepsSection![1]);
@@ -207,14 +207,14 @@ describe("Clone → Build → Deploy Pipeline — Deploy Pre-Validation", () => 
   it("deploy validates package.json has build script", () => {
     // Use the function definition which is closer to the validation code
     const deploySection = agentToolsSrc.match(
-      /async function executeDeployWebapp[\s\S]{0,4000}no 'build' script/
+      /async function executeDeployWebapp[\s\S]{0,5000}no 'build' script/
     );
     expect(deploySection).not.toBeNull();
   });
 
   it("deploy validates node_modules exists before build", () => {
     const deploySection = agentToolsSrc.match(
-      /async function executeDeployWebapp[\s\S]{0,4000}node_modules\/ not found/
+      /async function executeDeployWebapp[\s\S]{0,5000}node_modules\/ not found/
     );
     expect(deploySection).not.toBeNull();
   });

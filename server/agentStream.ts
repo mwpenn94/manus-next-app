@@ -1358,6 +1358,7 @@ For questions unrelated to GitHub (math, general knowledge, research, etc.), IGN
 4. If they ask about code quality → use github_assess
 5. If they ask to preview/view → use github_ops(status) + github_assess(assess)
 6. If they ask to build/deploy/run → github_ops(status) → git_operation(clone) → install_deps → deploy_webapp
+   CRITICAL: Do NOT call create_webapp before or after git_operation(clone). The clone sets the active project directory automatically. Calling create_webapp would override it with an empty scaffold.
 
 ### Auto-selection rule:
 If only one, use it automatically when the user asks about "my repo". If multiple repos, ask which repo they mean.
