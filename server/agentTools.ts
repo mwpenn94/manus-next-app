@@ -1740,8 +1740,12 @@ async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
       if (validPages.length > 0) {
         formattedResults += `### Detailed Page Content\n\n`;
         for (const page of validPages) {
-          const hostname = new URL(page.url).hostname;
-          formattedResults += `**From: ${hostname}** ([${page.url}](${page.url}))\n`;
+          try {
+            const hostname = new URL(page.url).hostname;
+            formattedResults += `**From: ${hostname}** ([${page.url}](${page.url}))\n`;
+          } catch {
+            formattedResults += `**From:** [${page.url}](${page.url})\n`;
+          }
           formattedResults += `${page.content.slice(0, 4000)}\n\n---\n\n`;
         }
       }

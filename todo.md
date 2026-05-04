@@ -7545,3 +7545,11 @@
 - [x] Fix 3: Deploy loop detection — add deploy_webapp to build attempt tracking with specific recovery instructions
 - [x] Fix 4: Deploy error recovery — pre-deploy validation now includes step-by-step recovery instructions
 - [x] Fix 5: Self-repo build script awareness — GitHub Query Guard and system prompt now warn against overwriting existing build config
+
+## Bug: "The string did not match the expected pattern" during deploy
+
+- [x] Root cause: new URL() in step label generation (lines 3223/3227/3239) threw on malformed URLs without try/catch
+- [x] Wrap all new URL() calls in step label generation with try/catch fallback
+- [x] Add catch-all in error handler for URL-related errors (prevents raw error leaking to client)
+- [x] Fix unguarded new URL(page.url) in web_search result formatting (line 1743)
+- [x] Change list_files step type from 'browsing' to 'reading' (prevents BrowserPreview rendering for file operations)

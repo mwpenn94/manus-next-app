@@ -2960,6 +2960,10 @@ Do NOT use browser_action to test it — present confidently since the deploy su
         userMessage = "The AI service was unable to process your request. Please try again or rephrase your message.";
         retryable = true;
       }
+    } else if (msg.includes("did not match") || msg.includes("Invalid URL") || msg.includes("ERR_INVALID_URL")) {
+      // URL construction errors from step label generation or tool execution — internal bug, not user-facing
+      userMessage = "An internal error occurred while processing a URL. The agent will retry automatically.";
+      retryable = true;
     }
     // Send error status BEFORE the error message so the client resets from "running"
     // PC2 FIX: Reset step_progress on error so the counter clears
@@ -3220,11 +3224,11 @@ function getToolDisplayInfo(
     case "execute_code":
       return { type: "executing", label: args.description || "Running code" };
     case "read_webpage":
-      return { type: "browsing", label: `Reading ${args.url ? new URL(args.url).hostname : "webpage"}` };
+      return { type: "browsing", label: `Reading ${args.url ? (() => { try { return new URL(args.url).hostname; } catch { return args.url.slice(0, 40); } })() : "webpage"}` };
     case "generate_document":
       return { type: "writing", label: `Writing document: ${(args.title || "").slice(0, 60)}` };
     case "browse_web":
-      return { type: "browsing", label: `Browsing ${args.url ? new URL(args.url).hostname : "webpage"}` };
+      return { type: "browsing", label: `Browsing ${args.url ? (() => { try { return new URL(args.url).hostname; } catch { return args.url.slice(0, 40); } })() : "webpage"}` };
     case "wide_research":
       return { type: "researching", label: `Wide research: ${(args.queries || []).length} parallel queries` };
     case "generate_slides":
@@ -3236,7 +3240,7 @@ function getToolDisplayInfo(
     case "design_canvas":
       return { type: "designing", label: `Creating design: ${(args.description || "").slice(0, 60)}` };
     case "cloud_browser":
-      return { type: "browsing", label: `Cloud browser: ${args.url ? new URL(args.url).hostname : "page"}` };
+      return { type: "browsing", label: `Cloud browser: ${args.url ? (() => { try { return new URL(args.url).hostname; } catch { return args.url.slice(0, 40); } })() : "page"}` };
     case "screenshot_verify":
       return { type: "analyzing", label: `Verifying screenshot: ${(args.question || "").slice(0, 60)}` };
     case "create_webapp":
@@ -3248,7 +3252,7 @@ function getToolDisplayInfo(
     case "read_file":
       return { type: "reading", label: `Reading file: ${(args.path || "").slice(0, 60)}` };
     case "list_files":
-      return { type: "browsing", label: `Listing project files${args.path ? `: ${args.path}` : ""}` };
+      return { type: "reading", label: `Listing project files${args.path ? `: ${args.path}` : ""}` };
     case "install_deps":
       return { type: "installing", label: `Installing: ${(args.packages || "").slice(0, 60)}` };
     case "run_command":
