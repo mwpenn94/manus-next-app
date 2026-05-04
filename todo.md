@@ -7536,3 +7536,12 @@
 - [x] Fix self-repo detection — allows clone/build/preview within sandbox (clone proceeds, adds context note)
 - [x] Fix GitHub Query Guard — supports full dev lifecycle (clone, build, preview, edit, publish)
 - [x] Agent can preview, edit, and republish itself within its sandbox (run_command only blocks direct host instance modification)
+
+## Video Bug Fixes (Session: 05-04-2026 ScreenRecording)
+
+- [x] Fix 1: Critical file protection in executeCreateFile — block hallucinated package.json overwrites
+- [x] Fix 2a: First-turn tool enforcement dead code — turn === 0 was unreachable (now turn === 1)
+- [x] Fix 2b: Cross-stream app-building pipeline detection — detect pipeline from message content when tool_calls aren't preserved
+- [x] Fix 3: Deploy loop detection — add deploy_webapp to build attempt tracking with specific recovery instructions
+- [x] Fix 4: Deploy error recovery — pre-deploy validation now includes step-by-step recovery instructions
+- [x] Fix 5: Self-repo build script awareness — GitHub Query Guard and system prompt now warn against overwriting existing build config

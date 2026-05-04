@@ -112,7 +112,7 @@ describe("Webapp creation pipeline fix (scope-creep bypass)", () => {
   });
 
   it("should define isAppBuildingPipeline as usedAppBuildingTools && !hasDeployed", () => {
-    expect(agentStreamSource).toContain("isAppBuildingPipeline = usedAppBuildingTools && !hasDeployed");
+    expect(agentStreamSource).toContain("isAppBuildingPipeline = (usedAppBuildingTools || contentShowsAppBuild) && !hasDeployed && !contentShowsDeployed");
   });
 
   it("should exclude app-building pipeline from scope-creep detection", () => {

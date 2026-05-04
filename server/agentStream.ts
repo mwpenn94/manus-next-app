@@ -288,6 +288,12 @@ When the user asks to BUILD, DEPLOY, RUN, HOST, RENDER, or LAUNCH their connecte
 IMPORTANT: Do NOT call create_webapp for this flow. create_webapp is for NEW projects from templates. For existing repos, use the clone → install → deploy pipeline above.
 If the build fails, problem-solve: check error messages, try different install flags, edit vite.config or package.json if needed, then retry the build.
 
+SELF-REPO AWARENESS: When working with a cloned repo that already has package.json:
+- ALWAYS run_command("cat package.json") FIRST to see existing scripts and dependencies
+- Use the EXISTING build scripts — do NOT overwrite them with create_file
+- If a build script is missing, ADD it with edit_file (targeted change), never replace the whole file
+- The repo's own configuration is authoritative — respect it
+
 ### READ vs BUILD Intent Detection
 If the user mentions a specific repo name or says "my connected repo" / "my repo":
 - **READ intents** ("show me", "what's in", "preview" without build words, "view", "read", "status", "what can you do"): Use github_ops + github_assess to READ and REPORT.
@@ -1591,7 +1597,13 @@ You have FULL development lifecycle capabilities:
 - respond_to_user — answer questions about the codebase
 
 The user can preview, edit, review changes, and publish updates through you.
-Do NOT call deep_research_content, wide_research, web_search, or read_webpage — the user wants to WORK WITH their repo, not research about it.`,
+Do NOT call deep_research_content, wide_research, web_search, or read_webpage — the user wants to WORK WITH their repo, not research about it.
+
+SELF-REPO AWARENESS: This repo already has its own package.json with build scripts. When building/deploying:
+- ALWAYS read the existing package.json first (run_command("cat package.json"))
+- Use the EXISTING build scripts — do NOT overwrite them
+- If a build script is missing, ADD it with edit_file, don't replace the whole file
+- Never use create_file on package.json when it already exists`,
             } as any);
           } else {
             toolCalls = filtered;
@@ -1785,14 +1797,17 @@ Do NOT call deep_research_content, wide_research, web_search, or read_webpage �
             }
 
             // PC6/VB5 FIX: Track build/install attempts to detect repeated failures with same approach
-            if ((tn === "install_deps" || tn === "run_command") && (ta.includes("build") || ta.includes("install"))) {
-              const buildKey = tn === "install_deps" ? pa.packages || "" : (pa.command || "").slice(0, 100);
+            if ((tn === "install_deps" || tn === "run_command" || tn === "deploy_webapp") && (ta.includes("build") || ta.includes("install") || tn === "deploy_webapp")) {
+              const buildKey = tn === "install_deps" ? pa.packages || "" : tn === "deploy_webapp" ? (pa.project_path || pa.path || "deploy").slice(0, 100) : (pa.command || "").slice(0, 100);
               buildAttemptHistory.push({ tool: tn, args: buildKey, failed: !result.success });
               // Check if same approach failed MAX_SAME_BUILD_ATTEMPTS times
               const recentSameAttempts = buildAttemptHistory.filter(h => h.tool === tn && h.args === buildKey && h.failed);
               if (recentSameAttempts.length >= MAX_SAME_BUILD_ATTEMPTS && !result.success) {
                 console.log(`[Agent] Build budget: ${tn} with "${buildKey.slice(0, 50)}" failed ${recentSameAttempts.length} times — injecting strategy change`);
-                conversation.push({ role: "tool", content: `SYSTEM: This exact ${tn} approach has failed ${recentSameAttempts.length} times. You MUST try a DIFFERENT strategy: use different packages, different build tool, simplify the project, or remove problematic dependencies. Do NOT retry the same command.`, tool_call_id: toolCall.id, name: tn } as any);
+                const strategyMsg = tn === "deploy_webapp"
+                  ? `SYSTEM: deploy_webapp has failed ${recentSameAttempts.length} times. STOP retrying. Instead: 1) run_command("cat package.json") to inspect the file, 2) Fix the actual issue (missing build script, broken deps), 3) Only THEN retry deploy_webapp.`
+                  : `SYSTEM: This exact ${tn} approach has failed ${recentSameAttempts.length} times. You MUST try a DIFFERENT strategy: use different packages, different build tool, simplify the project, or remove problematic dependencies. Do NOT retry the same command.`;
+                conversation.push({ role: "tool", content: strategyMsg, tool_call_id: toolCall.id, name: tn } as any);
                 completedToolCalls++;
                 sendSSE(safeWrite, { step_progress: { completed: completedToolCalls, total: totalToolCalls, turn } });
                 continue;
@@ -1925,7 +1940,7 @@ Do NOT call deep_research_content, wide_research, web_search, or read_webpage �
         // ═══════════════════════════════════════════════════════════════════
         // When the agent produces text-only on the first turn for tasks that
         // clearly require tool use, nudge it immediately to use tools.
-        if (turn === 0 && completedToolCalls === 0) {
+        if (turn === 1 && completedToolCalls === 0) {
           const firstUserMsg = conversation.find(m => m.role === "user");
           const firstUserText = typeof firstUserMsg?.content === "string" ? firstUserMsg.content.toLowerCase() : "";
           const requiresTools = /\b(research|search|find|look up|build|create|generate|make|write|draft|design|analyze|compare|demonstrate|show me|deploy|clone|edit.*(repo|code|file))\b/i.test(firstUserText);
@@ -1973,7 +1988,16 @@ Do NOT call deep_research_content, wide_research, web_search, or read_webpage �
         const hasDeployedForStuck = conversation.some(m =>
           (m as any).tool_calls?.some((tc: any) => tc.function?.name === "deploy_webapp")
         );
-        const isInAppBuildPipeline = usedAppBuildingToolsForStuck && !hasDeployedForStuck;
+        // CROSS-STREAM: Also detect pipeline from message content when tool_calls aren't preserved
+        const contentShowsAppBuildForStuck = !usedAppBuildingToolsForStuck && conversation.some(m =>
+          m.role === "assistant" && typeof m.content === "string" &&
+          /\b(clon(ed|ing)|install(ed|ing)\s+(dep|pack)|npm\s+install|pnpm\s+install|building\s+(the|your)|created\s+(the\s+)?(webapp|app|project))\b/i.test(m.content)
+        );
+        const contentShowsDeployedForStuck = conversation.some(m =>
+          m.role === "assistant" && typeof m.content === "string" &&
+          /\b(deployed\s+(successfully|to|at|your)|live\s+at|available\s+at\s+https?)\b/i.test(m.content)
+        );
+        const isInAppBuildPipeline = (usedAppBuildingToolsForStuck || contentShowsAppBuildForStuck) && !hasDeployedForStuck && !contentShowsDeployedForStuck;
         const normalizedText = (textContent || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, 500);
         if (normalizedText.length > 20 && !isInAppBuildPipeline) {
           // Check similarity against recent text responses
@@ -2273,8 +2297,17 @@ Do NOT call deep_research_content, wide_research, web_search, or read_webpage �
         const hasDeployed = conversation.some(m =>
           (m as any).tool_calls?.some((tc: any) => tc.function?.name === "deploy_webapp")
         );
+        // CROSS-STREAM: Also detect pipeline from message content when tool_calls aren't preserved
+        const contentShowsAppBuild = !usedAppBuildingTools && conversation.some(m =>
+          m.role === "assistant" && typeof m.content === "string" &&
+          /\b(clon(ed|ing)|install(ed|ing)\s+(dep|pack)|npm\s+install|pnpm\s+install|building\s+(the|your)|created\s+(the\s+)?(webapp|app|project))\b/i.test(m.content)
+        );
+        const contentShowsDeployed = conversation.some(m =>
+          m.role === "assistant" && typeof m.content === "string" &&
+          /\b(deployed\s+(successfully|to|at|your)|live\s+at|available\s+at\s+https?)\b/i.test(m.content)
+        );
         // If we're in an app-building pipeline and haven't deployed yet, NEVER trigger scope-creep
-        const isAppBuildingPipeline = usedAppBuildingTools && !hasDeployed;
+        const isAppBuildingPipeline = (usedAppBuildingTools || contentShowsAppBuild) && !hasDeployed && !contentShowsDeployed;
 
         // MULTI-PART REQUEST DETECTION: If the user's prompt contains multiple explicit requests
         // (connected by "and", "then", "also", numbered items, etc.), do NOT trigger scope-creep

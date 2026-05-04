@@ -3751,6 +3751,65 @@ async function executeCreateFile(args: {
     if (!fullPath.startsWith(activeProjectDir)) {
       return { success: false, result: "Invalid path: cannot write outside project directory." };
     }
+
+    // ── CRITICAL FILE PROTECTION (Video Bug Fix) ──
+    // Prevents the catastrophic bug where the agent overwrites a valid
+    // cloned package.json with hallucinated garbage content.
+    const basename = pathMod.basename(args.path).toLowerCase();
+    const CRITICAL_FILES = [
+      "package.json", "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
+      "tsconfig.json", "tsconfig.node.json", "tsconfig.app.json",
+      "vite.config.ts", "vite.config.js", "vite.config.mjs",
+      "next.config.ts", "next.config.js", "next.config.mjs",
+      "webpack.config.js", "webpack.config.ts",
+      ".env", ".env.local", ".env.production",
+      "dockerfile", "docker-compose.yml", "docker-compose.yaml",
+    ];
+    const isCriticalFile = CRITICAL_FILES.includes(basename);
+
+    if (fs.existsSync(fullPath) && isCriticalFile) {
+      if (basename === "package.json") {
+        try {
+          const parsed = JSON.parse(args.content);
+          const hasName = typeof parsed.name === "string" && parsed.name.length > 0;
+          const hasHallucinationSignals = (
+            (parsed.dependencies?.install) ||
+            (parsed.dependencies?.npm) ||
+            (parsed.dependencies?.node) ||
+            (!hasName && !parsed.scripts && !parsed.version)
+          );
+          if (hasHallucinationSignals) {
+            return {
+              success: false,
+              result: `BLOCKED: The content you're trying to write to package.json appears to be hallucinated (contains "install" or "npm" as dependencies, or is missing required fields). The file already exists with valid content from the cloned repository. Use read_file to see its current content, then use edit_file to make targeted modifications.`,
+            };
+          }
+        } catch {
+          return {
+            success: false,
+            result: `BLOCKED: Cannot overwrite existing package.json with invalid JSON content. Use read_file to see current content, then use edit_file for targeted modifications.`,
+          };
+        }
+      }
+      const existingSize = fs.statSync(fullPath).size;
+      return {
+        success: false,
+        result: `BLOCKED: ${args.path} already exists (${existingSize} bytes) and is a critical configuration file. Use read_file to see current content, then use edit_file for targeted modifications. Do NOT overwrite it.`,
+      };
+    }
+
+    if (basename === "package.json") {
+      try {
+        const parsed = JSON.parse(args.content);
+        if ((parsed.dependencies?.install) || (parsed.dependencies?.npm) || (parsed.dependencies?.node) || (!parsed.name && !parsed.scripts && !parsed.version)) {
+          return {
+            success: false,
+            result: `BLOCKED: The package.json content appears hallucinated. A valid package.json must have at least a "name" field and typically a "scripts" section.`,
+          };
+        }
+      } catch { /* allow non-JSON for new files */ }
+    }
+
     fs.mkdirSync(pathMod.dirname(fullPath), { recursive: true });
     fs.writeFileSync(fullPath, args.content);
 
@@ -4469,7 +4528,7 @@ async function executeDeployWebapp(args: {
     if (preDeployIssues.some(i => i.includes("no 'build' script") || i.includes("node_modules/ not found") || i.includes("body is nearly empty"))) {
       return {
         success: false,
-        result: `Pre-deploy validation failed:\n\n${preDeployIssues.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}\n\nFix these issues before deploying.`,
+        result: `Pre-deploy validation failed:\n\n${preDeployIssues.map((issue, i) => `${i + 1}. ${issue}`).join("\n")}\n\n── RECOVERY for missing build script ──\n1. run_command("cat package.json") to see current scripts\n2. If no "build" script exists, use edit_file to add one (e.g. "build": "vite build" or "build": "next build")\n3. If the project uses a non-standard build tool, check the README\n4. After fixing, retry deploy_webapp\n\n── RECOVERY for missing node_modules ──\n1. Call install_deps() to install dependencies\n2. After install completes, retry deploy_webapp\n\nDo NOT overwrite package.json with create_file — use edit_file for targeted changes.`,
       };
     }
 

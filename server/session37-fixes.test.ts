@@ -95,7 +95,7 @@ describe("VB5/PC6: Build attempt budget", () => {
   });
 
   it("tracks install_deps and run_command(build) failures", () => {
-    expect(AGENT_STREAM).toContain('(tn === "install_deps" || tn === "run_command") && (ta.includes("build") || ta.includes("install"))');
+    expect(AGENT_STREAM).toContain('(tn === "install_deps" || tn === "run_command" || tn === "deploy_webapp") && (ta.includes("build") || ta.includes("install") || tn === "deploy_webapp")');
   });
 
   it("injects strategy change message after repeated failures", () => {
