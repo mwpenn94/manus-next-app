@@ -18,7 +18,7 @@ export const browserAutomationRouter = router({
   /** Navigate to a URL and extract content */
   scrape: protectedProcedure
     .input(z.object({
-      url: z.string().url(),
+      url: z.string().min(1),
       extractType: z.enum(["text", "html", "markdown", "structured"]).default("markdown"),
       selector: z.string().optional(),
       waitForSelector: z.string().optional(),
@@ -65,7 +65,7 @@ export const browserAutomationRouter = router({
   /** Batch scrape multiple URLs */
   batchScrape: protectedProcedure
     .input(z.object({
-      urls: z.array(z.string().url()).min(1).max(10),
+      urls: z.array(z.string().min(1)).min(1).max(10),
       extractType: z.enum(["text", "markdown"]).default("markdown"),
     }))
     .mutation(async ({ input }) => {

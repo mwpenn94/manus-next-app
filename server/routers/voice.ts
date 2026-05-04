@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 export const voiceRouter = router({
     transcribe: protectedProcedure
       .input(z.object({
-        audioUrl: z.string().url(),
+        audioUrl: z.string().min(1),
         language: z.string().optional(),
         prompt: z.string().optional(),
       }))

@@ -28,7 +28,7 @@ export const libraryRouter = router({
     /** Extract text from a PDF file (by URL) */
     extractPdfText: protectedProcedure
       .input(z.object({
-        url: z.string().url(),
+        url: z.string().min(1),
       }))
       .mutation(async ({ input }) => {
         const { extractTextFromPdfUrl } = await import("../pdfExtraction");

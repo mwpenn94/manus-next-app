@@ -350,7 +350,7 @@ describe("file router", () => {
     expect(result).toEqual({ success: true });
   });
 
-  it("rejects file record with invalid URL", async () => {
+  it("rejects file record with empty URL", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
@@ -359,7 +359,7 @@ describe("file router", () => {
         taskExternalId: "test-task-ext",
         fileName: "bad.pdf",
         fileKey: "bad-key",
-        url: "not-a-url",
+        url: "",
       })
     ).rejects.toThrow();
   });

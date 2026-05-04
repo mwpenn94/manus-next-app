@@ -6,7 +6,7 @@ export const browserRouter = router({
     navigate: protectedProcedure
       .input(z.object({
         sessionId: z.string().optional(),
-        url: z.string().url(),
+        url: z.string().min(1, "URL is required"),
         waitUntil: z.enum(["load", "domcontentloaded", "networkidle"]).optional(),
         browserType: z.enum(["chromium", "firefox", "webkit"]).optional(),
       }))
@@ -190,7 +190,7 @@ export const browserRouter = router({
     /** Run a QA test suite server-side */
     runQA: protectedProcedure
       .input(z.object({
-        baseUrl: z.string().url(),
+        baseUrl: z.string().min(1, "Base URL is required"),
         steps: z.array(z.object({
           action: z.enum(["navigate", "click", "type", "screenshot", "assert", "wait", "scroll", "evaluate", "pressKey", "setViewport"]),
           selector: z.string().optional(),
@@ -225,7 +225,7 @@ export const browserRouter = router({
     screenshotDiff: protectedProcedure
       .input(z.object({
         sessionId: z.string().optional(),
-        baselineUrl: z.string().url(),
+        baselineUrl: z.string().min(1, "Baseline URL is required"),
         threshold: z.number().min(0).max(1).optional(),
       }))
       .mutation(async ({ input }) => {

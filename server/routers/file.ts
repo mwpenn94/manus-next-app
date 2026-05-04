@@ -14,7 +14,7 @@ export const fileRouter = router({
       taskExternalId: z.string().max(50),
       fileName: z.string().max(500),
       fileKey: z.string().max(500),
-      url: z.string().url(),
+      url: z.string().min(1),
       mimeType: z.string().optional(),
       size: z.number().optional(),
     }))

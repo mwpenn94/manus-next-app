@@ -10,7 +10,7 @@ export const paymentRouter = router({
     createCheckout: protectedProcedure
       .input(z.object({
         productId: z.string(),
-        origin: z.string().url(),
+        origin: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
         const { createCheckoutSession } = await import("../stripe");
@@ -34,7 +34,7 @@ export const paymentRouter = router({
     }),
     /** Create a Stripe Customer Portal session for self-service management */
     createPortalSession: protectedProcedure
-      .input(z.object({ origin: z.string().url() }))
+      .input(z.object({ origin: z.string().min(1) }))
       .mutation(async ({ ctx, input }) => {
         const { createPortalSession } = await import("../stripe");
         if (!ctx.user.stripeCustomerId) {

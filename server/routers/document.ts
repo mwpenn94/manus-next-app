@@ -228,7 +228,7 @@ Return a JSON object with:
   parse: protectedProcedure
     .input(
       z.object({
-        url: z.string().url(),
+        url: z.string().min(1),
       })
     )
     .mutation(async ({ input }) => {

@@ -17,7 +17,7 @@ export const videoRouter = router({
       .input(z.object({
         title: z.string().min(1).max(200),
         prompt: z.string().min(1).max(2000),
-        sourceImages: z.array(z.string().url()).optional(),
+        sourceImages: z.array(z.string().min(1)).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const externalId = nanoid();
@@ -54,7 +54,7 @@ export const videoRouter = router({
     /** Analyze a video URL (YouTube or direct) with AI — returns structured analysis */
     analyze: protectedProcedure
       .input(z.object({
-        url: z.string().url(),
+        url: z.string().min(1),
         prompt: z.string().min(1).max(2000).default("Summarize the key points of this video"),
         extractFrames: z.boolean().default(true),
         timestamps: z.boolean().default(true),

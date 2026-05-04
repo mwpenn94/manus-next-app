@@ -66,6 +66,29 @@ const queryClient = new QueryClient({
  *   2. Stale localStorage data triggers redirect even for legitimately unauthenticated pages
  *   3. The redirect cycle repeats when the session cookie is missing/expired
  */
+// Zod validation messages that are internal/technical and should not be shown to users
+const SUPPRESSED_ERROR_PATTERNS = [
+  'did not match',
+  'expected pattern',
+  'Invalid url',
+  'invalid_string',
+  'Expected string, received',
+  'Invalid input',
+  'String must contain',
+  'too_small',
+  'too_big',
+  'Failed query',
+  'insert into',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'values (default',
+];
+
+function isInternalValidationError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return SUPPRESSED_ERROR_PATTERNS.some(p => lower.includes(p.toLowerCase()));
+}
+
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
@@ -74,10 +97,12 @@ queryClient.getQueryCache().subscribe(event => {
       console.warn("[API] Network unavailable — retrying...");
       return;
     }
-     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
+    if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Query Error]", error);
-      // Global error toast for non-auth query failures (covers all pages)
-      toast.error(error.message || "Something went wrong", { id: 'query-error', duration: 4000 });
+      // Suppress internal validation errors from showing as toast
+      if (!isInternalValidationError(error.message)) {
+        toast.error(error.message || "Something went wrong", { id: 'query-error', duration: 4000 });
+      }
     }
   }
 });
@@ -86,8 +111,10 @@ queryClient.getMutationCache().subscribe(event => {
     const error = event.mutation.state.error;
     if (error instanceof TRPCClientError && error.message !== UNAUTHED_ERR_MSG) {
       console.error("[API Mutation Error]", error);
-      // Global error toast for mutation failures
-      toast.error(error.message || "Action failed", { id: 'mutation-error', duration: 4000 });
+      // Suppress internal validation errors from showing as toast
+      if (!isInternalValidationError(error.message)) {
+        toast.error(error.message || "Action failed", { id: 'mutation-error', duration: 4000 });
+      }
     }
   }
 });

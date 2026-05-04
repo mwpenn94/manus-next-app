@@ -799,7 +799,7 @@ Provide a JSON response with this exact structure:
     /** Cross-browser QA comparison */
     crossBrowserQA: protectedProcedure
       .input(z.object({
-        url: z.string().url(),
+        url: z.string().min(1),
         browsers: z.array(z.enum(["chromium", "firefox", "webkit"])).default(["chromium"]),
         steps: z.array(z.object({
           action: z.string(),

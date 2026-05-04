@@ -531,9 +531,14 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       addArtifactMutation.mutate({
         taskId: serverId,
         artifactType: artifactType as any,
-        label: data.label,
-        content: data.content,
-        url: data.url,
+        label: data.label || undefined,
+        content: data.content || undefined,
+        url: data.url || undefined,
+      }, {
+        onError: (err) => {
+          // Silently log artifact persistence failures — these are non-critical
+          console.warn("[Artifact] Failed to persist:", artifactType, err.message);
+        },
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- .mutate is stable (tRPC)

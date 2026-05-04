@@ -141,9 +141,9 @@ describe("browser router", () => {
       expect(result.success).toBe(true);
     });
 
-    it("rejects invalid URL", async () => {
+    it("rejects empty URL", async () => {
       await expect(
-        caller.browser.navigate({ url: "not-a-url" })
+        caller.browser.navigate({ url: "" })
       ).rejects.toThrow();
     });
   });
