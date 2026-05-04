@@ -384,6 +384,15 @@ export function buildStreamCallbacks(
         });
       }
     },
+    onContentReset: () => {
+      // Server suppressed previously streamed content and is restarting the response.
+      // Clear the client-side accumulated buffer so the replacement content isn't
+      // concatenated onto the suppressed text (which causes visible duplication).
+      console.log(`[Stream] Content reset — clearing accumulated buffer (was ${state.accumulated.length} chars)`);
+      state.accumulated = "";
+      setters.accumulatedRef.current = "";
+      setters.setStreamContent("");
+    },
     onContinuation: (data: { round: number; maxRounds: number; reason: string }) => {
       // Manus-parity: The agent is auto-continuing due to output token limits.
       // Show a subtle continuation indicator in the stream content, then remove it

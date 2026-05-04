@@ -1923,6 +1923,7 @@ If git_operation(clone) fails:
           if (isApologizing && !isActualDeliverable) {
             console.log(`[Agent] First-turn apology interception: agent apologized instead of acting. Redirecting.`);
             // Don't stream the apology to the user
+            sendSSE(safeWrite, { content_reset: true });
             finalContent = "";
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({
@@ -2015,6 +2016,7 @@ If git_operation(clone) fails:
                   });
                 } catch { /* telemetry is non-critical */ }
               }
+              sendSSE(safeWrite, { content_reset: true });
               finalContent = "";
               sendSSE(safeWrite, { delta: "\n\n" });
               conversation.push({ role: "assistant", content: textContent || "" });
@@ -2097,6 +2099,7 @@ If git_operation(clone) fails:
               } catch { /* telemetry is non-critical */ }
             }
 
+            sendSSE(safeWrite, { content_reset: true });
             finalContent = "";
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({ role: "user", content: correctionStrategy });
@@ -2167,6 +2170,7 @@ If git_operation(clone) fails:
         if ((mode === "max" || mode === "limitless") && turn <= 5 && completedToolCalls < 3 && (maxTurns === Infinity || turn < maxTurns - 2) && !isGenerationRequest) {
           const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
           console.log(`[Agent] ${modeName} mode anti-shallow: turn ${turn}, only ${completedToolCalls} tool calls — forcing deeper research`);
+          sendSSE(safeWrite, { content_reset: true });
           finalContent = "";
           sendSSE(safeWrite, { delta: "\n\n*Conducting deeper research...*\n\n" });
           conversation.push({ role: "assistant", content: textContent || "" });
@@ -2186,6 +2190,7 @@ Do NOT produce a final answer yet. Research more deeply first.`,
         if ((mode === "max" || mode === "limitless") && turn <= 3 && completedToolCalls === 0 && isGenerationRequest && (maxTurns === Infinity || turn < maxTurns - 2)) {
           const modeName = mode === "limitless" ? "LIMITLESS" : "MAX (flagship)";
           console.log(`[Agent] ${modeName} mode: generation request with 0 tool calls — nudging to use production tools`);
+          sendSSE(safeWrite, { content_reset: true });
           finalContent = "";
           sendSSE(safeWrite, { delta: "\n\n*Producing the requested output...*\n\n" });
           conversation.push({ role: "assistant", content: textContent || "" });
@@ -2207,6 +2212,7 @@ If the user hasn't specified content details, ASK them what content they want. D
         if ((claimsFulfilled || isDeflecting || isTopicDrift) && wantsCreativeOutput && turn <= 6 && turn < maxTurns - 2) {
           console.log(`[Agent] Anti-premature-completion: ${isTopicDrift ? 'topic drift' : claimsFulfilled ? 'false completion claim' : 'deflection'} on creative task, nudging to produce deliverable`);
           // Suppress the premature/drifted response
+          sendSSE(safeWrite, { content_reset: true });
           finalContent = "";
           sendSSE(safeWrite, { delta: "\n\n*Producing the requested content...*\n\n" });
           conversation.push({ role: "assistant", content: textContent || "" });
@@ -2413,6 +2419,7 @@ If the user hasn't specified content details, ASK them what content they want. D
           const hasSubstance = /\b(here|result|found|analysis|summary|report|created|generated|built|deployed|completed|answer)\b/i.test(textContent);
           if (!hasSubstance) {
             console.log(`[Agent] Quality gate: response too shallow (${textContent.length} chars, 0 tools) in ${mode} mode — forcing elaboration`);
+            sendSSE(safeWrite, { content_reset: true });
             finalContent = "";
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({
@@ -2436,6 +2443,7 @@ Do the work now.`,
           const isJustAcknowledgment = /^(done|complete|finished|here you go|there you go|all set|got it)[.!]?$/i.test(textContent.trim());
           if (isJustAcknowledgment && turn < maxTurns - 1) {
             console.log(`[Agent] Quality gate: response is just an acknowledgment without context — forcing explanation`);
+            sendSSE(safeWrite, { content_reset: true });
             finalContent = "";
             conversation.push({ role: "assistant", content: textContent || "" });
             conversation.push({

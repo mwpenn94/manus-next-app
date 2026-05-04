@@ -7522,3 +7522,5 @@
 - [x] All 40 regression tests pass (session55 + session55b)
 - [x] Fix GitHub Query Guard to block research on ALL turns unconditionally (not just until github_ops runs)
 - [x] Update regression tests for unconditional guard logic (session55b, session37, pass36, continuation-fix)
+- [x] Fix agent duplicating/looping responses in chat UI (same content rendered twice) — added content_reset SSE event at all 8 post-streaming reset points
+- [x] Fix messages not persisting across page reloads (root cause: client accumulated buffer diverged from server finalContent after continuation resets — content_reset keeps them in sync)
