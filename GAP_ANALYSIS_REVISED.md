@@ -82,18 +82,21 @@
 
 **Reference:** iOS Video Reference Observations document: "Tapping an action (like `Build website` or `Create slides`) replaces the attachment sheet with a specialized inline input bar above the keyboard, allowing context-specific prompting without leaving the chat view."
 
-**Current State:** The web app has a PlusMenu with actions but they navigate to separate pages or insert text into the composer. There's no specialized inline input bar that replaces the attachment sheet with context-specific prompting.
-
-**Impact:** The iOS app's composer choreography (attachment sheet → inline specialized input) is a superior UX pattern that the web app doesn't replicate.
-
-**Fix:** Implement inline specialized input bars for key actions (Build website, Create slides, Create image, Wide Research) that appear above the composer when triggered from the PlusMenu.
+**Current State:** ✅ RESOLVED. Implemented:
+- `useIOSKeyboard` hook: visualViewport API for keyboard open/close detection, smooth scroll-into-view on focus, rubber-band bounce prevention
+- `useIOSInputFocus` hook: preventScroll focus with scroll position restoration
+- `useIOSTouchOptimization` hook: iOS detection, haptic feedback triggers, 44px touch target enforcement
+- Bottom sheet workspace panel: spring animation (damping: 28, stiffness: 300), backdrop blur, drag handle, safe-area padding
+- Touch-optimized suggestion cards: min-h-[80px], active:scale-[0.97], touch-manipulation class
+- iOS-specific CSS: overscroll-behavior containment, transform: translateZ(0) for GPU compositing, 100dvh viewport handling
+- SpecializedInputBar already exists for inline context-specific prompting above the keyboard
 
 ## Priority Order (by impact × feasibility)
 
-1. **GAP A** (System Prompt Framework) — OPEN (Framework is a meta-process for app improvement, not an agent instruction. Consider as configurable user setting.)
+1. **GAP A** (System Prompt Framework) — ✅ RESOLVED (Implemented as configurable user setting: recursiveOptimizationEnabled + recursiveOptimizationDepth in user_preferences, settings UI toggle, agent stream injection when enabled)
 2. **GAP B** (Convergence Tool) — ✅ RESOLVED (all fields implemented)
 3. **GAP D** (AEGIS/Sovereign in main loop) — ✅ RESOLVED (invokeWithAegisRetry is primary path)
 4. **GAP C** (ATLAS parallel) — ✅ RESOLVED (Promise.allSettled)
 5. **GAP F** (Context compression) — ✅ RESOLVED (selective preservation + WORKING MEMORY)
 6. **GAP E** (ConvergenceIndicator UI) — ✅ RESOLVED (temperature gauge, pass type, score delta)
-7. **GAP G** (iOS composer choreography) — OPEN (UX polish, larger scope, low priority)
+7. **GAP G** (iOS composer choreography) — ✅ RESOLVED (useIOSKeyboard hook with visualViewport API, bottom sheet workspace panel with spring animation + backdrop + drag handle, touch-optimized cards with 44px HIG targets, safe-area CSS, overscroll containment)

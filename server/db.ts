@@ -514,6 +514,9 @@ export async function upsertUserPreferences(prefs: InsertUserPreference) {
   if (prefs.generalSettings !== undefined) updateSet.generalSettings = prefs.generalSettings;
   if (prefs.capabilities !== undefined) updateSet.capabilities = prefs.capabilities;
   if (prefs.systemPrompt !== undefined) updateSet.systemPrompt = prefs.systemPrompt;
+  if (prefs.recursiveOptimizationEnabled !== undefined) updateSet.recursiveOptimizationEnabled = prefs.recursiveOptimizationEnabled;
+  if (prefs.recursiveOptimizationDepth !== undefined) updateSet.recursiveOptimizationDepth = prefs.recursiveOptimizationDepth;
+  if (prefs.recursiveOptimizationTemperature !== undefined) updateSet.recursiveOptimizationTemperature = prefs.recursiveOptimizationTemperature;
   await db.insert(userPreferences).values(prefs).onDuplicateKeyUpdate({
     set: Object.keys(updateSet).length > 0 ? updateSet : { updatedAt: new Date() },
   });

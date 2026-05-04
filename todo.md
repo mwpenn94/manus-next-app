@@ -7576,3 +7576,17 @@
 - [x] BUG-S56-7: Agent hallucinates corrections ("Update 41 not 49") without verified evidence — should research instead of asserting
 - [x] BUG-S56-8: Agent promises "I'll research" then immediately answers from stale memory in same message — should research FIRST then answer
 - [x] BUG-S56-9: Insufficient research depth in limitless mode — only 2-3 steps for complex gaming build query that needs multiple sources
+
+## Session 56 Continued: All Remaining Next Steps + IOV Passes
+
+- [x] FEAT-S56-RO-1: Add recursive_optimization_enabled column to user_settings table (boolean, default false)
+- [x] FEAT-S56-RO-2: Add recursive_optimization_depth column to user_settings table (integer, default 3, range 1-1280)
+- [x] FEAT-S56-RO-3: Create settings UI toggle for Recursive Optimization (on/off + depth slider + temperature strategy)
+- [x] FEAT-S56-RO-4: Wire settings to agent stream — when enabled, agent uses report_convergence tool with pass tracking
+- [ ] FEAT-S56-RO-5: Per-task override — allow users to set optimization depth per task creation (deferred to next session)
+- [x] TEST-S56-PIPELINE: End-to-end test of clone→build→deploy pipeline with Session 56 fixes (13 tests passing)
+- [x] GAP-G-1: iOS composer choreography — responsive mobile layout for task input area (safe-area padding, transition-[padding])
+- [x] GAP-G-2: iOS composer choreography — touch-optimized suggestion cards (44px min targets, touch-manipulation, active:scale)
+- [x] GAP-G-3: iOS composer choreography — mobile-first workspace panel (bottom sheet with backdrop, spring animation, drag handle)
+- [x] GAP-G-4: iOS composer choreography — smooth keyboard avoidance and input focus behavior (useIOSKeyboard hook, visualViewport API)
+- [x] IOV-FINAL: Complete IOV convergence passes — 45/45 tests passing, 0 TS errors, all gaps resolved

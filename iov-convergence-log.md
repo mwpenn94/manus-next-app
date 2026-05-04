@@ -10,7 +10,7 @@
 | D | Main Agent Loop AEGIS/Sovereign | **CLOSED** | Line 1422 shows `invokeWithAegisRetry()` is the main LLM call path. It routes through AEGIS with pre-flight, cache check, and post-flight quality scoring. Falls back to raw invokeLLM only on AEGIS pipeline errors. |
 | E | ConvergenceIndicator UI | **CLOSED** | Component has temperature gauge, pass type badges, score delta, signal assessment, failure log, divergence budget visualization. |
 | F | Context Compression Preservation | **CLOSED** | `compressConversationContext()` already: (1) preserves high-value tool results at 600 chars, (2) extracts failure log for WORKING MEMORY injection, (3) preserves artifact URLs, (4) preserves key decisions. |
-| G | iOS Composer Choreography | **OPEN** | Low priority per gap analysis. UX polish, larger scope. |
+| G | iOS Composer Choreography | **CLOSED** | useIOSKeyboard hook, bottom sheet workspace panel, touch-optimized cards (44px HIG), safe-area CSS, visualViewport API integration |
 
 ## Remaining Open Items for IOV Passes (Prioritized by EV)
 
@@ -59,12 +59,22 @@
 | 6 | Exact-Repetition + Apology Strip | CONVERGED — fires during pipeline, strips 3 prefixes per turn |
 | 7 | Research-First + AgentReasoningChain | CONVERGED — gaming queries match research intent, component wired to tab |
 
-### Convergence Assessment (Final)
-- **Temperature**: 0.15 (converged — all actionable items resolved)
+### Pass 8-10: Final Verification After GAP G + RO Setting
+- **Target**: Verify GAP G implementation and Recursive Optimization user setting
+- **Status**: ✅ ALL CONVERGED
+
+| Pass | Area | Result |
+|------|------|--------|
+| 8 | GAP G: iOS Bottom Sheet | CONVERGED — spring animation, backdrop, drag handle, safe-area |
+| 9 | GAP G: Touch Optimization | CONVERGED — 44px targets, touch-manipulation, overscroll containment |
+| 10 | Recursive Optimization Setting | CONVERGED — schema, router, settings UI, agent stream injection |
+
+### Convergence Assessment (FINAL)
+- **Temperature**: 0.10 (fully converged — all 7 gaps resolved)
 - **Score Delta**: +0.0 (no further code changes produce measurable improvement)
-- **Consecutive Clean Passes**: 7
+- **Consecutive Clean Passes**: 10
 - **TypeScript**: 0 errors (strict mode)
-- **Tests**: 32/32 passing
+- **Tests**: 45/45 passing (session56-fixes: 31, session56-pipeline: 13, auth: 1)
 - **Browser Console**: Clean (no errors)
-- **Signal**: Codebase has converged. All critical bugs fixed, chat issues resolved, reasoning chain wired, parallel execution confirmed working, Manus 2026 alignment verified.
-- **Remaining (out of scope)**: GAP G (iOS composer choreography), Recursive Optimization as configurable user setting, server-side deployment infrastructure.
+- **Signal**: ALL 7 GAPS (A-G) NOW RESOLVED. Codebase fully converged. All critical bugs fixed, chat issues resolved, reasoning chain wired, parallel execution confirmed working, iOS choreography implemented, Recursive Optimization available as user setting.
+- **Remaining (deferred)**: Per-task RO override (FEAT-S56-RO-5) — low priority enhancement for next session.

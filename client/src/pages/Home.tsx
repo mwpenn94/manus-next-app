@@ -604,7 +604,7 @@ export default function Home() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px]",
+                  "text-left p-4 bg-card border border-border rounded-xl hover:border-foreground/20 transition-all group shrink-0 w-[260px] min-h-[80px] active:scale-[0.97] touch-manipulation",
                   (suggestion as any).isLink && "border-blue-500/20 hover:border-blue-500/40"
                 )}
                 style={{ scrollSnapAlign: 'start' }}

@@ -9,6 +9,9 @@ export const preferencesRouter = router({
       generalSettings: { notifications: true, soundEffects: false, autoExpandActions: true, compactMode: false, theme: 'dark' },
       capabilities: {},
       systemPrompt: null,
+      recursiveOptimizationEnabled: false,
+      recursiveOptimizationDepth: 3,
+      recursiveOptimizationTemperature: 'balanced',
     };
   }),
 
@@ -17,6 +20,9 @@ export const preferencesRouter = router({
       generalSettings: z.record(z.string(), z.unknown()).optional(),
       capabilities: z.record(z.string(), z.boolean()).optional(),
       systemPrompt: z.string().nullable().optional(),
+      recursiveOptimizationEnabled: z.boolean().optional(),
+      recursiveOptimizationDepth: z.number().min(1).max(1280).optional(),
+      recursiveOptimizationTemperature: z.enum(['conservative', 'balanced', 'exploratory']).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       return upsertUserPreferences({
@@ -24,6 +30,9 @@ export const preferencesRouter = router({
         generalSettings: input.generalSettings ?? undefined,
         capabilities: input.capabilities ?? undefined,
         systemPrompt: input.systemPrompt !== undefined ? input.systemPrompt : undefined,
+        recursiveOptimizationEnabled: input.recursiveOptimizationEnabled,
+        recursiveOptimizationDepth: input.recursiveOptimizationDepth,
+        recursiveOptimizationTemperature: input.recursiveOptimizationTemperature,
       });
     }),
 });

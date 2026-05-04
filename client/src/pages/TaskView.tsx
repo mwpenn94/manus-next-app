@@ -4887,10 +4887,10 @@ export default function TaskView() {
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Input */}
+        {/* Input — iOS Composer Choreography (GAP G) */}
         <div
           data-chat-input
-          className="px-3 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0 relative"
+          className="px-3 md:px-6 pb-3 md:pb-4 pt-2 border-t border-border shrink-0 relative transition-[padding] duration-200"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
@@ -5225,26 +5225,47 @@ export default function TaskView() {
         </>
       )}
 
-      {/* ── WORKSPACE PANEL (Mobile) ── */}
+      {/* ── WORKSPACE PANEL (Mobile) — iOS Bottom Sheet Pattern (GAP G) ── */}
       <AnimatePresence>
         {mobileWorkspaceOpen && (
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: "50vh" }}
-            exit={{ height: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="md:hidden overflow-hidden"
-          >
-            <ErrorBoundary><WorkspacePanel
-              task={task}
-              isMobile
-              bridgeStatus={bridgeStatus}
-              agentActions={agentActions}
-              aegisMeta={aegisMeta}
-              isStreaming={streaming}
-              onClose={() => setMobileWorkspaceOpen(false)}
-            /></ErrorBoundary>
-          </motion.div>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+              onClick={() => setMobileWorkspaceOpen(false)}
+              aria-hidden
+            />
+            {/* Bottom Sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 md:hidden rounded-t-2xl bg-background border-t border-border shadow-2xl"
+              style={{ height: "70vh", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </div>
+              {/* Sheet content */}
+              <div className="h-[calc(100%-20px)] overflow-hidden">
+                <ErrorBoundary><WorkspacePanel
+                  task={task}
+                  isMobile
+                  bridgeStatus={bridgeStatus}
+                  agentActions={agentActions}
+                  aegisMeta={aegisMeta}
+                  isStreaming={streaming}
+                  onClose={() => setMobileWorkspaceOpen(false)}
+                /></ErrorBoundary>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

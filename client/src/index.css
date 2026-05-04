@@ -619,3 +619,49 @@ html, body, #root {
   height: 100dvh;
   overflow: hidden;
 }
+
+/* ═══ iOS Composer Choreography (GAP G) ═══ */
+
+/* Prevent iOS rubber-band bounce on chat containers */
+@media (max-width: 767px) {
+  [data-chat-input] {
+    /* Ensure input stays above iOS safe area */
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    /* Prevent content shift when keyboard opens */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Smooth keyboard transition for the entire chat area */
+  [data-chat-container] {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Touch-optimized buttons — 44px minimum per Apple HIG */
+  [data-chat-input] button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent text selection on interactive elements during scroll */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* iOS bottom sheet overscroll containment */
+.ios-bottom-sheet {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Viewport-aware height for iOS (accounts for dynamic toolbar) */
+@supports (height: 100dvh) {
+  .h-screen-ios {
+    height: 100dvh;
+  }
+}

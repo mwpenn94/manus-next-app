@@ -143,6 +143,12 @@ export const userPreferences = mysqlTable("user_preferences", {
   capabilities: json("capabilities"),
   /** Global default system prompt for all tasks (overridden by per-task systemPrompt) */
   systemPrompt: text("systemPrompt"),
+  /** Recursive Optimization: enable convergence-driven iterative improvement on tasks */
+  recursiveOptimizationEnabled: boolean("recursiveOptimizationEnabled").default(false).notNull(),
+  /** Recursive Optimization: number of consecutive clean passes required for convergence (1-1280) */
+  recursiveOptimizationDepth: int("recursiveOptimizationDepth").default(3),
+  /** Recursive Optimization: temperature strategy (conservative=0.15, balanced=0.5, exploratory=0.85) */
+  recursiveOptimizationTemperature: varchar("recursiveOptimizationTemperature", { length: 32 }).default("balanced"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

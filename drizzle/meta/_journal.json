@@ -316,6 +316,13 @@
       "when": 1777816361368,
       "tag": "0044_lonely_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1777916015712,
+      "tag": "0045_soft_wild_pack",
+      "breakpoints": true
     }
   ]
 }

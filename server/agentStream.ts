@@ -1121,6 +1121,32 @@ will seamlessly continue you with full context. Write as extensively as the task
       conversation = [{ role: "system", content: systemPrompt }, ...conversation];
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // RECURSIVE OPTIMIZATION — User-configurable convergence-driven passes
+    // ═══════════════════════════════════════════════════════════════════
+    // Load user's recursive optimization preferences and inject instruction if enabled
+    if (userId) {
+      try {
+        const { getUserPreferences } = await import("./db");
+        const userPrefs = await getUserPreferences(userId);
+        if (userPrefs?.recursiveOptimizationEnabled) {
+          const depth = userPrefs.recursiveOptimizationDepth ?? 3;
+          const tempStrategy = userPrefs.recursiveOptimizationTemperature ?? 'balanced';
+          const tempMap = { conservative: 0.15, balanced: 0.5, exploratory: 0.85 };
+          const temp = tempMap[tempStrategy as keyof typeof tempMap] ?? 0.5;
+          // Inject recursive optimization instruction into system prompt
+          const roInstruction = `\n\n## RECURSIVE OPTIMIZATION (User-Enabled)\nThe user has enabled Recursive Optimization with convergence depth ${depth} and ${tempStrategy} temperature (${temp}).\n\nAfter completing your primary work, you MUST perform iterative optimization passes:\n1. Call report_convergence(pass_number=N, pass_type="landscape|depth|adversarial", status="running", temperature=${temp}) at the START of each pass.\n2. Review your work holistically. Look for: accuracy gaps, missing edge cases, unclear explanations, suboptimal structure, unexplored alternatives.\n3. If you find improvements, make them and call report_convergence(status="needs_more", convergence_count=0) — counter resets on any change.\n4. If no improvements found, call report_convergence(status="converged", convergence_count=N) — increment the counter.\n5. Continue until convergence_count reaches ${depth} consecutive clean passes.\n\nPass types to cycle through: landscape (broad review), depth (deep dive on weakest area), adversarial (try to break your own work).\nTemperature ${temp}: ${tempStrategy === 'conservative' ? 'Prefer stability, minimal changes' : tempStrategy === 'exploratory' ? 'Try novel approaches, wider search space' : 'Balance refinement with exploration'}.`;
+          // Append to system prompt before it's finalized
+          if (conversation.length > 0 && conversation[0].role === "system") {
+            conversation[0] = { role: "system", content: (conversation[0].content as string) + roInstruction };
+          }
+        }
+      } catch (e) {
+        // Non-critical — if preferences can't be loaded, proceed without RO
+        console.warn("[Agent] Could not load recursive optimization preferences:", e);
+      }
+    }
+
     // Resolve tier config — Speed, Quality, and Max have fixed (bounded) limits. Limitless has none.
     const tierConfig = getTierConfig(mode);
     let { maxTurns, maxContinuationRounds } = tierConfig;

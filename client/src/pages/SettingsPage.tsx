@@ -982,6 +982,99 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* ── Recursive Optimization ── */}
+              <div className="mt-6">
+                <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-muted-foreground" />
+                  Recursive Optimization
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Enable convergence-driven iterative improvement. When active, the agent will perform multiple optimization passes on its work, resetting the counter on any change until the target consecutive clean passes are reached.
+                </p>
+                <div className="space-y-4">
+                  {/* Enable toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-foreground">Enable Recursive Optimization</p>
+                      <p className="text-[10px] text-muted-foreground">Agent will iteratively refine work until convergence</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newVal = !(prefsQuery.data as any)?.recursiveOptimizationEnabled;
+                        savePrefsMutation.mutate({ recursiveOptimizationEnabled: newVal });
+                        toast.success(newVal ? "Recursive Optimization enabled" : "Recursive Optimization disabled");
+                      }}
+                      className={cn(
+                        "w-10 h-5 rounded-full transition-colors relative",
+                        (prefsQuery.data as any)?.recursiveOptimizationEnabled ? "bg-primary" : "bg-muted"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform",
+                        (prefsQuery.data as any)?.recursiveOptimizationEnabled ? "translate-x-5" : "translate-x-0.5"
+                      )} />
+                    </button>
+                  </div>
+
+                  {/* Convergence depth */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm text-foreground">Convergence Depth</p>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {(prefsQuery.data as any)?.recursiveOptimizationDepth ?? 3} consecutive passes
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={1280}
+                      step={1}
+                      value={(prefsQuery.data as any)?.recursiveOptimizationDepth ?? 3}
+                      onChange={(e) => {
+                        const depth = parseInt(e.target.value);
+                        savePrefsMutation.mutate({ recursiveOptimizationDepth: depth });
+                      }}
+                      className="w-full accent-primary"
+                    />
+                    <div className="flex justify-between text-[9px] text-muted-foreground mt-0.5">
+                      <span>1 (quick)</span>
+                      <span>3 (default)</span>
+                      <span>10 (thorough)</span>
+                      <span>1280 (exhaustive)</span>
+                    </div>
+                  </div>
+
+                  {/* Temperature strategy */}
+                  <div>
+                    <p className="text-sm text-foreground mb-2">Temperature Strategy</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { value: 'conservative', label: 'Conservative', desc: 'Minimal changes, stability-focused' },
+                        { value: 'balanced', label: 'Balanced', desc: 'Mix of refinement and exploration' },
+                        { value: 'exploratory', label: 'Exploratory', desc: 'Novel approaches, wider search' },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            savePrefsMutation.mutate({ recursiveOptimizationTemperature: opt.value });
+                            toast.success(`Temperature: ${opt.label}`);
+                          }}
+                          className={cn(
+                            "flex flex-col items-center gap-1 p-3 rounded-xl border transition-all text-center",
+                            ((prefsQuery.data as any)?.recursiveOptimizationTemperature ?? 'balanced') === opt.value
+                              ? "border-primary/50 bg-primary/5"
+                              : "border-border bg-card hover:border-primary/20"
+                          )}
+                        >
+                          <p className="text-xs font-medium text-foreground">{opt.label}</p>
+                          <p className="text-[9px] text-muted-foreground leading-tight">{opt.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* ── Appearance ── */}
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
