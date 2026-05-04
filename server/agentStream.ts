@@ -421,6 +421,15 @@ When answering questions about real-world topics:
 4. Synthesize ALL the information you gathered into a comprehensive answer
 5. Cite your sources with links
 
+### CRITICAL: TIME-SENSITIVE & PATCH-DEPENDENT QUERIES
+For ANY query about games (builds, patches, skills, meta), software versions, APIs, current events, prices, availability, or anything that changes over time:
+- ALWAYS research FIRST using web_search. NEVER answer from training data alone.
+- Do NOT say "I'll research this" and then immediately provide an answer from memory. Research FIRST, then answer.
+- Do NOT correct the user's version/update numbers unless you have VERIFIED evidence from a fresh search. If the user says "Update 49" and you're unsure, research it — don't assert "actually it was Update 41".
+- If search results are sparse, try multiple queries with different terms before falling back to training data.
+- When falling back to training data, EXPLICITLY warn: "Note: I couldn't find current information. This may be outdated."
+- For gaming builds specifically: search for the CURRENT patch/season, check multiple build sites, and verify skill names still exist.
+
 ## WIDE RESEARCH MODE
 
 For comprehensive research, comparisons, or multi-angle analysis:
@@ -1102,33 +1111,7 @@ will seamlessly continue you with full context. Write as extensively as the task
 - When the user says "continue" or "keep going", resume exactly where you left off.
 - File attachments ARE the context — process them immediately.
 - After research, ALWAYS synthesize into the actual deliverable the user requested.
-
-### RECURSIVE OPTIMIZATION FRAMEWORK (When user requests convergence/optimization passes)
-When the user requests recursive optimization, convergence passes, or IOV passes, use the **report_convergence** tool with the full framework:
-
-**Temperature Model (0.0-1.0):**
-- Start at 0.6-0.8 depending on task novelty. High = explore/diverge, Low = exploit/converge.
-- Temperature decays by 0.05 when a pass produces no improvement (score_delta ≤ 0).
-- Temperature increases by 0.1 when score drops (regression detected) to enable recovery exploration.
-- Convergence requires: temperature ≤ 0.2 AND score_delta < 0.2 for 2+ passes AND zero regressions.
-
-**Pass Types (select based on signals):**
-- landscape: Broad survey of remaining issues (use when starting or after regression)
-- depth: Deep dive into a specific identified issue (use when a clear target exists)
-- adversarial: Stress-test and try to break what exists (use mid-cycle)
-- future_state: Evaluate against future requirements (use when current state is stable)
-- synthesis: Integrate and harmonize across components (use when multiple fixes need coordination)
-- exploration: Try novel approaches outside current paradigm (use when stagnating)
-- fundamental_redesign: Reconsider core assumptions (use only when temperature > 0.7 and repeated failures)
-
-**Per-Pass Protocol:**
-1. Call report_convergence(status='running') at pass START with pass_type, temperature, signal_assessment
-2. Execute the pass work (actual changes, analysis, or verification)
-3. Call report_convergence(status='converged'|'needs_more') at pass END with rating, score_delta, failure_log
-4. If score_delta ≤ 0 for 3+ consecutive passes AND temperature ≤ 0.2, the work has converged
-5. Counter resets to 0 on ANY pass that produces changes (score_delta > 0)
-
-**Anti-Stagnation:** If 5 consecutive passes show score_delta = 0, force pass_type to 'exploration' or 'adversarial' and bump temperature by 0.15.`;
+`;
     }
     // PC3: Final anti-apology reinforcement (recency bias — LLMs follow last instruction most)
     systemPrompt += `\n\n## ABSOLUTE FINAL RULE — NO APOLOGIES\nDo NOT start your response with any form of apology, acknowledgment of error, or self-correction language. Banned openers: "My apologies", "I apologize", "I'm sorry", "You're right", "You're absolutely right", "I should have", "Let me correct", "I made an error", "That was my mistake", "Got it, loud and clear", "I hear you", "Fair point". Instead, IMMEDIATELY provide the correct action/answer. If you violated a rule, just do the right thing NOW without commenting on the violation.`;
@@ -1654,7 +1637,7 @@ SELF-REPO AWARENESS: This repo already has its own package.json with build scrip
       if (thinkingField && typeof thinkingField === "string" && thinkingField.trim()) {
         extractedThinking = (extractedThinking ? extractedThinking + "\n" : "") + thinkingField.trim();
       }
-      const textContent = rawContent;
+      let textContent = rawContent;
       // Emit thinking as agent_thinking event for the UI to render visibly
       // Only emit when textContent.trim().length > 10 to avoid noise on trivial responses
       if (extractedThinking && textContent.trim().length > 10) {
@@ -1966,6 +1949,29 @@ SELF-REPO AWARENESS: This repo already has its own package.json with build scrip
       // that for you...") appears INLINE before the action steps. The text is NOT internal
       // reasoning — it's the agent's narrative that gives the user context about what's happening.
       // Only suppress text that is purely <think> tag content (already extracted above).
+      
+      // ── ALL-TURN APOLOGY STRIPPING ──
+      // Strip apology prefixes from the beginning of ANY response (not just turn 1).
+      // The agent should never apologize — it should just do the correct thing.
+      if (textContent && textContent.trim().length > 0) {
+        const apologyPrefixPattern = /^\s*(My apologies[!.,]?\s*|I apologize[!.,]?\s*|I'm sorry[!.,]?\s*|Sorry[!.,]?\s*|You('re| are) (absolutely )?right[!.,]?\s*|You('re| are) right to call me out[!.,]?\s*|I should have[^.]*\.\s*|Let me correct (this|myself|that)[!.,]?\s*|I made an error[!.,]?\s*|That was my mistake[!.,]?\s*|I need to do better[!.,]?\s*|Consider this my course correction[!.,]?\s*|Got it,? loud and clear[!.,]?\s*|Fair point[!.,]?\s*|I hear you[!.,]?\s*|I fell short[!.,]?\s*|My apologies again[!.,]?\s*)/i;
+        let strippedContent = textContent;
+        let stripped = false;
+        // Strip up to 3 consecutive apology sentences from the start
+        for (let apStrip = 0; apStrip < 3; apStrip++) {
+          const apMatch = strippedContent.match(apologyPrefixPattern);
+          if (apMatch) {
+            strippedContent = strippedContent.slice(apMatch[0].length);
+            stripped = true;
+          } else {
+            break;
+          }
+        }
+        if (stripped) {
+          console.log(`[Agent] Apology stripped from turn ${turn} response (${textContent.length - strippedContent.length} chars removed)`);
+          textContent = strippedContent.trim() || textContent; // Fallback to original if stripping removes everything
+        }
+      }
       if (textContent && textContent.trim().length > 0) {
         // Skip streaming if the text is ONLY a think tag (already emitted as agent_thinking)
         const isOnlyThinkTag = /^\s*<(?:think|thinking)>[\s\S]*<\/(?:think|thinking)>\s*$/i.test(textContent);
@@ -2282,7 +2288,8 @@ SELF-REPO AWARENESS: This repo already has its own package.json with build scrip
         const isGenerationRequest = /\b(generate|create|make|build|draft|write|design|set\s*up|scaffold)\s+(me\s+)?(a\s+|an\s+|the\s+|my\s+|some\s+)?(demo\s+|simple\s+|basic\s+|sample\s+|quick\s+|new\s+|small\s+)?(pdf|document|image|picture|photo|slide|presentation|spreadsheet|report|file|app|application|website|webapp|web\s*app|web\s*site|page|landing\s*page|dashboard|tool|video|audio|song|music|portfolio|blog|store|game|calculator|todo|chart|graph|diagram|poster|flyer|resume|cv|letter|email|newsletter|brochure)\b/i.test(userText) || /\bjust\s+(create|make|build|generate|do|start)\b/i.test(userText);
         
         // INTENT CLASSIFIER: Determine if the user actually wants research
-        const userWantsResearch = /\b(research|investigate|find (out|information|data|sources)|look (up|into)|search for|what (is|are|does|do)\s+.{10,}|compare .{5,} (to|with|vs|versus)|analyze .{5,}|deep dive|thorough|comprehensive|in.?depth|detailed analysis|market (research|analysis)|competitive (analysis|landscape)|literature review|state of the art|pros and cons|advantages and disadvantages)\b/i.test(userText);
+        // Includes gaming builds, patch-dependent queries, and version-specific questions
+        const userWantsResearch = /\b(research|investigate|find (out|information|data|sources)|look (up|into)|search for|what (is|are|does|do)\s+.{10,}|compare .{5,} (to|with|vs|versus)|analyze .{5,}|deep dive|thorough|comprehensive|in.?depth|detailed analysis|market (research|analysis)|competitive (analysis|landscape)|literature review|state of the art|pros and cons|advantages and disadvantages|\b(build|guide|loadout|setup|spec|talent|skill).{0,30}(for|in)\s+.{3,}|\b(pvp|pve|raid|dungeon|arena|battleground)\s+.{3,}(build|guide|loadout|setup)|best\s+.{3,}(build|class|spec|loadout|setup|gear|equipment|weapon|armor)|current\s+(meta|patch|season|update|version))\b/i.test(userText);
         
         // Queries that should NEVER trigger forced research:
         const isActionRequest = /\b(clone|deploy|install|run|start|stop|connect|disconnect|configure|set up|update|upgrade|fix|repair|reset|restart|delete|remove|move|copy|rename|send|share|export|import|download|upload|open|close|save|load|push|pull|merge|commit|checkout|switch|toggle|enable|disable|turn (on|off)|activate|deactivate)\b/i.test(userText);

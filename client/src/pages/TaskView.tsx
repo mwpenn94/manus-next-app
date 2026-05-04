@@ -149,6 +149,7 @@ import TaskReplayViewer from "@/components/TaskReplayViewer";
 import AgentMemoryTimeline from "@/components/AgentMemoryTimeline";
 import ExecutionPlanDisplay from "@/components/ExecutionPlanDisplay";
 import LiveOrchestrationGraph from "@/components/LiveOrchestrationGraph";
+import { AgentReasoningChain } from "@/components/AgentReasoningChain";
 import SessionCostPanel from "@/components/SessionCostPanel";
 import useInputHistory from "@/hooks/useInputHistory";
 import { useSelfDiscovery } from "@/hooks/useSelfDiscovery";
@@ -1325,7 +1326,7 @@ function MessageBubble({ message, isLast, onRegenerate, canRegenerate, userTTSVo
 
 // ── Workspace Panel with real artifacts ──
 
-type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links" | "orchestration" | "artifacts" | "replay" | "memory";
+type WorkspaceTab = "browser" | "all" | "code" | "terminal" | "images" | "documents" | "links" | "orchestration" | "reasoning" | "artifacts" | "replay" | "memory";
 
 function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, aegisMeta, isStreaming }: { task: ReturnType<typeof useTask>["activeTask"]; isMobile?: boolean; onClose?: () => void; bridgeStatus?: string; agentActions?: AgentAction[]; aegisMeta?: { classification?: { taskType: string; complexity: string }; planSteps?: string[]; quality?: Record<string, number> } | null; isStreaming?: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -1487,6 +1488,7 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
     { id: "code", label: "Code", icon: Code, count: codeArtifacts.data?.length },
     { id: "links", label: "Links", icon: LinkIcon, count: extractedLinks.length || undefined },
     ...(agentActions && agentActions.length > 0 ? [{ id: "orchestration" as WorkspaceTab, label: "Graph", icon: GitBranch, count: agentActions.length }] : []),
+    ...(agentActions && agentActions.filter(a => a.type === "thinking").length > 0 ? [{ id: "reasoning" as WorkspaceTab, label: "Reasoning", icon: Sparkles, count: agentActions.filter(a => a.type === "thinking").length }] : []),
     { id: "artifacts" as WorkspaceTab, label: "Artifacts", icon: FolderOpen },
     { id: "replay" as WorkspaceTab, label: "Replay", icon: RotateCcw },
     { id: "memory" as WorkspaceTab, label: "Memory", icon: Brain },
@@ -2333,6 +2335,35 @@ function WorkspacePanel({ task, isMobile, onClose, bridgeStatus, agentActions, a
             className="h-full"
           />
         )}
+
+        {/* Agent Reasoning Chain — full thinking transparency */}
+        {activeTab === "reasoning" && (() => {
+          const thinkingActions = (agentActions || []).filter(a => a.type === "thinking");
+          const reasoningSteps = thinkingActions.map((a, i) => ({
+            id: `reasoning-${i}`,
+            title: `Turn ${i + 1} Reasoning`,
+            content: a.preview || "Processing...",
+            status: (a.status === "active" ? "thinking" : a.status === "done" ? "complete" : "error") as "thinking" | "complete" | "error",
+            duration: undefined,
+            toolCalls: undefined,
+          }));
+          return (
+            <div className="h-full overflow-auto p-4">
+              <AgentReasoningChain
+                steps={reasoningSteps}
+                isExpanded={true}
+                onToggleExpand={() => {}}
+                showToolCalls={false}
+                onToggleToolCalls={() => {}}
+              />
+              {reasoningSteps.length === 0 && (
+                <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+                  No reasoning steps captured yet.
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Artifacts Gallery */}
         {activeTab === "artifacts" && (

@@ -7567,3 +7567,12 @@
 - [x] IOV-S56-1: Embed full Recursive Optimization Framework in limitless mode system prompt (temperature, pass types, anti-stagnation)
 - [x] IOV-S56-2: Update parity-matrix.md — correct stale claims (loop depth, context compression now PARITY+)
 - [x] IOV-S56-3: Update GAP_ANALYSIS_REVISED.md — mark 6/7 gaps as RESOLVED with evidence
+- [x] REVERT-S56: Remove incorrectly embedded Recursive Optimization Framework from limitless mode system prompt (it's a meta-process for improving the app, not an agent instruction)
+- [x] DOC-S56: Update IOV convergence log and GAP analysis to reflect correct framework usage (configurable user setting, not hardcoded)
+- [x] NEXT-S56-1: Wire AgentReasoningChain into TaskView for richer thinking display (close P1-MEDIUM reasoning transparency gap)
+- [x] NEXT-S56-2: Implement parallel subtask spawning (map-style execution) — already implemented (parallel_execute + multi_agent_orchestrate)
+- [x] BUG-S56-5: Agent apologizes despite anti-apology system prompt rule ("My apologies!", "My apologies again") — strengthen enforcement
+- [x] BUG-S56-6: Agent uses outdated training data for gaming/patch-dependent queries instead of researching fresh (ESO Dragonknight skills pre-rework)
+- [x] BUG-S56-7: Agent hallucinates corrections ("Update 41 not 49") without verified evidence — should research instead of asserting
+- [x] BUG-S56-8: Agent promises "I'll research" then immediately answers from stale memory in same message — should research FIRST then answer
+- [x] BUG-S56-9: Insufficient research depth in limitless mode — only 2-3 steps for complex gaming build query that needs multiple sources

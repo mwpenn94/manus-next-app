@@ -90,7 +90,7 @@
 
 ## Priority Order (by impact × feasibility)
 
-1. **GAP A** (System Prompt Framework) — ✅ RESOLVED (Session 56: Full framework embedded in limitless mode)
+1. **GAP A** (System Prompt Framework) — OPEN (Framework is a meta-process for app improvement, not an agent instruction. Consider as configurable user setting.)
 2. **GAP B** (Convergence Tool) — ✅ RESOLVED (all fields implemented)
 3. **GAP D** (AEGIS/Sovereign in main loop) — ✅ RESOLVED (invokeWithAegisRetry is primary path)
 4. **GAP C** (ATLAS parallel) — ✅ RESOLVED (Promise.allSettled)

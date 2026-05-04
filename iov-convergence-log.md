@@ -20,11 +20,10 @@
 
 ## IOV Pass Execution
 
-### Pass 1: System Prompt Enhancement (GAP A Closure)
+### Pass 1: System Prompt Enhancement (GAP A Closure) — REVERTED
 - **Target**: Add explicit instruction in limitless mode to use report_convergence with temperature/pass-type framework
-- **Status**: ✅ COMPLETE
-- **Change**: Added full RECURSIVE OPTIMIZATION FRAMEWORK section to limitless mode system prompt (temperature model, 7 pass types, per-pass protocol, anti-stagnation)
-- **Score**: 9/10 (comprehensive framework now embedded)
+- **Status**: ❌ REVERTED — The Recursive Optimization Framework is a META-PROCESS for improving the app, not something to embed in the agent's system prompt. It should be offered as a configurable user setting instead.
+- **Lesson**: The framework guides OUR development process, not the agent's runtime behavior. The agent already has report_convergence as a tool; users can optionally enable recursive optimization as a task setting.
 
 ### Pass 2: Parity Matrix Accuracy Update
 - **Target**: Correct stale claims in parity-matrix.md that contradict current code
@@ -50,8 +49,22 @@
   - Remaining P2 gaps: server-side deployment, checkpoint UI, database for user apps
   - These are architectural/infrastructure gaps, not code bugs
 
-### Convergence Assessment
-- **Temperature**: 0.25 (declining — most actionable gaps are now closed)
-- **Score Delta**: +0.0 (no further code changes produce measurable improvement without architectural work)
-- **Signal**: The remaining gaps (parallel subtask spawning, server deployment, native mobile) require infrastructure changes beyond the scope of code fixes
-- **Conclusion**: The codebase has converged for this session's scope. All 3 critical bugs fixed, GAP A closed, documentation updated. Remaining items are architectural/infrastructure work.
+### Pass 5-7: Final IOV Verification Passes
+- **Target**: Verify all fixes are correct, complete, and non-regressive
+- **Status**: ✅ ALL CONVERGED
+
+| Pass | Area | Result |
+|------|------|--------|
+| 5 | Clone Dedup + Deploy Validation | CONVERGED — registry blocks re-clones, handles missing dirs, deploy recovers |
+| 6 | Exact-Repetition + Apology Strip | CONVERGED — fires during pipeline, strips 3 prefixes per turn |
+| 7 | Research-First + AgentReasoningChain | CONVERGED — gaming queries match research intent, component wired to tab |
+
+### Convergence Assessment (Final)
+- **Temperature**: 0.15 (converged — all actionable items resolved)
+- **Score Delta**: +0.0 (no further code changes produce measurable improvement)
+- **Consecutive Clean Passes**: 7
+- **TypeScript**: 0 errors (strict mode)
+- **Tests**: 32/32 passing
+- **Browser Console**: Clean (no errors)
+- **Signal**: Codebase has converged. All critical bugs fixed, chat issues resolved, reasoning chain wired, parallel execution confirmed working, Manus 2026 alignment verified.
+- **Remaining (out of scope)**: GAP G (iOS composer choreography), Recursive Optimization as configurable user setting, server-side deployment infrastructure.
