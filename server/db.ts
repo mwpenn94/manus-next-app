@@ -517,6 +517,10 @@ export async function upsertUserPreferences(prefs: InsertUserPreference) {
   if (prefs.recursiveOptimizationEnabled !== undefined) updateSet.recursiveOptimizationEnabled = prefs.recursiveOptimizationEnabled;
   if (prefs.recursiveOptimizationDepth !== undefined) updateSet.recursiveOptimizationDepth = prefs.recursiveOptimizationDepth;
   if (prefs.recursiveOptimizationTemperature !== undefined) updateSet.recursiveOptimizationTemperature = prefs.recursiveOptimizationTemperature;
+  if (prefs.previewTier !== undefined) updateSet.previewTier = prefs.previewTier;
+  if (prefs.vercelProjectId !== undefined) updateSet.vercelProjectId = prefs.vercelProjectId;
+  if (prefs.vercelTeamSlug !== undefined) updateSet.vercelTeamSlug = prefs.vercelTeamSlug;
+  if (prefs.codespaceScopeGranted !== undefined) updateSet.codespaceScopeGranted = prefs.codespaceScopeGranted;
   await db.insert(userPreferences).values(prefs).onDuplicateKeyUpdate({
     set: Object.keys(updateSet).length > 0 ? updateSet : { updatedAt: new Date() },
   });

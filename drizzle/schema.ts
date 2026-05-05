@@ -147,6 +147,14 @@ export const userPreferences = mysqlTable("user_preferences", {
   capabilities: json("capabilities"),
   /** Global default system prompt for all tasks (overridden by per-task systemPrompt) */
   systemPrompt: text("systemPrompt"),
+  /** Live Preview tier: auto | webcontainer | vercel | codespace */
+  previewTier: varchar("previewTier", { length: 32 }).default("auto"),
+  /** Vercel project ID (if connected) */
+  vercelProjectId: varchar("vercelProjectId", { length: 128 }),
+  /** Vercel team slug (if connected) */
+  vercelTeamSlug: varchar("vercelTeamSlug", { length: 128 }),
+  /** Whether user has granted codespace scope on their GitHub token */
+  codespaceScopeGranted: boolean("codespaceScopeGranted").default(false).notNull(),
   /** Recursive Optimization: enable convergence-driven iterative improvement on tasks */
   recursiveOptimizationEnabled: boolean("recursiveOptimizationEnabled").default(false).notNull(),
   /** Recursive Optimization: number of consecutive clean passes required for convergence (1-1280) */

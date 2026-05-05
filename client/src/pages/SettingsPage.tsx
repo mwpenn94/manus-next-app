@@ -66,7 +66,7 @@ import ProcessImprovementTracker from "@/components/ProcessImprovementTracker";
 import ScheduledTaskManager from "@/components/ScheduledTaskManager";
 import ConnectorsCRUDPanel from "@/components/ConnectorsCRUDPanel";
 
-type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "connectors" | "bridge" | "cloud_browser" | "data_controls" | "feedback" | "voice" | "knowledge_base" | "personalization" | "self_improvement" | "data_integration" | "process_improvement" | "scheduled_tasks";
+type SettingsTab = "account" | "general" | "notifications" | "secrets" | "capabilities" | "connectors" | "bridge" | "cloud_browser" | "data_controls" | "feedback" | "voice" | "knowledge_base" | "personalization" | "self_improvement" | "data_integration" | "process_improvement" | "scheduled_tasks" | "development";
 
 interface Capability {
   name: string;
@@ -426,6 +426,7 @@ export default function SettingsPage() {
     { id: "data_integration" as SettingsTab, label: "Data Integration", icon: BarChart3 },
     { id: "process_improvement" as SettingsTab, label: "Process Improvement", icon: Zap },
     { id: "scheduled_tasks" as SettingsTab, label: "Scheduled Tasks", icon: Timer },
+    { id: "development" as SettingsTab, label: "Development", icon: Code },
   ];
 
   return (
@@ -1857,8 +1858,197 @@ export default function SettingsPage() {
               <ScheduledTaskManager />
             </motion.div>
           )}
+
+          {activeTab === "development" && (
+            <DevelopmentSettings />
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Development Settings (Live Preview Tier Selection) ──
+
+function DevelopmentSettings() {
+  const previewTierQuery = trpc.preferences.getPreviewTier.useQuery();
+  const savePreviewTier = trpc.preferences.savePreviewTier.useMutation({
+    onSuccess: () => {
+      toast.success("Preview tier settings saved");
+      previewTierQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const [selectedTier, setSelectedTier] = useState<string>("auto");
+  const [vercelProjectId, setVercelProjectId] = useState("");
+  const [vercelTeamSlug, setVercelTeamSlug] = useState("");
+
+  useEffect(() => {
+    if (previewTierQuery.data) {
+      setSelectedTier(previewTierQuery.data.previewTier);
+      setVercelProjectId(previewTierQuery.data.vercelProjectId || "");
+      setVercelTeamSlug(previewTierQuery.data.vercelTeamSlug || "");
+    }
+  }, [previewTierQuery.data]);
+
+  const tiers = [
+    {
+      id: "auto",
+      name: "Auto (Recommended)",
+      description: "Automatically selects the best tier based on your project type",
+      cost: "Free",
+      icon: Sparkles,
+    },
+    {
+      id: "webcontainer",
+      name: "WebContainers",
+      description: "Instant in-browser Node.js via StackBlitz. Best for frontend projects.",
+      cost: "Free, unlimited",
+      icon: Globe,
+      capabilities: ["Frontend dev server", "Hot reload", "Terminal", "npm install"],
+      limitations: ["No database", "No server APIs", "JS/TS only"],
+    },
+    {
+      id: "vercel",
+      name: "Vercel Preview",
+      description: "Full production build per branch push. Best for full-stack apps.",
+      cost: "Free (6000 build min/month)",
+      icon: Layers,
+      capabilities: ["Full-stack build", "API routes", "Database", "Env vars"],
+      limitations: ["No hot reload", "30-90s build time"],
+      setupRequired: true,
+    },
+    {
+      id: "codespace",
+      name: "Cloud Sandbox",
+      description: "Full Linux VM with hot reload. Complete development environment.",
+      cost: "Free 60 hrs/month",
+      icon: Cpu,
+      capabilities: ["Full Linux VM", "Hot reload", "Any language", "Docker", "Database"],
+      limitations: ["60 hour monthly limit"],
+      setupRequired: true,
+    },
+  ];
+
+  const handleSave = () => {
+    savePreviewTier.mutate({
+      previewTier: selectedTier as any,
+      vercelProjectId: vercelProjectId || null,
+      vercelTeamSlug: vercelTeamSlug || null,
+    });
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+      <h2 className="text-xl font-semibold text-foreground mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+        Development
+      </h2>
+      <p className="text-sm text-muted-foreground mb-5">
+        Configure how live previews are launched when you ask the agent to build, run, or test a GitHub repo.
+      </p>
+
+      {/* Tier Selection Cards */}
+      <div className="space-y-3 mb-6">
+        <label className="text-sm font-medium text-foreground">Preview Tier</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {tiers.map((tier) => (
+            <button
+              key={tier.id}
+              onClick={() => setSelectedTier(tier.id)}
+              className={cn(
+                "text-left p-4 rounded-xl border transition-all",
+                selectedTier === tier.id
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "border-border hover:border-primary/30 bg-card"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                  selectedTier === tier.id ? "bg-primary/15" : "bg-muted"
+                )}>
+                  <tier.icon className={cn("w-4 h-4", selectedTier === tier.id ? "text-primary" : "text-muted-foreground")} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">{tier.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{tier.description}</p>
+                  <p className="text-xs text-primary/80 mt-1 font-medium">{tier.cost}</p>
+                  {tier.capabilities && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {tier.capabilities.map((cap) => (
+                        <span key={cap} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{cap}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Vercel Configuration (shown when Vercel tier is selected) */}
+      {(selectedTier === "vercel" || selectedTier === "auto") && (
+        <div className="space-y-3 mb-6 p-4 rounded-xl border border-border bg-card">
+          <h3 className="text-sm font-medium text-foreground">Vercel Configuration (Optional)</h3>
+          <p className="text-xs text-muted-foreground">
+            Connect your Vercel project for full-stack preview deployments. Leave blank if not using Vercel.
+          </p>
+          <div className="space-y-2">
+            <div>
+              <label className="text-xs text-muted-foreground">Vercel Project ID</label>
+              <input
+                type="text"
+                value={vercelProjectId}
+                onChange={(e) => setVercelProjectId(e.target.value)}
+                placeholder="prj_xxxxxxxxxxxxx"
+                className="w-full mt-1 px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Vercel Team Slug (optional)</label>
+              <input
+                type="text"
+                value={vercelTeamSlug}
+                onChange={(e) => setVercelTeamSlug(e.target.value)}
+                placeholder="my-team"
+                className="w-full mt-1 px-3 py-2 rounded-lg bg-background border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Codespace Status */}
+      {(selectedTier === "codespace" || selectedTier === "auto") && (
+        <div className="space-y-3 mb-6 p-4 rounded-xl border border-border bg-card">
+          <h3 className="text-sm font-medium text-foreground">GitHub Codespaces</h3>
+          <p className="text-xs text-muted-foreground">
+            {previewTierQuery.data?.codespaceScopeGranted
+              ? "Codespace scope is granted. You can use Tier 3 (Cloud Sandbox) for full Linux VM previews."
+              : "To use Tier 3 (Cloud Sandbox), you need to re-authorize GitHub with the `codespace` scope. Go to Connectors and reconnect GitHub."}
+          </p>
+          <div className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+            previewTierQuery.data?.codespaceScopeGranted
+              ? "bg-green-500/10 text-green-400"
+              : "bg-yellow-500/10 text-yellow-400"
+          )}>
+            <div className={cn("w-1.5 h-1.5 rounded-full", previewTierQuery.data?.codespaceScopeGranted ? "bg-green-400" : "bg-yellow-400")} />
+            {previewTierQuery.data?.codespaceScopeGranted ? "Enabled" : "Not Configured"}
+          </div>
+        </div>
+      )}
+
+      {/* Save Button */}
+      <button
+        onClick={handleSave}
+        disabled={savePreviewTier.isPending}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+      >
+        {savePreviewTier.isPending ? "Saving..." : "Save Preview Settings"}
+      </button>
+    </motion.div>
   );
 }

@@ -280,13 +280,16 @@ You work within **projects**. Each project is an isolated directory with its own
 ### LIVE PREVIEW WORKFLOW (Build & Deploy Connected Repo)
 When the user asks to BUILD, DEPLOY, RUN, HOST, RENDER, or LAUNCH their connected repo as a live preview:
 1. Call **github_ops(mode: 'status')** to get the repo URL and metadata
-2. Call **git_operation(operation: 'clone', remote_url: <repo_https_url>)** to clone the repo
-3. Call **install_deps** or **run_command** to install dependencies (try 'npm install', fall back to 'npm install --legacy-peer-deps')
-4. Call **deploy_webapp** to build and deploy to S3 — this produces a live URL
-5. Present the live preview URL to the user with the iframe card
+2. Call **live_preview(repo_url: <repo_https_url>)** — this automatically selects the best tier:
+   - Tier 1 (WebContainers): Instant, free, runs in browser — best for frontend/Node.js projects
+   - Tier 2 (Vercel): Full-stack preview deployments — requires user to connect Vercel
+   - Tier 3 (Codespaces): Full Linux VM with hot reload — requires codespace scope
+3. Present the preview URL to the user with the iframe/workspace card
 
-IMPORTANT: Do NOT call create_webapp for this flow. create_webapp is for NEW projects from templates. For existing repos, use the clone → install → deploy pipeline above.
-If the build fails, problem-solve: check error messages, try different install flags, edit vite.config or package.json if needed, then retry the build.
+IMPORTANT: Use **live_preview** instead of the old clone → install → deploy pipeline. The live_preview tool handles tier selection, authentication, and URL generation automatically.
+Do NOT call create_webapp for this flow. create_webapp is for NEW projects from templates.
+If the user needs a higher tier, guide them to Settings → Development to upgrade.
+The live_preview tool will return setup instructions if a tier upgrade is needed.
 
 SELF-REPO AWARENESS: When working with a cloned repo that already has package.json:
 - ALWAYS run_command("cat package.json") FIRST to see existing scripts and dependencies
@@ -1358,8 +1361,9 @@ For questions unrelated to GitHub (math, general knowledge, research, etc.), IGN
 3. If they ask to edit/fix code → use github_edit
 4. If they ask about code quality → use github_assess
 5. If they ask to preview/view → use github_ops(status) + github_assess(assess)
-6. If they ask to build/deploy/run → github_ops(status) → git_operation(clone) → install_deps → deploy_webapp
-   CRITICAL: Do NOT call create_webapp before or after git_operation(clone). The clone sets the active project directory automatically. Calling create_webapp would override it with an empty scaffold.
+6. If they ask to build/deploy/run → github_ops(status) → live_preview(repo_url)
+   The live_preview tool automatically selects the best tier (WebContainers, Vercel, or Codespaces) and returns a preview URL.
+   CRITICAL: Do NOT call create_webapp for existing repos. Do NOT use the old clone → install → deploy pipeline.
 
 ### Auto-selection rule:
 If only one, use it automatically when the user asks about "my repo". If multiple repos, ask which repo they mean.
@@ -1628,7 +1632,7 @@ If git_operation(clone) fails:
         });
         const hasGitHubCall = toolCalls.some((tc: any) => {
           const name = tc.function?.name || tc.name || "";
-          return ["github_ops", "github_assess", "github_edit", "git_operation", "app_lifecycle", "deploy_webapp"].includes(name);
+          return ["github_ops", "github_assess", "github_edit", "git_operation", "app_lifecycle", "deploy_webapp", "live_preview"].includes(name);
         });
         if (hasGitHubCall) {
           githubOpsCompleted = true;
@@ -1654,7 +1658,7 @@ If git_operation(clone) fails:
             // Safety: if the LLM keeps trying research after 5 blocks, force a text-only response
             if (githubGuardBlocks >= 5) {
               console.log(`[Agent] GITHUB QUERY GUARD: ${githubGuardBlocks} consecutive blocks — forcing text-only response about GitHub capabilities`);
-              const fallbackText = `I can help you work with your connected GitHub repository (mwpenn94/manus-next-app). Here's what I can do:\n\n**GitHub Operations (API-based):**\n- **github_ops**: Check repository status, manage branches, create and merge pull requests, assist with releases, and generate CI/CD workflows\n- **github_edit**: Make targeted code changes, fixes, or additions directly to your repository via the GitHub API\n- **github_assess**: Deeply assess your repository's code quality, security, performance, and provide structured reports\n\n**Development Lifecycle:**\n- **git_operation(clone)**: Clone your repo for a fresh working copy\n- **install_deps**: Install project dependencies\n- **deploy_webapp**: Build and deploy a live preview\n- **run_command**: Run any command (build, test, lint, etc.)\n\nWould you like me to demonstrate any of these capabilities?`;
+              const fallbackText = `I can help you work with your connected GitHub repository (mwpenn94/manus-next-app). Here's what I can do:\n\n**GitHub Operations (API-based):**\n- **github_ops**: Check repository status, manage branches, create and merge pull requests, assist with releases, and generate CI/CD workflows\n- **github_edit**: Make targeted code changes, fixes, or additions directly to your repository via the GitHub API\n- **github_assess**: Deeply assess your repository's code quality, security, performance, and provide structured reports\n\n**Development Lifecycle:**\n- **live_preview**: Launch a live preview of your repo (auto-selects best tier: WebContainers, Vercel, or Codespaces)\n- **git_operation(clone)**: Clone your repo for a fresh working copy\n- **install_deps**: Install project dependencies\n- **deploy_webapp**: Build and deploy a live preview\n- **run_command**: Run any command (build, test, lint, etc.)\n\nWould you like me to demonstrate any of these capabilities?`;
               sendSSE(safeWrite, { delta: fallbackText });
               finalContent = fallbackText;
               break;
@@ -1670,6 +1674,7 @@ If git_operation(clone) fails:
 CONTEXT: The connected repo (mwpenn94/manus-next-app) is the currently running application.
 
 You have FULL development lifecycle capabilities:
+- live_preview — launch a live preview of the repo (auto-selects best tier: WebContainers, Vercel, or Codespaces)
 - git_operation(clone) — clone the repo to /tmp/webapp-projects/ for a fresh working copy
 - install_deps — install dependencies in the cloned project
 - deploy_webapp — build and deploy a live preview

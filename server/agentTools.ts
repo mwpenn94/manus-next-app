@@ -637,6 +637,35 @@ export const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  // ── Live Preview (Tiered) ──
+  {
+    type: "function" as const,
+    function: {
+      name: "live_preview",
+      description:
+        "Launch a live preview of a GitHub repository. Automatically selects the best tier based on project type: Tier 1 (WebContainers — instant, free, frontend projects), Tier 2 (Vercel — full-stack, branch-based deploys), or Tier 3 (GitHub Codespaces — full Linux VM, hot reload, any language). Use this instead of git_operation(clone) + deploy_webapp when the user asks to preview, run, build, or test a repo. Returns a preview URL that can be shown in the workspace iframe.",
+      parameters: {
+        type: "object",
+        properties: {
+          repo_url: {
+            type: "string",
+            description: "GitHub repository URL (e.g., https://github.com/owner/repo)",
+          },
+          branch: {
+            type: "string",
+            description: "Branch to preview (default: main)",
+          },
+          tier: {
+            type: "string",
+            enum: ["auto", "webcontainer", "vercel", "codespace"],
+            description: "Force a specific tier. 'auto' selects based on project type. Default: auto.",
+          },
+        },
+        required: ["repo_url"],
+        additionalProperties: false,
+      },
+    },
+  },
   // ── Convergence Reporting Tool ──
   {
     type: "function" as const,
@@ -3360,6 +3389,8 @@ export async function executeTool(
       return executeGitOperation(args, context);
     case "deploy_webapp":
       return executeDeployWebapp(args, context);
+    case "live_preview":
+      return executeLivePreviewTool(args, context);
     case "report_convergence":
       // This is a signal tool — the actual SSE emission happens in agentStream.ts
       // We just return success so the agent loop continues
@@ -6648,5 +6679,105 @@ $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = "your-password"
     };
   } catch (err: any) {
     return { success: false, result: `Code signing configuration failed: ${err.message}` };
+  }
+}
+
+
+// ── Live Preview Tool Executor ──
+
+async function executeLivePreviewTool(args: {
+  repo_url: string;
+  branch?: string;
+  tier?: string;
+}, context?: ToolContext): Promise<ToolResult> {
+  const { executeLivePreview } = await import("./services/livePreview");
+  const { getUserPreferences } = await import("./db");
+  const { resolveGitHubAuth } = await import("./services/githubAuthFailover");
+
+  if (!args.repo_url) {
+    return { success: false, result: "repo_url is required" };
+  }
+
+  // Validate it looks like a GitHub URL
+  const match = args.repo_url.match(/github\.com\/([^/]+)\/([^/.]+)/);
+  if (!match) {
+    return { success: false, result: `Invalid GitHub URL: ${args.repo_url}. Expected format: https://github.com/owner/repo` };
+  }
+
+  // Get user preferences for tier config
+  let previewTier: string = "auto";
+  let vercelProjectId: string | undefined;
+  let vercelTeamSlug: string | undefined;
+  let codespaceScopeGranted = false;
+
+  if (context?.userId) {
+    try {
+      const prefs = await getUserPreferences(context.userId);
+      if (prefs) {
+        previewTier = prefs.previewTier || "auto";
+        vercelProjectId = prefs.vercelProjectId || undefined;
+        vercelTeamSlug = prefs.vercelTeamSlug || undefined;
+        codespaceScopeGranted = prefs.codespaceScopeGranted || false;
+      }
+    } catch (err) {
+      console.warn("[live_preview] Failed to get user preferences:", err);
+    }
+  }
+
+  // Get GitHub token for private repo access and Codespaces
+  let githubToken: string | undefined;
+  if (context?.userId) {
+    try {
+      const authResult = await resolveGitHubAuth({
+        userId: context.userId,
+        validate: false, // Skip validation for speed — we'll get a 401 if it's bad
+      });
+      if (authResult) {
+        githubToken = authResult.token;
+      }
+    } catch (err) {
+      console.warn("[live_preview] Failed to resolve GitHub auth:", err);
+    }
+  }
+
+  // Override tier if explicitly specified in args
+  const requestedTier = (args.tier || previewTier || "auto") as any;
+
+  try {
+    const result = await executeLivePreview({
+      repoUrl: args.repo_url,
+      branch: args.branch,
+      tier: requestedTier,
+      userId: context?.userId || 0,
+      githubToken,
+      vercelProjectId,
+      vercelTeamSlug,
+      codespaceScopeGranted,
+    });
+
+    if (result.success) {
+      let response = result.message;
+      if (result.previewUrl) {
+        response += `\n\nPreview URL: ${result.previewUrl}`;
+      }
+      if (result.setupRequired) {
+        response += `\n\n${result.setupRequired}`;
+      }
+      return {
+        success: true,
+        result: response,
+        artifactType: "webapp_preview",
+        artifactLabel: `Live Preview (${result.tier})`,
+        url: result.previewUrl || undefined,
+      };
+    } else {
+      let response = result.message;
+      if (result.setupRequired) {
+        response += `\n\n${result.setupRequired}`;
+      }
+      return { success: false, result: response };
+    }
+  } catch (err: any) {
+    return { success: false, result: `Live preview failed: ${err.message}` };
   }
 }

@@ -7789,3 +7789,38 @@
 - [x] Add free search service to supplement DDG/Wikipedia (HN Algolia + YouTube via Forge API)
 - [ ] Deploy fixes to production (user must click Publish)
 - [x] Skeptical re-verification pass on all changes (deep_research verified end-to-end)
+
+## Bug Fix: GitHub Repo Preview Persistently Fails
+- [ ] Investigate why agent fails to render connected GitHub repo preview (clone/build/deploy cycle fails)
+- [ ] Fix the implementation so repo preview works reliably for users
+- [ ] Test the fix end-to-end
+
+## Tiered Live Preview System (Manus Parity+)
+- [ ] Design tiered architecture (Tier 1: WebContainers, Tier 2: Vercel/Netlify, Tier 3: Codespaces)
+- [ ] Implement Tier 1: StackBlitz WebContainers SDK integration (free, instant, frontend)
+- [ ] Implement Tier 2: Vercel preview deployments via branch push (free, full-stack)
+- [ ] Implement Tier 3: GitHub Codespaces API integration (free 60hrs, full parity)
+- [ ] Implement tier selection UI in Settings with upgrade flow
+- [ ] Update agent system prompt with tiered routing logic (auto-detect project type → select tier)
+- [ ] Remove broken git_operation(clone) + deploy_webapp pipeline from system prompt
+- [ ] IOV Pass: Test Tier 1 as virtual user (frontend project preview)
+- [ ] IOV Pass: Test Tier 2 as virtual user (full-stack branch deploy)
+- [ ] IOV Pass: Test Tier 3 as virtual user (Codespaces full dev environment)
+- [ ] Convergence: 3 consecutive passes confirm all tiers work
+
+## Tiered Live Preview System (Aggregate Tier Solution)
+
+- [x] Create livePreview service with 3-tier architecture (WebContainers, Vercel, Codespaces)
+- [x] Add live_preview tool definition to agent tool registry
+- [x] Add executeLivePreviewTool function with GitHub auth integration
+- [x] Wire live_preview dispatch case in executeTool switch
+- [x] Update system prompt LIVE PREVIEW WORKFLOW to use live_preview tool
+- [x] Update GitHub query guard to allow live_preview tool
+- [x] Add previewTier, vercelProjectId, vercelTeamSlug, codespaceScopeGranted to user_preferences schema
+- [x] Add getPreviewTier and savePreviewTier tRPC procedures to preferences router
+- [x] Update upsertUserPreferences to persist preview tier fields
+- [x] Build Development tab in Settings UI with tier selection cards
+- [x] Add Vercel configuration panel (project ID, team slug inputs)
+- [x] Add Codespaces status indicator with scope check
+- [x] Write vitest tests for live preview tool (12 tests, all passing)
+- [x] TypeScript compilation clean (0 errors in agentTools.ts and livePreview.ts)
