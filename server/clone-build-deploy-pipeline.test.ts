@@ -320,39 +320,23 @@ describe("Clone → Build → Deploy Pipeline — Pipeline State Machine", () =>
   });
 });
 
-describe("Clone → Build → Deploy Pipeline — GitHub Query Guard Integration", () => {
-  it("GitHub Query Guard includes self-repo awareness", () => {
+describe("Clone → Build → Deploy Pipeline — GitHub Query Guard Removed", () => {
+  it("GitHub Query Guard has been fully removed", () => {
     const agentStreamSrc = fs.readFileSync(path.resolve("server/agentStream.ts"), "utf-8");
-    // The guard should mention self-repo or host application context
-    const selfRepoGuard = agentStreamSrc.match(
-      /GitHub Query Guard[\s\S]{0,2000}(self-repo|host application|currently running|mwpenn94)/i
-    );
-    expect(selfRepoGuard).not.toBeNull();
+    // The guard was removed because it arbitrarily blocked tool calls.
+    expect(agentStreamSrc).not.toContain("const isGitHubRepoQuery");
+    expect(agentStreamSrc).not.toContain("BLOCKED_RESEARCH_TOOLS");
+    expect(agentStreamSrc).not.toContain("SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED");
+    expect(agentStreamSrc).toContain("GitHub Query Guard was removed");
   });
 
-  it("GitHub Query Guard blocks research tools", () => {
+  it("intent-based routing still guides LLM for repo queries", () => {
     const agentStreamSrc = fs.readFileSync(path.resolve("server/agentStream.ts"), "utf-8");
-    // Should block deep_research_content, wide_research, web_search, read_webpage
-    expect(agentStreamSrc).toContain("BLOCKED_RESEARCH_TOOLS");
-    expect(agentStreamSrc).toContain('"deep_research_content"');
-    expect(agentStreamSrc).toContain('"wide_research"');
-    expect(agentStreamSrc).toContain('"web_search"');
-  });
-
-  it("GitHub Query Guard allows git_operation and deploy_webapp", () => {
-    const agentStreamSrc = fs.readFileSync(path.resolve("server/agentStream.ts"), "utf-8");
-    // The guard section mentions git_operation and deploy_webapp in the allowed tools list
-    // Use indexOf from the guard position since distances are large (2177 and 10861 chars)
-    const guardIdx = agentStreamSrc.indexOf('GITHUB QUERY GUARD');
-    expect(guardIdx).toBeGreaterThan(-1);
-    // git_operation should appear within the guard's scope (within 3000 chars)
-    const gitOpIdx = agentStreamSrc.indexOf('git_operation', guardIdx);
-    expect(gitOpIdx).toBeGreaterThan(guardIdx);
-    expect(gitOpIdx - guardIdx).toBeLessThan(5000);
-    // deploy_webapp appears in the enforcement prompt (within 12000 chars of guard start)
-    const deployIdx = agentStreamSrc.indexOf('deploy_webapp', guardIdx);
-    expect(deployIdx).toBeGreaterThan(guardIdx);
-    expect(deployIdx - guardIdx).toBeLessThan(30000);
+    // The system prompt has READ vs BUILD intent routing
+    expect(agentStreamSrc).toContain("READ intents");
+    expect(agentStreamSrc).toContain("BUILD intents");
+    expect(agentStreamSrc).toContain("github_ops");
+    expect(agentStreamSrc).toContain("github_assess");
   });
 });
 

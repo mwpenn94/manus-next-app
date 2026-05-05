@@ -1206,15 +1206,7 @@ will seamlessly continue you with full context. Write as extensively as the task
       isSimpleQueryMode = true;
       console.log(`[Agent] SIMPLE QUERY DETECTED: "${lastUserText.slice(0, 80)}" — capping to 1 turn, 0 continuations`);
     }
-    // GITHUB QUERY GUARD: Detect when user is asking about their connected repo.
-    // The LLM often ignores routing instructions and calls deep_research_content instead
-    // of github_ops. We detect this intent and strip research tools on turn 1.
-    const isGitHubRepoQuery = /\b(connected\s*(github|repo)|my\s*(github|repo)|the\s*repo|about\s*(the|my|your)\s*(connected\s*)?(github|repo)|tell\s*me\s*about.*repo|what\s*(can|do)\s*you.*repo|status\s*of.*repo|what.*connected.*repo|preview.*repo|render.*preview|you('re|\s+are)\s+connected)\b/i.test(simpleQueryText);
-    if (isGitHubRepoQuery) {
-      console.log(`[Agent] GITHUB QUERY GUARD: Detected repo-related query — will strip research tools on turn 1`);
-    }
-
-    console.log(`[Agent] Tier: ${mode}${isSimpleQueryMode ? ' (SIMPLE)' : ''}${isGitHubRepoQuery ? ' (GITHUB)' : ''} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
+    console.log(`[Agent] Tier: ${mode}${isSimpleQueryMode ? ' (SIMPLE)' : ''} | turns=${maxTurns === Infinity ? '∞' : maxTurns} | tokens/call=${tierConfig.maxTokensPerCall === Infinity ? '∞' : tierConfig.maxTokensPerCall} | continuation=${maxContinuationRounds === Infinity ? '∞' : maxContinuationRounds} | thinking=${tierConfig.thinkingBudget}`);
     
     let turn = 0;
     let finalContent = "";
@@ -1239,8 +1231,7 @@ will seamlessly continue you with full context. Write as extensively as the task
     const MAX_CLONE_ATTEMPTS = 2; // Hard budget: max 2 clone attempts per conversation
     let cloneBudgetExhausted = false; // When true, git_operation(clone) is blocked
     const successfulCloneUrls = new Set<string>(); // Session 56 Fix: Track URLs that cloned successfully to prevent re-cloning
-    let githubOpsCompleted = false; // Tracks whether github_ops has been called — guard deactivates after
-    let githubGuardBlocks = 0; // Counter for consecutive guard blocks to prevent infinite loops
+
 
     // PC4 FIX: Research budget for Limitless mode — after N consecutive research tools
     // without producing a deliverable, nudge the agent to synthesize and deliver
@@ -1632,93 +1623,12 @@ If git_operation(clone) fails:
           continue;
         }
       }
-      // GITHUB QUERY GUARD: ALWAYS block research tools for GitHub repo queries.
-      // The LLM persistently ignores prompt routing and calls deep_research_content
-      // for repo queries. This guard fires on EVERY turn, unconditionally.
-      // It does NOT deactivate after github_ops runs — research is NEVER appropriate
-      // for queries about the user's own connected repo.
-      // EXCEPTION: When wantsDemonstration is true, the user explicitly asked to
-      // demonstrate ALL capabilities (including web search, research, etc.).
-      // The demonstration protocol takes priority over the GitHub guard.
-      if (isGitHubRepoQuery && !wantsDemonstration && toolCalls && toolCalls.length > 0) {
-        const BLOCKED_RESEARCH_TOOLS = ["deep_research_content", "wide_research", "web_search", "read_webpage"];
-        const hasResearchCall = toolCalls.some((tc: any) => {
-          const name = tc.function?.name || tc.name || "";
-          return BLOCKED_RESEARCH_TOOLS.includes(name);
-        });
-        const hasGitHubCall = toolCalls.some((tc: any) => {
-          const name = tc.function?.name || tc.name || "";
-          return ["github_ops", "github_assess", "github_edit", "git_operation", "app_lifecycle", "deploy_webapp", "live_preview"].includes(name);
-        });
-        if (hasGitHubCall) {
-          githubOpsCompleted = true;
-          githubGuardBlocks = 0; // Reset block counter since agent is now using correct tools
-          console.log(`[Agent] GITHUB QUERY GUARD: GitHub/deploy tool detected on turn ${turn}`);
-          // Strip research calls even when mixed with github tools
-          if (hasResearchCall) {
-            console.log(`[Agent] GITHUB QUERY GUARD: Stripping ${toolCalls.filter((tc: any) => BLOCKED_RESEARCH_TOOLS.includes(tc.function?.name || tc.name || "")).length} research call(s) mixed with GitHub tools`);
-            toolCalls = toolCalls.filter((tc: any) => {
-              const name = tc.function?.name || tc.name || "";
-              return !BLOCKED_RESEARCH_TOOLS.includes(name);
-            });
-          }
-        } else if (hasResearchCall) {
-          githubGuardBlocks++;
-          console.log(`[Agent] GITHUB QUERY GUARD: Blocking ${toolCalls.length} research tool call(s) on turn ${turn} — research is NEVER allowed for repo queries (block #${githubGuardBlocks})`);
-          // Strip ALL research calls
-          const filtered = toolCalls.filter((tc: any) => {
-            const name = tc.function?.name || tc.name || "";
-            return !BLOCKED_RESEARCH_TOOLS.includes(name);
-          });
-          if (filtered.length === 0) {
-            // Safety: if the LLM keeps trying research after 5 blocks, force a text-only response
-            if (githubGuardBlocks >= 5) {
-              console.log(`[Agent] GITHUB QUERY GUARD: ${githubGuardBlocks} consecutive blocks — forcing text-only response about GitHub capabilities`);
-              const fallbackText = `I can help you work with your connected GitHub repository (mwpenn94/manus-next-app). Here's what I can do:\n\n**GitHub Operations (API-based):**\n- **github_ops**: Check repository status, manage branches, create and merge pull requests, assist with releases, and generate CI/CD workflows\n- **github_edit**: Make targeted code changes, fixes, or additions directly to your repository via the GitHub API\n- **github_assess**: Deeply assess your repository's code quality, security, performance, and provide structured reports\n\n**Development Lifecycle:**\n- **live_preview**: Launch a live preview of your repo (auto-selects best tier: WebContainers, Vercel, or Codespaces)\n- **git_operation(clone)**: Clone your repo for a fresh working copy\n- **install_deps**: Install project dependencies\n- **deploy_webapp**: Build and deploy a live preview\n- **run_command**: Run any command (build, test, lint, etc.)\n\nWould you like me to demonstrate any of these capabilities?`;
-              sendSSE(safeWrite, { delta: fallbackText });
-              finalContent = fallbackText;
-              break;
-            }
-            toolCalls = undefined;
-            // Push the assistant's (blocked) response to maintain conversation flow
-            const blockedAssistantContent = typeof assistantMessage?.content === "string" ? assistantMessage.content : "";
-            conversation.push({ role: "assistant", content: blockedAssistantContent } as any);
-            conversation.push({
-              role: "user",
-              content: `SYSTEM ENFORCEMENT: Research tools are PERMANENTLY BLOCKED for this query about your connected GitHub repo.
-
-CONTEXT: The connected repo (mwpenn94/manus-next-app) is the currently running application.
-
-You have FULL development lifecycle capabilities:
-- live_preview — launch a live preview of the repo (auto-selects best tier: WebContainers, Vercel, or Codespaces)
-- git_operation(clone) — clone the repo to /tmp/webapp-projects/ for a fresh working copy
-- install_deps — install dependencies in the cloned project
-- deploy_webapp — build and deploy a live preview
-- run_command — run any command in the project (build, test, lint, etc.)
-- app_lifecycle — manage the preview server
-- github_ops(status/branch/pr/release) — check repo health, create branches, manage PRs
-- github_edit — make code changes to files
-- respond_to_user — answer questions about the codebase
-
-The user can preview, edit, review changes, and publish updates through you.
-Do NOT call deep_research_content, wide_research, web_search, or read_webpage — the user wants to WORK WITH their repo, not research about it.
-
-SELF-REPO AWARENESS: This repo already has its own package.json with build scripts. When building/deploying:
-- ALWAYS read the existing package.json first (run_command("cat package.json"))
-- Use the EXISTING build scripts — do NOT overwrite them
-- If a build script is missing, ADD it with edit_file, don't replace the whole file
-- Never use create_file on package.json when it already exists
-
-IMPORTANT: You MUST use one of the tools listed above (github_ops, git_operation, run_command, etc.) on your next response. Do NOT produce a text-only response — take action immediately.`,
-            } as any);
-            // Skip the rest of this turn's processing (auto-continuation, scope-creep, etc.)
-            // and immediately restart the loop so the LLM gets a fresh chance to use correct tools
-            continue;
-          } else {
-            toolCalls = filtered;
-          }
-        }
-      }
+      // NOTE: GitHub Query Guard was removed. The system prompt's READ vs BUILD intent
+      // routing (lines 270-310) provides proper guidance to the LLM without arbitrarily
+      // blocking tool calls. The LLM is trusted to follow intent instructions. If it
+      // occasionally calls web_search for a repo query, it will self-correct from the
+      // irrelevant results. This is far better than killing tool calls and creating
+      // death loops that terminate tasks early.
       // Manus Parity: Thinking/reasoning content is a VISIBLE feature, not hidden.
       // Models may include reasoning in <think>...</think> tags or a separate `thinking` field.
       // We emit it as agent_thinking for the UI to render visibly (like Manus shows reasoning steps).
@@ -2411,8 +2321,7 @@ IMPORTANT: You MUST use one of the tools listed above (github_ops, git_operation
           !isConversationalQuery &&
           !isAboutConnectedResources &&
           !isShortDirective &&
-          !isSimpleQueryMode &&
-          !isGitHubRepoQuery
+          !isSimpleQueryMode
         );
         
         if (shouldForceResearch) {
@@ -2660,7 +2569,7 @@ IMPORTANT: You MUST use one of the tools listed above (github_ops, git_operation
         const isConversational = /\b(hello|hi|hey|what can you|who are you|how are you|thanks|thank you|help|capabilities|what do you|tell me about yourself|introduce|how do i|can you|could you|would you|will you|please)\b/i.test(userText);
         const userAskedSimpleQuestion = userText.split(/\s+/).length <= 12;
         const isActionOrResource = /\b(clone|deploy|install|run|start|stop|connect|disconnect|configure|set up|update|fix|reset|restart|delete|remove|send|share|export|import|download|upload|open|close|save|push|pull|merge|commit|connected|my (repo|github|account|project|app)|the repo)\b/i.test(userText);
-        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0 && !isConversational && !userAskedSimpleQuestion && !isActionOrResource && !isSimpleQueryMode && !isGitHubRepoQuery) {
+        if ((mode === "max" || mode === "limitless") && turn <= 3 && textContent.length < 200 && completedToolCalls === 0 && !isConversational && !userAskedSimpleQuestion && !isActionOrResource && !isSimpleQueryMode) {
           // Agent is trying to end with a very short response and no tool usage — this is a false positive
           const hasSubstance = /\b(here|result|found|analysis|summary|report|created|generated|built|deployed|completed|answer)\b/i.test(textContent);
           if (!hasSubstance) {

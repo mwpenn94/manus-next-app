@@ -7946,3 +7946,13 @@
 - [x] Identify root cause in agent loop (GitHub Guard blocks tools required by demonstration protocol)
 - [x] Fix the early termination issue (add !wantsDemonstration bypass to GitHub Guard condition)
 - [x] Verify fix with complex prompts end-to-end (8/8 tests pass, full suite 5458 tests pass)
+
+## Remove GitHub Query Guard — Use Intent System Instead
+- [x] Audit the existing intent classification system for GitHub query handling
+- [x] Remove the entire GitHub Query Guard block (isGitHubRepoQuery tool-blocking logic)
+- [x] Ensure intent system properly routes GitHub queries without killing tool calls
+- [x] Remove the isGitHubRepoQuery variable and all references
+- [x] Update/remove the demonstration-github-guard test to reflect new approach
+- [x] Verify GitHub-only prompts still work correctly via intent routing
+- [x] Verify demonstration+GitHub combo prompts work without guard interference
+- [x] Full suite: 5453/5454 pass (1 flaky network timeout, pre-existing)
