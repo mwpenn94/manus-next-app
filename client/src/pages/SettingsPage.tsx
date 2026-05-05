@@ -2424,7 +2424,8 @@ function SovereignModeCard() {
     ? preview.url.replace(/^https?:\/\//, "").split("/")[0]
     : status?.repo.fullName ? `${status.repo.fullName.split("/")[1]}.manus.space` : null;
 
-  const iframeSrc = preview?.url || null;
+  // Only show iframe for published sites (not Codespace forwarded ports which may be unreachable)
+  const iframeSrc = preview?.type === "published" ? preview.url : null;
 
   return (
     <div className="mt-8 pt-6 border-t border-border">
@@ -2453,7 +2454,9 @@ function SovereignModeCard() {
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <Globe className="w-8 h-8 text-muted-foreground/30" />
               <p className="text-xs text-muted-foreground/50">
-                {isReady ? "Publish to see your site here" : "Connect GitHub to get started"}
+                {preview?.type === "codespace"
+                  ? "Dev server available \u2014 click Preview to open"
+                  : isReady ? "Publish to see your site here" : "Connect GitHub to get started"}
               </p>
             </div>
           )}
