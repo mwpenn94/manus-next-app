@@ -1550,7 +1550,7 @@ async function wikipediaSummary(topic: string): Promise<{
     // Try with the topic as-is first
     const resp = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "ManusNext/1.0 (https://manusnext.manus.space; contact@manus.im)" } }
     );
     if (resp.status === 404) return null;
     if (!resp.ok) return null;
@@ -1572,7 +1572,7 @@ async function wikipediaSearch(query: string): Promise<Array<{ title: string; sn
   try {
     const resp = await fetch(
       `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=5`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "ManusNext/1.0 (https://manusnext.manus.space; contact@manus.im)" } }
     );
     const data = await resp.json();
     return (data.query?.search || []).map((r: any) => ({
@@ -1785,19 +1785,14 @@ async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
     console.log("[web_search] Querying DDG Instant Answer API...");
     let ddg = await ddgInstantAnswer(query);
     
-    // If no abstract found, try variations
+    // If no abstract found, try simplified query (remove time-specific terms)
     if (!ddg.abstract) {
-      const variations = [
-        query + " agent",
-        query + " company",
-        query + " software",
-      ];
-      for (const variation of variations) {
-        console.log(`[web_search] Trying DDG variation: "${variation}"`);
-        const alt = await ddgInstantAnswer(variation);
+      const simplified = query.replace(/\b(202[0-9]|latest|recent|new|current|today|this week|this month)\b/gi, "").trim();
+      if (simplified !== query && simplified.length > 3) {
+        console.log(`[web_search] Trying simplified query: "${simplified}"`);
+        const alt = await ddgInstantAnswer(simplified);
         if (alt.abstract) {
           ddg = alt;
-          break;
         }
       }
     }
@@ -1835,7 +1830,7 @@ async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
     const entityWords = coreEntity.toLowerCase().split(/\s+/).filter(w => w.length > 2);
     
     // Try multiple query variations and pick the best results
-    const wikiQueries = Array.from(new Set([query, coreEntity, coreEntity + " agent", coreEntity + " company"].filter(q => q.length > 2)));
+    const wikiQueries = Array.from(new Set([query, coreEntity].filter(q => q.length > 2)));
     
     let wikiResults: Array<{ title: string; snippet: string; url: string }> = [];
     let bestRelevance = 0;
@@ -1928,64 +1923,76 @@ async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
       }
     }
 
-    // Step 4: DDG HTML Search — real web results for broader queries
-    // Run this if DDG Instant Answer didn't return an abstract (common for broad/current queries)
-    if (!ddg.abstract) {
-      console.log("[web_search] Running DDG HTML search for broader results...");
-      const htmlResults = await ddgHtmlSearch(query);
-      console.log(`[web_search] DDG HTML returned ${htmlResults.length} results`);
-
-      if (htmlResults.length > 0) {
-        formattedResults += `### Web Search Results\n\n`;
-        for (const r of htmlResults.slice(0, 8)) {
-          formattedResults += `- **[${r.title}](${r.url})**: ${r.snippet}\n`;
-          sources.push({ title: r.title, url: r.url, snippet: r.snippet, source: "ddg" });
-          if (urlsToFetch.length < 4) urlsToFetch.push(r.url);
-        }
-        formattedResults += "\n";
-
-        // Fetch top 2 pages for detailed content if we haven't already
-        const newUrls = htmlResults
-          .slice(0, 3)
-          .map(r => r.url)
-          .filter(u => !u.includes("google.com/topics")); // Skip Google News redirect URLs
-        if (newUrls.length > 0) {
-          console.log(`[web_search] Fetching ${Math.min(newUrls.length, 2)} DDG HTML result pages...`);
-          const fetchPromises = newUrls.slice(0, 2).map(async (url) => {
-            const content = await fetchPageContent(url, 4000);
-            return { url, content };
-          });
-          const fetched = await Promise.allSettled(fetchPromises);
-          const validPages = fetched
-            .filter((r): r is PromiseFulfilledResult<{ url: string; content: string }> =>
-              r.status === "fulfilled" && !r.value.content.startsWith("(Failed") && !r.value.content.startsWith("(Non-text"))
-            .map(r => r.value);
-          if (validPages.length > 0) {
-            formattedResults += `### Detailed Page Content\n\n`;
-            for (const page of validPages) {
-              try {
-                const hostname = new URL(page.url).hostname;
-                formattedResults += `**From: ${hostname}** ([${page.url}](${page.url}))\n`;
-                formattedResults += `${page.content.slice(0, 4000)}\n\n---\n\n`;
-              } catch {
-                formattedResults += `${page.content.slice(0, 4000)}\n\n---\n\n`;
-              }
+    // Step 4: Direct news/reference site fetching for current queries
+    // DDG HTML search is blocked by CAPTCHA, so we fetch known reliable sources directly
+    if (!ddg.abstract && wikiResults.length === 0) {
+      console.log("[web_search] No DDG/Wikipedia results — trying direct source fetch...");
+      
+      // Build URLs from known reliable sources based on query keywords
+      const directUrls: string[] = [];
+      const queryLower = query.toLowerCase();
+      
+      // Try Wikipedia with cleaned query as last resort
+      const wikiTopic = query.replace(/\b(latest|recent|new|current|202[0-9])\b/gi, "").trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_()-]/g, "");
+      if (wikiTopic.length > 2) {
+        directUrls.push(`https://en.wikipedia.org/wiki/${wikiTopic}`);
+      }
+      
+      // Add topic-specific reliable sources
+      if (queryLower.includes("spacex") || queryLower.includes("starship") || queryLower.includes("rocket") || queryLower.includes("nasa")) {
+        directUrls.push("https://www.spacex.com/vehicles/starship/");
+      }
+      if (queryLower.includes("ai") || queryLower.includes("artificial intelligence") || queryLower.includes("openai") || queryLower.includes("llm")) {
+        directUrls.push("https://en.wikipedia.org/wiki/Artificial_intelligence");
+      }
+      
+      if (directUrls.length > 0) {
+        console.log(`[web_search] Fetching ${directUrls.length} direct source pages...`);
+        const fetchPromises = directUrls.slice(0, 2).map(async (url) => {
+          const content = await fetchPageContent(url, 5000);
+          return { url, content };
+        });
+        const fetched = await Promise.allSettled(fetchPromises);
+        const validPages = fetched
+          .filter((r): r is PromiseFulfilledResult<{ url: string; content: string }> =>
+            r.status === "fulfilled" && !r.value.content.startsWith("(Failed") && !r.value.content.startsWith("(Non-text"))
+          .map(r => r.value);
+        if (validPages.length > 0) {
+          formattedResults += `### Source Content\n\n`;
+          for (const page of validPages) {
+            try {
+              const hostname = new URL(page.url).hostname;
+              formattedResults += `**From: ${hostname}** ([${page.url}](${page.url}))\n`;
+              formattedResults += `${page.content.slice(0, 5000)}\n\n---\n\n`;
+              sources.push({ title: hostname, url: page.url, snippet: page.content.slice(0, 200), source: "direct" });
+            } catch {
+              formattedResults += `${page.content.slice(0, 5000)}\n\n---\n\n`;
             }
           }
         }
-      } else if (wikiResults.length === 0) {
-        // Last resort: try Wikipedia with cleaned query, then LLM synthesis
-        const wikiTopic = query.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_()-]/g, "");
-        const wikiSummary = await wikipediaSummary(wikiTopic);
-        if (wikiSummary) {
-          formattedResults += `### Wikipedia: ${wikiSummary.title}\n\n`;
-          formattedResults += `${wikiSummary.extract}\n`;
-          formattedResults += `\nSource: [${wikiSummary.url}](${wikiSummary.url})\n\n`;
-        } else {
-          formattedResults += `*Note: Limited web results for this query. Supplementing with AI knowledge.*\n\n`;
-          const fallback = await executeWebSearchFallback(args);
-          formattedResults += fallback.result;
-        }
+      }
+      
+      // If still nothing, use LLM synthesis as final fallback
+      if (sources.length === 0) {
+        formattedResults += `*Note: Limited web results for this query. Supplementing with AI knowledge.*\n\n`;
+        const fallback = await executeWebSearchFallback(args);
+        formattedResults += fallback.result;
+      }
+    } else if (!ddg.abstract && wikiResults.length > 0) {
+      // Wikipedia found results but DDG didn't — this is fine, we already have content above
+      console.log("[web_search] Wikipedia provided results, skipping DDG HTML fallback");
+    } else if (!ddg.abstract) {
+      // Last resort: LLM synthesis
+      const wikiTopic = query.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_()-]/g, "");
+      const wikiSummary = await wikipediaSummary(wikiTopic);
+      if (wikiSummary) {
+        formattedResults += `### Wikipedia: ${wikiSummary.title}\n\n`;
+        formattedResults += `${wikiSummary.extract}\n`;
+        formattedResults += `\nSource: [${wikiSummary.url}](${wikiSummary.url})\n\n`;
+      } else {
+        formattedResults += `*Note: Limited web results for this query. Supplementing with AI knowledge.*\n\n`;
+        const fallback = await executeWebSearchFallback(args);
+        formattedResults += fallback.result;
       }
     }
 
