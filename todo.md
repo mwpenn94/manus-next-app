@@ -7783,3 +7783,9 @@
 - [x] Live execution: Verify deploy_webapp actually builds and deploys (not a no-op) — Vite build + S3 upload
 - [x] Parity gap: Identify capabilities Manus has that this platform genuinely cannot do — documented in IOV2-PARITY-GAP-ANALYSIS.md
 - [x] Fix any real issues found — Wikipedia User-Agent, DDG variation strategy, test template cleanup
+
+## Session IOV-3: Next Steps Implementation + Skeptical Re-verification
+- [x] Wire deep_research_content to call real executeWebSearch before LLM synthesis (3/4 sources verified)
+- [x] Add free search service to supplement DDG/Wikipedia (HN Algolia + YouTube via Forge API)
+- [ ] Deploy fixes to production (user must click Publish)
+- [x] Skeptical re-verification pass on all changes (deep_research verified end-to-end)

@@ -1996,6 +1996,67 @@ async function executeWebSearch(args: { query: string }): Promise<ToolResult> {
       }
     }
 
+    // Step 5: Hacker News Algolia API — free, structured, great for tech/news
+    try {
+      console.log(`[web_search] Searching Hacker News for: "${query}"...`);
+      const hnResp = await fetch(`https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&tags=story&hitsPerPage=5`, {
+        signal: AbortSignal.timeout(5000),
+      });
+      if (hnResp.ok) {
+        const hnData = await hnResp.json();
+        const hits = hnData.hits || [];
+        if (hits.length > 0) {
+          formattedResults += `### Hacker News Discussions\n\n`;
+          for (const hit of hits.slice(0, 4)) {
+            const hnUrl = hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`;
+            formattedResults += `- **[${hit.title}](${hnUrl})** (${hit.num_comments || 0} comments, ${hit.points || 0} points)\n`;
+            sources.push({ title: hit.title, url: hnUrl, snippet: hit.title, source: "hackernews" });
+          }
+          formattedResults += "\n";
+        }
+      }
+    } catch (hnErr: any) {
+      console.log(`[web_search] HN search failed: ${hnErr.message}`);
+    }
+
+    // Step 6: YouTube via Forge API — for video content
+    try {
+      const forgeUrl = process.env.BUILT_IN_FORGE_API_URL;
+      const forgeKey = process.env.BUILT_IN_FORGE_API_KEY;
+      if (forgeUrl && forgeKey) {
+        console.log(`[web_search] Searching YouTube for: "${query}"...`);
+        const baseUrl = forgeUrl.endsWith("/") ? forgeUrl : forgeUrl + "/";
+        const ytResp = await fetch(baseUrl + "webdevtoken.v1.WebDevService/CallApi", {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "connect-protocol-version": "1",
+            "authorization": `Bearer ${forgeKey}`,
+          },
+          body: JSON.stringify({ apiId: "Youtube/search", query: { q: query } }),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (ytResp.ok) {
+          const ytData = await ytResp.json();
+          const parsed = JSON.parse(ytData.jsonData || "{}");
+          const videos = (parsed.contents || []).filter((c: any) => c.type === "video").slice(0, 3);
+          if (videos.length > 0) {
+            formattedResults += `### YouTube Videos\n\n`;
+            for (const v of videos) {
+              const vid = v.video;
+              const ytUrl = `https://www.youtube.com/watch?v=${vid.videoId}`;
+              formattedResults += `- **[${vid.title}](${ytUrl})** by ${vid.author?.title || "Unknown"} (${vid.stats?.views || ""} views)\n`;
+              sources.push({ title: vid.title, url: ytUrl, snippet: vid.descriptionSnippet || vid.title, source: "youtube" });
+            }
+            formattedResults += "\n";
+          }
+        }
+      }
+    } catch (ytErr: any) {
+      console.log(`[web_search] YouTube search failed: ${ytErr.message}`);
+    }
+
     // Add source summary
     if (sources.length > 0) {
       formattedResults += `\n### Sources\n\n`;

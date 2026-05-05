@@ -480,9 +480,21 @@ function buildResearchPrompt(
   parts.push(`Mode: ${mode}`);
   parts.push("");
 
-  parts.push("## Research Sources to Investigate");
+  parts.push("## Research Sources");
   for (const s of sources) {
-    parts.push(`- ${s.type}: "${s.query}" (reliability: ${s.reliability})`);
+    parts.push(`### ${s.type}: "${s.query}" (reliability: ${s.reliability})`);
+    if (s.findings.length > 0) {
+      parts.push("**Real findings from search:**");
+      for (const f of s.findings) {
+        parts.push(`- ${f}`);
+      }
+    }
+    if (s.citations.length > 0) {
+      parts.push("**Source URLs:**");
+      for (const c of s.citations) {
+        parts.push(`- ${c}`);
+      }
+    }
   }
   parts.push("");
 
@@ -608,6 +620,38 @@ function formatResearchReport(report: ResearchReport): string {
   return lines.join("\n");
 }
 
+// ── Real Web Search Integration ──
+
+async function gatherRealSearchData(sources: ResearchSource[]): Promise<void> {
+  const { executeTool } = await import("./agentTools");
+  
+  // Execute real web searches for each source that needs web data
+  const searchPromises = sources
+    .filter(s => s.type === "web_search" || s.type === "news_article" || s.type === "academic_paper")
+    .map(async (source) => {
+      try {
+        console.log(`[deep_research] Searching: "${source.query}"`);
+        const result = await executeTool("web_search", JSON.stringify({ query: source.query }));
+        if (result.success && result.result) {
+          // Extract findings from real search results
+          const lines = result.result.split("\n").filter((l: string) => l.trim().length > 20);
+          source.findings = lines.slice(0, 10); // Top 10 findings
+          // Extract any URLs as citations
+          const urlMatches = result.result.match(/https?:\/\/[^\s)]+/g);
+          if (urlMatches) {
+            source.citations = [...new Set(urlMatches)].slice(0, 5);
+          }
+          source.reliability = "high"; // Upgrade reliability since we have real data
+        }
+      } catch (err: any) {
+        console.log(`[deep_research] Search failed for "${source.query}": ${err.message}`);
+        source.findings = [`Search attempted but failed: ${err.message}`];
+      }
+    });
+
+  await Promise.allSettled(searchPromises);
+}
+
 // ── Main Executor ──
 
 export async function executeDeepResearch(
@@ -651,7 +695,14 @@ export async function executeDeepResearch(
       };
     }
 
-    // Execute via LLM
+    // ── REAL SEARCH: Gather actual web data before LLM synthesis ──
+    const searchableSources = sources.filter(s => s.type === "web_search" || s.type === "news_article" || s.type === "academic_paper");
+    console.log(`[deep_research] Gathering real search data for ${searchableSources.length}/${sources.length} sources...`);
+    await gatherRealSearchData(sources);
+    const realDataCount = sources.filter(s => s.findings.length > 0).length;
+    console.log(`[deep_research] Got real data from ${realDataCount}/${sources.length} sources`);
+
+    // Execute via LLM with real search data now populated in sources
     const report = await executeResearchWithLLM(topic, args.mode, sources, outline, args);
 
     return {
