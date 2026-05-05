@@ -7894,3 +7894,18 @@
 - [x] Include free tier limits information
 - [x] Update test assertions to reflect new tool count (42 → 44)
 - [x] All 8 previously failing tests now pass (295 tests, 0 failures)
+
+## Streamlined One-Click Sovereign Mode (Parity+ UX)
+- [x] Create server-side sovereignSync.ts orchestrator that auto-executes: create Codespace, configure webhook, verify deploy
+- [x] Add sovereignSync tRPC procedures: activate, status, deactivate, openEditor
+- [x] Replace multi-step guide with single "Activate Sovereign Mode" button + live status pipeline
+- [x] Show unified status indicator: pipeline badges (GitHub → Repo → Webhook → Codespace → Auto-Deploy)
+- [x] Auto-create Codespace via GitHub API when user clicks Activate
+- [x] Auto-configure webhook on the repo for push → deploy
+- [x] Auto-verify deployment health (webapp project linked check)
+- [x] Show single "Sovereign Mode: Active" badge when everything is connected
+- [x] Provide "Open Editor" one-click button that opens Codespace VS Code in browser
+- [x] Provide "View Live Site" one-click button that opens the published URL
+- [x] Deactivate button that tears down Codespace and optionally removes webhook
+- [x] All manual steps eliminated — user clicks one button and gets full external dev environment
+- [x] 17 unit tests written and passing for sovereignSync router

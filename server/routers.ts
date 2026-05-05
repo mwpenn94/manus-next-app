@@ -50,6 +50,7 @@ import { webappRouter } from "./routers/webapp";
 import { feedbackRouter } from "./routers/feedback";
 import { orchestrationRouter } from "./routers/orchestration";
 import { workspaceRouter } from "./routers/workspace";
+import { sovereignSyncRouter } from "./routers/sovereignSync";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -105,6 +106,7 @@ export const appRouter = router({
   voice: voiceRouter,
   webapp: webappRouter,
   workspace: workspaceRouter,
+  sovereignSync: sovereignSyncRouter,
   automation: automationRouter,
   pipeline: pipelineRouter,
   document: documentRouter,

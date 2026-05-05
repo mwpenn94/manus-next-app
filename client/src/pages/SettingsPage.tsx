@@ -2071,8 +2071,8 @@ function DevelopmentSettings() {
         {savePreviewTier.isPending ? "Saving..." : "Save Preview Settings"}
       </button>
 
-      {/* Unified Sovereign Development Workflow */}
-      <SovereignDevWorkflow />
+      {/* One-Click Sovereign Mode */}
+      <SovereignModeCard />
 
       {/* Search Engine Configuration */}
       <SearchEngineConfig />
@@ -2301,425 +2301,228 @@ function SearchEngineConfig() {
 }
 
 /**
- * Sovereign Development Workflow — Unified seamless process for Preview → Develop → Publish
- * Achieves deep alignment and parity+ with Manus by combining:
- * - GitHub Codespaces (identical Linux VM, hot reload, terminal)
- * - Auto-deploy webhook pipeline (push → build → CDN)
- * - Notification + rollback (same as Manus Publish button)
- * Into ONE continuous workflow that requires zero Manus sessions.
+ * Sovereign Mode — One-Click Activation
+ * 
+ * Single button → Codespace + Webhook + Auto-Deploy all provisioned.
+ * Deep Manus parity+ achieved through automation, not documentation.
  */
-function SovereignDevWorkflow() {
-  const [expanded, setExpanded] = useState(true);
-  const [activePhase, setActivePhase] = useState<"overview" | "setup" | "develop" | "publish" | "advanced">("overview");
+function SovereignModeCard() {
+  const statusQuery = trpc.sovereignSync.status.useQuery(undefined, { refetchInterval: 10000 });
+  const activateMutation = trpc.sovereignSync.activate.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Sovereign Mode activated! Your external dev environment is ready.");
+      } else {
+        toast.info("Sovereign Mode partially activated. Check status for details.");
+      }
+      statusQuery.refetch();
+    },
+    onError: (err: any) => { toast.error(err.message); },
+  });
+  const deactivateMutation = trpc.sovereignSync.deactivate.useMutation({
+    onSuccess: () => {
+      toast.success("Sovereign Mode deactivated.");
+      statusQuery.refetch();
+    },
+    onError: (err: any) => { toast.error(err.message); },
+  });
 
-  const phases = [
-    { id: "overview" as const, label: "Overview", emoji: "◎" },
-    { id: "setup" as const, label: "One-Time Setup", emoji: "①" },
-    { id: "develop" as const, label: "Develop & Preview", emoji: "②" },
-    { id: "publish" as const, label: "Push & Publish", emoji: "③" },
-    { id: "advanced" as const, label: "Advanced", emoji: "⚙" },
+  const status = statusQuery.data;
+  const isActive = status?.stage === "active";
+  const isPartial = status?.github.connected && status?.repo.connected && !isActive;
+  const isLoading = activateMutation.isPending || deactivateMutation.isPending || statusQuery.isLoading;
+
+  const handleActivate = () => {
+    activateMutation.mutate({});
+  };
+
+  const handleDeactivate = () => {
+    deactivateMutation.mutate({ removeWebhook: false });
+  };
+
+  // Pipeline stages for the status indicator
+  const stages = [
+    { key: "github", label: "GitHub", done: !!status?.github.connected },
+    { key: "repo", label: "Repo", done: !!status?.repo.connected },
+    { key: "webhook", label: "Webhook", done: !!status?.webhook.active },
+    { key: "codespace", label: "Codespace", done: !!status?.codespace.active },
+    { key: "deploy", label: "Auto-Deploy", done: !!status?.webapp.linked },
   ];
 
   return (
     <div className="mt-8 pt-6 border-t border-border">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between group"
-      >
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-foreground text-left" style={{ fontFamily: "var(--font-heading)" }}>
-            Sovereign Development Workflow
+          <h3 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>
+            Sovereign Mode
           </h3>
-          <p className="text-sm text-muted-foreground text-left">
-            One seamless process: Preview → Develop → Push → Auto-Publish — achieving full Manus parity+ from any environment
+          <p className="text-sm text-muted-foreground">
+            One click → Full external dev environment with Manus parity+
           </p>
         </div>
-        <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform", expanded && "rotate-180")} />
-      </button>
+        {/* Status badge */}
+        {isActive ? (
+          <span className="px-3 py-1.5 rounded-full bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
+            Active
+          </span>
+        ) : isPartial ? (
+          <span className="px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+            Partial
+          </span>
+        ) : (
+          <span className="px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium border border-border">
+            Inactive
+          </span>
+        )}
+      </div>
 
-      {expanded && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mt-4 space-y-4"
-        >
-          {/* Phase Navigation */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/30 border border-border overflow-x-auto">
-            {phases.map((phase) => (
-              <button
-                key={phase.id}
-                onClick={() => setActivePhase(phase.id)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all",
-                  activePhase === phase.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                <span>{phase.emoji}</span>
-                <span>{phase.label}</span>
-              </button>
-            ))}
+      {/* Pipeline Status Indicator */}
+      <div className="flex items-center gap-1 mb-5">
+        {stages.map((stage, i) => (
+          <div key={stage.key} className="flex items-center gap-1">
+            <div className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all",
+              stage.done
+                ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                : "bg-muted/50 text-muted-foreground border border-border"
+            )}>
+              <div className={cn("w-1.5 h-1.5 rounded-full", stage.done ? "bg-green-400" : "bg-muted-foreground/30")} />
+              {stage.label}
+            </div>
+            {i < stages.length - 1 && (
+              <span className={cn("text-xs", stage.done ? "text-green-400/50" : "text-muted-foreground/30")}>→</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* One-Click Action */}
+      {!isActive ? (
+        <div className="space-y-3">
+          {!status?.github.connected && (
+            <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+              <p className="text-xs text-amber-400">Connect GitHub first (Settings → Connectors), then come back here.</p>
+            </div>
+          )}
+          {status?.github.connected && !status?.repo.connected && (
+            <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+              <p className="text-xs text-amber-400">Connect a repository first (GitHub page → Add Repo), then come back here.</p>
+            </div>
+          )}
+          <button
+            onClick={handleActivate}
+            disabled={isLoading || !status?.github.connected || !status?.repo.connected}
+            className={cn(
+              "w-full py-3 rounded-xl text-sm font-semibold transition-all",
+              isLoading
+                ? "bg-primary/50 text-primary-foreground/70 cursor-wait"
+                : status?.github.connected && status?.repo.connected
+                  ? "bg-primary text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+            )}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4 animate-pulse" />
+                Activating Sovereign Mode...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4" />
+                Activate Sovereign Mode
+              </span>
+            )}
+          </button>
+          <p className="text-[11px] text-muted-foreground text-center">
+            One click provisions: Webhook + Codespace + Auto-Deploy pipeline
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* Active state — show quick actions */}
+          <div className="p-4 rounded-xl border border-green-500/20 bg-green-500/5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <p className="text-sm font-medium text-green-400">Sovereign Mode Active</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Push to <code className="text-[11px] bg-muted px-1 rounded">main</code> → auto-builds → live in ~60s. No Manus session needed.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {status?.codespace.url && (
+                <a
+                  href={status.codespace.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                >
+                  <Code className="w-3.5 h-3.5" />
+                  Open Editor
+                </a>
+              )}
+              {status?.webapp.publishedUrl && (
+                <a
+                  href={status.webapp.publishedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium hover:bg-green-500/20 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  View Live Site
+                </a>
+              )}
+              {status?.repo.fullName && (
+                <a
+                  href={`https://github.com/${status.repo.fullName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  GitHub Repo
+                </a>
+              )}
+            </div>
           </div>
 
-          {/* ═══ OVERVIEW PHASE ═══ */}
-          {activePhase === "overview" && (
-            <div className="space-y-4">
-              {/* The Pipeline Visualization */}
-              <div className="p-5 rounded-xl border border-primary/20 bg-primary/5">
-                <p className="text-xs font-medium text-primary mb-3">The Unified Pipeline</p>
-                <div className="flex items-center justify-between gap-1 text-[10px] text-muted-foreground">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                      <span className="text-blue-400 text-sm">⚡</span>
-                    </div>
-                    <span className="font-medium text-foreground">Connect</span>
-                    <span>GitHub repo</span>
-                  </div>
-                  <span className="text-muted-foreground/50 text-lg">→</span>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <span className="text-purple-400 text-sm">☁</span>
-                    </div>
-                    <span className="font-medium text-foreground">Develop</span>
-                    <span>Codespaces / Local</span>
-                  </div>
-                  <span className="text-muted-foreground/50 text-lg">→</span>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                      <span className="text-amber-400 text-sm">↑</span>
-                    </div>
-                    <span className="font-medium text-foreground">Push</span>
-                    <span>git push main</span>
-                  </div>
-                  <span className="text-muted-foreground/50 text-lg">→</span>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                      <span className="text-green-400 text-sm">✓</span>
-                    </div>
-                    <span className="font-medium text-foreground">Live</span>
-                    <span>Auto-published</span>
-                  </div>
-                </div>
-              </div>
+          {/* Workflow reminder */}
+          <div className="p-3 rounded-lg bg-muted/30 border border-border">
+            <p className="text-[11px] text-muted-foreground font-mono">
+              <span className="text-green-400">#</span> Your daily workflow (from Codespace or local):<br />
+              <span className="text-blue-400">$</span> pnpm dev &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-muted-foreground/50"># develop with hot reload</span><br />
+              <span className="text-blue-400">$</span> git add -A && git commit -m "feat: update" && git push<br />
+              <span className="text-amber-400"># → Auto-build → Live in ~60s → Done</span>
+            </p>
+          </div>
 
-              {/* Parity Matrix */}
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <p className="text-xs font-medium text-foreground mb-3">Deep Alignment: Manus vs. Sovereign Workflow</p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[11px]">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-1.5 pr-3 text-muted-foreground font-medium">Capability</th>
-                        <th className="text-center py-1.5 px-3 text-muted-foreground font-medium">Manus</th>
-                        <th className="text-center py-1.5 px-3 text-muted-foreground font-medium">Sovereign</th>
-                        <th className="text-center py-1.5 pl-3 text-muted-foreground font-medium">Parity</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-muted-foreground">
-                      {[
-                        ["Full Linux VM", "✓", "✓", "="],
-                        ["Hot reload (sub-second)", "✓", "✓", "="],
-                        ["Terminal + shell", "✓", "✓", "="],
-                        ["Database connections", "✓", "✓", "="],
-                        ["One-click publish", "✓", "✓ (push)", "="],
-                        ["Auto-build pipeline", "✓", "✓", "="],
-                        ["Rollback to any version", "✓", "✓", "="],
-                        ["Deploy notifications", "✓", "✓", "="],
-                        ["Any IDE / extensions", "—", "✓", "+"],
-                        ["Team collaboration (PRs)", "—", "✓", "+"],
-                        ["Offline development", "—", "✓", "+"],
-                        ["CI/CD integration", "—", "✓", "+"],
-                        ["AI agent orchestration", "✓", "Copilot", "~"],
-                      ].map(([cap, manus, sov, parity], i) => (
-                        <tr key={i} className="border-b border-border/50 last:border-0">
-                          <td className="py-1.5 pr-3 text-foreground">{cap}</td>
-                          <td className="text-center py-1.5 px-3">{manus}</td>
-                          <td className="text-center py-1.5 px-3">{sov}</td>
-                          <td className={cn("text-center py-1.5 pl-3 font-bold", parity === "+" ? "text-green-400" : parity === "=" ? "text-blue-400" : "text-amber-400")}>{parity}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  <span className="text-blue-400 font-bold">=</span> parity &nbsp;
-                  <span className="text-green-400 font-bold">+</span> exceeds Manus &nbsp;
-                  <span className="text-amber-400 font-bold">~</span> different approach, similar outcome
-                </p>
-              </div>
-            </div>
-          )}
+          {/* Deactivate */}
+          <button
+            onClick={handleDeactivate}
+            disabled={isLoading}
+            className="w-full py-2 rounded-lg text-xs text-muted-foreground hover:text-foreground border border-border hover:border-destructive/50 transition-all"
+          >
+            Deactivate Sovereign Mode
+          </button>
+        </div>
+      )}
 
-          {/* ═══ SETUP PHASE ═══ */}
-          {activePhase === "setup" && (
-            <div className="space-y-3">
-              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                <p className="text-xs text-amber-400 font-medium">One-time setup (~5 minutes). After this, you never need to open Manus to develop or publish.</p>
+      {/* Activation result steps (shown after activation) */}
+      {activateMutation.data?.steps && (
+        <div className="mt-4 p-3 rounded-lg bg-card border border-border">
+          <p className="text-xs font-medium text-foreground mb-2">Activation Results</p>
+          <div className="space-y-1.5">
+            {activateMutation.data.steps.map((step, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs">
+                <div className={cn(
+                  "w-1.5 h-1.5 rounded-full",
+                  step.status === "done" ? "bg-green-400" : step.status === "skipped" ? "bg-amber-400" : "bg-red-400"
+                )} />
+                <span className="text-foreground font-medium">{step.step}</span>
+                <span className="text-muted-foreground">— {step.detail}</span>
               </div>
-
-              {[
-                {
-                  num: 1,
-                  title: "Connect GitHub in the sidebar",
-                  detail: "Navigate to the GitHub page → Connect your repository. This automatically registers a deploy webhook on your repo.",
-                  badge: "Auto-configures webhook",
-                },
-                {
-                  num: 2,
-                  title: "Link a Webapp Project",
-                  detail: "In the GitHub tab → Deploy section, create or link a webapp project to your repo. This tells the pipeline WHERE to publish when you push.",
-                  badge: "Enables auto-publish",
-                },
-                {
-                  num: 3,
-                  title: "Open in Codespaces (or clone locally)",
-                  detail: "From your GitHub repo, click Code → Codespaces → Create codespace on main. Or clone locally: git clone https://github.com/you/repo.git",
-                  badge: "Choose your environment",
-                },
-                {
-                  num: 4,
-                  title: "Add .devcontainer (optional, recommended)",
-                  detail: "Add a .devcontainer/devcontainer.json to auto-configure Node version, extensions, port forwarding, and post-create commands. This ensures every Codespace boots identically.",
-                  badge: "Reproducible environments",
-                },
-              ].map((step) => (
-                <div key={step.num} className="flex gap-3 p-3 rounded-lg bg-card border border-border">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-primary">{step.num}</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium text-foreground">{step.title}</p>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{step.badge}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                <p className="text-[11px] text-muted-foreground">
-                  <strong className="text-foreground">Sample .devcontainer/devcontainer.json:</strong>
-                </p>
-                <pre className="mt-1 text-[10px] text-muted-foreground font-mono overflow-x-auto">{`{
-  "name": "Sovereign AI Dev",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "postCreateCommand": "pnpm install",
-  "forwardPorts": [3000, 5173],
-  "customizations": {
-    "vscode": {
-      "extensions": ["bradlc.vscode-tailwindcss", "dbaeumer.vscode-eslint"]
-    }
-  }
-}`}</pre>
-              </div>
-            </div>
-          )}
-
-          {/* ═══ DEVELOP & PREVIEW PHASE ═══ */}
-          {activePhase === "develop" && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">Seamless Development Loop</h4>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Whether you use Codespaces (browser-based) or local VS Code, the experience is identical to the Manus sandbox:
-                </p>
-                <div className="p-3 rounded-lg bg-background border border-border font-mono text-xs text-muted-foreground space-y-1">
-                  <p><span className="text-green-400">#</span> Start the dev server (Codespace auto-forwards the port)</p>
-                  <p><span className="text-blue-400">$</span> pnpm dev</p>
-                  <p className="text-muted-foreground/50 mt-1"># → Server starts on :3000 or :5173</p>
-                  <p className="text-muted-foreground/50"># → Codespace auto-generates preview URL</p>
-                  <p className="text-muted-foreground/50"># → Hot reload active (sub-second updates)</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">Preview Access</h4>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-400 mt-1.5 shrink-0" />
-                    <div>
-                      <p className="text-xs font-medium text-foreground">Codespaces (recommended)</p>
-                      <p className="text-[11px] text-muted-foreground">Auto-forwarded URL appears in the Ports tab. Click to open preview. Set to "Public" to share with teammates.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-400 mt-1.5 shrink-0" />
-                    <div>
-                      <p className="text-xs font-medium text-foreground">Local development</p>
-                      <p className="text-[11px] text-muted-foreground">Open http://localhost:3000 directly. Use ngrok or VS Code port forwarding to share externally.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                    <div>
-                      <p className="text-xs font-medium text-foreground">Mobile preview</p>
-                      <p className="text-[11px] text-muted-foreground">Codespace public URLs work on any device. Test responsive layouts on your phone in real-time.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">Full-Stack Capabilities (Identical to Manus)</h4>
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
-                  {[
-                    "Database connections (MySQL/Postgres)",
-                    "Environment variables (.env)",
-                    "npm/pnpm package install",
-                    "Docker containers",
-                    "Background workers",
-                    "API endpoint testing",
-                    "File system access",
-                    "Git operations",
-                  ].map((cap) => (
-                    <div key={cap} className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                      <span>{cap}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══ PUSH & PUBLISH PHASE ═══ */}
-          {activePhase === "publish" && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">The Auto-Publish Pipeline</h4>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap mb-3">
-                  <span className="px-2 py-1 rounded bg-muted font-mono">git push origin main</span>
-                  <span className="text-muted-foreground/50">→</span>
-                  <span className="px-2 py-1 rounded bg-blue-500/10 text-blue-400">Webhook</span>
-                  <span className="text-muted-foreground/50">→</span>
-                  <span className="px-2 py-1 rounded bg-amber-500/10 text-amber-400">Build</span>
-                  <span className="text-muted-foreground/50">→</span>
-                  <span className="px-2 py-1 rounded bg-green-500/10 text-green-400">CDN Live</span>
-                  <span className="text-muted-foreground/50">→</span>
-                  <span className="px-2 py-1 rounded bg-purple-500/10 text-purple-400">Notification</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  This is the same pipeline that runs when you click "Publish" in Manus. The webhook eliminates the need for a Manus session entirely.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">Daily Workflow</h4>
-                <div className="p-3 rounded-lg bg-background border border-border font-mono text-xs text-muted-foreground space-y-1">
-                  <p><span className="text-green-400">#</span> Develop with hot reload (Codespaces or local)</p>
-                  <p><span className="text-blue-400">$</span> pnpm dev</p>
-                  <p className="mt-2"><span className="text-green-400">#</span> When ready to publish:</p>
-                  <p><span className="text-blue-400">$</span> git add -A</p>
-                  <p><span className="text-blue-400">$</span> git commit -m "feat: new feature"</p>
-                  <p><span className="text-blue-400">$</span> git push origin main</p>
-                  <p className="text-amber-400 mt-2"># → Auto-build → Live in 60-90s → Notification sent</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">What Triggers Auto-Publish</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
-                    <span className="text-muted-foreground">Push to default branch (main)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
-                    <span className="text-muted-foreground">PR merged into default branch</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                    <span className="text-muted-foreground">Push to feature branches (preview only)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-                    <span className="text-muted-foreground">Draft PRs (ignored)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">After Publishing</h4>
-                <div className="space-y-1.5 text-xs text-muted-foreground">
-                  <p>• <strong className="text-foreground">Notification:</strong> In-app notification confirms success or failure with build logs</p>
-                  <p>• <strong className="text-foreground">Rollback:</strong> Visit the Deployments tab to view history and one-click rollback to any version</p>
-                  <p>• <strong className="text-foreground">Preview URL:</strong> Each deployment gets a unique preview URL for QA before promoting</p>
-                  <p>• <strong className="text-foreground">Build logs:</strong> Full build output available in the deployment detail view</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ═══ ADVANCED PHASE ═══ */}
-          {activePhase === "advanced" && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">Team Collaboration (Parity+ Feature)</h4>
-                <div className="space-y-1.5 text-xs text-muted-foreground">
-                  <p>• <strong className="text-foreground">Branch-based development:</strong> Create feature branches, develop independently, merge via PR</p>
-                  <p>• <strong className="text-foreground">Code review:</strong> Use GitHub PRs for team review before merging to main (auto-publishes on merge)</p>
-                  <p>• <strong className="text-foreground">Multiple Codespaces:</strong> Each team member can have their own Codespace with isolated state</p>
-                  <p>• <strong className="text-foreground">Protected branches:</strong> Require PR approval before merge to prevent accidental publishes</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">CI/CD Integration (Parity+ Feature)</h4>
-                <div className="space-y-1.5 text-xs text-muted-foreground">
-                  <p>• Add GitHub Actions for automated testing before deploy</p>
-                  <p>• Run linting, type-checking, and unit tests on every push</p>
-                  <p>• Block deploys on test failure (configure in repo Settings → Branches)</p>
-                </div>
-                <pre className="mt-2 text-[10px] text-muted-foreground font-mono overflow-x-auto p-2 rounded bg-background border border-border">{`# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - run: pnpm install
-      - run: pnpm test
-      - run: pnpm build`}</pre>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <h4 className="text-sm font-medium text-foreground mb-2">Environment Parity</h4>
-                <div className="space-y-1.5 text-xs text-muted-foreground">
-                  <p>• <strong className="text-foreground">Secrets:</strong> Use GitHub Codespace secrets (Settings → Secrets → Codespaces) for API keys — they inject as env vars automatically</p>
-                  <p>• <strong className="text-foreground">Database:</strong> Connect to the same remote DB from Codespaces using the same DATABASE_URL</p>
-                  <p>• <strong className="text-foreground">Storage:</strong> S3 credentials work identically from Codespaces — same storagePut/storageGet helpers</p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-lg bg-muted/30 border border-border">
-                <p className="text-xs font-medium text-foreground mb-1">Troubleshooting</p>
-                <ul className="text-[11px] text-muted-foreground space-y-1">
-                  <li>• <strong>Deploy not triggering?</strong> Check GitHub → Settings → Webhooks — verify active + delivering</li>
-                  <li>• <strong>Build failing?</strong> Ensure package.json has a <code className="text-[10px] bg-muted px-1 rounded">build</code> script producing <code className="text-[10px] bg-muted px-1 rounded">dist/index.html</code></li>
-                  <li>• <strong>Token expired?</strong> Reconnect GitHub in Settings → Connectors</li>
-                  <li>• <strong>Wrong branch?</strong> Auto-publish targets the repo default branch (GitHub → Settings → Default branch)</li>
-                  <li>• <strong>Codespace idle?</strong> Auto-stops after 30 min — work preserved, resumes instantly on reopen</li>
-                  <li>• <strong>Port not forwarding?</strong> Check Ports tab in Codespace, or run <code className="text-[10px] bg-muted px-1 rounded">gh codespace ports</code></li>
-                </ul>
-              </div>
-
-              <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                <p className="text-xs font-medium text-primary mb-1">Free Tier Limits</p>
-                <div className="text-[11px] text-muted-foreground space-y-0.5">
-                  <p>• <strong className="text-foreground">Codespaces:</strong> 60 core-hours/month (30 hrs on 2-core, 15 hrs on 4-core)</p>
-                  <p>• <strong className="text-foreground">Auto-deploy:</strong> Unlimited pushes, unlimited deploys</p>
-                  <p>• <strong className="text-foreground">Storage:</strong> 15 GB/month included in Codespaces free tier</p>
-                  <p>• <strong className="text-foreground">Idle timeout:</strong> Codespaces auto-stop after 30 min (configurable up to 4 hrs)</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
