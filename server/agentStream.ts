@@ -1595,9 +1595,25 @@ If git_operation(clone) fails:
       // SIMPLE QUERY GUARD: Strip tool_calls for trivial questions to prevent over-research.
       // The LLM may still try to call tools (e.g., wide_research for "What is 7+8?") because
       // the system prompt mentions capabilities. We suppress those calls entirely.
+      // FIX (IOV Session): When the LLM returns ONLY a tool_call with no text, stripping the
+      // tool call would leave an empty response → "SILENT COMPLETION" fallback. Instead, we
+      // re-invoke the LLM with a text-only nudge so it answers directly.
       if (isSimpleQueryMode && toolCalls && toolCalls.length > 0) {
         console.log(`[Agent] SIMPLE QUERY GUARD: Stripping ${toolCalls.length} tool call(s) for simple query`);
         toolCalls = undefined;
+        // If the LLM produced no text alongside the tool call, re-invoke with text-only instruction
+        const hasTextContent = typeof assistantMessage?.content === "string" && assistantMessage.content.trim().length > 0;
+        if (!hasTextContent) {
+          console.log(`[Agent] SIMPLE QUERY GUARD: No text content after stripping — re-invoking LLM for direct answer`);
+          // Temporarily increase maxTurns to allow one more turn for the text-only response
+          maxTurns = Math.max(maxTurns, turn + 2);
+          conversation.push({ role: "assistant", content: "" });
+          conversation.push({
+            role: "user",
+            content: `Answer this question directly in text. Do NOT use any tools. Just give the answer concisely: "${simpleQueryText.slice(0, 200)}"`,
+          } as any);
+          continue;
+        }
       }
       // GITHUB QUERY GUARD: ALWAYS block research tools for GitHub repo queries.
       // The LLM persistently ignores prompt routing and calls deep_research_content
