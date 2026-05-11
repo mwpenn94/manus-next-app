@@ -348,26 +348,18 @@ export async function generatePDF(title: string, markdownContent: string): Promi
               const cols = block.rows[0].length;
               const colWidth = PAGE_WIDTH / cols;
               const rowHeight = 18;
+              const headerRow = block.rows[0]; // Save header for repetition on page breaks
               doc.moveDown(0.3);
 
-              for (let r = 0; r < block.rows.length; r++) {
-                const row = block.rows[r];
-                const isHeader = r === 0;
-
-                // Ensure space for this row
-                ensureSpace(doc, rowHeight + 4);
-
+              // Helper: draw a single table row (header or data)
+              const drawTableRow = (row: string[], isHeader: boolean) => {
                 const rowY = doc.y;
-
                 if (isHeader) {
                   doc.save();
                   doc.rect(PAGE_LEFT, rowY - 2, PAGE_WIDTH, rowHeight).fill("#f0f0f0");
                   doc.restore();
                 }
-
-                // Reset fill color for text
                 doc.fill("#000000");
-
                 for (let c = 0; c < row.length; c++) {
                   doc.font(isHeader ? "Helvetica-Bold" : "Helvetica")
                     .fontSize(9)
@@ -377,13 +369,24 @@ export async function generatePDF(title: string, markdownContent: string): Promi
                       ellipsis: true,
                     });
                 }
-                // Reset x position after table cells to prevent drift
                 doc.x = PAGE_LEFT;
                 doc.y = rowY + rowHeight;
-                // Draw row separator line
                 doc.save();
                 doc.moveTo(PAGE_LEFT, doc.y).lineTo(PAGE_LEFT + PAGE_WIDTH, doc.y).stroke("#e0e0e0");
                 doc.restore();
+              };
+
+              for (let r = 0; r < block.rows.length; r++) {
+                const row = block.rows[r];
+                const isHeader = r === 0;
+                // Check if this data row would trigger a page break
+                if (!isHeader && doc.y + rowHeight + 4 > USABLE_BOTTOM) {
+                  // Page break — add new page and repeat header row
+                  doc.addPage();
+                  drawTableRow(headerRow, true);
+                }
+                ensureSpace(doc, rowHeight + 4);
+                drawTableRow(row, isHeader);
               }
               // Reset x position after table to prevent drift into subsequent blocks
               doc.x = PAGE_LEFT;

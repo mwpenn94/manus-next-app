@@ -7956,3 +7956,12 @@
 - [x] Verify GitHub-only prompts still work correctly via intent routing
 - [x] Verify demonstration+GitHub combo prompts work without guard interference
 - [x] Full suite: 5453/5454 pass (1 flaky network timeout, pre-existing)
+
+## Issues from Attached Chat Session (Recursive Optimization ESO Build)
+- [x] Agent auto-triggers optimization passes after user says "much better" — FIXED: context-aware RO injection (shouldAutoTrigger logic)
+- [x] Verify Limitless tier continuation — VERIFIED: maxTurns/maxContinuationRounds/maxTokensPerCall all Infinity
+- [x] Verify ConvergenceIndicator renders pass metadata — VERIFIED: SSE→callback→card→component fully wired
+- [x] PDF table pagination — FIXED: header row now repeats on page breaks via drawTableRow helper
+- [x] Content dedup across passes — ADDRESSED: passive RO instruction on follow-ups prevents unnecessary re-output
+- [x] Branch/fork functionality — VERIFIED: branchesRouter, BranchIndicator, BranchCompareView all implemented with tests
+- [x] Full suite: 226 files, 5466 tests pass
