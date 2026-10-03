@@ -7965,3 +7965,9 @@
 - [x] Content dedup across passes — ADDRESSED: passive RO instruction on follow-ups prevents unnecessary re-output
 - [x] Branch/fork functionality — VERIFIED: branchesRouter, BranchIndicator, BranchCompareView all implemented with tests
 - [x] Full suite: 226 files, 5466 tests pass
+
+## Deployment Repair — Missing pnpm Build Inputs
+- [x] Add regression checks for pnpm patch and local file dependencies before both Docker installs.
+- [x] Copy tracked `patches/` and `packages/` into both Docker install stages before `pnpm install`.
+- [x] Verify clean frozen production and full dependency installs using the corrected stage inputs; TypeScript and local production build pass.
+- [ ] Publish the new checkpoint through WebDev and verify production domain responds (no direct publish tool available in this session).

@@ -2,12 +2,16 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
+COPY packages ./packages
 RUN corepack enable && pnpm install --frozen-lockfile --prod
 
 # ── Stage 2: Build ───────────────────────────────────────────────
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
+COPY packages ./packages
 RUN corepack enable && pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
