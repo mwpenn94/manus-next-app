@@ -7976,5 +7976,5 @@
 - [x] Trace why the production server bundle imports `vite` at startup despite it being a development dependency.
 - [x] Implement the smallest runtime-safe fix while preserving the earlier Docker patch and local-package copies.
 - [x] Add and run regression tests for the production bootstrap dependency boundary.
-- [ ] Verify a production-like runtime with only `--prod` dependencies, then save a checkpoint.
+- [x] Verify a production-like runtime with only `--prod` dependencies, then save a checkpoint (`f2fa0ae3`).
 - [ ] Retry publishing and verify production startup; if direct publish is unavailable, leave this explicit external verification pending.
