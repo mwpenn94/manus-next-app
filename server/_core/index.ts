@@ -261,6 +261,10 @@ async function startServer() {
     crossOriginEmbedderPolicy: false, // Required for OAuth popups
   }));
 
+  // Container liveness must not fall through to the SPA's index.html response.
+  // Keep this independent of the database and third-party services.
+  app.get("/healthz", (_req, res) => res.status(200).json({ status: "ok" }));
+
   // ── Rate Limiting ──
   // Strict limit for LLM stream (costs real money per call)
   const streamLimiter = rateLimit({

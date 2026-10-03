@@ -7971,3 +7971,10 @@
 - [x] Copy tracked `patches/` and `packages/` into both Docker install stages before `pnpm install`.
 - [x] Verify clean frozen production and full dependency installs using the corrected stage inputs; TypeScript and local production build pass.
 - [ ] Publish the new checkpoint through WebDev and verify production domain responds (no direct publish tool available in this session).
+
+## Deployment Repair — Runtime Missing Vite (2026-10-03)
+- [x] Trace why the production server bundle imports `vite` at startup despite it being a development dependency.
+- [x] Implement the smallest runtime-safe fix while preserving the earlier Docker patch and local-package copies.
+- [x] Add and run regression tests for the production bootstrap dependency boundary.
+- [ ] Verify a production-like runtime with only `--prod` dependencies, then save a checkpoint.
+- [ ] Retry publishing and verify production startup; if direct publish is unavailable, leave this explicit external verification pending.
