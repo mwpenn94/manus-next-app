@@ -1181,6 +1181,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           </div>
         ) : isAuthenticated && user ? (
+          <>
           <div className="flex items-center justify-between px-3 py-2">
             {/* Left: icon buttons */}
             <div className="flex items-center gap-1">
@@ -1225,6 +1226,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               from <span className="font-medium">∞</span> Meta
             </span>
           </div>
+          <div className="px-3 pb-2 text-[10px] text-muted-foreground select-none">
+            Continued on Sidekick
+          </div>
+          </>
         ) : (
           <button
             onClick={handleLogin}
