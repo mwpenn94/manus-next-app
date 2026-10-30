@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { AgentAction } from "@/contexts/TaskContext";
+import { BrandMark } from "@/components/BrandAvatar";
 
 // ── Agent State Derivation ──
 
@@ -191,7 +192,7 @@ function ThinkingPresence({ knowledgeRecalled, connectorContext }: { knowledgeRe
       className="flex items-center gap-3 px-3 py-2"
     >
       <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-card ring-1 ring-border animate-pulse">
-        <img src="/manus-storage/white_marble_hero_29fc0d2e.png" alt="" className="w-5 h-5 rounded-full" />
+        <BrandMark className="w-5 h-5 rounded-full" />
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm text-foreground">

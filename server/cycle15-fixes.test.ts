@@ -110,7 +110,7 @@ describe("Brand avatar: No paw emoji remaining", () => {
   it("BrandAvatar component exists and exports BRAND_IMAGE_URL", () => {
     const src = readClientFile("components/BrandAvatar.tsx");
     expect(src).toContain("export default function BrandAvatar");
-    expect(src).toContain("export { BRAND_IMAGE_URL }");
+    expect(src).toContain("export { BRAND_IMAGE_URL, BrandMark }");
     expect(src).toContain("/manus-storage/");
   });
 
