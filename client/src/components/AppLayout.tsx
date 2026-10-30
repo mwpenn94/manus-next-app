@@ -1226,7 +1226,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               from <span className="font-medium">∞</span> Meta
             </span>
           </div>
-          <div className="px-3 pb-2 text-[10px] text-muted-foreground select-none">
+          <div
+            role="contentinfo"
+            aria-label="Sidebar footer"
+            className="px-3 pb-2 text-[10px] text-muted-foreground select-none"
+          >
             Continued on Sidekick
           </div>
           </>
