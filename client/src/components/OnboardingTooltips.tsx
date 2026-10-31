@@ -29,7 +29,7 @@ interface OnboardingStep {
 const STEPS: OnboardingStep[] = [
   {
     id: "welcome",
-    title: "Welcome to Manus",
+    title: "Welcome to Manus Next",
     description: "Your autonomous AI agent that can research, build, design, and automate — all from a single prompt.",
     icon: Sparkles,
     hint: "Manus works like a skilled colleague: give it a task and it handles the rest.",
